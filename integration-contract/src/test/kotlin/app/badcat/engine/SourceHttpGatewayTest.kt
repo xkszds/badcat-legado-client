@@ -75,6 +75,32 @@ class SourceHttpGatewayTest {
     }
 
     @Test
+    fun evaluatorProviderUsesTheCurrentSourceForEveryRequest() {
+        val client = RecordingClient()
+        val seenSourceIds = mutableListOf<String>()
+        val gateway = SourceHttpGateway(
+            client = client,
+            embeddedScriptEvaluatorProvider = { currentSource ->
+                LegadoEmbeddedScriptEvaluator { script, key ->
+                    assertEquals("key", script)
+                    seenSourceIds += currentSource.id
+                    EngineResult.Success("${currentSource.id}-$key")
+                }
+            },
+        )
+        kotlinx.coroutines.runBlocking {
+            assertIs<EngineResult.Success<SourceHttpResponse>>(
+                gateway.execute(source().copy(id = "source-a"), "/s?q={{key}}", key = "x"),
+            )
+            assertIs<EngineResult.Success<SourceHttpResponse>>(
+                gateway.execute(source().copy(id = "source-b"), "/s?q={{key}}", key = "y"),
+            )
+        }
+        assertEquals(listOf("source-a", "source-b"), seenSourceIds)
+        assertEquals("https://reader.example/s?q=source-b-y", requireNotNull(client.captured).url)
+    }
+
+    @Test
     fun templateEvaluationFailureNeverReachesTransport() {
         val client = RecordingClient()
         val evaluator = LegadoEmbeddedScriptEvaluator { _, _ ->
