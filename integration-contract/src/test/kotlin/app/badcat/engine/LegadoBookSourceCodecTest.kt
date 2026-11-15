@@ -30,6 +30,11 @@ class LegadoBookSourceCodecTest {
         assertEquals("Example source", source.name)
         assertEquals("test", source.group)
         assertTrue(source.enabled)
+        val engineSource = source.toEngineSource()
+        assertEquals(source.sourceId, engineSource.id)
+        assertEquals(source.name, engineSource.name)
+        assertEquals(source.group, engineSource.group)
+        assertEquals(source.rawJson, engineSource.rawJson)
 
         val exported = JsonParser.parseString(LegadoBookSourceCodec.encode(listOf(source)))
             .asJsonArray.single().asJsonObject
