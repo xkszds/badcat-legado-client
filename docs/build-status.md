@@ -33,7 +33,7 @@ Last updated: 2026-11-15
 
 - Expanded `BookSource` host contract to expose frequently used upstream source settings and raw nested rule JSON for explore, search, book info, TOC and content.
 - Extended codec mapping and fixture assertions, including upstream default behavior for the cookie jar.
-- Added explicit host boundaries for HTTP transport, the five separate rule stages (explore/search/book info/TOC/content), and source JavaScript execution. These are interfaces and contract tests only: no concrete HTTP client, selector parser, Rhino runtime/bindings, or search/detail/TOC/content orchestration is implemented.
+- Added explicit host boundaries for HTTP transport, the five separate rule stages (explore/search/book info/TOC/content), and source JavaScript execution. Added a tested request-settings factory that parses static source headers, applies case-insensitive per-request overrides, normalizes the method and carries the cookie-jar flag. This is not a concrete HTTP client: URL interpolation, cookie persistence, redirects, selector parsing, Rhino runtime/bindings, and search/detail/TOC/content orchestration remain unimplemented.
 - Tests were edited but have not been executed in this environment; CI has not been confirmed green.
 
 ## Next validation
