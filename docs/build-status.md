@@ -1,5 +1,12 @@
 ## Latest implementation update (2026-11-15)
 
+- Added `BadcatSourceHttpGatewayFactory` as the Android-side composition entry point. It constructs a source-scoped gateway with the bounded Rhino embedded-template adapter and the OkHttp transport, while allowing the transport and script runtime to be injected for tests/host configuration.
+- The factory opts into only the `{{...}}` URL-template subset and the string `key` binding. It does not enable `@js`, `bodyJs`, WebView, Java host objects, login/session services or full Legado AnalyzeUrl bindings. Directly constructed gateways remain fail-closed by default.
+- This is a composition entry point, not evidence that the app's launcher/search UI calls it. `MainActivity` remains a temporary validation shell; no end-user search flow is wired.
+- No Gradle build/test, CI run, device validation or APK generation has been performed. The pinned HtmlUnit Rhino fork JAR remains missing and blocks a verified build.
+
+## Latest implementation update (2026-11-15)
+
 - Connected the bounded `{{...}}` evaluator to `SourceHttpGateway` as an explicit opt-in dependency. The gateway expands expressions before URL resolution and query/form encoding, passes the search keyword as `key`, and aborts before transport on evaluator failure. The default gateway still rejects unresolved templates.
 - Added an Android adapter that bridges the pinned bounded Rhino runtime to the template contract with only the string `key` binding. No Java host objects, HTTP, cookies, cache, login, proxy, or WebView bindings are exposed. The search service now forwards its keyword to the gateway so the template path can be used end to end when the host explicitly injects the adapter.
 - Added gateway regression cases for fail-closed default behavior, Unicode/space key expansion before percent-encoding, and no network request after script failure. Corrected the template result conversion fallback for other primitive values.
