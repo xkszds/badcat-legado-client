@@ -34,19 +34,19 @@ class LegadoLiteralReplacementTest {
     }
 
     @Test
-    fun stopsCatastrophicRegexWithinConfiguredDeadline() {
+    fun stopsCatastrophicRegexWithinConfiguredDeadline(): Unit {
         val rules = listOf(
             LegadoReplaceRule(
                 LegadoReplaceRuleScope(10),
-                """^(a|aa)+$""",
+                """^(a+)+$""",
                 "x",
                 isRegex = true,
-                timeoutMillisecond = 100,
+                timeoutMillisecond = 1,
             ),
         )
         val replacement = LegadoLiteralReplacement(rules, "Book", "source")
         assertFailsWith<LegadoRegexTimeoutException> {
-            replacement.replace("a".repeat(64) + "!")
+            replacement.replace("a".repeat(4096) + "!")
         }
     }
 
