@@ -165,6 +165,8 @@ class SourceReadingEngineTest {
             id = "fixture",
             name = "Fixture",
             baseUrl = "https://reader.example/",
+            searchUrl = "/search?q={{key}}",
+            ruleSearchJson = """{"bookList":"div.result","name":"h2@text","bookUrl":"a@href"}""",
             ruleBookInfoJson = """{"name":"h1.title@text","tocUrl":"a.toc@href"}""",
             ruleTocJson = """{
                 "chapterList":"ul.chapters li",
@@ -178,6 +180,8 @@ class SourceReadingEngineTest {
             override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
                 requests += request.url
                 val body = when {
+                    request.url.contains("/search?") ->
+                        """<div class="result"><h2>Novel</h2><a href="/book/1">Open</a></div>"""
                     request.url.endsWith("/book/1") ->
                         """<h1 class="title">Novel</h1><a class="toc" href="/toc">Catalog</a>"""
                     request.url.endsWith("/toc") ->
@@ -189,7 +193,13 @@ class SourceReadingEngineTest {
                 return EngineResult.Success(SourceHttpResponse(200, request.url, body = body))
             }
         }
-        val gateway = SourceHttpGateway(client)
+        val gateway = SourceHttpGateway(
+            client,
+            embeddedScriptEvaluator = LegadoEmbeddedScriptEvaluator { script, key, _ ->
+                if (script == "key") EngineResult.Success(key)
+                else EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Unexpected search template")
+            },
+        )
         val engine = SourceReadingEngine(
             catalog = BookSourceCatalog { EngineResult.Success(listOf(source)) },
             searchUrlResolver = SearchUrlResolver { _, _ ->
@@ -201,8 +211,15 @@ class SourceReadingEngineTest {
             contentService = SourceChapterContentService(gateway),
         )
 
+        val candidates = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            engine.search("fixture", "Novel"),
+        ).value
+        assertEquals(1, candidates.size)
+        assertEquals("Novel", candidates.single().name)
+        assertEquals("https://reader.example/book/1", candidates.single().bookUrl)
+
         val detail = assertIs<EngineResult.Success<BookDetail>>(
-            engine.bookDetail("fixture", "https://reader.example/book/1"),
+            engine.bookDetail("fixture", candidates.single().bookUrl),
         ).value
         assertEquals("Novel", detail.name)
         assertEquals("https://reader.example/toc", detail.tocUrl)
@@ -224,6 +241,7 @@ class SourceReadingEngineTest {
 
         assertEquals(
             listOf(
+                "https://reader.example/search?q=Novel",
                 "https://reader.example/book/1",
                 "https://reader.example/book/1",
                 "https://reader.example/toc",
