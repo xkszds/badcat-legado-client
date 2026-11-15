@@ -91,6 +91,9 @@ jobs:
               --output "$local_root/$file"
           done
 
+      - name: Run bounded Rhino replacement host tests
+        run: gradle --no-daemon :app:testDebugUnitTest
+
       - name: Assemble debug APK
         run: gradle --no-daemon :app:assembleDebug
 
