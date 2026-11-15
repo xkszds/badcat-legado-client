@@ -8,6 +8,8 @@ package app.badcat.engine
 class SourceHttpGateway(
     private val client: SourceRequestClient,
     private val embeddedScriptEvaluator: LegadoEmbeddedScriptEvaluator? = null,
+    /** Resolve an evaluator for each request source; takes precedence over the fixed evaluator. */
+    private val embeddedScriptEvaluatorProvider: ((BookSource) -> LegadoEmbeddedScriptEvaluator?)? = null,
 ) {
     suspend fun execute(
         source: BookSource,
@@ -22,11 +24,12 @@ class SourceHttpGateway(
             )
         }
 
-        val expandedRuleUrl = if (ruleUrl.contains("{{") && embeddedScriptEvaluator != null) {
+        val evaluator = if (embeddedScriptEvaluatorProvider != null) embeddedScriptEvaluatorProvider.invoke(source) else embeddedScriptEvaluator
+        val expandedRuleUrl = if (ruleUrl.contains("{{") && evaluator != null) {
             when (val result = LegadoEmbeddedUrlTemplate.resolve(
                 template = ruleUrl,
                 key = key,
-                evaluator = embeddedScriptEvaluator,
+                evaluator = evaluator,
             )) {
                 is EngineResult.Success -> result.value
                 is EngineResult.Failure -> return result
