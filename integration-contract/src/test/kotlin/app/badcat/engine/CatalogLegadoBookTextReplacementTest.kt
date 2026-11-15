@@ -52,7 +52,7 @@ class CatalogLegadoBookTextReplacementTest {
     @Test
     fun disablesRuleWhenRegexExecutionTimesOut() = runBlocking {
         val imported = LegadoReplaceRuleCodec.decode(
-            """[{"id":77,"pattern":"^(a|aa)+$","replacement":"x","isRegex":true,"timeoutMillisecond":100}]"""
+            """[{"id":77,"pattern":"^(a+)+$","replacement":"x","isRegex":true,"timeoutMillisecond":1}]"""
         )
         var disabledRuleId: Long? = null
         val catalog = object : LegadoReplaceRuleCatalog {
@@ -67,7 +67,7 @@ class CatalogLegadoBookTextReplacementTest {
         val replacement = CatalogLegadoBookTextReplacement(catalog)
 
         assertFailsWith<LegadoRegexTimeoutException> {
-            replacement.replace("Chapter", "a".repeat(64) + "!", "Book", "https://source.example/")
+            replacement.replace("Chapter", "a".repeat(4096) + "!", "Book", "https://source.example/")
         }
         assertEquals(77L, disabledRuleId)
     }
