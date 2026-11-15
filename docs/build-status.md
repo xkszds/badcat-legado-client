@@ -1,5 +1,11 @@
 ## Latest implementation update (2026-11-15)
 
+- Added method validation at the shared `SourceRequestFactory` boundary, so callers cannot bypass the URL resolver's transport-method allowlist by constructing requests directly. Supported methods are GET, HEAD, POST, PUT, PATCH, PROPPATCH and REPORT; unsupported methods return `UNSUPPORTED_RULE` before transport creation.
+- Added a regression test for direct factory rejection of DELETE.
+- Tests are authored but not executed. No compile, CI run, device test or installable APK is confirmed.
+
+## Latest implementation update (2026-11-15)
+
 - Added `UnsupportedSourceScriptRuntime` as an explicit fail-closed default for hosts that have not integrated the pinned Legado Rhino runtime. It returns `UNSUPPORTED_RULE` and never echoes script text as if it were an evaluated result.
 - Added a coroutine-based contract test for the fail-closed behavior. This is a safety boundary, not a Rhino implementation; JavaScript-bearing book sources remain unsupported.
 - Tests are authored but not executed. No compile, CI run, device test or installable APK is confirmed.
