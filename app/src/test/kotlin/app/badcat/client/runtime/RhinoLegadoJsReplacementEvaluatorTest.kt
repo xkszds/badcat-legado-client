@@ -104,6 +104,19 @@ class RhinoLegadoJsReplacementEvaluatorTest {
         }
     }
 
+
+    @Test
+    fun blocksDangerousSystemMethodsThroughProtectedJavaWrapper() {
+        val session = RhinoLegadoJsReplacementEvaluator().createSession("system methods fixture")
+
+        assertThrows(UnsupportedOperationException::class.java) {
+            session.evaluate("Packages.java.lang.System.exit(0)", context())
+        }
+        assertThrows(UnsupportedOperationException::class.java) {
+            session.evaluate("Packages.java.lang.System.loadLibrary('badcat-test')", context())
+        }
+    }
+
     @Test
     fun doesNotShareHelperStateAcrossRuleSessions() {
         val first = RhinoLegadoJsReplacementEvaluator().createSession("first rule")
