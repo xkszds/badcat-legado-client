@@ -150,11 +150,16 @@ class SourceCatalogActivity : Activity() {
 
     private fun importFrom(uri: Uri) {
         scope.launch {
-            val json = withContext(Dispatchers.IO) {
-                contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+            val json = try {
+                withContext(Dispatchers.IO) {
+                    contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+                }
+            } catch (error: Exception) {
+                message.text = "读取书源文件失败：${error.message ?: "未知文件错误"}"
+                return@launch
             }
             if (json == null) {
-                message.text = "无法读取所选文件"
+                message.text = "无法读取所选文件，请检查文件访问权限"
                 return@launch
             }
             when (val result = catalog.importJson(json)) {
@@ -172,12 +177,17 @@ class SourceCatalogActivity : Activity() {
         scope.launch {
             when (val result = catalog.exportJson()) {
                 is app.badcat.engine.EngineResult.Success -> {
-                    val saved = withContext(Dispatchers.IO) {
-                        contentResolver.openOutputStream(uri)?.bufferedWriter(Charsets.UTF_8)?.use {
-                            it.write(result.value)
-                        } != null
+                    val saved = try {
+                        withContext(Dispatchers.IO) {
+                            contentResolver.openOutputStream(uri)?.bufferedWriter(Charsets.UTF_8)?.use {
+                                it.write(result.value)
+                            } != null
+                        }
+                    } catch (error: Exception) {
+                        message.text = "导出文件失败：${error.message ?: "未知文件错误"}"
+                        return@launch
                     }
-                    message.text = if (saved) "书源已导出" else "无法写入目标文件"
+                    message.text = if (saved) "书源已导出" else "无法写入目标文件，请检查文件访问权限"
                 }
                 is app.badcat.engine.EngineResult.Failure ->
                     message.text = "导出失败：${result.message}"
