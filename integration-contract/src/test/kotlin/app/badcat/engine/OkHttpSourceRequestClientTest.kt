@@ -60,8 +60,6 @@ class OkHttpSourceRequestClientTest {
         assertEquals(listOf(cookie), firstSourceJar.loadForRequest(url))
         assertTrue(secondSourceJar.loadForRequest(url).isEmpty())
     }
-}
-
 
     @Test
     fun redirectValidatorAllowsSafeRelativeAndCrossHostHttpsRedirects() {
@@ -84,3 +82,4 @@ class OkHttpSourceRequestClientTest {
         val from = "http://reader.example/book/1".toHttpUrl()
         assertTrue(isSafeRedirectTarget(from, "https://reader.example/book/1"))
     }
+}
