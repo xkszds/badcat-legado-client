@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -60,6 +62,14 @@ class ReplaceRuleActivity : Activity() {
             text = "复制全部规则 JSON"
             setOnClickListener { copyExportToClipboard() }
         }
+        val importFileButton = Button(this).apply {
+            text = "从文件导入 JSON"
+            setOnClickListener { openImportDocument() }
+        }
+        val exportFileButton = Button(this).apply {
+            text = "导出为 JSON 文件"
+            setOnClickListener { createExportDocument() }
+        }
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -76,6 +86,8 @@ class ReplaceRuleActivity : Activity() {
             addView(exportButton)
             addView(pasteButton)
             addView(copyButton)
+            addView(importFileButton)
+            addView(exportFileButton)
             addView(status)
             addView(ruleList)
         }
@@ -83,6 +95,81 @@ class ReplaceRuleActivity : Activity() {
         refreshRules()
     }
 
+    private fun openImportDocument() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/json"
+        }
+        startActivityForResult(intent, REQUEST_IMPORT_JSON)
+    }
+
+    private fun createExportDocument() {
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/json"
+            putExtra(Intent.EXTRA_TITLE, "legado-replace-rules.json")
+        }
+        startActivityForResult(intent, REQUEST_EXPORT_JSON)
+    }
+
+    @Deprecated("Uses the platform document picker for broad Android compatibility")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode != RESULT_OK) return
+        val uri = data?.data ?: return
+        when (requestCode) {
+            REQUEST_IMPORT_JSON -> importDocument(uri)
+            REQUEST_EXPORT_JSON -> exportDocument(uri)
+        }
+    }
+
+    private fun importDocument(uri: Uri) {
+        importButton.isEnabled = false
+        status.text = "正在读取 JSON 文件…"
+        worker.execute {
+            val result = try {
+                val bytes = contentResolver.openInputStream(uri)?.use { input ->
+                    input.readBytes().also { require(it.size <= MAX_IMPORT_BYTES) {
+                        "规则文件不能超过 5 MB"
+                    } }
+                } ?: error("无法打开所选文件")
+                runBlocking { catalog.importJson(bytes.toString(Charsets.UTF_8)) }
+            } catch (error: Exception) {
+                EngineResult.Failure(
+                    app.badcat.engine.EngineErrorCode.INVALID_SOURCE,
+                    error.message ?: "读取规则文件失败",
+                    error,
+                )
+            }
+            mainHandler.post {
+                importButton.isEnabled = true
+                when (result) {
+                    is EngineResult.Success -> status.text = "从文件成功导入/更新 " + result.value + " 条规则"
+                    is EngineResult.Failure -> status.text = "文件导入失败（" + result.code + "）：" + result.message
+                }
+                refreshRules()
+            }
+        }
+    }
+
+    private fun exportDocument(uri: Uri) {
+        status.text = "正在写入 JSON 文件…"
+        worker.execute {
+            val result = runBlocking { catalog.exportJson() }
+            val message = when (result) {
+                is EngineResult.Failure -> "文件导出失败：" + result.message
+                is EngineResult.Success -> try {
+                    contentResolver.openOutputStream(uri, "wt")?.bufferedWriter(Charsets.UTF_8)?.use {
+                        it.write(result.value)
+                    } ?: error("无法写入所选位置")
+                    "已导出 " + result.value.length + " 个字符到 JSON 文件"
+                } catch (error: Exception) {
+                    "文件导出失败：" + (error.message ?: "写入错误")
+                }
+            }
+            mainHandler.post { status.text = message }
+        }
+    }
     private fun pasteClipboard() {
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = clipboard.primaryClip
@@ -205,6 +292,12 @@ class ReplaceRuleActivity : Activity() {
                 refreshRules()
             }
         }
+    }
+
+    companion object {
+        private const val REQUEST_IMPORT_JSON = 4101
+        private const val REQUEST_EXPORT_JSON = 4102
+        private const val MAX_IMPORT_BYTES = 5 * 1024 * 1024
     }
 
     override fun onDestroy() {
