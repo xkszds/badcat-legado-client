@@ -71,3 +71,19 @@ interface SourceScriptRuntime {
         bindings: Map<String, String> = emptyMap(),
     ): EngineResult<String>
 }
+
+/**
+ * Fail-closed implementation for hosts that have not integrated the pinned
+ * Legado Rhino runtime. It deliberately never treats script as plain text and
+ * never evaluates it with a permissive default JavaScript engine.
+ */
+object UnsupportedSourceScriptRuntime : SourceScriptRuntime {
+    override suspend fun evaluate(
+        source: BookSource,
+        script: String,
+        bindings: Map<String, String>,
+    ): EngineResult<String> = EngineResult.Failure(
+        EngineErrorCode.UNSUPPORTED_RULE,
+        "JavaScript rules are disabled until the pinned Legado Rhino runtime is integrated",
+    )
+}
