@@ -74,6 +74,29 @@ class LegadoReplaceRuleCodecTest {
     }
 
     @Test
+    fun validatesRegexSyntaxAndTrailingAlternationLikeLegado() {
+        val invalidTrailingPipe = LegadoReplaceRuleCodec.decode(
+            """{"id":10,"pattern":"abc|","replacement":"","isRegex":true}"""
+        ).single()
+        assertFalse(invalidTrailingPipe.isValid())
+
+        val escapedPipe = LegadoReplaceRuleCodec.decode(
+            """{"id":11,"pattern":"abc\\\\|","replacement":"","isRegex":true}"""
+        ).single()
+        assertTrue(escapedPipe.isValid())
+
+        val invalidRegex = LegadoReplaceRuleCodec.decode(
+            """{"id":12,"pattern":"(","replacement":"","isRegex":true}"""
+        ).single()
+        assertFalse(invalidRegex.isValid())
+
+        val literal = LegadoReplaceRuleCodec.decode(
+            """{"id":13,"pattern":"[","replacement":"","isRegex":false}"""
+        ).single()
+        assertTrue(literal.isValid())
+    }
+
+    @Test
     fun rejectsDuplicateIdsAndInvalidKnownFieldTypes() {
         assertFailsWith<IllegalArgumentException> {
             LegadoReplaceRuleCodec.decode("""[{"id":1},{"id":1}]""")
