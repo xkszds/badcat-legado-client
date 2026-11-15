@@ -61,9 +61,9 @@ class SourceChapterContentServiceTest {
         var observedBookOrigin = ""
         val service = SourceChapterContentService(
             http = SourceHttpGateway(FixtureClient()),
-            scopedTextReplacement = ScopedBookTextReplacement { title, text, bookName, bookOrigin ->
-                observedBookName = bookName
-                observedBookOrigin = bookOrigin
+            scopedTextReplacement = ScopedBookTextReplacement { title, text, context ->
+                observedBookName = context.book.name
+                observedBookOrigin = context.book.origin
                 ReplacedChapterContent(title.replace("Chapter", "Part"), text.replace("First", "Scoped"))
             },
         )
@@ -92,7 +92,7 @@ class SourceChapterContentServiceTest {
         )
         val service = SourceChapterContentService(
             http = SourceHttpGateway(FixtureClient()),
-            scopedTextReplacement = ScopedBookTextReplacement { _, _, _, _ ->
+            scopedTextReplacement = ScopedBookTextReplacement { _, _, _ ->
                 throw UnsupportedOperationException("JavaScript replacement runtime unavailable")
             },
         )
