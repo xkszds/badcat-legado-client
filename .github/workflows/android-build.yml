@@ -65,6 +65,32 @@ jobs:
           test "$actual_size" = "1900654"
           test "$actual_blob" = "d240cdd66f5269ed33da53cde7e4e690cee6e162"
 
+      - name: Restore pinned Legado Rhino extension sources
+        run: |
+          upstream_commit="330e606c4d57e08adc056ff8ab7a4132c784da9"
+          upstream_root="modules/rhino/src/main/java/org/htmlunit/corejs/javascript"
+          local_root="legado-rhino/src/main/java/org/htmlunit/corejs/javascript"
+          files=(
+            "ConcurrentNativeObject.java"
+            "xmlimpl/Namespace.java"
+            "xmlimpl/QName.java"
+            "xmlimpl/XML.java"
+            "xmlimpl/XMLLibImpl.java"
+            "xmlimpl/XMLList.java"
+            "xmlimpl/XMLLoaderImpl.java"
+            "xmlimpl/XMLName.java"
+            "xmlimpl/XMLObjectImpl.java"
+            "xmlimpl/XMLWithScope.java"
+            "xmlimpl/XmlNode.java"
+            "xmlimpl/XmlProcessor.java"
+          )
+          for file in "${files[@]}"; do
+            mkdir -p "$local_root/$(dirname "$file")"
+            curl --fail --location --retry 3 --retry-delay 2 \
+              "https://raw.githubusercontent.com/LegadoTeam/legado/$upstream_commit/$upstream_root/$file" \
+              --output "$local_root/$file"
+          done
+
       - name: Assemble debug APK
         run: gradle --no-daemon :app:assembleDebug
 
