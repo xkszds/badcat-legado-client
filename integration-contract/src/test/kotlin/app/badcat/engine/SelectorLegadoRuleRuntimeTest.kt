@@ -34,6 +34,32 @@ class SelectorLegadoRuleRuntimeTest {
     }
 
     @Test
+    fun executesSelectedStageDirectlyFromImportedBookSource() = runBlocking {
+        val source = BookSource(
+            id = "https://reader.example/",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleSearchJson = """{"bookList":"div.book"}""",
+        )
+        val runtime = SelectorLegadoRuleRuntime(
+            mapOf("search.bookList" to SelectorRuleType.CSS),
+        )
+        val result = SourceRuleResolver.evaluateStage(
+            source = source,
+            stage = SourceRuleStage.SEARCH,
+            document = SourceDocument(
+                "https://reader.example/search",
+                """<div class="book">Gamma</div>""",
+            ),
+            runtime = runtime,
+        )
+        assertEquals(
+            listOf(mapOf("bookList" to "Gamma")),
+            assertIs<EngineResult.Success<List<Map<String, String>>>>(result).value,
+        )
+    }
+
+    @Test
     fun failsWhenNoFieldsHaveExplicitSelectorModes() = runBlocking {
         val source = BookSource(
             id = "https://reader.example/",
