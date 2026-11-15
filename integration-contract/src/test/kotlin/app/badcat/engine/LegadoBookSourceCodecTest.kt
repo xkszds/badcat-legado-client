@@ -10,6 +10,28 @@ import kotlin.test.assertTrue
 class LegadoBookSourceCodecTest {
 
     @Test
+    fun decodesUtf8WithoutCorruptingChineseSourceNames() {
+        val json = """{"bookSourceUrl":"https://utf8.example","bookSourceName":"雪猫书源"}"""
+        val decoded = LegadoBookSourceCodec.decodeUtf8ToString(json.toByteArray(Charsets.UTF_8))
+        assertEquals("雪猫书源", LegadoBookSourceCodec.decode(decoded).single().name)
+    }
+
+    @Test
+    fun rejectsMalformedUtf8AndOversizedDocuments() {
+        assertFailsWith<java.nio.charset.CharacterCodingException> {
+            LegadoBookSourceCodec.decodeUtf8ToString(byteArrayOf(0xC3.toByte(), 0x28))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            LegadoBookSourceCodec.decodeUtf8ToString(
+                ByteArray(LegadoBookSourceCodec.MAX_IMPORT_BYTES + 1)
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            LegadoBookSourceCodec.decode(" ".repeat(LegadoBookSourceCodec.MAX_IMPORT_BYTES + 1))
+        }
+    }
+
+    @Test
     fun decodesSingleSourceAndKeepsUnknownRuleFields() {
         val input = """
             {
