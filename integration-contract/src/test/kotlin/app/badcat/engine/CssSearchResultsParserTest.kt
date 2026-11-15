@@ -133,4 +133,38 @@ class CssSearchResultsParserTest {
         val result = CssSearchResultsParser().parse(source, response)
         assertIs<EngineResult.Failure>(result)
     }
+
+    @Test
+    fun rejectsExecutableAndLocalSchemesInBookAndCoverUrls() {
+        val parser = CssSearchResultsParser()
+        val response = SourceHttpResponse(
+            statusCode = 200,
+            finalUrl = "https://reader.example/search",
+            body = """<div class="book"><h2>Unsafe</h2><a href="javascript:alert(1)">open</a><img src="file:///etc/passwd"></div>""",
+        )
+        val bookUrlSource = source(
+            """{"bookList":"div.book","name":"h2@text","bookUrl":"a@href"}""",
+        )
+        val coverUrlSource = source(
+            """{"bookList":"div.book","name":"h2@text","bookUrl":"a@href","coverUrl":"img@src"}""",
+        )
+
+        assertIs<EngineResult.Failure>(parser.parse(bookUrlSource, response))
+        assertIs<EngineResult.Failure>(parser.parse(coverUrlSource, response))
+    }
+
+    @Test
+    fun rejectsCredentialBearingSearchResultUrls() {
+        val source = source(
+            """{"bookList":"div.book","name":"h2@text","bookUrl":"a@href"}""",
+        )
+        val response = SourceHttpResponse(
+            statusCode = 200,
+            finalUrl = "https://reader.example/search",
+            body = """<div class="book"><h2>Unsafe</h2><a href="https://user:pass@reader.example/book">open</a></div>""",
+        )
+
+        assertIs<EngineResult.Failure>(CssSearchResultsParser().parse(source, response))
+    }
+
 }
