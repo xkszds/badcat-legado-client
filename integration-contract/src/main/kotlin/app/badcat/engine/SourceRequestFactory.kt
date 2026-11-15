@@ -71,6 +71,24 @@ object SourceRequestFactory {
             )
         }
 
+        if (retryCount !in 0..5 ||
+            timeoutMillis?.let { it <= 0 || it > Int.MAX_VALUE } == true
+        ) {
+            return EngineResult.Failure(
+                EngineErrorCode.INVALID_SOURCE,
+                "Retry count must be 0..5 and timeout must be within the supported millisecond range",
+            )
+        }
+        if (responseCharset != null && !responseCharset.equals("escape", ignoreCase = true)) {
+            val validCharset = runCatching { java.nio.charset.Charset.forName(responseCharset) }.isSuccess
+            if (!validCharset) {
+                return EngineResult.Failure(
+                    EngineErrorCode.INVALID_SOURCE,
+                    "Unsupported response charset '$responseCharset'",
+                )
+            }
+        }
+
         val normalizedMethod = method.uppercase()
         if (normalizedMethod !in SUPPORTED_METHODS) {
             return EngineResult.Failure(
