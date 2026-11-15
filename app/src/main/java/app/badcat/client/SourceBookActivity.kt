@@ -121,13 +121,25 @@ class SourceBookActivity : Activity() {
                         .setTitle("选择书签章节")
                         .setItems(labels) { _, which ->
                             val chapter = bookmarked[which]
-                            startActivity(Intent(this@SourceBookActivity, SourceChapterActivity::class.java).apply {
-                                putExtra(SourceChapterActivity.EXTRA_SOURCE_ID, sourceId)
-                                putExtra(SourceChapterActivity.EXTRA_BOOK_URL, bookUrl)
-                                putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, chapter.url)
-                                putExtra(SourceChapterActivity.EXTRA_CHAPTER_TITLE, chapter.title)
-                                putExtra(SourceChapterActivity.EXTRA_JUMP_TO_BOOKMARK, true)
-                            })
+                            android.app.AlertDialog.Builder(this@SourceBookActivity)
+                                .setTitle(chapter.title)
+                                .setItems(arrayOf("打开书签", "删除书签")) { _, action ->
+                                    val key = chapterBookmarkKey(sourceId, bookUrl, chapter.url)
+                                    if (action == 0) {
+                                        startActivity(Intent(this@SourceBookActivity, SourceChapterActivity::class.java).apply {
+                                            putExtra(SourceChapterActivity.EXTRA_SOURCE_ID, sourceId)
+                                            putExtra(SourceChapterActivity.EXTRA_BOOK_URL, bookUrl)
+                                            putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, chapter.url)
+                                            putExtra(SourceChapterActivity.EXTRA_CHAPTER_TITLE, chapter.title)
+                                            putExtra(SourceChapterActivity.EXTRA_JUMP_TO_BOOKMARK, true)
+                                        })
+                                    } else {
+                                        prefs.edit().remove(key).apply()
+                                        showChapters(chapters)
+                                    }
+                                }
+                                .setNegativeButton("取消", null)
+                                .show()
                         }
                         .setNegativeButton("取消", null)
                         .show()
