@@ -24,6 +24,7 @@ data class LegadoReplaceRuleRecord(
         pattern = pattern,
         replacement = replacement,
         isRegex = isRegex,
+        timeoutMillisecond = validTimeoutMillisecond(),
     )
 
     /** Legado falls back to 3000 ms for non-positive timeout values. */
@@ -32,9 +33,10 @@ data class LegadoReplaceRuleRecord(
 
     /** Mirrors Legado's rule validation without executing the expression. */
     fun isValid(): Boolean {
-        if (pattern.endsWith("|") && !pattern.endsWith("\\|")) return false
+        if (pattern.isEmpty()) return false
         if (!isRegex) return true
-        return runCatching { java.util.regex.Pattern.compile(pattern) }.isSuccess
+        if (runCatching { java.util.regex.Pattern.compile(pattern) }.isFailure) return false
+        return !(pattern.endsWith("|") && !pattern.endsWith("\\|"))
     }
 }
 
