@@ -60,6 +60,47 @@ class CssSearchResultsParserTest {
     }
 
     @Test
+    fun preservesElementHtmlForEveryCombinedBookListBranch() {
+        val source = source(
+            """{"bookList":"div.primary&&div.secondary","name":"h2@text","bookUrl":"a@href"}""",
+        )
+        val response = SourceHttpResponse(
+            statusCode = 200,
+            finalUrl = "https://reader.example/search",
+            body = """
+                <div class="primary"><h2>Primary</h2><a href="/p">open</a></div>
+                <div class="secondary"><h2>Secondary</h2><a href="/s">open</a></div>
+            """.trimIndent(),
+        )
+
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parse(source, response),
+        ).value
+
+        assertEquals(listOf("Primary", "Secondary"), books.map { it.name })
+        assertEquals(
+            listOf("https://reader.example/p", "https://reader.example/s"),
+            books.map { it.bookUrl },
+        )
+    }
+
+    @Test
+    fun rejectsScalarExtractionSuffixOnBookList() {
+        val source = source(
+            """{"bookList":"div.book@text","name":"h2@text","bookUrl":"a@href"}""",
+        )
+        val response = SourceHttpResponse(
+            statusCode = 200,
+            finalUrl = "https://reader.example/search",
+            body = """<div class="book"><h2>Book</h2><a href="/book">open</a></div>""",
+        )
+
+        val result = CssSearchResultsParser().parse(source, response)
+
+        assertIs<EngineResult.Failure>(result)
+    }
+
+    @Test
     fun reportsScriptBasedSearchRuleAsUnsupported() {
         val source = source("""{"bookList":"{{java.getList()}}","name":"h2@text","bookUrl":"a@href"}""")
         val response = SourceHttpResponse(200, "https://reader.example/search", body = "<div></div>")
