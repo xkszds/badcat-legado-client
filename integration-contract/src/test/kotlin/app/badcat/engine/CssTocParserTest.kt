@@ -121,6 +121,32 @@ class CssTocParserTest {
 
 
     @Test
+    fun rejectsMalformedNextTocSelectorWithoutThrowing() {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"ul.chapters li",
+                "chapterName":"a@text",
+                "chapterUrl":"a@href",
+                "nextTocUrl":"["
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/catalog",
+            body = """<ul class="chapters"><li><a href="/chapter/1">Chapter One</a></li></ul>""",
+        )
+
+        val failure = assertIs<EngineResult.Failure>(
+            CssTocParser().parse(source, response, "https://reader.example/book"),
+        )
+
+        assertEquals(EngineErrorCode.UNSUPPORTED_RULE, failure.code)
+    }
+
+    @Test
     fun rejectsMissingChapterUrlRuleInsteadOfUsingTocPageAsChapterUrl() {
         val source = BookSource(
             id = "fixture",
