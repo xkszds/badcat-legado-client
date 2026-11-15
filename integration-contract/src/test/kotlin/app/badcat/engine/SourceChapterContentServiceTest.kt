@@ -112,7 +112,7 @@ class SourceChapterContentServiceTest {
         )
         val service = SourceChapterContentService(
             http = SourceHttpGateway(FixtureClient()),
-            scopedTextReplacement = ScopedBookTextReplacement { _, _, _, _ ->
+            scopedTextReplacement = ScopedBookTextReplacement { _, _, _ ->
                 throw LegadoRegexTimeoutException(42, 100)
             },
         )
