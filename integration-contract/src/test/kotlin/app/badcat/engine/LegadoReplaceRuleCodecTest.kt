@@ -97,6 +97,18 @@ class LegadoReplaceRuleCodecTest {
     }
 
     @Test
+    fun rejectsOversizedCatalogBeforeEncoding() {
+        val largeRecord = LegadoReplaceRuleCodec.decode(
+            """{"id":21,"pattern":"x","replacement":"y"}"""
+        ).single().copy(
+            rawJson = """{"id":21,"pattern":"x","replacement":"${"z".repeat(LegadoReplaceRuleCodec.MAX_IMPORT_BYTES)}"}"""
+        )
+        assertFailsWith<IllegalArgumentException> {
+            LegadoReplaceRuleCodec.encode(listOf(largeRecord))
+        }
+    }
+
+    @Test
     fun rejectsOversizedJsonBeforeParsing() {
         val oversized = " ".repeat(LegadoReplaceRuleCodec.MAX_IMPORT_BYTES + 1)
         assertFailsWith<IllegalArgumentException> {
