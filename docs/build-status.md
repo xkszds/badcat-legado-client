@@ -1,5 +1,10 @@
 ## Latest implementation update (2026-11-15)
 
+- Added disabled-source regression tests for the TOC and chapter-content entry points. Together with the existing search and book-detail cases, the tests now exercise the shared source-enabled gate across all four reading operations; the fake transport fails immediately if any disabled operation reaches HTTP.
+- Tests are authored but remain unexecuted. No compile, CI run, device test or installable APK is confirmed.
+
+## Latest implementation update (2026-11-15)
+
 - Expanded `LegadoUrlResolverTest` with regression cases for the `@js` URL form and the `js`, `bodyJs` and `webView` request options. Each case asserts an explicit `UNSUPPORTED_RULE` result, guarding against accidentally forwarding script-bearing source rules as ordinary URLs.
 - These are authored regression tests only; no local Gradle installation/wrapper is available in this environment, so they have not been executed. No build, CI run, device test or APK is confirmed.
 
