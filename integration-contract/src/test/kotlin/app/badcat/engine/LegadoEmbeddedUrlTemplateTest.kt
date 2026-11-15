@@ -11,8 +11,8 @@ class LegadoEmbeddedUrlTemplateTest {
         val result = LegadoEmbeddedUrlTemplate.resolve(
             "https://example.test/search?q={{key}}&page={{page}}",
             "雪猫",
-            LegadoEmbeddedScriptEvaluator { script, key ->
-                EngineResult.Success(if (script == "key") key else 3)
+            LegadoEmbeddedScriptEvaluator { script, key, page ->
+                EngineResult.Success(if (script == "key") key else page)
             },
         )
         assertEquals(
@@ -26,12 +26,12 @@ class LegadoEmbeddedUrlTemplateTest {
         val nullResult = LegadoEmbeddedUrlTemplate.resolve(
             "a{{empty}}b",
             "x",
-            LegadoEmbeddedScriptEvaluator { _, _ -> EngineResult.Success(null) },
+            LegadoEmbeddedScriptEvaluator { _, _, _ -> EngineResult.Success(null) },
         )
         val numberResult = LegadoEmbeddedUrlTemplate.resolve(
             "page={{page}}",
             "x",
-            LegadoEmbeddedScriptEvaluator { _, _ -> EngineResult.Success(12.0) },
+            LegadoEmbeddedScriptEvaluator { _, _, _ -> EngineResult.Success(12.0) },
         )
         assertEquals("ab", assertIs<EngineResult.Success<String>>(nullResult).value)
         assertEquals("page=12", assertIs<EngineResult.Success<String>>(numberResult).value)
@@ -42,7 +42,7 @@ class LegadoEmbeddedUrlTemplateTest {
         val result = LegadoEmbeddedUrlTemplate.resolve(
             "https://example.test/{{key",
             "x",
-            LegadoEmbeddedScriptEvaluator { _, _ -> error("must not evaluate") },
+            LegadoEmbeddedScriptEvaluator { _, _, _ -> error("must not evaluate") },
         )
         assertEquals(
             "https://example.test/{{key",
@@ -55,7 +55,7 @@ class LegadoEmbeddedUrlTemplateTest {
         val result = LegadoEmbeddedUrlTemplate.resolve(
             "https://example.test/{{key}}",
             "x",
-            LegadoEmbeddedScriptEvaluator { _, _ ->
+            LegadoEmbeddedScriptEvaluator { _, _, _ ->
                 EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "disabled")
             },
         )
