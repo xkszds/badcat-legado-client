@@ -107,6 +107,21 @@ class LegadoBookSourceCodecTest {
     }
 
     @Test
+    fun rejectsMalformedKnownFieldTypesInsteadOfApplyingDefaults() {
+        val malformedSources = listOf(
+            """{"bookSourceUrl":42,"bookSourceName":"Numeric URL"}""",
+            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad enabled","enabled":"yes"}""",
+            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad type","bookSourceType":"web"}""",
+            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad header","header":{"User-Agent":"x"}}"""
+        )
+        malformedSources.forEach { json ->
+            assertFailsWith<IllegalArgumentException> {
+                LegadoBookSourceCodec.decode(json)
+            }
+        }
+    }
+
+    @Test
     fun rejectsDuplicateSourceUrlsInsteadOfSilentlyOverwriting() {
         val duplicate = """
             [
