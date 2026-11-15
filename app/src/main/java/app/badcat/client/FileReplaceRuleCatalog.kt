@@ -7,6 +7,7 @@ import app.badcat.engine.EngineResult
 import app.badcat.engine.LegadoReplaceRuleCodec
 import app.badcat.engine.LegadoReplaceRuleRecord
 import app.badcat.engine.LegadoReplaceRuleCatalog
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -33,6 +34,7 @@ class FileReplaceRuleCatalog(context: Context) : LegadoReplaceRuleCatalog {
                 try {
                     EngineResult.Success(readRules())
                 } catch (error: Exception) {
+                    if (error is CancellationException) throw error
                     EngineResult.Failure(
                         EngineErrorCode.UNKNOWN,
                         "Unable to read the local replacement-rule catalog",
@@ -53,6 +55,7 @@ class FileReplaceRuleCatalog(context: Context) : LegadoReplaceRuleCatalog {
                     }
                 }
             } catch (error: Exception) {
+                if (error is CancellationException) throw error
                 return@withLock EngineResult.Failure(
                     EngineErrorCode.INVALID_SOURCE,
                     error.message ?: "Invalid Legado replacement-rule JSON",
@@ -67,6 +70,7 @@ class FileReplaceRuleCatalog(context: Context) : LegadoReplaceRuleCatalog {
                 writeRules(merged.values.toList())
                 EngineResult.Success(imported.size)
             } catch (error: Exception) {
+                if (error is CancellationException) throw error
                 EngineResult.Failure(
                     EngineErrorCode.UNKNOWN,
                     "Unable to save imported replacement rules",
@@ -92,6 +96,7 @@ class FileReplaceRuleCatalog(context: Context) : LegadoReplaceRuleCatalog {
                     writeRules(rules)
                     EngineResult.Success(Unit)
                 } catch (error: Exception) {
+                    if (error is CancellationException) throw error
                     EngineResult.Failure(
                         EngineErrorCode.UNKNOWN,
                         "Unable to update replacement-rule enabled state",
@@ -106,6 +111,7 @@ class FileReplaceRuleCatalog(context: Context) : LegadoReplaceRuleCatalog {
             try {
                 EngineResult.Success(LegadoReplaceRuleCodec.encode(readRules()))
             } catch (error: Exception) {
+                if (error is CancellationException) throw error
                 EngineResult.Failure(
                     EngineErrorCode.UNKNOWN,
                     "Unable to export the local replacement-rule catalog",
