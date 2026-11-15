@@ -74,9 +74,9 @@ class SourceBookActivity : Activity() {
 
     private fun loadBook() {
         worker.execute {
-            val detail = runBlocking { engine.bookDetail(sourceId, bookUrl) }
+            val detail = runBlocking { safeEngineCall { engine.bookDetail(sourceId, bookUrl) } }
             val toc = if (detail is EngineResult.Success) {
-                runBlocking { engine.chapters(sourceId, bookUrl) }
+                runBlocking { safeEngineCall { engine.chapters(sourceId, bookUrl) } }
             } else null
             mainHandler.post {
                 when (detail) {
@@ -317,14 +317,14 @@ class SourceChapterActivity : Activity() {
 
     private fun loadInitial(fallbackTitle: String) {
         worker.execute {
-            val toc = runBlocking { engine.chapters(sourceId, bookUrl) }
+            val toc = runBlocking { safeEngineCall { engine.chapters(sourceId, bookUrl) } }
             val chapterList = (toc as? EngineResult.Success)?.value.orEmpty()
             val selected = chapterList.indexOfFirst { it.url == currentChapterUrl }
             val initialIndex = selected
             val chapter = if (selected >= 0) chapterList[selected] else {
                 BookChapter(index = 0, title = fallbackTitle, url = currentChapterUrl)
             }
-            val content = runBlocking { engine.chapterContent(sourceId, bookUrl, chapter.url) }
+            val content = runBlocking { safeEngineCall { engine.chapterContent(sourceId, bookUrl, chapter.url) } }
             mainHandler.post {
                 chapters = chapterList
                 currentIndex = initialIndex
@@ -377,7 +377,7 @@ class SourceChapterActivity : Activity() {
         nextButton.isEnabled = false
         status.text = "正在加载：${chapter.title}"
         worker.execute {
-            val result = runBlocking { engine.chapterContent(sourceId, bookUrl, chapter.url) }
+            val result = runBlocking { safeEngineCall { engine.chapterContent(sourceId, bookUrl, chapter.url) } }
             mainHandler.post {
                 if (result is EngineResult.Success) currentIndex = target
                 renderChapter(chapter, result, EngineResult.Success(chapters))
