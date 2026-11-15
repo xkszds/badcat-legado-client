@@ -10,7 +10,7 @@ import java.nio.charset.Charset
 object LegadoUrlParameterEncoder {
     private val querySafe = buildSet<Char> {
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~".forEach(::add)
-        "!${'$'}%&()*+,/:;=?@[\\\\]^`{|}".forEach(::add)
+        "!${'$'}%&()*+,/:;=?@[\\]^`{|}".forEach(::add)
     }
 
     private val queryAlreadyEncodedSafe = buildSet<Char> {
