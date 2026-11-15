@@ -73,4 +73,23 @@ class CssBookInfoParserTest {
         val result = CssBookInfoParser().parse(source, response, response.finalUrl)
         assertIs<EngineResult.Failure>(result)
     }
+    @Test
+    fun rejectsUnsafeCoverAndTocLinks() {
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/book/7",
+            body = "<h1>Novel</h1><img src=\"file:///etc/passwd\"><a class=\"catalog\" href=\"javascript:alert(1)\">Catalog</a>",
+        )
+        val coverSource = BookSource(
+            id = "fixture", name = "Fixture", baseUrl = "https://reader.example/",
+            ruleBookInfoJson = """{\"name\":\"h1@text\",\"coverUrl\":\"img@src\"}""",
+        )
+        val tocSource = BookSource(
+            id = "fixture", name = "Fixture", baseUrl = "https://reader.example/",
+            ruleBookInfoJson = """{\"name\":\"h1@text\",\"tocUrl\":\"a.catalog@href\"}""",
+        )
+        assertIs<EngineResult.Failure>(CssBookInfoParser().parse(coverSource, response, response.finalUrl))
+        assertIs<EngineResult.Failure>(CssBookInfoParser().parse(tocSource, response, response.finalUrl))
+    }
+
 }
