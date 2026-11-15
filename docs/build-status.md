@@ -1,5 +1,13 @@
 ## Latest implementation update (2026-11-15)
 
+- Connected the bounded `{{...}}` evaluator to `SourceHttpGateway` as an explicit opt-in dependency. The gateway expands expressions before URL resolution and query/form encoding, passes the search keyword as `key`, and aborts before transport on evaluator failure. The default gateway still rejects unresolved templates.
+- Added an Android adapter that bridges the pinned bounded Rhino runtime to the template contract with only the string `key` binding. No Java host objects, HTTP, cookies, cache, login, proxy, or WebView bindings are exposed. The search service now forwards its keyword to the gateway so the template path can be used end to end when the host explicitly injects the adapter.
+- Added gateway regression cases for fail-closed default behavior, Unicode/space key expansion before percent-encoding, and no network request after script failure. Corrected the template result conversion fallback for other primitive values.
+- This is a narrow embedded-template path, not full Legado AnalyzeUrl: `@js`, `<js>`, `@result`, `page`/ `baseUrl` and shared host bindings, `js`/`bodyJs`, WebView, login/session and other host services remain unsupported. The Android adapter is available but is not yet wired into the app's active search construction path.
+- No Gradle tests/build, CI run, device validation or APK generation has been performed. The pinned HtmlUnit Rhino fork JAR remains missing from the repository and is still a hard build blocker.
+
+## Latest implementation update (2026-11-15)
+
 - Repaired the URL encoder character-set definitions and aligned the query allowlist with the pinned Legado `NetworkUtils` bitset and `AnalyzeUrl` `RFC3986` codec. The query path preserves valid already-encoded strings; otherwise it percent-encodes with the configured charset. The form path retains the upstream `&` / first-`=` splitting and `URLEncoder`/`escape` branches.
 - Integrated request preparation into `SourceRequestFactory` after source headers and URL-option headers are merged. GET/HEAD and other non-POST methods encode query parameters; POST text bodies become form fields only when no effective `Content-Type` is present and the body is neither JSON nor XML. Raw Unicode/space query values are encoded before `URI` resolution.
 - Added resolver and request-factory regression cases for Unicode query values, GET encoding, POST form encoding, JSON bodies and explicit content types. Existing script-bearing URL rules remain rejected; embedded `{{...}}` evaluation is not yet connected to this pipeline.
