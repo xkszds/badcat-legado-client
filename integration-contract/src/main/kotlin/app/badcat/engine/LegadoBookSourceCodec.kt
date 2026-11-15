@@ -58,7 +58,24 @@ data class LegadoBookSource(
 
 object LegadoBookSourceCodec {
 
+    const val MAX_IMPORT_BYTES = 5 * 1024 * 1024
+
+    /** Decode bounded UTF-8 documents without silently replacing malformed byte sequences. */
+    fun decodeUtf8ToString(bytes: ByteArray): String {
+        require(bytes.size <= MAX_IMPORT_BYTES) {
+            "Book-source JSON exceeds the 5 MiB import limit"
+        }
+        return Charsets.UTF_8.newDecoder()
+            .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+            .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
+            .decode(java.nio.ByteBuffer.wrap(bytes))
+            .toString()
+    }
+
     fun decode(json: String): List<LegadoBookSource> {
+        require(json.length <= MAX_IMPORT_BYTES) {
+            "Book-source JSON exceeds the 5 MiB import limit"
+        }
         val root = JsonParser.parseString(json)
         val entries = when {
             root.isJsonArray -> root.asJsonArray.toList()
