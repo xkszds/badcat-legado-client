@@ -17,7 +17,7 @@ class LegadoReplaceRuleScopeTest {
         )
 
         assertEquals(
-            listOf(1L, 4L),
+            listOf(4L, 1L),
             LegadoReplaceRuleSelector.forContent(rules, "My Book", "origin-x").map { it.id },
         )
     }
@@ -44,13 +44,13 @@ class LegadoReplaceRuleScopeTest {
     fun scopeUsesSqliteLikeWildcardsAndAsciiCaseFolding() {
         val rules = listOf(
             LegadoReplaceRuleScope(1, scope = "FANTASY"),
-            LegadoReplaceRuleScope(2, scope = "Sci_i"),
+            LegadoReplaceRuleScope(2, scope = "SciXi"),
             LegadoReplaceRuleScope(3, scope = "ÄBC"),
         )
 
         assertEquals(
             listOf(1L, 2L),
-            LegadoReplaceRuleSelector.forContent(rules, "fantasy", "SciX").map { it.id },
+            LegadoReplaceRuleSelector.forContent(rules, "fantasy", "Sci_i").map { it.id },
         )
         assertEquals(
             emptyList(),
