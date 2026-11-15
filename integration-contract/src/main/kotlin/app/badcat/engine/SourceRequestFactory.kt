@@ -1,6 +1,7 @@
 package app.badcat.engine
 
 import com.google.gson.JsonParser
+import java.net.URI
 
 /**
  * Converts source-level request settings into the transport contract.
@@ -58,6 +59,18 @@ object SourceRequestFactory {
             )
         }
 
+        val parsedUrl = runCatching { URI(url) }.getOrNull()
+        if (parsedUrl == null ||
+            parsedUrl.scheme?.lowercase() !in setOf("http", "https") ||
+            parsedUrl.host.isNullOrBlank() ||
+            parsedUrl.rawUserInfo != null
+        ) {
+            return EngineResult.Failure(
+                EngineErrorCode.INVALID_SOURCE,
+                "Request URL must be an absolute HTTP(S) URL without embedded credentials",
+            )
+        }
+
         val normalizedMethod = method.uppercase()
         if (normalizedMethod !in SUPPORTED_METHODS) {
             return EngineResult.Failure(
@@ -79,6 +92,12 @@ object SourceRequestFactory {
             if (existing != null) merged.remove(existing)
             merged[name] = value
         }
+        if (merged.any { (name, value) -> !isValidHeader(name, value) }) {
+            return EngineResult.Failure(
+                EngineErrorCode.INVALID_SOURCE,
+                "Request headers contain an invalid name or control character",
+            )
+        }
 
         return EngineResult.Success(
             SourceHttpRequest(
@@ -99,6 +118,17 @@ object SourceRequestFactory {
     private val SUPPORTED_METHODS = setOf(
         "GET", "HEAD", "POST", "PUT", "PATCH", "PROPPATCH", "REPORT",
     )
+
+    private fun isValidHeader(name: String, value: String): Boolean {
+        if (name.isEmpty() || name.any { it !in HEADER_NAME_CHARS }) return false
+        return value.none { char ->
+            char == '\\r' || char == '\\n' ||
+                (char.code < 0x20 && char != '\\t') || char.code == 0x7f
+        }
+    }
+
+    private val HEADER_NAME_CHARS =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#$%&'*+-.^_`|~"
 
     private fun parseHeaders(raw: String?): Map<String, String>? {
         if (raw.isNullOrBlank()) return emptyMap()
