@@ -149,7 +149,7 @@ object LegadoBookSourceCodec {
         }
         source.get("bookSourceType")?.let { value ->
             require(value.isJsonPrimitive && value.asJsonPrimitive.isNumber &&
-                runCatching { value.asInt }.isSuccess
+                runCatching { value.asBigDecimal.intValueExact() }.isSuccess
             ) {
                 "Book source at index $index has an invalid 'bookSourceType' field"
             }
