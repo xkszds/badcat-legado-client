@@ -48,9 +48,11 @@ object LegadoEmbeddedUrlTemplate {
             val replacement = when (evaluated) {
                 null -> ""
                 is String -> evaluated
-                is Double if evaluated % 1.0 == 0.0 ->
+                is Double -> if (evaluated % 1.0 == 0.0) {
                     String.format(java.util.Locale.US, "%.0f", evaluated)
-                else -> evaluated.toString()
+                } else {
+                    evaluated.toString()
+                }
             }
 
             if (replacement.isNotEmpty()) {
