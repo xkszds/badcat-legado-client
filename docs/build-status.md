@@ -1,5 +1,8 @@
 ## Latest implementation update (2026-11-15)
 
+- Added a minimal `SourceSearchActivity` that loads enabled imported sources with a nonblank `searchUrl`, lets the user choose a source and enter a keyword, calls `ReadingEngine.search()` off the UI thread, and displays parsed candidate metadata/errors. Added a launcher-shell entry and manifest registration. This is a development validation screen, not the original Badcat search UI.
+- Search remains limited to the implemented CSS parser and bounded URL-template path. Sources requiring unsupported `@js`, advanced Legado rules, or missing rule definitions will not work as in full Legado. No live source fixture, network test, Gradle build, device validation or APK is confirmed.
+
 - Added `BadcatReadingEngineFactory` as the Android composition root: it creates one durable `FileBookSourceCatalog`, `BookSourceSearchUrlResolver`, a shared per-source-aware gateway, and the search/detail/TOC/chapter-content services behind `SourceReadingEngine`. Chapter-text purification remains an explicit injection and defaults to identity until Badcat's real rules are ported.
 - `MainActivity` now constructs this engine graph at launch without changing the temporary screen layout or claiming the original Badcat UI has been restored. The factory exposes its catalog instance for import/export and source-management UI to share.
 - This is dependency composition, not yet a user-facing search workflow. No Gradle build, tests, CI/device validation or APK generation is confirmed; the pinned HtmlUnit Rhino fork JAR remains a build blocker.
