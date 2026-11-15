@@ -18,6 +18,15 @@ class WebUrlResolverTest {
     }
 
     @Test
+    fun rejectsBlankUrlReferences() {
+        listOf("", "   ").forEach { value ->
+            assertFailsWith<IllegalArgumentException> {
+                WebUrlResolver.resolve("https://reader.example/book/1", value)
+            }
+        }
+    }
+
+    @Test
     fun rejectsExecutableLocalAndCredentialBearingUrls() {
         val base = "https://reader.example/search"
         listOf("javascript:alert(1)", "file:///etc/passwd", "https://user:pass@reader.example/book").forEach {
