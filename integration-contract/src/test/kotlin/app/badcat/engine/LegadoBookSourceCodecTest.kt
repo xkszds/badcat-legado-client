@@ -75,6 +75,7 @@ class LegadoBookSourceCodecTest {
         assertEquals(2, sources.size)
         assertTrue(sources[0].enabled)
         assertEquals(0, sources[0].sourceType)
+        assertEquals(true, sources[0].toEngineSource().enabledCookieJar)
         assertFalse(sources[1].enabled)
         assertEquals(4, sources[1].sourceType)
     }
