@@ -23,7 +23,8 @@ import java.io.File
  */
 class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
     private val file = AtomicFile(File(context.applicationContext.filesDir, "legado-book-sources.json"))
-    private val mutex = Mutex()
+    // Activities create separate catalog instances; serialize access to the shared file process-wide.
+    private val mutex = catalogFileMutex
 
     override suspend fun all(): EngineResult<List<BookSource>> = withContext(Dispatchers.IO) {
         mutex.withLock {
