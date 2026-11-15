@@ -66,6 +66,12 @@ class SourceSearchActivity : Activity() {
                 text = "书源搜索 · ${intent.getStringExtra(EXTRA_CONTENT_TYPE).orEmpty().ifBlank { "全部" }}"
                 textSize = 20f
             })
+            addView(Button(this@SourceSearchActivity).apply {
+                text = "替换规则管理"
+                setOnClickListener {
+                    startActivity(Intent(this@SourceSearchActivity, ReplaceRuleActivity::class.java))
+                }
+            })
             addView(sourceSpinner)
             addView(keywordInput)
             addView(searchButton)
