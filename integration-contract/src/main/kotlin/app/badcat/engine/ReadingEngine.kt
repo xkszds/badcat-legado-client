@@ -38,6 +38,20 @@ data class BookSource(
     val enabled: Boolean = true,
     val group: String? = null,
     val sourceType: Int = 0,
+    val enabledExplore: Boolean = true,
+    val enabledCookieJar: Boolean? = true,
+    val header: String? = null,
+    val jsLib: String? = null,
+    val loginUrl: String? = null,
+    val exploreUrl: String? = null,
+    val searchUrl: String? = null,
+    val mainJs: String? = null,
+    /** Raw JSON objects for upstream nested rule models; not executable by this contract. */
+    val ruleExploreJson: String? = null,
+    val ruleSearchJson: String? = null,
+    val ruleBookInfoJson: String? = null,
+    val ruleTocJson: String? = null,
+    val ruleContentJson: String? = null,
     /** Full upstream JSON, including rule fields not yet mapped by the host. */
     val rawJson: String? = null,
 )
