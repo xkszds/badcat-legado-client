@@ -38,7 +38,10 @@ class SourceSearchActivity : Activity() {
     private lateinit var sourceSpinner: Spinner
     private lateinit var keywordInput: EditText
     private lateinit var searchButton: Button
+    private lateinit var previousPageButton: Button
+    private lateinit var nextPageButton: Button
     private lateinit var status: TextView
+    private var currentPage: Int = 1
     private lateinit var results: LinearLayout
     private var enabledSources: List<BookSource> = emptyList()
 
@@ -55,6 +58,24 @@ class SourceSearchActivity : Activity() {
         searchButton = Button(this).apply {
             text = "搜索"
             setOnClickListener { search() }
+        }
+        previousPageButton = Button(this).apply {
+            text = "上一页"
+            isEnabled = false
+            setOnClickListener {
+                if (currentPage > 1) {
+                    currentPage--
+                    search(resetPage = false)
+                }
+            }
+        }
+        nextPageButton = Button(this).apply {
+            text = "下一页"
+            isEnabled = false
+            setOnClickListener {
+                currentPage++
+                search(resetPage = false)
+            }
         }
         status = TextView(this).apply { text = "正在读取已启用书源…" }
         results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
@@ -75,6 +96,11 @@ class SourceSearchActivity : Activity() {
             addView(sourceSpinner)
             addView(keywordInput)
             addView(searchButton)
+            addView(LinearLayout(this@SourceSearchActivity).apply {
+                orientation = LinearLayout.HORIZONTAL
+                addView(previousPageButton, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                addView(nextPageButton, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            })
             addView(status)
             addView(results)
         }
@@ -118,7 +144,10 @@ class SourceSearchActivity : Activity() {
         }
     }
 
-    private fun search() {
+    private fun search(resetPage: Boolean = true) {
+        if (resetPage) currentPage = 1
+        previousPageButton.isEnabled = currentPage > 1
+        nextPageButton.isEnabled = false
         val selectedPosition = sourceSpinner.selectedItemPosition
         val selectedSources = if (selectedPosition <= 0) enabledSources
             else listOfNotNull(enabledSources.getOrNull(selectedPosition - 1))
@@ -129,7 +158,11 @@ class SourceSearchActivity : Activity() {
             return
         }
         searchButton.isEnabled = false
-        status.text = if (selectedSources.size == 1) "正在搜索：${selectedSources.first().name}" else "正在搜索全部 ${selectedSources.size} 个书源…"
+        status.text = if (selectedSources.size == 1) {
+            "正在搜索：${selectedSources.first().name}（第 ${currentPage} 页）"
+        } else {
+            "正在搜索全部 ${selectedSources.size} 个书源（第 ${currentPage} 页）…"
+        }
         results.removeAllViews()
         worker.execute {
             val collected = mutableListOf<BookCandidate>()
@@ -137,7 +170,7 @@ class SourceSearchActivity : Activity() {
             selectedSources.forEach { source ->
                 val result = runBlocking {
                     try {
-                        engine.search(source.id, keyword)
+                        engine.searchPage(source.id, keyword, currentPage)
                     } catch (error: Exception) {
                         EngineResult.Failure(
                             EngineErrorCode.UNKNOWN,
@@ -154,6 +187,8 @@ class SourceSearchActivity : Activity() {
             val unique = collected.distinctBy { "${it.sourceId}|${it.bookUrl}" }
             mainHandler.post {
                 searchButton.isEnabled = true
+                previousPageButton.isEnabled = currentPage > 1
+                nextPageButton.isEnabled = unique.isNotEmpty()
                 showResults(unique, failures)
             }
         }
@@ -161,7 +196,7 @@ class SourceSearchActivity : Activity() {
 
     private fun showResults(items: List<BookCandidate>, failures: List<String>) {
         status.text = buildString {
-            append("搜索完成：找到 ${items.size} 条结果")
+            append("搜索完成：第 ${currentPage} 页，找到 ${items.size} 条结果")
             if (failures.isNotEmpty()) append("；${failures.size} 个书源失败")
         }
         if (failures.isNotEmpty()) {
