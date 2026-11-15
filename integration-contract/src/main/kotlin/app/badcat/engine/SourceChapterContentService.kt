@@ -4,6 +4,7 @@ package app.badcat.engine
 class SourceChapterContentService(
     private val http: SourceHttpGateway,
     private val parser: CssChapterContentParser = CssChapterContentParser(),
+    private val textReplacement: BookTextReplacement = BookTextReplacement { it },
 ) {
     suspend fun load(
         source: BookSource,
@@ -20,6 +21,11 @@ class SourceChapterContentService(
                 "Chapter request for source '${source.id}' returned HTTP ${response.statusCode}",
             )
         }
-        return parser.parse(source, response, chapter)
+        return when (val parsed = parser.parse(source, response, chapter)) {
+            is EngineResult.Failure -> parsed
+            is EngineResult.Success -> EngineResult.Success(
+                parsed.value.copy(text = textReplacement.replace(parsed.value.text)),
+            )
+        }
     }
 }
