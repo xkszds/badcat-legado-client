@@ -1,7 +1,5 @@
 package app.badcat.engine
 
-import java.net.URI
-
 /**
  * CSS-only adapter for the official Legado BookInfoRule field names.
  * Init scripts, URL templates, JS and regex-based rule expansion are deliberately
@@ -30,7 +28,12 @@ class CssBookInfoParser {
                     "Book-info field '$name' requires unsupported script/template/replace behavior",
                 )
             }
-            return when (val result = SelectorRuleEvaluator.evaluate(document, SelectorRuleType.CSS, expression)) {
+            val extractionRule = when (name) {
+                "coverUrl" -> expression.replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
+                "tocUrl" -> expression.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
+                else -> expression
+            }
+            return when (val result = SelectorRuleEvaluator.evaluate(document, SelectorRuleType.CSS, extractionRule)) {
                 is EngineResult.Failure -> result
                 is EngineResult.Success -> EngineResult.Success(
                     result.value.firstOrNull()?.trim()?.takeIf(String::isNotEmpty),
@@ -46,8 +49,13 @@ class CssBookInfoParser {
             "Book-info rule did not produce a book name for source '${source.id}'",
         )
 
-        fun resolveUrl(value: String?): String? = value?.let {
-            runCatching { URI(response.finalUrl).resolve(it).toString() }.getOrDefault(it)
+        fun resolveUrl(value: String?): EngineResult<String?> = if (value == null) {
+            EngineResult.Success(null)
+        } else {
+            runCatching { WebUrlResolver.resolve(response.finalUrl, value) }.fold(
+                onSuccess = { EngineResult.Success(it) },
+                onFailure = { EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Book-info URL must resolve to a credential-free HTTP(S) URL", it) },
+            )
         }
 
         val author = when (val value = field("author")) {
@@ -71,16 +79,25 @@ class CssBookInfoParser {
             is EngineResult.Success -> value.value
         }
 
+        val resolvedCover = when (val value = resolveUrl(cover)) {
+            is EngineResult.Failure -> return value
+            is EngineResult.Success -> value.value
+        }
+        val resolvedToc = when (val value = resolveUrl(toc)) {
+            is EngineResult.Failure -> return value
+            is EngineResult.Success -> value.value
+        }
+
         return EngineResult.Success(
             BookDetail(
                 sourceId = source.id,
                 name = name,
                 author = author,
                 bookUrl = requestedBookUrl,
-                coverUrl = resolveUrl(cover),
+                coverUrl = resolvedCover,
                 intro = intro,
                 latestChapter = latest,
-                tocUrl = resolveUrl(toc),
+                tocUrl = resolvedToc,
             ),
         )
     }
