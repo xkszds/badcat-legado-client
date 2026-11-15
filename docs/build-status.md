@@ -4,21 +4,28 @@ Last updated: 2026-11-15
 
 ## Added
 
-- Android application module and manifest.
+- Android application module and manifest; the launcher remains a temporary build-validation shell.
 - Kotlin/JVM integration contract module.
 - JDK 21 toolchain configuration.
+- Kotlin plugin aligned to 2.4.20 and Android Gradle Plugin 8.13.2, matching the pinned Legado upstream baseline.
+- Legado book-source JSON import/export codec that retains the complete raw source object, including rule fields unknown to this host.
+- Unit tests for source JSON round-trip/defaults/invalid identity and purification-domain separation.
 - GitHub Actions workflow to run contract tests and assemble a debug APK.
-- A temporary launcher activity for build validation only.
+- Pinned upstream commit and copied upstream GPL-3.0 license text.
 
 ## Not yet verified
 
-- No Gradle wrapper has been committed; CI currently provisions Gradle 8.14.4.
-- The GitHub Actions workflow has not yet been observed running.
-- No successful compile/package result is claimed.
+- GitHub Actions has not been confirmed green; no successful CI test or package result is claimed.
 - No APK artifact has been downloaded or installed.
-- The temporary launcher is not the original Badcat UI.
-- Legado upstream source is not yet incorporated.
+- No Legado app-layer rule runtime is integrated. The source codec is import/export plumbing, not search or parsing execution.
+- Original Badcat UI and its real navigation are not yet present in the new Android module.
+- Badcat purification behavior has not yet been ported; only isolated interfaces and contract tests exist.
+- No Gradle wrapper has been committed; CI provisions Gradle 8.14.4.
 
 ## Next validation
 
-Run the workflow from GitHub Actions, inspect the actual build logs, fix any failures, and only then treat the debug APK as a build artifact. Device installation and UI regression remain separate gates.
+1. Confirm the latest workflow run and inspect logs.
+2. Implement the Legado app-layer engine slice and its initialization, network and persistence dependencies.
+3. Run source fixture tests for search, detail, catalog and chapter content.
+4. Migrate the original UI behavior and verify it on the target Android device.
+5. Only then treat a CI-produced APK as a candidate build artifact.
