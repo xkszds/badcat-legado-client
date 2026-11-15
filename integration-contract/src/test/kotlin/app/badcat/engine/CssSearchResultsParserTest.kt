@@ -101,6 +101,31 @@ class CssSearchResultsParserTest {
     }
 
     @Test
+    fun extractsOwnTextAndTagNameFromSearchFields() {
+        val source = source(
+            """{"bookList":"div.book","name":"h2.title@ownText","author":"h2.title@tag","bookUrl":"a@href"}""",
+        )
+        val response = SourceHttpResponse(
+            statusCode = 200,
+            finalUrl = "https://reader.example/search",
+            body = """
+                <div class="book">
+                    <h2 class="title">Novel <span>translated title</span></h2>
+                    <a href="/novel">open</a>
+                </div>
+            """.trimIndent(),
+        )
+
+        val book = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parse(source, response),
+        ).value.single()
+
+        assertEquals("Novel", book.name)
+        assertEquals("h2", book.author)
+        assertEquals("https://reader.example/novel", book.bookUrl)
+    }
+
+    @Test
     fun reportsScriptBasedSearchRuleAsUnsupported() {
         val source = source("""{"bookList":"{{java.getList()}}","name":"h2@text","bookUrl":"a@href"}""")
         val response = SourceHttpResponse(200, "https://reader.example/search", body = "<div></div>")
