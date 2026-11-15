@@ -110,6 +110,30 @@ class SourceBookActivity : Activity() {
             chapterList.addView(TextView(this).apply { text = "目录为空" })
             return
         }
+        val prefs = getSharedPreferences("badcat_reading_progress", MODE_PRIVATE)
+        val bookmarked = chapters.filter { prefs.contains(chapterBookmarkKey(sourceId, bookUrl, it.url)) }
+        if (bookmarked.isNotEmpty()) {
+            chapterList.addView(Button(this).apply {
+                text = "本书书签（" + bookmarked.size + "）"
+                setOnClickListener {
+                    val labels = bookmarked.map { chapter -> (chapter.index + 1).toString() + ". " + chapter.title }.toTypedArray()
+                    android.app.AlertDialog.Builder(this@SourceBookActivity)
+                        .setTitle("选择书签章节")
+                        .setItems(labels) { _, which ->
+                            val chapter = bookmarked[which]
+                            startActivity(Intent(this@SourceBookActivity, SourceChapterActivity::class.java).apply {
+                                putExtra(SourceChapterActivity.EXTRA_SOURCE_ID, sourceId)
+                                putExtra(SourceChapterActivity.EXTRA_BOOK_URL, bookUrl)
+                                putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, chapter.url)
+                                putExtra(SourceChapterActivity.EXTRA_CHAPTER_TITLE, chapter.title)
+                                putExtra(SourceChapterActivity.EXTRA_JUMP_TO_BOOKMARK, true)
+                            })
+                        }
+                        .setNegativeButton("取消", null)
+                        .show()
+                }
+            })
+        }
         chapters.forEach { chapter ->
             chapterList.addView(TextView(this).apply {
                 text = "${chapter.index + 1}. ${chapter.title}"
@@ -335,6 +359,18 @@ class SourceChapterActivity : Activity() {
         nextButton.isEnabled = currentIndex >= 0 && currentIndex < chapters.lastIndex
         if (result is EngineResult.Success) {
             restoreCurrentScrollPosition()
+            if (intent.getBooleanExtra(EXTRA_JUMP_TO_BOOKMARK, false)) {
+                intent.removeExtra(EXTRA_JUMP_TO_BOOKMARK)
+                val bookmarkY = preferences.getInt(
+                    chapterBookmarkKey(sourceId, bookUrl, currentChapterUrl),
+                    -1,
+                )
+                if (bookmarkY >= 0) {
+                    readerScroll.post {
+                        readerScroll.post { readerScroll.scrollTo(0, bookmarkY) }
+                    }
+                }
+            }
         }
     }
 
@@ -409,6 +445,7 @@ class SourceChapterActivity : Activity() {
         const val EXTRA_BOOK_URL = "reader_book_url"
         const val EXTRA_CHAPTER_URL = "reader_chapter_url"
         const val EXTRA_CHAPTER_TITLE = "reader_chapter_title"
+        const val EXTRA_JUMP_TO_BOOKMARK = "reader_jump_to_bookmark"
     }
 }
 
