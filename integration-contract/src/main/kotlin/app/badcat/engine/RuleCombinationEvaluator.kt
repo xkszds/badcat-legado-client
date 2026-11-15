@@ -26,7 +26,7 @@ object RuleCombinationEvaluator {
 
         return if (split.operator == "%%") {
             buildList {
-                val maxRows = results.maxOf { it.size }
+                val maxRows = results.first().size
                 for (index in 0 until maxRows) {
                     for (result in results) {
                         result.getOrNull(index)?.let(::add)
