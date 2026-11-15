@@ -23,6 +23,7 @@ The repository now contains an Android build scaffold, platform-neutral reading-
 - `docs/architecture.md` — integration boundaries and staged implementation plan.
 - `docs/legado-upstream-baseline.md` — pinned upstream revision and verified build facts.
 - `docs/legado-integration.md` — app-layer engine integration requirements.
+- `docs/legado-runtime-porting-map.md` — source-verified search/detail/TOC/content runtime dependency map.
 - `docs/licensing.md` — GPL-3.0 compliance checklist.
 - `gradle/legado-upstream.properties` — immutable Legado revision and toolchain pin.
 - `third_party/legado/LICENSE` — upstream GPL-3.0 license text.
