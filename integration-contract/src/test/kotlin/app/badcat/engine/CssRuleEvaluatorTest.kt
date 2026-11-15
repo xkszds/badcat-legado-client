@@ -60,6 +60,20 @@ class CssRuleEvaluatorTest {
     }
 
     @Test
+    fun extractsOwnTextAndTagName() {
+        val ownText = CssRuleEvaluator.evaluate(document, "a.title@ownText")
+        val tag = CssRuleEvaluator.evaluate(document, "a.title@tag")
+        assertEquals(
+            listOf("Alpha", "Beta Novel"),
+            assertIs<EngineResult.Success<List<String>>>(ownText).value,
+        )
+        assertEquals(
+            listOf("a", "a"),
+            assertIs<EngineResult.Success<List<String>>>(tag).value,
+        )
+    }
+
+    @Test
     fun combinesCssRulesWithLegadoOperators() {
         val fallback = CssRuleEvaluator.evaluate(
             document,
