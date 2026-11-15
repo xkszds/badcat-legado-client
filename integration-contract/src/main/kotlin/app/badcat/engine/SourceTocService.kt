@@ -38,6 +38,13 @@ class SourceTocService(
             }
         }
 
+        if (pending.isNotEmpty()) {
+            return EngineResult.Failure(
+                EngineErrorCode.PARSE,
+                "TOC pagination exceeded the $maxPages page safety limit",
+            )
+        }
+
         if (chapters.isEmpty()) {
             return EngineResult.Failure(EngineErrorCode.NOT_FOUND, "No chapters found for source '${source.id}'")
         }
