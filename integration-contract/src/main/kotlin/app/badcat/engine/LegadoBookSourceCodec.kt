@@ -17,6 +17,19 @@ data class LegadoBookSource(
     val group: String?,
     val sourceType: Int,
     val enabled: Boolean,
+    val enabledExplore: Boolean,
+    val enabledCookieJar: Boolean?,
+    val header: String?,
+    val jsLib: String?,
+    val loginUrl: String?,
+    val exploreUrl: String?,
+    val searchUrl: String?,
+    val mainJs: String?,
+    val ruleExploreJson: String?,
+    val ruleSearchJson: String?,
+    val ruleBookInfoJson: String?,
+    val ruleTocJson: String?,
+    val ruleContentJson: String?,
     val rawJson: String,
 ) {
     fun toEngineSource(): BookSource = BookSource(
@@ -26,6 +39,19 @@ data class LegadoBookSource(
         enabled = enabled,
         group = group,
         sourceType = sourceType,
+        enabledExplore = enabledExplore,
+        enabledCookieJar = enabledCookieJar,
+        header = header,
+        jsLib = jsLib,
+        loginUrl = loginUrl,
+        exploreUrl = exploreUrl,
+        searchUrl = searchUrl,
+        mainJs = mainJs,
+        ruleExploreJson = ruleExploreJson,
+        ruleSearchJson = ruleSearchJson,
+        ruleBookInfoJson = ruleBookInfoJson,
+        ruleTocJson = ruleTocJson,
+        ruleContentJson = ruleContentJson,
         rawJson = rawJson,
     )
 }
@@ -72,6 +98,19 @@ object LegadoBookSourceCodec {
             group = source.stringOrNull("bookSourceGroup"),
             sourceType = source.intOrDefault("bookSourceType", 0),
             enabled = source.booleanOrDefault("enabled", true),
+            enabledExplore = source.booleanOrDefault("enabledExplore", true),
+            enabledCookieJar = source.booleanOrNull("enabledCookieJar"),
+            header = source.stringOrNull("header"),
+            jsLib = source.stringOrNull("jsLib"),
+            loginUrl = source.stringOrNull("loginUrl"),
+            exploreUrl = source.stringOrNull("exploreUrl"),
+            searchUrl = source.stringOrNull("searchUrl"),
+            mainJs = source.stringOrNull("mainJs"),
+            ruleExploreJson = source.objectOrNull("ruleExplore"),
+            ruleSearchJson = source.objectOrNull("ruleSearch"),
+            ruleBookInfoJson = source.objectOrNull("ruleBookInfo"),
+            ruleTocJson = source.objectOrNull("ruleToc"),
+            ruleContentJson = source.objectOrNull("ruleContent"),
             rawJson = source.toString(),
         )
     }
@@ -89,5 +128,15 @@ object LegadoBookSourceCodec {
     private fun JsonObject.booleanOrDefault(key: String, default: Boolean): Boolean {
         val value: JsonElement = get(key) ?: return default
         return runCatching { value.asBoolean }.getOrDefault(default)
+    }
+
+    private fun JsonObject.booleanOrNull(key: String): Boolean? {
+        val value = get(key) ?: return null
+        return if (value.isJsonNull) null else runCatching { value.asBoolean }.getOrNull()
+    }
+
+    private fun JsonObject.objectOrNull(key: String): String? {
+        val value = get(key) ?: return null
+        return if (value.isJsonObject) value.asJsonObject.toString() else null
     }
 }
