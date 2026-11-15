@@ -8,7 +8,7 @@ Added `LegadoEmbeddedUrlTemplate` and an injected `LegadoEmbeddedScriptEvaluator
 
 Regression tests were added for multiple expressions, Unicode key passthrough, null/integral numeric conversion, unmatched markers, and evaluator failure. These tests are authored only; they have not been run.
 
-**Important:** neither helper is wired into `LegadoUrlResolver`, `SearchUrlResolver`, or the HTTP gateway. The new `LegadoUrlParameterEncoder` separately ports the pinned `AnalyzeUrl.encodeParams` / `NetworkUtils.encodedQuery` / `encodedForm` behavior: RFC3986 query-safe characters, the upstream already-encoded checks, segment-wise form encoding, charset selection, and legacy `escape` mode. Nine regression tests cover UTF-8/GBK, spaces, delimiters, existing and malformed percent escapes, empty form segments, and escape mode. They are authored but have not been run. Script-bearing source URLs therefore remain rejected.
+`LegadoUrlParameterEncoder` now ports the pinned `AnalyzeUrl.encodeParams` / `NetworkUtils.encodedQuery` / `encodedForm` behavior: RFC3986 query-safe characters, upstream already-encoded checks, segment-wise form encoding, charset selection, and legacy `escape` mode. It is wired into `SourceRequestFactory` after source and per-request headers are merged. Non-POST query strings are encoded before request dispatch; POST bodies are form-encoded only when the effective headers have no `Content-Type` and the body is neither JSON nor XML. The resolver also encodes raw Unicode/space query values before `URI` resolution. Regression tests cover UTF-8/GBK, delimiters, existing/malformed percent escapes, empty form segments, GET/POST branching, JSON and explicit content types. A standalone `kotlinc` smoke harness passed eight encoder/preparation checks; repository tests and the full Android build have not run. This is a static-request subset only: template evaluation remains unwired, and all script-bearing source URLs remain rejected.
 
 # AnalyzeUrl JavaScript compatibility gate
 
@@ -46,8 +46,8 @@ Consequently, enabling the sandbox directly inside the current static resolver w
 
 1. Keep the existing fail-closed behavior for all script-bearing URL rules.
 2. Implement a separately testable template evaluator with only the reviewed `key` binding for the narrow embedded-expression subset.
-3. Integrate the isolated query/form encoder into the static URL preparation pipeline, preserving the upstream GET-query versus POST-form branching and content-type checks.
-4. Add orchestration tests proving embedded-template expansion happens before query/form encoding; do not expose host objects until each API has a reviewed, source-scoped contract.
+3. Add an ordered template-expansion plus encoding pipeline with explicit, reviewed script bindings; the current encoder integration intentionally handles static requests only.
+4. Test template expansion before encoding and preserve source-scoped failure behavior; do not expose host objects until each API has a reviewed contract.
 5. Keep `@js`, URL-option `js`, `bodyJs`, WebView, login and shared-global behavior disabled until their independent semantics and tests exist.
 
 ## Verification
