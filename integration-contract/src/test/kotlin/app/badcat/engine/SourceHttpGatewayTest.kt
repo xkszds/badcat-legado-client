@@ -97,7 +97,7 @@ class SourceHttpGatewayTest {
             )
         }
         assertEquals(listOf("source-a", "source-b"), seenSourceIds)
-        assertEquals("https://reader.example/s?q=source-b-y", requireNotNull(client.captured).url)
+        assertEquals("https://reader.example/s?q=source-b-y-1", requireNotNull(client.captured).url)
     }
 
     @Test
