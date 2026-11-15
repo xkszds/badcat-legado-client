@@ -36,10 +36,31 @@ class RhinoLegadoJsReplacementEvaluator : LegadoJsReplacementEvaluator {
     ) : LegadoJsReplacementSession {
         private val javaExtensions = LegadoRegexJsExtensions(ruleName)
 
-        override fun evaluate(script: String, context: LegadoJsReplacementContext): String =
-            runBlocking {
+        override fun evaluate(script: String, context: LegadoJsReplacementContext): String {
+            require(script.isNotBlank()) { "Legado @js replacement script must not be blank" }
+            require(script.length <= MAX_SCRIPT_CHARS) { "Legado @js replacement script exceeds size limit" }
+            require(ruleName.length <= MAX_RULE_NAME_CHARS) { "Legado replacement rule name exceeds size limit" }
+            val values = listOf(
+                context.result,
+                context.chapter.url,
+                context.chapter.title,
+                context.chapter.bookUrl,
+                context.chapter.baseUrl,
+                context.book.bookUrl,
+                context.book.origin,
+                context.book.originName,
+                context.book.name,
+            )
+            require(values.all { it.length <= MAX_BINDING_VALUE_CHARS }) {
+                "Legado @js replacement context value exceeds size limit"
+            }
+            require(values.sumOf { it.length } <= MAX_TOTAL_BINDING_CHARS) {
+                "Legado @js replacement context exceeds total size limit"
+            }
+            val timeoutMillis = context.timeoutMillisecond.coerceIn(1L, MAX_TIMEOUT_MILLIS)
+            return runBlocking {
                 try {
-                    withTimeout(context.timeoutMillisecond.coerceAtLeast(1L)) {
+                    withTimeout(timeoutMillis) {
                         withContext(Dispatchers.Default) {
                             val bindings = ScriptBindings().apply {
                                 this["result"] = context.result
@@ -57,7 +78,7 @@ class RhinoLegadoJsReplacementEvaluator : LegadoJsReplacementEvaluator {
                 } catch (error: TimeoutCancellationException) {
                     throw LegadoRegexTimeoutException(
                         context.ruleId,
-                        context.configuredTimeoutMillisecond,
+                        timeoutMillis,
                     )
                 } catch (error: CancellationException) {
                     throw error
@@ -69,6 +90,15 @@ class RhinoLegadoJsReplacementEvaluator : LegadoJsReplacementEvaluator {
                     )
                 }
             }
+        }
+
+        private companion object {
+            const val MAX_SCRIPT_CHARS = 128 * 1024
+            const val MAX_RULE_NAME_CHARS = 256
+            const val MAX_BINDING_VALUE_CHARS = 64 * 1024
+            const val MAX_TOTAL_BINDING_CHARS = 128 * 1024
+            const val MAX_TIMEOUT_MILLIS = 10_000L
+        }
     }
 }
 
