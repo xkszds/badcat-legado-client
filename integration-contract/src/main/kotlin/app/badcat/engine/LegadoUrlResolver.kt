@@ -92,7 +92,12 @@ object LegadoUrlResolver {
                     "URL options js, bodyJs and webView require the Legado Rhino/WebView runtime",
                 )
             }
-            if (charset != null && !charset.equals("escape", true)) {
+            if (charset != null) {
+                if (charset.equals("escape", true)) {
+                    throw UnsupportedOperationException(
+                        "Legado escape response decoding is not implemented by the current transport",
+                    )
+                }
                 java.nio.charset.Charset.forName(charset)
             }
 
