@@ -6,6 +6,8 @@ import android.widget.TextView
 import android.widget.Button
 import android.widget.LinearLayout
 import android.content.Intent
+import app.badcat.client.runtime.BadcatReadingEngineFactory
+import app.badcat.engine.ReadingEngine
 
 /**
  * Temporary build-validation shell.
@@ -14,15 +16,18 @@ import android.content.Intent
  * Android project can package an APK before the original UI integration work.
  */
 class MainActivity : Activity() {
+    private lateinit var readingEngine: ReadingEngine
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        readingEngine = BadcatReadingEngineFactory(applicationContext).create()
 
         val message = TextView(this).apply {
             text = """
                 Badcat + Legado integration workspace
 
                 Build scaffold: initialized
-                Reading engine: source adapter implemented, host wiring pending
+                Reading engine: Android multi-source graph constructed
                 Original Badcat UI: not yet integrated
                 APK validation: pending CI build
             """.trimIndent()
