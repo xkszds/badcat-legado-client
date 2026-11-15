@@ -66,11 +66,25 @@ class SourceChapterContentService(
 
         val combinedText = pageTexts.joinToString("\n\n")
         return runCatching<EngineResult<ChapterContent>> {
+            val replacementContext = LegadoReplacementContext(
+                book = LegadoReplacementBookContext(
+                    bookUrl = bookUrl,
+                    origin = source.baseUrl.ifBlank { source.id },
+                    originName = source.name,
+                    name = bookName,
+                ),
+                chapter = LegadoReplacementChapterContext(
+                    url = chapter.url,
+                    title = title,
+                    bookUrl = bookUrl,
+                    index = chapter.index,
+                    baseUrl = source.baseUrl,
+                ),
+            )
             val replaced = scopedTextReplacement?.replace(
                 chapterTitle = title,
                 chapterText = combinedText,
-                bookName = bookName,
-                bookOrigin = source.baseUrl.ifBlank { source.id },
+                context = replacementContext,
             )
             EngineResult.Success(
                 ChapterContent(
