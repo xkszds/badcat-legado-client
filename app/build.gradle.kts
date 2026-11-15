@@ -33,4 +33,5 @@ dependencies {
     implementation(project(":legado-rhino"))
     // The app hosts coroutine-based source catalog operations and background engine calls.
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+    testImplementation("junit:junit:4.13.2")
 }
