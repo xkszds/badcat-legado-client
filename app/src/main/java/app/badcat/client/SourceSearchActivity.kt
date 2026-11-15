@@ -16,6 +16,7 @@ import android.content.Intent
 import app.badcat.client.runtime.BadcatReadingEngineFactory
 import app.badcat.engine.BookCandidate
 import app.badcat.engine.BookSource
+import app.badcat.engine.EngineErrorCode
 import app.badcat.engine.EngineResult
 import app.badcat.engine.ReadingEngine
 import java.util.concurrent.ExecutorService
@@ -78,7 +79,17 @@ class SourceSearchActivity : Activity() {
     private fun loadSources() {
         searchButton.isEnabled = false
         worker.execute {
-            val result = runBlocking { engine.sources() }
+            val result = runBlocking {
+                try {
+                    engine.sources()
+                } catch (error: Exception) {
+                    EngineResult.Failure(
+                        EngineErrorCode.UNKNOWN,
+                        error.message ?: "读取书源时发生异常",
+                        error,
+                    )
+                }
+            }
             mainHandler.post {
                 when (result) {
                     is EngineResult.Success -> {
@@ -118,7 +129,18 @@ class SourceSearchActivity : Activity() {
             val collected = mutableListOf<BookCandidate>()
             val failures = mutableListOf<String>()
             selectedSources.forEach { source ->
-                when (val result = runBlocking { engine.search(source.id, keyword) }) {
+                val result = runBlocking {
+                    try {
+                        engine.search(source.id, keyword)
+                    } catch (error: Exception) {
+                        EngineResult.Failure(
+                            EngineErrorCode.UNKNOWN,
+                            error.message ?: "搜索时发生异常",
+                            error,
+                        )
+                    }
+                }
+                when (result) {
                     is EngineResult.Success -> collected.addAll(result.value)
                     is EngineResult.Failure -> failures.add("${source.name}：${result.message}")
                 }
