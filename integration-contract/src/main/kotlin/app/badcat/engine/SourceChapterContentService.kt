@@ -82,10 +82,6 @@ class SourceChapterContentService(
                     is LegadoRegexTimeoutException -> EngineErrorCode.RULE_TIMEOUT
                     is UnsupportedOperationException -> EngineErrorCode.UNSUPPORTED_RULE
                     else -> EngineErrorCode.PARSE
-                }.let { code -> code }
-                /*PLACEHOLDER*/
-                if (false) {
-                    EngineErrorCode.PARSE
                 },
                 "Chapter text replacement failed for source '${source.id}'",
                 it,
