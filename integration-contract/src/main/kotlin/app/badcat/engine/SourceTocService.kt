@@ -33,8 +33,14 @@ class SourceTocService(
                 is EngineResult.Success -> result.value
             }
             chapters.addAll(page.chapters)
-            page.nextPageUrls.forEach { next ->
-                if (next !in visited && next !in pending) pending.addLast(next)
+            for (next in page.nextPageUrls) {
+                if (next in visited) {
+                    return EngineResult.Failure(
+                        EngineErrorCode.PARSE,
+                        "TOC pagination contains a URL cycle",
+                    )
+                }
+                if (next !in pending) pending.addLast(next)
             }
         }
 
