@@ -73,7 +73,7 @@ object LegadoBookSourceCodec {
     }
 
     fun decode(json: String): List<LegadoBookSource> {
-        require(json.length <= MAX_IMPORT_BYTES) {
+        require(json.toByteArray(Charsets.UTF_8).size <= MAX_IMPORT_BYTES) {
             "Book-source JSON exceeds the 5 MiB import limit"
         }
         val root = JsonParser.parseString(json)
