@@ -29,6 +29,9 @@ class CssSearchResultsParser {
         if (listRule.contains("@js", ignoreCase = true) || listRule.contains("{{")) {
             return unsupported(source, "JavaScript or interpolation in bookList")
         }
+        if (hasNonHtmlOutputSuffix(listRule)) {
+            return unsupported(source, "bookList must return element HTML, not extracted text or attributes")
+        }
 
         val root = Jsoup.parse(response.body, response.finalUrl)
         val items = when (val result = SelectorRuleEvaluator.evaluate(
@@ -100,8 +103,30 @@ class CssSearchResultsParser {
         }
     }
 
-    private fun normalizeHtmlOutput(rule: String): String =
-        if (rule.contains("@html", ignoreCase = true)) rule else "$rule@html"
+    /**
+     * bookList is a collection of element nodes, not a scalar field. Apply
+     * @html to every top-level branch so && / || / %% never mix serialized
+     * elements with text values before each card is parsed independently.
+     */
+    private fun normalizeHtmlOutput(rule: String): String {
+        val split = RuleExpressionTokenizer.splitByFirstTopLevelOperator(rule)
+        if (split.operator == null) {
+            return if (hasHtmlOutputSuffix(rule)) rule else "$rule@html"
+        }
+        return split.rules.joinToString(split.operator) { normalizeHtmlOutput(it) }
+    }
+
+    private fun hasHtmlOutputSuffix(rule: String): Boolean =
+        rule.trim().endsWith("@html", ignoreCase = true)
+
+    private fun hasNonHtmlOutputSuffix(rule: String): Boolean {
+        val split = RuleExpressionTokenizer.splitByFirstTopLevelOperator(rule)
+        if (split.operator != null) return split.rules.any(::hasNonHtmlOutputSuffix)
+        val value = rule.trim()
+        return listOf("@text", "@ownText", "@href", "@src", "@tag")
+            .any { value.endsWith(it, ignoreCase = true) } ||
+            Regex("@attr\\([^)]*\\)$", RegexOption.IGNORE_CASE).containsMatchIn(value)
+    }
 
     private fun unsupported(source: BookSource, detail: String) =
         EngineResult.Failure(
