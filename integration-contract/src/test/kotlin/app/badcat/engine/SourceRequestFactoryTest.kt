@@ -60,6 +60,43 @@ class SourceRequestFactoryTest {
     }
 
     @Test
+    fun rejectsNonHttpAndCredentialBearingUrls() {
+        listOf(
+            "javascript:alert(1)",
+            "file:///etc/passwd",
+            "https://user:password@reader.example/search",
+            "/relative/search",
+        ).forEach { url ->
+            val result = SourceRequestFactory.create(source(), url)
+            val failure = assertIs<EngineResult.Failure>(result)
+            assertEquals(EngineErrorCode.INVALID_SOURCE, failure.code)
+        }
+    }
+
+    @Test
+    fun rejectsHeaderInjectionAndInvalidHeaderNames() {
+        val injectedValue = SourceRequestFactory.create(
+            source(),
+            "https://reader.example/",
+            headers = mapOf("X-Test" to "safe\\r\\nInjected: yes"),
+        )
+        val invalidName = SourceRequestFactory.create(
+            source(),
+            "https://reader.example/",
+            headers = mapOf("Bad Header" to "value"),
+        )
+
+        assertEquals(
+            EngineErrorCode.INVALID_SOURCE,
+            assertIs<EngineResult.Failure>(injectedValue).code,
+        )
+        assertEquals(
+            EngineErrorCode.INVALID_SOURCE,
+            assertIs<EngineResult.Failure>(invalidName).code,
+        )
+    }
+
+    @Test
     fun rejectsMalformedOrNonStringHeaderValues() {
         val malformed = SourceRequestFactory.create(
             source = source("""{"User-Agent":42}"""),
