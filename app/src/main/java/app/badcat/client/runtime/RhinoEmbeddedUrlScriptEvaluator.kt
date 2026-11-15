@@ -7,15 +7,15 @@ import app.badcat.engine.SourceScriptRuntime
 
 /**
  * Narrow bridge from URL interpolation to the bounded source-script runtime.
- * Only the search key is exposed; no Java, network, cookie, cache or WebView
+ * Only the search key and current page number are exposed; no Java, network, cookie, cache or WebView
  * bindings are supplied by this adapter.
  */
 class RhinoEmbeddedUrlScriptEvaluator(
     private val source: BookSource,
     private val runtime: SourceScriptRuntime = RhinoSourceScriptRuntime(),
 ) : LegadoEmbeddedScriptEvaluator {
-    override suspend fun evaluate(script: String, key: String): EngineResult<Any?> =
-        when (val result = runtime.evaluate(source, script, mapOf("key" to key))) {
+    override suspend fun evaluate(script: String, key: String, page: Int): EngineResult<Any?> =
+        when (val result = runtime.evaluate(source, script, mapOf("key" to key, "page" to page.toString()))) {
             is EngineResult.Success -> EngineResult.Success(result.value)
             is EngineResult.Failure -> result
         }
