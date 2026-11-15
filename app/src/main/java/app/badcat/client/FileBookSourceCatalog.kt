@@ -93,7 +93,7 @@ class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
                     writeSources(sources)
                     EngineResult.Success(Unit)
                 } catch (error: Exception) {
-                if (error is CancellationException) throw error
+                    if (error is CancellationException) throw error
                     EngineResult.Failure(
                         EngineErrorCode.UNKNOWN,
                         "Unable to update book-source enabled state",
@@ -135,8 +135,9 @@ class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
             writer.flush()
             file.finishWrite(output)
         } catch (error: Exception) {
-                if (error is CancellationException) throw error
-            file.failWrite(output)
+            // Always close/roll back AtomicFile, including when the coroutine is cancelled.
+            runCatching { file.failWrite(output) }
+            if (error is CancellationException) throw error
             throw error
         }
     }
