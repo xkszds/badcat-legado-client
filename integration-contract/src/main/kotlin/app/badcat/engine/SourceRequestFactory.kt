@@ -122,8 +122,8 @@ object SourceRequestFactory {
     private fun isValidHeader(name: String, value: String): Boolean {
         if (name.isEmpty() || name.any { it !in HEADER_NAME_CHARS }) return false
         return value.none { char ->
-            char == '\\r' || char == '\\n' ||
-                (char.code < 0x20 && char != '\\t') || char.code == 0x7f
+            char == '\r' || char == '\n' ||
+                (char.code < 0x20 && char != '\t') || char.code == 0x7f
         }
     }
 
