@@ -4,6 +4,8 @@ Last updated: 2026-11-15
 
 ## Latest implementation update
 
+- Added `SourceReadingEngine`, a concrete orchestration adapter for the existing `ReadingEngine` contract. It connects source catalog lookup, injected search-URL resolution, search, book detail, TOC and chapter-content services; catalog failures are preserved and unknown source IDs return `NOT_FOUND`. Adapter tests cover catalog exposure and missing-source behavior.
+- The adapter still requires a real persistent source catalog and a Legado-compatible search URL resolver to be supplied by the Android host. It is not yet wired into the placeholder `MainActivity` or the original Badcat UI.
 - Corrected the `nextContentUrl` interpretation: it is same-chapter content pagination, not the next chapter. `ChapterContent.nextPageUrl` now reflects that distinction; chapter navigation remains the responsibility of the TOC.
 - The chapter fetch service now accepts an injected `BookTextReplacement` and applies it only after chapter HTML has been parsed into novel text; replacement failures are returned as typed parse failures. Page HTML, catalog and video purification remain separate domains.
 - Added `CssChapterContentParser` for the bounded CSS subset of Legado `ContentRule`: chapter body, optional title, and same-chapter next-page URL. HTML output is converted to readable text with script/style/iframe/noscript elements removed and paragraph/line breaks preserved.
