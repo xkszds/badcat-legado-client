@@ -40,6 +40,6 @@ Last updated: 2026-11-15
 
 1. Confirm the latest workflow run and inspect logs.
 2. Implement the Legado app-layer engine slice and its initialization, network and persistence dependencies.
-3. Verify combination-operator semantics against the pinned upstream `RuleAnalyzer`, then implement evaluation over the CSS primitive; add JSONPath/XPath dispatch and concrete transport/Rhino adapters before end-to-end source fixtures.
+3. Port the remaining `RuleAnalyzer` balancing/embedded-rule behavior and add JSONPath/XPath dispatch; then implement concrete transport and Rhino adapters before end-to-end source fixtures.
 4. Migrate the original UI behavior and verify it on the target Android device.
 5. Only then treat a CI-produced APK as a candidate build artifact.
