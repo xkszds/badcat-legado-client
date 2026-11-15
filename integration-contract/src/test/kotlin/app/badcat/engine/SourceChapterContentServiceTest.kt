@@ -148,4 +148,58 @@ class SourceChapterContentServiceTest {
         )
         assertEquals(EngineErrorCode.RULE_TIMEOUT, result.code)
     }
+
+    @Test
+    fun reportsChapterPaginationCycleInsteadOfReturningPartialText() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleContentJson = """{"content":"div#content","nextContentUrl":"a.next"}""",
+        )
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> =
+                EngineResult.Success(
+                    SourceHttpResponse(
+                        200,
+                        request.url,
+                        body = """<div id="content"><p>Repeated page.</p></div><a class="next" href="/chapter/1">Next</a>""",
+                    ),
+                )
+        }
+        val result = assertIs<EngineResult.Failure>(
+            SourceChapterContentService(SourceHttpGateway(client)).load(
+                source,
+                "https://reader.example/book/1",
+                BookChapter(0, "Chapter", "https://reader.example/chapter/1"),
+            ),
+        )
+
+        assertEquals(EngineErrorCode.PARSE, result.code)
+    }
+
+    @Test
+    fun reportsChapterPaginationSafetyLimitInsteadOfReturningPartialText() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleContentJson = """{"content":"div#content","nextContentUrl":"a.next"}""",
+        )
+        val client = FixtureClient()
+        val result = assertIs<EngineResult.Failure>(
+            SourceChapterContentService(
+                http = SourceHttpGateway(client),
+                maxPages = 1,
+            ).load(
+                source,
+                "https://reader.example/book/1",
+                BookChapter(0, "Chapter", "https://reader.example/chapter/1"),
+            ),
+        )
+
+        assertEquals(EngineErrorCode.PARSE, result.code)
+        assertEquals(listOf("https://reader.example/chapter/1"), client.requests)
+    }
+
 }
