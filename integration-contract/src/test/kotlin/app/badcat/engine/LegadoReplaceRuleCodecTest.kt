@@ -97,6 +97,14 @@ class LegadoReplaceRuleCodecTest {
     }
 
     @Test
+    fun rejectsOversizedJsonBeforeParsing() {
+        val oversized = " ".repeat(LegadoReplaceRuleCodec.MAX_IMPORT_BYTES + 1)
+        assertFailsWith<IllegalArgumentException> {
+            LegadoReplaceRuleCodec.decode(oversized)
+        }
+    }
+
+    @Test
     fun rejectsDuplicateIdsAndInvalidKnownFieldTypes() {
         assertFailsWith<IllegalArgumentException> {
             LegadoReplaceRuleCodec.decode("""[{"id":1},{"id":1}]""")
