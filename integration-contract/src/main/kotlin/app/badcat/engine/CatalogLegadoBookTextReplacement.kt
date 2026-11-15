@@ -18,12 +18,12 @@ interface LegadoReplaceRuleCatalog {
 class CatalogLegadoBookTextReplacement(
     private val catalog: LegadoReplaceRuleCatalog,
     private val fallback: BookTextReplacement = BookTextReplacement { it },
+    private val jsEvaluator: LegadoJsReplacementEvaluator? = null,
 ) : ScopedBookTextReplacement {
     override suspend fun replace(
         chapterTitle: String,
         chapterText: String,
-        bookName: String,
-        bookOrigin: String,
+        context: LegadoReplacementContext,
     ): ReplacedChapterContent {
         val records = when (val result = catalog.all()) {
             is EngineResult.Success -> result.value
@@ -36,15 +36,13 @@ class CatalogLegadoBookTextReplacement(
         val replacedTitle = applyRules(
             executableRules,
             chapterTitle,
-            bookName,
-            bookOrigin,
+            context,
             LegadoReplaceRuleTarget.TITLE,
         )
         val replacedText = applyRules(
             executableRules,
             chapterText,
-            bookName,
-            bookOrigin,
+            context,
             LegadoReplaceRuleTarget.CONTENT,
         )
         return ReplacedChapterContent(replacedTitle, fallback.replace(replacedText))
@@ -53,19 +51,24 @@ class CatalogLegadoBookTextReplacement(
     private suspend fun applyRules(
         rules: List<LegadoReplaceRule>,
         input: String,
-        bookName: String,
-        bookOrigin: String,
+        context: LegadoReplacementContext,
         target: LegadoReplaceRuleTarget,
     ): String {
         return try {
             LegadoLiteralReplacement(
                 rules = rules,
-                bookName = bookName,
-                bookOrigin = bookOrigin,
+                bookName = context.book.name,
+                bookOrigin = context.book.origin,
                 target = target,
+                replacementContext = context,
+                jsEvaluator = jsEvaluator,
             ).replace(input)
         } catch (timeout: LegadoRegexTimeoutException) {
-            val disabled = catalog.setEnabled(timeout.ruleId, false)
+            val disabled = runCatching { catalog.setEnabled(timeout.ruleId, false) }
+                .getOrElse {
+                    timeout.addSuppressed(it)
+                    null
+                }
             if (disabled is EngineResult.Failure) {
                 timeout.addSuppressed(
                     IllegalStateException("Unable to disable timed-out rule '${timeout.ruleId}': ${disabled.message}", disabled.cause)
