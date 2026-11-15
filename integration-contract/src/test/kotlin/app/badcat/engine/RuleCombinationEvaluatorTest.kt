@@ -37,6 +37,13 @@ class RuleCombinationEvaluatorTest {
     }
 
     @Test
+    fun detectsOnlyMixedNestedTopLevelCombinations() {
+        assertEquals(false, RuleCombinationEvaluator.hasNestedTopLevelOperator("primary && secondary && third"))
+        assertEquals(true, RuleCombinationEvaluator.hasNestedTopLevelOperator("primary && secondary || third"))
+        assertEquals(false, RuleCombinationEvaluator.hasNestedTopLevelOperator("""primary[data-x="x || y"] && secondary"""))
+    }
+
+    @Test
     fun nestedOperatorsDoNotSelectTheOuterCombination() {
         val expression = """primary[data-x="x || y"] && secondary"""
         val split = RuleExpressionTokenizer.splitByFirstTopLevelOperator(expression)
