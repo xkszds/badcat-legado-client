@@ -30,6 +30,7 @@ class SourceHttpGateway(
                 template = ruleUrl,
                 key = key,
                 evaluator = evaluator,
+                page = page ?: 1,
             )) {
                 is EngineResult.Success -> result.value
                 is EngineResult.Failure -> return result
