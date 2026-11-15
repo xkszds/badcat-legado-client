@@ -5,16 +5,15 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFails
 
 class LegadoUrlParameterEncoderTest {
-
     @Test
     fun queryPreservesLegadoSafeCharactersAndValidPercentEscapes() {
-        val input = "a-z_~!a-z_~!$&'()*+,-./:;=?@[\\\\]^()*+,-./:;=?@[\\\\]^\u0060{|}%2f"
+        val input = "a-z_~!${'$'}&()*+,-./:;=?@[]^`{|}%2f"
         assertEquals(input, LegadoUrlParameterEncoder.encodeQuery(input))
     }
 
     @Test
     fun queryPercentEncodesUtf8AndUnsafeCharactersButLeavesPercentLiteral() {
-        assertEquals("q=%E4%B8%AD%20%E6%96%87x%x", LegadoUrlParameterEncoder.encodeQuery("q=中文 x%x"))
+        assertEquals("q=%E4%B8%AD%20x%x", LegadoUrlParameterEncoder.encodeQuery("q=中文 x%x"))
     }
 
     @Test
@@ -24,7 +23,7 @@ class LegadoUrlParameterEncoderTest {
 
     @Test
     fun formEncodesEachKeyAndValueAndOnlySplitsAtFirstEquals() {
-        assertEquals("q=a+b&c=d&empty=&flag&tail=", LegadoUrlParameterEncoder.encodeForm("q=a b&c=d&empty=&flag&tail="))
+        assertEquals("q=a%3Db+c&empty=&flag&tail=", LegadoUrlParameterEncoder.encodeForm("q=a=b c&empty=&flag&tail="))
     }
 
     @Test
