@@ -146,8 +146,9 @@ class SourceSearchActivity : Activity() {
 
     private fun search(resetPage: Boolean = true) {
         if (resetPage) currentPage = 1
-        previousPageButton.isEnabled = currentPage > 1
+        previousPageButton.isEnabled = false
         nextPageButton.isEnabled = false
+        val requestedPage = currentPage
         val selectedPosition = sourceSpinner.selectedItemPosition
         val selectedSources = if (selectedPosition <= 0) enabledSources
             else listOfNotNull(enabledSources.getOrNull(selectedPosition - 1))
@@ -159,9 +160,9 @@ class SourceSearchActivity : Activity() {
         }
         searchButton.isEnabled = false
         status.text = if (selectedSources.size == 1) {
-            "正在搜索：${selectedSources.first().name}（第 ${currentPage} 页）"
+            "正在搜索：${selectedSources.first().name}（第 ${requestedPage} 页）"
         } else {
-            "正在搜索全部 ${selectedSources.size} 个书源（第 ${currentPage} 页）…"
+            "正在搜索全部 ${selectedSources.size} 个书源（第 ${requestedPage} 页）…"
         }
         results.removeAllViews()
         worker.execute {
@@ -170,7 +171,7 @@ class SourceSearchActivity : Activity() {
             selectedSources.forEach { source ->
                 val result = runBlocking {
                     try {
-                        engine.searchPage(source.id, keyword, currentPage)
+                        engine.searchPage(source.id, keyword, requestedPage)
                     } catch (error: Exception) {
                         EngineResult.Failure(
                             EngineErrorCode.UNKNOWN,
@@ -187,7 +188,7 @@ class SourceSearchActivity : Activity() {
             val unique = collected.distinctBy { "${it.sourceId}|${it.bookUrl}" }
             mainHandler.post {
                 searchButton.isEnabled = true
-                previousPageButton.isEnabled = currentPage > 1
+                previousPageButton.isEnabled = requestedPage > 1
                 nextPageButton.isEnabled = unique.isNotEmpty()
                 showResults(unique, failures)
             }
