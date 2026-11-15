@@ -12,7 +12,7 @@ A clean-room integration workspace for combining the Badcat 1.5.0.5 client exper
 
 ## Current status
 
-The repository now has a successful CI debug build. The latest verified run is [GitHub Actions #43707974288](https://github.com/xkszds/badcat-legado-client/actions/runs/43707974288), for commit `c72b96a288942dbeda02a653f268843bb25c78b1`. It passed the contract unit-test task, restored and verified the pinned Rhino artifact and extension sources, assembled the debug APK, and uploaded the `badcat-legado-debug` artifact. Download it from the run's **Artifacts** section.
+The repository has a successful CI debug build. The latest verified full pipeline is [GitHub Actions #43719899764](https://github.com/xkszds/badcat-legado-client/actions/runs/43719899764), for commit `a89b7d494f16b7b7d587f95e649dc711a9f3aa96`. Contract unit tests, bounded Rhino host tests, debug APK assembly and artifact upload all completed successfully; the `badcat-legado-debug` artifact (4,714,869 bytes) is available in the run's **Artifacts** section. This verifies CI packaging, not physical-device installation or runtime parity.
 
 The app currently contains a temporary launcher plus development-only source import/export, search, detail, TOC and chapter-reader screens. **This is a buildable integration prototype, not a reconstruction of the original Badcat UI and not yet a release-ready reader.** The bounded Rhino adapter evaluates scripts with string bindings only; it does not yet provide Legado's complete `AnalyzeUrl` / `AnalyzeRule` environment, including source-specific HTTP, cookie, cache and other host objects. Badcat's original purification behavior has also not yet been ported. A successful CI build does not prove installation or runtime behavior on a physical device.
 
