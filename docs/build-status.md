@@ -1,5 +1,9 @@
 ## Latest implementation update (2026-11-15)
 
+- Added `BadcatReadingEngineFactory` as the Android composition root: it creates one durable `FileBookSourceCatalog`, `BookSourceSearchUrlResolver`, a shared per-source-aware gateway, and the search/detail/TOC/chapter-content services behind `SourceReadingEngine`. Chapter-text purification remains an explicit injection and defaults to identity until Badcat's real rules are ported.
+- `MainActivity` now constructs this engine graph at launch without changing the temporary screen layout or claiming the original Badcat UI has been restored. The factory exposes its catalog instance for import/export and source-management UI to share.
+- This is dependency composition, not yet a user-facing search workflow. No Gradle build, tests, CI/device validation or APK generation is confirmed; the pinned HtmlUnit Rhino fork JAR remains a build blocker.
+
 - Fixed the multi-source evaluator isolation hazard in the shared HTTP gateway: it now supports a per-request evaluator provider receiving the exact `BookSource` passed to `execute()`. The Android factory exposes `create()` for shared service graphs and retains `forSource()` for intentionally single-source graphs.
 - Added a gateway regression test that sends requests for two distinct source IDs through one gateway and asserts the evaluator sees the matching source each time. This guards against capturing source A's runtime context for source B.
 - This addresses source-context selection only; it does not add full Legado source bindings or wire the engine into the launcher/search UI. Tests are authored but not executed. No Gradle build, CI/device validation or APK generation is confirmed.
