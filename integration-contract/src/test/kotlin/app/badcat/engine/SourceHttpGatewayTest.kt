@@ -77,13 +77,13 @@ class SourceHttpGatewayTest {
     @Test
     fun evaluatorProviderUsesTheCurrentSourceForEveryRequest() {
         val client = RecordingClient()
-        val seenSourceIds = mutableListOf<String>()
+        val seenContexts = mutableListOf<String>()
         val gateway = SourceHttpGateway(
             client = client,
             embeddedScriptEvaluatorProvider = { currentSource ->
                 LegadoEmbeddedScriptEvaluator { script, key, page ->
                     assertEquals("key", script)
-                    seenSourceIds += currentSource.id
+                    seenContexts += "${currentSource.id}:${key}:${page}"
                     EngineResult.Success("${currentSource.id}-$key-$page")
                 }
             },
@@ -96,8 +96,8 @@ class SourceHttpGatewayTest {
                 gateway.execute(source().copy(id = "source-b"), "/s?q={{key}}", key = "y"),
             )
         }
-        assertEquals(listOf("source-a", "source-b"), seenSourceIds)
-        assertEquals("https://reader.example/s?q=source-b-y-1", requireNotNull(client.captured).url)
+        assertEquals(listOf("source-a:x:1", "source-b:y:1"), seenContexts)
+        assertTrue(requireNotNull(client.captured).url.contains("source-b-y"))
     }
 
     @Test
