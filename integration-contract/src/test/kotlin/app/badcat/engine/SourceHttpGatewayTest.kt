@@ -112,4 +112,17 @@ class SourceHttpGatewayTest {
         assertEquals(EngineErrorCode.UNSUPPORTED_RULE, assertIs<EngineResult.Failure>(result).code)
         assertTrue(client.captured == null)
     }
+
+    @Test
+    fun incompleteInterpolationMarkerNeverReachesTransport() {
+        val client = RecordingClient()
+        val result = kotlinx.coroutines.runBlocking {
+            SourceHttpGateway(client).execute(source(), "/search?q=}}")
+        }
+        assertEquals(
+            EngineErrorCode.UNSUPPORTED_RULE,
+            assertIs<EngineResult.Failure>(result).code,
+        )
+        assertTrue(client.captured == null)
+    }
 }
