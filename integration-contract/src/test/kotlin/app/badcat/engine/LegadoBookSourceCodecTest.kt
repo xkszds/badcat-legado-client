@@ -105,4 +105,17 @@ class LegadoBookSourceCodecTest {
             LegadoBookSourceCodec.decode("""{"bookSourceUrl":"https://a.example"}""")
         }
     }
+
+    @Test
+    fun rejectsDuplicateSourceUrlsInsteadOfSilentlyOverwriting() {
+        val duplicate = """
+            [
+              {"bookSourceUrl":"https://same.example","bookSourceName":"First"},
+              {"bookSourceUrl":"https://same.example","bookSourceName":"Second"}
+            ]
+        """.trimIndent()
+        assertFailsWith<IllegalArgumentException> {
+            LegadoBookSourceCodec.decode(duplicate)
+        }
+    }
 }
