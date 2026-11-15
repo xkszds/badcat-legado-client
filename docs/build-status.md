@@ -1,5 +1,12 @@
 ## Latest implementation update (2026-11-15)
 
+- Added the pinned Legado Rhino runtime as a separate Android library module `:legado-rhino` and wired it into the app build. All 18 upstream Kotlin source files were copied from `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9`, including the class-shutter, wrap-factory, context and execution-gate code.
+- Added the upstream Legado GPL-3.0 license and attribution. Also preserved the HtmlUnit Rhino dependency's MPL-2.0, Apache-2.0, source provenance, NOTICE and diff records under `third_party/htmlunit-core-js-5.3.0-legado.4/`. Original Oracle/Rhino source headers remain unchanged.
+- Added the module's direct dependencies at upstream-pinned versions and included it in the app. This is a build integration step only: no Legado host bindings, AnalyzeUrl compatibility layer, or source-JS execution path is active. Existing fail-closed behavior must remain until security and compatibility tests are implemented.
+- No Gradle build or test was run here. GitHub currently reports no commit status or workflow run for this revision. No device validation or installable APK is confirmed.
+
+## Latest implementation update (2026-11-15)
+
 - Vendored all 18 Kotlin source files from LegadoTeam/legado `modules/rhino` at pinned revision `330e606c4d57e08adc056ff8ab7a4132c784da9`, including `RhinoClassShutter`, `RhinoWrapFactory`, context handling and script engine implementation.
 - Added an Android library module `:legado-rhino` with upstream-pinned dependencies (HtmlUnit Rhino 5.3.0-legado.4, coroutines 1.11.0, OkHttp 5.4.0, AndroidX Collection 1.6.0), included it in settings, and added it as an app dependency.
 - Added the upstream GPL-3.0 license and third-party attribution. The upstream Kotlin sources are vendored; this is not yet a complete Legado source-rule integration. No host bindings or JS source-rule execution have been enabled. The app must continue to fail closed for JS until that work and security tests are complete.
