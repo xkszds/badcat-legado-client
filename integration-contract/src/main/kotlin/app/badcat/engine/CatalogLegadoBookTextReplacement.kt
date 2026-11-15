@@ -1,8 +1,12 @@
 package app.badcat.engine
 
 /** Read-only view of the persisted Legado replacement-rule catalog. */
-fun interface LegadoReplaceRuleCatalog {
+interface LegadoReplaceRuleCatalog {
     suspend fun all(): EngineResult<List<LegadoReplaceRuleRecord>>
+
+    /** Persistence adapters should disable a rule after a regex timeout. */
+    suspend fun setEnabled(ruleId: Long, enabled: Boolean): EngineResult<Unit> =
+        EngineResult.Success(Unit)
 }
 
 /**
@@ -27,11 +31,22 @@ class CatalogLegadoBookTextReplacement(
                 result.cause,
             )
         }
-        val replaced = LegadoLiteralReplacement(
+        val replacement = LegadoLiteralReplacement(
             rules = records.map { it.executableLiteral() },
             bookName = bookName,
             bookOrigin = bookOrigin,
-        ).replace(chapterText)
+        )
+        val replaced = try {
+            replacement.replace(chapterText)
+        } catch (timeout: LegadoRegexTimeoutException) {
+            val disabled = catalog.setEnabled(timeout.ruleId, false)
+            if (disabled is EngineResult.Failure) {
+                timeout.addSuppressed(
+                    IllegalStateException("Unable to disable timed-out rule '${timeout.ruleId}': ${disabled.message}", disabled.cause)
+                )
+            }
+            throw timeout
+        }
         return fallback.replace(replaced)
     }
 }
