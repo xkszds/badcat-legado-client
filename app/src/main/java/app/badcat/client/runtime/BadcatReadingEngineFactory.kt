@@ -4,6 +4,7 @@ import android.content.Context
 import app.badcat.client.FileBookSourceCatalog
 import app.badcat.client.FileReplaceRuleCatalog
 import app.badcat.engine.BookTextReplacement
+import app.badcat.engine.CatalogLegadoBookTextReplacement
 import app.badcat.engine.BookSourceSearchUrlResolver
 import app.badcat.engine.OkHttpSourceRequestClient
 import app.badcat.engine.ReadingEngine
