@@ -76,6 +76,21 @@ object SourceRuleResolver {
         return SelectorRuleEvaluator.evaluate(document, type, expression)
     }
 
+
+    /** Resolves a source's selected stage JSON and runs the configured runtime. */
+    suspend fun evaluateStage(
+        source: BookSource,
+        stage: SourceRuleStage,
+        document: SourceDocument,
+        runtime: LegadoRuleRuntime,
+    ): EngineResult<List<Map<String, String>>> {
+        val raw = when (val resolved = resolve(source, stage)) {
+            is EngineResult.Failure -> return resolved
+            is EngineResult.Success -> resolved.value
+        }
+        return runtime.evaluate(stage, raw, source, document)
+    }
+
     private fun stageJson(source: BookSource, stage: SourceRuleStage): String? =
         when (stage) {
             SourceRuleStage.EXPLORE -> source.ruleExploreJson
