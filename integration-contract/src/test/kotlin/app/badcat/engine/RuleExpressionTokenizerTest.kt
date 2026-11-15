@@ -31,11 +31,15 @@ class RuleExpressionTokenizerTest {
     }
 
     @Test
-    fun preservesJsonAndScriptLikeGroups() {
-        val expression = """{ "left": "a %% b", "nested": { "ok": true } } %% fallback"""
+    fun preservesOperatorsInsideJsonPathFilterAndEscapedText() {
+        val expression = """$.store[?(@.name == 'a || b')] && $.other"""
         assertEquals(
-            listOf("""{ "left": "a %% b", "nested": { "ok": true } }""", "fallback"),
-            RuleExpressionTokenizer.splitTopLevel(expression, "%%"),
+            listOf("""$.store[?(@.name == 'a || b')]""", "$.other"),
+            RuleExpressionTokenizer.splitTopLevel(expression, "&&"),
+        )
+        assertEquals(
+            listOf("""a\\&&b""", "c"),
+            RuleExpressionTokenizer.splitTopLevel("""a\\&&b && c""", "&&"),
         )
     }
 
