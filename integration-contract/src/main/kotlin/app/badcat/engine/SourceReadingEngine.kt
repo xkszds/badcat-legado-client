@@ -43,7 +43,7 @@ class SourceReadingEngine(
                 "Search URL resolver returned a blank URL for source '${source.id}'",
             )
         }
-        return searchService.search(source, url)
+        return searchService.search(source, url, keyword = keyword)
     }
 
     override suspend fun bookDetail(sourceId: String, bookUrl: String): EngineResult<BookDetail> {
