@@ -49,6 +49,10 @@ data class LegadoJsReplacementContext(
 )
 
 fun interface LegadoJsReplacementEvaluator {
+    fun createSession(ruleName: String): LegadoJsReplacementSession
+}
+
+fun interface LegadoJsReplacementSession {
     fun evaluate(script: String, context: LegadoJsReplacementContext): String
 }
 
