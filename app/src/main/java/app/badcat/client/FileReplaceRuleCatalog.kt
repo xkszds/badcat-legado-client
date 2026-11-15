@@ -46,7 +46,12 @@ class FileReplaceRuleCatalog(context: Context) {
     suspend fun importJson(json: String): EngineResult<Int> = withContext(Dispatchers.IO) {
         mutex.withLock {
             val imported = try {
-                LegadoReplaceRuleCodec.decode(json)
+                LegadoReplaceRuleCodec.decode(json).also { rules ->
+                    val invalid = rules.firstOrNull { !it.isValid() }
+                    require(invalid == null) {
+                        "Invalid Legado replacement rule '${invalid?.scopeRule?.id}'"
+                    }
+                }
             } catch (error: Exception) {
                 return@withLock EngineResult.Failure(
                     EngineErrorCode.INVALID_SOURCE,
