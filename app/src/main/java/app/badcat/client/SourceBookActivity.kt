@@ -272,6 +272,10 @@ class SourceChapterActivity : Activity() {
             text = "切换背景"
             setOnClickListener { cycleReaderTheme() }
         }
+        val chapterCatalog = android.widget.Button(this).apply {
+            text = "章节目录"
+            setOnClickListener { showChapterCatalog() }
+        }
         val saveBookmark = android.widget.Button(this).apply {
             text = "保存书签"
             setOnClickListener { saveChapterBookmark() }
@@ -288,6 +292,7 @@ class SourceChapterActivity : Activity() {
         }
         val bookmarkControls = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
+            addView(chapterCatalog, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
             addView(saveBookmark, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
             addView(jumpBookmark, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         }
@@ -346,8 +351,26 @@ class SourceChapterActivity : Activity() {
     }
 
     private fun moveChapter(delta: Int) {
-        val target = currentIndex + delta
-        if (target !in chapters.indices) return
+        loadChapterAt(currentIndex + delta)
+    }
+
+    private fun showChapterCatalog() {
+        if (chapters.isEmpty()) {
+            status.text = "目录尚未加载"
+            return
+        }
+        val labels = chapters.mapIndexed { index, chapter ->
+            (index + 1).toString() + ". " + chapter.title
+        }.toTypedArray()
+        android.app.AlertDialog.Builder(this)
+            .setTitle("章节目录（${chapters.size} 章）")
+            .setItems(labels) { _, index -> loadChapterAt(index) }
+            .setNegativeButton("关闭", null)
+            .show()
+    }
+
+    private fun loadChapterAt(target: Int) {
+        if (target !in chapters.indices || target == currentIndex) return
         saveCurrentScrollPosition()
         val chapter = chapters[target]
         previousButton.isEnabled = false
