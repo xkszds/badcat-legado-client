@@ -51,6 +51,7 @@ class BadcatReadingEngineFactory(
                 scopedTextReplacement = CatalogLegadoBookTextReplacement(
                     catalog = replaceRuleCatalog,
                     fallback = bookTextReplacement,
+                    jsEvaluator = RhinoLegadoJsReplacementEvaluator(),
                 ),
             ),
         )
