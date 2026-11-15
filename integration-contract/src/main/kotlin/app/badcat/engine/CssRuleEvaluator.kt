@@ -22,22 +22,31 @@ object CssRuleEvaluator {
             return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "CSS rule is blank")
         }
 
-        var firstFailure: EngineResult.Failure? = null
-        val combined = RuleCombinationEvaluator.evaluate(rule) { part ->
-            when (val result = evaluateSingle(document, part)) {
-                is EngineResult.Success -> result.value
-                is EngineResult.Failure -> {
-                    if (firstFailure == null) firstFailure = result
-                    emptyList()
+        return runCatching {
+            var firstFailure: EngineResult.Failure? = null
+            val combined = RuleCombinationEvaluator.evaluate(rule) { part ->
+                when (val result = evaluateSingle(document, part)) {
+                    is EngineResult.Success -> result.value
+                    is EngineResult.Failure -> {
+                        if (firstFailure == null) firstFailure = result
+                        emptyList()
+                    }
                 }
             }
-        }
 
-        val operator = RuleExpressionTokenizer.splitByFirstTopLevelOperator(rule).operator
-        if (firstFailure != null && (operator != "||" || combined.isEmpty())) {
-            return firstFailure!!
+            val operator = RuleExpressionTokenizer.splitByFirstTopLevelOperator(rule).operator
+            if (firstFailure != null && (operator != "||" || combined.isEmpty())) {
+                firstFailure!!
+            } else {
+                EngineResult.Success(combined)
+            }
+        }.getOrElse {
+            EngineResult.Failure(
+                EngineErrorCode.PARSE,
+                "CSS rule evaluation failed: ${it.message ?: it::class.java.simpleName}",
+                it,
+            )
         }
-        return EngineResult.Success(combined)
     }
 
     private fun evaluateSingle(
