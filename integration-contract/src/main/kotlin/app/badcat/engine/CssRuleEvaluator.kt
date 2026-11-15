@@ -128,8 +128,8 @@ object CssRuleEvaluator {
         ValueMode.TEXT -> element.text()
         ValueMode.OWN_TEXT -> element.ownText()
         ValueMode.HTML -> element.html()
-        ValueMode.HREF -> element.absUrl("href").ifEmpty { element.attr("href") }
-        ValueMode.SRC -> element.absUrl("src").ifEmpty { element.attr("src") }
+        ValueMode.HREF -> element.attr("href")
+        ValueMode.SRC -> element.attr("src")
         ValueMode.TAG -> element.tagName()
         ValueMode.ATTRIBUTE -> element.attr(attribute.orEmpty())
     }
