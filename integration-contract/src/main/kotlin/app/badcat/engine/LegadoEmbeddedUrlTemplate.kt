@@ -20,7 +20,7 @@ object LegadoEmbeddedUrlTemplate {
      * Null becomes empty, strings stay unchanged, integral Double values omit
      * the decimal suffix, and other values use toString().
      *
-     * Empty replacements are omitted, matching upstream's StringBuilder logic.
+     * Empty expression results contribute no replacement text, while the surrounding literal prefix and suffix are retained.
      */
     suspend fun resolve(
         template: String,
@@ -55,10 +55,8 @@ object LegadoEmbeddedUrlTemplate {
                 }
             }
 
-            if (replacement.isNotEmpty()) {
-                output.append(template, startX, start)
-                output.append(replacement)
-            }
+            output.append(template, startX, start)
+            output.append(replacement)
             startX = end + 2
             searchFrom = startX
         }
