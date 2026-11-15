@@ -107,6 +107,7 @@ enum class EngineErrorCode {
     PARSE,
     NOT_FOUND,
     UNSUPPORTED_RULE,
+    RULE_TIMEOUT,
     CANCELLED,
     UNKNOWN,
 }
