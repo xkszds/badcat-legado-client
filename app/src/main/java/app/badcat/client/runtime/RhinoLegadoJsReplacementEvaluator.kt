@@ -9,6 +9,9 @@ import app.badcat.engine.LegadoRegexTimeoutException
 import com.script.ScriptBindings
 import com.script.rhino.RhinoScriptEngine
 import java.security.MessageDigest
+import java.util.Base64
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -96,6 +99,23 @@ class LegadoRegexJsExtensions(
     fun md5Encode(value: String): String = digest("MD5", value)
 
     fun md5Encode16(value: String): String = md5Encode(value).substring(8, 24)
+
+    fun digestHex(data: String, algorithm: String): String = digest(algorithm, data)
+
+    fun digestBase64Str(data: String, algorithm: String): String =
+        Base64.getEncoder().encodeToString(MessageDigest.getInstance(algorithm).digest(data.toByteArray(Charsets.UTF_8)))
+
+    fun HMacHex(data: String, algorithm: String, key: String): String =
+        hmac(algorithm, data, key).joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
+
+    fun HMacBase64(data: String, algorithm: String, key: String): String =
+        Base64.getEncoder().encodeToString(hmac(algorithm, data, key))
+
+    private fun hmac(algorithm: String, data: String, key: String): ByteArray =
+        Mac.getInstance(algorithm).run {
+            init(SecretKeySpec(key.toByteArray(Charsets.UTF_8), algorithm))
+            doFinal(data.toByteArray(Charsets.UTF_8))
+        }
 
     private fun digest(algorithm: String, value: String): String =
         MessageDigest.getInstance(algorithm).digest(value.toByteArray(Charsets.UTF_8))
