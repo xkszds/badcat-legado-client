@@ -30,9 +30,10 @@ class LegadoLiteralReplacement(
         }.filter { it.pattern.isNotEmpty() }
 
         val unsupported = selected.firstOrNull { it.isRegex }
-        require(unsupported == null) {
-            "Regex replacement rule '" + unsupported?.scopeRule?.id +
-                "' requires the Legado regex runtime"
+        if (unsupported != null) {
+            throw UnsupportedOperationException(
+                "Regex replacement rule '${unsupported.scopeRule.id}' requires the Legado regex runtime"
+            )
         }
 
         return selected.fold(chapterText) { text, rule ->
