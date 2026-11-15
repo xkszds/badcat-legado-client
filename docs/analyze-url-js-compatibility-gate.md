@@ -4,7 +4,7 @@ Added `LegadoEmbeddedUrlTemplate` and an injected `LegadoEmbeddedScriptEvaluator
 - evaluates complete `{{...}}` segments sequentially and supplies the search `key` as the only explicit input;
 - propagates an evaluator failure without returning a partial URL;
 - mirrors the pinned replacement conversion for null, strings, integral `Double`, and other primitive values;
-- follows the pinned `RuleAnalyzer.innerRule("{{", "}}")` empty-result behavior and leaves an unmatched opening marker literal.
+- follows the pinned `RuleAnalyzer.innerRule("{{", "}}")` empty-result behavior, retaining literal text around an empty expression and leaves an unmatched opening marker literal.
 
 Regression tests were added for multiple expressions, Unicode key passthrough, null/integral numeric conversion, unmatched markers, and evaluator failure. These tests are authored only; they have not been run.
 
