@@ -22,7 +22,7 @@ Last updated: 2026-11-15
 
 ## Not yet verified
 
-- Added a lexical tokenizer for top-level `&&`, `||` and `%%` delimiters. It ignores operators inside quoted strings and balanced `()`, `[]`, `{}` groups. This is tokenization groundwork only; it does not implement or claim upstream evaluation semantics. Tests are authored but unrun.\n- GitHub Actions has not been confirmed green; no successful CI test or package result is claimed.
+- Added a top-level tokenizer and generic list-combination evaluator for `&&`, `||` and `%%`, based on the pinned upstream `RuleAnalyzer` / `AnalyzeByJSoup` behavior: concatenate non-empty results, stop at the first non-empty fallback, or interleave by position (bounded by the first result's length). Delimiters inside quoted/nested groups are ignored. This is not yet wired into CSS evaluation and is not a full `RuleAnalyzer` port. Tests are authored but unrun.\n- GitHub Actions has not been confirmed green; no successful CI test or package result is claimed.
 - No APK artifact has been downloaded or installed.
 - The source codec now maps common upstream source configuration (headers, cookie-jar flag, JS library, login/explore/search URLs, main JS and nested rule JSON) into the host contract. Nested rules remain inert JSON: no Legado parser or JavaScript execution runtime is integrated. The codec is still import/export plumbing, not search or parsing execution.
 - Original Badcat UI and its real navigation are not yet present in the new Android module.
