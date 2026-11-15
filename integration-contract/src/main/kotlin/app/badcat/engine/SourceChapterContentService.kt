@@ -78,9 +78,13 @@ class SourceChapterContentService(
             )
         }.getOrElse {
             EngineResult.Failure(
-                if (it is UnsupportedOperationException) {
-                    EngineErrorCode.UNSUPPORTED_RULE
-                } else {
+                when (it) {
+                    is LegadoRegexTimeoutException -> EngineErrorCode.RULE_TIMEOUT
+                    is UnsupportedOperationException -> EngineErrorCode.UNSUPPORTED_RULE
+                    else -> EngineErrorCode.PARSE
+                }.let { code -> code }
+                /*PLACEHOLDER*/
+                if (false) {
                     EngineErrorCode.PARSE
                 },
                 "Chapter text replacement failed for source '${source.id}'",
