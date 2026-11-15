@@ -1,5 +1,10 @@
 ## Latest implementation update (2026-11-15)
 
+- Extended the development reader's book-level bookmark picker with a per-book management action: select a bookmarked chapter, then open its saved position or delete that chapter's bookmark. Deletion removes only the selected source/book/chapter key; the automatic last-read position and other chapter bookmarks remain intact.
+- The manager is derived from the currently loaded TOC and existing single-bookmark-per-chapter storage. It is not a full multi-anchor bookmark database and does not reproduce the original Badcat bookmark screen.
+- Verified the edit paths by source inspection only. No Gradle compilation, automated tests, device validation, CI result or APK generation is confirmed.
+## Latest implementation update (2026-11-15)
+
 - Added a book-level bookmark picker to the development reader's TOC screen. It lists chapters that have saved per-chapter bookmarks; selecting one opens that chapter and restores its explicit bookmark offset after content is laid out.
 - The feature reuses the existing source/book/chapter-isolated bookmark keys. It remains a single bookmark per chapter and does not provide text anchors, bookmark editing, or the original Badcat bookmark UI.
 - This change is code-reviewed by source inspection only. No Gradle compilation, automated test run, device validation, CI result, or APK generation is confirmed.
