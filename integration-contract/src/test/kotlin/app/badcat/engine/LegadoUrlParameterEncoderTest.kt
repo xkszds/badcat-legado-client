@@ -13,7 +13,7 @@ class LegadoUrlParameterEncoderTest {
 
     @Test
     fun queryPercentEncodesUtf8AndUnsafeCharactersButLeavesPercentLiteral() {
-        assertEquals("q=%E4%B8%AD%20x%x", LegadoUrlParameterEncoder.encodeQuery("q=中文 x%x"))
+        assertEquals("q=%E4%B8%AD%E6%96%87%20x%x", LegadoUrlParameterEncoder.encodeQuery("q=中文 x%x"))
     }
 
     @Test
