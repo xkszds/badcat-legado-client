@@ -53,11 +53,17 @@ class OkHttpSourceRequestClient(
 
             val method = request.method.uppercase()
             val requestBody = request.body?.let { body ->
-                val contentType = request.headers.entries
+                val explicitContentType = request.headers.entries
                     .firstOrNull { it.key.equals("Content-Type", ignoreCase = true) }
                     ?.value
-                    ?.toMediaTypeOrNull()
-                    ?: "application/x-www-form-urlencoded; charset=utf-8".toMediaTypeOrNull()
+                val inferredContentType = when {
+                    body.trimStart().startsWith("{") || body.trimStart().startsWith("[") ->
+                        "application/json; charset=utf-8"
+                    body.trimStart().startsWith("<?xml", ignoreCase = true) ->
+                        "application/xml; charset=utf-8"
+                    else -> "application/x-www-form-urlencoded; charset=utf-8"
+                }
+                (explicitContentType ?: inferredContentType).toMediaTypeOrNull()
                 body.toRequestBody(contentType)
             }
             val bodyForMethod = when {
