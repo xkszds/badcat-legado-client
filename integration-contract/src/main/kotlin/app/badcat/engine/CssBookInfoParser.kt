@@ -16,6 +16,15 @@ class CssBookInfoParser {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value.fields
         }
+        val safeBookUrl = runCatching {
+            WebUrlResolver.resolve(response.finalUrl, requestedBookUrl)
+        }.getOrElse {
+            return EngineResult.Failure(
+                EngineErrorCode.UNSUPPORTED_RULE,
+                "Requested book URL must be a credential-free HTTP(S) URL",
+                it,
+            )
+        }
         val document = SourceDocument(response.finalUrl, response.body, response.contentType)
 
         fun field(name: String): EngineResult<String?> {
@@ -93,7 +102,7 @@ class CssBookInfoParser {
                 sourceId = source.id,
                 name = name,
                 author = author,
-                bookUrl = requestedBookUrl,
+                bookUrl = safeBookUrl,
                 coverUrl = resolvedCover,
                 intro = intro,
                 latestChapter = latest,
