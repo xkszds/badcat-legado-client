@@ -62,8 +62,8 @@ class LegadoLiteralReplacement(
         val timeout = rule.timeoutMillisecond.takeIf { it > 0 }
             ?: LegadoReplaceRuleCodec.DEFAULT_TIMEOUT_MILLISECOND
         val timeoutNanos = timeout.coerceAtMost(Long.MAX_VALUE / 1_000_000L) * 1_000_000L
-        val deadline = System.nanoTime() + timeoutNanos
-        val boundedInput = DeadlineCharSequence(input, deadline, rule.scopeRule.id, timeout)
+        val startedAtNanos = System.nanoTime()
+        val boundedInput = DeadlineCharSequence(input, startedAtNanos, timeoutNanos, rule.scopeRule.id, timeout)
         val matcher = Pattern.compile(rule.pattern).matcher(boundedInput)
         val output = StringBuffer()
         val isJs = rule.replacement.startsWith("@js:")
@@ -106,7 +106,8 @@ class LegadoLiteralReplacement(
 
     private class DeadlineCharSequence(
         private val delegate: CharSequence,
-        private val deadlineNanos: Long,
+        private val startedAtNanos: Long,
+        private val timeoutNanos: Long,
         private val ruleId: Long,
         private val timeoutMillisecond: Long,
     ) : CharSequence {
@@ -125,7 +126,8 @@ class LegadoLiteralReplacement(
             checkDeadline()
             return DeadlineCharSequence(
                 delegate.subSequence(startIndex, endIndex),
-                deadlineNanos,
+                startedAtNanos,
+                timeoutNanos,
                 ruleId,
                 timeoutMillisecond,
             )
@@ -137,7 +139,8 @@ class LegadoLiteralReplacement(
         }
 
         fun remainingMilliseconds(): Long {
-            val remainingNanos = deadlineNanos - System.nanoTime()
+            val elapsedNanos = System.nanoTime() - startedAtNanos
+            val remainingNanos = timeoutNanos - elapsedNanos
             if (remainingNanos <= 0L) {
                 throw LegadoRegexTimeoutException(ruleId, timeoutMillisecond)
             }
@@ -145,7 +148,7 @@ class LegadoLiteralReplacement(
         }
 
         private fun checkDeadline() {
-            if (System.nanoTime() - deadlineNanos >= 0L) {
+            if (System.nanoTime() - startedAtNanos >= timeoutNanos) {
                 throw LegadoRegexTimeoutException(ruleId, timeoutMillisecond)
             }
         }
