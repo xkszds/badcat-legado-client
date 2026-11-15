@@ -25,10 +25,12 @@ object LegadoUrlParameterEncoder {
 
     fun encodeQuery(params: String, charsetName: String? = null): String {
         val charset = resolveCharset(charsetName)
-        if (charset != null && isAlreadyEncoded(params, queryAlreadyEncodedSafe)) return params
-        return encodeFields(params, charsetName.isNullOrEmpty(), charset)
+        if (charset != null) {
+            if (isAlreadyEncoded(params, queryAlreadyEncodedSafe)) return params
+            return percentEncode(params, charset)
+        }
+        return encodeFields(params, checkEncoded = false, charset = null)
     }
-
     fun encodeForm(params: String, charsetName: String? = null): String =
         encodeFields(params, charsetName.isNullOrEmpty(), resolveCharset(charsetName))
 
@@ -64,6 +66,21 @@ object LegadoUrlParameterEncoder {
         return result.toString()
     }
 
+    private fun percentEncode(value: String, charset: Charset): String {
+        val bytes = value.toByteArray(charset)
+        return buildString(bytes.size) {
+            bytes.forEach { byte ->
+                val unsigned = byte.toInt() and 0xff
+                val char = unsigned.toChar()
+                if (unsigned < 128 && char in querySafe) append(char)
+                else {
+                    append('%')
+                    append(HEX[unsigned ushr 4])
+                    append(HEX[unsigned and 0x0f])
+                }
+            }
+        }
+    }
     private fun encodePart(value: String, checkEncoded: Boolean, charset: Charset?): String = when {
         checkEncoded && isAlreadyEncoded(value, formAlreadyEncodedSafe) -> value
         charset == null -> escape(value)
@@ -93,4 +110,6 @@ object LegadoUrlParameterEncoder {
 
     private fun Char.isHexDigit(): Boolean =
         this in '0'..'9' || this in 'A'..'F' || this in 'a'..'f'
+
+    private const val HEX = "0123456789ABCDEF"
 }
