@@ -50,7 +50,7 @@ class CatalogLegadoBookTextReplacement(
         return ReplacedChapterContent(replacedTitle, fallback.replace(replacedText))
     }
 
-    private fun applyRules(
+    private suspend fun applyRules(
         rules: List<LegadoReplaceRule>,
         input: String,
         bookName: String,
