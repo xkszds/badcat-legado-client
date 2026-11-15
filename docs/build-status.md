@@ -1,5 +1,11 @@
 ## Latest implementation update (2026-11-15)
 
+- Added isolated `LegadoEmbeddedUrlTemplate` and injected `LegadoEmbeddedScriptEvaluator` contracts. The helper processes complete `{{...}}` segments in order, passes only the search key, mirrors upstream null/string/integral-Double conversion and empty-result behavior, leaves unmatched opening markers literal, and propagates evaluation failures without returning a partial URL.
+- Added regression tests for multiple expressions, Unicode key input, null and integral numeric conversion, unmatched markers, and script failure. Tests are authored but not executed.
+- Deliberately did not wire this helper into `LegadoUrlResolver` or search: upstream query/form encoding and already-encoded detection are not implemented yet. Existing script-bearing URLs continue to fail closed. No Gradle build, test run, CI, device validation, or APK is confirmed.
+
+## Latest implementation update (2026-11-15)
+
 - Added `docs/analyze-url-js-compatibility-gate.md` after re-reading the pinned upstream `AnalyzeUrl.kt`, `ScriptBindings.kt`, and `RhinoScriptEngine.kt`. It records the exact order of `@js`, embedded `{{...}}`, page tokens, URL-option parsing, and query/form encoding; it also records the upstream primitive conversion rules and why the current string-only sandbox is not yet safe to wire into search.
 - Confirmed that upstream embedded JavaScript receives `key` plus additional host bindings, and that query/form encoding happens after expression evaluation. The current adapter exposes neither the complete binding model nor the exact encoding pipeline, so script-bearing URL rules remain fail-closed.
 - This is a source-level compatibility audit only. No runtime behavior was enabled, and no Gradle build, tests, CI run, device validation, or installable APK is confirmed.
