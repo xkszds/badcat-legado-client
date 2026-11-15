@@ -34,4 +34,19 @@ class WebUrlResolverTest {
             WebUrlResolver.resolve("file:///tmp/search", "/book")
         }
     }
+    @Test
+    fun queryOnlyPaginationLinksKeepTheCurrentPath() {
+        assertEquals(
+            "https://reader.example/book/1/catalog?page=2",
+            WebUrlResolver.resolve(
+                "https://reader.example/book/1/catalog?page=1",
+                "?page=2",
+            ),
+        )
+        assertEquals(
+            "https://reader.example/chapter/1?page=2",
+            WebUrlResolver.resolve("https://reader.example/chapter/1", "?page=2"),
+        )
+    }
+
 }
