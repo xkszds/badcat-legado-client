@@ -161,8 +161,8 @@ class CssTocParserTest {
         )
 
         val result = CssTocParser().parse(source, response, "https://reader.example/book")
-        assertIs<EngineResult.Failure>(result)
-        assertEquals(EngineErrorCode.UNSUPPORTED_RULE, result.code)
+        val failure = assertIs<EngineResult.Failure>(result)
+        assertEquals(EngineErrorCode.UNSUPPORTED_RULE, failure.code)
     }
 
 }
