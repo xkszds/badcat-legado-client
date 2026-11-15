@@ -24,7 +24,7 @@ import kotlin.coroutines.resumeWithException
  *
  * Redirects are followed by OkHttp. Cookies are isolated by source ID and can
  * be disabled per request. This implements static headers and HTTP only; it
- * intentionally does not evaluate Legado URL/JS request expressions.
+ * does not evaluate JavaScript URL expressions or implement WebView/DNS overrides.
  */
 class OkHttpSourceRequestClient(
     private val connectTimeoutSeconds: Long = 15,
@@ -37,7 +37,10 @@ class OkHttpSourceRequestClient(
     private val clients = ConcurrentHashMap<String, OkHttpClient>()
 
     override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
-        if (request.sourceId.isBlank() || request.url.isBlank()) {
+        if (request.sourceId.isBlank() || request.url.isBlank() ||
+            request.retryCount !in 0..5 ||
+            request.timeoutMillis?.let { it <= 0 || it > Int.MAX_VALUE } == true
+        ) {
             return EngineResult.Failure(
                 EngineErrorCode.INVALID_SOURCE,
                 "Source identity and request URL must not be blank",
@@ -65,9 +68,18 @@ class OkHttpSourceRequestClient(
             }
             builder.method(method, bodyForMethod)
 
-            val response = awaitResponse(client.newCall(builder.build()))
-            response.use { readResponse(it) }
-                .let { EngineResult.Success(it) }
+            var attempt = 0
+            while (true) {
+                try {
+                    val response = awaitResponse(client.newCall(builder.build()))
+                    return response.use { EngineResult.Success(readResponse(it, request.responseCharset)) }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (io: IOException) {
+                    if (attempt >= request.retryCount) throw io
+                    attempt++
+                }
+            }
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (invalid: IllegalArgumentException) {
@@ -87,7 +99,7 @@ class OkHttpSourceRequestClient(
 
     private fun clientFor(request: SourceHttpRequest): OkHttpClient {
         val key = request.sourceId + if (request.useCookieJar) "|cookies" else "|no-cookies"
-        return clients.computeIfAbsent(key) {
+        val baseClient = clients.computeIfAbsent(key) {
             val jar = if (request.useCookieJar) {
                 cookieJars.computeIfAbsent(request.sourceId) { MemorySourceCookieJar() }
             } else {
@@ -102,6 +114,18 @@ class OkHttpSourceRequestClient(
                 .followSslRedirects(true)
                 .build()
         }
+        if (request.timeoutMillis == null && request.followRedirects == null) return baseClient
+        return baseClient.newBuilder().apply {
+            request.timeoutMillis?.let { timeout ->
+                readTimeout(timeout, TimeUnit.MILLISECONDS)
+                val derivedCallTimeout = maxOf(60_000L, timeout * 2)
+                callTimeout(derivedCallTimeout, TimeUnit.MILLISECONDS)
+            }
+            request.followRedirects?.let {
+                followRedirects(it)
+                followSslRedirects(it)
+            }
+        }.build()
     }
 
     private suspend fun awaitResponse(call: okhttp3.Call): Response =
@@ -122,7 +146,7 @@ class OkHttpSourceRequestClient(
             })
         }
 
-    private fun readResponse(response: Response): SourceHttpResponse {
+    private fun readResponse(response: Response, responseCharset: String?): SourceHttpResponse {
         val responseBody = response.body
         val bytes = responseBody?.byteStream()?.use { input ->
             val output = ByteArrayOutputStream()
@@ -139,7 +163,10 @@ class OkHttpSourceRequestClient(
             }
             output.toByteArray()
         } ?: ByteArray(0)
-        val charset: Charset = responseBody?.contentType()?.charset(StandardCharsets.UTF_8)
+        val charset: Charset = responseCharset
+            ?.takeUnless { it.equals("escape", ignoreCase = true) }
+            ?.let(Charset::forName)
+            ?: responseBody?.contentType()?.charset(StandardCharsets.UTF_8)
             ?: StandardCharsets.UTF_8
         val headerMap = response.headers.names().associateWith { name ->
             response.headers.values(name)
