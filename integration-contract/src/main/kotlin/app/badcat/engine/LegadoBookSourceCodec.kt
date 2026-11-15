@@ -154,7 +154,7 @@ object LegadoBookSourceCodec {
                 "Book source at index $index has an invalid 'bookSourceType' field"
             }
         }
-        listOf("ruleExplore", "ruleSearch", "ruleBookInfo", "ruleToc", "ruleContent").forEach { key ->
+        listOf("ruleExplore", "ruleSearch", "ruleBookInfo", "ruleToc", "ruleContent", "ruleReview").forEach { key ->
             val value = source.get(key) ?: return@forEach
             require(value.isJsonNull || value.isJsonObject || (
                 value.isJsonPrimitive && value.asJsonPrimitive.isString &&
