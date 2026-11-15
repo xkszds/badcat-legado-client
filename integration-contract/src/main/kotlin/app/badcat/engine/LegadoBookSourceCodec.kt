@@ -66,12 +66,20 @@ object LegadoBookSourceCodec {
             else -> throw IllegalArgumentException("Book source JSON must be an object or array")
         }
 
-        return entries.mapIndexed { index, element ->
+        val decoded = entries.mapIndexed { index, element ->
             if (!element.isJsonObject) {
                 throw IllegalArgumentException("Book source at index $index is not an object")
             }
             decodeObject(element.asJsonObject, index)
         }
+        val duplicateIds = decoded.groupingBy { it.sourceId }
+            .eachCount()
+            .filterValues { count -> count > 1 }
+            .keys
+        require(duplicateIds.isEmpty()) {
+            "Duplicate bookSourceUrl values: ${duplicateIds.joinToString()}"
+        }
+        return decoded
     }
 
     fun withEnabled(source: LegadoBookSource, enabled: Boolean): LegadoBookSource {
