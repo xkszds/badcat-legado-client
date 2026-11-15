@@ -4,6 +4,7 @@ Last updated: 2026-11-15
 
 ## Latest implementation update
 
+- The chapter fetch service now accepts an injected `BookTextReplacement` and applies it only after chapter HTML has been parsed into novel text; replacement failures are returned as typed parse failures. Page HTML, catalog and video purification remain separate domains.
 - Added `CssChapterContentParser` for the bounded CSS subset of Legado `ContentRule`: chapter body, optional title, and next-chapter URL. HTML output is converted to readable text with script/style/iframe/noscript elements removed and paragraph/line breaks preserved.
 - Added `SourceChapterContentService` to fetch a chapter through the shared HTTP gateway, enforce 2xx status, and parse its content. Added parser tests for text extraction, next-link resolution, fallback title, and script-rule rejection.
 - Explicit unsupported content features remain: `webJs`, `callBackJs`, JavaScript/interpolation, `sourceRegex`, `replaceRegex`, `payAction`, image decoding/style, content batching, and full upstream AnalyzeRule semantics. This is not yet full Legado content compatibility; ad purification remains a separate pipeline.
