@@ -28,6 +28,17 @@ class SourceTocService(
                     "TOC request for source '${source.id}' returned HTTP ${response.statusCode}",
                 )
             }
+            // Track the post-redirect URL as well as the requested URL. A source
+            // may point its next-page link at the redirect destination, which
+            // would otherwise trigger one redundant fetch before cycle detection.
+            if (response.finalUrl.isNotBlank() && response.finalUrl != url &&
+                !visited.add(response.finalUrl)
+            ) {
+                return EngineResult.Failure(
+                    EngineErrorCode.PARSE,
+                    "TOC pagination contains a redirect URL cycle",
+                )
+            }
             val page = when (val result = parser.parse(source, response, bookUrl)) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
