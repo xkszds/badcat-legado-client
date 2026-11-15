@@ -1,5 +1,13 @@
 ## Latest implementation update (2026-11-15)
 
+- Added `LegadoRhinoSandbox` inside `:legado-rhino`: string-only host bindings, bounded script/binding sizes, primitive-only return values, and a coroutine timeout enforced through the upstream Rhino instruction observer.
+- Added Android `RhinoSourceScriptRuntime` implementing the platform-neutral `SourceScriptRuntime` contract. It maps parse/unsupported/timeout outcomes and propagates caller cancellation. It deliberately does not expose Java/Android services, HTTP, cookies, cache, or WebView objects.
+- Important build dependency correction: the pinned `org.htmlunit:htmlunit-core-js:5.3.0-legado.4` fork is **not** a Maven Central release. Upstream stores it in `third_party/maven`; the local Maven repository and POM metadata are now configured. The required JAR (1,900,654 bytes; upstream Git blob SHA `d240cdd66f5269ed33da53cde7e4e690cee6e162`) is not yet in this repository because the available GitHub integration cannot transfer binary blobs. The project must not substitute stock HtmlUnit 5.3.0, which lacks the pinned Legado fork changes. This missing JAR is a hard build blocker.
+- Script execution is not yet wired into `LegadoUrlResolver`/search URL expansion. Full `AnalyzeUrl` compatibility still requires the source model, headers/login/cookies/proxy, URL options, HTTP semantics and reviewed host bindings. Existing JS-bearing URL rules remain rejected.
+- No Gradle build or tests were run. No CI success, device validation, or installable APK is confirmed.
+
+## Latest implementation update (2026-11-15)
+
 - Added the pinned Legado Rhino runtime as a separate Android library module `:legado-rhino` and wired it into the app build. All 18 upstream Kotlin source files were copied from `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9`, including the class-shutter, wrap-factory, context and execution-gate code.
 - Added the upstream Legado GPL-3.0 license and attribution. Also preserved the HtmlUnit Rhino dependency's MPL-2.0, Apache-2.0, source provenance, NOTICE and diff records under `third_party/htmlunit-core-js-5.3.0-legado.4/`. Original Oracle/Rhino source headers remain unchanged.
 - Added the module's direct dependencies at upstream-pinned versions and included it in the app. This is a build integration step only: no Legado host bindings, AnalyzeUrl compatibility layer, or source-JS execution path is active. Existing fail-closed behavior must remain until security and compatibility tests are implemented.
