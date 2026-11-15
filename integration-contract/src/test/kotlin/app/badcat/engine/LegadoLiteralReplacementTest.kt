@@ -53,7 +53,7 @@ class LegadoLiteralReplacementTest {
         val rules = listOf(
             LegadoReplaceRule(
                 LegadoReplaceRuleScope(13),
-                """\\d+""",
+                """\d+""",
                 "x",
                 isRegex = true,
                 timeoutMillisecond = Long.MAX_VALUE,
