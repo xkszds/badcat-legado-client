@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import java.io.File
 
 private val catalogFileMutex = Mutex()
@@ -121,18 +122,32 @@ class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
 
     private fun readSources(): List<LegadoBookSource> {
         if (!file.baseFile.exists()) return emptyList()
-        return file.openRead().bufferedReader(Charsets.UTF_8).use { reader ->
-            val json = reader.readText()
-            if (json.isBlank()) emptyList() else LegadoBookSourceCodec.decode(json)
+        val bytes = file.openRead().use { input ->
+            val output = ByteArrayOutputStream()
+            val buffer = ByteArray(8 * 1024)
+            while (true) {
+                val count = input.read(buffer)
+                if (count < 0) break
+                require(output.size() + count <= LegadoBookSourceCodec.MAX_IMPORT_BYTES) {
+                    "Local book-source catalog exceeds the 5 MiB limit"
+                }
+                output.write(buffer, 0, count)
+            }
+            output.toByteArray()
         }
+        val json = LegadoBookSourceCodec.decodeUtf8ToString(bytes)
+        return if (json.isBlank()) emptyList() else LegadoBookSourceCodec.decode(json)
     }
 
     private fun writeSources(sources: List<LegadoBookSource>) {
+        val bytes = LegadoBookSourceCodec.encode(sources).toByteArray(Charsets.UTF_8)
+        require(bytes.size <= LegadoBookSourceCodec.MAX_IMPORT_BYTES) {
+            "Local book-source catalog exceeds the 5 MiB limit"
+        }
         val output = file.startWrite()
         try {
-            val writer = output.writer(Charsets.UTF_8)
-            writer.write(LegadoBookSourceCodec.encode(sources))
-            writer.flush()
+            output.write(bytes)
+            output.flush()
             file.finishWrite(output)
         } catch (error: Exception) {
             // Always close/roll back AtomicFile, including when the coroutine is cancelled.
