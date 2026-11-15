@@ -14,7 +14,7 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        TextView(this).apply {
+        val message = TextView(this).apply {
             text = """
                 Badcat + Legado integration workspace
 
@@ -25,6 +25,7 @@ class MainActivity : Activity() {
             """.trimIndent()
             textSize = 16f
             setPadding(32, 48, 32, 32)
-        }.also(::setContentView)
+        }
+        setContentView(message)
     }
 }
