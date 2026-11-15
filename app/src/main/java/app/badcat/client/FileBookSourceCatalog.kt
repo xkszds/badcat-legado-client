@@ -1,0 +1,112 @@
+package app.badcat.client
+
+import android.content.Context
+import android.util.AtomicFile
+import app.badcat.engine.BookSource
+import app.badcat.engine.BookSourceCatalog
+import app.badcat.engine.EngineErrorCode
+import app.badcat.engine.EngineResult
+import app.badcat.engine.LegadoBookSource
+import app.badcat.engine.LegadoBookSourceCodec
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.IOException
+
+/**
+ * A small, durable host-side catalog for imported Legado source descriptors.
+ *
+ * The complete upstream JSON object is retained by [LegadoBookSourceCodec], so
+ * fields unknown to this host survive import/export. This class stores metadata;
+ * it does not execute source JavaScript or claim full Legado compatibility.
+ */
+class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
+    private val file = AtomicFile(File(context.applicationContext.filesDir, "legado-book-sources.json"))
+    private val mutex = Mutex()
+
+    override suspend fun all(): EngineResult<List<BookSource>> = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            try {
+                readSources().map { source -> source.toEngineSource() }
+                    .let { EngineResult.Success(it) }
+            } catch (error: Exception) {
+                EngineResult.Failure(
+                    EngineErrorCode.UNKNOWN,
+                    "Unable to read the local book-source catalog",
+                    error,
+                )
+            }
+        }
+    }
+
+    /** Import one Legado source object or an array; existing IDs are replaced in place. */
+    suspend fun importJson(json: String): EngineResult<Int> = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            val imported = try {
+                LegadoBookSourceCodec.decode(json)
+            } catch (error: Exception) {
+                return@withLock EngineResult.Failure(
+                    EngineErrorCode.INVALID_SOURCE,
+                    error.message ?: "Invalid Legado book-source JSON",
+                    error,
+                )
+            }
+
+            try {
+                val current = readSources().toMutableList()
+                val positions = current.mapIndexed { index, source -> source.sourceId to index }.toMap()
+                imported.forEach { source ->
+                    val index = positions[source.sourceId]
+                    if (index == null) current.add(source) else current[index] = source
+                }
+                writeSources(current)
+                EngineResult.Success(imported.size)
+            } catch (error: Exception) {
+                EngineResult.Failure(
+                    EngineErrorCode.UNKNOWN,
+                    "Unable to save imported book sources",
+                    error,
+                )
+            }
+        }
+    }
+
+    /** Export the catalog as a Legado-compatible JSON array. */
+    suspend fun exportJson(): EngineResult<String> = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            try {
+                EngineResult.Success(LegadoBookSourceCodec.encode(readSources()))
+            } catch (error: Exception) {
+                EngineResult.Failure(
+                    EngineErrorCode.UNKNOWN,
+                    "Unable to export the local book-source catalog",
+                    error,
+                )
+            }
+        }
+    }
+
+    private fun readSources(): List<LegadoBookSource> {
+        if (!file.baseFile.exists()) return emptyList()
+        return file.openRead().bufferedReader(Charsets.UTF_8).use { reader ->
+            val json = reader.readText()
+            if (json.isBlank()) emptyList() else LegadoBookSourceCodec.decode(json)
+        }
+    }
+
+    private fun writeSources(sources: List<LegadoBookSource>) {
+        val output = file.startWrite()
+        try {
+            output.writer(Charsets.UTF_8).use { writer ->
+                writer.write(LegadoBookSourceCodec.encode(sources))
+                writer.flush()
+            }
+            file.finishWrite(output)
+        } catch (error: Exception) {
+            file.failWrite(output)
+            throw error
+        }
+    }
+}
