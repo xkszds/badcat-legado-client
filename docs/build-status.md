@@ -1,5 +1,11 @@
 ## Latest implementation update (2026-11-15)
 
+- Hardened `SourceReadingEngine.search`: blank/whitespace-only keywords are rejected before source lookup; disabled sources are rejected before the URL resolver or HTTP service can run; blank resolved URLs are rejected before network access.
+- Added unit-test cases proving disabled sources do not invoke the resolver and blank keywords are rejected before resolution. Tests are authored but have not been executed.
+- Verified the pinned upstream Legado `AnalyzeUrl.kt` at commit `330e606c4d57e08adc056ff8ab7a4132c784da9`: `{{...}}` expressions are evaluated as JavaScript with `key` in the runtime bindings, before URL query/form encoding. Therefore a generic text substitution is not a faithful or safe implementation. Dynamic URL expressions remain unsupported until the pinned Rhino behavior and encoding pipeline are integrated.
+- No search UI is wired to `SourceReadingEngine`; no compile, CI run, device test, or installable APK is confirmed.
+## Latest implementation update (2026-11-15)
+
 - Added per-source enable/disable controls to the temporary source catalog screen. Changes are persisted by `FileBookSourceCatalog.setEnabled`; the codec updates only the upstream `enabled` property and retains other JSON fields.
 - Added a codec regression test for toggling the enabled flag while preserving unknown fields and nested search rules. The test is authored but has not been executed.
 - The switch currently controls the catalog's enabled flag only. Search UI, source editing/deletion, and live source execution are not implemented. The temporary screen remains separate from the original Badcat UI.
