@@ -1,11 +1,9 @@
 package app.badcat.engine
 
 /**
- * Runs the currently supported CSS-only search path after the caller supplies
- * a URL rule with any keyword/script substitutions already resolved.
- *
- * Keeping URL scripting outside this service prevents silently sending an
- * unresolved keyword template to a website.
+ * Runs the CSS-only search-result path. Embedded URL expressions are delegated
+ * to the opt-in gateway evaluator, which expands them before URL encoding.
+ * The @js URL form remains unsupported.
  */
 class SourceSearchService(
     private val http: SourceHttpGateway,
@@ -13,18 +11,17 @@ class SourceSearchService(
 ) {
     suspend fun search(
         source: BookSource,
-        resolvedSearchRuleUrl: String,
+        searchRuleUrl: String,
         page: Int? = null,
+        keyword: String = "",
     ): EngineResult<List<BookCandidate>> {
-        if (resolvedSearchRuleUrl.contains("{{") ||
-            resolvedSearchRuleUrl.contains("@js", ignoreCase = true)
-        ) {
+        if (searchRuleUrl.contains("@js", ignoreCase = true)) {
             return EngineResult.Failure(
                 EngineErrorCode.UNSUPPORTED_RULE,
-                "Search URL for source '${source.id}' still contains JavaScript/interpolation",
+                "Search URL for source '${source.id}' uses the unsupported @js form",
             )
         }
-        val response = when (val result = http.execute(source, resolvedSearchRuleUrl, page)) {
+        val response = when (val result = http.execute(source, searchRuleUrl, page, keyword)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
         }
