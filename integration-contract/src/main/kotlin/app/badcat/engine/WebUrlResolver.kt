@@ -7,11 +7,44 @@ object WebUrlResolver {
     fun resolve(baseUrl: String, value: String): String {
         val base = URI(baseUrl)
         require(isWebUri(base) && base.userInfo == null) { "Base URL must be credential-free HTTP(S)" }
-        val resolved = base.resolve(value.trim()).normalize()
+        val reference = URI(value.trim())
+        val resolved = resolveReference(base, reference).normalize()
         require(isWebUri(resolved) && resolved.userInfo == null) {
             "Resolved URL must be credential-free HTTP(S)"
         }
         return resolved.toASCIIString()
+    }
+
+    /**
+     * java.net.URI.resolve treats a query-only reference as a sibling path on
+     * some JDKs. Web pagination links such as ?page=2 must retain the full
+     * current path, replacing only its query component.
+     */
+    private fun resolveReference(base: URI, reference: URI): URI {
+        if (reference.scheme == null && reference.rawAuthority == null &&
+            reference.rawPath.isNullOrEmpty() &&
+            (reference.rawQuery != null || reference.rawFragment != null)
+        ) {
+            val prefix = buildString {
+                append(base.scheme)
+                append("://")
+                append(base.rawAuthority)
+                append(base.rawPath.orEmpty())
+                if (reference.rawQuery != null) {
+                    append('?')
+                    append(reference.rawQuery)
+                } else if (base.rawQuery != null) {
+                    append('?')
+                    append(base.rawQuery)
+                }
+                if (reference.rawFragment != null) {
+                    append('#')
+                    append(reference.rawFragment)
+                }
+            }
+            return URI(prefix)
+        }
+        return base.resolve(reference)
     }
 
     private fun isWebUri(uri: URI): Boolean =
