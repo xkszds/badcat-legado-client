@@ -61,3 +61,26 @@ class OkHttpSourceRequestClientTest {
         assertTrue(secondSourceJar.loadForRequest(url).isEmpty())
     }
 }
+
+
+    @Test
+    fun redirectValidatorAllowsSafeRelativeAndCrossHostHttpsRedirects() {
+        val from = "https://reader.example/book/1".toHttpUrl()
+        assertTrue(isSafeRedirectTarget(from, "../login"))
+        assertTrue(isSafeRedirectTarget(from, "https://cdn.example/book/1"))
+    }
+
+    @Test
+    fun redirectValidatorRejectsCredentialsAndHttpsDowngrades() {
+        val from = "https://reader.example/book/1".toHttpUrl()
+        assertTrue(!isSafeRedirectTarget(from, "https://user:pass@cdn.example/book/1"))
+        assertTrue(!isSafeRedirectTarget(from, "http://reader.example/book/1"))
+        assertTrue(!isSafeRedirectTarget(from, "javascript:alert(1)"))
+        assertTrue(!isSafeRedirectTarget(from, "://invalid"))
+    }
+
+    @Test
+    fun redirectValidatorAllowsHttpToHttpsUpgrade() {
+        val from = "http://reader.example/book/1".toHttpUrl()
+        assertTrue(isSafeRedirectTarget(from, "https://reader.example/book/1"))
+    }
