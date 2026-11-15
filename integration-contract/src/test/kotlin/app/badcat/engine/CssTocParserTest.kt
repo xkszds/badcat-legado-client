@@ -36,7 +36,7 @@ class CssTocParserTest {
 
         assertEquals(listOf("Chapter One", "Chapter Two"), page.chapters.map { it.title })
         assertEquals(
-            listOf("https://reader.example/chapter/1", "https://reader.example/chapter/2"),
+            listOf("https://reader.example/book/1/chapter/1", "https://reader.example/chapter/2"),
             page.chapters.map { it.url },
         )
         assertEquals(listOf("https://reader.example/book/1/catalog?page=2"), page.nextPageUrls)
