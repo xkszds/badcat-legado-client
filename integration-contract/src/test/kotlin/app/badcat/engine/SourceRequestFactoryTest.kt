@@ -97,6 +97,54 @@ class SourceRequestFactoryTest {
     }
 
     @Test
+    fun rejectsOutOfRangeRetryAndTimeoutOptions() {
+        val excessiveRetry = SourceRequestFactory.create(
+            source(),
+            LegadoResolvedUrl(
+                url = "https://reader.example/",
+                retryCount = 6,
+            ),
+        )
+        val excessiveTimeout = SourceRequestFactory.create(
+            source(),
+            LegadoResolvedUrl(
+                url = "https://reader.example/",
+                timeoutMillis = Int.MAX_VALUE.toLong() + 1,
+            ),
+        )
+        val zeroTimeout = SourceRequestFactory.create(
+            source(),
+            LegadoResolvedUrl(
+                url = "https://reader.example/",
+                timeoutMillis = 0,
+            ),
+        )
+
+        listOf(excessiveRetry, excessiveTimeout, zeroTimeout).forEach { result ->
+            assertEquals(
+                EngineErrorCode.INVALID_SOURCE,
+                assertIs<EngineResult.Failure>(result).code,
+            )
+        }
+    }
+
+    @Test
+    fun rejectsUnsupportedResponseCharsetBeforeTransport() {
+        val result = SourceRequestFactory.create(
+            source(),
+            LegadoResolvedUrl(
+                url = "https://reader.example/",
+                charset = "not-a-real-charset",
+            ),
+        )
+
+        assertEquals(
+            EngineErrorCode.INVALID_SOURCE,
+            assertIs<EngineResult.Failure>(result).code,
+        )
+    }
+
+    @Test
     fun rejectsMalformedOrNonStringHeaderValues() {
         val malformed = SourceRequestFactory.create(
             source = source("""{"User-Agent":42}"""),
