@@ -119,4 +119,50 @@ class CssTocParserTest {
         )
     }
 
+
+    @Test
+    fun rejectsMissingChapterUrlRuleInsteadOfUsingTocPageAsChapterUrl() {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"ul.chapters li",
+                "chapterName":"a@text"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/catalog",
+            body = """<ul class="chapters"><li><a href="/chapter/1">Chapter One</a></li></ul>""",
+        )
+
+        val result = CssTocParser().parse(source, response, "https://reader.example/book")
+        assertIs<EngineResult.Failure>(result)
+        assertEquals(EngineErrorCode.UNSUPPORTED_RULE, result.code)
+    }
+
+    @Test
+    fun rejectsChapterItemWithoutResolvableChapterUrl() {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"ul.chapters li",
+                "chapterName":"a@text",
+                "chapterUrl":"a@attr(href)"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/catalog",
+            body = """<ul class="chapters"><li><a>Chapter One</a></li></ul>""",
+        )
+
+        val result = CssTocParser().parse(source, response, "https://reader.example/book")
+        assertIs<EngineResult.Failure>(result)
+        assertEquals(EngineErrorCode.UNSUPPORTED_RULE, result.code)
+    }
+
 }
