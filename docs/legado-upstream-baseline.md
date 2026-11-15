@@ -22,9 +22,11 @@ The pin is immutable. Do not silently move the integration to the upstream defau
 - `:modules:rhino` exposes the HtmlUnit fork of Rhino, coroutines, OkHttp and AndroidX collection.
 - `:modules:book` is a local parsing library; it is not the complete online book-source engine.
 
-## Critical engine boundary
+## Source model and engine boundary
 
-Online book-source execution is in the Legado `:app` layer, not just the two library modules. The upstream application initializes Rhino in its Application startup and the source engine relies on app-level entities, database, HTTP/network helpers, rule models, coroutine context and application globals. The online search/detail/catalog/content pipeline includes app-layer components such as `BookChapterList` and `BookContent`.
+The upstream `BookSource` model uses `bookSourceUrl` and `bookSourceName` as identity fields and includes enabled/type/group metadata, nested search/detail/TOC/content rules, JavaScript libraries, and `mainJs`. This project now has a JSON codec that retains the entire source object instead of dropping unknown nested fields.
+
+Online book-source execution lives in the Legado `:app` layer, not just the two library modules. The upstream application initializes Rhino in its Application startup. The online search/detail/catalog/content pipeline includes app-layer components such as `BookList`, `BookInfo`, `BookChapterList`, `BookContent`, `AnalyzeRule` and `AnalyzeUrl`, and depends on source entities, rule models, HTTP/network helpers, database/cache, coroutine context and app initialization.
 
 Therefore, adding only `:modules:book` and `:modules:rhino` as dependencies would not deliver Legado-compatible online book sources. A valid in-process integration must either:
 1. port the necessary app-layer engine slice together with its real dependencies and initialization, or
@@ -34,4 +36,4 @@ The first option preserves this repository's current host direction but requires
 
 ## Current state
 
-The upstream commit and build versions are recorded. No upstream runtime code has been copied or compiled into this project yet. No engine functionality is claimed complete.
+The upstream commit and build versions are recorded. The source JSON import/export codec is implemented with tests, but no upstream runtime rule engine has been copied or compiled into this project. No engine functionality is claimed complete.
