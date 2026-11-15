@@ -1,5 +1,10 @@
 ## Latest implementation update (2026-11-15)
 
+- Added persistent reader display settings to the development reader: line spacing can be adjusted from 1.0× to 2.0×, and the background can cycle between white/day, warm sepia and dark themes. Text size, line spacing and theme are stored in the existing reader preferences and reapplied when the reader opens.
+- These controls style only the prototype TextView/ScrollView reader. They do not reproduce Badcat's original reader settings panel, system brightness control, page-turn gestures, or per-book profiles. No Gradle compilation, tests, device validation or APK generation is confirmed.
+
+## Latest implementation update (2026-11-15)
+
 - Added per-chapter reading-position persistence to the development reader. The current ScrollView offset is saved when leaving the reader and before chapter navigation; each position is keyed by source ID, book URL and chapter URL using URL-safe Base64, then restored after the newly loaded chapter has been laid out. Switching chapters therefore restores that chapter's own last position rather than reusing the previous chapter's offset.
 - This is scroll-position restoration for the current TextView/ScrollView prototype only. It does not provide paragraph anchors, pagination/page-turn gestures, background/line-spacing/brightness controls, or the original Badcat reading UI. No compilation, tests, device validation or APK generation is confirmed.
 
