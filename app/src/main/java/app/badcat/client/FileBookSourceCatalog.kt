@@ -54,13 +54,10 @@ class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
             }
 
             try {
-                val current = readSources().toMutableList()
-                val positions = current.mapIndexed { index, source -> source.sourceId to index }.toMap()
-                imported.forEach { source ->
-                    val index = positions[source.sourceId]
-                    if (index == null) current.add(source) else current[index] = source
-                }
-                writeSources(current)
+                val merged = LinkedHashMap<String, LegadoBookSource>()
+                readSources().forEach { source -> merged[source.sourceId] = source }
+                imported.forEach { source -> merged[source.sourceId] = source }
+                writeSources(merged.values.toList())
                 EngineResult.Success(imported.size)
             } catch (error: Exception) {
                 EngineResult.Failure(
