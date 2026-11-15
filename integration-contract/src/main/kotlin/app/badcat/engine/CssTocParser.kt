@@ -87,7 +87,11 @@ class CssTocParser {
                 Regex("@(?:href|src|attr\\((?:href|src)\\))$", RegexOption.IGNORE_CASE),
                 "",
             ).trim()
-            val values = Jsoup.parse(response.body, response.finalUrl).select(selector).map { it.attr(attribute) }
+            val values = runCatching {
+                Jsoup.parse(response.body, response.finalUrl).select(selector).map { it.attr(attribute) }
+            }.getOrElse {
+                return unsupported(source, "invalid nextTocUrl selector")
+            }
             for (value in values.filter(String::isNotBlank)) {
                 val url = runCatching { WebUrlResolver.resolve(response.finalUrl, value) }.getOrElse {
                     return unsupported(source, "nextTocUrl must resolve to a credential-free HTTP(S) URL")
