@@ -95,6 +95,21 @@ class CssRuleEvaluatorTest {
     }
 
     @Test
+    fun rejectsMixedNestedCombinationOperatorsInsteadOfTreatingThemAsCss() {
+        val leftNested = CssRuleEvaluator.evaluate(
+            document,
+            "a.title@text && p.intro@text || a.missing@text",
+        )
+        val rightNested = CssRuleEvaluator.evaluate(
+            document,
+            "a.missing@text || p.intro@text && a.title@text",
+        )
+
+        assertIs<EngineResult.Failure>(leftNested)
+        assertIs<EngineResult.Failure>(rightNested)
+    }
+
+    @Test
     fun rejectsUnsupportedSuffixAndMalformedSelector() {
         val unsupported = CssRuleEvaluator.evaluate(document, "a.title@unknown")
         assertIs<EngineResult.Failure>(unsupported)
