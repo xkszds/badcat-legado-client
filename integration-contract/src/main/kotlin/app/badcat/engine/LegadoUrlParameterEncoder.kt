@@ -12,18 +12,18 @@ import java.nio.charset.Charset
 object LegadoUrlParameterEncoder {
 
     private val querySafe = buildSet<Char> {
-        addAll("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
-        addAll("!$%&()*+,/:;=?@[\\]^\u0060{|}")
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~".forEach(::add)
+        "!$%&()*+,/:;=?@[\\]^\u0060{|}".forEach(::add)
     }
 
     private val queryAlreadyEncodedSafe = buildSet<Char> {
-        addAll("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")
-        addAll("!$&()*+,-./:;=?@[\\\\]^_\u0060{|}~")
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".forEach(::add)
+        "!addAll("!$&()*+,-./:;=?@[\\\\]^_\u0060{|}~")()*+,-./:;=?@[\\\\]^_\u0060{|}~".forEach(::add)
     }
 
     private val formAlreadyEncodedSafe = buildSet<Char> {
         addAll("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")
-        addAll("*-._")
+        "*-._".forEach(::add)
     }
 
     /**
