@@ -19,7 +19,7 @@ private val replaceRuleCatalogMutex = Mutex()
  * Durable app-private storage for imported Legado replacement rules.
  *
  * The catalog implements the engine's read contract; literal rules are applied
- * during chapter loading. Unsupported regex and @js execution remain fail-closed.
+ * during chapter loading. JavaScript replacement expressions remain fail-closed.
  */
 class FileReplaceRuleCatalog(context: Context) : LegadoReplaceRuleCatalog {
     private val file = AtomicFile(
