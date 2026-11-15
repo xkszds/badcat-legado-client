@@ -158,4 +158,79 @@ class SourceReadingEngineTest {
         )
         assertEquals(EngineErrorCode.INVALID_SOURCE, failure.code)
     }
+
+    @Test
+    fun completesBookDetailTocAndChapterContentFlowWithOneImportedSource() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleBookInfoJson = """{"name":"h1.title@text","tocUrl":"a.toc@href"}""",
+            ruleTocJson = """{
+                "chapterList":"ul.chapters li",
+                "chapterName":"a@text",
+                "chapterUrl":"a@href"
+            }""",
+            ruleContentJson = """{"content":"div#content"}""",
+        )
+        val requests = mutableListOf<String>()
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                requests += request.url
+                val body = when {
+                    request.url.endsWith("/book/1") ->
+                        """<h1 class="title">Novel</h1><a class="toc" href="/toc">Catalog</a>"""
+                    request.url.endsWith("/toc") ->
+                        """<ul class="chapters"><li><a href="/chapter/1">Chapter One</a></li></ul>"""
+                    request.url.endsWith("/chapter/1") ->
+                        """<div id="content"><p>Readable chapter text.</p></div>"""
+                    else -> error("Unexpected source request: ${request.url}")
+                }
+                return EngineResult.Success(SourceHttpResponse(200, request.url, body = body))
+            }
+        }
+        val gateway = SourceHttpGateway(client)
+        val engine = SourceReadingEngine(
+            catalog = BookSourceCatalog { EngineResult.Success(listOf(source)) },
+            searchUrlResolver = SearchUrlResolver { _, _ ->
+                EngineResult.Failure(EngineErrorCode.UNKNOWN, "Search is not used in this test")
+            },
+            searchService = SourceSearchService(gateway),
+            detailService = SourceBookDetailService(gateway),
+            tocService = SourceTocService(gateway),
+            contentService = SourceChapterContentService(gateway),
+        )
+
+        val detail = assertIs<EngineResult.Success<BookDetail>>(
+            engine.bookDetail("fixture", "https://reader.example/book/1"),
+        ).value
+        assertEquals("Novel", detail.name)
+        assertEquals("https://reader.example/toc", detail.tocUrl)
+
+        val chapters = assertIs<EngineResult.Success<List<BookChapter>>>(
+            engine.chapters("fixture", detail.bookUrl),
+        ).value
+        assertEquals(listOf("Chapter One"), chapters.map { it.title })
+
+        val content = assertIs<EngineResult.Success<ChapterContent>>(
+            engine.chapterContent(
+                "fixture",
+                detail.bookUrl,
+                chapters.single().url,
+                bookName = detail.name,
+            ),
+        ).value
+        assertEquals("Readable chapter text.", content.text)
+
+        assertEquals(
+            listOf(
+                "https://reader.example/book/1",
+                "https://reader.example/book/1",
+                "https://reader.example/toc",
+                "https://reader.example/chapter/1",
+            ),
+            requests,
+        )
+    }
+
 }
