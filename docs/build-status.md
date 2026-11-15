@@ -25,7 +25,7 @@ Last updated: 2026-11-15
 - Added a bounded tokenizer and list-combination evaluator for `&&`, `||` and `%%`, checked against the pinned upstream `RuleAnalyzer` and `AnalyzeByJSoup` behavior. It is wired into the CSS evaluator. Added bounded JSONPath and XPath evaluators using pinned upstream libraries (`json-path` 3.0.0, JsoupXpath 2.5.3, Jsoup 1.23.2), with synthetic tests. These are selector primitives, not the full upstream `AnalyzeRule` pipeline: embedded `{$...}` interpolation, chained rule grammar, regex suffixes, script execution and source-stage orchestration remain unimplemented. Tests are authored but unrun.
 - GitHub Actions has not been confirmed green; no successful CI test or package result is claimed.
 - No APK artifact has been downloaded or installed.
-- The source codec now maps common upstream source configuration (headers, cookie-jar flag, JS library, login/explore/search URLs, main JS and nested rule JSON) into the host contract. Nested rules remain inert JSON: no Legado parser or JavaScript execution runtime is integrated. The codec is still import/export plumbing, not search or parsing execution.
+- The source codec maps common upstream source configuration (headers, cookie-jar flag, JS library, login/explore/search URLs, main JS and nested rule JSON) into the host contract. The new CSS/JSONPath/XPath components are standalone selector primitives; nested source rules are not yet dispatched through them. There is no complete Legado source runtime, JavaScript execution runtime or search/detail/TOC/content orchestration.
 - Original Badcat UI and its real navigation are not yet present in the new Android module.
 - Badcat purification behavior has not yet been ported; only isolated interfaces and contract tests exist.
 - No Gradle wrapper has been committed; CI provisions Gradle 8.14.4.
@@ -34,7 +34,7 @@ Last updated: 2026-11-15
 
 - Expanded `BookSource` host contract to expose frequently used upstream source settings and raw nested rule JSON for explore, search, book info, TOC and content.
 - Extended codec mapping and fixture assertions, including upstream default behavior for the cookie jar.
-- Added explicit host boundaries for HTTP transport, the five separate rule stages (explore/search/book info/TOC/content), and source JavaScript execution. Added a tested request-settings factory that parses static source headers, applies case-insensitive per-request overrides, normalizes the method and carries the cookie-jar flag. This is not a concrete HTTP client: URL interpolation, cookie persistence, redirects, selector parsing, Rhino runtime/bindings, and search/detail/TOC/content orchestration remain unimplemented.
+- Added explicit host boundaries for HTTP transport, the five separate rule stages (explore/search/book info/TOC/content), and source JavaScript execution. Added a tested request-settings factory that parses static source headers, applies case-insensitive per-request overrides, normalizes the method and carries the cookie-jar flag. This is not a concrete HTTP client: URL interpolation, cookie persistence, redirects, Rhino runtime/bindings, and search/detail/TOC/content orchestration remain unimplemented.
 - Tests were edited but have not been executed in this environment; CI has not been confirmed green.
 
 ## Next validation
