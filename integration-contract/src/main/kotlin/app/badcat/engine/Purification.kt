@@ -13,8 +13,18 @@ fun interface BookTextReplacement {
  * The origin is the selected book-source URL; the title is supplied by the
  * caller so title-scoped rules are not guessed from a URL.
  */
+data class ReplacedChapterContent(
+    val title: String,
+    val text: String,
+)
+
 fun interface ScopedBookTextReplacement {
-    suspend fun replace(chapterText: String, bookName: String, bookOrigin: String): String
+    suspend fun replace(
+        chapterTitle: String,
+        chapterText: String,
+        bookName: String,
+        bookOrigin: String,
+    ): ReplacedChapterContent
 }
 
 fun interface PageAdFilter {
