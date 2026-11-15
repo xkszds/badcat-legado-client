@@ -57,6 +57,31 @@ class CssChapterContentParserTest {
     }
 
     @Test
+    fun rejectsMalformedNextContentUrlSelectorWithoutThrowing() {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleContentJson = """{"content":"article","nextContentUrl":"["}""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/chapter",
+            body = "<article>Readable body</article>",
+        )
+
+        val failure = assertIs<EngineResult.Failure>(
+            CssChapterContentParser().parse(
+                source,
+                response,
+                BookChapter(0, "Chapter", response.finalUrl),
+            ),
+        )
+
+        assertEquals(EngineErrorCode.UNSUPPORTED_RULE, failure.code)
+    }
+
+    @Test
     fun usesChapterTitleWhenNoTitleRuleExists() {
         val source = BookSource(
             id = "fixture",
