@@ -4,6 +4,10 @@ Last updated: 2026-11-15
 
 ## Latest implementation update
 
+- Added a deterministic Legado URL resolver based on the pinned upstream `AnalyzeUrl.kt`: relative URL resolution, numbered page-list tokens such as `<1,2,3>`, and static JSON URL options for method, headers, body, timeout, redirect policy, retry count, charset and DNS IP fields.
+- Added resolver tests for relative/page URL handling, static POST options, malformed option JSON and explicit rejection of script-bearing URL rules.
+- Important boundary: parsed timeout/redirect/retry/charset/DNS metadata is currently returned as a typed result but is not yet wired into the OkHttp transport. JavaScript URL templates (`{{...}}`, `@js`), `js`, `bodyJs` and WebView options are explicitly rejected until the pinned Rhino/WebView runtime exists; they are not sent as literal URL text.
+
 - Added `OkHttpSourceRequestClient` using the pinned Legado baseline OkHttp 5.4.0.
 - HTTP requests now support static source/request headers, GET/HEAD and body-bearing methods, redirect following, final URL/status/headers/content type/body capture, configurable connect/read/write timeouts, and an 8 MiB default response limit.
 - Added an in-memory cookie jar isolated by source ID. It respects cookie domain/path/secure/expiry matching; the existing per-source `enabledCookieJar` flag disables cookie storage and sending for that request.
@@ -46,7 +50,7 @@ Last updated: 2026-11-15
 
 ## Next engineering steps
 
-1. Add request URL templating and request option parsing based on the pinned upstream source model.
+1. Wire resolved URL option metadata into the OkHttp request client, including timeout/redirect/body/header handling; then add the pinned Rhino runtime before enabling JavaScript URL templates.
 2. Implement the actual Legado rule mode parser, replacement pipeline and safe Rhino initialization/bindings.
 3. Build the end-to-end search, book-detail, TOC and chapter-content flow on top of the transport and rule runtime.
 4. Port original Badcat UI/navigation and purification behavior without changing its established interaction structure.
