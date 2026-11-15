@@ -83,4 +83,23 @@ class RhinoLegadoJsReplacementEvaluatorTest {
         }
     }
 
+
+    @Test
+    fun blocksJavaRuntimeClassAccess() {
+        val session = RhinoLegadoJsReplacementEvaluator().createSession("class shutter fixture")
+
+        assertThrows(UnsupportedOperationException::class.java) {
+            session.evaluate("Packages.java.lang.Runtime.getRuntime()", context())
+        }
+    }
+
+    @Test
+    fun doesNotShareHelperStateAcrossRuleSessions() {
+        val first = RhinoLegadoJsReplacementEvaluator().createSession("first rule")
+        val second = RhinoLegadoJsReplacementEvaluator().createSession("second rule")
+
+        first.evaluate("java.put('privateKey', 'first-only')", context())
+        assertEquals("", second.evaluate("java.get('privateKey')", context()))
+    }
+
 }
