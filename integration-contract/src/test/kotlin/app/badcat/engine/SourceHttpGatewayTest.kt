@@ -63,7 +63,7 @@ class SourceHttpGatewayTest {
     @Test
     fun expandsKeyBeforeUriEncodingAndRequestExecution() {
         val client = RecordingClient()
-        val evaluator = LegadoEmbeddedScriptEvaluator { script, key ->
+        val evaluator = LegadoEmbeddedScriptEvaluator { script, key, _ ->
             assertEquals("key", script)
             EngineResult.Success(key)
         }
@@ -81,10 +81,10 @@ class SourceHttpGatewayTest {
         val gateway = SourceHttpGateway(
             client = client,
             embeddedScriptEvaluatorProvider = { currentSource ->
-                LegadoEmbeddedScriptEvaluator { script, key ->
+                LegadoEmbeddedScriptEvaluator { script, key, page ->
                     assertEquals("key", script)
                     seenSourceIds += currentSource.id
-                    EngineResult.Success("${currentSource.id}-$key")
+                    EngineResult.Success("${currentSource.id}-$key-$page")
                 }
             },
         )
@@ -103,7 +103,7 @@ class SourceHttpGatewayTest {
     @Test
     fun templateEvaluationFailureNeverReachesTransport() {
         val client = RecordingClient()
-        val evaluator = LegadoEmbeddedScriptEvaluator { _, _ ->
+        val evaluator = LegadoEmbeddedScriptEvaluator { _, _, _ ->
             EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "blocked")
         }
         val result = kotlinx.coroutines.runBlocking {
