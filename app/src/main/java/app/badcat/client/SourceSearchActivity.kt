@@ -123,7 +123,7 @@ class SourceSearchActivity : Activity() {
                     is EngineResult.Failure -> failures.add("${source.name}：${result.message}")
                 }
             }
-            val unique = collected.distinctBy { "${it.sourceId}|\${it.bookUrl}" }
+            val unique = collected.distinctBy { "${it.sourceId}|${it.bookUrl}" }
             mainHandler.post {
                 searchButton.isEnabled = true
                 showResults(unique, failures)
