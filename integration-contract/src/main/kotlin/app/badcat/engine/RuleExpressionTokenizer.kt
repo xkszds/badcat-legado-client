@@ -1,14 +1,10 @@
 package app.badcat.engine
 
 /**
- * Lexical groundwork for Legado's rule-combination operators.
- *
- * Splits only when the delimiter is outside quoted strings and balanced
- * (), [] and {} groups. This prevents operators embedded in CSS attribute
- * values, function arguments or script/object literals from being mistaken
- * for top-level separators.
- *
- * This class tokenizes rule operators; evaluation behavior lives separately.
+ * Bounded port of the delimiter-scanning part of Legado's RuleAnalyzer.
+ * Rule separators inside XPath/CSS bracket or parenthesis groups and quoted
+ * strings are ignored. Embedded JS/JSON rule expansion is a separate phase
+ * in upstream and is intentionally not handled here.
  */
 data class RuleExpressionParts(
     val operator: String?,
@@ -19,7 +15,6 @@ object RuleExpressionTokenizer {
 
     private val supportedDelimiters = setOf("&&", "||", "%%")
 
-    /** Matches the upstream first-operator choice, then splits on that operator. */
     fun splitByFirstTopLevelOperator(expression: String): RuleExpressionParts {
         val candidates = supportedDelimiters.mapNotNull { delimiter ->
             val parts = splitTopLevel(expression, delimiter)
@@ -38,7 +33,6 @@ object RuleExpressionTokenizer {
         val parts = mutableListOf<String>()
         val stack = ArrayDeque<Char>()
         var quote: Char? = null
-        var escaped = false
         var start = 0
         var index = 0
 
@@ -46,11 +40,7 @@ object RuleExpressionTokenizer {
             val char = expression[index]
 
             if (quote != null) {
-                when {
-                    escaped -> escaped = false
-                    char == '\\' -> escaped = true
-                    char == quote -> quote = null
-                }
+                if (char == quote) quote = null
                 index++
                 continue
             }
@@ -60,16 +50,17 @@ object RuleExpressionTokenizer {
                     quote = char
                     index++
                 }
-                char == '(' || char == '[' || char == '{' -> {
+                char == '\\' -> {
+                    // RuleAnalyzer treats an escape outside a quoted string
+                    // as escaping the following character.
+                    index = (index + 2).coerceAtMost(expression.length)
+                }
+                char == '(' || char == '[' -> {
                     stack.addLast(char)
                     index++
                 }
-                char == ')' || char == ']' || char == '}' -> {
-                    val expected = when (char) {
-                        ')' -> '('
-                        ']' -> '['
-                        else -> '{'
-                    }
+                char == ')' || char == ']' -> {
+                    val expected = if (char == ')') '(' else '['
                     require(stack.isNotEmpty() && stack.removeLast() == expected) {
                         "Unbalanced rule expression near index $index"
                     }
