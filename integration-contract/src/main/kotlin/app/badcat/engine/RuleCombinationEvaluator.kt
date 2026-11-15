@@ -6,12 +6,12 @@ package app.badcat.engine
  */
 object RuleCombinationEvaluator {
 
-    fun hasNestedTopLevelOperator(expression: String): Boolean {
+    fun hasNestedTopLevelOperator(expression: String): Boolean = runCatching {
         val outer = RuleExpressionTokenizer.splitByFirstTopLevelOperator(expression)
-        return outer.operator != null && outer.rules.any { part ->
+        outer.operator != null && outer.rules.any { part ->
             RuleExpressionTokenizer.splitByFirstTopLevelOperator(part).operator != null
         }
-    }
+    }.getOrDefault(false)
 
     fun <T> evaluate(
         expression: String,
