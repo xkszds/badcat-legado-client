@@ -4,6 +4,8 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import java.nio.ByteBuffer
+import java.nio.charset.CodingErrorAction
 
 /**
  * Legado ReplaceRule JSON adapter. Unknown JSON fields are retained verbatim
@@ -44,6 +46,18 @@ data class LegadoReplaceRuleRecord(
 object LegadoReplaceRuleCodec {
     const val DEFAULT_TIMEOUT_MILLISECOND = 3000L
     const val MAX_IMPORT_BYTES = 5 * 1024 * 1024
+
+    /** Decode imported UTF-8 strictly; malformed byte sequences must not be silently replaced. */
+    fun decodeUtf8(bytes: ByteArray): List<LegadoReplaceRuleRecord> {
+        require(bytes.size <= MAX_IMPORT_BYTES) {
+            "Replace-rule JSON exceeds the 5 MiB import limit"
+        }
+        val decoder = Charsets.UTF_8.newDecoder()
+            .onMalformedInput(CodingErrorAction.REPORT)
+            .onUnmappableCharacter(CodingErrorAction.REPORT)
+        val json = decoder.decode(ByteBuffer.wrap(bytes)).toString()
+        return decode(json)
+    }
 
     fun decode(json: String): List<LegadoReplaceRuleRecord> {
         require(json.toByteArray(Charsets.UTF_8).size <= MAX_IMPORT_BYTES) {
