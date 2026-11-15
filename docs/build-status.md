@@ -1,5 +1,10 @@
 ## Latest implementation update (2026-11-15)
 
+- Expanded `LegadoUrlResolverTest` with regression cases for the `@js` URL form and the `js`, `bodyJs` and `webView` request options. Each case asserts an explicit `UNSUPPORTED_RULE` result, guarding against accidentally forwarding script-bearing source rules as ordinary URLs.
+- These are authored regression tests only; no local Gradle installation/wrapper is available in this environment, so they have not been executed. No build, CI run, device test or APK is confirmed.
+
+## Latest implementation update (2026-11-15)
+
 - Centralized the enabled-source gate in `SourceReadingEngine.findSource`, so disabled sources are rejected consistently for search, book-detail, TOC and chapter-content operations rather than relying only on the HTTP gateway. Search still rejects blank keywords and blank resolved URLs before requesting.
 - Added a regression test that verifies a disabled source cannot enter the book-detail request path; the existing search test verifies the URL resolver is not called for a disabled source. Tests are authored, not executed.
 - Reviewed the pinned Legado Rhino artifact metadata: upstream uses an HtmlUnit Rhino fork (`org.htmlunit:htmlunit-core-js:5.3.0-legado.4`) plus Legado-specific context, bindings, class shutter and execution guards. Adding only the Maven artifact would not reproduce those safety/runtime semantics, so JavaScript URL evaluation remains disabled instead of introducing an unreviewed permissive script engine.
