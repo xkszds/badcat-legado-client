@@ -1,5 +1,10 @@
 ## Latest implementation update (2026-11-15)
 
+- Added per-chapter reading-position persistence to the development reader. The current ScrollView offset is saved when leaving the reader and before chapter navigation; each position is keyed by source ID, book URL and chapter URL using URL-safe Base64, then restored after the newly loaded chapter has been laid out. Switching chapters therefore restores that chapter's own last position rather than reusing the previous chapter's offset.
+- This is scroll-position restoration for the current TextView/ScrollView prototype only. It does not provide paragraph anchors, pagination/page-turn gestures, background/line-spacing/brightness controls, or the original Badcat reading UI. No compilation, tests, device validation or APK generation is confirmed.
+
+## Latest implementation update (2026-11-15)
+
 - Extended the development reader with TOC-based previous/next chapter navigation, persistent last-read chapter URL, a book-detail `继续上次阅读` entry, and adjustable 14–32sp text size persisted across sessions. Progress keys use URL-safe Base64 of the source ID and book URL to avoid ordinary hash collisions. Chapter navigation is only available when the current chapter URL matches an entry in the fetched TOC.
 - The reader still uses a plain selectable `TextView` in a `ScrollView`; it does not yet preserve intra-chapter scroll position, implement swipe/page-turn gestures, or match Badcat's original reading UI. Reading progress is chapter-level only.
 - Changes are source edits only. No Gradle compilation, automated test run, device validation, or APK generation is confirmed.
