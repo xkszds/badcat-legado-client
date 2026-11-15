@@ -5,19 +5,12 @@ fun interface BookSourceCatalog {
     suspend fun all(): EngineResult<List<BookSource>>
 }
 
-/**
- * Resolves only the source's search URL rule. The implementation must explicitly
- * handle supported keyword interpolation and reject JavaScript it cannot run.
- */
+/** Resolves the source search URL, rejecting script behavior it cannot execute. */
 fun interface SearchUrlResolver {
     suspend fun resolve(source: BookSource, keyword: String): EngineResult<String>
 }
 
-/**
- * Concrete orchestration adapter for the existing ReadingEngine contract.
- * Storage and search-URL interpolation stay injectable; transport and CSS
- * parsing are supplied by the services below.
- */
+/** Orchestrates the supported source services behind the existing ReadingEngine contract. */
 class SourceReadingEngine(
     private val catalog: BookSourceCatalog,
     private val searchUrlResolver: SearchUrlResolver,
@@ -29,11 +22,11 @@ class SourceReadingEngine(
 
     override suspend fun sources(): EngineResult<List<BookSource>> = catalog.all()
 
-    override suspend fun search(
-        sourceId: String,
-        keyword: String,
-    ): EngineResult<List<BookCandidate>> {
-        val source = when (val result = findSource(sourceId)) {\n            is EngineResult.Failure -> return result\n            is EngineResult.Success -> result.value\n        }
+    override suspend fun search(sourceId: String, keyword: String): EngineResult<List<BookCandidate>> {
+        val source = when (val result = findSource(sourceId)) {
+            is EngineResult.Failure -> return result
+            is EngineResult.Success -> result.value
+        }
         val url = when (val result = searchUrlResolver.resolve(source, keyword)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
@@ -41,10 +34,7 @@ class SourceReadingEngine(
         return searchService.search(source, url)
     }
 
-    override suspend fun bookDetail(
-        sourceId: String,
-        bookUrl: String,
-    ): EngineResult<BookDetail> {
+    override suspend fun bookDetail(sourceId: String, bookUrl: String): EngineResult<BookDetail> {
         val source = when (val result = findSource(sourceId)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
@@ -52,10 +42,7 @@ class SourceReadingEngine(
         return detailService.load(source, bookUrl)
     }
 
-    override suspend fun chapters(
-        sourceId: String,
-        bookUrl: String,
-    ): EngineResult<List<BookChapter>> {
+    override suspend fun chapters(sourceId: String, bookUrl: String): EngineResult<List<BookChapter>> {
         val source = when (val result = findSource(sourceId)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
