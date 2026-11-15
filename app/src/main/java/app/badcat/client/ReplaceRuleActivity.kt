@@ -129,9 +129,17 @@ class ReplaceRuleActivity : Activity() {
         worker.execute {
             val result = try {
                 val bytes = contentResolver.openInputStream(uri)?.use { input ->
-                    input.readBytes().also { require(it.size <= MAX_IMPORT_BYTES) {
-                        "规则文件不能超过 5 MB"
-                    } }
+                    val output = java.io.ByteArrayOutputStream()
+                    val buffer = ByteArray(8 * 1024)
+                    var total = 0
+                    while (true) {
+                        val count = input.read(buffer)
+                        if (count < 0) break
+                        total += count
+                        require(total <= MAX_IMPORT_BYTES) { "规则文件不能超过 5 MB" }
+                        output.write(buffer, 0, count)
+                    }
+                    output.toByteArray()
                 } ?: error("无法打开所选文件")
                 runBlocking { catalog.importJson(bytes.toString(Charsets.UTF_8)) }
             } catch (error: Exception) {
