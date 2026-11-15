@@ -1,0 +1,80 @@
+# Badcat UI reconstruction map
+
+## Purpose and fidelity rule
+
+The enhanced client must keep Badcat 1.5.0.5 as the host experience. Legado is an engine/data provider behind adapters; it must not dictate a new navigation model. Do not replace the original page hierarchy with generic development screens as the final UI.
+
+The original APK remains an immutable, read-only reference. This document records resource/class evidence and visual requirements; it does not claim that the proprietary UI source code has been recovered or that any current screen has visual parity.
+
+## Verified reference inventory
+
+The original APK inspection records identify these key layouts:
+
+| User-facing area | Original resource | Integration responsibility |
+|---|---|---|
+| Main shell and bottom navigation | `res/layout/activity_main.xml` | Keep the four-tab host navigation and its custom bottom toolbar |
+| Home | `res/layout/fragment_home.xml` | Preserve home content structure and entry points |
+| Search home | `res/layout/fragment_search.xml` | Keep search category tabs, search input, quick entries and navigation |
+| Search input | `res/layout/activity_search.xml` | Retain the original search entry flow |
+| Search results | `res/layout/activity_search_result.xml` | Keep filter/type control, keyword bar, source tabs and result list; replace data provider behind the view model |
+| Book detail | `res/layout/activity_book_detail.xml` | Preserve detail presentation, favorite and “go read” actions |
+| Chapter list | `res/layout/activity_chapter_lsit.xml`, `frag_chapterlist_catalog.xml`, `item_chapter_list.xml` | Adapt Legado chapters into the original catalog view |
+| Favorites / shelf | `res/layout/activity_favorites.xml`, `activity_favorites_folder.xml` | Preserve shelf grouping, folders and book-card presentation |
+| Reader | `res/layout/activity_base_read.xml` | Keep original reader host and its toolbar/drawer interaction where legally and technically possible |
+| Reader settings | `res/layout/activity_read_setting.xml` | Map new engine settings without changing existing setting semantics |
+
+Related class evidence includes `MainActivity`, `SearchActivity`, `SearchResultActivity`, `BookDetailActivity`, `ChapterListActivity`, `BaseReadActivity`, `GenuineBookReadView`, `LocalBookReadView` and `ReadConfig`. These names and resources are static evidence only; behavior must be verified against the reference screens and available code paths.
+
+## Visual reference requirements
+
+The four uploaded reference-screen descriptions establish these baselines:
+
+1. **Reader:** warm beige background, dark large reading text, top reader toolbar, bottom chapter progress and catalog/source-switch/brightness/settings actions.
+2. **Favorites:** white background, top filter/work/book-sticker area, grouped shelf-card grid, bottom navigation for search/favorites/cat-space/profile.
+3. **Search home:** blue cat-themed header, novel/comic/all category switch, rounded search field, shortcut entries and four-item bottom navigation.
+4. **Search results:** back action, type dropdown, keyword field, search button and multiple source tabs.
+
+Treat exact colors, spacing, icon assets, typography and control states as values to measure from the actual reference images/resources before implementing them. Do not invent a “close enough” redesign and call it parity.
+
+## Integration sequence
+
+### UI shell first
+
+1. Rebuild the main shell and bottom navigation.
+2. Rebuild the search-home and search-results screens with fixture data.
+3. Rebuild book detail and chapter catalog with fixture data.
+4. Rebuild the favorites shelf and folder presentation.
+5. Integrate the Legado adapter into the existing view models without moving controls or changing navigation.
+6. Replace the temporary development launcher only after these screens have screenshot-based regression coverage.
+
+### Reader compatibility
+
+1. Keep online and local reader paths distinct until their data contracts are proven compatible.
+2. Map Legado chapter content into the original reader's content model.
+3. Preserve font size, line spacing, font, background, night/eye-care mode, brightness, orientation, auto-scroll, listening speed and page-turn preferences.
+4. Keep chapter navigation, catalog drawer, source switching, progress and bookmarks in the original interaction flow.
+5. Add new engine controls only as additive settings; do not overwrite existing preference keys.
+
+### Regression gates
+
+- Screenshot comparisons for all four reference screens and each major state (normal, selected, empty, loading, error).
+- Navigation tests for home → search → results → detail → catalog → reader and favorites → reader.
+- Reader tests for previous/next chapter, catalog drawer, progress restore, bookmarks, text settings and theme settings.
+- Verify that unsupported Legado rule behavior is reported explicitly and does not crash or silently return misleading content.
+- Test on a physical Android device before claiming runtime or visual parity.
+
+## Current implementation status
+
+- CI debug APK packaging: verified on GitHub Actions run #43707974288.
+- Temporary Android launcher and development-only source screens: present.
+- Original Badcat UI layouts/views wired into the new app: not yet implemented.
+- Screenshot parity, original reader integration, and physical-device regression: not yet verified.
+- Full Legado `AnalyzeRule` / `AnalyzeUrl` runtime: not yet implemented.
+
+## Evidence and safety boundaries
+
+- APK layout/class inventories and the four-screen visual description are recorded in the project research notes.
+- Static class names, layout names and DEX strings do not prove full runtime semantics.
+- Do not remove original native libraries or protection-related components based solely on names. Do not bypass signatures, integrity checks or access controls.
+- Do not claim an APK can replace the installed original app. A separately signed test build needs an isolated package identity/device and must not overwrite user data.
+- Preserve the original APK and research inputs unchanged.
