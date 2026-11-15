@@ -1,6 +1,6 @@
 ## Latest implementation update (2026-11-15)
 
-- Added isolated `LegadoEmbeddedUrlTemplate` and injected `LegadoEmbeddedScriptEvaluator` contracts. The helper processes complete `{{...}}` segments in order, passes only the search key, mirrors upstream null/string/integral-Double conversion and empty-result behavior, leaves unmatched opening markers literal, and propagates evaluation failures without returning a partial URL.
+- Added isolated `LegadoEmbeddedUrlTemplate` and injected `LegadoEmbeddedScriptEvaluator` contracts. The helper processes complete `{{...}}` segments in order, passes only the search key, mirrors upstream null/string/integral-Double conversion and preserves surrounding literal text when an expression returns empty, leaves unmatched opening markers literal, and propagates evaluation failures without returning a partial URL.
 - Added regression tests for multiple expressions, Unicode key input, null and integral numeric conversion, unmatched markers, and script failure. Tests are authored but not executed.
 - Deliberately did not wire this helper into `LegadoUrlResolver` or search: upstream query/form encoding and already-encoded detection are not implemented yet. Existing script-bearing URLs continue to fail closed. No Gradle build, test run, CI, device validation, or APK is confirmed.
 
