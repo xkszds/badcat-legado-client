@@ -99,6 +99,7 @@ object LegadoBookSourceCodec {
     }
 
     private fun decodeObject(source: JsonObject, index: Int): LegadoBookSource {
+        validateKnownFieldTypes(source, index)
         val sourceId = source.stringOrNull("bookSourceUrl")
             ?.takeIf(String::isNotBlank)
             ?: throw IllegalArgumentException("Book source at index $index has no bookSourceUrl")
@@ -127,6 +128,32 @@ object LegadoBookSourceCodec {
             ruleContentJson = source.objectOrNull("ruleContent"),
             rawJson = source.toString(),
         )
+    }
+
+    private fun validateKnownFieldTypes(source: JsonObject, index: Int) {
+        val stringFields = listOf(
+            "bookSourceUrl", "bookSourceName", "bookSourceGroup", "header",
+            "jsLib", "loginUrl", "exploreUrl", "searchUrl", "mainJs",
+        )
+        stringFields.forEach { key ->
+            val value = source.get(key) ?: return@forEach
+            require(value.isJsonNull || (value.isJsonPrimitive && value.asJsonPrimitive.isString)) {
+                "Book source at index $index has a non-string '$key' field"
+            }
+        }
+        listOf("enabled", "enabledExplore", "enabledCookieJar").forEach { key ->
+            val value = source.get(key) ?: return@forEach
+            require(value.isJsonNull || (value.isJsonPrimitive && value.asJsonPrimitive.isBoolean)) {
+                "Book source at index $index has a non-boolean '$key' field"
+            }
+        }
+        source.get("bookSourceType")?.let { value ->
+            require(value.isJsonPrimitive && value.asJsonPrimitive.isNumber &&
+                runCatching { value.asInt }.isSuccess
+            ) {
+                "Book source at index $index has an invalid 'bookSourceType' field"
+            }
+        }
     }
 
     private fun JsonObject.stringOrNull(key: String): String? {
