@@ -1,19 +1,19 @@
 package app.badcat.engine
 
 /**
- * Executes the supported static subset of a book-source URL rule end to end:
- * resolve URL/options -> merge source headers -> perform HTTP request.
- *
- * This is a transport gateway, not a complete Legado rule engine. It does not
- * evaluate URL JavaScript, parse result documents, or run stage selectors.
+ * Executes the bounded URL-template subset before static URL parsing and
+ * request parameter encoding. Script evaluation is opt-in; the default remains
+ * fail-closed when a URL contains embedded JavaScript.
  */
 class SourceHttpGateway(
     private val client: SourceRequestClient,
+    private val embeddedScriptEvaluator: LegadoEmbeddedScriptEvaluator? = null,
 ) {
     suspend fun execute(
         source: BookSource,
         ruleUrl: String,
         page: Int? = null,
+        key: String = "",
     ): EngineResult<SourceHttpResponse> {
         if (!source.enabled) {
             return EngineResult.Failure(
@@ -22,9 +22,22 @@ class SourceHttpGateway(
             )
         }
 
+        val expandedRuleUrl = if (ruleUrl.contains("{{") && embeddedScriptEvaluator != null) {
+            when (val result = LegadoEmbeddedUrlTemplate.resolve(
+                template = ruleUrl,
+                key = key,
+                evaluator = embeddedScriptEvaluator,
+            )) {
+                is EngineResult.Success -> result.value
+                is EngineResult.Failure -> return result
+            }
+        } else {
+            ruleUrl
+        }
+
         val resolved = when (val result = LegadoUrlResolver.resolve(
             baseUrl = source.baseUrl,
-            ruleUrl = ruleUrl,
+            ruleUrl = expandedRuleUrl,
             page = page,
         )) {
             is EngineResult.Success -> result.value
