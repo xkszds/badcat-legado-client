@@ -1,3 +1,11 @@
+
+## Latest implementation update (2026-11-15)
+
+- Hardened Legado book-source JSON import and local persistence: strict UTF-8 decoding, a 5 MiB limit measured in encoded bytes, chunked document reads, and matching bounds on local catalog reads/writes. Added regression coverage for malformed UTF-8, multibyte Chinese input and oversize documents.
+- CI passed with Debug APK artifacts for commits `818047a7`, `1e4a660a` and `32604f47`. Runs for `c17501f6`, `cf85c715` and `cd227524` have also produced Debug APK artifacts; their GitHub Actions cleanup steps were still running at last inspection.
+- Extended the CSS extraction subset with `@ownText` and `@tag`, with regression tests authored in commits `c41b6d55` and `b15c95a4`. Those newest selector changes still require CI confirmation.
+- These are source-level and CI build checks only. No real device install/acceptance, full Legado AnalyzeRule runtime, original Badcat UI restoration, or original Badcat purification parity is claimed.
+
 ## Latest CI diagnosis (2026-11-15)
 
 - Inspected the failed GitHub Actions job logs for run `43705149699`. The job failed during `android-actions/setup-android@v3`: that action invoked `sdkmanager tools`, and the current Android SDK repository reports `Failed to find package 'tools'`. The Gradle setup, contract tests, Rhino artifact preflight and APK assembly were all skipped; this run says nothing yet about whether the Rhino JAR is present.
