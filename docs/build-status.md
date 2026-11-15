@@ -311,3 +311,14 @@ Last updated: 2026-11-15
 3. Build the end-to-end search, book-detail, TOC and chapter-content flow on top of the transport and rule runtime.
 4. Port original Badcat UI/navigation and purification behavior without changing its established interaction structure.
 5. Run CI, fix compiler/test failures, then produce and install a candidate APK for device validation.
+
+
+## Latest verified build (2026-11-15)
+
+- Workflow run: [#43719899764](https://github.com/xkszds/badcat-legado-client/actions/runs/43719899764)
+- Commit: `a89b7d494f16b7b7d587f95e649dc711a9f3aa96`
+- Contract unit tests: passed (including the large-timeout regex regression).
+- Bounded Rhino replacement host tests: passed.
+- Android debug APK assembly: passed.
+- Artifact upload: passed; `badcat-legado-debug`, 4,714,869 bytes (artifact expires 2026-11-29).
+- Physical-device installation, live source compatibility, original Badcat UI parity, original purification parity and release signing: not verified/completed.
