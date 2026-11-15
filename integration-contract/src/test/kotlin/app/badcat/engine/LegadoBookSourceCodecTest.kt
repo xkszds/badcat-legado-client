@@ -29,6 +29,10 @@ class LegadoBookSourceCodecTest {
         assertFailsWith<IllegalArgumentException> {
             LegadoBookSourceCodec.decode(" ".repeat(LegadoBookSourceCodec.MAX_IMPORT_BYTES + 1))
         }
+        // Character count is below 5 MiB, but UTF-8 byte count is above it.
+        assertFailsWith<IllegalArgumentException> {
+            LegadoBookSourceCodec.decode("雪".repeat(LegadoBookSourceCodec.MAX_IMPORT_BYTES / 2))
+        }
     }
 
     @Test
