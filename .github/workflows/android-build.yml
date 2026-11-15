@@ -50,9 +50,10 @@ jobs:
         run: |
           upstream_commit="330e606c4d57e08adc056ff8ab7a4132c784da9"
           artifact="third_party/maven/org/htmlunit/htmlunit-core-js/5.3.0-legado.4/htmlunit-core-js-5.3.0-legado.4.jar"
-          git fetch --no-tags https://github.com/LegadoTeam/legado.git "$upstream_commit"
           mkdir -p "$(dirname "$artifact")"
-          git show "FETCH_HEAD:$artifact" > "$artifact"
+          curl --fail --location --retry 3 --retry-delay 2 \
+            "https://raw.githubusercontent.com/LegadoTeam/legado/$upstream_commit/$artifact" \
+            --output "$artifact"
 
       - name: Verify pinned Legado Rhino artifact
         run: |
