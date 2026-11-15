@@ -6,44 +6,30 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class SourceHttpGatewayTest {
-
     private class RecordingClient : SourceRequestClient {
         var captured: SourceHttpRequest? = null
-
         override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
             captured = request
-            return EngineResult.Success(
-                SourceHttpResponse(
-                    statusCode = 200,
-                    finalUrl = request.url,
-                    body = "<html>ok</html>",
-                ),
-            )
+            return EngineResult.Success(SourceHttpResponse(200, request.url, body = "<html>ok</html>"))
         }
     }
 
     private fun source(enabled: Boolean = true) = BookSource(
-        id = "fixture-source",
-        name = "Fixture",
-        baseUrl = "https://reader.example/",
-        enabled = enabled,
-        header = """{"User-Agent":"BadcatFixture"}""",
+        id = "fixture-source", name = "Fixture", baseUrl = "https://reader.example/",
+        enabled = enabled, header = """{"User-Agent":"BadcatFixture"}""",
         searchUrl = "/search?q={{key}}",
     )
 
     @Test
     fun resolvesPageAndOptionsThenExecutesTransportRequest() {
         val client = RecordingClient()
-        val gateway = SourceHttpGateway(client)
-
         val result = kotlinx.coroutines.runBlocking {
-            gateway.execute(
+            SourceHttpGateway(client).execute(
                 source(),
                 "/search?page=<1,2,3>,{\"method\":\"POST\",\"headers\":{\"X-Test\":\"yes\"},\"body\":\"q=cat\"}",
                 page = 2,
             )
         }
-
         val response = assertIs<EngineResult.Success<SourceHttpResponse>>(result).value
         val request = requireNotNull(client.captured)
         assertEquals(200, response.statusCode)
@@ -60,19 +46,44 @@ class SourceHttpGatewayTest {
         val result = kotlinx.coroutines.runBlocking {
             SourceHttpGateway(client).execute(source(enabled = false), "/search")
         }
-
         assertIs<EngineResult.Failure>(result)
         assertTrue(client.captured == null)
     }
 
     @Test
-    fun unsupportedScriptRuleDoesNotReachTransport() {
+    fun unsupportedScriptRuleDoesNotReachTransportWithoutOptInEvaluator() {
         val client = RecordingClient()
         val result = kotlinx.coroutines.runBlocking {
-            SourceHttpGateway(client).execute(source(), "/search?key={{java.getKey()}}")
+            SourceHttpGateway(client).execute(source(), "/search?key={{key}}", key = "cat")
         }
-
         assertIs<EngineResult.Failure>(result)
+        assertTrue(client.captured == null)
+    }
+
+    @Test
+    fun expandsKeyBeforeUriEncodingAndRequestExecution() {
+        val client = RecordingClient()
+        val evaluator = LegadoEmbeddedScriptEvaluator { script, key ->
+            assertEquals("key", script)
+            EngineResult.Success(key)
+        }
+        val result = kotlinx.coroutines.runBlocking {
+            SourceHttpGateway(client, evaluator).execute(source(), "/search?q={{key}}", key = "雪 猫")
+        }
+        assertIs<EngineResult.Success<SourceHttpResponse>>(result)
+        assertEquals("https://reader.example/search?q=%E9%9B%AA%20%E7%8C%AB", requireNotNull(client.captured).url)
+    }
+
+    @Test
+    fun templateEvaluationFailureNeverReachesTransport() {
+        val client = RecordingClient()
+        val evaluator = LegadoEmbeddedScriptEvaluator { _, _ ->
+            EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "blocked")
+        }
+        val result = kotlinx.coroutines.runBlocking {
+            SourceHttpGateway(client, evaluator).execute(source(), "/search?q={{key}}", key = "cat")
+        }
+        assertEquals(EngineErrorCode.UNSUPPORTED_RULE, assertIs<EngineResult.Failure>(result).code)
         assertTrue(client.captured == null)
     }
 }
