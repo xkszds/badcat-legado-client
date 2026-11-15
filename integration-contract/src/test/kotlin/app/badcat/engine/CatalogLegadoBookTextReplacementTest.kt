@@ -97,13 +97,16 @@ class CatalogLegadoBookTextReplacementTest {
             override suspend fun all(): EngineResult<List<LegadoReplaceRuleRecord>> =
                 EngineResult.Success(imported)
         }
-        val evaluator = LegadoJsReplacementEvaluator { script, jsContext ->
-            assertEquals("Uppercase digits", jsContext.ruleName)
-            assertEquals("Current Book", jsContext.book.name)
-            assertEquals("Chapter", jsContext.chapter.title)
-            assertEquals("foo", jsContext.result)
-            assertEquals("book.name + ':' + chapter.title + ':' + result.toUpperCase()", script)
-            jsContext.book.name + ":" + jsContext.chapter.title + ":" + jsContext.result.uppercase()
+        val evaluator = LegadoJsReplacementEvaluator { ruleName ->
+            assertEquals("Uppercase digits", ruleName)
+            LegadoJsReplacementSession { script, jsContext ->
+                assertEquals("Uppercase digits", jsContext.ruleName)
+                assertEquals("Current Book", jsContext.book.name)
+                assertEquals("Chapter", jsContext.chapter.title)
+                assertEquals("foo", jsContext.result)
+                assertEquals("book.name + ':' + chapter.title + ':' + result.toUpperCase()", script)
+                jsContext.book.name + ":" + jsContext.chapter.title + ":" + jsContext.result.uppercase()
+            }
         }
         val replacement = CatalogLegadoBookTextReplacement(catalog, jsEvaluator = evaluator)
 
