@@ -18,7 +18,7 @@ The intended direction is an in-process adapter, subject to source, license and 
 ## Bounded source execution currently available
 
 - The host has a CSS selector evaluator for `@text`, `@ownText`, `@html`, `@href`, `@src`, `@tag` and `@attr(name)`, plus the currently tested top-level `&&`, `||` and `%%` combination operators. This is a limited selector subset, not full Legado AnalyzeRule grammar.
-- The search-result parser supports a CSS `bookList` and per-item CSS fields for name, book URL, author, cover, last chapter and intro. Other parser types, filters, JS interpolation and complex rule chains remain unsupported unless explicitly handled by a separate adapter.
+- The search-result parser supports a CSS `bookList` and per-item CSS fields for name, book URL, author, cover, last chapter and intro. Combined `bookList` branches are normalized independently to element HTML before per-card parsing; scalar extraction suffixes on `bookList` are rejected rather than misread as card markup. Per-item fields support the bounded CSS suffix set above, including `@ownText` and `@tag`. Other parser types, filters, JS interpolation and complex rule chains remain unsupported unless explicitly handled by a separate adapter.
 - Embedded `{{...}}` URL expressions can be evaluated through the bounded injected Rhino evaluator; `@js` URL rules and full Legado request bindings are still fail-closed.
 - Book-source JSON import uses strict UTF-8 decoding and a 5 MiB byte limit. Local catalog reads and writes enforce the same limit; unknown JSON fields are retained for round-trip export.
 
