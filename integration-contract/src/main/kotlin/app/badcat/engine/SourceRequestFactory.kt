@@ -5,9 +5,9 @@ import com.google.gson.JsonParser
 /**
  * Converts source-level request settings into the transport contract.
  *
- * This handles only the static header/cookie portion of Legado's request setup.
- * URL interpolation, JS request options, redirects and cookie persistence remain
- * responsibilities of the concrete upstream-compatible transport adapter.
+ * This handles static source headers, per-request overrides and the cookie policy
+ * flag. [OkHttpSourceRequestClient] supplies redirects and in-memory cookie handling;
+ * URL interpolation and JS-generated request options remain outside this factory.
  */
 object SourceRequestFactory {
 
