@@ -39,7 +39,7 @@ Last updated: 2026-11-15
 ## Verification status
 
 - Unit tests have been authored for codecs, request settings, selectors, rule combination, source-stage dispatch and cookie matching, but have not been executed in this environment.
-- Latest commit: `bdfedce773e0e900146cfb5c3b289a204e855858`.
+- Latest implementation commit before this status update: `91b2a1cd23921e77240cb572412322879823d554`.
 - GitHub Actions query for that commit returned no workflow runs; combined commit status returned no checks. This is not a passing build.
 - No installable APK has been produced, downloaded or installed.
 - No Gradle wrapper is committed; the workflow provisions Gradle 8.14.4 when it runs.
