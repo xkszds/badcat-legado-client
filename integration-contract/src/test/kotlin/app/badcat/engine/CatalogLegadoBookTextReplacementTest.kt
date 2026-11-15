@@ -42,4 +42,28 @@ class CatalogLegadoBookTextReplacementTest {
             replacement.replace("text", "Book", "https://source.example/")
         }
     }
+
+    @Test
+    fun disablesRuleWhenRegexExecutionTimesOut() = runBlocking {
+        val imported = LegadoReplaceRuleCodec.decode(
+            """[{"id":77,"pattern":"^(a|aa)+$","replacement":"x","isRegex":true,"timeoutMillisecond":100}]"""
+        )
+        var disabledRuleId: Long? = null
+        val catalog = object : LegadoReplaceRuleCatalog {
+            override suspend fun all(): EngineResult<List<LegadoReplaceRuleRecord>> =
+                EngineResult.Success(imported)
+
+            override suspend fun setEnabled(ruleId: Long, enabled: Boolean): EngineResult<Unit> {
+                if (!enabled) disabledRuleId = ruleId
+                return EngineResult.Success(Unit)
+            }
+        }
+        val replacement = CatalogLegadoBookTextReplacement(catalog)
+
+        assertFailsWith<LegadoRegexTimeoutException> {
+            replacement.replace("a".repeat(64) + "!", "Book", "https://source.example/")
+        }
+        assertEquals(77L, disabledRuleId)
+    }
+
 }
