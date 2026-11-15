@@ -4,11 +4,12 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 
 /**
- * A deliberately bounded first parser slice for Legado's default/CSS selector mode.
+ * A bounded Legado CSS selector evaluator.
  *
- * Supports a CSS selector followed by @text, @html, @href, @src or @attr(name).
- * It does not implement Legado's full RuleAnalyzer grammar, chained selectors,
- * XPath, JSONPath, regex suffixes or JavaScript.
+ * Supports a CSS selector followed by @text, @html, @href, @src or @attr(name),
+ * plus the top-level &&, || and %% list-combination operators. It does not
+ * implement the full RuleAnalyzer grammar, chained selectors, XPath, JSONPath,
+ * regex suffixes or JavaScript.
  */
 object CssRuleEvaluator {
 
@@ -21,10 +22,32 @@ object CssRuleEvaluator {
             return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "CSS rule is blank")
         }
 
-        val parsed = parseExpression(rule)
+        var firstFailure: EngineResult.Failure? = null
+        val combined = RuleCombinationEvaluator.evaluate(rule) { part ->
+            when (val result = evaluateSingle(document, part)) {
+                is EngineResult.Success -> result.value
+                is EngineResult.Failure -> {
+                    if (firstFailure == null) firstFailure = result
+                    emptyList()
+                }
+            }
+        }
+
+        val operator = RuleExpressionTokenizer.splitByFirstTopLevelOperator(rule).operator
+        if (firstFailure != null && (operator != "||" || combined.isEmpty())) {
+            return firstFailure!!
+        }
+        return EngineResult.Success(combined)
+    }
+
+    private fun evaluateSingle(
+        document: SourceDocument,
+        expression: String,
+    ): EngineResult<List<String>> {
+        val parsed = parseExpression(expression)
             ?: return EngineResult.Failure(
                 EngineErrorCode.UNSUPPORTED_RULE,
-                "Unsupported CSS rule expression: $rule",
+                "Unsupported CSS rule expression: $expression",
             )
 
         return runCatching {
