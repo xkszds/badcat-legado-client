@@ -22,7 +22,8 @@ Last updated: 2026-11-15
 
 ## Not yet verified
 
-- Added a top-level tokenizer and generic list-combination evaluator for `&&`, `||` and `%%`, based on the pinned upstream `RuleAnalyzer` / `AnalyzeByJSoup` behavior: concatenate non-empty results, stop at the first non-empty fallback, or interleave by position (bounded by the first result's length). Delimiters inside quoted/nested groups are ignored. This is not yet wired into CSS evaluation and is not a full `RuleAnalyzer` port. Tests are authored but unrun.\n- GitHub Actions has not been confirmed green; no successful CI test or package result is claimed.
+- Added a bounded tokenizer and list-combination evaluator for `&&`, `||` and `%%`, checked against the pinned upstream `RuleAnalyzer` and `AnalyzeByJSoup` behavior. It is wired into the CSS evaluator. Added bounded JSONPath and XPath evaluators using pinned upstream libraries (`json-path` 3.0.0, JsoupXpath 2.5.3, Jsoup 1.23.2), with synthetic tests. These are selector primitives, not the full upstream `AnalyzeRule` pipeline: embedded `{$...}` interpolation, chained rule grammar, regex suffixes, script execution and source-stage orchestration remain unimplemented. Tests are authored but unrun.
+- GitHub Actions has not been confirmed green; no successful CI test or package result is claimed.
 - No APK artifact has been downloaded or installed.
 - The source codec now maps common upstream source configuration (headers, cookie-jar flag, JS library, login/explore/search URLs, main JS and nested rule JSON) into the host contract. Nested rules remain inert JSON: no Legado parser or JavaScript execution runtime is integrated. The codec is still import/export plumbing, not search or parsing execution.
 - Original Badcat UI and its real navigation are not yet present in the new Android module.
