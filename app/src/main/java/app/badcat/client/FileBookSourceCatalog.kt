@@ -8,6 +8,7 @@ import app.badcat.engine.EngineErrorCode
 import app.badcat.engine.EngineResult
 import app.badcat.engine.LegadoBookSource
 import app.badcat.engine.LegadoBookSourceCodec
+import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -68,6 +69,35 @@ class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
             }
         }
     }
+
+    /** Persist the enabled flag in the original JSON while retaining all other source fields. */
+    suspend fun setEnabled(sourceId: String, enabled: Boolean): EngineResult<Unit> =
+        withContext(Dispatchers.IO) {
+            mutex.withLock {
+                try {
+                    val sources = readSources().toMutableList()
+                    val index = sources.indexOfFirst { it.sourceId == sourceId }
+                    if (index < 0) {
+                        return@withLock EngineResult.Failure(
+                            EngineErrorCode.NOT_FOUND,
+                            "Book source '$sourceId' was not found",
+                        )
+                    }
+                    val source = sources[index]
+                    val json = JsonParser.parseString(source.rawJson).asJsonObject
+                    json.addProperty("enabled", enabled)
+                    sources[index] = LegadoBookSourceCodec.decode(json.toString()).single()
+                    writeSources(sources)
+                    EngineResult.Success(Unit)
+                } catch (error: Exception) {
+                    EngineResult.Failure(
+                        EngineErrorCode.UNKNOWN,
+                        "Unable to update book-source enabled state",
+                        error,
+                    )
+                }
+            }
+        }
 
     /** Export the catalog as a Legado-compatible JSON array. */
     suspend fun exportJson(): EngineResult<String> = withContext(Dispatchers.IO) {
