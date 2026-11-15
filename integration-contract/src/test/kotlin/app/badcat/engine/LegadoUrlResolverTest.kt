@@ -40,6 +40,30 @@ class LegadoUrlResolverTest {
     }
 
     @Test
+    fun acceptsBodyMethodsImplementedByTheHttpTransport() {
+        listOf("PUT", "PATCH", "PROPPATCH", "REPORT").forEach { method ->
+            val result = LegadoUrlResolver.resolve(
+                "https://example.com/",
+                """search, {"method":"$method","body":"payload"}""",
+            )
+            val value = assertIs<EngineResult.Success<LegadoResolvedUrl>>(result).value
+            assertEquals(method, value.method)
+            assertEquals("payload", value.body)
+        }
+    }
+
+    @Test
+    fun rejectsMethodsNotImplementedByTheHttpTransport() {
+        val failure = assertIs<EngineResult.Failure>(
+            LegadoUrlResolver.resolve(
+                "https://example.com/",
+                """search, {"method":"DELETE"}""",
+            ),
+        )
+        assertEquals(EngineErrorCode.INVALID_SOURCE, failure.code)
+    }
+
+    @Test
     fun rejectsScriptSyntaxInsteadOfSendingItLiterally() {
         val result = LegadoUrlResolver.resolve("https://example.com/", "{{key}}/search")
         val failure = assertIs<EngineResult.Failure>(result)
