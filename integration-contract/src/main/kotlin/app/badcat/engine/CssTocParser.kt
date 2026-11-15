@@ -70,7 +70,8 @@ class CssTocParser {
         val nextUrls = ArrayList<String>()
         val nextRule = rules["nextTocUrl"]?.takeIf(String::isNotBlank)
         if (nextRule != null) {
-            when (val result = SelectorRuleEvaluator.evaluate(root, SelectorRuleType.CSS, nextRule)) {
+            val urlRule = if (nextRule.substringAfterLast("@", "").let { it in setOf("href", "src", "text", "html") }) nextRule else "$nextRule@href"
+            when (val result = SelectorRuleEvaluator.evaluate(root, SelectorRuleType.CSS, urlRule)) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value.map { resolve(response.finalUrl, it) }
                     .filter { it != response.finalUrl }
