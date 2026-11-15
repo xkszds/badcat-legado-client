@@ -248,7 +248,12 @@ internal object SafeRedirectInterceptor : Interceptor {
 }
 
 internal fun isSafeRedirectTarget(from: HttpUrl, location: String): Boolean {
-    val target = from.resolve(location) ?: return false
+    val trimmedLocation = location.trim()
+    val explicitScheme = Regex("^([A-Za-z][A-Za-z0-9+.-]*):").find(trimmedLocation)?.groupValues?.get(1)
+    if (explicitScheme != null && !explicitScheme.equals("http", true) &&
+        !explicitScheme.equals("https", true)
+    ) return false
+    val target = from.resolve(trimmedLocation) ?: return false
     if (target.scheme != "http" && target.scheme != "https") return false
     if (target.username.isNotEmpty() || target.password.isNotEmpty()) return false
     if (from.scheme == "https" && target.scheme != "https") return false
