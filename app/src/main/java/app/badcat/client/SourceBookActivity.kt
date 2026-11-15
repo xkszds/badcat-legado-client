@@ -240,9 +240,27 @@ class SourceChapterActivity : Activity() {
         }
     }
 
+    private fun saveCurrentScrollPosition() {
+        if (!::readerScroll.isInitialized || currentChapterUrl.isBlank()) return
+        preferences.edit()
+            .putInt(chapterScrollPositionKey(sourceId, bookUrl, currentChapterUrl), readerScroll.scrollY)
+            .apply()
+    }
+
+    private fun restoreCurrentScrollPosition() {
+        val savedY = preferences.getInt(
+            chapterScrollPositionKey(sourceId, bookUrl, currentChapterUrl),
+            0,
+        ).coerceAtLeast(0)
+        readerScroll.post {
+            readerScroll.post { readerScroll.scrollTo(0, savedY) }
+        }
+    }
+
     private fun moveChapter(delta: Int) {
         val target = currentIndex + delta
         if (target !in chapters.indices) return
+        saveCurrentScrollPosition()
         val chapter = chapters[target]
         previousButton.isEnabled = false
         nextButton.isEnabled = false
@@ -275,13 +293,20 @@ class SourceChapterActivity : Activity() {
         }
         previousButton.isEnabled = currentIndex > 0
         nextButton.isEnabled = currentIndex >= 0 && currentIndex < chapters.lastIndex
-        readerScroll.post { readerScroll.scrollTo(0, 0) }
+        if (result is EngineResult.Success) {
+            restoreCurrentScrollPosition()
+        }
     }
 
     private fun changeTextSize(delta: Float) {
         textSizeSp = (textSizeSp + delta).coerceIn(14f, 32f)
         body.textSize = textSizeSp
         preferences.edit().putFloat("reader_text_size", textSizeSp).apply()
+    }
+
+    override fun onPause() {
+        saveCurrentScrollPosition()
+        super.onPause()
     }
 
     override fun onDestroy() {
@@ -300,4 +325,13 @@ class SourceChapterActivity : Activity() {
 private fun readingProgressKey(sourceId: String, bookUrl: String): String {
     val raw = "$sourceId\n$bookUrl".toByteArray(Charsets.UTF_8)
     return "last_chapter_" + Base64.encodeToString(raw, Base64.URL_SAFE or Base64.NO_WRAP)
+}
+
+private fun chapterScrollPositionKey(
+    sourceId: String,
+    bookUrl: String,
+    chapterUrl: String,
+): String {
+    val raw = "$sourceId\n$bookUrl\n$chapterUrl".toByteArray(Charsets.UTF_8)
+    return "chapter_scroll_" + Base64.encodeToString(raw, Base64.URL_SAFE or Base64.NO_WRAP)
 }
