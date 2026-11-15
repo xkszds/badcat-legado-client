@@ -14,6 +14,20 @@ interface ReadingEngine {
         keyword: String,
     ): EngineResult<List<BookCandidate>>
 
+    /**
+     * Loads one search-result page. Existing engine adapters remain compatible:
+     * page one delegates to [search], while unsupported later pages fail closed.
+     */
+    suspend fun searchPage(
+        sourceId: String,
+        keyword: String,
+        page: Int,
+    ): EngineResult<List<BookCandidate>> =
+        if (page == 1) search(sourceId, keyword) else EngineResult.Failure(
+            EngineErrorCode.UNSUPPORTED_RULE,
+            "This reading engine does not support paged search",
+        )
+
     suspend fun bookDetail(
         sourceId: String,
         bookUrl: String,
