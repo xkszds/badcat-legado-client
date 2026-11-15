@@ -202,9 +202,7 @@ class SourceReadingEngineTest {
         )
         val engine = SourceReadingEngine(
             catalog = BookSourceCatalog { EngineResult.Success(listOf(source)) },
-            searchUrlResolver = SearchUrlResolver { _, _ ->
-                EngineResult.Failure(EngineErrorCode.UNKNOWN, "Search is not used in this test")
-            },
+            searchUrlResolver = BookSourceSearchUrlResolver(),
             searchService = SourceSearchService(gateway),
             detailService = SourceBookDetailService(gateway),
             tocService = SourceTocService(gateway),
