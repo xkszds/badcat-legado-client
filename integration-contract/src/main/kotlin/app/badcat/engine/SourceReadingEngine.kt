@@ -22,11 +22,18 @@ class SourceReadingEngine(
 
     override suspend fun sources(): EngineResult<List<BookSource>> = catalog.all()
 
-    override suspend fun search(sourceId: String, keyword: String): EngineResult<List<BookCandidate>> {
-        if (keyword.isBlank()) {
+    override suspend fun search(sourceId: String, keyword: String): EngineResult<List<BookCandidate>> =
+        searchPage(sourceId, keyword, 1)
+
+    override suspend fun searchPage(
+        sourceId: String,
+        keyword: String,
+        page: Int,
+    ): EngineResult<List<BookCandidate>> {
+        if (keyword.isBlank() || page < 1) {
             return EngineResult.Failure(
                 EngineErrorCode.INVALID_SOURCE,
-                "Search keyword must not be blank",
+                "Search keyword must not be blank and page must be positive",
             )
         }
         val source = when (val result = findSource(sourceId)) {
@@ -43,7 +50,7 @@ class SourceReadingEngine(
                 "Search URL resolver returned a blank URL for source '${source.id}'",
             )
         }
-        return searchService.search(source, url, keyword = keyword)
+        return searchService.search(source, url, page = page, keyword = keyword)
     }
 
     override suspend fun bookDetail(sourceId: String, bookUrl: String): EngineResult<BookDetail> {
