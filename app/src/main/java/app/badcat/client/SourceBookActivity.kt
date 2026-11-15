@@ -224,11 +224,24 @@ class SourceChapterActivity : Activity() {
             text = "切换背景"
             setOnClickListener { cycleReaderTheme() }
         }
+        val saveBookmark = android.widget.Button(this).apply {
+            text = "保存书签"
+            setOnClickListener { saveChapterBookmark() }
+        }
+        val jumpBookmark = android.widget.Button(this).apply {
+            text = "跳转书签"
+            setOnClickListener { jumpToChapterBookmark() }
+        }
         val displayControls = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             addView(lineLess, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
             addView(lineMore, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
             addView(themeButton, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        }
+        val bookmarkControls = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            addView(saveBookmark, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            addView(jumpBookmark, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         }
         readerRoot = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -236,6 +249,7 @@ class SourceChapterActivity : Activity() {
             addView(status)
             addView(controls)
             addView(displayControls)
+            addView(bookmarkControls)
             addView(body)
         }
         readerScroll = ScrollView(this).apply { addView(readerRoot) }
@@ -324,6 +338,32 @@ class SourceChapterActivity : Activity() {
         }
     }
 
+    private fun saveChapterBookmark() {
+        if (currentChapterUrl.isBlank()) {
+            status.text = "当前章节尚未加载，无法保存书签"
+            return
+        }
+        val position = readerScroll.scrollY.coerceAtLeast(0)
+        preferences.edit()
+            .putInt(chapterBookmarkKey(sourceId, bookUrl, currentChapterUrl), position)
+            .apply()
+        status.text = "书签已保存（当前位置）"
+    }
+
+    private fun jumpToChapterBookmark() {
+        if (currentChapterUrl.isBlank()) return
+        val key = chapterBookmarkKey(sourceId, bookUrl, currentChapterUrl)
+        if (!preferences.contains(key)) {
+            status.text = "本章还没有保存书签"
+            return
+        }
+        val position = preferences.getInt(key, 0).coerceAtLeast(0)
+        readerScroll.post {
+            readerScroll.post { readerScroll.scrollTo(0, position) }
+        }
+        status.text = "已跳转到本章书签"
+    }
+
     private fun changeTextSize(delta: Float) {
         textSizeSp = (textSizeSp + delta).coerceIn(14f, 32f)
         body.textSize = textSizeSp
@@ -384,4 +424,13 @@ private fun chapterScrollPositionKey(
 ): String {
     val raw = "$sourceId\n$bookUrl\n$chapterUrl".toByteArray(Charsets.UTF_8)
     return "chapter_scroll_" + Base64.encodeToString(raw, Base64.URL_SAFE or Base64.NO_WRAP)
+}
+
+private fun chapterBookmarkKey(
+    sourceId: String,
+    bookUrl: String,
+    chapterUrl: String,
+): String {
+    val raw = "$sourceId\n$bookUrl\n$chapterUrl".toByteArray(Charsets.UTF_8)
+    return "chapter_bookmark_" + Base64.encodeToString(raw, Base64.URL_SAFE or Base64.NO_WRAP)
 }
