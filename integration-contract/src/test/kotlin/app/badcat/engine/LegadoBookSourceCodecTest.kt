@@ -20,7 +20,7 @@ class LegadoBookSourceCodecTest {
               "enabled": true,
               "enabledExplore": false,
               "enabledCookieJar": true,
-              "header": "{\\"User-Agent\\":\\"fixture\\"}",
+              "header": "{\"User-Agent\":\"fixture\"}",
               "jsLib": "https://reader.example/lib.js",
               "loginUrl": "https://reader.example/login",
               "exploreUrl": "https://reader.example/explore",
