@@ -47,6 +47,27 @@ class CssBookInfoParserTest {
     }
 
     @Test
+    fun rejectsBlankRequestedBookUrl() {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleBookInfoJson = """{"name":"h1@text"}""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/book/7",
+            body = "<h1>Novel</h1>",
+        )
+
+        val failure = assertIs<EngineResult.Failure>(
+            CssBookInfoParser().parse(source, response, "  "),
+        )
+
+        assertEquals(EngineErrorCode.INVALID_SOURCE, failure.code)
+    }
+
+    @Test
     fun rejectsUnsafeRequestedBookUrl() {
         val source = BookSource(
             id = "fixture",
