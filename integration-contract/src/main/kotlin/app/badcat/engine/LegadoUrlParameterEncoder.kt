@@ -34,6 +34,43 @@ object LegadoUrlParameterEncoder {
     fun encodeForm(params: String, charsetName: String? = null): String =
         encodeFields(params, charsetName.isNullOrEmpty(), resolveCharset(charsetName))
 
+    data class PreparedRequest(val url: String, val body: String?)
+
+    /** Applies AnalyzeUrl's method-dependent query/form preparation after headers merge. */
+    fun prepareRequest(
+        url: String,
+        method: String,
+        body: String?,
+        headers: Map<String, String>,
+        charsetName: String? = null,
+    ): PreparedRequest {
+        if (!method.equals("POST", ignoreCase = true)) {
+            val fragmentAt = url.indexOf('#').let { if (it < 0) url.length else it }
+            val queryAt = url.indexOf('?')
+            if (queryAt < 0 || queryAt >= fragmentAt) return PreparedRequest(url, body)
+            val query = url.substring(queryAt + 1, fragmentAt)
+            val encoded = encodeQuery(query, charsetName)
+            val prefix = url.substring(0, queryAt)
+            val fragment = url.substring(fragmentAt)
+            return PreparedRequest(
+                url = if (encoded.isEmpty()) prefix + fragment else "$prefix?$encoded$fragment",
+                body = body,
+            )
+        }
+        val contentType = headers.entries.firstOrNull { it.key.equals("Content-Type", true) }?.value
+        val payload = body ?: return PreparedRequest(url, null)
+        if (!contentType.isNullOrBlank() || isJson(payload) || payload.trimStart().startsWith("<")) {
+            return PreparedRequest(url, payload)
+        }
+        return PreparedRequest(url, encodeForm(payload, charsetName))
+    }
+
+    private fun isJson(value: String): Boolean {
+        val trimmed = value.trim()
+        if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) return false
+        return runCatching { com.google.gson.JsonParser.parseString(trimmed) }.isSuccess
+    }
+
     /** Legacy EncoderUtils.escape, operating on UTF-16 code units like the upstream Kotlin loop. */
     fun escape(value: String): String = buildString {
         value.forEach { char ->
