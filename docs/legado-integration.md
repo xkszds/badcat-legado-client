@@ -14,6 +14,16 @@ The intended direction is an in-process adapter, subject to source, license and 
 - `LegadoBookSourceCodec` imports single-object or array JSON exports, validates `bookSourceUrl` and `bookSourceName`, reads basic source metadata, and preserves the entire raw source object for round-trip export.
 - The codec deliberately does not attempt to execute rules. Nested search/detail/TOC/content rules and JavaScript fields are retained intact for the future runtime adapter.
 
+
+## Bounded source execution currently available
+
+- The host has a CSS selector evaluator for `@text`, `@ownText`, `@html`, `@href`, `@src`, `@tag` and `@attr(name)`, plus the currently tested top-level `&&`, `||` and `%%` combination operators. This is a limited selector subset, not full Legado AnalyzeRule grammar.
+- The search-result parser supports a CSS `bookList` and per-item CSS fields for name, book URL, author, cover, last chapter and intro. Other parser types, filters, JS interpolation and complex rule chains remain unsupported unless explicitly handled by a separate adapter.
+- Embedded `{{...}}` URL expressions can be evaluated through the bounded injected Rhino evaluator; `@js` URL rules and full Legado request bindings are still fail-closed.
+- Book-source JSON import uses strict UTF-8 decoding and a 5 MiB byte limit. Local catalog reads and writes enforce the same limit; unknown JSON fields are retained for round-trip export.
+
+These boundaries are intentionally explicit: an imported source can be stored even when some of its rules cannot yet be executed. A successful import is not a compatibility guarantee.
+
 ## Pinning checklist
 
 - Record a full immutable upstream commit SHA; do not rely on a floating branch for a release.
