@@ -58,6 +58,14 @@ object SourceRequestFactory {
             )
         }
 
+        val normalizedMethod = method.uppercase()
+        if (normalizedMethod !in SUPPORTED_METHODS) {
+            return EngineResult.Failure(
+                EngineErrorCode.UNSUPPORTED_RULE,
+                "HTTP method '$normalizedMethod' is not supported by the source transport",
+            )
+        }
+
         val sourceHeaders = parseHeaders(source.header)
             ?: return EngineResult.Failure(
                 EngineErrorCode.INVALID_SOURCE,
@@ -76,7 +84,7 @@ object SourceRequestFactory {
             SourceHttpRequest(
                 sourceId = source.id,
                 url = url,
-                method = method.uppercase(),
+                method = normalizedMethod,
                 headers = merged,
                 body = body,
                 useCookieJar = source.enabledCookieJar != false,
@@ -87,6 +95,10 @@ object SourceRequestFactory {
             ),
         )
     }
+
+    private val SUPPORTED_METHODS = setOf(
+        "GET", "HEAD", "POST", "PUT", "PATCH", "PROPPATCH", "REPORT",
+    )
 
     private fun parseHeaders(raw: String?): Map<String, String>? {
         if (raw.isNullOrBlank()) return emptyMap()
