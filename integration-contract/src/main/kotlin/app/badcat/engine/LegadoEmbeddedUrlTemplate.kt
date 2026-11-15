@@ -9,7 +9,7 @@ package app.badcat.engine
  * The Android host must supply a reviewed, bounded evaluator before opting in.
  */
 fun interface LegadoEmbeddedScriptEvaluator {
-    suspend fun evaluate(script: String, key: String): EngineResult<Any?>
+    suspend fun evaluate(script: String, key: String, page: Int): EngineResult<Any?>
 }
 
 object LegadoEmbeddedUrlTemplate {
@@ -26,6 +26,7 @@ object LegadoEmbeddedUrlTemplate {
         template: String,
         key: String,
         evaluator: LegadoEmbeddedScriptEvaluator,
+        page: Int = 1,
     ): EngineResult<String> {
         if (!template.contains("{{")) return EngineResult.Success(template)
 
@@ -40,7 +41,7 @@ object LegadoEmbeddedUrlTemplate {
             if (end < 0) break
 
             val evaluated = when (
-                val result = evaluator.evaluate(template.substring(expressionStart, end), key)
+                val result = evaluator.evaluate(template.substring(expressionStart, end), key, page)
             ) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
