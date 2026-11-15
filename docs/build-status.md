@@ -1,3 +1,8 @@
+## Source audit correction (2026-11-15)
+
+- A follow-up source review found a compile-blocking stale reference in `LegadoUrlResolver`: the resolver's result constructor still referenced local `dnsIp` and `type` values after those options had been changed to fail closed. Removed the stale constructor arguments and removed the unused fields from `LegadoResolvedUrl`, so the contract no longer implies those unsupported transport features are available.
+- This is a static source correction only. The project has not been compiled and the regression suite has not been executed; additional compile issues may remain.
+
 ## Latest implementation update (2026-11-15)
 
 - Removed a misleading charset compatibility path: the transport previously accepted Legado's `escape` response mode but decoded the bytes as UTF-8. The URL resolver and shared request factory now reject this mode explicitly until the actual Legado escape decoder is implemented.
