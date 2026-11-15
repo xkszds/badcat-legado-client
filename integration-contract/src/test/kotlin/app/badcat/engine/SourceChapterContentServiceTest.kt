@@ -56,4 +56,42 @@ class SourceChapterContentServiceTest {
         assertEquals("Chapter", result.title)
         assertEquals(null, result.nextPageUrl)
     }
+
+    @Test
+    fun passesBookTitleAndSourceOriginToScopedReplacement() = runBlocking {
+        val client = FixtureClient()
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture Source",
+            baseUrl = "https://reader.example/",
+            ruleContentJson = """{
+                "content":"div#content",
+                "nextContentUrl":"a.next"
+            }""",
+        )
+        var observedBookName = ""
+        var observedBookOrigin = ""
+        val service = SourceChapterContentService(
+            http = SourceHttpGateway(client),
+            scopedTextReplacement = ScopedBookTextReplacement { text, bookName, bookOrigin ->
+                observedBookName = bookName
+                observedBookOrigin = bookOrigin
+                text.replace("First", "Scoped")
+            },
+        )
+
+        val result = assertIs<EngineResult.Success<ChapterContent>>(
+            service.load(
+                source,
+                "https://reader.example/book/1",
+                BookChapter(0, "Chapter", "https://reader.example/chapter/1"),
+                bookName = "Novel Title",
+            ),
+        ).value
+
+        assertEquals("Novel Title", observedBookName)
+        assertEquals("Fixture Source", observedBookOrigin)
+        assertEquals("Scoped page.\\n\\nSecond page.", result.text)
+    }
+
 }
