@@ -40,6 +40,12 @@ class MainActivity : Activity() {
         }
         root.addView(message)
         root.addView(Button(this).apply {
+            text = "书源搜索（开发验证）"
+            setOnClickListener {
+                startActivity(Intent(this@MainActivity, SourceSearchActivity::class.java))
+            }
+        })
+        root.addView(Button(this).apply {
             text = "书源管理（导入 / 导出）"
             setOnClickListener {
                 startActivity(Intent(this@MainActivity, SourceCatalogActivity::class.java))
