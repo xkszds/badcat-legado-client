@@ -1,5 +1,11 @@
 ## Latest implementation update (2026-11-15)
 
+- Hardened the shared HTTP request factory: only absolute HTTP/HTTPS URLs with a host and without embedded URL credentials are accepted. Header names are restricted to HTTP token characters, and header values containing CR/LF or disallowed control characters are rejected before transport creation.
+- Added regression tests for non-HTTP schemes, relative URLs, credential-bearing URLs, CRLF header injection and invalid header names. Corrected Kotlin character escape literals during source review.
+- Tests are authored but not executed. No compile, CI run, device test or installable APK is confirmed.
+
+## Latest implementation update (2026-11-15)
+
 - Added method validation at the shared `SourceRequestFactory` boundary, so callers cannot bypass the URL resolver's transport-method allowlist by constructing requests directly. Supported methods are GET, HEAD, POST, PUT, PATCH, PROPPATCH and REPORT; unsupported methods return `UNSUPPORTED_RULE` before transport creation.
 - Added a regression test for direct factory rejection of DELETE.
 - Tests are authored but not executed. No compile, CI run, device test or installable APK is confirmed.
