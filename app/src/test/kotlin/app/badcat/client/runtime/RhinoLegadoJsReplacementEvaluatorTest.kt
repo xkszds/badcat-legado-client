@@ -65,4 +65,22 @@ class RhinoLegadoJsReplacementEvaluatorTest {
             session.evaluate("while (true) {}", context(timeout = 250))
         }
     }
+    @Test
+    fun rejectsOversizedScriptBeforeEvaluation() {
+        val session = RhinoLegadoJsReplacementEvaluator().createSession("oversized fixture")
+
+        assertThrows(IllegalArgumentException::class.java) {
+            session.evaluate(" ".repeat(128 * 1024 + 1), context())
+        }
+    }
+
+    @Test
+    fun rejectsOversizedContextBeforeBindingCreation() {
+        val session = RhinoLegadoJsReplacementEvaluator().createSession("oversized context fixture")
+
+        assertThrows(IllegalArgumentException::class.java) {
+            session.evaluate("result", context(result = "x".repeat(64 * 1024 + 1)))
+        }
+    }
+
 }
