@@ -25,6 +25,7 @@ data class LegadoReplaceRuleRecord(
         replacement = replacement,
         isRegex = isRegex,
         timeoutMillisecond = validTimeoutMillisecond(),
+        name = name,
     )
 
     /** Legado falls back to 3000 ms for non-positive timeout values. */
