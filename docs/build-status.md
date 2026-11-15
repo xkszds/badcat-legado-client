@@ -1,5 +1,12 @@
 ## Latest implementation update (2026-11-15)
 
+- Added isolated `LegadoUrlParameterEncoder` matching the pinned upstream `AnalyzeUrl.encodeParams` and `NetworkUtils` behavior: RFC3986 query encoding, upstream already-encoded detection, form splitting at `&` and the first `=`, charset-specific encoding, and legacy `escape` handling.
+- Added nine regression tests for safe query characters, UTF-8 and GBK encoding, literal/malformed percent sequences, form delimiters and empty segments, explicit charset re-encoding, escape mode, and invalid charsets. Tests are authored but not executed.
+- Kept this encoder separate from `LegadoUrlResolver` and the template evaluator. URL preparation still does not orchestrate template expansion followed by GET-query/POST-form encoding, so JavaScript-bearing URLs remain fail-closed.
+- This is a source change only. No Gradle build, test execution, CI run, device validation, or installable APK is confirmed.
+
+## Latest implementation update (2026-11-15)
+
 - Added isolated `LegadoEmbeddedUrlTemplate` and injected `LegadoEmbeddedScriptEvaluator` contracts. The helper processes complete `{{...}}` segments in order, passes only the search key, mirrors upstream null/string/integral-Double conversion and preserves surrounding literal text when an expression returns empty, leaves unmatched opening markers literal, and propagates evaluation failures without returning a partial URL.
 - Added regression tests for multiple expressions, Unicode key input, null and integral numeric conversion, unmatched markers, and script failure. Tests are authored but not executed.
 - Deliberately did not wire this helper into `LegadoUrlResolver` or search: upstream query/form encoding and already-encoded detection are not implemented yet. Existing script-bearing URLs continue to fail closed. No Gradle build, test run, CI, device validation, or APK is confirmed.
