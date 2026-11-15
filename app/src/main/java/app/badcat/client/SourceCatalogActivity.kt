@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import android.widget.Switch
 import android.widget.TextView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,13 +18,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Temporary source-catalog utility screen. It is deliberately separate from the
- * original Badcat navigation until the original UI resources are reconstructed.
+ * Temporary source-catalog utility screen, separate from the original Badcat UI.
  */
 class SourceCatalogActivity : Activity() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private lateinit var catalog: FileBookSourceCatalog
-    private lateinit var summary: TextView
+    private lateinit var listContainer: LinearLayout
     private lateinit var message: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,22 +34,23 @@ class SourceCatalogActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             setPadding(28, 32, 28, 24)
         }
-        val title = TextView(this).apply {
+        root.addView(TextView(this).apply {
             text = "书源管理"
             textSize = 24f
-        }
-        summary = TextView(this).apply {
-            textSize = 15f
-            setPadding(0, 20, 0, 20)
-        }
+        })
+        root.addView(actionButton("导入 Legado 书源 JSON") { chooseImportFile() })
+        root.addView(actionButton("导出全部书源 JSON") { chooseExportFile() })
+        root.addView(TextView(this).apply {
+            text = "书源列表（开关仅控制本应用是否选用该书源）"
+            textSize = 14f
+            setPadding(0, 20, 0, 8)
+        })
+        listContainer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        root.addView(listContainer)
         message = TextView(this).apply {
             textSize = 14f
             setPadding(0, 16, 0, 0)
         }
-        root.addView(title)
-        root.addView(summary)
-        root.addView(actionButton("导入 Legado 书源 JSON") { chooseImportFile() })
-        root.addView(actionButton("导出全部书源 JSON") { chooseExportFile() })
         root.addView(message)
         setContentView(ScrollView(this).apply { addView(root) })
         refreshCatalog()
@@ -69,17 +70,48 @@ class SourceCatalogActivity : Activity() {
         scope.launch {
             when (val result = catalog.all()) {
                 is app.badcat.engine.EngineResult.Success -> {
+                    listContainer.removeAllViews()
                     val sources = result.value
-                    summary.text = if (sources.isEmpty()) {
-                        "本地暂无书源"
-                    } else {
-                        "已保存 ${sources.size} 个书源\n\n" + sources.joinToString("\n") {
-                            (if (it.enabled) "● " else "○ ") + it.name + "  [" + it.id + "]"
+                    if (sources.isEmpty()) {
+                        listContainer.addView(TextView(this@SourceCatalogActivity).apply {
+                            text = "本地暂无书源"
+                            textSize = 15f
+                        })
+                    }
+                    sources.forEach { source ->
+                        val row = LinearLayout(this@SourceCatalogActivity).apply {
+                            orientation = LinearLayout.VERTICAL
+                            setPadding(0, 12, 0, 12)
                         }
+                        row.addView(TextView(this@SourceCatalogActivity).apply {
+                            text = source.name + "\n" + source.id
+                            textSize = 14f
+                        })
+                        val enabledSwitch = Switch(this@SourceCatalogActivity).apply {
+                            text = if (source.enabled) "已启用" else "已停用"
+                            isChecked = source.enabled
+                            setOnCheckedChangeListener { _, checked ->
+                                isEnabled = false
+                                scope.launch {
+                                    when (val update = catalog.setEnabled(source.id, checked)) {
+                                        is app.badcat.engine.EngineResult.Success -> {
+                                            message.text = if (checked) "已启用：${source.name}" else "已停用：${source.name}"
+                                            refreshCatalog()
+                                        }
+                                        is app.badcat.engine.EngineResult.Failure -> {
+                                            message.text = "状态更新失败：${update.message}"
+                                            refreshCatalog()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        row.addView(enabledSwitch)
+                        listContainer.addView(row)
                     }
                 }
                 is app.badcat.engine.EngineResult.Failure ->
-                    summary.text = "读取书源失败：${result.message}"
+                    message.text = "读取书源失败：${result.message}"
             }
         }
     }
