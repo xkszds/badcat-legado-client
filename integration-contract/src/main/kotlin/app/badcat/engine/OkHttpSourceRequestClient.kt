@@ -165,7 +165,7 @@ class OkHttpSourceRequestClient(
         } ?: ByteArray(0)
         val charset: Charset = responseCharset
             ?.takeUnless { it.equals("escape", ignoreCase = true) }
-            ?.let(Charset::forName)
+            ?.let { Charset.forName(it) }
             ?: responseBody?.contentType()?.charset(StandardCharsets.UTF_8)
             ?: StandardCharsets.UTF_8
         val headerMap = response.headers.names().associateWith { name ->
