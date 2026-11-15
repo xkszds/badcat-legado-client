@@ -2,6 +2,12 @@
 
 Last updated: 2026-11-15
 
+## Latest engineering update
+
+- Reviewed the pinned upstream implementation of `BookList`, `BookInfo`, `BookChapterList`, `BookContent`, `AnalyzeRule`, `AnalyzeUrl` and the upstream `BookSource` model.
+- Added `docs/legado-runtime-porting-map.md` with the observed operation-level dependency map and a staged porting/acceptance plan.
+- This is source review and documentation only; no upstream runtime code was ported and no build/test result is implied.
+
 ## Added
 
 - Android application module and manifest; the launcher remains a temporary build-validation shell.
