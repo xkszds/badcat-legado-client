@@ -18,7 +18,17 @@ data class LegadoBookSource(
     val sourceType: Int,
     val enabled: Boolean,
     val rawJson: String,
-)
+) {
+    fun toEngineSource(): BookSource = BookSource(
+        id = sourceId,
+        name = name,
+        baseUrl = sourceId,
+        enabled = enabled,
+        group = group,
+        sourceType = sourceType,
+        rawJson = rawJson,
+    )
+}
 
 object LegadoBookSourceCodec {
 
