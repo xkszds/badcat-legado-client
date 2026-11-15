@@ -112,6 +112,7 @@ class SourceBookActivity : Activity() {
                     startActivity(Intent(this@SourceBookActivity, SourceChapterActivity::class.java).apply {
                         putExtra(SourceChapterActivity.EXTRA_SOURCE_ID, sourceId)
                         putExtra(SourceChapterActivity.EXTRA_BOOK_URL, bookUrl)
+                        putExtra(SourceChapterActivity.EXTRA_BOOK_NAME, bookName)
                         putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, savedChapterUrl)
                         putExtra(SourceChapterActivity.EXTRA_CHAPTER_TITLE, "继续阅读")
                     })
@@ -141,6 +142,7 @@ class SourceBookActivity : Activity() {
                                         startActivity(Intent(this@SourceBookActivity, SourceChapterActivity::class.java).apply {
                                             putExtra(SourceChapterActivity.EXTRA_SOURCE_ID, sourceId)
                                             putExtra(SourceChapterActivity.EXTRA_BOOK_URL, bookUrl)
+                        putExtra(SourceChapterActivity.EXTRA_BOOK_NAME, bookName)
                                             putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, chapter.url)
                                             putExtra(SourceChapterActivity.EXTRA_CHAPTER_TITLE, chapter.title)
                                             putExtra(SourceChapterActivity.EXTRA_JUMP_TO_BOOKMARK, true)
@@ -168,6 +170,7 @@ class SourceBookActivity : Activity() {
                     startActivity(Intent(this@SourceBookActivity, SourceChapterActivity::class.java).apply {
                         putExtra(SourceChapterActivity.EXTRA_SOURCE_ID, sourceId)
                         putExtra(SourceChapterActivity.EXTRA_BOOK_URL, bookUrl)
+                        putExtra(SourceChapterActivity.EXTRA_BOOK_NAME, bookName)
                         putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, chapter.url)
                         putExtra(SourceChapterActivity.EXTRA_CHAPTER_TITLE, chapter.title)
                     })
@@ -204,6 +207,7 @@ class SourceChapterActivity : Activity() {
     private lateinit var readerRoot: LinearLayout
     private lateinit var sourceId: String
     private lateinit var bookUrl: String
+    private lateinit var bookName: String
     private var chapters: List<BookChapter> = emptyList()
     private var currentIndex: Int = -1
     private var currentChapterUrl: String = ""
@@ -219,6 +223,7 @@ class SourceChapterActivity : Activity() {
         engine = BadcatReadingEngineFactory(applicationContext).create()
         sourceId = intent.getStringExtra(EXTRA_SOURCE_ID).orEmpty()
         bookUrl = intent.getStringExtra(EXTRA_BOOK_URL).orEmpty()
+        bookName = intent.getStringExtra(EXTRA_BOOK_NAME).orEmpty()
         currentChapterUrl = intent.getStringExtra(EXTRA_CHAPTER_URL).orEmpty()
         val chapterTitle = intent.getStringExtra(EXTRA_CHAPTER_TITLE).orEmpty()
         if (currentChapterUrl.isBlank()) {
@@ -324,7 +329,7 @@ class SourceChapterActivity : Activity() {
             val chapter = if (selected >= 0) chapterList[selected] else {
                 BookChapter(index = 0, title = fallbackTitle, url = currentChapterUrl)
             }
-            val content = runBlocking { safeEngineCall { engine.chapterContent(sourceId, bookUrl, chapter.url) } }
+            val content = runBlocking { safeEngineCall { engine.chapterContent(sourceId, bookUrl, chapter.url, bookName) } }
             mainHandler.post {
                 chapters = chapterList
                 currentIndex = initialIndex
@@ -490,6 +495,7 @@ class SourceChapterActivity : Activity() {
     companion object {
         const val EXTRA_SOURCE_ID = "reader_source_id"
         const val EXTRA_BOOK_URL = "reader_book_url"
+        const val EXTRA_BOOK_NAME = "reader_book_name"
         const val EXTRA_CHAPTER_URL = "reader_chapter_url"
         const val EXTRA_CHAPTER_TITLE = "reader_chapter_title"
         const val EXTRA_JUMP_TO_BOOKMARK = "reader_jump_to_bookmark"
