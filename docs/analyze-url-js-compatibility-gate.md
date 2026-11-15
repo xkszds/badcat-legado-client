@@ -1,3 +1,9 @@
+## Integrated bounded embedded-template path (2026-11-15)
+
+The helper is now connected to `SourceHttpGateway` through an optional injected evaluator. The gateway expands complete `{{...}}` expressions before static URL parsing and parameter encoding, supplies the search keyword as `key`, and returns an evaluator failure without issuing HTTP. Without an injected evaluator, the gateway remains fail-closed. The Android `RhinoEmbeddedUrlScriptEvaluator` adapter uses the bounded Rhino runtime and supplies only `key`; it does not expose Java, network, cookie, cache, login, proxy, or WebView services. `SourceSearchService` forwards the search keyword into the gateway.
+
+This does not enable the full upstream script pipeline. `@js`, `<js>`, `@result`, `page`/ `baseUrl` and shared host bindings, URL-option `js`/`bodyJs`, WebView, login/session and other host integrations remain unsupported. The Android adapter is not yet injected into the app's active search construction path. Tests are authored but not executed; no Gradle build, CI, device test, or APK is confirmed.
+
 ## Implemented isolated contract helper (2026-11-15)
 
 Added `LegadoEmbeddedUrlTemplate` and an injected `LegadoEmbeddedScriptEvaluator` in the platform-neutral integration module. This helper:
