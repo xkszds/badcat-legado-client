@@ -166,6 +166,23 @@ object LegadoBookSourceCodec {
                 "Book source at index $index has an invalid '$key' rule object"
             }
         }
+        source.get("ruleContent")?.let { value ->
+            if (value.isJsonObject || (value.isJsonPrimitive && value.asJsonPrimitive.isString)) {
+                val rule = runCatching {
+                    if (value.isJsonObject) value.asJsonObject
+                    else JsonParser.parseString(value.asString).asJsonObject
+                }.getOrNull() ?: return@let
+                rule.get("maxBatchSize")?.let { batchSize ->
+                    require(batchSize.isJsonNull || (
+                        batchSize.isJsonPrimitive && batchSize.asJsonPrimitive.isNumber &&
+                            runCatching { batchSize.asBigDecimal.intValueExact() }.isSuccess
+                        )
+                    ) {
+                        "Book source at index $index has an invalid 'ruleContent.maxBatchSize' field"
+                    }
+                }
+            }
+        }
     }
 
     private fun JsonObject.stringOrNull(key: String): String? {
