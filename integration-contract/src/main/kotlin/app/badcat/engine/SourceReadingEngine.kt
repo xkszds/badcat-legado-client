@@ -45,7 +45,10 @@ class SourceReadingEngine(
         sourceId: String,
         bookUrl: String,
     ): EngineResult<BookDetail> {
-        val source = findSource(sourceId) ?: return sourceNotFound(sourceId)
+        val source = when (val result = findSource(sourceId)) {
+            is EngineResult.Failure -> return result
+            is EngineResult.Success -> result.value
+        }
         return detailService.load(source, bookUrl)
     }
 
@@ -53,7 +56,10 @@ class SourceReadingEngine(
         sourceId: String,
         bookUrl: String,
     ): EngineResult<List<BookChapter>> {
-        val source = findSource(sourceId) ?: return sourceNotFound(sourceId)
+        val source = when (val result = findSource(sourceId)) {
+            is EngineResult.Failure -> return result
+            is EngineResult.Success -> result.value
+        }
         val detail = when (val result = detailService.load(source, bookUrl)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
@@ -66,7 +72,10 @@ class SourceReadingEngine(
         bookUrl: String,
         chapterUrl: String,
     ): EngineResult<ChapterContent> {
-        val source = findSource(sourceId) ?: return sourceNotFound(sourceId)
+        val source = when (val result = findSource(sourceId)) {
+            is EngineResult.Failure -> return result
+            is EngineResult.Success -> result.value
+        }
         return contentService.load(
             source,
             bookUrl,
