@@ -99,5 +99,5 @@ class LegadoRegexJsExtensions(
 
     private fun digest(algorithm: String, value: String): String =
         MessageDigest.getInstance(algorithm).digest(value.toByteArray(Charsets.UTF_8))
-            .joinToString("") { byte -> "%02x".format(byte) }
+            .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
 }
