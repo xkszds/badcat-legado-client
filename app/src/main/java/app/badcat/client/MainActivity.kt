@@ -19,7 +19,7 @@ class MainActivity : Activity() {
                 Badcat + Legado integration workspace
 
                 Build scaffold: initialized
-                Reading engine: adapter pending
+                Reading engine: source adapter implemented, host wiring pending
                 Original Badcat UI: not yet integrated
                 APK validation: pending CI build
             """.trimIndent()
