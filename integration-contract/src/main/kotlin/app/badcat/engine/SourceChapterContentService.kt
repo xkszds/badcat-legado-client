@@ -23,9 +23,17 @@ class SourceChapterContentService(
         }
         return when (val parsed = parser.parse(source, response, chapter)) {
             is EngineResult.Failure -> parsed
-            is EngineResult.Success -> EngineResult.Success(
-                parsed.value.copy(text = textReplacement.replace(parsed.value.text)),
-            )
+            is EngineResult.Success -> runCatching {
+                EngineResult.Success(
+                    parsed.value.copy(text = textReplacement.replace(parsed.value.text)),
+                )
+            }.getOrElse {
+                EngineResult.Failure(
+                    EngineErrorCode.PARSE,
+                    "Chapter text replacement failed for source '${source.id}'",
+                    it,
+                )
+            }
         }
     }
 }
