@@ -4,6 +4,10 @@ Last updated: 2026-11-15
 
 ## Latest implementation update
 
+- Added `CssChapterContentParser` for the bounded CSS subset of Legado `ContentRule`: chapter body, optional title, and next-chapter URL. HTML output is converted to readable text with script/style/iframe/noscript elements removed and paragraph/line breaks preserved.
+- Added `SourceChapterContentService` to fetch a chapter through the shared HTTP gateway, enforce 2xx status, and parse its content. Added parser tests for text extraction, next-link resolution, fallback title, and script-rule rejection.
+- Explicit unsupported content features remain: `webJs`, `callBackJs`, JavaScript/interpolation, `sourceRegex`, `replaceRegex`, `payAction`, image decoding/style, content batching, and full upstream AnalyzeRule semantics. This is not yet full Legado content compatibility; ad purification remains a separate pipeline.
+- Tests remain authored but unexecuted. No successful CI run or installable APK is confirmed.
 - Added `CssTocParser` for the official Legado `TocRule` CSS subset: `chapterList`, `chapterName`, `chapterUrl`, and `nextTocUrl`. Chapter and next-page URLs are resolved against the response URL.
 - Added `SourceTocService` to fetch TOC pages sequentially, follow extracted next-page links, prevent URL loops, cap pagination at 20 pages, deduplicate chapters by URL, and assign stable indices. Added tests for chapter extraction, relative URLs, pagination URL extraction, and script-rule rejection.
 - TOC limitations remain explicit: no full AnalyzeRule, JavaScript/formatJs, volume/VIP/pay metadata, reverse-TOC preferences, or advanced pagination expressions. Tests are authored but not executed; no CI/APK result is available.
