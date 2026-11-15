@@ -24,10 +24,7 @@ object CssRuleEvaluator {
 
         return runCatching {
             val outerSplit = RuleExpressionTokenizer.splitByFirstTopLevelOperator(rule)
-            if (outerSplit.operator != null && outerSplit.rules.any { part ->
-                    RuleExpressionTokenizer.splitByFirstTopLevelOperator(part).operator != null
-                }
-            ) {
+            if (RuleCombinationEvaluator.hasNestedTopLevelOperator(rule)) {
                 return@runCatching EngineResult.Failure(
                     EngineErrorCode.UNSUPPORTED_RULE,
                     "Nested CSS list-combination operators are not supported",
