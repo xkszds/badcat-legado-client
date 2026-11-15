@@ -58,7 +58,7 @@ class CssTocParser {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
             } ?: continue
-            val rawUrl = when (val result = extract(item, rules["chapterUrl"])) {
+            val rawUrl = when (val result = extract(item, rules["chapterUrl"]?.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")?.replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)"))) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
             }
@@ -73,7 +73,7 @@ class CssTocParser {
         val nextUrls = ArrayList<String>()
         val nextRule = rules["nextTocUrl"]?.takeIf(String::isNotBlank)
         if (nextRule != null) {
-            val urlRule = if (nextRule.substringAfterLast("@", "").let { it in setOf("href", "src", "text", "html") }) nextRule else "$nextRule@href"
+            val urlRule = if (nextRule.substringAfterLast("@", "").let { it in setOf("href", "src", "text", "html") }) nextRule.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)").replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)") else "$nextRule@attr(href)"
             when (val result = SelectorRuleEvaluator.evaluate(root, SelectorRuleType.CSS, urlRule)) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> {
