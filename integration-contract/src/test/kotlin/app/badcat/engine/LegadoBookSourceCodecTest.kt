@@ -122,6 +122,19 @@ class LegadoBookSourceCodecTest {
     }
 
     @Test
+    fun rejectsMalformedRuleObjectsInsteadOfSilentlyDroppingThem() {
+        val malformedSources = listOf(
+            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad search","ruleSearch":"div.book"}""",
+            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad content","ruleContent":[]}"""
+        )
+        malformedSources.forEach { json ->
+            assertFailsWith<IllegalArgumentException> {
+                LegadoBookSourceCodec.decode(json)
+            }
+        }
+    }
+
+    @Test
     fun rejectsDuplicateSourceUrlsInsteadOfSilentlyOverwriting() {
         val duplicate = """
             [
