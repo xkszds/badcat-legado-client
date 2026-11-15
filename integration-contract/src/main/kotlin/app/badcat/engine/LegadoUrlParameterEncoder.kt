@@ -13,7 +13,7 @@ object LegadoUrlParameterEncoder {
 
     private val querySafe = buildSet<Char> {
         addAll("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
-        addAll("!$%&()*+,/:;=?@[\\\\]^\u0060{|}")
+        addAll("!$%&()*+,/:;=?@[\\]^\u0060{|}")
     }
 
     private val queryAlreadyEncodedSafe = buildSet<Char> {
@@ -31,11 +31,10 @@ object LegadoUrlParameterEncoder {
      * NetworkUtils.encodedQuery; otherwise it applies its RFC3986 PercentCodec.
      */
     fun encodeQuery(params: String, charsetName: String? = null): String {
-        val charset = resolveCharset(charsetName)
-        if (charset != null && isAlreadyEncoded(params, queryAlreadyEncodedSafe)) {
-            return params
-        }
-        return percentEncode(params, charset ?: Charsets.UTF_8, querySafe)
+        if (charsetName == "escape") return encodeForm(params, charsetName)
+        val charset = resolveCharset(charsetName) ?: Charsets.UTF_8
+        if (isAlreadyEncoded(params, queryAlreadyEncodedSafe)) return params
+        return percentEncode(params, charset, querySafe)
     }
 
     /**
@@ -86,7 +85,7 @@ object LegadoUrlParameterEncoder {
         when {
             checkEncoded && isAlreadyEncoded(value, formAlreadyEncodedSafe) -> value
             charset == null -> escape(value)
-            else -> URLEncoder.encode(value, charset)
+            else -> URLEncoder.encode(value, charset.name())
         }
 
     private fun resolveCharset(charsetName: String?): Charset? = when {
