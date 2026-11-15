@@ -2,6 +2,7 @@ package app.badcat.client.runtime
 
 import android.content.Context
 import app.badcat.client.FileBookSourceCatalog
+import app.badcat.client.FileReplaceRuleCatalog
 import app.badcat.engine.BookTextReplacement
 import app.badcat.engine.BookSourceSearchUrlResolver
 import app.badcat.engine.OkHttpSourceRequestClient
@@ -29,6 +30,7 @@ class BadcatReadingEngineFactory(
     private val bookTextReplacement: BookTextReplacement = BookTextReplacement { text -> text },
 ) {
     private val catalog = FileBookSourceCatalog(context.applicationContext)
+    private val replaceRuleCatalog = FileReplaceRuleCatalog(context.applicationContext)
 
     fun create(): ReadingEngine {
         val gateway = BadcatSourceHttpGatewayFactory(
@@ -51,4 +53,7 @@ class BadcatReadingEngineFactory(
 
     /** Exposes the same durable catalog for import/export and enabled-state UI. */
     fun sourceCatalog(): FileBookSourceCatalog = catalog
+
+    /** Exposes durable Legado replacement-rule import/export storage. */
+    fun replaceRuleCatalog(): FileReplaceRuleCatalog = replaceRuleCatalog
 }
