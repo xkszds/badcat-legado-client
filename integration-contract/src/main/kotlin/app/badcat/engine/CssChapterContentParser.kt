@@ -1,7 +1,6 @@
 package app.badcat.engine
 
 import org.jsoup.Jsoup
-import org.jsoup.nodes.Element
 import org.jsoup.nodes.TextNode
 
 /**
