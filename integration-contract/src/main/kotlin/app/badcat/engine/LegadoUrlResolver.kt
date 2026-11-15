@@ -48,6 +48,8 @@ object LegadoUrlResolver {
                 JsonParser.parseString(optionJson).takeIf { it.isJsonObject }?.asJsonObject
                     ?: throw IllegalArgumentException("URL options must be a JSON object")
             }
+            // URI rejects raw Unicode and spaces in query values; Legado encodes them later.
+            expanded = encodeQueryForUri(expanded, options?.string("charset"))
             val base = URI(baseUrl)
             require(
                 base.scheme.equals("http", true) &&
@@ -122,6 +124,15 @@ object LegadoUrlResolver {
         }
     }
 
+    private fun encodeQueryForUri(rule: String, charsetName: String?): String {
+        val fragmentAt = rule.indexOf('#').let { if (it < 0) rule.length else it }
+        val queryAt = rule.indexOf('?')
+        if (queryAt < 0 || queryAt >= fragmentAt) return rule
+        val query = rule.substring(queryAt + 1, fragmentAt)
+        val encoded = LegadoUrlParameterEncoder.encodeQuery(query, charsetName)
+        return rule.substring(0, queryAt) +
+            if (encoded.isEmpty()) rule.substring(fragmentAt) else "?$encoded" + rule.substring(fragmentAt)
+    }
     private fun replacePageTokens(rule: String, page: Int?): String {
         if (page == null) return rule
         return PAGE_TOKEN.replace(rule) { match ->
