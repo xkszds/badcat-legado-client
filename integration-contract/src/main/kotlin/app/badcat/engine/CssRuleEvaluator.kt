@@ -23,6 +23,17 @@ object CssRuleEvaluator {
         }
 
         return runCatching {
+            val outerSplit = RuleExpressionTokenizer.splitByFirstTopLevelOperator(rule)
+            if (outerSplit.operator != null && outerSplit.rules.any { part ->
+                    RuleExpressionTokenizer.splitByFirstTopLevelOperator(part).operator != null
+                }
+            ) {
+                return@runCatching EngineResult.Failure(
+                    EngineErrorCode.UNSUPPORTED_RULE,
+                    "Nested CSS list-combination operators are not supported",
+                )
+            }
+
             var firstFailure: EngineResult.Failure? = null
             val combined = RuleCombinationEvaluator.evaluate(rule) { part ->
                 when (val result = evaluateSingle(document, part)) {
@@ -34,7 +45,7 @@ object CssRuleEvaluator {
                 }
             }
 
-            val operator = RuleExpressionTokenizer.splitByFirstTopLevelOperator(rule).operator
+            val operator = outerSplit.operator
             if (firstFailure != null && (operator != "||" || combined.isEmpty())) {
                 firstFailure!!
             } else {
