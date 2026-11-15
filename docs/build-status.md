@@ -1,5 +1,12 @@
 ## Latest implementation update (2026-11-15)
 
+- Centralized the enabled-source gate in `SourceReadingEngine.findSource`, so disabled sources are rejected consistently for search, book-detail, TOC and chapter-content operations rather than relying only on the HTTP gateway. Search still rejects blank keywords and blank resolved URLs before requesting.
+- Added a regression test that verifies a disabled source cannot enter the book-detail request path; the existing search test verifies the URL resolver is not called for a disabled source. Tests are authored, not executed.
+- Reviewed the pinned Legado Rhino artifact metadata: upstream uses an HtmlUnit Rhino fork (`org.htmlunit:htmlunit-core-js:5.3.0-legado.4`) plus Legado-specific context, bindings, class shutter and execution guards. Adding only the Maven artifact would not reproduce those safety/runtime semantics, so JavaScript URL evaluation remains disabled instead of introducing an unreviewed permissive script engine.
+- No Android search UI or executable full Legado runtime is wired. No compilation, CI run, device test or installable APK is confirmed.
+
+## Latest implementation update (2026-11-15)
+
 - Hardened `SourceReadingEngine.search`: blank/whitespace-only keywords are rejected before source lookup; disabled sources are rejected before the URL resolver or HTTP service can run; blank resolved URLs are rejected before network access.
 - Added unit-test cases proving disabled sources do not invoke the resolver and blank keywords are rejected before resolution. Tests are authored but have not been executed.
 - Verified the pinned upstream Legado `AnalyzeUrl.kt` at commit `330e606c4d57e08adc056ff8ab7a4132c784da9`: `{{...}}` expressions are evaluated as JavaScript with `key` in the runtime bindings, before URL query/form encoding. Therefore a generic text substitution is not a faithful or safe implementation. Dynamic URL expressions remain unsupported until the pinned Rhino behavior and encoding pipeline are integrated.
