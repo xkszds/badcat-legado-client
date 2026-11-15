@@ -35,6 +35,9 @@ jobs:
         with:
           gradle-version: '8.14.4'
 
+      - name: Run contract unit tests
+        run: gradle --no-daemon :integration-contract:test
+
       - name: Assemble debug APK
         run: gradle --no-daemon :app:assembleDebug
 
