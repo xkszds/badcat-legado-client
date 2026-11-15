@@ -28,6 +28,7 @@ interface ReadingEngine {
         sourceId: String,
         bookUrl: String,
         chapterUrl: String,
+        bookName: String? = null,
     ): EngineResult<ChapterContent>
 }
 
