@@ -30,6 +30,7 @@ class LegadoBookSourceCodecTest {
               "ruleBookInfo": {"name": "h1@text"},
               "ruleToc": {"chapterList": "a.chapter"},
               "ruleContent": {"content": "#content"},
+              "ruleReview": {"enabled": true, "reviewUrl": "/reviews"},
               "mainJs": "function search() { return []; }",
               "futureField": {"keep": true}
             }
@@ -54,6 +55,7 @@ class LegadoBookSourceCodecTest {
         assertEquals("function search() { return []; }", engineSource.mainJs)
         assertTrue(engineSource.ruleSearchJson!!.contains("div.book"))
         assertTrue(engineSource.ruleContentJson!!.contains("#content"))
+        assertTrue(engineSource.ruleReviewJson!!.contains("/reviews"))
 
         val exported = JsonParser.parseString(LegadoBookSourceCodec.encode(listOf(source)))
             .asJsonArray.single().asJsonObject
@@ -127,7 +129,8 @@ class LegadoBookSourceCodecTest {
     fun rejectsMalformedRuleObjectsInsteadOfSilentlyDroppingThem() {
         val malformedSources = listOf(
             """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad search","ruleSearch":"div.book"}""",
-            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad content","ruleContent":[]}"""
+            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad content","ruleContent":[]}""",
+            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad review","ruleReview":42}"""
         )
         malformedSources.forEach { json ->
             assertFailsWith<IllegalArgumentException> {
