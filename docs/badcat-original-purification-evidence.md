@@ -70,7 +70,7 @@ Do not merge PPRule or AdMarkRuleItem into Legado ReplaceRule JSON. Do not silen
 - Legado title/body scope selection: implemented.
 - Literal replacement: implemented.
 - Bounded Java/Kotlin regex replacement: implemented with timeout detection; timed-out rules are disabled in the local catalog.
-- JavaScript @js replacement expressions: explicitly unsupported and fail closed.
+- JavaScript @js replacement expressions: bounded Rhino execution is wired with result/book/chapter context and per-rule helper state (log, logType, get, put, MD5). This is a limited host, not full upstream RegexJsExtensions/JsEncodeUtils compatibility; unsupported helpers may still fail.
 - Development-only rule manager screen: implemented; it is not the original Badcat settings UI.
 - Original Badcat WebView JS injection, AdMark service, and PPRule execution: not ported.
 - Original Badcat UI/resource reconstruction: not yet integrated into the host app.
