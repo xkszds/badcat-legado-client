@@ -1,5 +1,11 @@
 ## Latest implementation update (2026-11-15)
 
+- Added validation at the shared request-factory boundary for transport options: retry count is limited to 0–5, timeout must be positive and fit the transport's supported millisecond range, and response charset names must be recognized (with Legado's explicit `escape` mode retained).
+- Added regression tests for excessive retries, zero/oversized timeouts and invalid charset names. This prevents malformed imported source options from reaching OkHttp as late runtime failures.
+- Tests are authored but not executed. No compile, CI run, device test or installable APK is confirmed.
+
+## Latest implementation update (2026-11-15)
+
 - Hardened the shared HTTP request factory: only absolute HTTP/HTTPS URLs with a host and without embedded URL credentials are accepted. Header names are restricted to HTTP token characters, and header values containing CR/LF or disallowed control characters are rejected before transport creation.
 - Added regression tests for non-HTTP schemes, relative URLs, credential-bearing URLs, CRLF header injection and invalid header names. Corrected Kotlin character escape literals during source review.
 - Tests are authored but not executed. No compile, CI run, device test or installable APK is confirmed.
