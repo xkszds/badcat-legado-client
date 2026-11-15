@@ -60,6 +60,27 @@ class CssRuleEvaluatorTest {
     }
 
     @Test
+    fun combinesCssRulesWithLegadoOperators() {
+        val fallback = CssRuleEvaluator.evaluate(
+            document,
+            "a.missing@text || p.intro@text",
+        )
+        assertEquals(
+            listOf("First intro", "Second intro"),
+            assertIs<EngineResult.Success<List<String>>>(fallback).value,
+        )
+
+        val concatenated = CssRuleEvaluator.evaluate(
+            document,
+            "a.title@text && p.intro@text",
+        )
+        assertEquals(
+            listOf("Alpha Novel", "Beta Novel", "First intro", "Second intro"),
+            assertIs<EngineResult.Success<List<String>>>(concatenated).value,
+        )
+    }
+
+    @Test
     fun rejectsUnsupportedSuffixAndMalformedSelector() {
         val unsupported = CssRuleEvaluator.evaluate(document, "a.title@unknown")
         assertIs<EngineResult.Failure>(unsupported)
