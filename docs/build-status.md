@@ -1,5 +1,10 @@
 ## Latest implementation update (2026-11-15)
 
+- Hardened the existing GitHub Actions Android build workflow with an explicit preflight for the pinned Legado HtmlUnit/Rhino fork JAR. The step checks the expected local Maven artifact path and prints the expected SHA-256 before APK assembly, so a missing binary is reported as a clear prerequisite rather than an opaque Gradle dependency-resolution failure.
+- The workflow file exists and is configured for pushes/PRs to `main` plus manual dispatch. The latest queried commit still has no associated workflow run or status checks; adding the preflight does not itself run CI.
+- The expected JAR remains absent from the repository. No successful Gradle build, device validation or APK is confirmed.
+## Latest implementation update (2026-11-15)
+
 - Extended the development reader's book-level bookmark picker with a per-book management action: select a bookmarked chapter, then open its saved position or delete that chapter's bookmark. Deletion removes only the selected source/book/chapter key; the automatic last-read position and other chapter bookmarks remain intact.
 - The manager is derived from the currently loaded TOC and existing single-bookmark-per-chapter storage. It is not a full multi-anchor bookmark database and does not reproduce the original Badcat bookmark screen.
 - Verified the edit paths by source inspection only. No Gradle compilation, automated tests, device validation, CI result or APK generation is confirmed.
