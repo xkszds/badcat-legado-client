@@ -59,18 +59,6 @@ object SourceRequestFactory {
             )
         }
 
-        val parsedUrl = runCatching { URI(url) }.getOrNull()
-        if (parsedUrl == null ||
-            parsedUrl.scheme?.lowercase() !in setOf("http", "https") ||
-            parsedUrl.host.isNullOrBlank() ||
-            parsedUrl.rawUserInfo != null
-        ) {
-            return EngineResult.Failure(
-                EngineErrorCode.INVALID_SOURCE,
-                "Request URL must be an absolute HTTP(S) URL without embedded credentials",
-            )
-        }
-
         if (retryCount !in 0..5 ||
             timeoutMillis?.let { it <= 0 || it > Int.MAX_VALUE } == true
         ) {
