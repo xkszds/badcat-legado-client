@@ -5,6 +5,8 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Base64
+import android.widget.Button
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -88,6 +90,21 @@ class SourceBookActivity : Activity() {
     private fun showChapters(chapters: List<BookChapter>) {
         chapterList.removeAllViews()
         status.append("\n\n目录：${chapters.size} 章（点击章节开始阅读）")
+        val savedChapterUrl = getSharedPreferences("badcat_reading_progress", MODE_PRIVATE)
+            .getString(readingProgressKey(sourceId, bookUrl), null)
+        if (!savedChapterUrl.isNullOrBlank()) {
+            chapterList.addView(Button(this).apply {
+                text = "继续上次阅读"
+                setOnClickListener {
+                    startActivity(Intent(this@SourceBookActivity, SourceChapterActivity::class.java).apply {
+                        putExtra(SourceChapterActivity.EXTRA_SOURCE_ID, sourceId)
+                        putExtra(SourceChapterActivity.EXTRA_BOOK_URL, bookUrl)
+                        putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, savedChapterUrl)
+                        putExtra(SourceChapterActivity.EXTRA_CHAPTER_TITLE, "继续阅读")
+                    })
+                }
+            })
+        }
         if (chapters.isEmpty()) {
             chapterList.addView(TextView(this).apply { text = "目录为空" })
             return
@@ -153,7 +170,7 @@ class SourceChapterActivity : Activity() {
         currentChapterUrl = intent.getStringExtra(EXTRA_CHAPTER_URL).orEmpty()
         val chapterTitle = intent.getStringExtra(EXTRA_CHAPTER_TITLE).orEmpty()
         if (currentChapterUrl.isBlank()) {
-            currentChapterUrl = preferences.getString(progressKey(sourceId, bookUrl), "").orEmpty()
+            currentChapterUrl = preferences.getString(readingProgressKey(sourceId, bookUrl), "").orEmpty()
         }
         textSizeSp = preferences.getFloat("reader_text_size", 18f).coerceIn(14f, 32f)
 
@@ -272,13 +289,15 @@ class SourceChapterActivity : Activity() {
         super.onDestroy()
     }
 
-    private fun progressKey(source: String, book: String): String =
-        "last_chapter_" + (source + "|" + book).hashCode().toString()
-
     companion object {
         const val EXTRA_SOURCE_ID = "reader_source_id"
         const val EXTRA_BOOK_URL = "reader_book_url"
         const val EXTRA_CHAPTER_URL = "reader_chapter_url"
         const val EXTRA_CHAPTER_TITLE = "reader_chapter_title"
     }
+}
+
+private fun readingProgressKey(sourceId: String, bookUrl: String): String {
+    val raw = "$sourceId\n$bookUrl".toByteArray(Charsets.UTF_8)
+    return "last_chapter_" + Base64.encodeToString(raw, Base64.URL_SAFE or Base64.NO_WRAP)
 }
