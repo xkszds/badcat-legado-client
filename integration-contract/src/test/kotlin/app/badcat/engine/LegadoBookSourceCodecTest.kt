@@ -112,6 +112,8 @@ class LegadoBookSourceCodecTest {
             """{"bookSourceUrl":42,"bookSourceName":"Numeric URL"}""",
             """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad enabled","enabled":"yes"}""",
             """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad type","bookSourceType":"web"}""",
+            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Fractional type","bookSourceType":1.5}""",
+            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Overflow type","bookSourceType":2147483648}""",
             """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad header","header":{"User-Agent":"x"}}"""
         )
         malformedSources.forEach { json ->
