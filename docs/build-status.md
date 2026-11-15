@@ -22,7 +22,7 @@ Last updated: 2026-11-15
 
 ## Not yet verified
 
-- GitHub Actions has not been confirmed green; no successful CI test or package result is claimed.
+- Added a lexical tokenizer for top-level `&&`, `||` and `%%` delimiters. It ignores operators inside quoted strings and balanced `()`, `[]`, `{}` groups. This is tokenization groundwork only; it does not implement or claim upstream evaluation semantics. Tests are authored but unrun.\n- GitHub Actions has not been confirmed green; no successful CI test or package result is claimed.
 - No APK artifact has been downloaded or installed.
 - The source codec now maps common upstream source configuration (headers, cookie-jar flag, JS library, login/explore/search URLs, main JS and nested rule JSON) into the host contract. Nested rules remain inert JSON: no Legado parser or JavaScript execution runtime is integrated. The codec is still import/export plumbing, not search or parsing execution.
 - Original Badcat UI and its real navigation are not yet present in the new Android module.
@@ -40,6 +40,6 @@ Last updated: 2026-11-15
 
 1. Confirm the latest workflow run and inspect logs.
 2. Implement the Legado app-layer engine slice and its initialization, network and persistence dependencies.
-3. Implement concrete transport, selector/parser dispatch and Rhino adapter behind the new contracts; then add source fixtures for search, detail, catalog and chapter content.
+3. Verify combination-operator semantics against the pinned upstream `RuleAnalyzer`, then implement evaluation over the CSS primitive; add JSONPath/XPath dispatch and concrete transport/Rhino adapters before end-to-end source fixtures.
 4. Migrate the original UI behavior and verify it on the target Android device.
 5. Only then treat a CI-produced APK as a candidate build artifact.
