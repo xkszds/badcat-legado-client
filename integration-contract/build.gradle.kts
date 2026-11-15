@@ -8,6 +8,8 @@ kotlin {
 
 dependencies {
     implementation("com.google.code.gson:gson:2.14.0")
+    // Match the pinned Legado baseline; do not upgrade independently.
+    implementation("org.jsoup:jsoup:1.16.2")
     testImplementation(kotlin("test-junit"))
     testImplementation("junit:junit:4.13.2")
 }
