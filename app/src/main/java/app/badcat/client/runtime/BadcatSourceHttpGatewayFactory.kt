@@ -7,19 +7,26 @@ import app.badcat.engine.SourceRequestClient
 import app.badcat.engine.SourceScriptRuntime
 
 /**
- * Creates a source-scoped HTTP gateway with the bounded embedded-template
- * adapter explicitly enabled.
- *
- * This factory enables only the `{{...}}` expression subset and the string
- * `key` binding. It does not enable @js, bodyJs, WebView, Java host objects,
- * login/session services, or the other bindings required by full AnalyzeUrl.
- * Hosts that are not ready to execute embedded expressions should construct
- * SourceHttpGateway directly, whose default remains fail-closed.
+ * Creates gateways whose bounded URL-template evaluator is selected per request.
+ * The provider receives the actual BookSource passed to execute(), preventing a
+ * shared service graph from evaluating every source with the first source's context.
+ * Only {{...}} and the string key binding are exposed; @js, bodyJs, WebView,
+ * Java host objects and login/session services remain unsupported.
  */
 class BadcatSourceHttpGatewayFactory(
     private val client: SourceRequestClient = OkHttpSourceRequestClient(),
     private val scriptRuntime: SourceScriptRuntime = RhinoSourceScriptRuntime(),
 ) {
+    /** Use this gateway in shared Source*Service instances handling many sources. */
+    fun create(): SourceHttpGateway =
+        SourceHttpGateway(
+            client = client,
+            embeddedScriptEvaluatorProvider = { source ->
+                RhinoEmbeddedUrlScriptEvaluator(source = source, runtime = scriptRuntime)
+            },
+        )
+
+    /** Convenience for an intentionally single-source service graph. */
     fun forSource(source: BookSource): SourceHttpGateway =
         SourceHttpGateway(
             client = client,
