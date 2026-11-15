@@ -51,7 +51,7 @@ class LegadoLiteralReplacementTest {
         )
         val replacement = LegadoLiteralReplacement(rules, "Book", "source")
 
-        assertFailsWith<IllegalArgumentException> {
+        assertFailsWith<UnsupportedOperationException> {
             replacement.replace("chapter 123")
         }
     }
