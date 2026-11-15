@@ -8,12 +8,14 @@ class SourceChapterContentService(
     private val http: SourceHttpGateway,
     private val parser: CssChapterContentParser = CssChapterContentParser(),
     private val textReplacement: BookTextReplacement = BookTextReplacement { it },
+    private val scopedTextReplacement: ScopedBookTextReplacement? = null,
     private val maxPages: Int = 20,
 ) {
     suspend fun load(
         source: BookSource,
         bookUrl: String,
         chapter: BookChapter,
+        bookName: String = "",
     ): EngineResult<ChapterContent> {
         if (bookUrl.isBlank() || chapter.url.isBlank() || maxPages < 1) {
             return EngineResult.Failure(
@@ -67,7 +69,11 @@ class SourceChapterContentService(
             EngineResult.Success(
                 ChapterContent(
                     title = title,
-                    text = textReplacement.replace(combinedText),
+                    text = scopedTextReplacement?.replace(
+                        chapterText = combinedText,
+                        bookName = bookName,
+                        bookOrigin = source.name.ifBlank { source.id },
+                    ) ?: textReplacement.replace(combinedText),
                 ),
             )
         }.getOrElse {
