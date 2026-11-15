@@ -8,7 +8,7 @@ Added `LegadoEmbeddedUrlTemplate` and an injected `LegadoEmbeddedScriptEvaluator
 
 Regression tests were added for multiple expressions, Unicode key passthrough, null/integral numeric conversion, unmatched markers, and evaluator failure. These tests are authored only; they have not been run.
 
-**Important:** this helper is not wired into `LegadoUrlResolver`, `SearchUrlResolver`, or the HTTP gateway. It does not percent-encode query/form values. All script-bearing source URLs therefore remain rejected. The next gate is to port and test upstream query/form encoding before any orchestration integration.
+**Important:** neither helper is wired into `LegadoUrlResolver`, `SearchUrlResolver`, or the HTTP gateway. The new `LegadoUrlParameterEncoder` separately ports the pinned `AnalyzeUrl.encodeParams` / `NetworkUtils.encodedQuery` / `encodedForm` behavior: RFC3986 query-safe characters, the upstream already-encoded checks, segment-wise form encoding, charset selection, and legacy `escape` mode. Nine regression tests cover UTF-8/GBK, spaces, delimiters, existing and malformed percent escapes, empty form segments, and escape mode. They are authored but have not been run. Script-bearing source URLs therefore remain rejected.
 
 # AnalyzeUrl JavaScript compatibility gate
 
@@ -46,9 +46,9 @@ Consequently, enabling the sandbox directly inside the current static resolver w
 
 1. Keep the existing fail-closed behavior for all script-bearing URL rules.
 2. Implement a separately testable template evaluator with only the reviewed `key` binding for the narrow embedded-expression subset.
-3. Port the pinned upstream query/form encoding behavior and test Unicode, spaces, ampersands, equals signs, existing percent escapes, null, numeric and string results.
-4. Integrate template evaluation and encoding as one ordered URL preparation pipeline; do not expose host objects until each API has a reviewed, source-scoped contract.
-5. Keep `@js`, `js`, `bodyJs`, WebView, login and shared-global behavior disabled until their independent semantics and tests exist.
+3. Integrate the isolated query/form encoder into the static URL preparation pipeline, preserving the upstream GET-query versus POST-form branching and content-type checks.
+4. Add orchestration tests proving embedded-template expansion happens before query/form encoding; do not expose host objects until each API has a reviewed, source-scoped contract.
+5. Keep `@js`, URL-option `js`, `bodyJs`, WebView, login and shared-global behavior disabled until their independent semantics and tests exist.
 
 ## Verification
 
