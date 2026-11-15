@@ -14,7 +14,7 @@ Last updated: 2026-11-15
 - Kotlin/JVM integration contract module.
 - JDK 21 toolchain configuration.
 - Kotlin plugin aligned to 2.4.20 and Android Gradle Plugin 8.13.2, matching the pinned Legado upstream baseline.
-- Legado book-source JSON import/export codec that retains the complete raw source object, including rule fields unknown to this host, and maps basic metadata into the host source model.
+- Legado book-source JSON import/export codec that retains the complete raw source object, including rule fields unknown to this host, and maps core source metadata plus raw JSON for explore/search/detail/TOC/content rule objects into the host contract.
 - Re-verified original Badcat APK SHA-256 and recorded screenshot-backed UI acceptance criteria and high-priority resource paths in `docs/badcat-apk-ui-baseline.md`.
 - Unit tests for source JSON round-trip/defaults/invalid identity and purification-domain separation.
 - GitHub Actions workflow to run contract tests and assemble a debug APK.
@@ -24,10 +24,17 @@ Last updated: 2026-11-15
 
 - GitHub Actions has not been confirmed green; no successful CI test or package result is claimed.
 - No APK artifact has been downloaded or installed.
-- No Legado app-layer rule runtime is integrated. The source codec is import/export plumbing, not search or parsing execution.
+- The source codec now maps common upstream source configuration (headers, cookie-jar flag, JS library, login/explore/search URLs, main JS and nested rule JSON) into the host contract. Nested rules remain inert JSON: no Legado parser or JavaScript execution runtime is integrated. The codec is still import/export plumbing, not search or parsing execution.
 - Original Badcat UI and its real navigation are not yet present in the new Android module.
 - Badcat purification behavior has not yet been ported; only isolated interfaces and contract tests exist.
 - No Gradle wrapper has been committed; CI provisions Gradle 8.14.4.
+
+## Latest implementation update (2026-11-15)
+
+- Expanded `BookSource` host contract to expose frequently used upstream source settings and raw nested rule JSON for explore, search, book info, TOC and content.
+- Extended codec mapping and fixture assertions, including upstream default behavior for the cookie jar.
+- These are metadata/model-adapter improvements only. The upstream rule entity classes, parser dispatch, Rhino bindings, network layer and search/detail/TOC/content orchestration remain unported.
+- Tests were edited but have not been executed in this environment; CI has not been confirmed green.
 
 ## Next validation
 
