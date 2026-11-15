@@ -1,5 +1,11 @@
 ## Latest implementation update (2026-11-15)
 
+- Added `docs/analyze-url-js-compatibility-gate.md` after re-reading the pinned upstream `AnalyzeUrl.kt`, `ScriptBindings.kt`, and `RhinoScriptEngine.kt`. It records the exact order of `@js`, embedded `{{...}}`, page tokens, URL-option parsing, and query/form encoding; it also records the upstream primitive conversion rules and why the current string-only sandbox is not yet safe to wire into search.
+- Confirmed that upstream embedded JavaScript receives `key` plus additional host bindings, and that query/form encoding happens after expression evaluation. The current adapter exposes neither the complete binding model nor the exact encoding pipeline, so script-bearing URL rules remain fail-closed.
+- This is a source-level compatibility audit only. No runtime behavior was enabled, and no Gradle build, tests, CI run, device validation, or installable APK is confirmed.
+
+## Latest implementation update (2026-11-15)
+
 - Added `LegadoRhinoSandbox` inside `:legado-rhino`: string-only host bindings, bounded script/binding sizes, primitive-only return values, and a coroutine timeout enforced through the upstream Rhino instruction observer.
 - Added Android `RhinoSourceScriptRuntime` implementing the platform-neutral `SourceScriptRuntime` contract. It maps parse/unsupported/timeout outcomes and propagates caller cancellation. It deliberately does not expose Java/Android services, HTTP, cookies, cache, or WebView objects.
 - Important build dependency correction: the pinned `org.htmlunit:htmlunit-core-js:5.3.0-legado.4` fork is **not** a Maven Central release. Upstream stores it in `third_party/maven`; the local Maven repository and POM metadata are now configured. The required JAR (1,900,654 bytes; upstream Git blob SHA `d240cdd66f5269ed33da53cde7e4e690cee6e162`) is not yet in this repository because the available GitHub integration cannot transfer binary blobs. The project must not substitute stock HtmlUnit 5.3.0, which lacks the pinned Legado fork changes. This missing JAR is a hard build blocker.
