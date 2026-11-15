@@ -94,4 +94,31 @@ class SourceChapterContentServiceTest {
         assertEquals("Scoped page.\n\nSecond page.", result.text)
     }
 
+
+    @Test
+    fun mapsUnsupportedReplacementRuntimeToTypedEngineError() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleContentJson = """{"content":"div#content"}""",
+        )
+        val service = SourceChapterContentService(
+            http = SourceHttpGateway(FixtureClient()),
+            scopedTextReplacement = ScopedBookTextReplacement { _, _, _ ->
+                throw UnsupportedOperationException("Regex runtime unavailable")
+            },
+        )
+
+        val result = assertIs<EngineResult.Failure>(
+            service.load(
+                source,
+                "https://reader.example/book/1",
+                BookChapter(0, "Chapter", "https://reader.example/chapter/1"),
+                bookName = "Novel",
+            ),
+        )
+        assertEquals(EngineErrorCode.UNSUPPORTED_RULE, result.code)
+    }
+
 }
