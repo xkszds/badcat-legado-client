@@ -86,7 +86,7 @@ data class BookChapter(
 data class ChapterContent(
     val title: String,
     val text: String,
-    val nextChapterUrl: String? = null,
+    val nextPageUrl: String? = null,
     val previousChapterUrl: String? = null,
 )
 
