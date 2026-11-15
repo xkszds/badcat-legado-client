@@ -2,47 +2,52 @@
 
 Last updated: 2026-11-15
 
-## Latest engineering update
+## Latest implementation update
 
-- Reviewed the pinned upstream implementation of `BookList`, `BookInfo`, `BookChapterList`, `BookContent`, `AnalyzeRule`, `AnalyzeUrl` and the upstream `BookSource` model.
-- Added `docs/legado-runtime-porting-map.md` with the observed operation-level dependency map and a staged porting/acceptance plan.
-- This is source review and documentation only; no upstream runtime code was ported and no build/test result is implied.
+- Added `OkHttpSourceRequestClient` using the pinned Legado baseline OkHttp 5.4.0.
+- HTTP requests now support static source/request headers, GET/HEAD and body-bearing methods, redirect following, final URL/status/headers/content type/body capture, configurable connect/read/write timeouts, and an 8 MiB default response limit.
+- Added an in-memory cookie jar isolated by source ID. It respects cookie domain/path/secure/expiry matching; the existing per-source `enabledCookieJar` flag disables cookie storage and sending for that request.
+- Added cookie-jar unit tests for domain/path/secure scoping and isolation between sources.
+- Added `SourceRuleResolver.evaluateStage` and `SelectorLegadoRuleRuntime` to connect nested stage JSON to selector primitives when each field's selector mode is explicitly configured.
+- These changes are committed to the connected GitHub repository. No successful test/build run has been observed; the latest commit has no reported workflow runs or status checks.
 
 ## Added
 
-- Android application module and manifest; the launcher remains a temporary build-validation shell.
-- Kotlin/JVM integration contract module.
-- JDK 21 toolchain configuration.
-- Kotlin plugin aligned to 2.4.20 and Android Gradle Plugin 8.13.2, matching the pinned Legado upstream baseline.
-- Legado book-source JSON import/export codec that retains the complete raw source object, including rule fields unknown to this host, and maps core source metadata plus raw JSON for explore/search/detail/TOC/content rule objects into the host contract.
-- Re-verified original Badcat APK SHA-256 and recorded screenshot-backed UI acceptance criteria and high-priority resource paths in `docs/badcat-apk-ui-baseline.md`.
-- Unit tests for source JSON round-trip/defaults/invalid identity, purification-domain separation, and the source-runtime contract defaults/stage separation.
-- GitHub Actions workflow to run contract tests and assemble a debug APK.
-- Pinned upstream commit and copied upstream GPL-3.0 license text.
+- Android application module and manifest; launcher remains a temporary build-validation shell.
+- Kotlin/JVM integration contract module and JDK 21 toolchain.
+- Kotlin 2.4.20 and Android Gradle Plugin 8.13.2 aligned with the pinned Legado upstream baseline.
+- Legado book-source JSON import/export codec retaining full raw source JSON and mapping core metadata, URLs, headers, cookie flag, JS fields and nested explore/search/book-info/TOC/content rule JSON.
+- Purification-domain interfaces that keep novel text replacement, page-ad filtering, catalog cleanup and video rules separate.
+- Request-settings factory for static source headers and case-insensitive request overrides.
+- Bounded rule-expression tokenizer and combination evaluator for `&&`, `||` and `%%`.
+- CSS, JSONPath and XPath selector primitives, plus an explicit selector dispatcher.
+- Nested source-stage rule object resolution and selector-only runtime adapter.
+- GitHub Actions workflow intended to run contract tests and assemble a debug APK.
+- Pinned upstream Legado commit and GPL-3.0 license/notice documentation.
 
-## Not yet verified
+## Important limitations
 
-- Added a bounded tokenizer and list-combination evaluator for `&&`, `||` and `%%`, checked against the pinned upstream `RuleAnalyzer` and `AnalyzeByJSoup` behavior. It is wired into the CSS evaluator. Added bounded JSONPath and XPath evaluators using pinned upstream libraries (`json-path` 3.0.0, JsoupXpath 2.5.3, Jsoup 1.23.2), with synthetic tests. These are selector primitives, not the full upstream `AnalyzeRule` pipeline: embedded `{$...}` interpolation, chained rule grammar, regex suffixes, script execution and source-stage orchestration remain unimplemented. Tests are authored but unrun.
-- Added `SourceRuleObject` parsing for nested stage rule JSON, named-field lookup, and `evaluateField` dispatch into the explicit CSS/XPath/JSONPath selector entry point. Added `SelectorLegadoRuleRuntime`, which evaluates only fields whose parser modes are explicitly configured (so URL templates/JS/regex are not misread as CSS), and returns row maps. Added synthetic tests for field lookup, dispatch, unknown fields, and the selector-only runtime. Coroutines 1.11.0 is pinned to the Legado baseline for suspend runtime tests. These tests remain unrun.
-- Added `SourceRuleResolver.resolveObject` and `evaluateField` for named string rules inside each imported stage object, plus `evaluateStage` to resolve the correct stage JSON and invoke a `LegadoRuleRuntime`. Added `SelectorLegadoRuleRuntime`, which evaluates only fields with an explicit stage/field-to-parser-mode mapping and emits row maps; this deliberately avoids guessing that URL templates, JS or regex rules are CSS. Synthetic tests cover source-stage dispatch and failure paths. Coroutines 1.11.0 is pinned to the upstream baseline for suspend tests. Tests remain unrun.
-- GitHub Actions has not been confirmed green; no successful CI test or package result is claimed.
-- No APK artifact has been downloaded or installed.
-- The source codec maps common upstream source configuration (headers, cookie-jar flag, JS library, login/explore/search URLs, main JS and nested rule JSON) into the host contract. The new CSS/JSONPath/XPath components are standalone selector primitives; nested source rules are not yet dispatched through them. There is no complete Legado source runtime, JavaScript execution runtime or search/detail/TOC/content orchestration.
-- Original Badcat UI and its real navigation are not yet present in the new Android module.
-- Badcat purification behavior has not yet been ported; only isolated interfaces and contract tests exist.
-- No Gradle wrapper has been committed; CI provisions Gradle 8.14.4.
+- The selector runtime is deliberately partial. It does not yet implement the full upstream `RuleAnalyzer`, embedded `{$...}` interpolation, regex suffixes, all Legado parser modes, chained rule grammar or replacement semantics.
+- The HTTP adapter handles static headers and HTTP only. It does not yet evaluate Legado URL templates, request JS, source login scripts, custom encodings, or all upstream request options.
+- Cookie persistence is currently in-memory only; it is lost when the process exits. It is source-isolated but not yet integrated with a persistent Android cookie store.
+- There is no Rhino/JavaScript runtime, complete search/detail/TOC/content orchestration, or end-to-end source fixture against a live book source.
+- Original Badcat UI/navigation has not yet been migrated into the new Android app. The current launcher is not a replica of the original UI.
+- Badcat's actual purification rules/behavior have not yet been ported; only separated contracts exist.
+- The original APK remains a read-only reference. No shell/signature/native protection bypass or patching has been performed.
+- Only the upstream GPL-3.0 license text has been copied so far; upstream runtime source is not yet vendored. Any later distribution of incorporated Legado code must meet GPL-3.0 source and notice obligations.
 
-## Latest implementation update (2026-11-15)
+## Verification status
 
-- Expanded `BookSource` host contract to expose frequently used upstream source settings and raw nested rule JSON for explore, search, book info, TOC and content.
-- Extended codec mapping and fixture assertions, including upstream default behavior for the cookie jar.
-- Added explicit host boundaries for HTTP transport, the five separate rule stages (explore/search/book info/TOC/content), and source JavaScript execution. Added a tested request-settings factory that parses static source headers, applies case-insensitive per-request overrides, normalizes the method and carries the cookie-jar flag. This is not a concrete HTTP client: URL interpolation, cookie persistence, redirects, Rhino runtime/bindings, and search/detail/TOC/content orchestration remain unimplemented.
-- Tests were edited but have not been executed in this environment; CI has not been confirmed green.
+- Unit tests have been authored for codecs, request settings, selectors, rule combination, source-stage dispatch and cookie matching, but have not been executed in this environment.
+- Latest commit: `bdfedce773e0e900146cfb5c3b289a204e855858`.
+- GitHub Actions query for that commit returned no workflow runs; combined commit status returned no checks. This is not a passing build.
+- No installable APK has been produced, downloaded or installed.
+- No Gradle wrapper is committed; the workflow provisions Gradle 8.14.4 when it runs.
 
-## Next validation
+## Next engineering steps
 
-1. Confirm the latest workflow run and inspect logs.
-2. Implement the Legado app-layer engine slice and its initialization, network and persistence dependencies.
-3. Complete Legado `SourceRule` tokenization/mode and replacement semantics, embedded-rule interpolation and JavaScript/Rhino; implement concrete HTTP/Cookie transport and the search/detail/TOC/content orchestration.
-4. Migrate the original UI behavior and verify it on the target Android device.
-5. Only then treat a CI-produced APK as a candidate build artifact.
+1. Add request URL templating and request option parsing based on the pinned upstream source model.
+2. Implement the actual Legado rule mode parser, replacement pipeline and safe Rhino initialization/bindings.
+3. Build the end-to-end search, book-detail, TOC and chapter-content flow on top of the transport and rule runtime.
+4. Port original Badcat UI/navigation and purification behavior without changing its established interaction structure.
+5. Run CI, fix compiler/test failures, then produce and install a candidate APK for device validation.
