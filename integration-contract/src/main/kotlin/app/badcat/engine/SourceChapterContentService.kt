@@ -1,8 +1,8 @@
 package app.badcat.engine
 
 /**
- * Fetches all pages of one chapter's content. Legado's nextContentUrl is a
- * same-chapter pagination rule, not a link to the next chapter.
+ * Fetches all pages of one chapter's content, then applies the injected
+ * book-aware replacement pipeline. nextContentUrl is same-chapter pagination.
  */
 class SourceChapterContentService(
     private val http: SourceHttpGateway,
