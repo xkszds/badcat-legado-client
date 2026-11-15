@@ -211,6 +211,4 @@ data class LegadoResolvedUrl(
     val followRedirects: Boolean? = null,
     val retryCount: Int = 0,
     val charset: String? = null,
-    val dnsIp: String? = null,
-    val type: String? = null,
 )
