@@ -43,12 +43,15 @@ jobs:
           artifact="third_party/maven/org/htmlunit/htmlunit-core-js/5.3.0-legado.4/htmlunit-core-js-5.3.0-legado.4.jar"
           if [ ! -f "$artifact" ]; then
             echo "::error title=Missing pinned Rhino JAR::Upload the exact Legado fork artifact at $artifact before assembling the APK."
-            echo "Expected SHA-256: d240cdd66f5269ed33da53cde7e4e690cee6e162"
+            echo "Expected size: 1900654 bytes"
+            echo "Expected Git blob SHA-1: d240cdd66f5269ed33da53cde7e4e690cee6e162"
             exit 1
           fi
-          echo "Found pinned Rhino artifact:"
-          sha256sum "$artifact"
-          echo "Expected SHA-256: d240cdd66f5269ed33da53cde7e4e690cee6e162"
+          actual_size="$(wc -c < "$artifact" | tr -d " ")"; test "$actual_size" = "1900654"
+          actual_blob="$(git hash-object "$artifact")"
+          echo "Artifact size: $actual_size bytes"
+          echo "Git blob SHA-1: $actual_blob"
+          test "$actual_blob" = "d240cdd66f5269ed33da53cde7e4e690cee6e162"
 
       - name: Assemble debug APK
         run: gradle --no-daemon :app:assembleDebug
