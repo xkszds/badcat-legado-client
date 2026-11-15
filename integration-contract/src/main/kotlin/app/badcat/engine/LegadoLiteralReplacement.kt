@@ -1,5 +1,8 @@
 package app.badcat.engine
 
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+
 /** The Legado replacement-rule target selected from DAO scope flags. */
 enum class LegadoReplaceRuleTarget { CONTENT, TITLE }
 
@@ -10,25 +13,28 @@ data class LegadoReplaceRule(
     val replacement: String,
     val isRegex: Boolean = true,
     val timeoutMillisecond: Long = LegadoReplaceRuleCodec.DEFAULT_TIMEOUT_MILLISECOND,
+    val name: String = scopeRule.id.toString(),
 )
 
-/** Raised when a rule's regular expression exceeds its configured wall-clock budget. */
+/** Raised when a rule's regular expression or JavaScript exceeds its time budget. */
 class LegadoRegexTimeoutException(
     val ruleId: Long,
     val timeoutMillisecond: Long,
 ) : RuntimeException(
-    "Legado replacement rule '$ruleId' exceeded ${timeoutMillisecond}ms regex budget"
+    "Legado replacement rule '" + ruleId + "' exceeded " + timeoutMillisecond + "ms execution budget"
 )
 
 /**
- * Executes scoped Legado replacement rules. Regex matching is bounded by a
- * deadline-aware CharSequence; unsupported @js replacement expressions fail closed.
+ * Executes scoped Legado replacement rules. Regex matching uses a deadline-aware
+ * CharSequence. @js expressions are delegated to the host's bounded Rhino evaluator.
  */
 class LegadoLiteralReplacement(
     private val rules: List<LegadoReplaceRule>,
     private val bookName: String,
     private val bookOrigin: String,
     private val target: LegadoReplaceRuleTarget = LegadoReplaceRuleTarget.CONTENT,
+    private val replacementContext: LegadoReplacementContext? = null,
+    private val jsEvaluator: LegadoJsReplacementEvaluator? = null,
 ) : BookTextReplacement {
 
     override fun replace(chapterText: String): String {
@@ -47,11 +53,6 @@ class LegadoLiteralReplacement(
             if (!rule.isRegex) {
                 text.replace(rule.pattern, rule.replacement)
             } else {
-                if (rule.replacement.trimStart().startsWith("@js:")) {
-                    throw UnsupportedOperationException(
-                        "JavaScript replacement for rule '${rule.scopeRule.id}' requires the Legado @js runtime"
-                    )
-                }
                 replaceRegexBounded(text, rule)
             }
         }
@@ -63,11 +64,40 @@ class LegadoLiteralReplacement(
         val timeoutNanos = timeout.coerceAtMost(Long.MAX_VALUE / 1_000_000L) * 1_000_000L
         val deadline = System.nanoTime() + timeoutNanos
         val boundedInput = DeadlineCharSequence(input, deadline, rule.scopeRule.id, timeout)
-        return try {
-            Regex(rule.pattern).replace(boundedInput, rule.replacement)
-        } catch (error: LegadoRegexTimeoutException) {
-            throw error
+        val matcher = Pattern.compile(rule.pattern).matcher(boundedInput)
+        val output = StringBuffer()
+        val isJs = rule.replacement.startsWith("@js:")
+        val jsScript = if (isJs) rule.replacement.substring(4) else rule.replacement
+        while (matcher.find()) {
+            val replacement = if (isJs) {
+                val evaluator = jsEvaluator ?: throw UnsupportedOperationException(
+                    "JavaScript replacement for rule '" + rule.scopeRule.id + "' has no Rhino host"
+                )
+                val context = replacementContext ?: throw UnsupportedOperationException(
+                    "JavaScript replacement for rule '" + rule.scopeRule.id + "' has no book/chapter context"
+                )
+                evaluator.evaluate(
+                    jsScript,
+                    LegadoJsReplacementContext(
+                        ruleId = rule.scopeRule.id,
+                        ruleName = rule.name,
+                        result = matcher.group(),
+                        timeoutMillisecond = boundedInput.remainingMilliseconds(),
+                        configuredTimeoutMillisecond = timeout,
+                        book = context.book,
+                        chapter = context.chapter,
+                    ),
+                )
+            } else {
+                rule.replacement
+            }
+            matcher.appendReplacement(
+                output,
+                if (isJs) Matcher.quoteReplacement(replacement) else replacement,
+            )
         }
+        matcher.appendTail(output)
+        return output.toString()
     }
 
     private class DeadlineCharSequence(
@@ -87,17 +117,27 @@ class LegadoLiteralReplacement(
             return delegate[index]
         }
 
-        override fun subSequence(startIndex: Int, endIndex: Int): CharSequence =
-            DeadlineCharSequence(
+        override fun subSequence(startIndex: Int, endIndex: Int): CharSequence {
+            checkDeadline()
+            return DeadlineCharSequence(
                 delegate.subSequence(startIndex, endIndex),
                 deadlineNanos,
                 ruleId,
                 timeoutMillisecond,
             )
+        }
 
         override fun toString(): String {
             checkDeadline()
             return delegate.toString()
+        }
+
+        fun remainingMilliseconds(): Long {
+            val remainingNanos = deadlineNanos - System.nanoTime()
+            if (remainingNanos <= 0L) {
+                throw LegadoRegexTimeoutException(ruleId, timeoutMillisecond)
+            }
+            return (remainingNanos / 1_000_000L).coerceAtLeast(1L)
         }
 
         private fun checkDeadline() {
