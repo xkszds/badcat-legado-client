@@ -10,6 +10,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.HttpUrl
 import okhttp3.Response
+import okhttp3.Interceptor
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.nio.charset.Charset
@@ -122,7 +123,9 @@ class OkHttpSourceRequestClient(
                 .readTimeout(readTimeoutSeconds, TimeUnit.SECONDS)
                 .writeTimeout(writeTimeoutSeconds, TimeUnit.SECONDS)
                 .followRedirects(true)
-                .followSslRedirects(true)
+                // Never downgrade an HTTPS source request to cleartext HTTP.
+                .followSslRedirects(false)
+                .addNetworkInterceptor(SafeRedirectInterceptor)
                 .build()
         }
         if (request.timeoutMillis == null && request.followRedirects == null) return baseClient
@@ -134,7 +137,8 @@ class OkHttpSourceRequestClient(
             }
             request.followRedirects?.let {
                 followRedirects(it)
-                followSslRedirects(it)
+                // The source option controls redirects, but not HTTPS downgrade safety.
+                followSslRedirects(false)
             }
         }.build()
     }
@@ -220,4 +224,33 @@ internal class MemorySourceCookieJar : CookieJar {
 private object NoSourceCookies : CookieJar {
     override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) = Unit
     override fun loadForRequest(url: HttpUrl): List<Cookie> = emptyList()
+}
+
+
+/**
+ * Validates each redirect before OkHttp follows it. Source URLs may legitimately
+ * redirect across hosts, but redirects must remain credential-free HTTP(S), and
+ * HTTPS requests must never be downgraded to cleartext HTTP.
+ */
+internal object SafeRedirectInterceptor : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val response = chain.proceed(chain.request())
+        if (response.code !in REDIRECT_CODES) return response
+        val location = response.header("Location") ?: return response
+        if (!isSafeRedirectTarget(response.request.url, location)) {
+            response.close()
+            throw IOException("Blocked unsafe or HTTPS-downgrade redirect")
+        }
+        return response
+    }
+
+    private val REDIRECT_CODES = setOf(300, 301, 302, 303, 307, 308)
+}
+
+internal fun isSafeRedirectTarget(from: HttpUrl, location: String): Boolean {
+    val target = from.resolve(location) ?: return false
+    if (target.scheme != "http" && target.scheme != "https") return false
+    if (target.username.isNotEmpty() || target.password.isNotEmpty()) return false
+    if (from.scheme == "https" && target.scheme != "https") return false
+    return true
 }
