@@ -4,6 +4,11 @@ Last updated: 2026-11-15
 
 ## Latest implementation update
 
+- Wired resolved static Legado URL options through `SourceRequestFactory` into `SourceHttpRequest`, and through `OkHttpSourceRequestClient` into per-request read/call timeouts, redirect policy, bounded retry-on-I/O-failure (0–5), and explicit response charset decoding.
+- POST bodies now honor an explicit `Content-Type`; otherwise JSON/XML-looking bodies get matching media types and ordinary form bodies default to URL-encoded form content.
+- Added a factory test asserting that resolved method, headers, body, timeout, redirect, retry and charset fields reach the transport request.
+- Still not implemented: Legado query/form percent-encoding rules, DNS IP override, binary/data URI `type`, URL-option JavaScript/bodyJs, WebView, and retry semantics beyond bounded transport I/O retries. The parsed DNS/type metadata is not executed by the transport.
+
 - Added a deterministic Legado URL resolver based on the pinned upstream `AnalyzeUrl.kt`: relative URL resolution, numbered page-list tokens such as `<1,2,3>`, and static JSON URL options for method, headers, body, timeout, redirect policy, retry count, charset and DNS IP fields.
 - Added resolver tests for relative/page URL handling, static POST options, malformed option JSON and explicit rejection of script-bearing URL rules.
 - Important boundary: parsed timeout/redirect/retry/charset/DNS metadata is currently returned as a typed result but is not yet wired into the OkHttp transport. JavaScript URL templates (`{{...}}`, `@js`), `js`, `bodyJs` and WebView options are explicitly rejected until the pinned Rhino/WebView runtime exists; they are not sent as literal URL text.
@@ -50,7 +55,7 @@ Last updated: 2026-11-15
 
 ## Next engineering steps
 
-1. Wire resolved URL option metadata into the OkHttp request client, including timeout/redirect/body/header handling; then add the pinned Rhino runtime before enabling JavaScript URL templates.
+1. Add exact Legado query/form encoding semantics and decide/implement supported DNS/data-URI options; then integrate the pinned Rhino runtime before enabling JavaScript URL templates.
 2. Implement the actual Legado rule mode parser, replacement pipeline and safe Rhino initialization/bindings.
 3. Build the end-to-end search, book-detail, TOC and chapter-content flow on top of the transport and rule runtime.
 4. Port original Badcat UI/navigation and purification behavior without changing its established interaction structure.
