@@ -25,6 +25,19 @@ class LegadoUrlResolverTest {
     }
 
     @Test
+    fun encodesUnicodeAndSpacesInRawQueryBeforeResolvingUri() {
+        val result = LegadoUrlResolver.resolve(
+            "https://example.com/",
+            "search?q=中文 x&tag=a+b",
+        )
+        val value = assertIs<EngineResult.Success<LegadoResolvedUrl>>(result).value
+        assertEquals(
+            "https://example.com/search?q=%E4%B8%AD%E6%96%87%20x&tag=a+b",
+            value.url,
+        )
+    }
+
+    @Test
     fun parsesStaticRequestOptions() {
         val result = LegadoUrlResolver.resolve(
             "https://example.com/",
