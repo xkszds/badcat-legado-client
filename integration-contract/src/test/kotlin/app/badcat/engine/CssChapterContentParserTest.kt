@@ -6,7 +6,7 @@ import kotlin.test.assertIs
 
 class CssChapterContentParserTest {
     @Test
-    fun extractsReadableTextAndResolvesNextChapterUrl() {
+    fun extractsReadableTextAndResolvesNextContentPageUrl() {
         val source = BookSource(
             id = "fixture",
             name = "Fixture",
@@ -38,7 +38,7 @@ class CssChapterContentParserTest {
 
         assertEquals("Chapter One", result.title)
         assertEquals("First paragraph.\nSecond paragraph.", result.text)
-        assertEquals("https://reader.example/chapter/2", result.nextChapterUrl)
+        assertEquals("https://reader.example/chapter/2", result.nextPageUrl)
     }
 
     @Test
