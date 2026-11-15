@@ -59,7 +59,11 @@ class CssChapterContentParser {
                 Regex("@(?:href|src|attr\\((?:href|src)\\))$", RegexOption.IGNORE_CASE),
                 "",
             ).trim()
-            val rawLink = Jsoup.parse(response.body, response.finalUrl).select(selector).first()?.attr(attribute)
+            val rawLink = runCatching {
+                Jsoup.parse(response.body, response.finalUrl).select(selector).first()?.attr(attribute)
+            }.getOrElse {
+                return unsupported(source, "invalid nextContentUrl selector")
+            }
             if (rawLink.isNullOrBlank()) null else {
                 runCatching { WebUrlResolver.resolve(response.finalUrl, rawLink) }.getOrElse {
                     return unsupported(source, "nextContentUrl must resolve to a credential-free HTTP(S) URL")
