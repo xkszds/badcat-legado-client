@@ -10,6 +10,9 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.Switch
 import android.widget.TextView
+import app.badcat.engine.LegadoBookSourceCodec
+import kotlinx.coroutines.CancellationException
+import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -152,14 +155,25 @@ class SourceCatalogActivity : Activity() {
         scope.launch {
             val json = try {
                 withContext(Dispatchers.IO) {
-                    contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+                    val input = contentResolver.openInputStream(uri)
+                        ?: throw IllegalStateException("无法打开所选文件")
+                    input.use { stream ->
+                        val output = ByteArrayOutputStream()
+                        val buffer = ByteArray(8 * 1024)
+                        while (true) {
+                            val count = stream.read(buffer)
+                            if (count < 0) break
+                            require(output.size() + count <= LegadoBookSourceCodec.MAX_IMPORT_BYTES) {
+                                "书源文件超过 5 MiB 导入限制"
+                            }
+                            output.write(buffer, 0, count)
+                        }
+                        LegadoBookSourceCodec.decodeUtf8ToString(output.toByteArray())
+                    }
                 }
             } catch (error: Exception) {
+                if (error is CancellationException) throw error
                 message.text = "读取书源文件失败：${error.message ?: "未知文件错误"}"
-                return@launch
-            }
-            if (json == null) {
-                message.text = "无法读取所选文件，请检查文件访问权限"
                 return@launch
             }
             when (val result = catalog.importJson(json)) {
