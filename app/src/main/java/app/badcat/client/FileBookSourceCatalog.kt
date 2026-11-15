@@ -14,6 +14,8 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 
+private val catalogFileMutex = Mutex()
+
 /**
  * A small, durable host-side catalog for imported Legado source descriptors.
  *
