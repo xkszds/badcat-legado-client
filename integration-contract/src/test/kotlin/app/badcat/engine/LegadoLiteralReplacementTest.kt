@@ -49,6 +49,21 @@ class LegadoLiteralReplacementTest {
     }
 
     @Test
+    fun acceptsLargePositiveTimeoutWithoutDeadlineOverflow() {
+        val rules = listOf(
+            LegadoReplaceRule(
+                LegadoReplaceRuleScope(13),
+                """\\d+""",
+                "x",
+                isRegex = true,
+                timeoutMillisecond = Long.MAX_VALUE,
+            ),
+        )
+        val replacement = LegadoLiteralReplacement(rules, "Book", "source")
+        assertEquals("chapter x", replacement.replace("chapter 123"))
+    }
+
+    @Test
     fun stopsCatastrophicRegexWithinConfiguredDeadline(): Unit {
         val rules = listOf(
             LegadoReplaceRule(
