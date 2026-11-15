@@ -12,13 +12,20 @@ A clean-room integration workspace for combining the Badcat 1.5.0.5 client exper
 
 ## Current status
 
-This repository was empty when connected on 2026-11-15. The initial architecture and engine contract are being established. No APK has been built from this repository yet.
+The repository now contains an Android build scaffold, platform-neutral reading-engine and purification contracts, an upstream-compatible Legado book-source JSON import/export codec, and a CI workflow. The selected Legado source revision is pinned in `gradle/legado-upstream.properties`.
+
+**No Legado runtime rule engine has been integrated yet. No successful build or installable APK is claimed.** The temporary Android launcher is only a build-validation shell, not the original Badcat UI.
 
 ## Repository map
 
+- `app/` — temporary Android host shell; not the final UI.
+- `integration-contract/` — engine port, purification boundaries and Legado source codec with unit tests.
 - `docs/architecture.md` — integration boundaries and staged implementation plan.
-- `docs/licensing.md` — GPL-3.0 compliance checklist for Legado-derived components.
-- `integration-contract/` — platform-neutral Kotlin contract between the preserved client UI and a reading engine.
+- `docs/legado-upstream-baseline.md` — pinned upstream revision and verified build facts.
+- `docs/legado-integration.md` — app-layer engine integration requirements.
+- `docs/licensing.md` — GPL-3.0 compliance checklist.
+- `gradle/legado-upstream.properties` — immutable Legado revision and toolchain pin.
+- `third_party/legado/LICENSE` — upstream GPL-3.0 license text.
 
 ## Important constraints
 
@@ -30,11 +37,10 @@ This repository was empty when connected on 2026-11-15. The initial architecture
 
 ## Next engineering gates
 
-1. Recover/establish a legitimate editable Android project baseline and verify the original app's build/runtime assumptions.
-2. Select and pin a compatible Legado revision; map its app-layer rule execution dependencies rather than treating the book/rhino libraries alone as the complete engine.
-3. Implement and test source/search/catalog/content/replacement adapters.
-4. Connect the adapters to the original UI flow without changing existing navigation unnecessarily.
-5. Integrate purification by content domain and validate on the target Android device.
-6. Build, sign with a new project key, install and run regression tests.
+1. Extract the required Legado app-layer source engine and initialization behind a host-owned adapter; do not mistake `:modules:book` and `:modules:rhino` for the complete online book-source engine.
+2. Implement fixture-backed search/detail/catalog/content and JavaScript rule tests.
+3. Connect the adapter to Badcat's original UI flow without changing its navigation unnecessarily.
+4. Map and integrate existing purification behavior by content domain.
+5. Build, sign with a new project key, install and run regression tests on the target Android device.
 
-See [the architecture plan](docs/architecture.md) and [licensing checklist](docs/licensing.md).
+See [the architecture plan](docs/architecture.md), [upstream baseline](docs/legado-upstream-baseline.md), [integration gates](docs/legado-integration.md) and [licensing checklist](docs/licensing.md).
