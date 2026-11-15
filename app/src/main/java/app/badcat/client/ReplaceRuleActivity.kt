@@ -83,8 +83,8 @@ class ReplaceRuleActivity : Activity() {
             mainHandler.post {
                 importButton.isEnabled = true
                 when (result) {
-                    is EngineResult.Success -> status.text = "成功导入/更新 \${result.value} 条规则"
-                    is EngineResult.Failure -> status.text = "导入失败（\${result.code}）：\${result.message}"
+                    is EngineResult.Success -> status.text = "成功导入/更新 ${result.value} 条规则"
+                    is EngineResult.Failure -> status.text = "导入失败（${result.code}）：${result.message}"
                 }
                 refreshRules()
             }
@@ -99,9 +99,9 @@ class ReplaceRuleActivity : Activity() {
                 when (result) {
                     is EngineResult.Success -> {
                         jsonInput.setText(result.value)
-                        status.text = "已导出 \${result.value.length} 个字符；可复制文本框内容"
+                        status.text = "已导出 ${result.value.length} 个字符；可复制文本框内容"
                     }
-                    is EngineResult.Failure -> status.text = "导出失败：\${result.message}"
+                    is EngineResult.Failure -> status.text = "导出失败：${result.message}"
                 }
             }
         }
@@ -113,7 +113,7 @@ class ReplaceRuleActivity : Activity() {
             mainHandler.post {
                 ruleList.removeAllViews()
                 when (result) {
-                    is EngineResult.Failure -> status.text = "读取规则失败：\${result.message}"
+                    is EngineResult.Failure -> status.text = "读取规则失败：${result.message}"
                     is EngineResult.Success -> {
                         val rules = result.value
                         if (rules.isEmpty()) {
@@ -144,7 +144,7 @@ class ReplaceRuleActivity : Activity() {
                                 ruleList.addView(row)
                             }
                         }
-                        if (rules.isNotEmpty()) status.text = "本地共 \${rules.size} 条规则"
+                        if (rules.isNotEmpty()) status.text = "本地共 ${rules.size} 条规则"
                     }
                 }
             }
@@ -156,8 +156,8 @@ class ReplaceRuleActivity : Activity() {
             val result = runBlocking { catalog.setEnabled(ruleId, enabled) }
             mainHandler.post {
                 when (result) {
-                    is EngineResult.Success -> status.text = "规则 #$ruleId 已\${if (enabled) "启用" else "停用"}"
-                    is EngineResult.Failure -> status.text = "更新失败：\${result.message}"
+                    is EngineResult.Success -> status.text = "规则 #$ruleId 已${if (enabled) "启用" else "停用"}"
+                    is EngineResult.Failure -> status.text = "更新失败：${result.message}"
                 }
                 refreshRules()
             }
