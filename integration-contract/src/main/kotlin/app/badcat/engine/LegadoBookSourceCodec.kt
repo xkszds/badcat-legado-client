@@ -74,6 +74,12 @@ object LegadoBookSourceCodec {
         }
     }
 
+    fun withEnabled(source: LegadoBookSource, enabled: Boolean): LegadoBookSource {
+        val json = JsonParser.parseString(source.rawJson).asJsonObject
+        json.addProperty("enabled", enabled)
+        return decode(json.toString()).single()
+    }
+
     fun encode(sources: List<LegadoBookSource>): String {
         val array = JsonArray()
         sources.forEach { source ->
