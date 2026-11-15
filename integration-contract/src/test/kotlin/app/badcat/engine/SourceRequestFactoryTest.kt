@@ -66,4 +66,30 @@ class SourceRequestFactoryTest {
 
         assertIs<EngineResult.Failure>(result)
     }
+    @Test
+    fun resolvedUrlOptionsArePassedIntoTransportRequest() {
+        val resolved = LegadoResolvedUrl(
+            url = "https://reader.example/search",
+            method = "POST",
+            headers = mapOf("X-Source" to "url-option"),
+            body = """{"q":"cat"}""",
+            timeoutMillis = 8_000,
+            followRedirects = false,
+            retryCount = 2,
+            charset = "UTF-8",
+        )
+
+        val result = SourceRequestFactory.create(source(), resolved)
+        val request = assertIs<EngineResult.Success<SourceHttpRequest>>(result).value
+
+        assertEquals(resolved.url, request.url)
+        assertEquals("POST", request.method)
+        assertEquals("url-option", request.headers["X-Source"])
+        assertEquals(resolved.body, request.body)
+        assertEquals(8_000L, request.timeoutMillis)
+        assertEquals(false, request.followRedirects)
+        assertEquals(2, request.retryCount)
+        assertEquals("UTF-8", request.responseCharset)
+    }
+
 }
