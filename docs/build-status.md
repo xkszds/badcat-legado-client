@@ -1,5 +1,12 @@
 ## Latest implementation update (2026-11-15)
 
+- Repaired the URL encoder character-set definitions and aligned the query allowlist with the pinned Legado `NetworkUtils` bitset and `AnalyzeUrl` `RFC3986` codec. The query path preserves valid already-encoded strings; otherwise it percent-encodes with the configured charset. The form path retains the upstream `&` / first-`=` splitting and `URLEncoder`/`escape` branches.
+- Integrated request preparation into `SourceRequestFactory` after source headers and URL-option headers are merged. GET/HEAD and other non-POST methods encode query parameters; POST text bodies become form fields only when no effective `Content-Type` is present and the body is neither JSON nor XML. Raw Unicode/space query values are encoded before `URI` resolution.
+- Added resolver and request-factory regression cases for Unicode query values, GET encoding, POST form encoding, JSON bodies and explicit content types. Existing script-bearing URL rules remain rejected; embedded `{{...}}` evaluation is not yet connected to this pipeline.
+- A standalone Kotlin compiler smoke harness passed eight checks covering UTF-8/GBK query encoding, form splitting, existing/malformed escapes, `escape`, GET/POST preparation, and explicit content type. The repository's Gradle/Kotlin test suite, full Android build, CI, device validation and installable APK remain unverified.
+
+## Latest implementation update (2026-11-15)
+
 - Added isolated `LegadoUrlParameterEncoder` matching the pinned upstream `AnalyzeUrl.encodeParams` and `NetworkUtils` behavior: RFC3986 query encoding, upstream already-encoded detection, form splitting at `&` and the first `=`, charset-specific encoding, and legacy `escape` handling.
 - Added nine regression tests for safe query characters, UTF-8 and GBK encoding, literal/malformed percent sequences, form delimiters and empty segments, explicit charset re-encoding, escape mode, and invalid charsets. Tests are authored but not executed.
 - Kept this encoder separate from `LegadoUrlResolver` and the template evaluator. URL preparation still does not orchestrate template expansion followed by GET-query/POST-form encoding, so JavaScript-bearing URLs remain fail-closed.
