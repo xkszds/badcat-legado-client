@@ -111,8 +111,6 @@ object LegadoUrlResolver {
                     followRedirects = redirects,
                     retryCount = retry,
                     charset = charset,
-                    dnsIp = dnsIp,
-                    type = type,
                 ),
             )
         }.getOrElse { error ->
