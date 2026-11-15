@@ -116,7 +116,8 @@ class FileReplaceRuleCatalog(context: Context) : LegadoReplaceRuleCatalog {
     }
 
     private fun readRules(): List<LegadoReplaceRuleRecord> {
-        if (!file.baseFile.exists()) return emptyList()
+        val backupFile = File(file.baseFile.path + ".bak")
+        if (!file.baseFile.exists() && !backupFile.exists()) return emptyList()
         return file.openRead().bufferedReader(Charsets.UTF_8).use { reader ->
             val json = reader.readText()
             if (json.isBlank()) emptyList() else LegadoReplaceRuleCodec.decode(json)
@@ -126,10 +127,9 @@ class FileReplaceRuleCatalog(context: Context) : LegadoReplaceRuleCatalog {
     private fun writeRules(rules: List<LegadoReplaceRuleRecord>) {
         val output = file.startWrite()
         try {
-            output.writer(Charsets.UTF_8).use { writer ->
-                writer.write(LegadoReplaceRuleCodec.encode(rules))
-                writer.flush()
-            }
+            val writer = output.writer(Charsets.UTF_8)
+            writer.write(LegadoReplaceRuleCodec.encode(rules))
+            writer.flush()
             file.finishWrite(output)
         } catch (error: Exception) {
             file.failWrite(output)
