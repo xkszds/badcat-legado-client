@@ -74,7 +74,7 @@ class OkHttpSourceRequestClientTest {
         assertTrue(!isSafeRedirectTarget(from, "https://user:pass@cdn.example/book/1"))
         assertTrue(!isSafeRedirectTarget(from, "http://reader.example/book/1"))
         assertTrue(!isSafeRedirectTarget(from, "javascript:alert(1)"))
-        assertTrue(!isSafeRedirectTarget(from, "https://[invalid"))
+        assertTrue(!isSafeRedirectTarget(from, "file:///etc/passwd"))
     }
 
     @Test
