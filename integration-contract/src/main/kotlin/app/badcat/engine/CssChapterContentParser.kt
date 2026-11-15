@@ -1,0 +1,115 @@
+package app.badcat.engine
+
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Element
+import org.jsoup.nodes.TextNode
+
+/**
+ * Parses the bounded CSS subset of Legado ContentRule.
+ * It deliberately does not execute webJs/callBackJs or emulate sourceRegex,
+ * replaceRegex, payAction, imageDecode, or contentBatch.
+ */
+class CssChapterContentParser {
+    fun parse(
+        source: BookSource,
+        response: SourceHttpResponse,
+        chapter: BookChapter,
+    ): EngineResult<ChapterContent> {
+        val rules = when (val result = SourceRuleResolver.resolveObject(source, SourceRuleStage.CONTENT)) {
+            is EngineResult.Failure -> return result
+            is EngineResult.Success -> result.value.fields
+        }
+        val contentRule = rules["content"]?.takeIf(String::isNotBlank)
+            ?: return unsupported(source, "missing content rule")
+
+        val expressions = listOf(
+            contentRule,
+            rules["title"],
+            rules["nextContentUrl"],
+        ).filterNotNull()
+        if (expressions.any {
+                it.contains("@js", true) || it.contains("{{") || it.contains("}}")
+            } || !rules["webJs"].isNullOrBlank() || !rules["callBackJs"].isNullOrBlank()) {
+            return unsupported(source, "JavaScript or interpolation")
+        }
+
+        val document = SourceDocument(response.finalUrl, response.body, response.contentType)
+        val contentValues = when (val result = SelectorRuleEvaluator.evaluate(
+            document, SelectorRuleType.CSS,
+            if (contentRule.contains("@", ignoreCase = true)) contentRule else "$contentRule@html",
+        )) {
+            is EngineResult.Failure -> return result
+            is EngineResult.Success -> result.value
+        }
+        if (contentValues.isEmpty()) {
+            return EngineResult.Failure(
+                EngineErrorCode.NOT_FOUND,
+                "No chapter content matched source '${source.id}' rule",
+            )
+        }
+
+        val title = when (val result = evaluateOptional(document, rules["title"], response.finalUrl)) {
+            is EngineResult.Failure -> return result
+            is EngineResult.Success -> result.value?.takeIf(String::isNotBlank) ?: chapter.title
+        }
+        val nextUrl = when (val result = evaluateOptional(
+            document, rules["nextContentUrl"], response.finalUrl, defaultAttribute = "href",
+        )) {
+            is EngineResult.Failure -> return result
+            is EngineResult.Success -> result.value?.let { resolve(response.finalUrl, it) }
+        }
+
+        val text = contentValues.mapNotNull(::htmlToReadableText)
+            .filter(String::isNotBlank)
+            .joinToString("\n\n")
+        if (text.isBlank()) {
+            return EngineResult.Failure(
+                EngineErrorCode.NOT_FOUND,
+                "Chapter content is empty after HTML cleanup for source '${source.id}'",
+            )
+        }
+        return EngineResult.Success(ChapterContent(title, text, nextUrl))
+    }
+
+    private fun evaluateOptional(
+        document: SourceDocument,
+        expression: String?,
+        baseUrl: String,
+        defaultAttribute: String? = null,
+    ): EngineResult<String?> {
+        if (expression.isNullOrBlank()) return EngineResult.Success(null)
+        val normalized = if (defaultAttribute != null &&
+            expression.substringAfterLast("@", "").let { it !in setOf("href", "src", "text", "html") }
+        ) "$expression@$defaultAttribute" else expression
+        return when (val result = SelectorRuleEvaluator.evaluate(document, SelectorRuleType.CSS, normalized)) {
+            is EngineResult.Failure -> result
+            is EngineResult.Success -> EngineResult.Success(
+                result.value.firstOrNull()?.trim()?.takeIf(String::isNotEmpty),
+            )
+        }
+    }
+
+    private fun htmlToReadableText(html: String): String? = runCatching {
+        val body = Jsoup.parseBodyFragment(html).body()
+        body.select("script,style,noscript,iframe").remove()
+        body.select("br").forEach { it.replaceWith(TextNode("\n")) }
+        body.select("p,div,section,article,li,h1,h2,h3,h4,h5,h6,blockquote").forEach {
+            it.appendChild(TextNode("\n"))
+        }
+        body.wholeText()
+            .replace('\u00a0', ' ')
+            .lineSequence()
+            .map(String::trim)
+            .filter(String::isNotEmpty)
+            .joinToString("\n")
+    }.getOrNull()
+
+    private fun resolve(base: String, value: String): String =
+        runCatching { java.net.URI(base).resolve(value).toString() }.getOrDefault(value)
+
+    private fun unsupported(source: BookSource, reason: String) =
+        EngineResult.Failure(
+            EngineErrorCode.UNSUPPORTED_RULE,
+            "Source '${source.id}' content rule requires unsupported behavior: $reason",
+        )
+}
