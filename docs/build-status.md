@@ -1,5 +1,9 @@
 ## Latest implementation update (2026-11-15)
 
+- Extended the development search flow: search result rows now open `SourceBookActivity`, which requests book detail and TOC through `ReadingEngine`; selecting a chapter opens `SourceChapterActivity`, which fetches and displays chapter text. Both activities are registered as non-exported. This is an end-to-end UI path for the currently supported engine subset, not the original Badcat UI or a complete Legado reader.
+- The reader currently displays extracted text only; paging/next-chapter navigation, typography controls, bookmarks, offline caching and the original reading gestures are not implemented. `chapterContent()` currently passes a URL-only chapter descriptor, so source-specific title fallback is handled in the UI.
+- No live source fixture, Gradle build/test, CI/device validation or APK is confirmed.
+
 - Added `SourceSearchActivity`, a minimal development search workflow: it loads enabled imported sources with a configured `searchUrl`, lets the user select a source and enter a keyword, invokes `ReadingEngine.search()` on a worker thread, and displays candidate metadata or typed errors. Registered it in the manifest and added a launcher-shell entry. This is not the original Badcat search UI.
 - Declared `kotlinx-coroutines-android` directly in the app module because the Android host screens use coroutine APIs; the engine search call itself is run off the UI thread.
 - Scope remains deliberately bounded: CSS parser subset and limited URL template evaluation only. Sources depending on unsupported `@js`, advanced Legado rules, or missing selector definitions may fail. No live source fixture, Gradle build, test execution, CI/device validation or APK is confirmed.
