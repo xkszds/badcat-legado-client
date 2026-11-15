@@ -50,6 +50,18 @@ class SourceBookActivity : Activity() {
                 textSize = 20f
             })
             addView(status)
+            addView(Button(this@SourceBookActivity).apply {
+                text = if (FavoriteBooks.contains(this@SourceBookActivity, sourceId, bookUrl)) "已加入收藏" else "加入收藏"
+                setOnClickListener {
+                    val added = FavoriteBooks.add(this@SourceBookActivity, sourceId, bookUrl, bookName)
+                    text = if (added) "已加入收藏" else "已在收藏夹"
+                    android.widget.Toast.makeText(
+                        this@SourceBookActivity,
+                        if (added) "已加入收藏夹" else "这本书已经收藏",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+            })
             addView(chapterList)
         }
         setContentView(ScrollView(this).apply { addView(root) })
