@@ -6,8 +6,8 @@ import com.google.gson.JsonParser
  * Converts source-level request settings into the transport contract.
  *
  * This handles static source headers, per-request overrides and the cookie policy
- * flag. [OkHttpSourceRequestClient] supplies redirects and in-memory cookie handling;
- * URL interpolation and JS-generated request options remain outside this factory.
+ * flag. The resolved URL overload also carries static HTTP options supported by
+ * the transport. Script-generated options remain outside this factory.
  */
 object SourceRequestFactory {
 
@@ -17,6 +17,39 @@ object SourceRequestFactory {
         method: String = "GET",
         headers: Map<String, String> = emptyMap(),
         body: String? = null,
+    ): EngineResult<SourceHttpRequest> = createRequest(
+        source = source,
+        url = url,
+        method = method,
+        headers = headers,
+        body = body,
+    )
+
+    fun create(
+        source: BookSource,
+        resolved: LegadoResolvedUrl,
+    ): EngineResult<SourceHttpRequest> = createRequest(
+        source = source,
+        url = resolved.url,
+        method = resolved.method,
+        headers = resolved.headers,
+        body = resolved.body,
+        timeoutMillis = resolved.timeoutMillis,
+        followRedirects = resolved.followRedirects,
+        retryCount = resolved.retryCount,
+        responseCharset = resolved.charset,
+    )
+
+    private fun createRequest(
+        source: BookSource,
+        url: String,
+        method: String,
+        headers: Map<String, String>,
+        body: String?,
+        timeoutMillis: Long? = null,
+        followRedirects: Boolean? = null,
+        retryCount: Int = 0,
+        responseCharset: String? = null,
     ): EngineResult<SourceHttpRequest> {
         if (source.id.isBlank() || url.isBlank()) {
             return EngineResult.Failure(
@@ -47,6 +80,10 @@ object SourceRequestFactory {
                 headers = merged,
                 body = body,
                 useCookieJar = source.enabledCookieJar != false,
+                timeoutMillis = timeoutMillis,
+                followRedirects = followRedirects,
+                retryCount = retryCount,
+                responseCharset = responseCharset,
             ),
         )
     }
