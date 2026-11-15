@@ -112,4 +112,50 @@ class SourceReadingEngineTest {
         val result = assertIs<EngineResult.Success<List<BookSource>>>(engine.sources())
         assertEquals(listOf(source), result.value)
     }
+
+    @Test
+    fun disabledSourceIsRejectedBeforeTocDetailRequest() = runBlocking {
+        val source = BookSource("off", "Disabled", "https://reader.example/", enabled = false)
+        val gateway = SourceHttpGateway(NoNetworkClient())
+        val engine = SourceReadingEngine(
+            catalog = BookSourceCatalog { EngineResult.Success(listOf(source)) },
+            searchUrlResolver = SearchUrlResolver { _, _ ->
+                EngineResult.Failure(EngineErrorCode.UNKNOWN, "not expected")
+            },
+            searchService = SourceSearchService(gateway),
+            detailService = SourceBookDetailService(gateway),
+            tocService = SourceTocService(gateway),
+            contentService = SourceChapterContentService(gateway),
+        )
+
+        val failure = assertIs<EngineResult.Failure>(
+            engine.chapters("off", "https://reader.example/book"),
+        )
+        assertEquals(EngineErrorCode.INVALID_SOURCE, failure.code)
+    }
+
+    @Test
+    fun disabledSourceIsRejectedBeforeChapterContentRequest() = runBlocking {
+        val source = BookSource("off", "Disabled", "https://reader.example/", enabled = false)
+        val gateway = SourceHttpGateway(NoNetworkClient())
+        val engine = SourceReadingEngine(
+            catalog = BookSourceCatalog { EngineResult.Success(listOf(source)) },
+            searchUrlResolver = SearchUrlResolver { _, _ ->
+                EngineResult.Failure(EngineErrorCode.UNKNOWN, "not expected")
+            },
+            searchService = SourceSearchService(gateway),
+            detailService = SourceBookDetailService(gateway),
+            tocService = SourceTocService(gateway),
+            contentService = SourceChapterContentService(gateway),
+        )
+
+        val failure = assertIs<EngineResult.Failure>(
+            engine.chapterContent(
+                "off",
+                "https://reader.example/book",
+                "https://reader.example/chapter/1",
+            ),
+        )
+        assertEquals(EngineErrorCode.INVALID_SOURCE, failure.code)
+    }
 }
