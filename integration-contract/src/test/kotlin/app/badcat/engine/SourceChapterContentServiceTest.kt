@@ -30,22 +30,14 @@ class SourceChapterContentServiceTest {
             id = "fixture",
             name = "Fixture",
             baseUrl = "https://reader.example/",
-            ruleContentJson = """{
-                "content":"div#content",
-                "nextContentUrl":"a.next"
-            }""",
+            ruleContentJson = """{"content":"div#content","nextContentUrl":"a.next"}""",
         )
         val service = SourceChapterContentService(
             http = SourceHttpGateway(client),
             textReplacement = BookTextReplacement { it.replace("First", "Opening") },
         )
-
         val result = assertIs<EngineResult.Success<ChapterContent>>(
-            service.load(
-                source,
-                "https://reader.example/book/1",
-                BookChapter(0, "Chapter", "https://reader.example/chapter/1"),
-            ),
+            service.load(source, "https://reader.example/book/1", BookChapter(0, "Chapter", "https://reader.example/chapter/1")),
         ).value
 
         assertEquals(
@@ -58,28 +50,23 @@ class SourceChapterContentServiceTest {
     }
 
     @Test
-    fun passesBookTitleAndSourceOriginToScopedReplacement() = runBlocking {
-        val client = FixtureClient()
+    fun passesBookIdentityAndAcceptsScopedTitleAndBodyReplacement() = runBlocking {
         val source = BookSource(
             id = "fixture",
             name = "Fixture Source",
             baseUrl = "https://reader.example/",
-            ruleContentJson = """{
-                "content":"div#content",
-                "nextContentUrl":"a.next"
-            }""",
+            ruleContentJson = """{"content":"div#content","nextContentUrl":"a.next"}""",
         )
         var observedBookName = ""
         var observedBookOrigin = ""
         val service = SourceChapterContentService(
-            http = SourceHttpGateway(client),
-            scopedTextReplacement = ScopedBookTextReplacement { text, bookName, bookOrigin ->
+            http = SourceHttpGateway(FixtureClient()),
+            scopedTextReplacement = ScopedBookTextReplacement { title, text, bookName, bookOrigin ->
                 observedBookName = bookName
                 observedBookOrigin = bookOrigin
-                text.replace("First", "Scoped")
+                ReplacedChapterContent(title.replace("Chapter", "Part"), text.replace("First", "Scoped"))
             },
         )
-
         val result = assertIs<EngineResult.Success<ChapterContent>>(
             service.load(
                 source,
@@ -91,9 +78,9 @@ class SourceChapterContentServiceTest {
 
         assertEquals("Novel Title", observedBookName)
         assertEquals("https://reader.example/", observedBookOrigin)
+        assertEquals("Part", result.title)
         assertEquals("Scoped page.\n\nSecond page.", result.text)
     }
-
 
     @Test
     fun mapsUnsupportedReplacementRuntimeToTypedEngineError() = runBlocking {
@@ -105,22 +92,15 @@ class SourceChapterContentServiceTest {
         )
         val service = SourceChapterContentService(
             http = SourceHttpGateway(FixtureClient()),
-            scopedTextReplacement = ScopedBookTextReplacement { _, _, _ ->
-                throw UnsupportedOperationException("Regex runtime unavailable")
+            scopedTextReplacement = ScopedBookTextReplacement { _, _, _, _ ->
+                throw UnsupportedOperationException("JavaScript replacement runtime unavailable")
             },
         )
-
         val result = assertIs<EngineResult.Failure>(
-            service.load(
-                source,
-                "https://reader.example/book/1",
-                BookChapter(0, "Chapter", "https://reader.example/chapter/1"),
-                bookName = "Novel",
-            ),
+            service.load(source, "https://reader.example/book/1", BookChapter(0, "Chapter", "https://reader.example/chapter/1"), "Novel"),
         )
         assertEquals(EngineErrorCode.UNSUPPORTED_RULE, result.code)
     }
-
 
     @Test
     fun mapsRegexDeadlineToTypedRuleTimeoutError() = runBlocking {
@@ -132,20 +112,13 @@ class SourceChapterContentServiceTest {
         )
         val service = SourceChapterContentService(
             http = SourceHttpGateway(FixtureClient()),
-            scopedTextReplacement = ScopedBookTextReplacement { _, _, _ ->
+            scopedTextReplacement = ScopedBookTextReplacement { _, _, _, _ ->
                 throw LegadoRegexTimeoutException(42, 100)
             },
         )
-
         val result = assertIs<EngineResult.Failure>(
-            service.load(
-                source,
-                "https://reader.example/book/1",
-                BookChapter(0, "Chapter", "https://reader.example/chapter/1"),
-                bookName = "Novel",
-            ),
+            service.load(source, "https://reader.example/book/1", BookChapter(0, "Chapter", "https://reader.example/chapter/1"), "Novel"),
         )
         assertEquals(EngineErrorCode.RULE_TIMEOUT, result.code)
     }
-
 }
