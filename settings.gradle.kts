@@ -17,3 +17,4 @@ dependencyResolutionManagement {
 rootProject.name = "BadcatLegadoClient"
 include(":app")
 include(":integration-contract")
+include(":legado-rhino")
