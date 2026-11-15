@@ -78,7 +78,11 @@ class SourceChapterContentService(
             )
         }.getOrElse {
             EngineResult.Failure(
-                EngineErrorCode.PARSE,
+                if (it is UnsupportedOperationException) {
+                    EngineErrorCode.UNSUPPORTED_RULE
+                } else {
+                    EngineErrorCode.PARSE
+                },
                 "Chapter text replacement failed for source '${source.id}'",
                 it,
             )
