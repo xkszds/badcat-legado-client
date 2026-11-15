@@ -13,7 +13,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.IOException
 
 /**
  * A small, durable host-side catalog for imported Legado source descriptors.
@@ -99,10 +98,9 @@ class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
     private fun writeSources(sources: List<LegadoBookSource>) {
         val output = file.startWrite()
         try {
-            output.writer(Charsets.UTF_8).use { writer ->
-                writer.write(LegadoBookSourceCodec.encode(sources))
-                writer.flush()
-            }
+            val writer = output.writer(Charsets.UTF_8)
+            writer.write(LegadoBookSourceCodec.encode(sources))
+            writer.flush()
             file.finishWrite(output)
         } catch (error: Exception) {
             file.failWrite(output)
