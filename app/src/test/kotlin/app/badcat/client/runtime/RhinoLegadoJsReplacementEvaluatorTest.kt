@@ -66,6 +66,17 @@ class RhinoLegadoJsReplacementEvaluatorTest {
         }
     }
     @Test
+    fun remainsUsableAfterTimedOutScript() {
+        val session = RhinoLegadoJsReplacementEvaluator().createSession("timeout recovery fixture")
+
+        assertThrows(LegadoRegexTimeoutException::class.java) {
+            session.evaluate("while (true) {}", context(timeout = 250))
+        }
+
+        assertEquals("recovered", session.evaluate("'recovered'", context(timeout = 1_000)))
+    }
+
+    @Test
     fun rejectsOversizedScriptBeforeEvaluation() {
         val session = RhinoLegadoJsReplacementEvaluator().createSession("oversized fixture")
 
