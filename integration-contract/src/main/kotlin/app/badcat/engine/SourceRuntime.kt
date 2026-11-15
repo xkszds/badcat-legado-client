@@ -18,6 +18,10 @@ data class SourceHttpRequest(
     val headers: Map<String, String> = emptyMap(),
     val body: String? = null,
     val useCookieJar: Boolean = true,
+    val timeoutMillis: Long? = null,
+    val followRedirects: Boolean? = null,
+    val retryCount: Int = 0,
+    val responseCharset: String? = null,
 )
 
 data class SourceHttpResponse(
