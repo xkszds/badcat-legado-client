@@ -180,6 +180,58 @@ class SourceRequestFactoryTest {
         assertIs<EngineResult.Failure>(result)
     }
     @Test
+    fun getQueryUsesLegadoRfc3986EncodingAfterSourceAndRequestHeadersMerge() {
+        val result = SourceRequestFactory.create(
+            source(),
+            "https://reader.example/search?q=中文 x&tag=a+b",
+        )
+
+        val request = assertIs<EngineResult.Success<SourceHttpRequest>>(result).value
+        assertEquals(
+            "https://reader.example/search?q=%E4%B8%AD%E6%96%87%20x&tag=a+b",
+            request.url,
+        )
+    }
+
+    @Test
+    fun postTextBodyUsesLegadoFormEncodingWhenContentTypeIsAbsent() {
+        val result = SourceRequestFactory.create(
+            source(),
+            "https://reader.example/search",
+            method = "POST",
+            body = "q=中文&tag=a b",
+        )
+
+        val request = assertIs<EngineResult.Success<SourceHttpRequest>>(result).value
+        assertEquals("q=%E4%B8%AD%E6%96%87&tag=a+b", request.body)
+    }
+
+    @Test
+    fun postJsonAndExplicitContentTypeBodiesAreNotFormEncoded() {
+        val json = SourceRequestFactory.create(
+            source(),
+            "https://reader.example/search",
+            method = "POST",
+            body = """{"q":"中文"}""",
+        )
+        val typed = SourceRequestFactory.create(
+            source(header = """{"Content-Type":"application/json"}"""),
+            "https://reader.example/search",
+            method = "POST",
+            body = "q=中文",
+        )
+
+        assertEquals(
+            """{"q":"中文"}""",
+            assertIs<EngineResult.Success<SourceHttpRequest>>(json).value.body,
+        )
+        assertEquals(
+            "q=中文",
+            assertIs<EngineResult.Success<SourceHttpRequest>>(typed).value.body,
+        )
+    }
+
+    @Test
     fun resolvedUrlOptionsArePassedIntoTransportRequest() {
         val resolved = LegadoResolvedUrl(
             url = "https://reader.example/search",
