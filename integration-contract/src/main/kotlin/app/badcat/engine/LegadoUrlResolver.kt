@@ -56,9 +56,7 @@ object LegadoUrlResolver {
             val headers = parseHeaders(options?.get("headers"))
             val method = options?.string("method")?.uppercase()?.let {
                 when (it) {
-                    "POST" -> "POST"
-                    "HEAD" -> "HEAD"
-                    "GET" -> "GET"
+                    "GET", "HEAD", "POST", "PUT", "PATCH", "PROPPATCH", "REPORT" -> it
                     else -> throw IllegalArgumentException("Unsupported URL option method: $it")
                 }
             } ?: "GET"
