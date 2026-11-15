@@ -72,7 +72,7 @@ class SourceChapterContentService(
                     text = scopedTextReplacement?.replace(
                         chapterText = combinedText,
                         bookName = bookName,
-                        bookOrigin = source.name.ifBlank { source.id },
+                        bookOrigin = source.baseUrl.ifBlank { source.id },
                     ) ?: textReplacement.replace(combinedText),
                 ),
             )
