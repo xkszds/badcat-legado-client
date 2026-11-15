@@ -14,6 +14,7 @@ class LegadoEmbeddedUrlTemplateTest {
             LegadoEmbeddedScriptEvaluator { script, key, page ->
                 EngineResult.Success(if (script == "key") key else page)
             },
+            page = 3,
         )
         assertEquals(
             "https://example.test/search?q=雪猫&page=3",
