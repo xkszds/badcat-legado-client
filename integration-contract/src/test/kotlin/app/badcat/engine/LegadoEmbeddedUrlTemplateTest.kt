@@ -7,7 +7,7 @@ import kotlin.test.assertIs
 class LegadoEmbeddedUrlTemplateTest {
 
     @Test
-    fun evaluatesMultipleEmbeddedExpressionsInOrder() = kotlinx.coroutines.test.runTest {
+    fun evaluatesMultipleEmbeddedExpressionsInOrder() = kotlinx.coroutines.runBlocking {
         val result = LegadoEmbeddedUrlTemplate.resolve(
             "https://example.test/search?q={{key}}&page={{page}}",
             "雪猫",
@@ -22,7 +22,7 @@ class LegadoEmbeddedUrlTemplateTest {
     }
 
     @Test
-    fun convertsNullAndIntegralDoubleLikePinnedUpstream() = kotlinx.coroutines.test.runTest {
+    fun convertsNullAndIntegralDoubleLikePinnedUpstream() = kotlinx.coroutines.runBlocking {
         val nullResult = LegadoEmbeddedUrlTemplate.resolve(
             "a{{empty}}b",
             "x",
@@ -38,7 +38,7 @@ class LegadoEmbeddedUrlTemplateTest {
     }
 
     @Test
-    fun leavesUnclosedMarkerLiteral() = kotlinx.coroutines.test.runTest {
+    fun leavesUnclosedMarkerLiteral() = kotlinx.coroutines.runBlocking {
         val result = LegadoEmbeddedUrlTemplate.resolve(
             "https://example.test/{{key",
             "x",
@@ -51,7 +51,7 @@ class LegadoEmbeddedUrlTemplateTest {
     }
 
     @Test
-    fun propagatesScriptFailureWithoutSendingPartialUrl() = kotlinx.coroutines.test.runTest {
+    fun propagatesScriptFailureWithoutSendingPartialUrl() = kotlinx.coroutines.runBlocking {
         val result = LegadoEmbeddedUrlTemplate.resolve(
             "https://example.test/{{key}}",
             "x",
