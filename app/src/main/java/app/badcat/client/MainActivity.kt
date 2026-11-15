@@ -66,7 +66,7 @@ class MainActivity : Activity() {
     private fun buildHeader(): View = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
         setPadding(dp(22), dp(18), dp(22), dp(28))
-        background = rounded(blue, 0, 0, 0, 24)
+        background = rounded(blue, 24, 0, 0, 24, 24)
         addView(TextView(this@MainActivity).apply {
             text = "坏坏猫"
             textSize = 26f
@@ -230,14 +230,20 @@ class MainActivity : Activity() {
         startActivity(Intent(this, SourceCatalogActivity::class.java))
     }
 
-    private fun rounded(color: Int, radius: Int, tl: Int = radius, tr: Int = radius, bl: Int = radius): GradientDrawable =
-        GradientDrawable().apply {
-            setColor(color)
-            cornerRadii = floatArrayOf(
-                dp(tl).toFloat(), dp(tl).toFloat(), dp(tr).toFloat(), dp(tr).toFloat(),
-                dp(radius).toFloat(), dp(radius).toFloat(), dp(bl).toFloat(), dp(bl).toFloat()
-            )
-        }
+    private fun rounded(
+        color: Int,
+        radius: Int,
+        tl: Int = radius,
+        tr: Int = radius,
+        br: Int = radius,
+        bl: Int = radius,
+    ): GradientDrawable = GradientDrawable().apply {
+        setColor(color)
+        cornerRadii = floatArrayOf(
+            dp(tl).toFloat(), dp(tl).toFloat(), dp(tr).toFloat(), dp(tr).toFloat(),
+            dp(br).toFloat(), dp(br).toFloat(), dp(bl).toFloat(), dp(bl).toFloat()
+        )
+    }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 }
