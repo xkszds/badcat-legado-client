@@ -16,9 +16,11 @@ class CatalogLegadoBookTextReplacementTest {
             ]"""
         )
         var catalogReads = 0
-        val catalog = LegadoReplaceRuleCatalog {
-            catalogReads++
-            EngineResult.Success(imported)
+        val catalog = object : LegadoReplaceRuleCatalog {
+            override suspend fun all(): EngineResult<List<LegadoReplaceRuleRecord>> {
+                catalogReads++
+                return EngineResult.Success(imported)
+            }
         }
         val replacement = CatalogLegadoBookTextReplacement(catalog)
 
@@ -30,8 +32,9 @@ class CatalogLegadoBookTextReplacementTest {
 
     @Test
     fun surfacesCatalogReadFailuresInsteadOfSilentlySkippingPurification() = runBlocking {
-        val catalog = LegadoReplaceRuleCatalog {
-            EngineResult.Failure(EngineErrorCode.UNKNOWN, "catalog unavailable")
+        val catalog = object : LegadoReplaceRuleCatalog {
+            override suspend fun all(): EngineResult<List<LegadoReplaceRuleRecord>> =
+                EngineResult.Failure(EngineErrorCode.UNKNOWN, "catalog unavailable")
         }
         val replacement = CatalogLegadoBookTextReplacement(catalog)
 
