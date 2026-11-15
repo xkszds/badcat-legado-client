@@ -266,7 +266,7 @@ class SourceChapterActivity : Activity() {
                 status.text = result.value.title.ifBlank { chapter.title }
                 body.text = result.value.text
                 currentChapterUrl = chapter.url
-                preferences.edit().putString(progressKey(sourceId, bookUrl), chapter.url).apply()
+                preferences.edit().putString(readingProgressKey(sourceId, bookUrl), chapter.url).apply()
             }
             is EngineResult.Failure -> status.text = "正文加载失败（${result.code}）：${result.message}"
         }
