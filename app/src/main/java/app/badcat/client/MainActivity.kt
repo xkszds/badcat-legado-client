@@ -159,7 +159,7 @@ class MainActivity : Activity() {
             Triple("书源管理", "导入与整理", { openSourceCatalog() }),
             Triple("搜索书籍", "多源检索", { openSearch() }),
             Triple("阅读进度", "继续阅读", { Toast.makeText(this@MainActivity, "阅读记录入口正在接入", Toast.LENGTH_SHORT).show() }),
-            Triple("净化规则", "规则管理", { Toast.makeText(this@MainActivity, "原版净化规则正在移植", Toast.LENGTH_SHORT).show() }),
+            Triple("替换规则", "Legado正文规则", { startActivity(Intent(this@MainActivity, ReplaceRuleActivity::class.java)) }),
         )
         shortcuts.forEach { (title, subtitle, action) ->
             val card = LinearLayout(this@MainActivity).apply {
