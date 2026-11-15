@@ -3,6 +3,7 @@ package app.badcat.engine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertFailsWith
 import kotlinx.coroutines.runBlocking
 
 class SourceChapterContentServiceTest {
@@ -80,6 +81,31 @@ class SourceChapterContentServiceTest {
         assertEquals("https://reader.example/", observedBookOrigin)
         assertEquals("Part", result.title)
         assertEquals("Scoped page.\n\nSecond page.", result.text)
+    }
+
+    @Test
+    fun propagatesCoroutineCancellationFromReplacementInsteadOfMappingToParseFailure() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleContentJson = """{"content":"div#content"}""",
+        )
+        val service = SourceChapterContentService(
+            http = SourceHttpGateway(FixtureClient()),
+            scopedTextReplacement = ScopedBookTextReplacement { _, _, _ ->
+                throw java.util.concurrent.CancellationException("caller cancelled chapter processing")
+            },
+        )
+
+        assertFailsWith<java.util.concurrent.CancellationException> {
+            service.load(
+                source,
+                "https://reader.example/book/1",
+                BookChapter(0, "Chapter", "https://reader.example/chapter/1"),
+                "Novel",
+            )
+        }
     }
 
     @Test
