@@ -1,5 +1,11 @@
 ## Latest implementation update (2026-11-15)
 
+- Aligned the static Legado URL-option method allowlist with the methods already implemented by the shared HTTP transport: GET, HEAD, POST, PUT, PATCH, PROPPATCH and REPORT. This removes an avoidable mismatch where the URL resolver rejected body methods the transport could already execute.
+- Added regression tests for PUT/PATCH/PROPPATCH/REPORT forwarding and explicit rejection of DELETE, which is not implemented by the transport.
+- Tests are authored but not executed. No compile, CI run, device test or installable APK is confirmed.
+
+## Latest implementation update (2026-11-15)
+
 - Added disabled-source regression tests for the TOC and chapter-content entry points. Together with the existing search and book-detail cases, the tests now exercise the shared source-enabled gate across all four reading operations; the fake transport fails immediately if any disabled operation reaches HTTP.
 - Tests are authored but remain unexecuted. No compile, CI run, device test or installable APK is confirmed.
 
