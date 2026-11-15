@@ -109,6 +109,25 @@ class LegadoReplaceRuleCodecTest {
     }
 
     @Test
+    fun decodesValidUtf8BytesAndRejectsMalformedSequences() {
+        val valid = """{"id":31,"pattern":"猫","replacement":"书"}"""
+            .toByteArray(Charsets.UTF_8)
+        assertEquals("猫", LegadoReplaceRuleCodec.decodeUtf8(valid).single().pattern)
+
+        val malformed = byteArrayOf(
+            '{'.code.toByte(), '"'.code.toByte(), 'i'.code.toByte(), 'd'.code.toByte(),
+            '"'.code.toByte(), ':'.code.toByte(), '3'.code.toByte(), '2'.code.toByte(),
+            ','.code.toByte(), '"'.code.toByte(), 'p'.code.toByte(), 'a'.code.toByte(),
+            't'.code.toByte(), 't'.code.toByte(), 'e'.code.toByte(), 'r'.code.toByte(),
+            'n'.code.toByte(), '"'.code.toByte(), ':'.code.toByte(), '"'.code.toByte(),
+            0xC3.toByte(), 0x28.toByte(), '"'.code.toByte(), '}'.code.toByte(),
+        )
+        assertFailsWith<java.nio.charset.CharacterCodingException> {
+            LegadoReplaceRuleCodec.decodeUtf8(malformed)
+        }
+    }
+
+    @Test
     fun rejectsOversizedJsonBeforeParsing() {
         val oversized = " ".repeat(LegadoReplaceRuleCodec.MAX_IMPORT_BYTES + 1)
         assertFailsWith<IllegalArgumentException> {
