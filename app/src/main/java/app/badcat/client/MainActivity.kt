@@ -208,7 +208,7 @@ class MainActivity : Activity() {
                 setOnClickListener {
                     when (index) {
                         0 -> Unit
-                        1 -> Toast.makeText(this@MainActivity, "收藏夹界面正在移植", Toast.LENGTH_SHORT).show()
+                        1 -> startActivity(Intent(this@MainActivity, FavoritesActivity::class.java))
                         2 -> Toast.makeText(this@MainActivity, "猫咪空间入口待接入", Toast.LENGTH_SHORT).show()
                         3 -> openSourceCatalog()
                     }
