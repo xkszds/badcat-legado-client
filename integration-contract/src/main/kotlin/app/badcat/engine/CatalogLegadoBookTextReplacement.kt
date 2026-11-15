@@ -20,10 +20,11 @@ class CatalogLegadoBookTextReplacement(
     private val fallback: BookTextReplacement = BookTextReplacement { it },
 ) : ScopedBookTextReplacement {
     override suspend fun replace(
+        chapterTitle: String,
         chapterText: String,
         bookName: String,
         bookOrigin: String,
-    ): String {
+    ): ReplacedChapterContent {
         val records = when (val result = catalog.all()) {
             is EngineResult.Success -> result.value
             is EngineResult.Failure -> throw IllegalStateException(
@@ -31,13 +32,38 @@ class CatalogLegadoBookTextReplacement(
                 result.cause,
             )
         }
-        val replacement = LegadoLiteralReplacement(
-            rules = records.map { it.executableLiteral() },
-            bookName = bookName,
-            bookOrigin = bookOrigin,
+        val executableRules = records.map { it.executableLiteral() }
+        val replacedTitle = applyRules(
+            executableRules,
+            chapterTitle,
+            bookName,
+            bookOrigin,
+            LegadoReplaceRuleTarget.TITLE,
         )
-        val replaced = try {
-            replacement.replace(chapterText)
+        val replacedText = applyRules(
+            executableRules,
+            chapterText,
+            bookName,
+            bookOrigin,
+            LegadoReplaceRuleTarget.CONTENT,
+        )
+        return ReplacedChapterContent(replacedTitle, fallback.replace(replacedText))
+    }
+
+    private fun applyRules(
+        rules: List<LegadoReplaceRule>,
+        input: String,
+        bookName: String,
+        bookOrigin: String,
+        target: LegadoReplaceRuleTarget,
+    ): String {
+        return try {
+            LegadoLiteralReplacement(
+                rules = rules,
+                bookName = bookName,
+                bookOrigin = bookOrigin,
+                target = target,
+            ).replace(input)
         } catch (timeout: LegadoRegexTimeoutException) {
             val disabled = catalog.setEnabled(timeout.ruleId, false)
             if (disabled is EngineResult.Failure) {
@@ -47,6 +73,5 @@ class CatalogLegadoBookTextReplacement(
             }
             throw timeout
         }
-        return fallback.replace(replaced)
     }
 }
