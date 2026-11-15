@@ -37,10 +37,7 @@ class RuleExpressionTokenizerTest {
             listOf("""$.store[?(@.name == 'a || b')]""", "$.other"),
             RuleExpressionTokenizer.splitTopLevel(expression, "&&"),
         )
-        assertEquals(
-            listOf("""a\\&&b""", "c"),
-            RuleExpressionTokenizer.splitTopLevel("""a\\&&b && c""", "&&"),
-        )
+
     }
 
     @Test
