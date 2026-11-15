@@ -48,10 +48,22 @@ object LegadoUrlResolver {
                 JsonParser.parseString(optionJson).takeIf { it.isJsonObject }?.asJsonObject
                     ?: throw IllegalArgumentException("URL options must be a JSON object")
             }
-            val absolute = URI(baseUrl).resolve(expanded).toString()
-            require(absolute.startsWith("http://", true) || absolute.startsWith("https://", true)) {
-                "Resolved URL must use HTTP or HTTPS"
-            }
+            val base = URI(baseUrl)
+            require(
+                base.scheme.equals("http", true) &&
+                    !base.host.isNullOrBlank() ||
+                    base.scheme.equals("https", true) && !base.host.isNullOrBlank(),
+            ) { "Base URL must be an absolute HTTP(S) URL" }
+            require(base.rawUserInfo == null) { "Base URL must not contain embedded credentials" }
+
+            val resolvedUri = base.resolve(expanded)
+            require(
+                (resolvedUri.scheme.equals("http", true) ||
+                    resolvedUri.scheme.equals("https", true)) &&
+                    !resolvedUri.host.isNullOrBlank() &&
+                    resolvedUri.rawUserInfo == null,
+            ) { "Resolved URL must be an absolute HTTP(S) URL without embedded credentials" }
+            val absolute = resolvedUri.toString()
 
             val headers = parseHeaders(options?.get("headers"))
             val method = options?.string("method")?.uppercase()?.let {
@@ -64,9 +76,15 @@ object LegadoUrlResolver {
             val timeout = options?.get("timeout")?.let(::positiveLong)
             val redirects = options?.get("followRedirects")?.let(::booleanValue)
             val retry = options?.get("retry")?.let(::nonNegativeInt) ?: 0
+            require(retry <= 5) { "URL option retry must be between 0 and 5" }
             val charset = options?.string("charset")
-            val dnsIp = options?.string("dnsIp") ?: options?.string("resolveIp")
-            val type = options?.string("type")
+            if (options?.has("dnsIp") == true || options?.has("resolveIp") == true ||
+                options?.has("type") == true
+            ) {
+                throw UnsupportedOperationException(
+                    "URL options dnsIp, resolveIp and type are not implemented by the current HTTP transport",
+                )
+            }
             val webView = options?.get("webView")?.let(::booleanValue) ?: false
 
             if (options?.has("js") == true || options?.has("bodyJs") == true || webView) {
