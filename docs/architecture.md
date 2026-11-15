@@ -30,7 +30,7 @@ No UI rewrite should be undertaken merely to make engine integration easier.
 
 The platform-neutral contract lives in `integration-contract/`. It defines the minimum operations the host needs: source listing, search, book detail, chapter listing, chapter content, and replacement-rule application.
 
-A concrete Legado adapter is not implemented yet. It must be pinned to a reviewed upstream revision and use the full required rule execution/app-layer dependencies. The Legado Android app's HTTP API is not an embedded SDK, and its ContentProvider is not an in-process engine.
+A complete Legado adapter is not implemented yet. The build pins upstream revision `330e606c4d57e08adc056ff8ab7a4132c784da9` and retrieves the Rhino JAR plus selected Rhino extension sources during CI, but the host still lacks the full AnalyzeUrl / AnalyzeRule app-level runtime and host objects. The Legado Android app's HTTP API is not an embedded SDK, and its ContentProvider is not an in-process engine.
 
 ### 3. Legado implementation adapter
 
@@ -54,7 +54,7 @@ Keep separate rule domains and execution points:
 | Catalog/chapter cleanup | Chapter metadata/list | Normalize unwanted catalog entries and parsing artifacts |
 | Video/episode rules | Video pages and episode metadata | Remain isolated from novel text and chapter replacement |
 
-Badcat's existing purification behavior must be mapped before porting. Legado replacement rules must not silently replace or disable Badcat's existing page/video filtering.
+Badcat's existing purification behavior has only been statically mapped from APK symbols and resources; its original rule execution behavior has not yet been ported. The platform-neutral pipeline currently provides separate injected interfaces, not the original implementation. Legado replacement rules must not silently replace or disable Badcat's existing page/video filtering.
 
 ## Data flow
 
