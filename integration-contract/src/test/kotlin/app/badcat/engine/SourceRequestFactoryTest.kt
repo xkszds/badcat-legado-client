@@ -48,6 +48,18 @@ class SourceRequestFactoryTest {
     }
 
     @Test
+    fun rejectsMethodsNotSupportedByTheTransportBeforeCreatingRequest() {
+        val result = SourceRequestFactory.create(
+            source = source(),
+            url = "https://reader.example/search",
+            method = "DELETE",
+        )
+
+        val failure = assertIs<EngineResult.Failure>(result)
+        assertEquals(EngineErrorCode.UNSUPPORTED_RULE, failure.code)
+    }
+
+    @Test
     fun rejectsMalformedOrNonStringHeaderValues() {
         val malformed = SourceRequestFactory.create(
             source = source("""{"User-Agent":42}"""),
