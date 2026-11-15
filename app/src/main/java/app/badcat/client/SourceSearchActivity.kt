@@ -12,6 +12,7 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.Spinner
 import android.widget.TextView
+import android.content.Intent
 import app.badcat.client.runtime.BadcatReadingEngineFactory
 import app.badcat.engine.BookCandidate
 import app.badcat.engine.BookSource
@@ -134,6 +135,14 @@ class SourceSearchActivity : Activity() {
                 }
                 textSize = 15f
                 setPadding(0, 14, 0, 14)
+                isClickable = true
+                setOnClickListener {
+                    startActivity(Intent(this@SourceSearchActivity, SourceBookActivity::class.java).apply {
+                        putExtra(SourceBookActivity.EXTRA_SOURCE_ID, item.sourceId)
+                        putExtra(SourceBookActivity.EXTRA_BOOK_URL, item.bookUrl)
+                        putExtra(SourceBookActivity.EXTRA_BOOK_NAME, item.name)
+                    })
+                }
             }, LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
