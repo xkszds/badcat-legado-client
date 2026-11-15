@@ -76,11 +76,13 @@ class LegadoLiteralReplacementTest {
                 name = "JS rule",
             ),
         )
-        val evaluator = LegadoJsReplacementEvaluator { script, jsContext ->
-            assertEquals("result + ':' + book.name", script)
-            assertEquals("123", jsContext.result)
-            assertEquals("Book", jsContext.book.name)
-            jsContext.result + ":" + jsContext.book.name
+        val evaluator = LegadoJsReplacementEvaluator {
+            LegadoJsReplacementSession { script, jsContext ->
+                assertEquals("result + ':' + book.name", script)
+                assertEquals("123", jsContext.result)
+                assertEquals("Book", jsContext.book.name)
+                jsContext.result + ":" + jsContext.book.name
+            }
         }
         val replacement = LegadoLiteralReplacement(
             rules = rules,
