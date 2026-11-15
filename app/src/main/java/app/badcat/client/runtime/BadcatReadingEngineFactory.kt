@@ -22,7 +22,7 @@ import app.badcat.engine.SourceScriptRuntime
  * All four source services share one gateway whose embedded evaluator is
  * selected from the BookSource supplied to each request. The source catalog
  * remains app-private and durable. Purification is injected separately and
- * applies imported Legado literal replacement rules before the optional host hook.
+ * applies imported Legado title/content rules with bounded regex before the optional host hook.
  */
 class BadcatReadingEngineFactory(
     context: Context,
