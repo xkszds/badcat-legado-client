@@ -7,12 +7,13 @@ import kotlin.test.assertFailsWith
 
 class CatalogLegadoBookTextReplacementTest {
     @Test
-    fun reloadsPersistedRulesAndAppliesScopedLiteralReplacement() = runBlocking {
+    fun reloadsPersistedRulesAndAppliesTitleAndContentScopes() = runBlocking {
         val imported = LegadoReplaceRuleCodec.decode(
             """[
                 {"id":1,"pattern":"foo","replacement":"bar","isRegex":false,"scopeContent":true,"order":0},
                 {"id":2,"pattern":"bar","replacement":"done","isRegex":false,"scopeContent":true,"order":1},
-                {"id":3,"pattern":"foo","replacement":"wrong","isRegex":false,"scope":"Another Book","scopeContent":true,"order":0}
+                {"id":3,"pattern":"foo","replacement":"wrong","isRegex":false,"scope":"Another Book","scopeContent":true,"order":0},
+                {"id":4,"pattern":"Chapter","replacement":"Part","isRegex":false,"scopeTitle":true,"scopeContent":false,"order":0}
             ]"""
         )
         var catalogReads = 0
@@ -24,9 +25,14 @@ class CatalogLegadoBookTextReplacementTest {
         }
         val replacement = CatalogLegadoBookTextReplacement(catalog)
 
-        assertEquals("done done", replacement.replace("foo foo", "Current Book", "https://source.example/"))
+        val first = replacement.replace("Chapter 1", "foo foo", "Current Book", "https://source.example/")
+        assertEquals("Part 1", first.title)
+        assertEquals("done done", first.text)
         assertEquals(1, catalogReads)
-        assertEquals("done", replacement.replace("foo", "Current Book", "https://source.example/"))
+
+        val second = replacement.replace("Chapter 2", "foo", "Current Book", "https://source.example/")
+        assertEquals("Part 2", second.title)
+        assertEquals("done", second.text)
         assertEquals(2, catalogReads)
     }
 
@@ -39,7 +45,7 @@ class CatalogLegadoBookTextReplacementTest {
         val replacement = CatalogLegadoBookTextReplacement(catalog)
 
         assertFailsWith<IllegalStateException> {
-            replacement.replace("text", "Book", "https://source.example/")
+            replacement.replace("Title", "text", "Book", "https://source.example/")
         }
     }
 
@@ -61,9 +67,8 @@ class CatalogLegadoBookTextReplacementTest {
         val replacement = CatalogLegadoBookTextReplacement(catalog)
 
         assertFailsWith<LegadoRegexTimeoutException> {
-            replacement.replace("a".repeat(64) + "!", "Book", "https://source.example/")
+            replacement.replace("Chapter", "a".repeat(64) + "!", "Book", "https://source.example/")
         }
         assertEquals(77L, disabledRuleId)
     }
-
 }
