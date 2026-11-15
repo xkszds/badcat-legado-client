@@ -86,6 +86,11 @@ class OkHttpSourceRequestClient(
                     attempt++
                 }
             }
+            @Suppress("UNREACHABLE_CODE")
+            EngineResult.Failure(
+                EngineErrorCode.NETWORK,
+                "HTTP retry loop ended unexpectedly",
+            )
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (invalid: IllegalArgumentException) {
