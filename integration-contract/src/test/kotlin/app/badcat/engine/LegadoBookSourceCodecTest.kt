@@ -137,6 +137,19 @@ class LegadoBookSourceCodecTest {
     }
 
     @Test
+    fun decodesLegacyStringEncodedRuleObjects() {
+        val source = LegadoBookSourceCodec.decode(
+            """{"bookSourceUrl":"https://legacy.example","bookSourceName":"Legacy","ruleSearch":"{\\"bookList\\":\\"div.book\\",\\"name\\":\\"h2@text\\"}"}"""
+        ).single()
+        assertTrue(source.ruleSearchJson!!.contains("div.book"))
+        assertTrue(source.ruleSearchJson!!.contains("h2@text"))
+        val exported = JsonParser.parseString(
+            LegadoBookSourceCodec.encode(listOf(source))
+        ).asJsonArray.single().asJsonObject
+        assertTrue(exported.get("ruleSearch").asString.contains("div.book"))
+    }
+
+    @Test
     fun rejectsDuplicateSourceUrlsInsteadOfSilentlyOverwriting() {
         val duplicate = """
             [
