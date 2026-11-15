@@ -93,6 +93,9 @@ class SourceChapterContentService(
                 ),
             )
         }.getOrElse {
+            // Preserve structured coroutine cancellation instead of converting it
+            // into an ordinary chapter parsing failure.
+            if (it is java.util.concurrent.CancellationException) throw it
             EngineResult.Failure(
                 when (it) {
                     is LegadoRegexTimeoutException -> EngineErrorCode.RULE_TIMEOUT
