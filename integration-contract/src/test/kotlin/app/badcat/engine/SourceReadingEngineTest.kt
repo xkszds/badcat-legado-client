@@ -54,6 +54,27 @@ class SourceReadingEngineTest {
     }
 
     @Test
+    fun disabledSourceIsRejectedForBookDetailToo() = runBlocking {
+        val source = BookSource("off", "Disabled", "https://reader.example/", enabled = false)
+        val gateway = SourceHttpGateway(NoNetworkClient())
+        val engine = SourceReadingEngine(
+            catalog = BookSourceCatalog { EngineResult.Success(listOf(source)) },
+            searchUrlResolver = SearchUrlResolver { _, _ ->
+                EngineResult.Failure(EngineErrorCode.UNKNOWN, "not expected")
+            },
+            searchService = SourceSearchService(gateway),
+            detailService = SourceBookDetailService(gateway),
+            tocService = SourceTocService(gateway),
+            contentService = SourceChapterContentService(gateway),
+        )
+
+        val failure = assertIs<EngineResult.Failure>(
+            engine.bookDetail("off", "https://reader.example/book"),
+        )
+        assertEquals(EngineErrorCode.INVALID_SOURCE, failure.code)
+    }
+
+    @Test
     fun returnsNotFoundWhenSourceIdIsUnknown() = runBlocking {
         val gateway = SourceHttpGateway(NoNetworkClient())
         val engine = SourceReadingEngine(
