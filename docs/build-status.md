@@ -1,3 +1,9 @@
+## Latest implementation update (2026-11-15)
+
+- Corrected error classification for unsupported static URL-option HTTP methods: a syntactically valid but unimplemented method (for example DELETE) now returns `UNSUPPORTED_RULE`, while malformed option data continues to return `INVALID_SOURCE`. Updated the regression expectation accordingly.
+- Clarified the older charset-validation note: the current resolver and request factory reject Legado's `escape` mode; only ordinary JVM-supported charsets are accepted. The older note saying `escape` was retained is historical and no longer describes current behavior.
+- Tests are authored but not executed. No compile, CI run, device test or installable APK is confirmed.
+
 ## Source audit correction (2026-11-15)
 
 - A follow-up source review found a compile-blocking stale reference in `LegadoUrlResolver`: the resolver's result constructor still referenced local `dnsIp` and `type` values after those options had been changed to fail closed. Removed the stale constructor arguments and removed the unused fields from `LegadoResolvedUrl`, so the contract no longer implies those unsupported transport features are available.
