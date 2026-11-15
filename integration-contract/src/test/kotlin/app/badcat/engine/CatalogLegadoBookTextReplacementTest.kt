@@ -37,7 +37,7 @@ class CatalogLegadoBookTextReplacementTest {
     }
 
     @Test
-    fun surfacesCatalogReadFailuresInsteadOfSilentlySkippingPurification() = runBlocking {
+    fun surfacesCatalogReadFailuresInsteadOfSilentlySkippingPurification(): Unit = runBlocking {
         val catalog = object : LegadoReplaceRuleCatalog {
             override suspend fun all(): EngineResult<List<LegadoReplaceRuleRecord>> =
                 EngineResult.Failure(EngineErrorCode.UNKNOWN, "catalog unavailable")
