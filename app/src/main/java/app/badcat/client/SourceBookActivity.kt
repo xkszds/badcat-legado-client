@@ -382,7 +382,7 @@ class SourceChapterActivity : Activity() {
         nextButton.isEnabled = false
         status.text = "正在加载：${chapter.title}"
         worker.execute {
-            val result = runBlocking { safeEngineCall { engine.chapterContent(sourceId, bookUrl, chapter.url) } }
+            val result = runBlocking { safeEngineCall { engine.chapterContent(sourceId, bookUrl, chapter.url, bookName) } }
             mainHandler.post {
                 if (result is EngineResult.Success) currentIndex = target
                 renderChapter(chapter, result, EngineResult.Success(chapters))
