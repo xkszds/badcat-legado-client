@@ -79,7 +79,7 @@ object SourceRequestFactory {
                 "Retry count must be 0..5 and timeout must be within the supported millisecond range",
             )
         }
-        if (responseCharset != null && !responseCharset.equals("escape", ignoreCase = true)) {
+        if (responseCharset != null) {
             val validCharset = runCatching { java.nio.charset.Charset.forName(responseCharset) }.isSuccess
             if (!validCharset) {
                 return EngineResult.Failure(
