@@ -1,12 +1,20 @@
 # Reading engine contract
 
-This directory defines a small, platform-neutral Kotlin port for the existing Badcat UI.
+This directory defines a small, platform-neutral port for the existing Badcat UI.
 
-It is intentionally only an interface and data-model boundary. It does not yet contain:
-- a Legado implementation,
-- source-rule execution,
-- Android persistence or networking,
-- a reader UI,
-- or a buildable APK.
+## Implemented
 
-The next step is to pin a Legado upstream revision and implement an adapter against the reviewed app-layer APIs. Keep this boundary stable so the original UI can remain the host.
+- Host-facing operations for source listing, search, book detail, chapter listing and chapter content.
+- Separate interfaces for chapter text replacement, page HTML filtering, catalog cleanup and video payload processing.
+- Legado book-source JSON import/export codec. It validates the upstream identity fields `bookSourceUrl` and `bookSourceName`, maps basic source metadata, and retains the full JSON object so nested rules and unknown future fields are not silently discarded.
+- Unit tests for codec import/export/defaults/validation and purification-domain separation.
+
+## Not implemented yet
+
+- Legado online search/detail/catalog/content rule execution.
+- Rhino environment and script bindings.
+- HTTP/network and cookie handling.
+- Source persistence/database integration.
+- Android reader UI integration.
+
+The codec is source-file interchange plumbing, not a substitute for the Legado app-layer runtime. A concrete engine adapter must be implemented against the immutable upstream revision in `gradle/legado-upstream.properties`.
