@@ -70,6 +70,7 @@ class SourceReadingEngine(
         sourceId: String,
         bookUrl: String,
         chapterUrl: String,
+        bookName: String?,
     ): EngineResult<ChapterContent> {
         val source = when (val result = findSource(sourceId)) {
             is EngineResult.Failure -> return result
@@ -79,6 +80,7 @@ class SourceReadingEngine(
             source,
             bookUrl,
             BookChapter(index = 0, title = "", url = chapterUrl),
+            bookName = bookName.orEmpty(),
         )
     }
 
