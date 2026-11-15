@@ -107,7 +107,7 @@ class RhinoLegadoJsReplacementEvaluatorTest {
         val session = RhinoLegadoJsReplacementEvaluator().createSession("packages fixture")
 
         assertThrows(UnsupportedOperationException::class.java) {
-            session.evaluate("Packages.java.lang.ProcessBuilder", context())
+            session.evaluate("new Packages.java.lang.ProcessBuilder()", context())
         }
     }
 
