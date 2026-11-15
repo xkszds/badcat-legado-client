@@ -33,7 +33,7 @@ class SourceReadingEngine(
         sourceId: String,
         keyword: String,
     ): EngineResult<List<BookCandidate>> {
-        val source = findSource(sourceId) ?: return sourceNotFound(sourceId)
+        val source = when (val result = findSource(sourceId)) {\n            is EngineResult.Failure -> return result\n            is EngineResult.Success -> result.value\n        }
         val url = when (val result = searchUrlResolver.resolve(source, keyword)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
@@ -74,14 +74,14 @@ class SourceReadingEngine(
         )
     }
 
-    private suspend fun findSource(sourceId: String): BookSource? =
+    private suspend fun findSource(sourceId: String): EngineResult<BookSource> =
         when (val result = catalog.all()) {
-            is EngineResult.Failure -> null
+            is EngineResult.Failure -> result
             is EngineResult.Success -> result.value.firstOrNull { it.id == sourceId }
+                ?.let { EngineResult.Success(it) }
+                ?: EngineResult.Failure(
+                    EngineErrorCode.NOT_FOUND,
+                    "Book source '$sourceId' was not found",
+                )
         }
-
-    private fun sourceNotFound(sourceId: String) = EngineResult.Failure(
-        EngineErrorCode.NOT_FOUND,
-        "Book source '$sourceId' was not found",
-    )
 }
