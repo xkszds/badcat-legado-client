@@ -52,6 +52,7 @@ data class BookSource(
     val ruleBookInfoJson: String? = null,
     val ruleTocJson: String? = null,
     val ruleContentJson: String? = null,
+    val ruleReviewJson: String? = null,
     /** Full upstream JSON, including rule fields not yet mapped by the host. */
     val rawJson: String? = null,
 )
