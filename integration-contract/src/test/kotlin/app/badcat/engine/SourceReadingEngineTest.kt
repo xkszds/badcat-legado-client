@@ -342,4 +342,85 @@ class SourceReadingEngineTest {
         )
     }
 
+
+    @Test
+    fun forwardsRequestedSearchPageIntoEmbeddedLegadoUrlTemplate() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            searchUrl = "/search?q={{key}}&p={{page}}",
+            ruleSearchJson = """{"bookList":"div.result","name":"h2@text","bookUrl":"a@href"}""",
+        )
+        val requests = mutableListOf<String>()
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                requests += request.url
+                return EngineResult.Success(
+                    SourceHttpResponse(
+                        200,
+                        request.url,
+                        body = """<div class="result"><h2>Novel</h2><a href="/book/1">Open</a></div>""",
+                    ),
+                )
+            }
+        }
+        val gateway = SourceHttpGateway(
+            client,
+            embeddedScriptEvaluator = LegadoEmbeddedScriptEvaluator { script, key, page ->
+                when (script.trim()) {
+                    "key" -> EngineResult.Success(key)
+                    "page" -> EngineResult.Success(page)
+                    else -> EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Unexpected template expression")
+                }
+            },
+        )
+        val engine = SourceReadingEngine(
+            catalog = BookSourceCatalog { EngineResult.Success(listOf(source)) },
+            searchUrlResolver = BookSourceSearchUrlResolver(),
+            searchService = SourceSearchService(gateway),
+            detailService = SourceBookDetailService(gateway),
+            tocService = SourceTocService(gateway),
+            contentService = SourceChapterContentService(gateway),
+        )
+
+        val result = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            engine.searchPage("fixture", "Novel", 3),
+        )
+
+        assertEquals(1, result.value.size)
+        assertEquals(listOf("https://reader.example/search?q=Novel&p=3"), requests)
+    }
+
+    @Test
+    fun rejectsNonPositiveSearchPageBeforeMakingARequest() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            searchUrl = "/search?q={{key}}",
+        )
+        var requested = false
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                requested = true
+                error("No request should be made for an invalid page")
+            }
+        }
+        val gateway = SourceHttpGateway(client)
+        val engine = SourceReadingEngine(
+            catalog = BookSourceCatalog { EngineResult.Success(listOf(source)) },
+            searchUrlResolver = BookSourceSearchUrlResolver(),
+            searchService = SourceSearchService(gateway),
+            detailService = SourceBookDetailService(gateway),
+            tocService = SourceTocService(gateway),
+            contentService = SourceChapterContentService(gateway),
+        )
+
+        val failure = assertIs<EngineResult.Failure>(engine.searchPage("fixture", "Novel", 0))
+
+        assertEquals(EngineErrorCode.INVALID_SOURCE, failure.code)
+        assertEquals(false, requested)
+    }
+
 }
