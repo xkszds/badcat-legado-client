@@ -71,6 +71,52 @@ class LegadoUrlResolverTest {
     }
 
     @Test
+    fun rejectsBaseAndResolvedUrlsWithUnsafeSchemesOrCredentials() {
+        val invalidBases = listOf(
+            "file:///tmp/",
+            "https://user:password@example.com/",
+            "/relative/base/",
+        )
+        invalidBases.forEach { base ->
+            assertIs<EngineResult.Failure>(
+                LegadoUrlResolver.resolve(base, "search"),
+            )
+        }
+
+        val credentialRedirect = LegadoUrlResolver.resolve(
+            "https://example.com/",
+            "https://user:password@other.example/search",
+        )
+        assertIs<EngineResult.Failure>(credentialRedirect)
+    }
+
+    @Test
+    fun rejectsTransportOptionsThatAreParsedButNotImplemented() {
+        val unsupportedOptions = listOf(
+            """search, {"dnsIp":"127.0.0.1"}""",
+            """search, {"resolveIp":"127.0.0.1"}""",
+            """search, {"type":"image"}""",
+        )
+        unsupportedOptions.forEach { rule ->
+            val failure = assertIs<EngineResult.Failure>(
+                LegadoUrlResolver.resolve("https://example.com/", rule),
+            )
+            assertEquals(EngineErrorCode.UNSUPPORTED_RULE, failure.code)
+        }
+    }
+
+    @Test
+    fun rejectsRetryCountAboveTransportLimitAtResolutionTime() {
+        val failure = assertIs<EngineResult.Failure>(
+            LegadoUrlResolver.resolve(
+                "https://example.com/",
+                """search, {"retry":6}""",
+            ),
+        )
+        assertEquals(EngineErrorCode.INVALID_SOURCE, failure.code)
+    }
+
+    @Test
     fun rejectsMalformedOptions() {
         val result = LegadoUrlResolver.resolve("https://example.com/", "search, {bad}")
         assertIs<EngineResult.Failure>(result)
