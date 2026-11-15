@@ -40,8 +40,10 @@ class LegadoLiteralReplacement(
             if (!rule.isRegex) {
                 text.replace(rule.pattern, rule.replacement)
             } else {
-                require(!rule.replacement.trimStart().startsWith("@js:")) {
-                    "JavaScript replacement for rule '${rule.scopeRule.id}' requires the Legado @js runtime"
+                if (rule.replacement.trimStart().startsWith("@js:")) {
+                    throw UnsupportedOperationException(
+                        "JavaScript replacement for rule '${rule.scopeRule.id}' requires the Legado @js runtime"
+                    )
                 }
                 replaceRegexBounded(text, rule)
             }
