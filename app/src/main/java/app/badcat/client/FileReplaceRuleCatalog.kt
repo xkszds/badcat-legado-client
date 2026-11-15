@@ -6,6 +6,7 @@ import app.badcat.engine.EngineErrorCode
 import app.badcat.engine.EngineResult
 import app.badcat.engine.LegadoReplaceRuleCodec
 import app.badcat.engine.LegadoReplaceRuleRecord
+import app.badcat.engine.LegadoReplaceRuleCatalog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -17,17 +18,16 @@ private val replaceRuleCatalogMutex = Mutex()
 /**
  * Durable app-private storage for imported Legado replacement rules.
  *
- * This catalog handles JSON persistence and enabled-state editing only.
- * Runtime application is wired separately once regex timeout and @js semantics
- * can be provided without risking the reading thread.
+ * The catalog implements the engine's read contract; literal rules are applied
+ * during chapter loading. Unsupported regex and @js execution remain fail-closed.
  */
-class FileReplaceRuleCatalog(context: Context) {
+class FileReplaceRuleCatalog(context: Context) : LegadoReplaceRuleCatalog {
     private val file = AtomicFile(
         File(context.applicationContext.filesDir, "legado-replace-rules.json")
     )
     private val mutex = replaceRuleCatalogMutex
 
-    suspend fun all(): EngineResult<List<LegadoReplaceRuleRecord>> =
+    override suspend fun all(): EngineResult<List<LegadoReplaceRuleRecord>> =
         withContext(Dispatchers.IO) {
             mutex.withLock {
                 try {
