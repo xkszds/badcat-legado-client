@@ -12,6 +12,48 @@ class SourceReadingEngineTest {
     }
 
     @Test
+    fun doesNotResolveOrRequestSearchForDisabledSource() = runBlocking {
+        var resolverCalled = false
+        val source = BookSource("off", "Disabled", "https://reader.example/", enabled = false)
+        val engine = SourceReadingEngine(
+            catalog = BookSourceCatalog { EngineResult.Success(listOf(source)) },
+            searchUrlResolver = SearchUrlResolver { _, _ ->
+                resolverCalled = true
+                EngineResult.Success("https://reader.example/search")
+            },
+            searchService = SourceSearchService(SourceHttpGateway(NoNetworkClient())),
+            detailService = SourceBookDetailService(SourceHttpGateway(NoNetworkClient())),
+            tocService = SourceTocService(SourceHttpGateway(NoNetworkClient())),
+            contentService = SourceChapterContentService(SourceHttpGateway(NoNetworkClient())),
+        )
+
+        val failure = assertIs<EngineResult.Failure>(engine.search("off", "cat"))
+        assertEquals(EngineErrorCode.INVALID_SOURCE, failure.code)
+        assertEquals(false, resolverCalled)
+    }
+
+    @Test
+    fun rejectsBlankSearchKeywordBeforeResolvingSource() = runBlocking {
+        var resolverCalled = false
+        val source = BookSource("on", "Enabled", "https://reader.example/")
+        val engine = SourceReadingEngine(
+            catalog = BookSourceCatalog { EngineResult.Success(listOf(source)) },
+            searchUrlResolver = SearchUrlResolver { _, _ ->
+                resolverCalled = true
+                EngineResult.Success("https://reader.example/search")
+            },
+            searchService = SourceSearchService(SourceHttpGateway(NoNetworkClient())),
+            detailService = SourceBookDetailService(SourceHttpGateway(NoNetworkClient())),
+            tocService = SourceTocService(SourceHttpGateway(NoNetworkClient())),
+            contentService = SourceChapterContentService(SourceHttpGateway(NoNetworkClient())),
+        )
+
+        val failure = assertIs<EngineResult.Failure>(engine.search("on", "  "))
+        assertEquals(EngineErrorCode.INVALID_SOURCE, failure.code)
+        assertEquals(false, resolverCalled)
+    }
+
+    @Test
     fun returnsNotFoundWhenSourceIdIsUnknown() = runBlocking {
         val gateway = SourceHttpGateway(NoNetworkClient())
         val engine = SourceReadingEngine(
