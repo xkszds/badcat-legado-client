@@ -36,6 +36,10 @@ data class BookSource(
     val name: String,
     val baseUrl: String,
     val enabled: Boolean = true,
+    val group: String? = null,
+    val sourceType: Int = 0,
+    /** Full upstream JSON, including rule fields not yet mapped by the host. */
+    val rawJson: String? = null,
 )
 
 data class BookCandidate(
