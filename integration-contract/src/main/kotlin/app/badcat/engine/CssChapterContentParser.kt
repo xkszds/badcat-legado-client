@@ -51,12 +51,17 @@ class CssChapterContentParser {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value?.takeIf(String::isNotBlank) ?: chapter.title
         }
-        val nextUrl = when (val result = evaluateOptional(
-            document, rules["nextContentUrl"], response.finalUrl, defaultAttribute = "href",
-        )) {
-            is EngineResult.Failure -> return result
-            is EngineResult.Success -> result.value?.let { value ->
-                runCatching { WebUrlResolver.resolve(response.finalUrl, value) }.getOrElse {
+        val nextRule = rules["nextContentUrl"]?.trim().orEmpty()
+        val nextUrl = if (nextRule.isEmpty()) null else {
+            val suffix = nextRule.substringAfterLast("@", "").lowercase()
+            val attribute = if (suffix == "src" || suffix == "attr(src)") "src" else "href"
+            val selector = nextRule.replace(
+                Regex("@(?:href|src|attr\\((?:href|src)\\))$", RegexOption.IGNORE_CASE),
+                "",
+            ).trim()
+            val rawLink = Jsoup.parse(response.body, response.finalUrl).select(selector).first()?.attr(attribute)
+            if (rawLink.isNullOrBlank()) null else {
+                runCatching { WebUrlResolver.resolve(response.finalUrl, rawLink) }.getOrElse {
                     return unsupported(source, "nextContentUrl must resolve to a credential-free HTTP(S) URL")
                 }
             }
