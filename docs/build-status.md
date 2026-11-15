@@ -1,8 +1,14 @@
 ## Latest implementation update (2026-11-15)
 
+- Added per-source enable/disable controls to the temporary source catalog screen. Changes are persisted by `FileBookSourceCatalog.setEnabled`; the codec updates only the upstream `enabled` property and retains other JSON fields.
+- Added a codec regression test for toggling the enabled flag while preserving unknown fields and nested search rules. The test is authored but has not been executed.
+- The switch currently controls the catalog's enabled flag only. Search UI, source editing/deletion, and live source execution are not implemented. The temporary screen remains separate from the original Badcat UI.
+- No compile, device test, CI result, or installable APK is confirmed.
+## Latest implementation update (2026-11-15)
+
 - Added a temporary Android `SourceCatalogActivity` with system document-picker import/export for Legado JSON, a local source list, and import/export result messages.
 - Added a launcher entry into that screen and registered it in the manifest. The UI is explicitly a development utility screen, not a recreation of Badcat's original source-management UI.
-- Import/export uses the durable `FileBookSourceCatalog`; the screen currently displays source names/IDs and enabled state. It does not yet expose editing, enable/disable controls, source execution, or search.
+- Import/export uses the durable `FileBookSourceCatalog`; the screen displays source names/IDs and now provides per-source enable/disable switches. The flag is persisted back into each source JSON while retaining unknown fields and nested rules. Source execution and search are not yet wired to this screen.
 - These Android changes have not been compiled or exercised on a device. No CI run or APK is confirmed.
 ## Latest implementation update (2026-11-15)
 
