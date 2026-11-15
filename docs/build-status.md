@@ -1,5 +1,12 @@
 ## Latest implementation update (2026-11-15)
 
+- Added `BookSourceSearchUrlResolver`, the concrete `SearchUrlResolver` for imported source metadata. It returns the configured `searchUrl` without prematurely substituting or encoding `{{key}}`; the HTTP gateway remains responsible for bounded template expansion before URI parsing/encoding.
+- The resolver rejects disabled sources, blank keywords, missing search URLs and unsupported `@js` syntax. Added four contract tests for those cases and preservation of the raw template.
+- This fills the missing search-URL resolution contract, but does not yet constitute an end-to-end Android search screen: the app still needs a source-aware engine composition path and UI wiring. The current gateway factory is source-scoped, so a single shared service graph must not reuse one source's evaluator for other sources.
+- Tests are authored but not executed. No Gradle build, CI run, device validation or APK generation is confirmed. The pinned HtmlUnit Rhino fork JAR remains missing.
+
+## Latest implementation update (2026-11-15)
+
 - Added `BadcatSourceHttpGatewayFactory` as the Android-side composition entry point. It constructs a source-scoped gateway with the bounded Rhino embedded-template adapter and the OkHttp transport, while allowing the transport and script runtime to be injected for tests/host configuration.
 - The factory opts into only the `{{...}}` URL-template subset and the string `key` binding. It does not enable `@js`, `bodyJs`, WebView, Java host objects, login/session services or full Legado AnalyzeUrl bindings. Directly constructed gateways remain fail-closed by default.
 - This is a composition entry point, not evidence that the app's launcher/search UI calls it. `MainActivity` remains a temporary validation shell; no end-user search flow is wired.
