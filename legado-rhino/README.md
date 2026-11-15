@@ -16,3 +16,9 @@ Adding this module makes the upstream Rhino engine available to the Android buil
 ## License compliance
 
 This is a GPL-3.0 component. Any distribution of a combined application must comply with GPL-3.0, including providing the corresponding source code and license notices as required. Review the upstream license and the project's distribution model before publishing binaries.
+
+## Host adapter progress
+
+The module now includes `LegadoRhinoSandbox`, a deliberately narrow coroutine-aware bridge. It accepts only string bindings, limits script/binding sizes, applies a bounded timeout using the upstream instruction observer, and returns only primitive results. The Android app contains `RhinoSourceScriptRuntime`, which maps execution outcomes into the platform-neutral source runtime contract.
+
+This adapter is not wired into URL parsing or search yet. It does not expose `java`, HTTP, cookie, cache, WebView, or arbitrary application objects, and it does not implement the complete Legado `AnalyzeUrl`/rule-binding environment. Script-bearing URL rules therefore remain rejected by `LegadoUrlResolver` until a complete, reviewed adapter is implemented.
