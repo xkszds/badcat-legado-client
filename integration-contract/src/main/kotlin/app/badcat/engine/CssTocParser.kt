@@ -24,6 +24,12 @@ class CssTocParser {
         }
         val listRule = rules["chapterList"]?.takeIf(String::isNotBlank)
             ?: return unsupported(source, "missing chapterList rule")
+        if (rules["chapterName"].isNullOrBlank()) {
+            return unsupported(source, "missing chapterName rule")
+        }
+        if (rules["chapterUrl"].isNullOrBlank()) {
+            return unsupported(source, "missing chapterUrl rule")
+        }
         if (listOf(listRule, rules["chapterName"], rules["chapterUrl"], rules["nextTocUrl"])
                 .filterNotNull().any { it.contains("@js", true) || it.contains("{{") || it.contains("}}") }) {
             return unsupported(source, "JavaScript or interpolation")
@@ -62,10 +68,11 @@ class CssTocParser {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
             }
-            val url = if (rawUrl == null) response.finalUrl else {
-                runCatching { WebUrlResolver.resolve(response.finalUrl, rawUrl) }.getOrElse {
-                    return unsupported(source, "chapterUrl must resolve to a credential-free HTTP(S) URL")
-                }
+            if (rawUrl.isNullOrBlank()) {
+                return unsupported(source, "chapterUrl did not produce a URL for chapter '$title'")
+            }
+            val url = runCatching { WebUrlResolver.resolve(response.finalUrl, rawUrl) }.getOrElse {
+                return unsupported(source, "chapterUrl must resolve to a credential-free HTTP(S) URL")
             }
             chapters += BookChapter(index = chapters.size, title = title, url = url)
         }
