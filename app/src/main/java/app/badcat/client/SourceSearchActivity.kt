@@ -27,6 +27,10 @@ import kotlinx.coroutines.runBlocking
  * This is a development workflow, not a recreation of Badcat's original UI.
  */
 class SourceSearchActivity : Activity() {
+    companion object {
+        const val EXTRA_INITIAL_QUERY = "initial_query"
+        const val EXTRA_CONTENT_TYPE = "content_type"
+    }
     private val worker: ExecutorService = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
     private lateinit var engine: ReadingEngine
@@ -45,6 +49,7 @@ class SourceSearchActivity : Activity() {
         keywordInput = EditText(this).apply {
             hint = "输入书名或关键词"
             setSingleLine(true)
+            setText(intent.getStringExtra(EXTRA_INITIAL_QUERY).orEmpty())
         }
         searchButton = Button(this).apply {
             text = "搜索"
@@ -57,7 +62,7 @@ class SourceSearchActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             setPadding(24, 24, 24, 24)
             addView(TextView(this@SourceSearchActivity).apply {
-                text = "书源搜索（开发验证界面）"
+                text = "书源搜索 · ${intent.getStringExtra(EXTRA_CONTENT_TYPE).orEmpty().ifBlank { "全部" }}"
                 textSize = 20f
             })
             addView(sourceSpinner)
