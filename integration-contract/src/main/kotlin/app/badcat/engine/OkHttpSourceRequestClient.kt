@@ -63,7 +63,7 @@ class OkHttpSourceRequestClient(
                         "application/xml; charset=utf-8"
                     else -> "application/x-www-form-urlencoded; charset=utf-8"
                 }
-                (explicitContentType ?: inferredContentType).toMediaTypeOrNull()
+                val contentType = (explicitContentType ?: inferredContentType).toMediaTypeOrNull()
                 body.toRequestBody(contentType)
             }
             val bodyForMethod = when {
