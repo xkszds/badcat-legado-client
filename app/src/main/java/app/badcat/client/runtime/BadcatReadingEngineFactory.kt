@@ -21,7 +21,7 @@ import app.badcat.engine.SourceScriptRuntime
  * All four source services share one gateway whose embedded evaluator is
  * selected from the BookSource supplied to each request. The source catalog
  * remains app-private and durable. Purification is injected separately and
- * defaults to identity until Badcat's original replacement rules are ported.
+ * applies imported Legado literal replacement rules before the optional host hook.
  */
 class BadcatReadingEngineFactory(
     context: Context,
@@ -47,6 +47,10 @@ class BadcatReadingEngineFactory(
             contentService = SourceChapterContentService(
                 http = gateway,
                 textReplacement = bookTextReplacement,
+                scopedTextReplacement = CatalogLegadoBookTextReplacement(
+                    catalog = replaceRuleCatalog,
+                    fallback = bookTextReplacement,
+                ),
             ),
         )
     }
