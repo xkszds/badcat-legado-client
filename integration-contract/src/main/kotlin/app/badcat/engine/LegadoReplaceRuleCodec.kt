@@ -74,7 +74,11 @@ object LegadoReplaceRuleCodec {
             require(element.isJsonObject) { "Stored replace rule ${rule.scopeRule.id} is not an object" }
             array.add(element)
         }
-        return array.toString()
+        val encoded = array.toString()
+        require(encoded.toByteArray(Charsets.UTF_8).size <= MAX_IMPORT_BYTES) {
+            "Replace-rule catalog exceeds the 5 MiB storage limit"
+        }
+        return encoded
     }
 
     fun withEnabled(rule: LegadoReplaceRuleRecord, enabled: Boolean): LegadoReplaceRuleRecord {
