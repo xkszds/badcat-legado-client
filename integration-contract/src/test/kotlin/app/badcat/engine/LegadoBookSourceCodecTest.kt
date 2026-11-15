@@ -139,7 +139,7 @@ class LegadoBookSourceCodecTest {
     @Test
     fun decodesLegacyStringEncodedRuleObjects() {
         val source = LegadoBookSourceCodec.decode(
-            """{"bookSourceUrl":"https://legacy.example","bookSourceName":"Legacy","ruleSearch":"{\\"bookList\\":\\"div.book\\",\\"name\\":\\"h2@text\\"}"}"""
+            """{"bookSourceUrl":"https://legacy.example","bookSourceName":"Legacy","ruleSearch":"{\"bookList\":\"div.book\",\"name\":\"h2@text\"}"}"""
         ).single()
         assertTrue(source.ruleSearchJson!!.contains("div.book"))
         assertTrue(source.ruleSearchJson!!.contains("h2@text"))
