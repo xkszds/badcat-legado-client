@@ -10,7 +10,7 @@ class LegadoLiteralReplacementTest {
     fun appliesEnabledLiteralContentRulesInLegadoOrderAndScope() {
         val rules = listOf(
             LegadoReplaceRule(
-                LegadoReplaceRuleScope(1, order = 2),
+                LegadoReplaceRuleScope(1, order = 0),
                 "foo",
                 "bar",
                 isRegex = false,
