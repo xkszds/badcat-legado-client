@@ -1,5 +1,9 @@
 ## Latest implementation update (2026-11-15)
 
+- Extended the development reader with TOC-based previous/next chapter navigation, persistent last-read chapter URL, a book-detail `继续上次阅读` entry, and adjustable 14–32sp text size persisted across sessions. Progress keys use URL-safe Base64 of the source ID and book URL to avoid ordinary hash collisions. Chapter navigation is only available when the current chapter URL matches an entry in the fetched TOC.
+- The reader still uses a plain selectable `TextView` in a `ScrollView`; it does not yet preserve intra-chapter scroll position, implement swipe/page-turn gestures, or match Badcat's original reading UI. Reading progress is chapter-level only.
+- Changes are source edits only. No Gradle compilation, automated test run, device validation, or APK generation is confirmed.
+
 - Extended the development search flow: search result rows now open `SourceBookActivity`, which requests book detail and TOC through `ReadingEngine`; selecting a chapter opens `SourceChapterActivity`, which fetches and displays chapter text. Both activities are registered as non-exported. This is an end-to-end UI path for the currently supported engine subset, not the original Badcat UI or a complete Legado reader.
 - The reader currently displays extracted text only; paging/next-chapter navigation, typography controls, bookmarks, offline caching and the original reading gestures are not implemented. `chapterContent()` currently passes a URL-only chapter descriptor, so source-specific title fallback is handled in the UI.
 - No live source fixture, Gradle build/test, CI/device validation or APK is confirmed.
