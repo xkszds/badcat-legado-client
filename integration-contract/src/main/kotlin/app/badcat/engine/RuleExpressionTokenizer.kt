@@ -8,12 +8,27 @@ package app.badcat.engine
  * values, function arguments or script/object literals from being mistaken
  * for top-level separators.
  *
- * This class only tokenizes; it deliberately does not assign evaluation
- * semantics to &&, || or %%.
+ * This class tokenizes rule operators; evaluation behavior lives separately.
  */
+data class RuleExpressionParts(
+    val operator: String?,
+    val rules: List<String>,
+)
+
 object RuleExpressionTokenizer {
 
     private val supportedDelimiters = setOf("&&", "||", "%%")
+
+    /** Matches the upstream first-operator choice, then splits on that operator. */
+    fun splitByFirstTopLevelOperator(expression: String): RuleExpressionParts {
+        val candidates = supportedDelimiters.mapNotNull { delimiter ->
+            val parts = splitTopLevel(expression, delimiter)
+            if (parts.size > 1) Triple(parts.first().length, delimiter, parts) else null
+        }
+        val first = candidates.minByOrNull { it.first }
+            ?: return RuleExpressionParts(null, listOf(expression.trim()))
+        return RuleExpressionParts(first.second, first.third)
+    }
 
     fun splitTopLevel(expression: String, delimiter: String): List<String> {
         require(delimiter in supportedDelimiters) {
