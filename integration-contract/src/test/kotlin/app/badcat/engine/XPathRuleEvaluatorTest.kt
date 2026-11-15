@@ -13,6 +13,15 @@ class XPathRuleEvaluatorTest {
     )
 
     @Test
+    fun rejectsMixedNestedCombinationOperators() {
+        val result = XPathRuleEvaluator.evaluate(
+            document,
+            "//p[@class='name']/text() && //p[@class='missing']/text() || //p[@class='name']/text()",
+        )
+        assertIs<EngineResult.Failure>(result)
+    }
+
+    @Test
     fun extractsXPathTextNodes() {
         val result = XPathRuleEvaluator.evaluate(document, "//p[@class='name']/text()")
         assertEquals(
