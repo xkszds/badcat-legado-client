@@ -102,4 +102,22 @@ class RhinoLegadoJsReplacementEvaluatorTest {
         assertEquals("", second.evaluate("java.get('privateKey')", context()))
     }
 
+    @Test
+    fun blocksProtectedClassesThroughPackagesNamespace() {
+        val session = RhinoLegadoJsReplacementEvaluator().createSession("packages fixture")
+
+        assertThrows(UnsupportedOperationException::class.java) {
+            session.evaluate("Packages.java.lang.ProcessBuilder", context())
+        }
+    }
+
+    @Test
+    fun blocksReflectiveClassLookupFromExposedHelper() {
+        val session = RhinoLegadoJsReplacementEvaluator().createSession("reflection fixture")
+
+        assertThrows(UnsupportedOperationException::class.java) {
+            session.evaluate("java.getClass().forName('java.lang.Runtime')", context())
+        }
+    }
+
 }
