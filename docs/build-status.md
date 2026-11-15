@@ -1,5 +1,11 @@
 ## Latest implementation update (2026-11-15)
 
+- Removed a misleading charset compatibility path: the transport previously accepted Legado's `escape` response mode but decoded the bytes as UTF-8. The URL resolver and shared request factory now reject this mode explicitly until the actual Legado escape decoder is implemented.
+- Added resolver- and factory-level regression tests for this unsupported mode. Ordinary JVM-supported charsets remain validated and passed to the transport.
+- Tests are authored but not executed. No compile, CI run, device test or installable APK is confirmed.
+
+## Latest implementation update (2026-11-15)
+
 - Tightened the static URL resolver so the base and final resolved address must be absolute HTTP(S) URLs with a host and no embedded credentials; this catches unsafe addresses before they reach the request factory.
 - Closed a silent-compatibility gap: `dnsIp`, `resolveIp` and `type` were previously parsed into metadata but never applied by the HTTP transport. They now return explicit `UNSUPPORTED_RULE` instead of appearing to work. Retry values above the transport's 0–5 limit are rejected during URL resolution.
 - Added regression tests for unsafe base/final URLs, unsupported transport options and excessive retry values. Tests are authored but not executed; no compile, CI run, device test or installable APK is confirmed.
