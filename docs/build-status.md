@@ -1,6 +1,6 @@
 ## Latest implementation update (2026-11-15)
 
-- Hardened the existing GitHub Actions Android build workflow with an explicit preflight for the pinned Legado HtmlUnit/Rhino fork JAR. The step checks the expected local Maven artifact path and prints the expected SHA-256 before APK assembly, so a missing binary is reported as a clear prerequisite rather than an opaque Gradle dependency-resolution failure.
+- Hardened the existing GitHub Actions Android build workflow with an explicit preflight for the pinned Legado HtmlUnit/Rhino fork JAR. It checks the expected path and 1,900,654-byte size, then verifies the Git blob SHA-1 (`d240cdd66f5269ed33da53cde7e4e690cee6e162`) with `git hash-object`. This is deliberately identified as a Git blob SHA-1, not a SHA-256.
 - The workflow file exists and is configured for pushes/PRs to `main` plus manual dispatch. The latest queried commit still has no associated workflow run or status checks; adding the preflight does not itself run CI.
 - The expected JAR remains absent from the repository. No successful Gradle build, device validation or APK is confirmed.
 ## Latest implementation update (2026-11-15)
