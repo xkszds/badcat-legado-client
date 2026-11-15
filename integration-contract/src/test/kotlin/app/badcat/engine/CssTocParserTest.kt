@@ -42,6 +42,35 @@ class CssTocParserTest {
         assertEquals(listOf("https://reader.example/book/1/catalog?page=2"), page.nextPageUrls)
     }
 
+
+    @Test
+    fun resolvesRelativeChapterLinksAgainstRedirectedTocResponseUrl() {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"ul.chapters li",
+                "chapterName":"a@text",
+                "chapterUrl":"a@href"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://cdn.reader.example/novel/42/catalog/index.html",
+            body = """<ul class="chapters"><li><a href="../chapter/1.html">Chapter One</a></li></ul>""",
+        )
+
+        val page = assertIs<EngineResult.Success<ParsedTocPage>>(
+            CssTocParser().parse(source, response, "https://reader.example/book/42"),
+        ).value
+
+        assertEquals(
+            listOf("https://cdn.reader.example/novel/42/chapter/1.html"),
+            page.chapters.map { it.url },
+        )
+    }
+
     @Test
     fun rejectsScriptBasedTocRules() {
         val source = BookSource(
