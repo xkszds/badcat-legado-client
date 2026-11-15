@@ -117,13 +117,33 @@ object SourceRequestFactory {
             )
         }
 
+        val prepared = LegadoUrlParameterEncoder.prepareRequest(
+            url = url,
+            method = normalizedMethod,
+            body = body,
+            headers = merged,
+            charsetName = responseCharset,
+        )
+
+        val preparedUri = runCatching { URI(prepared.url) }.getOrNull()
+        if (preparedUri == null ||
+            preparedUri.scheme?.lowercase() !in setOf("http", "https") ||
+            preparedUri.host.isNullOrBlank() ||
+            preparedUri.rawUserInfo != null
+        ) {
+            return EngineResult.Failure(
+                EngineErrorCode.INVALID_SOURCE,
+                "Prepared request URL must remain an absolute HTTP(S) URL without embedded credentials",
+            )
+        }
+
         return EngineResult.Success(
             SourceHttpRequest(
                 sourceId = source.id,
-                url = url,
+                url = prepared.url,
                 method = normalizedMethod,
                 headers = merged,
-                body = body,
+                body = prepared.body,
                 useCookieJar = source.enabledCookieJar != false,
                 timeoutMillis = timeoutMillis,
                 followRedirects = followRedirects,
