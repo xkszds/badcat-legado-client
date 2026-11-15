@@ -106,6 +106,7 @@ class SourceChapterContentServiceTest {
                 "Novel",
             )
         }
+        Unit
     }
 
     @Test
