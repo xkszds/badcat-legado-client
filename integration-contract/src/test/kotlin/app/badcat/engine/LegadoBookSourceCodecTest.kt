@@ -18,8 +18,18 @@ class LegadoBookSourceCodecTest {
               "bookSourceGroup": "test",
               "bookSourceType": 0,
               "enabled": true,
+              "enabledExplore": false,
+              "enabledCookieJar": true,
+              "header": "{\\"User-Agent\\":\\"fixture\\"}",
+              "jsLib": "https://reader.example/lib.js",
+              "loginUrl": "https://reader.example/login",
+              "exploreUrl": "https://reader.example/explore",
               "searchUrl": "https://reader.example/search?q={{key}}",
+              "ruleExplore": {"bookList": "div.explore"},
               "ruleSearch": {"bookList": "div.book", "name": "h3@text"},
+              "ruleBookInfo": {"name": "h1@text"},
+              "ruleToc": {"chapterList": "a.chapter"},
+              "ruleContent": {"content": "#content"},
               "mainJs": "function search() { return []; }",
               "futureField": {"keep": true}
             }
@@ -35,6 +45,15 @@ class LegadoBookSourceCodecTest {
         assertEquals(source.name, engineSource.name)
         assertEquals(source.group, engineSource.group)
         assertEquals(source.rawJson, engineSource.rawJson)
+        assertFalse(engineSource.enabledExplore)
+        assertEquals(true, engineSource.enabledCookieJar)
+        assertEquals("https://reader.example/search?q={{key}}", engineSource.searchUrl)
+        assertEquals("https://reader.example/explore", engineSource.exploreUrl)
+        assertEquals("https://reader.example/login", engineSource.loginUrl)
+        assertEquals("https://reader.example/lib.js", engineSource.jsLib)
+        assertEquals("function search() { return []; }", engineSource.mainJs)
+        assertTrue(engineSource.ruleSearchJson!!.contains("div.book"))
+        assertTrue(engineSource.ruleContentJson!!.contains("#content"))
 
         val exported = JsonParser.parseString(LegadoBookSourceCodec.encode(listOf(source)))
             .asJsonArray.single().asJsonObject
