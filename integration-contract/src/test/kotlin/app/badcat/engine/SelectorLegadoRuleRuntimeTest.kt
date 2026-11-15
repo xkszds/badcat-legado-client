@@ -8,7 +8,7 @@ import kotlin.test.assertIs
 class SelectorLegadoRuleRuntimeTest {
 
     @Test
-    fun evaluatesConfiguredFieldsFromNestedSourceRuleObject() = runBlocking {
+    fun evaluatesConfiguredFieldsFromNestedSourceRuleObject(): Unit = runBlocking {
         val source = BookSource(
             id = "https://reader.example/",
             name = "Fixture",
@@ -34,7 +34,7 @@ class SelectorLegadoRuleRuntimeTest {
     }
 
     @Test
-    fun executesSelectedStageDirectlyFromImportedBookSource() = runBlocking {
+    fun executesSelectedStageDirectlyFromImportedBookSource(): Unit = runBlocking {
         val source = BookSource(
             id = "https://reader.example/",
             name = "Fixture",
@@ -60,7 +60,7 @@ class SelectorLegadoRuleRuntimeTest {
     }
 
     @Test
-    fun failsWhenNoFieldsHaveExplicitSelectorModes() = runBlocking {
+    fun failsWhenNoFieldsHaveExplicitSelectorModes(): Unit = runBlocking {
         val source = BookSource(
             id = "https://reader.example/",
             name = "Fixture",
@@ -77,7 +77,7 @@ class SelectorLegadoRuleRuntimeTest {
     }
 
     @Test
-    fun rejectsNonObjectRuleJson() = runBlocking {
+    fun rejectsNonObjectRuleJson(): Unit = runBlocking {
         val source = BookSource("id", "Fixture", "https://reader.example/")
         val runtime = SelectorLegadoRuleRuntime(mapOf("search.bookList" to SelectorRuleType.CSS))
         val result = runtime.evaluate(
