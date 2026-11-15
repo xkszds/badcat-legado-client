@@ -4,6 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.runBlocking
 
 class SourceRuntimeContractTest {
 
@@ -35,6 +36,23 @@ class SourceRuntimeContractTest {
         assertEquals("fixture", request.headers["User-Agent"])
         assertEquals("keyword=cat", request.body)
         assertEquals(false, request.useCookieJar)
+    }
+
+    @Test
+    fun unsupportedScriptRuntimeFailsClosedInsteadOfReturningScriptText() = runBlocking {
+        val source = BookSource(
+            id = "source-1",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+        )
+        val result = UnsupportedSourceScriptRuntime.evaluate(
+            source = source,
+            script = "return key",
+            bindings = mapOf("key" to "cat"),
+        )
+
+        val failure = result as EngineResult.Failure
+        assertEquals(EngineErrorCode.UNSUPPORTED_RULE, failure.code)
     }
 
     @Test
