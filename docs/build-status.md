@@ -1,3 +1,8 @@
+## Latest CI diagnosis (2026-11-15)
+
+- Inspected the failed GitHub Actions job logs for run `43705149699`. The job failed during `android-actions/setup-android@v3`: that action invoked `sdkmanager tools`, and the current Android SDK repository reports `Failed to find package 'tools'`. The Gradle setup, contract tests, Rhino artifact preflight and APK assembly were all skipped; this run says nothing yet about whether the Rhino JAR is present.
+- Replaced the deprecated Android SDK setup action with explicit configuration of the Android SDK preinstalled on the GitHub-hosted runner, locating its command-line tools and adding platform-tools to `PATH`; SDK platform/build-tools installation now uses `sdkmanager --sdk_root` directly.
+- This is a CI setup correction only. The new workflow commit must run before the next failure point can be diagnosed. No APK has been built or uploaded.
 ## Latest implementation update (2026-11-15)
 
 - Hardened the existing GitHub Actions Android build workflow with an explicit preflight for the pinned Legado HtmlUnit/Rhino fork JAR. It checks the expected path and 1,900,654-byte size, then verifies the Git blob SHA-1 (`d240cdd66f5269ed33da53cde7e4e690cee6e162`) with `git hash-object`. This is deliberately identified as a Git blob SHA-1, not a SHA-256.
