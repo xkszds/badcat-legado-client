@@ -46,19 +46,22 @@ jobs:
       - name: Run contract unit tests
         run: gradle --no-daemon :integration-contract:test
 
+      - name: Restore pinned Legado Rhino artifact
+        run: |
+          upstream_commit="330e606c4d57e08adc056ff8ab7a4132c784da9"
+          artifact="third_party/maven/org/htmlunit/htmlunit-core-js/5.3.0-legado.4/htmlunit-core-js-5.3.0-legado.4.jar"
+          git fetch --no-tags https://github.com/LegadoTeam/legado.git "$upstream_commit"
+          mkdir -p "$(dirname "$artifact")"
+          git show "FETCH_HEAD:$artifact" > "$artifact"
+
       - name: Verify pinned Legado Rhino artifact
         run: |
           artifact="third_party/maven/org/htmlunit/htmlunit-core-js/5.3.0-legado.4/htmlunit-core-js-5.3.0-legado.4.jar"
-          if [ ! -f "$artifact" ]; then
-            echo "::error title=Missing pinned Rhino JAR::Upload the exact Legado fork artifact at $artifact before assembling the APK."
-            echo "Expected size: 1900654 bytes"
-            echo "Expected Git blob SHA-1: d240cdd66f5269ed33da53cde7e4e690cee6e162"
-            exit 1
-          fi
-          actual_size="$(wc -c < "$artifact" | tr -d " ")"; test "$actual_size" = "1900654"
+          actual_size="$(wc -c < "$artifact" | tr -d " ")"
           actual_blob="$(git hash-object "$artifact")"
           echo "Artifact size: $actual_size bytes"
           echo "Git blob SHA-1: $actual_blob"
+          test "$actual_size" = "1900654"
           test "$actual_blob" = "d240cdd66f5269ed33da53cde7e4e690cee6e162"
 
       - name: Assemble debug APK
