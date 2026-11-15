@@ -63,7 +63,7 @@ class CssTocParser {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
             }
-            val url = rawUrl?.let { resolve(bookUrl, it) } ?: response.finalUrl
+            val url = rawUrl?.let { resolve(response.finalUrl, it) } ?: response.finalUrl
             chapters += BookChapter(index = chapters.size, title = title, url = url)
         }
 
