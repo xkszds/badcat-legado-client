@@ -91,7 +91,7 @@ class SourceChapterContentServiceTest {
 
         assertEquals("Novel Title", observedBookName)
         assertEquals("Fixture Source", observedBookOrigin)
-        assertEquals("Scoped page.\\n\\nSecond page.", result.text)
+        assertEquals("Scoped page.\n\nSecond page.", result.text)
     }
 
 }
