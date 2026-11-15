@@ -156,8 +156,14 @@ object LegadoBookSourceCodec {
         }
         listOf("ruleExplore", "ruleSearch", "ruleBookInfo", "ruleToc", "ruleContent").forEach { key ->
             val value = source.get(key) ?: return@forEach
-            require(value.isJsonNull || value.isJsonObject) {
-                "Book source at index $index has a non-object '$key' field"
+            require(value.isJsonNull || value.isJsonObject || (
+                value.isJsonPrimitive && value.asJsonPrimitive.isString &&
+                    runCatching {
+                        com.google.gson.JsonParser.parseString(value.asString).isJsonObject
+                    }.getOrDefault(false)
+                )
+            ) {
+                "Book source at index $index has an invalid '$key' rule object"
             }
         }
     }
@@ -179,6 +185,11 @@ object LegadoBookSourceCodec {
 
     private fun JsonObject.objectOrNull(key: String): String? {
         val value = get(key) ?: return null
-        return if (value.isJsonObject) value.asJsonObject.toString() else null
+        return when {
+            value.isJsonObject -> value.asJsonObject.toString()
+            value.isJsonPrimitive && value.asJsonPrimitive.isString ->
+                com.google.gson.JsonParser.parseString(value.asString).asJsonObject.toString()
+            else -> null
+        }
     }
 }
