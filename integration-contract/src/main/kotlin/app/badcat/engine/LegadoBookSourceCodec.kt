@@ -99,7 +99,7 @@ object LegadoBookSourceCodec {
             sourceType = source.intOrDefault("bookSourceType", 0),
             enabled = source.booleanOrDefault("enabled", true),
             enabledExplore = source.booleanOrDefault("enabledExplore", true),
-            enabledCookieJar = source.booleanOrNull("enabledCookieJar"),
+            enabledCookieJar = source.booleanOrDefault("enabledCookieJar", true),
             header = source.stringOrNull("header"),
             jsLib = source.stringOrNull("jsLib"),
             loginUrl = source.stringOrNull("loginUrl"),
@@ -128,11 +128,6 @@ object LegadoBookSourceCodec {
     private fun JsonObject.booleanOrDefault(key: String, default: Boolean): Boolean {
         val value: JsonElement = get(key) ?: return default
         return runCatching { value.asBoolean }.getOrDefault(default)
-    }
-
-    private fun JsonObject.booleanOrNull(key: String): Boolean? {
-        val value = get(key) ?: return null
-        return if (value.isJsonNull) null else runCatching { value.asBoolean }.getOrNull()
     }
 
     private fun JsonObject.objectOrNull(key: String): String? {
