@@ -42,7 +42,7 @@ class CssTocParser {
         fun extract(itemHtml: String, expression: String?): EngineResult<String?> {
             if (expression.isNullOrBlank()) return EngineResult.Success(null)
             return when (val result = SelectorRuleEvaluator.evaluate(
-                SourceDocument(bookUrl, itemHtml, response.contentType),
+                SourceDocument(response.finalUrl, itemHtml, response.contentType),
                 SelectorRuleType.CSS,
                 expression,
             )) {
