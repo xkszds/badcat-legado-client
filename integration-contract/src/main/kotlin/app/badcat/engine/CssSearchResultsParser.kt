@@ -41,19 +41,31 @@ class CssSearchResultsParser {
         }
 
         val candidates = ArrayList<BookCandidate>()
-        for (itemHtml in items) {
-            val item = Jsoup.parse(itemHtml, response.finalUrl)
-            val name = field(source, rules, "name", item, response) ?: continue
-            val bookUrl = field(source, rules, "bookUrl", item, response)
-                ?.takeIf(String::isNotBlank) ?: continue
-            candidates += BookCandidate(
-                sourceId = source.id,
-                name = name,
-                author = field(source, rules, "author", item, response),
-                bookUrl = bookUrl,
-                coverUrl = field(source, rules, "coverUrl", item, response),
-                latestChapter = field(source, rules, "lastChapter", item, response),
-                intro = field(source, rules, "intro", item, response),
+        try {
+            for (itemHtml in items) {
+                val item = Jsoup.parse(itemHtml, response.finalUrl)
+                val name = field(source, rules, "name", item, response) ?: continue
+                val bookUrl = field(source, rules, "bookUrl", item, response)
+                    ?.takeIf(String::isNotBlank) ?: continue
+                candidates += BookCandidate(
+                    sourceId = source.id,
+                    name = name,
+                    author = field(source, rules, "author", item, response),
+                    bookUrl = bookUrl,
+                    coverUrl = field(source, rules, "coverUrl", item, response),
+                    latestChapter = field(source, rules, "lastChapter", item, response),
+                    intro = field(source, rules, "intro", item, response),
+                )
+            }
+        } catch (failure: SearchParseFailure) {
+            return failure.failure
+        } catch (failure: UnsupportedSearchRule) {
+            return unsupported(source, failure.message ?: "unsupported search field")
+        } catch (failure: Exception) {
+            return EngineResult.Failure(
+                EngineErrorCode.PARSE,
+                "Could not parse search results for source '${source.id}'",
+                failure,
             )
         }
         return EngineResult.Success(candidates.distinctBy { it.bookUrl })
