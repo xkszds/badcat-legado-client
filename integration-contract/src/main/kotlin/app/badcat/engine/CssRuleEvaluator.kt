@@ -83,8 +83,8 @@ object CssRuleEvaluator {
     ): String = when (mode) {
         ValueMode.TEXT -> element.text()
         ValueMode.HTML -> element.html()
-        ValueMode.HREF -> element.attr("href")
-        ValueMode.SRC -> element.attr("src")
+        ValueMode.HREF -> element.absUrl("href").ifEmpty { element.attr("href") }
+        ValueMode.SRC -> element.absUrl("src").ifEmpty { element.attr("src") }
         ValueMode.ATTRIBUTE -> element.attr(attribute.orEmpty())
     }
 }
