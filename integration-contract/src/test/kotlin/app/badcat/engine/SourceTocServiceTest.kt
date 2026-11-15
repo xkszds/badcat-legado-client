@@ -141,4 +141,55 @@ class SourceTocServiceTest {
         assertEquals(2, requests.size)
     }
 
+
+    @Test
+    fun removesDuplicateChapterUrlsAcrossPagesAndReindexesTheMergedToc() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"ul.chapters li",
+                "chapterName":"a@text",
+                "chapterUrl":"a@href",
+                "nextTocUrl":"a.next"
+            }""",
+        )
+        val requests = mutableListOf<String>()
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                requests += request.url
+                val body = if (request.url.contains("page=2")) {
+                    """<ul class="chapters">
+                        <li><a href="/chapter/2">Chapter Two</a></li>
+                        <li><a href="/chapter/1">Chapter One (duplicate)</a></li>
+                    </ul>"""
+                } else {
+                    """<ul class="chapters">
+                        <li><a href="/chapter/1">Chapter One</a></li>
+                    </ul><a class="next" href="?page=2">Next</a>"""
+                }
+                return EngineResult.Success(SourceHttpResponse(200, request.url, body = body))
+            }
+        }
+
+        val result = assertIs<EngineResult.Success<List<BookChapter>>>(
+            SourceTocService(SourceHttpGateway(client)).load(
+                source,
+                "https://reader.example/book/1",
+            ),
+        )
+
+        assertEquals(
+            listOf("https://reader.example/book/1", "https://reader.example/book/1?page=2"),
+            requests,
+        )
+        assertEquals(listOf("Chapter One", "Chapter Two"), result.value.map { it.title })
+        assertEquals(listOf(0, 1), result.value.map { it.index })
+        assertEquals(
+            listOf("https://reader.example/chapter/1", "https://reader.example/chapter/2"),
+            result.value.map { it.url },
+        )
+    }
+
 }
