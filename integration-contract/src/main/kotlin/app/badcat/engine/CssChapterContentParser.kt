@@ -55,7 +55,11 @@ class CssChapterContentParser {
             document, rules["nextContentUrl"], response.finalUrl, defaultAttribute = "href",
         )) {
             is EngineResult.Failure -> return result
-            is EngineResult.Success -> result.value?.let { WebUrlResolver.resolve(response.finalUrl, it) }
+            is EngineResult.Success -> result.value?.let { value ->
+                runCatching { WebUrlResolver.resolve(response.finalUrl, value) }.getOrElse {
+                    return unsupported(source, "nextContentUrl must resolve to a credential-free HTTP(S) URL")
+                }
+            }
         }
 
         val text = contentValues.mapNotNull(::htmlToReadableText)
