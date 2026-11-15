@@ -1,7 +1,6 @@
 package app.badcat.client.runtime
 
 import android.util.Log
-import androidx.annotation.Keep
 import app.badcat.engine.LegadoJsReplacementContext
 import app.badcat.engine.LegadoJsReplacementEvaluator
 import app.badcat.engine.LegadoJsReplacementSession
@@ -74,7 +73,6 @@ class RhinoLegadoJsReplacementEvaluator : LegadoJsReplacementEvaluator {
 }
 
 /** Small, per-rule helper compatible with common Legado replacement scripts. */
-@Keep
 class LegadoRegexJsExtensions(
     private val ruleName: String,
 ) {
