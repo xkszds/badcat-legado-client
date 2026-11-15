@@ -8,6 +8,12 @@
 
 The intended direction is an in-process adapter, subject to source, license and dependency review.
 
+## Implemented groundwork
+
+- Immutable upstream revision and build versions are recorded in `gradle/legado-upstream.properties`.
+- `LegadoBookSourceCodec` imports single-object or array JSON exports, validates `bookSourceUrl` and `bookSourceName`, reads basic source metadata, and preserves the entire raw source object for round-trip export.
+- The codec deliberately does not attempt to execute rules. Nested search/detail/TOC/content rules and JavaScript fields are retained intact for the future runtime adapter.
+
 ## Pinning checklist
 
 - Record a full immutable upstream commit SHA; do not rely on a floating branch for a release.
@@ -29,4 +35,4 @@ The intended direction is an in-process adapter, subject to source, license and 
 
 ## Current status
 
-Only the platform-neutral engine port and isolated purification contracts are present. The Legado implementation adapter and upstream pin are pending review.
+The platform-neutral engine port, purification boundaries and source JSON codec are present. No Legado online rule runtime or Badcat UI integration is implemented yet.
