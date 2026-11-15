@@ -5,6 +5,7 @@ import java.net.URI
 /** Resolves untrusted source links while allowing only credential-free HTTP(S) destinations. */
 object WebUrlResolver {
     fun resolve(baseUrl: String, value: String): String {
+        require(value.isNotBlank()) { "URL reference must not be blank" }
         val base = URI(baseUrl)
         require(isWebUri(base) && base.userInfo == null) { "Base URL must be credential-free HTTP(S)" }
         val reference = URI(value.trim())
