@@ -17,7 +17,11 @@ object JsonPathRuleEvaluator {
 
         return try {
             val values = RuleCombinationEvaluator.evaluate(rule) { part ->
-                val result = JsonPath.parse(document.body).read<Any?>(part)
+                val result = try {
+                    JsonPath.parse(document.body).read<Any?>(part)
+                } catch (_: com.jayway.jsonpath.PathNotFoundException) {
+                    null
+                }
                 when (result) {
                     null -> emptyList()
                     is Iterable<*> -> result.map { it?.toString().orEmpty() }.filter(String::isNotEmpty)
