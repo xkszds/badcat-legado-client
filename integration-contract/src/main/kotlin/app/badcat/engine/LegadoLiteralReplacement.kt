@@ -68,15 +68,19 @@ class LegadoLiteralReplacement(
         val output = StringBuffer()
         val isJs = rule.replacement.startsWith("@js:")
         val jsScript = if (isJs) rule.replacement.substring(4) else rule.replacement
+        val jsSession = if (isJs) {
+            jsEvaluator?.createSession(rule.name) ?: throw UnsupportedOperationException(
+                "JavaScript replacement for rule '" + rule.scopeRule.id + "' has no Rhino host"
+            )
+        } else {
+            null
+        }
         while (matcher.find()) {
             val replacement = if (isJs) {
-                val evaluator = jsEvaluator ?: throw UnsupportedOperationException(
-                    "JavaScript replacement for rule '" + rule.scopeRule.id + "' has no Rhino host"
-                )
                 val context = replacementContext ?: throw UnsupportedOperationException(
                     "JavaScript replacement for rule '" + rule.scopeRule.id + "' has no book/chapter context"
                 )
-                evaluator.evaluate(
+                jsSession!!.evaluate(
                     jsScript,
                     LegadoJsReplacementContext(
                         ruleId = rule.scopeRule.id,
