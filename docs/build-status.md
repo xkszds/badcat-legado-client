@@ -1,5 +1,11 @@
 ## Latest implementation update (2026-11-15)
 
+- Added `UnsupportedSourceScriptRuntime` as an explicit fail-closed default for hosts that have not integrated the pinned Legado Rhino runtime. It returns `UNSUPPORTED_RULE` and never echoes script text as if it were an evaluated result.
+- Added a coroutine-based contract test for the fail-closed behavior. This is a safety boundary, not a Rhino implementation; JavaScript-bearing book sources remain unsupported.
+- Tests are authored but not executed. No compile, CI run, device test or installable APK is confirmed.
+
+## Latest implementation update (2026-11-15)
+
 - Aligned the static Legado URL-option method allowlist with the methods already implemented by the shared HTTP transport: GET, HEAD, POST, PUT, PATCH, PROPPATCH and REPORT. This removes an avoidable mismatch where the URL resolver rejected body methods the transport could already execute.
 - Added regression tests for PUT/PATCH/PROPPATCH/REPORT forwarding and explicit rejection of DELETE, which is not implemented by the transport.
 - Tests are authored but not executed. No compile, CI run, device test or installable APK is confirmed.
