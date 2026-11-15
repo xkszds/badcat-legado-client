@@ -1,5 +1,9 @@
 ## Latest implementation update (2026-11-15)
 
+- Added `SourceSearchActivity`, a minimal development search workflow: it loads enabled imported sources with a configured `searchUrl`, lets the user select a source and enter a keyword, invokes `ReadingEngine.search()` on a worker thread, and displays candidate metadata or typed errors. Registered it in the manifest and added a launcher-shell entry. This is not the original Badcat search UI.
+- Declared `kotlinx-coroutines-android` directly in the app module because the Android host screens use coroutine APIs; the engine search call itself is run off the UI thread.
+- Scope remains deliberately bounded: CSS parser subset and limited URL template evaluation only. Sources depending on unsupported `@js`, advanced Legado rules, or missing selector definitions may fail. No live source fixture, Gradle build, test execution, CI/device validation or APK is confirmed.
+
 - Added a minimal `SourceSearchActivity` that loads enabled imported sources with a nonblank `searchUrl`, lets the user choose a source and enter a keyword, calls `ReadingEngine.search()` off the UI thread, and displays parsed candidate metadata/errors. Added a launcher-shell entry and manifest registration. This is a development validation screen, not the original Badcat search UI.
 - Search remains limited to the implemented CSS parser and bounded URL-template path. Sources requiring unsupported `@js`, advanced Legado rules, or missing rule definitions will not work as in full Legado. No live source fixture, network test, Gradle build, device validation or APK is confirmed.
 
