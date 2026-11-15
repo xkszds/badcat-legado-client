@@ -12,6 +12,12 @@ class CssBookInfoParser {
         response: SourceHttpResponse,
         requestedBookUrl: String,
     ): EngineResult<BookDetail> {
+        if (requestedBookUrl.isBlank()) {
+            return EngineResult.Failure(
+                EngineErrorCode.INVALID_SOURCE,
+                "Requested book URL must not be blank",
+            )
+        }
         val rules = when (val result = SourceRuleResolver.resolveObject(source, SourceRuleStage.BOOK_INFO)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value.fields
