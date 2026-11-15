@@ -44,7 +44,7 @@ class SourceSearchActivity : Activity() {
         sourceSpinner = Spinner(this)
         keywordInput = EditText(this).apply {
             hint = "输入书名或关键词"
-            singleLine = true
+            setSingleLine(true)
         }
         searchButton = Button(this).apply {
             text = "搜索"
