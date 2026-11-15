@@ -27,4 +27,5 @@ android {
 
 dependencies {
     implementation(project(":integration-contract"))
+    implementation(project(":legado-rhino"))
 }
