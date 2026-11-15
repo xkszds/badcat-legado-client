@@ -78,7 +78,7 @@ class SourceRequestFactoryTest {
         val injectedValue = SourceRequestFactory.create(
             source(),
             "https://reader.example/",
-            headers = mapOf("X-Test" to "safe\\r\\nInjected: yes"),
+            headers = mapOf("X-Test" to "safe\r\nInjected: yes"),
         )
         val invalidName = SourceRequestFactory.create(
             source(),
