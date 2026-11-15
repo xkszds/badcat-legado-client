@@ -18,12 +18,45 @@ data class ReplacedChapterContent(
     val text: String,
 )
 
+data class LegadoReplacementBookContext(
+    val bookUrl: String,
+    val origin: String,
+    val originName: String,
+    val name: String,
+)
+
+data class LegadoReplacementChapterContext(
+    val url: String,
+    val title: String,
+    val bookUrl: String,
+    val index: Int,
+    val baseUrl: String,
+)
+
+data class LegadoReplacementContext(
+    val book: LegadoReplacementBookContext,
+    val chapter: LegadoReplacementChapterContext,
+)
+
+data class LegadoJsReplacementContext(
+    val ruleId: Long,
+    val ruleName: String,
+    val result: String,
+    val timeoutMillisecond: Long,
+    val configuredTimeoutMillisecond: Long,
+    val book: LegadoReplacementBookContext,
+    val chapter: LegadoReplacementChapterContext,
+)
+
+fun interface LegadoJsReplacementEvaluator {
+    fun evaluate(script: String, context: LegadoJsReplacementContext): String
+}
+
 fun interface ScopedBookTextReplacement {
     suspend fun replace(
         chapterTitle: String,
         chapterText: String,
-        bookName: String,
-        bookOrigin: String,
+        context: LegadoReplacementContext,
     ): ReplacedChapterContent
 }
 
