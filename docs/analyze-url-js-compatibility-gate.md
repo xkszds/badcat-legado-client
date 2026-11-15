@@ -1,3 +1,15 @@
+## Implemented isolated contract helper (2026-11-15)
+
+Added `LegadoEmbeddedUrlTemplate` and an injected `LegadoEmbeddedScriptEvaluator` in the platform-neutral integration module. This helper:
+- evaluates complete `{{...}}` segments sequentially and supplies the search `key` as the only explicit input;
+- propagates an evaluator failure without returning a partial URL;
+- mirrors the pinned replacement conversion for null, strings, integral `Double`, and other primitive values;
+- follows the pinned `RuleAnalyzer.innerRule("{{", "}}")` empty-result behavior and leaves an unmatched opening marker literal.
+
+Regression tests were added for multiple expressions, Unicode key passthrough, null/integral numeric conversion, unmatched markers, and evaluator failure. These tests are authored only; they have not been run.
+
+**Important:** this helper is not wired into `LegadoUrlResolver`, `SearchUrlResolver`, or the HTTP gateway. It does not percent-encode query/form values. All script-bearing source URLs therefore remain rejected. The next gate is to port and test upstream query/form encoding before any orchestration integration.
+
 # AnalyzeUrl JavaScript compatibility gate
 
 Pinned upstream: `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9`
