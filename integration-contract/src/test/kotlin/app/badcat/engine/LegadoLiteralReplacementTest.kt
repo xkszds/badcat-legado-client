@@ -5,6 +5,21 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class LegadoLiteralReplacementTest {
+    private fun context() = LegadoReplacementContext(
+        book = LegadoReplacementBookContext(
+            bookUrl = "book-url",
+            origin = "source-url",
+            originName = "Source",
+            name = "Book",
+        ),
+        chapter = LegadoReplacementChapterContext(
+            url = "chapter-url",
+            title = "Chapter",
+            bookUrl = "book-url",
+            index = 0,
+            baseUrl = "source-url",
+        ),
+    )
 
     @Test
     fun appliesEnabledLiteralContentRulesInLegadoOrderAndScope() {
@@ -51,14 +66,37 @@ class LegadoLiteralReplacementTest {
     }
 
     @Test
-    fun failsClosedForJavaScriptReplacementExpressions() {
+    fun evaluatesJsReplacementPerMatchWithContext() {
         val rules = listOf(
             LegadoReplaceRule(
                 LegadoReplaceRuleScope(11),
                 """\d+""",
-                "@js:result",
+                "@js:result + ':' + book.name",
                 isRegex = true,
+                name = "JS rule",
             ),
+        )
+        val evaluator = LegadoJsReplacementEvaluator { script, jsContext ->
+            assertEquals("result + ':' + book.name", script)
+            assertEquals("123", jsContext.result)
+            assertEquals("Book", jsContext.book.name)
+            jsContext.result + ":" + jsContext.book.name
+        }
+        val replacement = LegadoLiteralReplacement(
+            rules = rules,
+            bookName = "Book",
+            bookOrigin = "source",
+            replacementContext = context(),
+            jsEvaluator = evaluator,
+        )
+
+        assertEquals("chapter 123:Book", replacement.replace("chapter 123"))
+    }
+
+    @Test
+    fun failsClosedWhenJsReplacementHasNoHost() {
+        val rules = listOf(
+            LegadoReplaceRule(LegadoReplaceRuleScope(12), """\d+""", "@js:result", isRegex = true),
         )
         val replacement = LegadoLiteralReplacement(rules, "Book", "source")
         assertFailsWith<UnsupportedOperationException> {
