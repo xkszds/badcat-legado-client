@@ -1,5 +1,8 @@
 package app.badcat.engine
 
+/** The Legado replacement-rule target selected from DAO scope flags. */
+enum class LegadoReplaceRuleTarget { CONTENT, TITLE }
+
 /** Executable subset of a Legado replacement rule. */
 data class LegadoReplaceRule(
     val scopeRule: LegadoReplaceRuleScope,
@@ -25,14 +28,18 @@ class LegadoLiteralReplacement(
     private val rules: List<LegadoReplaceRule>,
     private val bookName: String,
     private val bookOrigin: String,
+    private val target: LegadoReplaceRuleTarget = LegadoReplaceRuleTarget.CONTENT,
 ) : BookTextReplacement {
 
     override fun replace(chapterText: String): String {
-        val selected = LegadoReplaceRuleSelector.forContent(
-            rules = rules.map { it.scopeRule },
-            bookName = bookName,
-            bookOrigin = bookOrigin,
-        ).mapNotNull { selectedScope ->
+        val scopes = rules.map { it.scopeRule }
+        val selectedScopes = when (target) {
+            LegadoReplaceRuleTarget.CONTENT ->
+                LegadoReplaceRuleSelector.forContent(scopes, bookName, bookOrigin)
+            LegadoReplaceRuleTarget.TITLE ->
+                LegadoReplaceRuleSelector.forTitle(scopes, bookName, bookOrigin)
+        }
+        val selected = selectedScopes.mapNotNull { selectedScope ->
             rules.firstOrNull { it.scopeRule.id == selectedScope.id }
         }.filter { it.pattern.isNotEmpty() }
 
