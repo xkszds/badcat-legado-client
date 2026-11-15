@@ -53,6 +53,7 @@ object LegadoEmbeddedUrlTemplate {
                 } else {
                     evaluated.toString()
                 }
+                else -> evaluated.toString()
             }
 
             output.append(template, startX, start)
