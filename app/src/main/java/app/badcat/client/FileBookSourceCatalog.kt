@@ -8,6 +8,7 @@ import app.badcat.engine.EngineErrorCode
 import app.badcat.engine.EngineResult
 import app.badcat.engine.LegadoBookSource
 import app.badcat.engine.LegadoBookSourceCodec
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -34,6 +35,7 @@ class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
                 readSources().map { source -> source.toEngineSource() }
                     .let { EngineResult.Success(it) }
             } catch (error: Exception) {
+                if (error is CancellationException) throw error
                 EngineResult.Failure(
                     EngineErrorCode.UNKNOWN,
                     "Unable to read the local book-source catalog",
@@ -49,6 +51,7 @@ class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
             val imported = try {
                 LegadoBookSourceCodec.decode(json)
             } catch (error: Exception) {
+                if (error is CancellationException) throw error
                 return@withLock EngineResult.Failure(
                     EngineErrorCode.INVALID_SOURCE,
                     error.message ?: "Invalid Legado book-source JSON",
@@ -63,6 +66,7 @@ class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
                 writeSources(merged.values.toList())
                 EngineResult.Success(imported.size)
             } catch (error: Exception) {
+                if (error is CancellationException) throw error
                 EngineResult.Failure(
                     EngineErrorCode.UNKNOWN,
                     "Unable to save imported book sources",
@@ -89,6 +93,7 @@ class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
                     writeSources(sources)
                     EngineResult.Success(Unit)
                 } catch (error: Exception) {
+                if (error is CancellationException) throw error
                     EngineResult.Failure(
                         EngineErrorCode.UNKNOWN,
                         "Unable to update book-source enabled state",
@@ -104,6 +109,7 @@ class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
             try {
                 EngineResult.Success(LegadoBookSourceCodec.encode(readSources()))
             } catch (error: Exception) {
+                if (error is CancellationException) throw error
                 EngineResult.Failure(
                     EngineErrorCode.UNKNOWN,
                     "Unable to export the local book-source catalog",
@@ -129,6 +135,7 @@ class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
             writer.flush()
             file.finishWrite(output)
         } catch (error: Exception) {
+                if (error is CancellationException) throw error
             file.failWrite(output)
             throw error
         }
