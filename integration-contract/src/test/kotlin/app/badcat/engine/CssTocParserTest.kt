@@ -85,4 +85,38 @@ class CssTocParserTest {
             CssTocParser().parse(source, response, "https://reader.example/book"),
         )
     }
+    @Test
+    fun rejectsExecutableAndCredentialBearingChapterAndNextPageUrls() {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"ul.chapters li",
+                "chapterName":"a@text",
+                "chapterUrl":"a@href",
+                "nextTocUrl":"a.next"
+            }""",
+        )
+        val parser = CssTocParser()
+        val unsafeChapter = SourceHttpResponse(
+            200,
+            "https://reader.example/catalog",
+            body = """<ul class="chapters"><li><a href="javascript:alert(1)">Unsafe</a></li></ul>""",
+        )
+        val credentialNextPage = SourceHttpResponse(
+            200,
+            "https://reader.example/catalog",
+            body = """<ul class="chapters"><li><a href="/chapter/1">Chapter</a></li></ul>
+                <a class="next" href="https://user:pass@reader.example/catalog?page=2">Next</a>""",
+        )
+
+        assertIs<EngineResult.Failure>(
+            parser.parse(source, unsafeChapter, "https://reader.example/book"),
+        )
+        assertIs<EngineResult.Failure>(
+            parser.parse(source, credentialNextPage, "https://reader.example/book"),
+        )
+    }
+
 }
