@@ -69,7 +69,7 @@ object LegadoUrlResolver {
             val method = options?.string("method")?.uppercase()?.let {
                 when (it) {
                     "GET", "HEAD", "POST", "PUT", "PATCH", "PROPPATCH", "REPORT" -> it
-                    else -> throw IllegalArgumentException("Unsupported URL option method: $it")
+                    else -> throw UnsupportedOperationException("Unsupported URL option method: $it")
                 }
             } ?: "GET"
             val body = options?.get("body")?.let(::bodyValue)
