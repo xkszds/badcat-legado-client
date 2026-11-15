@@ -155,6 +155,33 @@ class LegadoBookSourceCodecTest {
         assertTrue(exported.get("ruleSearch").asString.contains("div.book"))
     }
     @Test
+    fun rejectsInvalidContentBatchSizes() {
+        val malformedRules = listOf(
+            """{"maxBatchSize":1.5}""",
+            """{"maxBatchSize":2147483648}""",
+            """{"maxBatchSize":"10"}""",
+            """{"maxBatchSize":true}"""
+        )
+        malformedRules.forEach { rule ->
+            val source = JsonParser.parseString(
+                """{"bookSourceUrl":"https://batch.example","bookSourceName":"Batch","ruleContent":$rule}"""
+            )
+            assertFailsWith<IllegalArgumentException> {
+                LegadoBookSourceCodec.decode(source.toString())
+            }
+        }
+        val legacyStringRule = """{"maxBatchSize":1.5}"""
+        val legacySource = JsonParser.parseString(
+            """{"bookSourceUrl":"https://batch-legacy.example","bookSourceName":"Batch legacy"}"""
+        ).asJsonObject.apply {
+            addProperty("ruleContent", legacyStringRule)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            LegadoBookSourceCodec.decode(legacySource.toString())
+        }
+    }
+
+    @Test
     fun rejectsDuplicateSourceUrlsInsteadOfSilentlyOverwriting() {
         val duplicate = """
             [
