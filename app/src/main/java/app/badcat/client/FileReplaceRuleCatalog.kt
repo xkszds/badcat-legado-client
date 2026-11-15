@@ -76,7 +76,7 @@ class FileReplaceRuleCatalog(context: Context) : LegadoReplaceRuleCatalog {
         }
     }
 
-    suspend fun setEnabled(ruleId: Long, enabled: Boolean): EngineResult<Unit> =
+    override suspend fun setEnabled(ruleId: Long, enabled: Boolean): EngineResult<Unit> =
         withContext(Dispatchers.IO) {
             mutex.withLock {
                 try {
