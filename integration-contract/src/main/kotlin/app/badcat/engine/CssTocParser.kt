@@ -1,6 +1,5 @@
 package app.badcat.engine
 
-import java.net.URI
 import org.jsoup.Jsoup
 
 data class ParsedTocPage(
@@ -63,7 +62,11 @@ class CssTocParser {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
             }
-            val url = rawUrl?.let { resolve(response.finalUrl, it) } ?: response.finalUrl
+            val url = if (rawUrl == null) response.finalUrl else {
+                runCatching { WebUrlResolver.resolve(response.finalUrl, rawUrl) }.getOrElse {
+                    return unsupported(source, "chapterUrl must resolve to a credential-free HTTP(S) URL")
+                }
+            }
             chapters += BookChapter(index = chapters.size, title = title, url = url)
         }
 
@@ -73,16 +76,18 @@ class CssTocParser {
             val urlRule = if (nextRule.substringAfterLast("@", "").let { it in setOf("href", "src", "text", "html") }) nextRule else "$nextRule@href"
             when (val result = SelectorRuleEvaluator.evaluate(root, SelectorRuleType.CSS, urlRule)) {
                 is EngineResult.Failure -> return result
-                is EngineResult.Success -> result.value.map { resolve(response.finalUrl, it) }
-                    .filter { it != response.finalUrl }
-                    .forEach { if (it !in nextUrls) nextUrls += it }
+                is EngineResult.Success -> {
+                    for (value in result.value) {
+                        val url = runCatching { WebUrlResolver.resolve(response.finalUrl, value) }.getOrElse {
+                            return unsupported(source, "nextTocUrl must resolve to a credential-free HTTP(S) URL")
+                        }
+                        if (url != response.finalUrl && url !in nextUrls) nextUrls += url
+                    }
+                }
             }
         }
         return EngineResult.Success(ParsedTocPage(chapters, nextUrls))
     }
-
-    private fun resolve(base: String, value: String): String =
-        runCatching { URI(base).resolve(value).toString() }.getOrDefault(value)
 
     private fun unsupported(source: BookSource, reason: String) =
         EngineResult.Failure(
