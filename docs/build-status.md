@@ -1,3 +1,9 @@
+## Latest implementation update (2026-11-15)
+
+- Added Android-host `FileBookSourceCatalog`: imports one Legado book-source JSON object or an array, merges by `bookSourceUrl`, persists the catalog in app-private storage through Android `AtomicFile`, exposes catalog entries through the existing `BookSourceCatalog` contract, and exports the stored entries as a Legado JSON array.
+- Import validation is delegated to `LegadoBookSourceCodec`; full raw JSON is retained so unknown upstream fields survive round trips. The catalog stores source definitions only: it does not execute JavaScript, and it is not yet connected to the launcher or a source-management screen.
+- The catalog implementation has not been compiled or tested. No CI run or APK is confirmed for this change.
+
 # Build status
 
 Last updated: 2026-11-15
