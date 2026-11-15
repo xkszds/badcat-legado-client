@@ -3,6 +3,9 @@ package app.badcat.client
 import android.app.Activity
 import android.os.Bundle
 import android.widget.TextView
+import android.widget.Button
+import android.widget.LinearLayout
+import android.content.Intent
 
 /**
  * Temporary build-validation shell.
@@ -26,6 +29,17 @@ class MainActivity : Activity() {
             textSize = 16f
             setPadding(32, 48, 32, 32)
         }
-        setContentView(message)
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(32, 48, 32, 32)
+        }
+        root.addView(message)
+        root.addView(Button(this).apply {
+            text = "书源管理（导入 / 导出）"
+            setOnClickListener {
+                startActivity(Intent(this@MainActivity, SourceCatalogActivity::class.java))
+            }
+        })
+        setContentView(root)
     }
 }
