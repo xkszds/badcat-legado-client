@@ -43,8 +43,12 @@ data class LegadoReplaceRuleRecord(
 
 object LegadoReplaceRuleCodec {
     const val DEFAULT_TIMEOUT_MILLISECOND = 3000L
+    const val MAX_IMPORT_BYTES = 5 * 1024 * 1024
 
     fun decode(json: String): List<LegadoReplaceRuleRecord> {
+        require(json.toByteArray(Charsets.UTF_8).size <= MAX_IMPORT_BYTES) {
+            "Replace-rule JSON exceeds the 5 MiB import limit"
+        }
         val root = JsonParser.parseString(json)
         val elements = when {
             root.isJsonArray -> root.asJsonArray.toList()
