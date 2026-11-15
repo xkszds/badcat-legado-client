@@ -23,6 +23,7 @@ Last updated: 2026-11-15
 ## Not yet verified
 
 - Added a bounded tokenizer and list-combination evaluator for `&&`, `||` and `%%`, checked against the pinned upstream `RuleAnalyzer` and `AnalyzeByJSoup` behavior. It is wired into the CSS evaluator. Added bounded JSONPath and XPath evaluators using pinned upstream libraries (`json-path` 3.0.0, JsoupXpath 2.5.3, Jsoup 1.23.2), with synthetic tests. These are selector primitives, not the full upstream `AnalyzeRule` pipeline: embedded `{$...}` interpolation, chained rule grammar, regex suffixes, script execution and source-stage orchestration remain unimplemented. Tests are authored but unrun.
+- Added `SourceRuleObject` parsing for nested stage rule JSON, named-field lookup, and `evaluateField` dispatch into the explicit CSS/XPath/JSONPath selector entry point. Added `SelectorLegadoRuleRuntime`, which evaluates only fields whose parser modes are explicitly configured (so URL templates/JS/regex are not misread as CSS), and returns row maps. Added synthetic tests for field lookup, dispatch, unknown fields, and the selector-only runtime. Coroutines 1.11.0 is pinned to the Legado baseline for suspend runtime tests. These tests remain unrun.
 - GitHub Actions has not been confirmed green; no successful CI test or package result is claimed.
 - No APK artifact has been downloaded or installed.
 - The source codec maps common upstream source configuration (headers, cookie-jar flag, JS library, login/explore/search URLs, main JS and nested rule JSON) into the host contract. The new CSS/JSONPath/XPath components are standalone selector primitives; nested source rules are not yet dispatched through them. There is no complete Legado source runtime, JavaScript execution runtime or search/detail/TOC/content orchestration.
@@ -41,6 +42,6 @@ Last updated: 2026-11-15
 
 1. Confirm the latest workflow run and inspect logs.
 2. Implement the Legado app-layer engine slice and its initialization, network and persistence dependencies.
-3. Port the remaining `RuleAnalyzer`/`AnalyzeRule` embedded-rule and chained-rule behavior; wire CSS/JSONPath/XPath selection into nested source rule objects, then implement concrete transport and Rhino adapters before end-to-end source fixtures.
+3. Complete Legado `SourceRule` tokenization/mode and replacement semantics, embedded-rule interpolation and JavaScript/Rhino; implement concrete HTTP/Cookie transport and the search/detail/TOC/content orchestration.
 4. Migrate the original UI behavior and verify it on the target Android device.
 5. Only then treat a CI-produced APK as a candidate build artifact.
