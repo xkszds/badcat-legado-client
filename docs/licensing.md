@@ -14,7 +14,9 @@ Legado is published under GPL-3.0. Before distributing a combined client that in
 
 ## Current state
 
-No Legado source has been copied into this repository yet. This document is a compliance gate, not a legal opinion. The exact license obligations must be checked against the chosen upstream commit and the actual linkage/combination architecture before release.
+The repository pins Legado revision `330e606c4d57e08adc056ff8ab7a4132c784da9`. The Android CI workflow downloads the pinned Rhino JAR and 12 Rhino extension source files (including XML implementation classes) from that upstream revision into the build workspace; those downloaded files are not currently committed as ordinary repository source files. The resulting debug APK therefore includes upstream Legado/Rhino components. The project also carries the upstream GPL-3.0 license text under `third_party/legado/LICENSE`.
+
+Before distributing any combined APK, verify the exact license and notice obligations for every included upstream component and dependency, publish complete corresponding source for the distributed build (including the workflow-retrieved files and modifications), and ensure the source archive/build instructions reproduce the artifact. This document is a compliance gate, not a legal opinion.
 
 ## Release must be blocked if
 
