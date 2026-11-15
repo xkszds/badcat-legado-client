@@ -28,7 +28,7 @@ data class LegadoReplaceRuleRecord(
 
     /** Legado falls back to 3000 ms for non-positive timeout values. */
     fun validTimeoutMillisecond(): Long =
-        timeoutMillisecond.takeIf { it > 0 } ?: DEFAULT_TIMEOUT_MILLISECOND
+        timeoutMillisecond.takeIf { it > 0 } ?: LegadoReplaceRuleCodec.DEFAULT_TIMEOUT_MILLISECOND
 }
 
 object LegadoReplaceRuleCodec {
