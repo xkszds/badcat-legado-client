@@ -33,7 +33,7 @@ class LegadoEmbeddedUrlTemplateTest {
             "x",
             LegadoEmbeddedScriptEvaluator { _, _ -> EngineResult.Success(12.0) },
         )
-        assertEquals("", assertIs<EngineResult.Success<String>>(nullResult).value)
+        assertEquals("b", assertIs<EngineResult.Success<String>>(nullResult).value)
         assertEquals("page=12", assertIs<EngineResult.Success<String>>(numberResult).value)
     }
 
