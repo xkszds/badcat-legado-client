@@ -35,4 +35,4 @@ The intended direction is an in-process adapter, subject to source, license and 
 
 ## Current status
 
-The platform-neutral engine port, purification boundaries and source JSON codec are present. No Legado online rule runtime or Badcat UI integration is implemented yet.
+The platform-neutral engine port, purification boundaries and source JSON codec are present. The Android host has a bounded Rhino evaluator with string bindings, but no complete Legado online rule runtime (AnalyzeUrl / AnalyzeRule host environment) or original Badcat UI integration yet. CI contract tests and debug APK assembly passed in [run #43707974288](https://github.com/xkszds/badcat-legado-client/actions/runs/43707974288); device installation and runtime validation remain outstanding.
