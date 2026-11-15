@@ -95,24 +95,13 @@ class CssSearchResultsParser {
         }?.let { value ->
             if (key == "bookUrl" || key == "coverUrl") {
                 return try {
-                    resolveWebUrl(response.finalUrl, value)
+                    WebUrlResolver.resolve(response.finalUrl, value)
                 } catch (_: Exception) {
                     throw UnsupportedSearchRule(source.id, "$key must resolve to an HTTP(S) URL")
                 }
             }
             value
         }
-    }
-
-    /** Resolve untrusted book/cover links without allowing executable or local schemes. */
-    private fun resolveWebUrl(baseUrl: String, value: String): String {
-        val base = java.net.URI(baseUrl)
-        require(base.scheme.equals("http", true) || base.scheme.equals("https", true))
-        require(!base.host.isNullOrBlank() && base.userInfo == null)
-        val resolved = base.resolve(value.trim()).normalize()
-        require(resolved.scheme.equals("http", true) || resolved.scheme.equals("https", true))
-        require(!resolved.host.isNullOrBlank() && resolved.userInfo == null)
-        return resolved.toASCIIString()
     }
 
     /**
