@@ -33,12 +33,6 @@ class SourceReadingEngine(
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
         }
-        if (!source.enabled) {
-            return EngineResult.Failure(
-                EngineErrorCode.INVALID_SOURCE,
-                "Book source '${source.id}' is disabled",
-            )
-        }
         val url = when (val result = searchUrlResolver.resolve(source, keyword)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
@@ -91,11 +85,20 @@ class SourceReadingEngine(
     private suspend fun findSource(sourceId: String): EngineResult<BookSource> =
         when (val result = catalog.all()) {
             is EngineResult.Failure -> result
-            is EngineResult.Success -> result.value.firstOrNull { it.id == sourceId }
-                ?.let { EngineResult.Success(it) }
-                ?: EngineResult.Failure(
-                    EngineErrorCode.NOT_FOUND,
-                    "Book source '$sourceId' was not found",
-                )
+            is EngineResult.Success -> {
+                val source = result.value.firstOrNull { it.id == sourceId }
+                    ?: return EngineResult.Failure(
+                        EngineErrorCode.NOT_FOUND,
+                        "Book source '$sourceId' was not found",
+                    )
+                if (!source.enabled) {
+                    EngineResult.Failure(
+                        EngineErrorCode.INVALID_SOURCE,
+                        "Book source '${source.id}' is disabled",
+                    )
+                } else {
+                    EngineResult.Success(source)
+                }
+            }
         }
 }
