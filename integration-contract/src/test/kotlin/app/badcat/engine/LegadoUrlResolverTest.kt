@@ -60,7 +60,7 @@ class LegadoUrlResolverTest {
                 """search, {"method":"DELETE"}""",
             ),
         )
-        assertEquals(EngineErrorCode.INVALID_SOURCE, failure.code)
+        assertEquals(EngineErrorCode.UNSUPPORTED_RULE, failure.code)
     }
 
     @Test
