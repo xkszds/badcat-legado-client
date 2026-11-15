@@ -18,6 +18,7 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import app.badcat.engine.EngineResult
+import app.badcat.engine.LegadoReplaceRuleCodec
 import java.util.concurrent.Executors
 import kotlinx.coroutines.runBlocking
 
@@ -141,7 +142,7 @@ class ReplaceRuleActivity : Activity() {
                     }
                     output.toByteArray()
                 } ?: error("无法打开所选文件")
-                runBlocking { catalog.importJson(bytes.toString(Charsets.UTF_8)) }
+                runBlocking { catalog.importJson(LegadoReplaceRuleCodec.decodeUtf8(bytes).let { rules -> LegadoReplaceRuleCodec.encode(rules) }) }
             } catch (error: Exception) {
                 EngineResult.Failure(
                     app.badcat.engine.EngineErrorCode.INVALID_SOURCE,
