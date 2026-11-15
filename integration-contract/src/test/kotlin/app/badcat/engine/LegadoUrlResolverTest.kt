@@ -106,6 +106,17 @@ class LegadoUrlResolverTest {
     }
 
     @Test
+    fun rejectsLegadoEscapeCharsetUntilItsDecoderExists() {
+        val failure = assertIs<EngineResult.Failure>(
+            LegadoUrlResolver.resolve(
+                "https://example.com/",
+                """search, {"charset":"escape"}""",
+            ),
+        )
+        assertEquals(EngineErrorCode.UNSUPPORTED_RULE, failure.code)
+    }
+
+    @Test
     fun rejectsRetryCountAboveTransportLimitAtResolutionTime() {
         val failure = assertIs<EngineResult.Failure>(
             LegadoUrlResolver.resolve(
