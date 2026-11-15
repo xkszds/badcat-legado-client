@@ -1,5 +1,10 @@
 ## Latest implementation update (2026-11-15)
 
+- Expanded the pinned Rhino integration audit with the exact upstream Android-library configuration, four direct dependencies and versions, and the complete 18-file Kotlin runtime inventory. This confirms the class-shutter/wrap-factory protections are part of the module and must not be omitted.
+- No runtime source has been copied into the app yet; no JavaScript capability has been enabled. This update is source inventory and integration planning only.
+
+## Latest implementation update (2026-11-15)
+
 - Added `docs/legado-rhino-integration-audit.md` after inspecting the pinned upstream `AnalyzeUrl`, `RhinoScriptEngine`, `ScriptBindings`, `RhinoContext`, `RhinoClassShutter` and `RhinoWrapFactory` sources. It records why the Maven Rhino artifact alone is insufficient and the exact security, binding, encoding, licensing and regression-test gates required before enabling source JavaScript.
 - This is an upstream source audit and integration specification, not a Rhino implementation. JavaScript rules remain fail-closed; no build, CI, device test or APK is confirmed.
 
