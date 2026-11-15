@@ -74,6 +74,7 @@ data class BookDetail(
     val coverUrl: String? = null,
     val intro: String? = null,
     val latestChapter: String? = null,
+    val tocUrl: String? = null,
 )
 
 data class BookChapter(
