@@ -10,7 +10,7 @@ fun interface BookTextReplacement {
 
 /**
  * Suspendable, book-aware replacement hook for durable Legado rule catalogs.
- * The origin is the selected book-source name; the title is supplied by the
+ * The origin is the selected book-source URL; the title is supplied by the
  * caller so title-scoped rules are not guessed from a URL.
  */
 fun interface ScopedBookTextReplacement {
