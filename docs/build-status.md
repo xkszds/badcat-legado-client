@@ -1,5 +1,9 @@
 ## Latest implementation update (2026-11-15)
 
+- Fixed the multi-source evaluator isolation hazard in the shared HTTP gateway: it now supports a per-request evaluator provider receiving the exact `BookSource` passed to `execute()`. The Android factory exposes `create()` for shared service graphs and retains `forSource()` for intentionally single-source graphs.
+- Added a gateway regression test that sends requests for two distinct source IDs through one gateway and asserts the evaluator sees the matching source each time. This guards against capturing source A's runtime context for source B.
+- This addresses source-context selection only; it does not add full Legado source bindings or wire the engine into the launcher/search UI. Tests are authored but not executed. No Gradle build, CI/device validation or APK generation is confirmed.
+
 - Added `BookSourceSearchUrlResolver`, the concrete `SearchUrlResolver` for imported source metadata. It returns the configured `searchUrl` without prematurely substituting or encoding `{{key}}`; the HTTP gateway remains responsible for bounded template expansion before URI parsing/encoding.
 - The resolver rejects disabled sources, blank keywords, missing search URLs and unsupported `@js` syntax. Added four contract tests for those cases and preservation of the raw template.
 - This fills the missing search-URL resolution contract, but does not yet constitute an end-to-end Android search screen: the app still needs a source-aware engine composition path and UI wiring. The current gateway factory is source-scoped, so a single shared service graph must not reuse one source's evaluator for other sources.
