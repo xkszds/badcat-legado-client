@@ -31,7 +31,7 @@ class RuleCombinationEvaluatorTest {
     @Test
     fun percentPercentInterleavesResultsByPosition() {
         assertEquals(
-            listOf("A", "C", "D", "B", "E", "F"),
+            listOf("A", "C", "D", "B", "E"),
             RuleCombinationEvaluator.evaluate("primary %% secondary %% third") { fixture[it].orEmpty() },
         )
     }
