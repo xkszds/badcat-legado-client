@@ -44,6 +44,6 @@ The host-side `BookSource` in `integration-contract` currently stores only basic
 
 - Source-level dependency review: documented from the pinned upstream files.
 - Host JSON import/export: present as staging code.
-- Runtime-compatible upstream models, parser/JS execution, HTTP adapter, persistence and operation pipeline: not implemented.
-- Original Badcat UI migration and installable APK: not completed.
-- No build or test pass is claimed by this document.
+- Runtime-compatible upstream models, parser/JS execution, HTTP adapter, persistence and complete operation pipeline: not implemented. The host currently has only a bounded Rhino evaluator with string bindings; it is not Legado's full rule environment.
+- CI contract tests and debug APK assembly: passed for commit `c72b96a288942dbeda02a653f268843bb25c78b1` ([run #43707974288](https://github.com/xkszds/badcat-legado-client/actions/runs/43707974288)).
+- Original Badcat UI migration, device installation/runtime verification and release signing: not completed.
