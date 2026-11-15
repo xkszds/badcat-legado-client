@@ -1,6 +1,7 @@
 package app.badcat.client
 
 import android.app.Activity
+import android.graphics.Color
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -152,12 +153,15 @@ class SourceChapterActivity : Activity() {
     private lateinit var previousButton: android.widget.Button
     private lateinit var nextButton: android.widget.Button
     private lateinit var readerScroll: ScrollView
+    private lateinit var readerRoot: LinearLayout
     private lateinit var sourceId: String
     private lateinit var bookUrl: String
     private var chapters: List<BookChapter> = emptyList()
     private var currentIndex: Int = -1
     private var currentChapterUrl: String = ""
     private var textSizeSp: Float = 18f
+    private var lineSpacingMultiplier: Float = 1.15f
+    private var readerTheme: Int = 0
     private val preferences by lazy {
         getSharedPreferences("badcat_reading_progress", MODE_PRIVATE)
     }
@@ -173,13 +177,15 @@ class SourceChapterActivity : Activity() {
             currentChapterUrl = preferences.getString(readingProgressKey(sourceId, bookUrl), "").orEmpty()
         }
         textSizeSp = preferences.getFloat("reader_text_size", 18f).coerceIn(14f, 32f)
+        lineSpacingMultiplier = preferences.getFloat("reader_line_spacing", 1.15f).coerceIn(1.0f, 2.0f)
+        readerTheme = preferences.getInt("reader_theme", 0).coerceIn(0, 2)
 
         status = TextView(this).apply { text = "正在加载目录…" }
         body = TextView(this).apply {
             textSize = textSizeSp
             setTextIsSelectable(true)
             setPadding(20, 16, 20, 24)
-            setLineSpacing(6f, 1.15f)
+            setLineSpacing(6f, lineSpacingMultiplier)
         }
         previousButton = android.widget.Button(this).apply {
             text = "上一章"
@@ -206,14 +212,34 @@ class SourceChapterActivity : Activity() {
             addView(larger, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
             addView(nextButton, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         }
-        val root = LinearLayout(this).apply {
+        val lineLess = android.widget.Button(this).apply {
+            text = "行距−"
+            setOnClickListener { changeLineSpacing(-0.1f) }
+        }
+        val lineMore = android.widget.Button(this).apply {
+            text = "行距+"
+            setOnClickListener { changeLineSpacing(0.1f) }
+        }
+        val themeButton = android.widget.Button(this).apply {
+            text = "切换背景"
+            setOnClickListener { cycleReaderTheme() }
+        }
+        val displayControls = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            addView(lineLess, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            addView(lineMore, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            addView(themeButton, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        }
+        readerRoot = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(12, 12, 12, 12)
             addView(status)
             addView(controls)
+            addView(displayControls)
             addView(body)
         }
-        readerScroll = ScrollView(this).apply { addView(root) }
+        readerScroll = ScrollView(this).apply { addView(readerRoot) }
+        applyReaderTheme()
         setContentView(readerScroll)
         if (sourceId.isBlank() || bookUrl.isBlank() || currentChapterUrl.isBlank()) {
             status.text = "缺少书源、书籍地址或章节地址"
@@ -302,6 +328,30 @@ class SourceChapterActivity : Activity() {
         textSizeSp = (textSizeSp + delta).coerceIn(14f, 32f)
         body.textSize = textSizeSp
         preferences.edit().putFloat("reader_text_size", textSizeSp).apply()
+    }
+
+    private fun changeLineSpacing(delta: Float) {
+        lineSpacingMultiplier = (lineSpacingMultiplier + delta).coerceIn(1.0f, 2.0f)
+        body.setLineSpacing(6f, lineSpacingMultiplier)
+        preferences.edit().putFloat("reader_line_spacing", lineSpacingMultiplier).apply()
+    }
+
+    private fun cycleReaderTheme() {
+        readerTheme = (readerTheme + 1) % 3
+        preferences.edit().putInt("reader_theme", readerTheme).apply()
+        applyReaderTheme()
+    }
+
+    private fun applyReaderTheme() {
+        val (background, foreground) = when (readerTheme) {
+            1 -> Color.rgb(244, 234, 211) to Color.rgb(75, 61, 43)
+            2 -> Color.rgb(28, 30, 34) to Color.rgb(220, 222, 226)
+            else -> Color.WHITE to Color.rgb(35, 35, 35)
+        }
+        readerRoot.setBackgroundColor(background)
+        readerScroll.setBackgroundColor(background)
+        body.setTextColor(foreground)
+        status.setTextColor(foreground)
     }
 
     override fun onPause() {
