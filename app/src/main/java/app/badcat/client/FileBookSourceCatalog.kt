@@ -8,7 +8,6 @@ import app.badcat.engine.EngineErrorCode
 import app.badcat.engine.EngineResult
 import app.badcat.engine.LegadoBookSource
 import app.badcat.engine.LegadoBookSourceCodec
-import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -83,10 +82,7 @@ class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
                             "Book source '$sourceId' was not found",
                         )
                     }
-                    val source = sources[index]
-                    val json = JsonParser.parseString(source.rawJson).asJsonObject
-                    json.addProperty("enabled", enabled)
-                    sources[index] = LegadoBookSourceCodec.decode(json.toString()).single()
+                    sources[index] = LegadoBookSourceCodec.withEnabled(sources[index], enabled)
                     writeSources(sources)
                     EngineResult.Success(Unit)
                 } catch (error: Exception) {
