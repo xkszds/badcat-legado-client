@@ -85,10 +85,15 @@ class CssSearchResultsParser {
         if (expression.contains("@js", ignoreCase = true) || expression.contains("{{")) {
             throw UnsupportedSearchRule(source.id, key)
         }
+        val extractionRule = when (key) {
+            "bookUrl" -> expression.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
+            "coverUrl" -> expression.replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
+            else -> expression
+        }
         return when (val result = SelectorRuleEvaluator.evaluate(
             SourceDocument(response.finalUrl, item.outerHtml(), response.contentType),
             SelectorRuleType.CSS,
-            expression,
+            extractionRule,
         )) {
             is EngineResult.Failure -> throw SearchParseFailure(result)
             is EngineResult.Success -> result.value.firstOrNull()?.trim()?.takeIf(String::isNotEmpty)
