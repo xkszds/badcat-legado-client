@@ -21,6 +21,7 @@ The app currently contains a temporary launcher plus development-only source imp
 - `app/` — temporary Android host shell and development validation screens; not the final UI.
 - `integration-contract/` — engine port, purification boundaries and Legado source codec with unit tests.
 - `docs/architecture.md` — integration boundaries and staged implementation plan.
+- `docs/badcat-ui-reconstruction-map.md` — evidence-based original UI, screen, and regression map.
 - `docs/legado-upstream-baseline.md` — pinned upstream revision and verified build facts.
 - `docs/legado-integration.md` — app-layer engine integration requirements.
 - `docs/legado-runtime-porting-map.md` — source-verified search/detail/TOC/content runtime dependency map.
@@ -40,9 +41,10 @@ The app currently contains a temporary launcher plus development-only source imp
 
 1. Complete the Legado app-layer rule environment: `AnalyzeUrl` / `AnalyzeRule`, HTTP and cookie context, parser/runtime globals, and source-specific helper objects.
 2. Expand fixture-backed search/detail/catalog/content and JavaScript rule tests against representative real-world source definitions.
-3. Connect the adapter to Badcat's original UI flow without changing its navigation unnecessarily.
-4. Map and integrate existing purification behavior by content domain.
-5. Install the debug build on the target Android device and run import, search, detail, TOC, chapter navigation, progress, bookmark and reader-setting regression tests.
-6. Establish GPL-3.0 source/notices compliance and a separate release-signing process before distribution.
+3. Reconstruct the original Badcat UI screens and navigation from the read-only resource/screenshot baseline; see `docs/badcat-ui-reconstruction-map.md`.
+4. Connect the adapter to those screens without changing their navigation unnecessarily.
+5. Map and integrate existing purification behavior by content domain.
+6. Install the debug build on the target Android device and run import, search, detail, TOC, chapter navigation, progress, bookmark and reader-setting regression tests.
+7. Establish GPL-3.0 source/notices compliance and a separate release-signing process before distribution.
 
 See [the architecture plan](docs/architecture.md), [upstream baseline](docs/legado-upstream-baseline.md), [integration gates](docs/legado-integration.md) and [licensing checklist](docs/licensing.md).
