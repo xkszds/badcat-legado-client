@@ -129,6 +129,22 @@ class SourceRequestFactoryTest {
     }
 
     @Test
+    fun rejectsEscapeCharsetUntilDecoderIsImplemented() {
+        val result = SourceRequestFactory.create(
+            source(),
+            LegadoResolvedUrl(
+                url = "https://reader.example/",
+                charset = "escape",
+            ),
+        )
+
+        assertEquals(
+            EngineErrorCode.INVALID_SOURCE,
+            assertIs<EngineResult.Failure>(result).code,
+        )
+    }
+
+    @Test
     fun rejectsUnsupportedResponseCharsetBeforeTransport() {
         val result = SourceRequestFactory.create(
             source(),
