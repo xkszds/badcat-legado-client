@@ -119,7 +119,7 @@ class MainActivity : Activity() {
         keyword = EditText(this@MainActivity).apply {
             hint = "输入书名或作者"
             textSize = 15f
-            singleLine = true
+            setSingleLine(true)
             setTextColor(ink)
             setHintTextColor(muted)
             background = null
