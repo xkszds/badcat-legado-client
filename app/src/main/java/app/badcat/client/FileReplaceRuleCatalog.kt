@@ -118,6 +118,12 @@ class FileReplaceRuleCatalog(context: Context) : LegadoReplaceRuleCatalog {
     private fun readRules(): List<LegadoReplaceRuleRecord> {
         val backupFile = File(file.baseFile.path + ".bak")
         if (!file.baseFile.exists() && !backupFile.exists()) return emptyList()
+        require(file.baseFile.length() <= LegadoReplaceRuleCodec.MAX_IMPORT_BYTES) {
+            "Local replacement-rule catalog exceeds the 5 MiB storage limit"
+        }
+        require(backupFile.length() <= LegadoReplaceRuleCodec.MAX_IMPORT_BYTES) {
+            "Replacement-rule backup exceeds the 5 MiB storage limit"
+        }
         return file.openRead().bufferedReader(Charsets.UTF_8).use { reader ->
             val json = reader.readText()
             if (json.isBlank()) emptyList() else LegadoReplaceRuleCodec.decode(json)
