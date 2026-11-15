@@ -40,3 +40,44 @@ The Android host still uses a temporary development launcher; the persistent sou
 ## Verification
 
 This audit is a source-level integration assessment against the pinned upstream tree. It is not a build or runtime test. The project has not been compiled in this environment; no CI success, device validation, or installable APK is confirmed.
+
+
+## Verified module dependency and source inventory
+
+The pinned upstream `modules/rhino/build.gradle` is an Android library (namespace `com.script`, minSdk 21, Java/Kotlin toolchain 21). Its direct dependencies are:
+
+| Dependency | Pinned version | Upstream declaration |
+|---|---:|---|
+| `org.htmlunit:htmlunit-core-js` | `5.3.0-legado.4` | API |
+| `org.jetbrains.kotlinx:kotlinx-coroutines-core` | `1.11.0` | implementation |
+| `com.squareup.okhttp3:okhttp` | `5.4.0` | implementation |
+| `androidx.collection:collection` | `1.6.0` | implementation |
+
+The source inventory at the pinned revision contains 18 Kotlin files plus the module Gradle file. The Kotlin files are:
+
+- `com/script/CompiledScript.kt`
+- `com/script/ScriptBindings.kt`
+- `com/script/ScriptBindingsExtensions.kt`
+- `com/script/ScriptException.kt`
+- `com/script/rhino/CatchableNativeJavaObject.kt`
+- `com/script/rhino/ClassNameMatcher.kt`
+- `com/script/rhino/CollectionExtensions.kt`
+- `com/script/rhino/JavaObjectWrapFactory.kt`
+- `com/script/rhino/ProtectedNativeJavaClass.kt`
+- `com/script/rhino/ReadOnlyJavaObject.kt`
+- `com/script/rhino/RhinoClassShutter.kt`
+- `com/script/rhino/RhinoCompiledScript.kt`
+- `com/script/rhino/RhinoContext.kt`
+- `com/script/rhino/RhinoContextElement.kt`
+- `com/script/rhino/RhinoErrors.kt`
+- `com/script/rhino/RhinoExtensions.kt`
+- `com/script/rhino/RhinoScriptEngine.kt`
+- `com/script/rhino/RhinoWrapFactory.kt`
+
+This inventory is important: the class shutter and wrap factory are not optional convenience files. They are part of the upstream execution boundary. The upstream module also declares OkHttp and coroutines internally, so the host must check dependency alignment with its own transport and coroutine versions before packaging.
+
+## Integration sequencing decision
+
+The safest next implementation increment is to vendor the complete 18-file runtime module at the pinned revision as a distinct Android library module, preserving each upstream file's copyright/license headers and adding the upstream GPL-3.0 license and source attribution. Then adapt the host runtime in a separate package; do not modify upstream security classes to weaken restrictions. The host adapter must expose only explicitly approved objects and functions.
+
+The runtime module alone still does not provide the app-level Legado source pipeline or `AnalyzeUrl`. URL parsing and rule execution remain separate integration tasks. The source catalog and current CSS/JSONPath/XPath subset must not be presented as complete Legado compatibility.
