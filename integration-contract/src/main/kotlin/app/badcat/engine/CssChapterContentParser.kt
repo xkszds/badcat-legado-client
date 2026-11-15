@@ -55,7 +55,7 @@ class CssChapterContentParser {
             document, rules["nextContentUrl"], response.finalUrl, defaultAttribute = "href",
         )) {
             is EngineResult.Failure -> return result
-            is EngineResult.Success -> result.value?.let { resolve(response.finalUrl, it) }
+            is EngineResult.Success -> result.value?.let { WebUrlResolver.resolve(response.finalUrl, it) }
         }
 
         val text = contentValues.mapNotNull(::htmlToReadableText)
@@ -79,8 +79,8 @@ class CssChapterContentParser {
         if (expression.isNullOrBlank()) return EngineResult.Success(null)
         val normalized = if (defaultAttribute != null &&
             expression.substringAfterLast("@", "").let { it !in setOf("href", "src", "text", "html") }
-        ) "$expression@$defaultAttribute" else expression
-        return when (val result = SelectorRuleEvaluator.evaluate(document, SelectorRuleType.CSS, normalized)) {
+        ) "$expression@attr($defaultAttribute)" else expression
+        return when (val result = SelectorRuleEvaluator.evaluate(document, SelectorRuleType.CSS, normalized.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)").replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)"))) {
             is EngineResult.Failure -> result
             is EngineResult.Success -> EngineResult.Success(
                 result.value.firstOrNull()?.trim()?.takeIf(String::isNotEmpty),
@@ -102,9 +102,6 @@ class CssChapterContentParser {
             .filter(String::isNotEmpty)
             .joinToString("\n")
     }.getOrNull()
-
-    private fun resolve(base: String, value: String): String =
-        runCatching { java.net.URI(base).resolve(value).toString() }.getOrDefault(value)
 
     private fun unsupported(source: BookSource, reason: String) =
         EngineResult.Failure(
