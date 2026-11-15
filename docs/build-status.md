@@ -8,7 +8,8 @@ Last updated: 2026-11-15
 - Kotlin/JVM integration contract module.
 - JDK 21 toolchain configuration.
 - Kotlin plugin aligned to 2.4.20 and Android Gradle Plugin 8.13.2, matching the pinned Legado upstream baseline.
-- Legado book-source JSON import/export codec that retains the complete raw source object, including rule fields unknown to this host.
+- Legado book-source JSON import/export codec that retains the complete raw source object, including rule fields unknown to this host, and maps basic metadata into the host source model.
+- Re-verified original Badcat APK SHA-256 and recorded screenshot-backed UI acceptance criteria and high-priority resource paths in `docs/badcat-apk-ui-baseline.md`.
 - Unit tests for source JSON round-trip/defaults/invalid identity and purification-domain separation.
 - GitHub Actions workflow to run contract tests and assemble a debug APK.
 - Pinned upstream commit and copied upstream GPL-3.0 license text.
