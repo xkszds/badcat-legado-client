@@ -1,5 +1,10 @@
 ## Latest implementation update (2026-11-15)
 
+- Added `docs/legado-rhino-integration-audit.md` after inspecting the pinned upstream `AnalyzeUrl`, `RhinoScriptEngine`, `ScriptBindings`, `RhinoContext`, `RhinoClassShutter` and `RhinoWrapFactory` sources. It records why the Maven Rhino artifact alone is insufficient and the exact security, binding, encoding, licensing and regression-test gates required before enabling source JavaScript.
+- This is an upstream source audit and integration specification, not a Rhino implementation. JavaScript rules remain fail-closed; no build, CI, device test or APK is confirmed.
+
+## Latest implementation update (2026-11-15)
+
 - Corrected error classification for unsupported static URL-option HTTP methods: a syntactically valid but unimplemented method (for example DELETE) now returns `UNSUPPORTED_RULE`, while malformed option data continues to return `INVALID_SOURCE`. Updated the regression expectation accordingly.
 - Clarified the older charset-validation note: the current resolver and request factory reject Legado's `escape` mode; only ordinary JVM-supported charsets are accepted. The older note saying `escape` was retained is historical and no longer describes current behavior.
 - Tests are authored but not executed. No compile, CI run, device test or installable APK is confirmed.
