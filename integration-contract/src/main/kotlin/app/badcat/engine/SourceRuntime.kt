@@ -3,9 +3,9 @@ package app.badcat.engine
 /**
  * Transport boundary for the Legado-compatible source runtime.
  *
- * Implementations must apply source headers, cookie-jar policy, redirects and
- * response decoding consistently. This interface intentionally does not perform
- * HTTP itself; the Android host supplies the concrete client.
+ * Implementations apply source headers, cookie-jar policy, redirects and response
+ * decoding. [OkHttpSourceRequestClient] is the current concrete transport; the
+ * interface remains injectable for deterministic tests and future host adapters.
  */
 interface SourceRequestClient {
     suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse>
