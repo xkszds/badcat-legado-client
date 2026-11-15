@@ -81,6 +81,22 @@ class LegadoBookSourceCodecTest {
     }
 
     @Test
+    fun changingEnabledFlagPreservesUnknownFieldsAndRules() {
+        val original = LegadoBookSourceCodec.decode(
+            """{"bookSourceUrl":"https://toggle.example","bookSourceName":"Toggle","enabled":true,"future":{"x":7},"ruleSearch":{"bookList":"main"}}"""
+        ).single()
+
+        val disabled = LegadoBookSourceCodec.withEnabled(original, false)
+        assertFalse(disabled.enabled)
+        val exported = JsonParser.parseString(
+            LegadoBookSourceCodec.encode(listOf(disabled))
+        ).asJsonArray.single().asJsonObject
+        assertFalse(exported.get("enabled").asBoolean)
+        assertEquals(7, exported.getAsJsonObject("future").get("x").asInt)
+        assertEquals("main", exported.getAsJsonObject("ruleSearch").get("bookList").asString)
+    }
+
+    @Test
     fun rejectsMissingIdentityFields() {
         assertFailsWith<IllegalArgumentException> {
             LegadoBookSourceCodec.decode("""{"bookSourceName":"missing url"}""")
