@@ -3,8 +3,8 @@ package app.badcat.engine
 /**
  * The replacement-rule scope fields used by the pinned Legado DAO.
  *
- * This models rule selection only. It deliberately does not execute regular
- * expressions: the Android host still needs a safe, compatible regex runtime.
+ * This models Legado's title/content/source scope selection. Execution is
+ * delegated to the bounded replacement runtime.
  */
 data class LegadoReplaceRuleScope(
     val id: Long,
