@@ -73,17 +73,19 @@ class CssTocParser {
         val nextUrls = ArrayList<String>()
         val nextRule = rules["nextTocUrl"]?.takeIf(String::isNotBlank)
         if (nextRule != null) {
-            val urlRule = if (nextRule.substringAfterLast("@", "").let { it in setOf("href", "src", "text", "html") }) nextRule.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)").replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)") else "$nextRule@attr(href)"
-            when (val result = SelectorRuleEvaluator.evaluate(root, SelectorRuleType.CSS, urlRule)) {
-                is EngineResult.Failure -> return result
-                is EngineResult.Success -> {
-                    for (value in result.value) {
-                        val url = runCatching { WebUrlResolver.resolve(response.finalUrl, value) }.getOrElse {
-                            return unsupported(source, "nextTocUrl must resolve to a credential-free HTTP(S) URL")
-                        }
-                        if (url != response.finalUrl && url !in nextUrls) nextUrls += url
-                    }
+            val trimmed = nextRule.trim()
+            val suffix = trimmed.substringAfterLast("@", "").lowercase()
+            val attribute = if (suffix == "src" || suffix == "attr(src)") "src" else "href"
+            val selector = trimmed.replace(
+                Regex("@(?:href|src|attr\\((?:href|src)\\))$", RegexOption.IGNORE_CASE),
+                "",
+            ).trim()
+            val values = Jsoup.parse(response.body, response.finalUrl).select(selector).map { it.attr(attribute) }
+            for (value in values.filter(String::isNotBlank)) {
+                val url = runCatching { WebUrlResolver.resolve(response.finalUrl, value) }.getOrElse {
+                    return unsupported(source, "nextTocUrl must resolve to a credential-free HTTP(S) URL")
                 }
+                if (url != response.finalUrl && url !in nextUrls) nextUrls += url
             }
         }
         return EngineResult.Success(ParsedTocPage(chapters, nextUrls))
