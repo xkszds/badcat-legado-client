@@ -1,6 +1,9 @@
 package app.badcat.client
 
 import android.app.Activity
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -49,6 +52,14 @@ class ReplaceRuleActivity : Activity() {
             text = "导出全部规则到上方文本框"
             setOnClickListener { exportRules() }
         }
+        val pasteButton = Button(this).apply {
+            text = "从剪贴板粘贴 JSON"
+            setOnClickListener { pasteClipboard() }
+        }
+        val copyButton = Button(this).apply {
+            text = "复制全部规则 JSON"
+            setOnClickListener { copyExportToClipboard() }
+        }
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -63,11 +74,43 @@ class ReplaceRuleActivity : Activity() {
             ))
             addView(importButton)
             addView(exportButton)
+            addView(pasteButton)
+            addView(copyButton)
             addView(status)
             addView(ruleList)
         }
         setContentView(ScrollView(this).apply { addView(root) })
         refreshRules()
+    }
+
+    private fun pasteClipboard() {
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = clipboard.primaryClip
+        if (clip == null || clip.itemCount == 0) {
+            status.text = "剪贴板没有可粘贴的内容"
+            return
+        }
+        jsonInput.setText(clip.getItemAt(0).coerceToText(this))
+        status.text = "已粘贴剪贴板内容，请确认后点击导入"
+    }
+
+    private fun copyExportToClipboard() {
+        status.text = "正在准备导出…"
+        worker.execute {
+            val result = runBlocking { catalog.exportJson() }
+            mainHandler.post {
+                when (result) {
+                    is EngineResult.Success -> {
+                        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        clipboard.setPrimaryClip(
+                            ClipData.newPlainText("Legado replacement rules", result.value)
+                        )
+                        status.text = "已复制 ${result.value.length} 个字符到剪贴板"
+                    }
+                    is EngineResult.Failure -> status.text = "复制失败：${result.message}"
+                }
+            }
+        }
     }
 
     private fun importRules() {
