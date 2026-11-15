@@ -15,7 +15,7 @@ object LegadoUrlParameterEncoder {
 
     private val queryAlreadyEncodedSafe = buildSet<Char> {
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".forEach(::add)
-        "!${'$'}&()*+,-./:;=?@[\\\\]^_`{|}~".forEach(::add)
+        "!${'$'}&()*+,-./:;=?@[\\]^_`{|}~".forEach(::add)
     }
 
     private val formAlreadyEncodedSafe = buildSet<Char> {
