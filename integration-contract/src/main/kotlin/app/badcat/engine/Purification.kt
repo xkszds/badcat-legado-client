@@ -8,6 +8,15 @@ fun interface BookTextReplacement {
     fun replace(chapterText: String): String
 }
 
+/**
+ * Suspendable, book-aware replacement hook for durable Legado rule catalogs.
+ * The origin is the selected book-source name; the title is supplied by the
+ * caller so title-scoped rules are not guessed from a URL.
+ */
+fun interface ScopedBookTextReplacement {
+    suspend fun replace(chapterText: String, bookName: String, bookOrigin: String): String
+}
+
 fun interface PageAdFilter {
     fun filter(html: String): String
 }
