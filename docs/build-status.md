@@ -4,6 +4,9 @@ Last updated: 2026-11-15
 
 ## Latest implementation update
 
+- Added `CssTocParser` for the official Legado `TocRule` CSS subset: `chapterList`, `chapterName`, `chapterUrl`, and `nextTocUrl`. Chapter and next-page URLs are resolved against the response URL.
+- Added `SourceTocService` to fetch TOC pages sequentially, follow extracted next-page links, prevent URL loops, cap pagination at 20 pages, deduplicate chapters by URL, and assign stable indices. Added tests for chapter extraction, relative URLs, pagination URL extraction, and script-rule rejection.
+- TOC limitations remain explicit: no full AnalyzeRule, JavaScript/formatJs, volume/VIP/pay metadata, reverse-TOC preferences, or advanced pagination expressions. Tests are authored but not executed; no CI/APK result is available.
 - Added `CssBookInfoParser` for the official Legado `BookInfoRule` field names (`name`, `author`, `intro`, `coverUrl`, `lastChapter`, `tocUrl`) using the current CSS selector subset. It resolves relative cover/catalog URLs, requires a parsed book name, and rejects unsupported script/template/replace expressions.
 - Added `SourceBookDetailService` to fetch detail pages through the shared HTTP gateway, check HTTP status, and parse the result. `BookDetail` now exposes the parsed optional `tocUrl` for the subsequent TOC request.
 - Added book-detail parser tests for field extraction, relative URLs, missing title, and script rejection. These tests are authored but not executed; the detail flow is CSS-only and does not yet implement full Legado `AnalyzeRule` or init/redirect behavior.
