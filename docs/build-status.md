@@ -1,5 +1,10 @@
 ## Latest implementation update (2026-11-15)
 
+- Added a book-level bookmark picker to the development reader's TOC screen. It lists chapters that have saved per-chapter bookmarks; selecting one opens that chapter and restores its explicit bookmark offset after content is laid out.
+- The feature reuses the existing source/book/chapter-isolated bookmark keys. It remains a single bookmark per chapter and does not provide text anchors, bookmark editing, or the original Badcat bookmark UI.
+- This change is code-reviewed by source inspection only. No Gradle compilation, automated test run, device validation, CI result, or APK generation is confirmed.
+## Latest implementation update (2026-11-15)
+
 - Added per-chapter bookmarks to the development reader. A user can save the current vertical reading offset and jump back to that bookmark; bookmark keys are isolated by source ID, book URL and chapter URL, so different books and chapters do not overwrite one another. The existing automatic last-read scroll position remains separate from the explicit bookmark.
 - This is a single saved bookmark per chapter in the prototype ScrollView, not a multi-bookmark manager, text-anchor bookmark or original Badcat bookmark UI. No Gradle compilation, automated tests, device validation or APK generation is confirmed.
 
