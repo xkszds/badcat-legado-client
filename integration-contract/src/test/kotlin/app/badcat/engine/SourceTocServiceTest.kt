@@ -102,4 +102,43 @@ class SourceTocServiceTest {
         )
     }
 
+    @Test
+    fun reportsTocPaginationCycleInsteadOfSilentlyReturningPartialChapters() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"ul.chapters li",
+                "chapterName":"a@text",
+                "chapterUrl":"a@href",
+                "nextTocUrl":"a.next"
+            }""",
+        )
+        val requests = mutableListOf<String>()
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                requests += request.url
+                val next = if (request.url.contains("page=2")) {
+                    "https://reader.example/book/1"
+                } else {
+                    "?page=2"
+                }
+                return EngineResult.Success(
+                    SourceHttpResponse(
+                        200,
+                        request.url,
+                        body = """<ul class="chapters"><li><a href="/chapter/${requests.size}">Chapter ${requests.size}</a></li></ul><a class="next" href="$next">Next</a>""",
+                    ),
+                )
+            }
+        }
+
+        val failure = assertIs<EngineResult.Failure>(
+            SourceTocService(SourceHttpGateway(client)).load(source, "https://reader.example/book/1"),
+        )
+        assertEquals(EngineErrorCode.PARSE, failure.code)
+        assertEquals(2, requests.size)
+    }
+
 }
