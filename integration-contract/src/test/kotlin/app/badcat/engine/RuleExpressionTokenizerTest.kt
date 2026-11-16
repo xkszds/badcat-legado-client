@@ -49,4 +49,23 @@ class RuleExpressionTokenizerTest {
             RuleExpressionTokenizer.splitTopLevel("a && b", "??")
         }
     }
+
+    @Test
+    fun escapedQuotesDoNotExposeCombinationOperators() {
+        val expression = """a[data-value="one\\\"&&two"]&&b"""
+        assertEquals(
+            listOf("""a[data-value="one\\\"&&two"]""", "b"),
+            RuleExpressionTokenizer.splitTopLevel(expression, "&&"),
+        )
+    }
+
+    @Test
+    fun rejectsOversizedExpressionsBeforeScanning() {
+        assertFailsWith<IllegalArgumentException> {
+            RuleExpressionTokenizer.splitTopLevel(
+                "a".repeat(RuleExpressionTokenizer.MAX_RULE_EXPRESSION_LENGTH + 1),
+                "&&",
+            )
+        }
+    }
 }
