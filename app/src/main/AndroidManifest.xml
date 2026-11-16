@@ -14,6 +14,7 @@
         <activity android:name=".ReplaceRuleActivity" android:exported="false" />
         <activity android:name=".FavoritesActivity" android:exported="false" />
         <activity android:name=".ReadingHistoryActivity" android:exported="false" />
+        <activity android:name=".DownloadManagementActivity" android:exported="false" />
         <activity android:name=".SourceCatalogActivity" android:exported="false" />
         <activity android:name=".SourceSearchActivity" android:exported="false" />
         <activity android:name=".SourceBookActivity" android:exported="false" />
