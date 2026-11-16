@@ -1,18 +1,22 @@
 package app.badcat.client
 
 import android.app.Activity
+import android.content.Intent
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
-import android.widget.Button
+import android.view.inputmethod.EditorInfo
 import android.widget.EditText
+import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import android.widget.Spinner
 import android.widget.TextView
-import android.content.Intent
 import app.badcat.client.runtime.BadcatReadingEngineFactory
 import app.badcat.engine.BookCandidate
 import app.badcat.engine.BookSource
@@ -24,92 +28,213 @@ import java.util.concurrent.Executors
 import kotlinx.coroutines.runBlocking
 
 /**
- * Minimal source-aware search screen for exercising the composed ReadingEngine.
- * This is a development workflow, not a recreation of Badcat's original UI.
+ * User-facing search screen around the existing Legado ReadingEngine.
+ * The original search page's hierarchy is retained: back/type row, keyword
+ * field, source/channel strip, disclaimer, then results/empty state.
  */
 class SourceSearchActivity : Activity() {
     companion object {
         const val EXTRA_INITIAL_QUERY = "initial_query"
         const val EXTRA_CONTENT_TYPE = "content_type"
     }
+
     private val worker: ExecutorService = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val blue = Color.rgb(55, 137, 222)
+    private val ink = Color.rgb(48, 55, 66)
+    private val muted = Color.rgb(135, 145, 158)
+    private val page = Color.rgb(247, 249, 252)
     private lateinit var engine: ReadingEngine
-    private lateinit var sourceSpinner: Spinner
     private lateinit var keywordInput: EditText
-    private lateinit var searchButton: Button
-    private lateinit var previousPageButton: Button
-    private lateinit var nextPageButton: Button
+    private lateinit var searchButton: TextView
+    private lateinit var previousPageButton: TextView
+    private lateinit var nextPageButton: TextView
     private lateinit var status: TextView
-    private var currentPage: Int = 1
     private lateinit var results: LinearLayout
+    private lateinit var sourceTabs: LinearLayout
+    private lateinit var typeSelector: TextView
+    private var currentPage = 1
+    private var selectedSourcePosition = 0
+    private var contentType = "小说"
     private var enabledSources: List<BookSource> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         engine = BadcatReadingEngineFactory(applicationContext).create()
-
-        sourceSpinner = Spinner(this)
-        keywordInput = EditText(this).apply {
-            hint = "输入书名或关键词"
-            setSingleLine(true)
-            setText(intent.getStringExtra(EXTRA_INITIAL_QUERY).orEmpty())
-        }
-        searchButton = Button(this).apply {
-            text = "搜索"
-            setOnClickListener { search() }
-        }
-        previousPageButton = Button(this).apply {
-            text = "上一页"
-            isEnabled = false
-            setOnClickListener {
-                if (currentPage > 1) {
-                    currentPage--
-                    search(resetPage = false)
-                }
-            }
-        }
-        nextPageButton = Button(this).apply {
-            text = "下一页"
-            isEnabled = false
-            setOnClickListener {
-                currentPage++
-                search(resetPage = false)
-            }
-        }
-        status = TextView(this).apply { text = "正在读取已启用书源…" }
-        results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        contentType = intent.getStringExtra(EXTRA_CONTENT_TYPE)
+            ?.takeIf { it in listOf("小说", "漫画", "综合") } ?: "小说"
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(24, 24, 24, 24)
-            addView(TextView(this@SourceSearchActivity).apply {
-                text = "书源搜索 · ${intent.getStringExtra(EXTRA_CONTENT_TYPE).orEmpty().ifBlank { "全部" }}"
-                textSize = 20f
-            })
-            addView(Button(this@SourceSearchActivity).apply {
-                text = "替换规则管理"
-                setOnClickListener {
-                    startActivity(Intent(this@SourceSearchActivity, ReplaceRuleActivity::class.java))
-                }
-            })
-            addView(sourceSpinner)
-            addView(keywordInput)
-            addView(searchButton)
-            addView(LinearLayout(this@SourceSearchActivity).apply {
-                orientation = LinearLayout.HORIZONTAL
-                addView(previousPageButton, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-                addView(nextPageButton, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-            })
-            addView(status)
-            addView(results)
+            setBackgroundColor(page)
         }
-        setContentView(ScrollView(this).apply { addView(root) })
+        root.addView(buildToolbar())
+        root.addView(buildSearchControls())
+        root.addView(buildSourceStrip())
+        root.addView(buildDisclaimer())
+
+        val scroll = ScrollView(this).apply {
+            isFillViewport = true
+            addView(LinearLayout(this@SourceSearchActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(16), dp(12), dp(16), dp(24))
+                addView(status)
+                addView(results)
+            })
+        }
+        root.addView(scroll, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
+        ))
+        root.addView(buildPagination())
+        setContentView(root)
         loadSources()
+    }
+
+    private fun buildToolbar(): View = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        setPadding(dp(14), dp(10), dp(16), dp(10))
+        setBackgroundColor(Color.WHITE)
+        addView(TextView(this@SourceSearchActivity).apply {
+            text = "‹"
+            textSize = 32f
+            gravity = Gravity.CENTER
+            setTextColor(ink)
+            setOnClickListener { finish() }
+        }, LinearLayout.LayoutParams(dp(42), dp(44)))
+        typeSelector = TextView(this@SourceSearchActivity).apply {
+            text = "$contentType  ▾"
+            textSize = 15f
+            gravity = Gravity.CENTER
+            setTextColor(ink)
+            setPadding(dp(10), 0, dp(10), 0)
+            setOnClickListener { cycleContentType() }
+        }
+        addView(typeSelector)
+        addView(TextView(this@SourceSearchActivity).apply {
+            text = "书籍搜索"
+            textSize = 15f
+            setTextColor(muted)
+            setPadding(dp(12), 0, 0, 0)
+        })
+    }
+
+    private fun buildSearchControls(): View = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        setPadding(dp(14), dp(12), dp(14), dp(12))
+        setBackgroundColor(Color.WHITE)
+        val field = LinearLayout(this@SourceSearchActivity).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            background = rounded(Color.rgb(246, 247, 249), 22)
+            setPadding(dp(14), 0, dp(8), 0)
+        }
+        keywordInput = EditText(this@SourceSearchActivity).apply {
+            hint = "输入书名或作者"
+            textSize = 14f
+            setSingleLine(true)
+            setTextColor(ink)
+            setHintTextColor(muted)
+            background = null
+            setPadding(0, dp(10), 0, dp(10))
+            setText(intent.getStringExtra(EXTRA_INITIAL_QUERY).orEmpty())
+            imeOptions = EditorInfo.IME_ACTION_SEARCH
+            setOnEditorActionListener { _, actionId, _ ->
+                if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                    search()
+                    true
+                } else false
+            }
+        }
+        field.addView(keywordInput, LinearLayout.LayoutParams(0, dp(44), 1f))
+        searchButton = TextView(this@SourceSearchActivity).apply {
+            text = "搜索"
+            textSize = 14f
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            background = rounded(blue, 20)
+            setPadding(dp(18), 0, dp(18), 0)
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { search() }
+        }
+        field.addView(searchButton, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, dp(36)
+        ))
+        addView(field, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        ))
+    }
+
+    private fun buildSourceStrip(): View = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        setBackgroundColor(Color.WHITE)
+        val scroll = HorizontalScrollView(this@SourceSearchActivity).apply {
+            isHorizontalScrollBarEnabled = false
+            sourceTabs = LinearLayout(this@SourceSearchActivity).apply {
+                orientation = LinearLayout.HORIZONTAL
+                setPadding(dp(12), dp(4), dp(12), dp(10))
+            }
+            addView(sourceTabs)
+        }
+        addView(scroll)
+    }
+
+    private fun buildDisclaimer(): View = TextView(this).apply {
+        text = "免责声明：搜索结果来自已导入并启用的书源，请确认内容来源及版权。"
+        textSize = 11f
+        setTextColor(muted)
+        setPadding(dp(16), dp(10), dp(16), dp(10))
+        setBackgroundColor(Color.rgb(250, 250, 250))
+    }
+
+    private fun buildPagination(): View = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER
+        setPadding(dp(16), dp(8), dp(16), dp(8))
+        setBackgroundColor(Color.WHITE)
+        previousPageButton = pageButton("上一页") {
+            if (currentPage > 1) {
+                currentPage--
+                search(resetPage = false)
+            }
+        }
+        nextPageButton = pageButton("下一页") {
+            currentPage++
+            search(resetPage = false)
+        }
+        addView(previousPageButton, LinearLayout.LayoutParams(0, dp(40), 1f).apply {
+            marginEnd = dp(8)
+        })
+        addView(nextPageButton, LinearLayout.LayoutParams(0, dp(40), 1f))
+        previousPageButton.isEnabled = false
+        nextPageButton.isEnabled = false
+    }
+
+    private fun pageButton(label: String, action: () -> Unit) = TextView(this).apply {
+        text = label
+        textSize = 13f
+        gravity = Gravity.CENTER
+        setTextColor(blue)
+        background = rounded(Color.rgb(241, 247, 253), 18)
+        isClickable = true
+        isFocusable = true
+        setOnClickListener { action() }
+    }
+
+    private fun cycleContentType() {
+        contentType = when (contentType) {
+            "小说" -> "漫画"
+            "漫画" -> "综合"
+            else -> "小说"
+        }
+        typeSelector.text = "$contentType  ▾"
     }
 
     private fun loadSources() {
         searchButton.isEnabled = false
+        status.text = "正在读取已启用书源…"
         worker.execute {
             val result = runBlocking {
                 try {
@@ -125,22 +250,49 @@ class SourceSearchActivity : Activity() {
             mainHandler.post {
                 when (result) {
                     is EngineResult.Success -> {
-                        enabledSources = result.value.filter { it.enabled && !it.searchUrl.isNullOrBlank() }
-                        sourceSpinner.adapter = ArrayAdapter(
-                            this,
-                            android.R.layout.simple_spinner_dropdown_item,
-                            listOf("全部书源") + enabledSources.map { it.name },
-                        )
+                        enabledSources = result.value.filter {
+                            it.enabled && !it.searchUrl.isNullOrBlank()
+                        }
+                        renderSourceTabs()
                         status.text = if (enabledSources.isEmpty()) {
-                            "没有可搜索的已启用书源（请先导入包含 searchUrl 的 Legado 书源）"
+                            "暂无可搜索书源，请先到「我的 - 书源管理」导入 Legado 书源"
                         } else {
-                            "已载入 ${enabledSources.size} 个可搜索书源；可选择单个书源或全部搜索"
+                            "已载入 ${enabledSources.size} 个可搜索书源"
                         }
                         searchButton.isEnabled = enabledSources.isNotEmpty()
+                        if (keywordInput.text.toString().isNotBlank() && enabledSources.isNotEmpty()) {
+                            search()
+                        }
                     }
                     is EngineResult.Failure -> status.text = "读取书源失败：${result.message}"
                 }
             }
+        }
+    }
+
+    private fun renderSourceTabs() {
+        sourceTabs.removeAllViews()
+        val labels = listOf("全部") + enabledSources.map { it.name }
+        labels.forEachIndexed { index, label ->
+            val selected = index == selectedSourcePosition
+            sourceTabs.addView(TextView(this).apply {
+                text = label
+                textSize = 13f
+                gravity = Gravity.CENTER
+                setTextColor(if (selected) Color.WHITE else muted)
+                background = rounded(
+                    if (selected) blue else Color.rgb(246, 247, 249), 18
+                )
+                setPadding(dp(15), dp(8), dp(15), dp(8))
+                isClickable = true
+                isFocusable = true
+                setOnClickListener {
+                    selectedSourcePosition = index
+                    renderSourceTabs()
+                }
+            }, LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, dp(34)
+            ).apply { marginEnd = dp(8) })
         }
     }
 
@@ -149,21 +301,19 @@ class SourceSearchActivity : Activity() {
         previousPageButton.isEnabled = false
         nextPageButton.isEnabled = false
         val requestedPage = currentPage
-        val selectedPosition = sourceSpinner.selectedItemPosition
-        val selectedSources = if (selectedPosition <= 0) enabledSources
-            else listOfNotNull(enabledSources.getOrNull(selectedPosition - 1))
-        if (selectedSources.isEmpty()) return
-        val keyword = keywordInput.text.toString().trim()
-        if (keyword.isEmpty()) {
+        val selectedSources = if (selectedSourcePosition == 0) enabledSources
+            else listOfNotNull(enabledSources.getOrNull(selectedSourcePosition - 1))
+        if (selectedSources.isEmpty()) {
+            status.text = "没有可搜索的书源"
+            return
+        }
+        val query = keywordInput.text.toString().trim()
+        if (query.isEmpty()) {
             status.text = "请输入搜索关键词"
             return
         }
         searchButton.isEnabled = false
-        status.text = if (selectedSources.size == 1) {
-            "正在搜索：${selectedSources.first().name}（第 ${requestedPage} 页）"
-        } else {
-            "正在搜索全部 ${selectedSources.size} 个书源（第 ${requestedPage} 页）…"
-        }
+        status.text = "正在搜索（第 ${requestedPage} 页）…"
         results.removeAllViews()
         worker.execute {
             val collected = mutableListOf<BookCandidate>()
@@ -171,7 +321,7 @@ class SourceSearchActivity : Activity() {
             selectedSources.forEach { source ->
                 val result = runBlocking {
                     try {
-                        engine.searchPage(source.id, keyword, requestedPage)
+                        engine.searchPage(source.id, query, requestedPage)
                     } catch (error: Exception) {
                         EngineResult.Failure(
                             EngineErrorCode.UNKNOWN,
@@ -187,42 +337,42 @@ class SourceSearchActivity : Activity() {
             }
             val unique = collected.distinctBy { "${it.sourceId}|${it.bookUrl}" }
             mainHandler.post {
-                searchButton.isEnabled = true
+                searchButton.isEnabled = enabledSources.isNotEmpty()
                 previousPageButton.isEnabled = requestedPage > 1
                 nextPageButton.isEnabled = unique.isNotEmpty()
-                showResults(unique, failures)
+                showResults(requestedPage, unique, failures)
             }
         }
     }
 
-    private fun showResults(items: List<BookCandidate>, failures: List<String>) {
-        status.text = buildString {
-            append("搜索完成：第 ${currentPage} 页，找到 ${items.size} 条结果")
-            if (failures.isNotEmpty()) append("；${failures.size} 个书源失败")
-        }
+    private fun showResults(page: Int, items: List<BookCandidate>, failures: List<String>) {
+        status.text = "第 ${page} 页 · 找到 ${items.size} 条结果" +
+            if (failures.isNotEmpty()) " · ${failures.size} 个书源失败" else ""
         if (failures.isNotEmpty()) {
             results.addView(TextView(this).apply {
                 text = failures.joinToString("\n") { "• $it" }
                 textSize = 12f
-                setPadding(0, 4, 0, 10)
+                setTextColor(muted)
+                setPadding(0, dp(4), 0, dp(10))
             })
         }
         if (items.isEmpty()) {
-            results.addView(TextView(this).apply { text = "没有匹配的书籍" })
+            results.addView(TextView(this).apply {
+                text = "暂未找到相关书籍"
+                textSize = 14f
+                gravity = Gravity.CENTER
+                setTextColor(muted)
+                setPadding(0, dp(42), 0, dp(42))
+            })
             return
         }
         items.forEach { item ->
-            results.addView(TextView(this).apply {
-                text = buildString {
-                    append(item.name)
-                    item.author?.let { append("\n作者：").append(it) }
-                    item.latestChapter?.let { append("\n最新章节：").append(it) }
-                    item.intro?.takeIf { it.isNotBlank() }?.let { append("\n").append(it) }
-                    append("\n书源：").append(item.sourceId)
-                }
-                textSize = 15f
-                setPadding(0, 14, 0, 14)
+            results.addView(LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                background = rounded(Color.WHITE, 12)
+                setPadding(dp(14), dp(13), dp(14), dp(13))
                 isClickable = true
+                isFocusable = true
                 setOnClickListener {
                     startActivity(Intent(this@SourceSearchActivity, SourceBookActivity::class.java).apply {
                         putExtra(SourceBookActivity.EXTRA_SOURCE_ID, item.sourceId)
@@ -230,12 +380,50 @@ class SourceSearchActivity : Activity() {
                         putExtra(SourceBookActivity.EXTRA_BOOK_NAME, item.name)
                     })
                 }
+                addView(TextView(this@SourceSearchActivity).apply {
+                    text = item.name
+                    textSize = 16f
+                    typeface = Typeface.DEFAULT_BOLD
+                    setTextColor(ink)
+                })
+                item.author?.takeIf { it.isNotBlank() }?.let { author ->
+                    addView(resultMeta("作者：$author"))
+                }
+                item.latestChapter?.takeIf { it.isNotBlank() }?.let { chapter ->
+                    addView(resultMeta("最新：$chapter"))
+                }
+                item.intro?.takeIf { it.isNotBlank() }?.let { intro ->
+                    addView(TextView(this@SourceSearchActivity).apply {
+                        text = intro
+                        textSize = 12f
+                        maxLines = 2
+                        setTextColor(muted)
+                        setPadding(0, dp(6), 0, 0)
+                    })
+                }
+                addView(resultMeta("书源：${item.sourceId}"))
             }, LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-            ))
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = dp(10) })
         }
     }
+
+    private fun resultMeta(value: String) = TextView(this).apply {
+        text = value
+        textSize = 12f
+        setTextColor(muted)
+        setPadding(0, dp(5), 0, 0)
+    }
+
+    private fun rounded(color: Int, radius: Int): GradientDrawable =
+        GradientDrawable().apply {
+            setColor(color)
+            cornerRadius = dp(radius).toFloat()
+        }
+
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
 
     override fun onDestroy() {
         worker.shutdownNow()
