@@ -32,11 +32,7 @@ object LegadoRuleExpressionDispatcher {
             )
         }
         val split = try {
-            val candidates = listOf("||", "%%").mapNotNull { operator ->
-                val parts = RuleExpressionTokenizer.splitTopLevel(normalized, operator)
-                if (parts.size > 1) Triple(parts.first().length, operator, parts) else null
-            }
-            candidates.minByOrNull { it.first }
+            RuleExpressionTokenizer.splitByFirstTopLevelOperator(normalized)
         } catch (error: Exception) {
             return EngineResult.Failure(
                 EngineErrorCode.UNSUPPORTED_RULE,
@@ -45,7 +41,7 @@ object LegadoRuleExpressionDispatcher {
             )
         }
 
-        if (split == null) {
+        if (split.operator == null) {
             val leaf = normalized.trim()
             if (leaf.startsWith("@regex:", ignoreCase = true)) {
                 return LegadoRegexElementEvaluator.evaluate(document.body, leaf.substringAfter(':'))
@@ -72,9 +68,9 @@ object LegadoRuleExpressionDispatcher {
             }
         }
 
-        if (split.second == "||") {
+        if (split.operator == "||") {
             var firstFailure: EngineResult.Failure? = null
-            for (branch in split.third) {
+            for (branch in split.rules) {
                 when (val result = evaluateCollectionBranches(document, branch, allowUnprefixedRegexFallback)) {
                     is EngineResult.Failure -> if (firstFailure == null) firstFailure = result
                     is EngineResult.Success -> if (result.value.isNotEmpty()) return result
@@ -84,17 +80,24 @@ object LegadoRuleExpressionDispatcher {
         }
 
         val branches = ArrayList<List<String>>()
-        for (branch in split.third) {
+        for (branch in split.rules) {
             when (val result = evaluateCollectionBranches(document, branch, allowUnprefixedRegexFallback)) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> if (result.value.isNotEmpty()) branches += result.value
             }
         }
         if (branches.isEmpty()) return EngineResult.Success(emptyList())
-        return EngineResult.Success(buildList {
-            val rows = branches.maxOfOrNull { it.size } ?: 0
-            for (index in 0 until rows) branches.forEach { it.getOrNull(index)?.let(::add) }
-        })
+        val combined = if (split.operator == "%%") {
+            buildList {
+                val rows = branches.maxOfOrNull { it.size } ?: 0
+                for (index in 0 until rows) {
+                    branches.forEach { it.getOrNull(index)?.let(::add) }
+                }
+            }
+        } else {
+            branches.flatten()
+        }
+        return EngineResult.Success(combined)
     }
 
     fun evaluate(document: SourceDocument, expression: String): EngineResult<List<String>> =
