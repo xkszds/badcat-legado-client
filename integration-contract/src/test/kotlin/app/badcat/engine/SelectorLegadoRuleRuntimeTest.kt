@@ -108,6 +108,35 @@ class SelectorLegadoRuleRuntimeTest {
     }
 
     @Test
+    fun failedSelectorBranchFallsBackButUnionFailureIsPreserved(): Unit = runBlocking {
+        val source = BookSource("https://reader.example/", "Fixture", "https://reader.example/")
+        val runtime = SelectorLegadoRuleRuntime()
+        val document = SourceDocument(
+            "https://reader.example/search",
+            """<div class="second">Beta</div>""",
+        )
+
+        val fallback = runtime.evaluate(
+            SourceRuleStage.SEARCH,
+            """{"bookList":"div:unsupported-pseudo||div.second"}""",
+            source,
+            document,
+        )
+        assertEquals(
+            listOf(mapOf("bookList" to "Beta")),
+            assertIs<EngineResult.Success<List<Map<String, String>>>>(fallback).value,
+        )
+
+        val union = runtime.evaluate(
+            SourceRuleStage.SEARCH,
+            """{"bookList":"div:unsupported-pseudo&&div.second"}""",
+            source,
+            document,
+        )
+        assertIs<EngineResult.Failure>(union)
+    }
+
+    @Test
     fun dispatchesExplicitXPathAndJsonPathFields(): Unit = runBlocking {
         val source = BookSource("https://reader.example/", "Fixture", "https://reader.example/")
         val runtime = SelectorLegadoRuleRuntime()
