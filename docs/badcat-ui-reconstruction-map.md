@@ -178,3 +178,12 @@ The personal center currently shows only implemented routes: reading history, bo
 - Chapter filtering and display-order transformation were extracted into the platform-neutral `ChapterCatalogQuery` helper and covered by unit tests; filtering/reversal does not rewrite chapter indices or URLs.
 
 - The book detail “开始阅读” action now opens the first real `BookChapter` directly when no saved progress exists. It no longer assumes the first child in the catalog container is a chapter row (the container may begin with continue-reading or bookmark actions).
+
+## Latest integration notes (2026-11-16)
+
+- The development book-detail screen now displays a source-provided cover when available, expands/collapses the introduction, and supports chapter-title filtering plus ascending/descending catalog order. Filtering preserves each chapter's original index and URL.
+- “开始阅读” resumes the saved chapter when progress exists; otherwise it opens the first actual chapter entry rather than assuming the first child view is a chapter.
+- Favorites now persist an optional cover URL and load it asynchronously with byte-size and image-dimension limits. Legacy favorite records without a cover URL remain readable.
+- The “全部小说” folder is an aggregate view across the default and custom folders. A folder selected by its own ID shows only that folder's books. Unit tests cover aggregate counts and custom-folder filtering.
+- The development reader exposes persisted font size, line spacing, theme cycling, reset-to-default, chapter navigation, scroll progress, and the CSS profile editor.
+- These are functional improvements to the current development screens; they do **not** establish pixel-level parity with the original screenshots.真机运行、布局对照和完整原版导航仍需单独验收。
