@@ -63,7 +63,9 @@ class CssChapterContentParser {
                     }
                     return result
                 }
-                is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(\n                    normalizeLinkExpression(nextRule), result.value,\n                )?.trim()?.takeIf(String::isNotEmpty)
+                is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(
+                    normalizeLinkExpression(nextRule), result.value,
+                )?.trim()?.takeIf(String::isNotEmpty)
             }
             if (rawLink.isNullOrBlank()) null else {
                 runCatching { WebUrlResolver.resolve(response.finalUrl, rawLink) }.getOrElse {
@@ -74,7 +76,9 @@ class CssChapterContentParser {
 
         val text = contentValues.mapNotNull(::htmlToReadableText)
             .filter(String::isNotBlank)
-            .joinToString("\n\n")
+            .joinToString("
+
+")
         if (text.isBlank()) {
             return EngineResult.Failure(
                 EngineErrorCode.NOT_FOUND,
@@ -112,7 +116,8 @@ class CssChapterContentParser {
         return when (val result = LegadoRuleExpressionDispatcher.evaluate(document, normalized.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)").replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)"))) {
             is EngineResult.Failure -> result
             is EngineResult.Success -> EngineResult.Success(
-                LegadoRuleExpressionDispatcher.firstScalarValue(normalized, result.value)\n                    ?.trim()?.takeIf(String::isNotEmpty),
+                LegadoRuleExpressionDispatcher.firstScalarValue(normalized, result.value)
+                    ?.trim()?.takeIf(String::isNotEmpty),
             )
         }
     }
@@ -120,16 +125,19 @@ class CssChapterContentParser {
     private fun htmlToReadableText(html: String): String? = runCatching {
         val body = Jsoup.parseBodyFragment(html).body()
         body.select("script,style,noscript,iframe").remove()
-        body.select("br").forEach { it.replaceWith(TextNode("\n")) }
+        body.select("br").forEach { it.replaceWith(TextNode("
+")) }
         body.select("p,div,section,article,li,h1,h2,h3,h4,h5,h6,blockquote").forEach {
-            it.appendChild(TextNode("\n"))
+            it.appendChild(TextNode("
+"))
         }
         body.wholeText()
             .replace('\u00a0', ' ')
             .lineSequence()
             .map(String::trim)
             .filter(String::isNotEmpty)
-            .joinToString("\n")
+            .joinToString("
+")
     }.getOrNull()
 
     private fun unsupported(source: BookSource, reason: String) =
