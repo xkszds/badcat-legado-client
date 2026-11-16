@@ -74,7 +74,7 @@ object CssRuleEvaluator {
                         EngineErrorCode.UNSUPPORTED_RULE,
                         "Unsupported CSS collection rule: $part",
                     )
-                    return@evaluate emptyList()
+                    return@evaluateNested emptyList()
                 }
                 if (parsed.valueMode != ValueMode.TEXT && parsed.valueMode != ValueMode.HTML &&
                     parsed.valueMode != ValueMode.ALL
@@ -83,7 +83,7 @@ object CssRuleEvaluator {
                         EngineErrorCode.UNSUPPORTED_RULE,
                         "Collection rule must select elements, not scalar values",
                     )
-                    return@evaluate emptyList()
+                    return@evaluateNested emptyList()
                 }
                 val indexedRule = if (explicitCss) null else LegadoElementIndex.parse(part)
                 val selector = indexedRule?.selector ?: parsed.selector
