@@ -122,6 +122,17 @@ object FavoriteBooks {
         save(context, all(context).map { if (it.sourceId == book.sourceId && it.bookUrl == book.bookUrl) it.copy(folderId = folderId) else it })
     }
 
+    fun replaceAll(context: Context, books: List<FavoriteBook>, folders: List<FavoriteFolder>) {
+        val validFolders = folders.filter { it.id != DEFAULT_FOLDER_ID && it.id.isNotBlank() && it.name.isNotBlank() }
+        val folderIds = validFolders.map { it.id }.toSet()
+        val normalizedBooks = books.map { book ->
+            if (book.folderId == DEFAULT_FOLDER_ID || book.folderId in folderIds) book
+            else book.copy(folderId = DEFAULT_FOLDER_ID)
+        }
+        saveFolders(context, validFolders)
+        save(context, normalizedBooks.distinctBy { it.sourceId + "|" + it.bookUrl })
+    }
+
     private fun saveFolders(context: Context, folders: List<FavoriteFolder>) {
         val json = JSONArray()
         folders.forEach { json.put(JSONObject().put("id", it.id).put("name", it.name)) }
