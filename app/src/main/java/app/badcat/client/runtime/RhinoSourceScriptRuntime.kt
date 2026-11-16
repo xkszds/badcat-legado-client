@@ -45,6 +45,12 @@ class RhinoSourceScriptRuntime(
                 "Source JavaScript bindings exceed the total size limit"
             }
 
+            val jsLib = source.jsLib.orEmpty()
+            require(jsLib.length <= MAX_SCRIPT_CHARS) { "Source JavaScript library exceeds the size limit" }
+            require(script.length + jsLib.length <= MAX_TOTAL_SCRIPT_CHARS) {
+                "Source JavaScript and library exceed the combined size limit"
+            }
+
             val scope = ScriptBindings()
             bindings.forEach { (name, value) -> scope[name] = value }
             scope.chainTo(
@@ -54,6 +60,10 @@ class RhinoSourceScriptRuntime(
                 },
             )
             val result = withTimeout(timeoutMillis) {
+                // Legado jsLib is source-scoped shared code. Evaluate it in the same
+                // isolated scope before each rule so its functions are available to
+                // search/detail/TOC/content scripts without exposing host capabilities.
+                if (jsLib.isNotBlank()) RhinoScriptEngine.evalSuspend(jsLib, scope)
                 RhinoScriptEngine.evalSuspend(script, scope)
             }
             when (result) {
