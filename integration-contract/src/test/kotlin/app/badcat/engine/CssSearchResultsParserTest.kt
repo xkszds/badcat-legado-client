@@ -210,4 +210,28 @@ class CssSearchResultsParserTest {
         assertEquals("https://reader.example/book/regex", book.bookUrl)
     }
 
+
+    @Test
+    fun extractsRegexBookListWithQuotedHtmlAttributes() {
+        val source = BookSource(
+            id = "fixture", name = "Fixture", baseUrl = "https://reader.example/",
+            ruleSearchJson = """{
+                "bookList":"@regex:<div class=\\"book\\">.*?</div>",
+                "name":"h3@text",
+                "bookUrl":"a@href"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200, "https://reader.example/search",
+            body = """<div class="book"><h3>Quoted Regex Book</h3><a href="/book/quoted">Read</a></div><div class="other">Skip</div>""",
+        )
+
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parse(source, response),
+        ).value
+
+        assertEquals(listOf("Quoted Regex Book"), books.map { it.name })
+        assertEquals(listOf("https://reader.example/book/quoted"), books.map { it.bookUrl })
+    }
+
 }
