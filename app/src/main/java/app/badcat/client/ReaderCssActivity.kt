@@ -166,7 +166,16 @@ class ReaderCssActivity : Activity() {
     private fun manageProfile(id: String) {
         val profile = readProfiles().firstOrNull { it.id == id } ?: return
         val labels = profile.rules.map { "${it.name.ifBlank { it.selector }}\n${it.selector}" }.toTypedArray()
-        val actions = arrayOf("添加子选择器", "编辑方案名称和备注", "编辑已有子选择器", "删除子选择器", "上移子选择器（调整优先级）", "下移子选择器（调整优先级）", "预览整套方案（全部子选择器）")
+        val actions = arrayOf(
+            "添加子选择器",
+            "编辑方案名称和备注",
+            "编辑已有子选择器",
+            "删除子选择器",
+            "上移子选择器（调整优先级）",
+            "下移子选择器（调整优先级）",
+            "预览整套方案（全部子选择器）",
+            "复制已有子选择器",
+        )
         android.app.AlertDialog.Builder(this).setTitle(profile.name)
             .setItems(actions) { _, which ->
                 when (which) {
@@ -203,6 +212,21 @@ class ReaderCssActivity : Activity() {
                                 }
                             }.show()
                     6 -> showProfilePreview(id)
+                    7 -> if (profile.rules.isEmpty()) message.text = "请先添加子选择器" else
+                        android.app.AlertDialog.Builder(this).setTitle("选择要复制的子选择器")
+                            .setItems(labels) { _, index ->
+                                val source = profile.rules.getOrNull(index) ?: return@setItems
+                                val copy = source.copy(
+                                    name = (source.name.ifBlank { "子选择器" }) + " 副本",
+                                    note = source.note,
+                                )
+                                saveProfiles(readProfiles().map { p ->
+                                    if (p.id == id) p.copy(rules = p.rules.toMutableList().apply { add(index + 1, copy) })
+                                    else p
+                                })
+                                refresh()
+                                message.text = "已复制子选择器，可继续修改名称、备注、选择器和样式"
+                            }.show()
                 }
             }.setNegativeButton("关闭", null).show()
     }
