@@ -235,4 +235,44 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(sourceV1.id)
     }
 
+
+    @Test
+    fun initializesMainJsOnceBeforeEverySourceRule() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val source = BookSource(
+            id = "https://main-js.example/",
+            name = "Main JS source",
+            baseUrl = "https://main-js.example/",
+            mainJs = "var mainJsRuns = 0; mainJsRuns++; function readMainJsRuns() { return mainJsRuns; }",
+        )
+
+        val first = runtime.evaluate(source, "readMainJsRuns()")
+        val second = runtime.evaluate(source, "readMainJsRuns()")
+
+        assertEquals("1", (first as EngineResult.Success).value)
+        assertEquals("1", (second as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
+    fun resetsSourceScopeWhenMainJsChanges() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val sourceV1 = BookSource(
+            id = "https://main-js-edited.example/",
+            name = "Edited main JS source",
+            baseUrl = "https://main-js-edited.example/",
+            mainJs = "const mainJsLabel = 'old'; function readMainJsLabel() { return mainJsLabel; }",
+        )
+        val sourceV2 = sourceV1.copy(
+            mainJs = "const mainJsLabel = 'new'; function readMainJsLabel() { return mainJsLabel; }",
+        )
+
+        val first = runtime.evaluate(sourceV1, "readMainJsLabel()")
+        val second = runtime.evaluate(sourceV2, "readMainJsLabel()")
+
+        assertEquals("old", (first as EngineResult.Success).value)
+        assertEquals("new", (second as EngineResult.Success).value)
+        runtime.clearSourceState(sourceV1.id)
+    }
+
 }
