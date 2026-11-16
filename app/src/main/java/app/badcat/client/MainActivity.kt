@@ -161,9 +161,9 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER
         }
         val shortcuts = listOf(
-            Triple("♛", "排行榜", Color.rgb(255, 183, 77)),
+            Triple("🏆", "排行榜", Color.rgb(255, 183, 77)),
             Triple("🎁", "今日抽奖", Color.rgb(239, 112, 130)),
-            Triple("♥", "赚取现金", Color.rgb(91, 177, 151)),
+            Triple("💰", "赚取现金", Color.rgb(91, 177, 151)),
         )
         shortcuts.forEach { (symbol, label, tint) ->
             val item = LinearLayout(this@MainActivity).apply {
@@ -207,8 +207,8 @@ class MainActivity : Activity() {
                     when (index) {
                         0 -> Unit
                         1 -> startActivity(Intent(this@MainActivity, FavoritesActivity::class.java))
-                        2 -> startActivity(Intent(this@MainActivity, ReadingHistoryActivity::class.java))
-                        3 -> startActivity(Intent(this@MainActivity, SourceCatalogActivity::class.java))
+                        2 -> startActivity(Intent(this@MainActivity, CatSpaceActivity::class.java))
+                        3 -> startActivity(Intent(this@MainActivity, MyActivity::class.java))
                     }
                 }
                 addView(TextView(this@MainActivity).apply {
