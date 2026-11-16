@@ -33,9 +33,11 @@ class CssSearchResultsParser {
             return unsupported(source, "bookList must return element HTML, not extracted text or attributes")
         }
 
-        val root = Jsoup.parse(response.body, response.finalUrl)
+        // Preserve the original response bytes/text for regex roots; Jsoup.outerHtml()
+        // normalizes attribute quotes and can change the meaning of an imported regex.
+        val document = SourceDocument(response.finalUrl, response.body, response.contentType)
         val items = when (val result = LegadoRuleExpressionDispatcher.evaluateElements(
-            SourceDocument(response.finalUrl, root.outerHtml(), response.contentType),
+            document,
             listRule,
         )) {
             is EngineResult.Failure -> return result
