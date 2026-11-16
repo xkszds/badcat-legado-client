@@ -147,7 +147,7 @@ object CssRuleEvaluator {
         attribute: String?,
     ): String = when (mode) {
         ValueMode.TEXT -> element.text()
-        ValueMode.TEXT_NODES -> element.textNodes().map { it.text().trim() }.filter(String::isNotEmpty).joinToString("\\n")
+        ValueMode.TEXT_NODES -> element.textNodes().map { it.text().trim() }.filter(String::isNotEmpty).joinToString("\n")
         ValueMode.OWN_TEXT -> element.ownText()
         ValueMode.HTML -> element.html()
         ValueMode.ALL -> element.outerHtml()
