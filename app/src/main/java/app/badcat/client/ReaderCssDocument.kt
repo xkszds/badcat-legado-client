@@ -91,7 +91,7 @@ internal object ReaderCssDocument {
         }
     }.getOrDefault("")
 
-    private fun scopeSelector(selector: String): String {
+    internal fun scopeSelector(selector: String): String {
         // Scope each top-level selector independently. A comma inside :not(...)
         // or an attribute value is not a selector-group separator.
         return splitSelectorGroups(selector).joinToString(", ") { group ->
