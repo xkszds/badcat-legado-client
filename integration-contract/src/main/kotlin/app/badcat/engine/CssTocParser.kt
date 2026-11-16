@@ -91,11 +91,16 @@ class CssTocParser {
                     .replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
             } else trimmed
             if (legacyRegexMode) {
-                return when (val result = LegadoRegexElementEvaluator.evaluateScalar(itemHtml, normalized)) {
-                    is EngineResult.Failure -> result
+                val parsed = LegadoRuleReplacement.parse(normalized)
+                val raw = when (val result = LegadoRegexElementEvaluator.evaluateScalar(itemHtml, parsed.expression)) {
+                    is EngineResult.Failure -> return result
+                    is EngineResult.Success -> (result.value.getOrNull(1) ?: result.value.firstOrNull())
+                        ?.trim()?.takeIf(String::isNotEmpty)
+                } ?: return EngineResult.Success(null)
+                return when (val replaced = parsed.apply(listOf(raw))) {
+                    is EngineResult.Failure -> replaced
                     is EngineResult.Success -> EngineResult.Success(
-                        (result.value.getOrNull(1) ?: result.value.firstOrNull())
-                            ?.trim()?.takeIf(String::isNotEmpty),
+                        replaced.value.firstOrNull()?.trim()?.takeIf(String::isNotEmpty),
                     )
                 }
             }
@@ -160,9 +165,14 @@ class CssTocParser {
                     is EngineResult.Success -> result.value.trim()
                 }
             } else if (legacyRegexMode) {
-                when (val result = LegadoRegexElementEvaluator.evaluateScalar(response.body, nextRule)) {
+                val parsed = LegadoRuleReplacement.parse(nextRule)
+                val raw = when (val result = LegadoRegexElementEvaluator.evaluateScalar(response.body, parsed.expression)) {
                     is EngineResult.Failure -> return result
                     is EngineResult.Success -> (result.value.getOrNull(1) ?: result.value.firstOrNull()).orEmpty()
+                }
+                when (val replaced = parsed.apply(listOf(raw))) {
+                    is EngineResult.Failure -> return replaced
+                    is EngineResult.Success -> replaced.value.firstOrNull().orEmpty()
                 }
             } else {
                 val normalized = normalizeLinkExpression(nextRule)
@@ -215,11 +225,16 @@ class CssTocParser {
         fun extract(itemHtml: String, expression: String?): EngineResult<String?> {
             if (expression.isNullOrBlank()) return EngineResult.Success(null)
             if (legacyRegexMode) {
-                return when (val result = LegadoRegexElementEvaluator.evaluateScalar(itemHtml, expression)) {
-                    is EngineResult.Failure -> result
+                val parsed = LegadoRuleReplacement.parse(expression)
+                val raw = when (val result = LegadoRegexElementEvaluator.evaluateScalar(itemHtml, parsed.expression)) {
+                    is EngineResult.Failure -> return result
+                    is EngineResult.Success -> (result.value.getOrNull(1) ?: result.value.firstOrNull())
+                        ?.trim()?.takeIf(String::isNotEmpty)
+                } ?: return EngineResult.Success(null)
+                return when (val replaced = parsed.apply(listOf(raw))) {
+                    is EngineResult.Failure -> replaced
                     is EngineResult.Success -> EngineResult.Success(
-                        (result.value.getOrNull(1) ?: result.value.firstOrNull())
-                            ?.trim()?.takeIf(String::isNotEmpty),
+                        replaced.value.firstOrNull()?.trim()?.takeIf(String::isNotEmpty),
                     )
                 }
             }
@@ -263,9 +278,14 @@ class CssTocParser {
         val nextRule = rules["nextTocUrl"]?.takeIf(String::isNotBlank)
         if (nextRule != null) {
             val values = if (legacyRegexMode) {
-                when (val result = LegadoRegexElementEvaluator.evaluateScalar(response.body, nextRule)) {
+                val parsed = LegadoRuleReplacement.parse(nextRule)
+                val raw = when (val result = LegadoRegexElementEvaluator.evaluateScalar(response.body, parsed.expression)) {
                     is EngineResult.Failure -> return result
-                    is EngineResult.Success -> listOfNotNull(result.value.getOrNull(1) ?: result.value.firstOrNull())
+                    is EngineResult.Success -> result.value.getOrNull(1) ?: result.value.firstOrNull()
+                }
+                if (raw == null) emptyList() else when (val replaced = parsed.apply(listOf(raw))) {
+                    is EngineResult.Failure -> return replaced
+                    is EngineResult.Success -> replaced.value
                 }
             } else {
                 when (val result = LegadoRuleExpressionDispatcher.evaluate(
