@@ -80,3 +80,38 @@ Badcat's existing purification behavior has only been statically mapped from APK
 - No claim that a reconstructed project is the original source.
 - No copying of proprietary server credentials or private keys.
 - No release APK until build and device checks actually pass.
+
+
+## Modern implementation policy (confirmed 2026-11-16)
+
+The original application is a behavioral and visual reference, not an implementation template. The new client should reproduce the required user-visible behavior with clean, modern, maintainable code rather than transplanting an obsolete architecture.
+
+### Preferred Android stack
+
+- Kotlin as the primary application language; use coroutines and `Flow` / `StateFlow` for asynchronous work and observable state.
+- Jetpack Compose for new/rebuilt screens where it improves iteration and testability. Keep the existing custom visual language; do not apply default Material styling when it would alter the reference UI.
+- Use Compose/View interoperability where a gradual migration is safer than rewriting the entire shell at once.
+- ViewModel for screen state and lifecycle-aware collection; keep UI state separate from source/network/parser logic.
+- Room for structured relational data such as books, folders, reading progress and history when migration is justified; DataStore for small settings. Provide explicit migration from existing SharedPreferences data before changing storage.
+- Repository and use-case boundaries for book sources, search, catalogs, chapters, favorites and history. Keep Legado behind a stable engine adapter.
+- Keep WebView only where web rendering or the CSS reader requires it; apply restrictive WebView settings and do not expose native bridges to untrusted source content.
+- Use Gradle version catalogs and pinned dependency versions. Prefer current stable AndroidX releases compatible with the project's compile/target SDK; do not chase alpha/beta versions merely to be “latest”.
+
+### Compatibility rules
+
+1. Preserve original navigation, labels, control placement, gestures and user-visible outcomes. Internal class names and data structures may be redesigned.
+2. Match the reference screenshots and measured dimensions; do not force Material 3 components if they change the appearance. Compose is an implementation tool, not a visual redesign mandate.
+3. Keep engine operations off the main thread; surface loading, empty, error and success states explicitly.
+4. Use stable IDs and transactional migrations for persisted user data. Never discard existing favorites, folders, history, bookmarks or reader preferences during a refactor.
+5. Keep domain logic testable without Android UI; use fixtures and screenshot/UI tests for presentation and navigation.
+6. Replace temporary development screens with finished host screens, not by adding more shortcuts to the launcher.
+7. Avoid unnecessary abstraction and duplicate compatibility layers. Prefer small, cohesive modules with explicit contracts.
+
+### Delivery order
+
+1. Rebuild the main shell and home screen against the reference screenshot.
+2. Rebuild favorites and folder presentation while preserving the existing shelf operations and migrating stored data safely.
+3. Rebuild search home/results and connect the current source engine through view models.
+4. Rebuild book detail and chapter catalog.
+5. Rebuild the reader chrome/settings while retaining CSS profiles and existing reader preferences.
+6. Run screenshot, navigation, persistence and device regression tests before marking each screen complete.
