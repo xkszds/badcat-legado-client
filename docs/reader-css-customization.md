@@ -39,3 +39,6 @@ Enter the selector in the selector field and declarations (without braces) in th
 - The renderer currently styles the normalized chapter text, not the source site's original DOM. It therefore exposes reader-generated paragraph/container selectors rather than every original website element.
 - Complex selectors and arbitrary CSS at-rules are not supported.
 - This feature changes the development reader's content presentation only; it does not alter the original Badcat APK.
+
+
+Imported profiles preserve an explicit enabled flag; if that field is absent, the profile defaults to disabled to avoid unexpectedly activating incomplete backup data.
