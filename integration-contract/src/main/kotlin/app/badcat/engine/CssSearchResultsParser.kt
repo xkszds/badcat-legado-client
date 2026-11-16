@@ -1,7 +1,5 @@
 package app.badcat.engine
 
-import org.jsoup.Jsoup
-
 /**
  * Bounded search result parser for the official Legado SearchRule
  * field names. Each bookList element is evaluated independently so item
@@ -51,18 +49,21 @@ class CssSearchResultsParser {
         val candidates = ArrayList<BookCandidate>()
         try {
             for (itemHtml in items) {
-                val item = Jsoup.parse(itemHtml, response.finalUrl)
-                val name = field(source, rules, "name", item, response) ?: continue
-                val bookUrl = field(source, rules, "bookUrl", item, response)
+                // Collection roots may return either HTML fragments or JSON values.
+                // Keep the selected fragment as a SourceDocument so each field is
+                // evaluated by the same CSS/XPath/JSONPath dispatcher as its root.
+                val itemDocument = SourceDocument(response.finalUrl, itemHtml, response.contentType)
+                val name = field(source, rules, "name", itemDocument) ?: continue
+                val bookUrl = field(source, rules, "bookUrl", itemDocument)
                     ?.takeIf(String::isNotBlank) ?: continue
                 candidates += BookCandidate(
                     sourceId = source.id,
                     name = name,
-                    author = field(source, rules, "author", item, response),
+                    author = field(source, rules, "author", itemDocument),
                     bookUrl = bookUrl,
-                    coverUrl = field(source, rules, "coverUrl", item, response),
-                    latestChapter = field(source, rules, "lastChapter", item, response),
-                    intro = field(source, rules, "intro", item, response),
+                    coverUrl = field(source, rules, "coverUrl", itemDocument),
+                    latestChapter = field(source, rules, "lastChapter", itemDocument),
+                    intro = field(source, rules, "intro", itemDocument),
                 )
             }
         } catch (failure: SearchParseFailure) {
@@ -83,8 +84,7 @@ class CssSearchResultsParser {
         source: BookSource,
         rules: Map<String, String>,
         key: String,
-        item: org.jsoup.nodes.Document,
-        response: SourceHttpResponse,
+        itemDocument: SourceDocument,
     ): String? {
         val expression = rules[key]?.takeIf(String::isNotBlank) ?: return null
         if (expression.contains("@js", ignoreCase = true) || expression.contains("{{")) {
@@ -96,7 +96,7 @@ class CssSearchResultsParser {
             else -> expression
         }
         return when (val result = LegadoRuleExpressionDispatcher.evaluate(
-            SourceDocument(response.finalUrl, item.outerHtml(), response.contentType),
+            itemDocument,
             extractionRule,
         )) {
             is EngineResult.Failure -> throw SearchParseFailure(result)
