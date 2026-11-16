@@ -33,5 +33,7 @@ dependencies {
     implementation(project(":legado-rhino"))
     // The app hosts coroutine-based source catalog operations and background engine calls.
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+    // The Android host supplies a persistent CookieJar to the shared source HTTP client.
+    implementation("com.squareup.okhttp3:okhttp:5.4.0")
     testImplementation("junit:junit:4.13.2")
 }
