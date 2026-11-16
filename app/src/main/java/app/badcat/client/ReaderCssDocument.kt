@@ -88,12 +88,7 @@ internal object ReaderCssDocument {
                     val selector = sanitizeSelector(rule.optString("selector")) ?: continue
                     val declarations = sanitizeDeclarations(rule.optString("css"))
                     if (declarations.isNotEmpty()) {
-                        val scopedSelector = if (selector == ".reader-root" || selector.startsWith(".reader-root ")) {
-                            selector
-                        } else {
-                            ".reader-root $selector"
-                        }
-                        append(scopedSelector).append('{').append(declarations).append("}\n")
+                        append(scopeSelector(selector)).append('{').append(declarations).append("}\n")
                         count++
                     }
                 }
@@ -101,6 +96,15 @@ internal object ReaderCssDocument {
         }
     }.getOrDefault("")
 
+    private fun scopeSelector(selector: String): String {
+        // Do not prefix selectors already targeting the reader root, including
+        // compound class/id/pseudo/attribute selectors.
+        val rootPrefix = ".reader-root"
+        val isRootSelector = selector.startsWith(rootPrefix) &&
+            (selector.length == rootPrefix.length ||
+                selector[rootPrefix.length] in charArrayOf(' ', '.', '#', ':', '[', '>', '+', '~'))
+        return if (isRootSelector) selector else "$rootPrefix $selector"
+    }
     private fun sanitizeSelector(raw: String): String? {
         val value = raw.trim()
         if (value.isEmpty() || value.length > 240) return null
