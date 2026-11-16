@@ -68,6 +68,32 @@ class ReaderCssSelectorScopeTest {
     }
 
     @Test
+    fun keepsAllowedMultilineReaderCssDeclarations() {
+        assertEquals(
+            "font-size:18px;line-height:1.8;color:#555555",
+            ReaderCssDocument.sanitizeDeclarations(
+                "font-size: 18px;\\nline-height: 1.8;\\ncolor: #555555;",
+            ),
+        )
+    }
+
+    @Test
+    fun dropsUnsupportedAndActiveCssDeclarationValues() {
+        assertEquals(
+            "color:#333333",
+            ReaderCssDocument.sanitizeDeclarations(
+                "color: #333333; position: fixed; background-color: url(https://bad.invalid/x); " +
+                    "font-size: expression(alert(1)); line-height: 1.5 !important;",
+            ),
+        )
+    }
+
+    @Test
+    fun rejectsOversizedCssDeclarationBlock() {
+        assertEquals("", ReaderCssDocument.sanitizeDeclarations("color:" + "a".repeat(4001)))
+    }
+
+    @Test
     fun reportsOnlyExactDuplicateSelectors() {
         assertEquals(
             mapOf(".reader-paragraph" to listOf("profile A / body", "profile B / paragraph")),
