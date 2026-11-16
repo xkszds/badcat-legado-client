@@ -112,7 +112,7 @@ internal object ReaderCssDocument {
         var quote: Char? = null
         selector.forEachIndexed { index, char ->
             if (quote != null) {
-                if (char == quote && (index == 0 || selector[index - 1] != '\\\\')) quote = null
+                if (char == quote && (index == 0 || selector[index - 1] != '\\')) quote = null
             } else {
                 when (char) {
                     '\\'', '"' -> quote = char
