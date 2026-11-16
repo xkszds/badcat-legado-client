@@ -51,7 +51,7 @@ class BadcatReadingEngineFactory(
             searchService = SourceSearchService(gateway, scriptRuntime = scriptRuntime),
             exploreService = SourceExploreService(gateway, scriptRuntime = scriptRuntime),
             detailService = SourceBookDetailService(gateway, scriptRuntime = scriptRuntime),
-            tocService = SourceTocService(gateway),
+            tocService = SourceTocService(gateway, scriptRuntime = scriptRuntime),
             contentService = SourceChapterContentService(
                 http = gateway,
                 textReplacement = bookTextReplacement,
