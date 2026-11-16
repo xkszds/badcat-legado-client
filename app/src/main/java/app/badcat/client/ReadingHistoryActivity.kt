@@ -123,7 +123,7 @@ class ReadingHistoryActivity : Activity() {
 
         fun save(context: android.content.Context, sourceId: String, bookUrl: String, bookName: String, chapterUrl: String, chapterTitle: String) {
             if (sourceId.isBlank() || bookUrl.isBlank() || chapterUrl.isBlank()) return
-            val prefs = context.getSharedPreferences(PREFS, MODE_PRIVATE)
+            val prefs = context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
             val old = runCatching { JSONArray(prefs.getString(KEY, "[]").orEmpty()) }.getOrDefault(JSONArray())
             val next = JSONArray()
             for (i in 0 until old.length()) {
