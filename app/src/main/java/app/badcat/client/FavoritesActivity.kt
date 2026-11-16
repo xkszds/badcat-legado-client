@@ -173,7 +173,7 @@ class FavoritesActivity : Activity() {
         val visible = allBooks.filter { it.folderId == selectedFolderId }
         if (visible.isEmpty()) {
             rootContent.addView(TextView(this).apply {
-                text = if (allBooks.isEmpty()) "书架还是空的\n在书籍详情页点击「加入收藏」，小说就会出现在这里。" else "这个文件夹还没有书籍"
+                text = if (allBooks.isEmpty()) "还没有小说\n在书籍详情页点击「加入收藏」，小说就会出现在这里。" else "这个文件夹还没有小说"
                 textSize = 14f; setTextColor(muted); gravity = Gravity.CENTER
                 setPadding(dp(12), dp(38), dp(12), dp(38))
             })
