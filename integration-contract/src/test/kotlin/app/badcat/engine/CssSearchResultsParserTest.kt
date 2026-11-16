@@ -202,7 +202,7 @@ class CssSearchResultsParserTest {
         val source = BookSource(
             id = "fixture", name = "Fixture", baseUrl = "https://reader.example/",
             ruleSearchJson = """{
-                "bookList":":(?s)<div.*?book.*?>.*?</div>",
+                "bookList":"@regex:(?s)<div.*?book.*?>.*?</div>",
                 "name":"h3@text",
                 "bookUrl":"a@href"
             }""",
