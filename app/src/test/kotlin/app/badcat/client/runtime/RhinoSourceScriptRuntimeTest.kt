@@ -8,7 +8,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import kotlin.test.assertIs
 import org.junit.Test
 
 class RhinoSourceScriptRuntimeTest {
@@ -266,12 +265,18 @@ class RhinoSourceScriptRuntimeTest {
             baseUrl = "https://variables-two.example/",
         )
 
-        assertIs<EngineResult.Success<Unit>>(runtime.putString(first, "session", "one"))
-        assertEquals("one", assertIs<EngineResult.Success<String?>>(runtime.getString(first, "session")).value)
-        assertEquals(null, assertIs<EngineResult.Success<String?>>(runtime.getString(second, "session")).value)
+        assertTrue(runtime.putString(first, "session", "one") is EngineResult.Success)
+        val firstValue = runtime.getString(first, "session")
+        val secondValue = runtime.getString(second, "session")
+        assertTrue(firstValue is EngineResult.Success)
+        assertTrue(secondValue is EngineResult.Success)
+        assertEquals("one", (firstValue as EngineResult.Success<String?>).value)
+        assertEquals(null, (secondValue as EngineResult.Success<String?>).value)
 
         runtime.clearSourceState(first.id)
-        assertEquals(null, assertIs<EngineResult.Success<String?>>(runtime.getString(first, "session")).value)
+        val clearedValue = runtime.getString(first, "session")
+        assertTrue(clearedValue is EngineResult.Success)
+        assertEquals(null, (clearedValue as EngineResult.Success<String?>).value)
     }
 
 }
