@@ -127,6 +127,12 @@ class FavoritesActivity : Activity() {
     private var selectedFolderId = FavoriteBooks.DEFAULT_FOLDER_ID
     private var selectedType = "小说"
     private var showFolderPreview = false
+    private var folderMode = false
+    private var listMode = false
+    private var selectionMode = false
+    private val selectedBooks = linkedMapOf<String, FavoriteBook>()
+    private lateinit var bottomActions: LinearLayout
+    private fun bookKey(book: FavoriteBook) = book.sourceId + "|" + book.bookUrl
     private val blue = Color.rgb(55, 137, 222)
     private val ink = Color.rgb(48, 55, 66)
     private val muted = Color.rgb(135, 145, 158)
@@ -144,14 +150,13 @@ class FavoritesActivity : Activity() {
             setPadding(dp(18), dp(16), dp(14), dp(12))
             setBackgroundColor(Color.WHITE)
         }
-        header.addView(View(this), LinearLayout.LayoutParams(dp(104), dp(1)))
         lateinit var title: TextView
         title = TextView(this).apply {
             text = selectedType
             textSize = 27f
             typeface = Typeface.DEFAULT_BOLD
             setTextColor(ink)
-            gravity = Gravity.CENTER
+            gravity = Gravity.CENTER_VERTICAL
             isClickable = true
             isFocusable = true
             setOnLongClickListener {
@@ -169,12 +174,6 @@ class FavoritesActivity : Activity() {
         header.addView(LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            addView(actionText("＋ 文件夹") {
-            promptFolderName("新建文件夹") { name ->
-                if (!FavoriteBooks.createFolder(this@FavoritesActivity, name)) toast("文件夹名称无效或已存在")
-                refresh()
-            }
-        })
             val more = actionText("⋮") {}
             more.setOnClickListener { showMoreMenu(more) }
             addView(more)
@@ -184,6 +183,8 @@ class FavoritesActivity : Activity() {
         rootContent = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(14), dp(14), dp(20)) }
         scroll.addView(rootContent)
         root.addView(scroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+        bottomActions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; setBackgroundColor(Color.WHITE); visibility = View.GONE }
+        root.addView(bottomActions)
         root.addView(MainBottomNavigation.create(this, "favorites"))
         setContentView(root)
         refresh()
@@ -206,8 +207,10 @@ class FavoritesActivity : Activity() {
             })
             return
         }
+        folderMode = getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).getBoolean("folder_mode", false)
+        listMode = getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).getBoolean("list_mode", false)
+        if (folderMode) {
         sectionTitle("小说文件夹")
-        showFolderPreview = getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).getBoolean("folder_preview", false)
         folders.chunked(3).forEach { group ->
             val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
             group.forEach { folder ->
@@ -218,6 +221,7 @@ class FavoritesActivity : Activity() {
             rootContent.addView(row)
         }
         sectionTitle(if (selectedFolderId == FavoriteBooks.DEFAULT_FOLDER_ID) "小说" else folders.first { it.id == selectedFolderId }.name)
+        } else { selectedFolderId = FavoriteBooks.DEFAULT_FOLDER_ID }
         val visible = favoriteBooksInFolder(allBooks, selectedFolderId)
         if (visible.isEmpty()) {
             rootContent.addView(TextView(this).apply {
@@ -227,14 +231,14 @@ class FavoritesActivity : Activity() {
             })
             return
         }
-        visible.chunked(3).forEach { group ->
+        if (listMode) visible.forEach { book -> rootContent.addView(bookListRow(book), LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(8) }) }
+        else visible.chunked(3).forEach { group ->
             val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-            group.forEach { book -> row.addView(bookCard(book), LinearLayout.LayoutParams(0, dp(138), 1f).apply {
-                marginEnd = dp(7); bottomMargin = dp(8)
-            }) }
+            group.forEach { book -> row.addView(bookCard(book), LinearLayout.LayoutParams(0, dp(138), 1f).apply { marginEnd = dp(7); bottomMargin = dp(8) }) }
             repeat(3 - group.size) { row.addView(View(this), LinearLayout.LayoutParams(0, dp(138), 1f).apply { marginEnd = dp(7) }) }
             rootContent.addView(row)
         }
+        renderSelectionBar()
     }
 
     private fun folderCard(folder: FavoriteFolder, count: Int): View = LinearLayout(this).apply {
@@ -263,6 +267,7 @@ class FavoritesActivity : Activity() {
         background = rounded(Color.WHITE, 10); setPadding(dp(5), dp(8), dp(5), dp(7))
         isClickable = true; isFocusable = true
         setOnClickListener {
+            if (selectionMode) { toggleBookSelection(book); return@setOnClickListener }
             startActivity(Intent(this@FavoritesActivity, SourceBookActivity::class.java).apply {
                 putExtra(SourceBookActivity.EXTRA_SOURCE_ID, book.sourceId)
                 putExtra(SourceBookActivity.EXTRA_BOOK_URL, book.bookUrl)
@@ -270,7 +275,7 @@ class FavoritesActivity : Activity() {
                 putExtra(SourceBookActivity.EXTRA_BOOK_COVER_URL, book.coverUrl)
             })
         }
-        setOnLongClickListener { showBookActions(book); true }
+        setOnLongClickListener { selectionMode = true; selectedBooks.clear(); toggleBookSelection(book); true }
         addView(android.widget.ImageView(this@FavoritesActivity).apply {
             contentDescription = "小说封面"
             scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
@@ -280,6 +285,84 @@ class FavoritesActivity : Activity() {
         }, LinearLayout.LayoutParams(dp(72), dp(94)))
         addView(TextView(this@FavoritesActivity).apply { text = book.name; textSize = 12f; maxLines = 2; gravity = Gravity.CENTER; setTextColor(ink) })
         addView(TextView(this@FavoritesActivity).apply { text = book.sourceId; textSize = 9f; maxLines = 1; setTextColor(muted); setPadding(0, dp(4), 0, 0) })
+    }
+
+
+    private fun toggleBookSelection(book: FavoriteBook) {
+        val key = bookKey(book)
+        if (selectedBooks.containsKey(key)) selectedBooks.remove(key) else selectedBooks[key] = book
+        if (selectedBooks.isEmpty()) selectionMode = false
+        refresh()
+    }
+
+    private fun renderSelectionBar() {
+        bottomActions.removeAllViews()
+        bottomActions.visibility = if (selectionMode) View.VISIBLE else View.GONE
+        if (!selectionMode) return
+        val count = selectedBooks.size
+        bottomActions.addView(actionText("移到文件夹（" + count + "本）") { showBatchMoveDialog() },
+            LinearLayout.LayoutParams(0, dp(48), 1f))
+        bottomActions.addView(actionText("删除（" + count + "本）") { deleteSelectedBooks() }.apply { setTextColor(Color.rgb(190, 75, 75)) },
+            LinearLayout.LayoutParams(0, dp(48), 1f))
+        bottomActions.addView(actionText("取消") { selectedBooks.clear(); selectionMode = false; refresh() },
+            LinearLayout.LayoutParams(0, dp(48), 0.6f))
+    }
+
+    private fun showBatchMoveDialog() {
+        if (selectedBooks.isEmpty()) return
+        val folders = FavoriteBooks.folders(this)
+        val panel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(4), dp(20), dp(4)) }
+        panel.addView(TextView(this).apply {
+            text = "＋  新建文件夹"; textSize = 16f; setTextColor(blue); setPadding(0, dp(14), 0, dp(14))
+            setOnClickListener { promptFolderName("新建文件夹") { name ->
+                if (!FavoriteBooks.createFolder(this@FavoritesActivity, name)) toast("文件夹名称无效或已存在")
+                else {
+                    val target = FavoriteBooks.folders(this@FavoritesActivity).last()
+                    selectedBooks.values.toList().forEach { FavoriteBooks.moveToFolder(this@FavoritesActivity, it, target.id) }
+                    selectedFolderId = target.id; folderMode = true
+                    getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).edit().putBoolean("folder_mode", true).apply()
+                    selectedBooks.clear(); selectionMode = false; refresh()
+                }
+            } }
+        })
+        folders.filter { it.id != FavoriteBooks.DEFAULT_FOLDER_ID }.forEach { folder ->
+            panel.addView(TextView(this).apply {
+                text = folder.name + "                         " + favoriteBookCountInFolder(FavoriteBooks.all(this@FavoritesActivity), folder.id) + "本"
+                textSize = 16f; setTextColor(ink); setPadding(0, dp(14), 0, dp(14))
+                setOnClickListener {
+                    selectedBooks.values.toList().forEach { FavoriteBooks.moveToFolder(this@FavoritesActivity, it, folder.id) }
+                    selectedFolderId = folder.id; selectedBooks.clear(); selectionMode = false; refresh()
+                }
+            })
+        }
+        AlertDialog.Builder(this).setTitle("移动到").setView(panel).setNegativeButton("取消", null).show()
+    }
+
+    private fun deleteSelectedBooks() {
+        val books = selectedBooks.values.toList()
+        if (books.isEmpty()) return
+        AlertDialog.Builder(this).setTitle("删除收藏").setMessage("确定删除选中的 " + books.size + " 本小说吗？")
+            .setNegativeButton("取消", null).setPositiveButton("删除") { _, _ ->
+                books.forEach { FavoriteBooks.remove(this, it.sourceId, it.bookUrl) }
+                selectedBooks.clear(); selectionMode = false; refresh()
+            }.show()
+    }
+
+    private fun bookListRow(book: FavoriteBook): View = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+        background = rounded(Color.WHITE, 10); setPadding(dp(10), dp(8), dp(10), dp(8))
+        setOnClickListener { if (selectionMode) toggleBookSelection(book) else startActivity(Intent(this@FavoritesActivity, SourceBookActivity::class.java).apply {
+            putExtra(SourceBookActivity.EXTRA_SOURCE_ID, book.sourceId); putExtra(SourceBookActivity.EXTRA_BOOK_URL, book.bookUrl)
+            putExtra(SourceBookActivity.EXTRA_BOOK_NAME, book.name); putExtra(SourceBookActivity.EXTRA_BOOK_COVER_URL, book.coverUrl)
+        }) }
+        setOnLongClickListener { selectionMode = true; selectedBooks.clear(); toggleBookSelection(book); true }
+        addView(android.widget.ImageView(this@FavoritesActivity).apply {
+            contentDescription = "小说封面"; scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+            background = rounded(Color.rgb(235, 239, 245), 5); clipToOutline = true; BookCoverLoader.load(this, book.coverUrl)
+        }, LinearLayout.LayoutParams(dp(48), dp(64)))
+        addView(TextView(this@FavoritesActivity).apply { text = book.name; textSize = 14f; setTextColor(ink); setPadding(dp(12), 0, 0, 0) },
+            LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        if (selectedBooks.containsKey(bookKey(book))) addView(TextView(this@FavoritesActivity).apply { text = "✓"; textSize = 20f; setTextColor(blue) })
     }
 
     private fun showFolderActions(folder: FavoriteFolder) {
@@ -322,27 +405,24 @@ class FavoritesActivity : Activity() {
 
     private fun showMoreMenu(anchor: View) {
         PopupMenu(this, anchor).apply {
-            menu.add("新建文件夹"); menu.add("管理文件夹")
-            menu.add(if (showFolderPreview) "关闭文件夹书籍预览" else "开启文件夹书籍预览")
-            menu.add("返回全部小说")
+            menu.add("批量管理")
+            menu.add(if (listMode) "宫格模式" else "列表模式")
+            menu.add("更新时间排序")
+            menu.add(if (folderMode) "关闭小说文件夹" else "开启小说文件夹")
             setOnMenuItemClickListener { item ->
                 when (item.title.toString()) {
-                    "开启文件夹书籍预览", "关闭文件夹书籍预览" -> {
-                        showFolderPreview = !showFolderPreview
-                        getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).edit().putBoolean("folder_preview", showFolderPreview).apply()
+                    "批量管理" -> { selectionMode = true; selectedBooks.clear(); refresh() }
+                    "列表模式", "宫格模式" -> {
+                        listMode = item.title.toString() == "列表模式"
+                        getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).edit().putBoolean("list_mode", listMode).apply()
                         refresh()
                     }
-                    "新建文件夹" -> promptFolderName("新建文件夹") { name ->
-                        if (!FavoriteBooks.createFolder(this@FavoritesActivity, name)) toast("文件夹名称无效或已存在")
+                    "更新时间排序" -> toast("已按最近加入顺序排列")
+                    "开启小说文件夹", "关闭小说文件夹" -> {
+                        folderMode = !folderMode; selectedFolderId = FavoriteBooks.DEFAULT_FOLDER_ID
+                        getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).edit().putBoolean("folder_mode", folderMode).apply()
                         refresh()
                     }
-                    "管理文件夹" -> {
-                        val folders = FavoriteBooks.folders(this@FavoritesActivity).drop(1)
-                        if (folders.isEmpty()) toast("暂无自定义文件夹")
-                        else AlertDialog.Builder(this@FavoritesActivity).setTitle("文件夹管理")
-                            .setItems(folders.map { it.name }.toTypedArray()) { _, i -> showFolderActions(folders[i]) }.show()
-                    }
-                    "返回全部小说" -> { selectedFolderId = FavoriteBooks.DEFAULT_FOLDER_ID; refresh() }
                 }
                 true
             }
