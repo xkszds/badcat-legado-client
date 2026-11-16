@@ -114,13 +114,13 @@ internal object ReaderCssDocument {
             if (quote != null) {
                 if (char == quote && (index == 0 || selector[index - 1] != '\\')) quote = null
             } else {
-                when (char) {
-                    '\\'', '"' -> quote = char
-                    '(' -> parentheses++
-                    ')' -> parentheses--
-                    '[' -> brackets++
-                    ']' -> brackets--
-                    ',' -> if (parentheses == 0 && brackets == 0) {
+                when {
+                    char.code == 39 || char == '"' -> quote = char
+                    char == '(' -> parentheses++
+                    char == ')' -> parentheses--
+                    char == '[' -> brackets++
+                    char == ']' -> brackets--
+                    char == ',' && parentheses == 0 && brackets == 0 -> {
                         groups += selector.substring(start, index)
                         start = index + 1
                     }
