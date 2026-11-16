@@ -58,28 +58,40 @@ class RhinoSourceScriptRuntime(
                 if (previousJsLibHash != null && previousJsLibHash != jsLibHash) {
                     // A source may be edited in place. Reset its old global scope so
                     // top-level let/const declarations from the previous library do not collide.
+                    sourceScopes.remove(source.id)
                     sourceGlobals.remove(source.id)
                     ScriptBindings.removeSharedGlobalStates(GLOBAL_KEY_PREFIX + source.id)
                     sourceJsLibHashes.remove(source.id)
                 }
 
-                val scope = ScriptBindings()
-                bindings.forEach { (name, value) -> scope[name] = value }
-                scope.chainTo(
-                    RhinoScriptEngine.newStandardTopLevel(),
-                    sourceGlobals.computeIfAbsent(source.id) {
-                        ScriptBindings.getSharedGlobalStateHandle(GLOBAL_KEY_PREFIX + it)
-                    },
-                )
-                val result = withTimeout(timeoutMillis) {
-                    // jsLib declarations are installed once per source/library version.
-                    // Re-evaluating top-level let/const declarations on every request
-                    // would cause duplicate lexical declaration errors.
-                    if (jsLibHash != null && sourceJsLibHashes[source.id] == null) {
-                        RhinoScriptEngine.evalSuspend(jsLib, scope)
-                        sourceJsLibHashes[source.id] = jsLibHash
+                // Keep one VarScope per source. A shared globalThis alone is not
+                // sufficient: Rhino stores top-level let/const declarations in the
+                // lexical environment attached to the VarScope, not on its prototype.
+                val scope = sourceScopes.computeIfAbsent(source.id) {
+                    ScriptBindings().apply {
+                        chainTo(
+                            RhinoScriptEngine.newStandardTopLevel(),
+                            sourceGlobals.computeIfAbsent(source.id) {
+                                ScriptBindings.getSharedGlobalStateHandle(GLOBAL_KEY_PREFIX + it)
+                            },
+                        )
                     }
-                    RhinoScriptEngine.evalSuspend(script, scope)
+                }
+                bindings.forEach { (name, value) -> scope[name] = value }
+                val result = try {
+                    withTimeout(timeoutMillis) {
+                        // jsLib declarations are installed once per source/library version.
+                        // Re-evaluating top-level let/const declarations on every request
+                        // would cause duplicate lexical declaration errors.
+                        if (jsLibHash != null && sourceJsLibHashes[source.id] == null) {
+                            RhinoScriptEngine.evalSuspend(jsLib, scope)
+                            sourceJsLibHashes[source.id] = jsLibHash
+                        }
+                        RhinoScriptEngine.evalSuspend(script, scope)
+                    }
+                } finally {
+                    // Request bindings must not leak into the persistent source scope.
+                    bindings.keys.forEach(scope::delete)
                 }
                 when (result) {
                     null -> EngineResult.Success("")
@@ -124,6 +136,7 @@ class RhinoSourceScriptRuntime(
     suspend fun clearSourceState(sourceId: String) {
         if (sourceId.isBlank()) return
         sourceLocks.computeIfAbsent(sourceId) { Mutex() }.withLock {
+            sourceScopes.remove(sourceId)
             sourceGlobals.remove(sourceId)
             sourceJsLibHashes.remove(sourceId)
             ScriptBindings.removeSharedGlobalStates(GLOBAL_KEY_PREFIX + sourceId)
@@ -140,6 +153,7 @@ class RhinoSourceScriptRuntime(
         const val MAX_TOTAL_SCRIPT_CHARS = 256 * 1024
         const val GLOBAL_KEY_PREFIX = "badcat-source:"
         val BINDING_NAME = Regex("[A-Za-z_$][A-Za-z0-9_$]{0,63}")
+        val sourceScopes = ConcurrentHashMap<String, ScriptBindings>()
         val sourceGlobals = ConcurrentHashMap<String, com.script.SharedGlobalStateHandle>()
         val sourceLocks = ConcurrentHashMap<String, Mutex>()
         val sourceJsLibHashes = ConcurrentHashMap<String, String>()
