@@ -16,6 +16,8 @@ class MyActivity : Activity() {
     private val muted = Color.rgb(145, 151, 160)
     private val blue = Color.rgb(55, 137, 222)
     private val page = Color.rgb(247, 248, 250)
+    private var versionTapCount = 0
+    private var sourceEntryRevealed = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,7 +49,7 @@ class MyActivity : Activity() {
                 setOnClickListener { editNickname(this) }
                 contentDescription = "点击修改昵称"
             })
-            addView(label("收藏了 ${FavoriteBooks.all(this@MyActivity).size} 本小说", 12f, muted).apply { setPadding(0, dp(9), 0, 0) })
+            addView(label("阅读时长：" + formatReadingTime() + "    获得的收藏数：" + FavoriteBooks.all(this@MyActivity).size, 12f, muted).apply { setPadding(0, dp(9), 0, 0) })
         }, LinearLayout.LayoutParams(0, -2, 1f))
         profile.addView(identity)
         root.addView(profile)
@@ -62,13 +64,17 @@ class MyActivity : Activity() {
         tools.addView(label("常用功能", 18f, ink, true).apply { setPadding(0, 0, 0, dp(12)) })
         // Only show destinations that have a real implementation.
         val entries = listOf(
+            "我的消息" to "messages",
             "历史记录" to "history",
             "书签管理" to "bookmarks",
+            "下载管理" to "downloads",
+            "意见反馈" to "feedback",
+            "同步收藏夹" to "sync",
             "分享坏坏猫" to "share",
-            "书源管理" to "sources",
             "正文替换规则" to "replace"
         )
-        entries.chunked(4).forEach { group ->
+        val visibleEntries = if (sourceEntryRevealed) entries + ("书源管理" to "sources") else entries
+        visibleEntries.chunked(4).forEach { group ->
             val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
             group.forEach { (title, key) ->
                 val cell = LinearLayout(this).apply {
@@ -79,7 +85,8 @@ class MyActivity : Activity() {
                     isFocusable = true
                     addView(label(when (key) {
                         "history" -> "◷"; "bookmarks" -> "◇"; "sources" -> "▤"
-                        "replace" -> "≋"; else -> "↗"
+                        "downloads" -> "↓"; "messages" -> "…"; "feedback" -> "▤"
+                        "sync" -> "☁"; "replace" -> "≋"; else -> "↗"
                     }, 25f, blue))
                     addView(label(title, 12f, ink).apply { setPadding(0, dp(5), 0, 0) })
                     setOnClickListener { openTool(key) }
