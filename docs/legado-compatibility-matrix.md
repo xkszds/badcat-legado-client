@@ -11,14 +11,14 @@ and must not be treated as full BookSource/AnalyzeRule compatibility.
 | BookSource JSON | Partial | Single object or array import; strict UTF-8; 5 MiB, 2,000-source, 64-level nesting and 512-field-per-source limits; known metadata/rule type checks; duplicate URL rejection; unknown-field-preserving export and enabled edits | Validate remaining upstream fields against a real-world source corpus; source runtime is still partial |
 | Source management | Partial | Imported sources can be stored, enabled/disabled, selected, searched, explored and exported | Verify bulk import/export and persistence on device; improve source diagnostics |
 | Search URL | Partial | Absolute/relative HTTP(S), page tokens, URL options for method/headers/body/timeout/retry/redirects/charset; bounded query encoding; pure @js and <js> URL expressions with string-only key/page/result bindings | Full Legado java/http/cookie/cache/WebView objects, webView, dnsIp, resolveIp, type, URL-option js/bodyJs and login/session state are not supported |
-| HTTP transport | Partial | Async OkHttp, redirects with HTTPS downgrade prevention, per-source cookie jar, headers, common methods, response size cap, charset, retry | Legado DNS overrides, WebView requests, advanced request body and cookie semantics need coverage |
+| HTTP transport | Partial | Async OkHttp, redirects with HTTPS downgrade prevention, per-source cookie jar, durable app-private cookie persistence, headers, common methods, response size cap, charset, retry | Legado DNS overrides, WebView requests, advanced request body and cookie semantics need coverage; cookie/login flows still require real-source validation |
 | Explore | Partial | Dedicated `exploreUrl` transport, separate `enabledExplore` gate and `ruleExplore.bookList` parsing through the same bounded search-card parser; exposed as `ReadingEngine.explore` | Explore filters, category discovery UI, script-driven exploration and real-source fixtures remain outstanding |
 | Search result fields | Partial | CSS or bounded regex collection for bookList; CSS/XPath/JSONPath and bounded regex scalar extraction; relative book/cover URL resolution | Regex and collection limits apply; JS, filters, interpolation and direct-detail detection are not supported |
 | Book detail | Partial | Name/author/intro/cover/latest chapter/TOC URL; CSS/XPath/JSONPath and bounded regex scalar extraction | JS, replacement chains, variables and source-specific init scripts are not supported |
 | TOC | Partial | CSS or bounded regex chapter collection; CSS/XPath/JSONPath and bounded regex scalar title, chapter URL and next-page link extraction; multi-page pagination and cycle guards | Regex budgets apply; volume grouping, VIP/pay and script formatting are not implemented |
 | Chapter content | Partial | CSS/XPath/JSONPath content extraction; CSS/XPath/JSONPath and bounded regex title/next-page URL; HTML-to-readable-text conversion; pagination and replacement hook | Regex chapter-body transforms, JS/webJs/callBackJs, sourceRegex, replaceRegex, payAction, imageDecode and contentBatch are not implemented |
 | Selector expressions | Partial | Explicit @css:, @xpath:, @jsonpath: / @json:; unprefixed CSS default; unambiguous XPath and JSONPath inference | Complete upstream expression grammar, selector filters and mixed parser chains are not implemented |
-| JavaScript | Partial | Pinned Rhino sandbox for bounded string-only script evaluation; URL @js/<js> supports key/page/result strings; replacement helper | Full Legado Java/http/cookie/cache/WebView bindings, source mainJs/jsLib and stage-specific AnalyzeRule execution are not integrated |
+| JavaScript | Partial | Pinned Rhino sandbox for bounded string-only script evaluation; URL @js/<js> supports key/page/result strings; replacement helper; execution timeout maps to RULE_TIMEOUT | Full Legado Java/http/cookie/cache/WebView bindings, source mainJs/jsLib and stage-specific AnalyzeRule execution are not integrated |
 | Regex | Partial | Bounded regex replacement; staged collection roots for search/TOC; scalar capture-group extraction for search, detail, TOC and chapter title/next-page fields | Full upstream regex filter suffixes and every AnalyzeRule combination are not implemented |
 | Replace rules | Partial | Scope, include/exclude matching, order, literal/regex replacement, optional JS evaluator hook | Not equivalent to all upstream Legado replace-rule and source-specific replacement behavior |
 | Reader CSS profiles | Implemented | Multiple named profiles, notes, child selector rules, import/export, preview, sanitization and limits | Requires device UI/reader regression testing |
@@ -61,4 +61,16 @@ modes remain outside this increment.
 - The scalar path shares the regex input, pattern, stage, match, output and deadline limits with collection extraction.
 - Book-info scalar fields can now use bounded regex in addition to CSS, XPath and JSONPath.
 - This does not implement every upstream regex/filter suffix or JavaScript transformation.
-\n\n### Search source enablement guard (2026-11-16)\n\n- Search service now rejects disabled sources before calling the HTTP gateway.\n- A dedicated contract test verifies the disabled path makes zero transport requests and the enabled path still parses results and resolves relative book URLs.\n
+
+
+### Search source enablement guard (2026-11-16)
+
+- Search service rejects disabled sources before calling the HTTP gateway.
+- A dedicated contract test verifies the disabled path makes zero transport requests and the enabled path still parses results and resolves relative book URLs.
+
+### Durable per-source cookie persistence (2026-11-16)
+
+- Android's default OkHttp source client now uses an app-private SharedPreferences cookie jar keyed by the source ID.
+- Cookie name/value, domain, path, expiry, host-only, secure and HttpOnly attributes are restored across process restarts; source jars remain isolated.
+- Android backup is disabled for the app, so the cookie preference file is not included in app backup.
+- This does not implement Legado login UI, loginCheckJs, JavaScript cookie APIs, WebView cookies or full upstream cookie semantics. Validate against representative authenticated sources on-device.
