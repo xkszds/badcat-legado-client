@@ -3,6 +3,7 @@ package app.badcat.client
 import android.app.Activity
 import android.os.Bundle
 import android.view.ViewGroup
+import android.text.InputType
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -241,9 +242,13 @@ class ReaderCssActivity : Activity() {
             setText(old?.selector.orEmpty())
         }
         val css = EditText(this).apply {
-            hint = "CSS 声明，例如 font-size: 18px; line-height: 1.8;"
+            hint = "CSS 声明，例如：\\nfont-size: 18px;\\nline-height: 1.8;\\ncolor: #555555;"
             setText(old?.css.orEmpty())
-            minLines = 3
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE or
+                InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            setSingleLine(false)
+            minLines = 5
+            maxLines = 10
             gravity = android.view.Gravity.TOP
         }
         val presetButton = Button(this).apply {
