@@ -170,7 +170,7 @@ class CssBookInfoParserTest {
             CssBookInfoParser().parse(source, response, response.finalUrl),
         ).value
         assertEquals("Regex Novel", detail.name)
-        assertEquals("Regex Writer", detail.author)
+        assertEquals("Regex Writer", detail.author, "Regex author extraction returned: ${detail.author}")
     }
 
 
