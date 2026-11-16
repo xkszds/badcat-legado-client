@@ -68,6 +68,47 @@ class ReaderCssSelectorScopeTest {
     }
 
     @Test
+    fun reportsOnlyExactDuplicateSelectors() {
+        assertEquals(
+            mapOf(".reader-paragraph" to listOf("profile A / body", "profile B / paragraph")),
+            ReaderCssDocument.duplicateSelectorGroups(
+                listOf(
+                    ".reader-paragraph" to "profile A / body",
+                    ".reader-content" to "profile A / content",
+                    ".reader-paragraph" to "profile B / paragraph",
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun ignoresInvalidSelectorsWhenCheckingDuplicates() {
+        assertEquals(
+            emptyMap<String, List<String>>(),
+            ReaderCssDocument.duplicateSelectorGroups(
+                listOf(
+                    ".reader-paragraph" to "valid",
+                    ".reader-paragraph)" to "invalid",
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun preservesAllOwnersForThreeWayDuplicateSelector() {
+        assertEquals(
+            listOf("first", "second", "third"),
+            ReaderCssDocument.duplicateSelectorGroups(
+                listOf(
+                    ".reader-content" to "first",
+                    ".reader-content" to "second",
+                    ".reader-content" to "third",
+                ),
+            )[".reader-content"],
+        )
+    }
+
+    @Test
     fun keepsCommaInsideQuotedAttributeValueValid() {
         assertEquals(
             "[data-label='first,second']",
