@@ -6,8 +6,8 @@ import org.jsoup.nodes.Element
 /**
  * A bounded Legado CSS selector evaluator.
  *
- * Supports a CSS selector followed by @text, @ownText, @html, @href, @src, @tag or @attr(name),
- * plus the top-level &&, || and %% list-combination operators. It does not
+ * Supports @CSS: rules and CSS selectors followed by @text, @textNodes, @ownText, @html, @all,
+ * direct attribute suffixes, @href, @src, @tag or @attr(name), plus top-level &&, || and %% operators. It does not
  * implement the full RuleAnalyzer grammar, chained selectors, XPath, JSONPath,
  * regex suffixes or JavaScript.
  */
@@ -17,7 +17,10 @@ object CssRuleEvaluator {
         document: SourceDocument,
         expression: String,
     ): EngineResult<List<String>> {
-        val rule = expression.trim()
+        val rawRule = expression.trim()
+        val rule = if (rawRule.startsWith("@CSS:", ignoreCase = true)) {
+            rawRule.substring(5).trim()
+        } else rawRule
         if (rule.isEmpty()) {
             return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "CSS rule is blank")
         }
@@ -72,7 +75,15 @@ object CssRuleEvaluator {
             val elements = doc.select(parsed.selector)
             val values = when (parsed.valueMode) {
                 ValueMode.ALL -> listOf(elements.outerHtml()).filter(String::isNotEmpty)
+                ValueMode.HTML -> {
+                    elements.select("script, style").remove()
+                    listOf(elements.outerHtml()).filter(String::isNotEmpty)
+                }
+                ValueMode.ATTRIBUTE -> elements.map { it.attr(parsed.attribute.orEmpty()) }
+                    .filter(String::isNotBlank)
+                    .distinct()
                 else -> elements.map { extract(it, parsed.valueMode, parsed.attribute) }
+                    .filter(String::isNotEmpty)
             }
             EngineResult.Success(values)
         }.getOrElse {
