@@ -233,4 +233,27 @@ class CssTocParserTest {
         assertEquals(listOf("https://reader.example/chapter/1"), page.chapters.map { it.url })
     }
 
+
+    @Test
+    fun extractsRegexCaptureGroupForChapterTitles() {
+        val source = BookSource(
+            id = "fixture", name = "Fixture", baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"ul.chapters li",
+                "chapterName":"@regex:<a[^>]*>(.*?)</a>",
+                "chapterUrl":"a@href"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200, "https://reader.example/catalog",
+            body = """<ul class="chapters"><li><a href="/chapter/1">Regex Chapter</a></li></ul>""",
+        )
+
+        val page = assertIs<EngineResult.Success<ParsedTocPage>>(
+            CssTocParser().parse(source, response, "https://reader.example/book"),
+        ).value
+
+        assertEquals(listOf("Regex Chapter"), page.chapters.map { it.title })
+    }
+
 }
