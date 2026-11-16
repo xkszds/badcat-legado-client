@@ -140,3 +140,11 @@ The personal center currently shows only implemented routes: reading history, bo
 - New bookmarks record a save timestamp; the manager sorts newest first and removes timestamp metadata when a bookmark is deleted.
 - Existing bookmarks without timestamps remain visible and sort after timestamped entries; existing book/title fallbacks remain intact.
 - The saved scroll offset continues to be restored after the chapter document finishes loading. This is code-path verification only; WebView scroll restoration still requires physical-device testing with long chapters and different display settings.
+
+
+## 2026-11-16 follow-up: reader navigation shell
+
+- Replaced the development reader's always-visible multi-row button cluster with a compact top bar (back, chapter title, tools menu), chapter status, WebView reading area, and bottom previous/progress/next navigation.
+- Chapter progress seeks through the loaded table of contents. The tools menu retains font size, line spacing, background, CSS profiles, chapter catalog, save bookmark, and jump-to-bookmark actions.
+- Existing source-engine loading, reading history, per-chapter scroll persistence, and bookmark position restoration remain in the reader activity.
+- This is a structural first pass, not a pixel-perfect reproduction of the original reader; no device rendering or touch-accuracy validation has been performed yet.
