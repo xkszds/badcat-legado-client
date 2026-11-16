@@ -134,7 +134,7 @@ class CssRuleEvaluatorTest {
     }
 
     @Test
-    fun rejectsMixedNestedCombinationOperatorsInsteadOfTreatingThemAsCss() {
+    fun evaluatesMixedNestedCombinationOperatorsRecursively() {
         val leftNested = CssRuleEvaluator.evaluate(
             document,
             "a.title@text && p.intro@text || a.missing@text",
@@ -144,8 +144,14 @@ class CssRuleEvaluatorTest {
             "a.missing@text || p.intro@text && a.title@text",
         )
 
-        assertIs<EngineResult.Failure>(leftNested)
-        assertIs<EngineResult.Failure>(rightNested)
+        assertEquals(
+            listOf("Alpha Novel", "Beta Novel", "First intro", "Second intro"),
+            assertIs<EngineResult.Success<List<String>>>(leftNested).value,
+        )
+        assertEquals(
+            listOf("First intro", "Second intro", "Alpha Novel", "Beta Novel"),
+            assertIs<EngineResult.Success<List<String>>>(rightNested).value,
+        )
     }
 
     @Test
