@@ -115,12 +115,19 @@ class RhinoSourceScriptRuntime(
         }
     }
 
-    /** Drop source-level globals after a source is replaced or removed. */
-    fun clearSourceState(sourceId: String) {
+    /**
+     * Drop source-level globals after a source is replaced or removed.
+     *
+     * This uses the same per-source mutex as evaluate(), so a source cannot
+     * recreate or mutate its global scope while that scope is being cleared.
+     */
+    suspend fun clearSourceState(sourceId: String) {
         if (sourceId.isBlank()) return
-        sourceGlobals.remove(sourceId)
-        sourceJsLibHashes.remove(sourceId)
-        ScriptBindings.removeSharedGlobalStates(GLOBAL_KEY_PREFIX + sourceId)
+        sourceLocks.computeIfAbsent(sourceId) { Mutex() }.withLock {
+            sourceGlobals.remove(sourceId)
+            sourceJsLibHashes.remove(sourceId)
+            ScriptBindings.removeSharedGlobalStates(GLOBAL_KEY_PREFIX + sourceId)
+        }
     }
 
     private companion object {
