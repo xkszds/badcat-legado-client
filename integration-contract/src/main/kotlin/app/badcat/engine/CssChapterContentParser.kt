@@ -33,8 +33,8 @@ class CssChapterContentParser {
         }
 
         val document = SourceDocument(response.finalUrl, response.body, response.contentType)
-        val contentValues = when (val result = SelectorRuleEvaluator.evaluate(
-            document, SelectorRuleType.CSS,
+        val contentValues = when (val result = LegadoRuleExpressionDispatcher.evaluate(
+            document,
             if (contentRule.contains("@", ignoreCase = true)) contentRule else "$contentRule@html",
         )) {
             is EngineResult.Failure -> return result
@@ -93,7 +93,7 @@ class CssChapterContentParser {
         val normalized = if (defaultAttribute != null &&
             expression.substringAfterLast("@", "").let { it !in setOf("href", "src", "text", "html") }
         ) "$expression@attr($defaultAttribute)" else expression
-        return when (val result = SelectorRuleEvaluator.evaluate(document, SelectorRuleType.CSS, normalized.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)").replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)"))) {
+        return when (val result = LegadoRuleExpressionDispatcher.evaluate(document, normalized.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)").replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)"))) {
             is EngineResult.Failure -> result
             is EngineResult.Success -> EngineResult.Success(
                 result.value.firstOrNull()?.trim()?.takeIf(String::isNotEmpty),
