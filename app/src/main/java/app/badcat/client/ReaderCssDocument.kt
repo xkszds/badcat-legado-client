@@ -36,6 +36,36 @@ internal object ReaderCssDocument {
         """.trimIndent()
     }
 
+    fun preview(context: Context, selectorRaw: String, declarationsRaw: String): String {
+        val selector = sanitizeSelector(selectorRaw)
+        val declarations = sanitizeDeclarations(declarationsRaw)
+        val css = if (selector == null || declarations.isEmpty()) "" else {
+            val scoped = if (selector == ".reader-root" || selector.startsWith(".reader-root ")) {
+                selector
+            } else {
+                ".reader-root $selector"
+            }
+            "$scoped{$declarations}"
+        }
+        val bg = String.format("#%06X", 0xFFFFFF and android.graphics.Color.WHITE)
+        val fg = String.format("#%06X", 0xFFFFFF and android.graphics.Color.rgb(35, 35, 35))
+        return """
+            <!doctype html><html><head><meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+            html,body{margin:0;padding:0;background:$bg;color:$fg}
+            body{font-size:18px;line-height:1.7;font-family:sans-serif}
+            .reader-root{padding:16px 20px}
+            .reader-paragraph{margin:0 0 1em;text-indent:2em}
+            $css
+            </style></head><body><main class="reader-root"><article class="reader-content">
+            <p class="reader-paragraph">这是阅读页面样式预览。你可以观察字体、颜色、行距和段落效果。</p>
+            <p class="reader-paragraph">第二段示例文字，用于测试 nth-child 选择器和局部样式。</p>
+            <p class="reader-paragraph">第三段示例文字，方便比较不同段落的显示差异。</p>
+            </article></main></body></html>
+        """.trimIndent()
+    }
+
     private fun activeCss(context: Context): String = runCatching {
         val prefs = context.getSharedPreferences("reader_css_profiles", Context.MODE_PRIVATE)
         val profiles = JSONArray(prefs.getString("profiles_v1", "[]"))
