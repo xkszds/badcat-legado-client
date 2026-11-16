@@ -156,7 +156,7 @@ object LegadoRegexElementEvaluator {
         var start = 0
         var index = 0
         var escaped = false
-        var inCharacterClass = false
+        var characterClassDepth = 0
         var groupDepth = 0
         while (index < expression.length) {
             val char = expression[index]
@@ -170,13 +170,16 @@ object LegadoRegexElementEvaluator {
                 index++
                 continue
             }
-            if (inCharacterClass) {
-                if (char == ']') inCharacterClass = false
+            if (characterClassDepth > 0) {
+                when (char) {
+                    '[' -> characterClassDepth++
+                    ']' -> characterClassDepth--
+                }
                 index++
                 continue
             }
             when (char) {
-                '[' -> { inCharacterClass = true; index++ }
+                '[' -> { characterClassDepth = 1; index++ }
                 '(' -> { groupDepth++; index++ }
                 ')' -> { if (groupDepth > 0) groupDepth--; index++ }
                 '&' -> if (groupDepth == 0 && expression.startsWith("&&", index)) {

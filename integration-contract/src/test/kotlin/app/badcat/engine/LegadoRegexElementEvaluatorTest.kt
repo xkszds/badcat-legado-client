@@ -141,4 +141,17 @@ class LegadoRegexElementEvaluatorTest {
         )
     }
 
+    @Test
+    fun regexStageSplitterIgnoresNestedCharacterClassIntersections() {
+        val result = LegadoRegexElementEvaluator.evaluateScalar(
+            "abcxyz",
+            """[a-z&&[^m-p]]+ && ([a-z]+)""",
+        )
+        assertEquals(
+            listOf("abcxyz", "abcxyz"),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
+
 }
