@@ -18,7 +18,8 @@ class SourceTocService(
 
         while (pending.isNotEmpty() && pageCount < maxPages) {
             val url = pending.removeFirst()
-            if (!visited.add(url)) continue
+            val requestedIdentity = paginationUrlIdentity(url)
+            if (!visited.add(requestedIdentity)) continue
             val response = when (val result = http.execute(source, url)) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
@@ -33,8 +34,9 @@ class SourceTocService(
             // Track the post-redirect URL as well as the requested URL. A source
             // may point its next-page link at the redirect destination, which
             // would otherwise trigger one redundant fetch before cycle detection.
-            if (response.finalUrl.isNotBlank() && response.finalUrl != url &&
-                !visited.add(response.finalUrl)
+            val finalIdentity = paginationUrlIdentity(response.finalUrl)
+            if (finalIdentity.isNotBlank() && finalIdentity != requestedIdentity &&
+                !visited.add(finalIdentity)
             ) {
                 return EngineResult.Failure(
                     EngineErrorCode.PARSE,
@@ -47,13 +49,14 @@ class SourceTocService(
             }
             chapters.addAll(page.chapters)
             for (next in page.nextPageUrls) {
-                if (next in visited) {
+                val nextIdentity = paginationUrlIdentity(next)
+                if (nextIdentity in visited) {
                     return EngineResult.Failure(
                         EngineErrorCode.PARSE,
                         "TOC pagination contains a URL cycle",
                     )
                 }
-                if (next !in pending) pending.addLast(next)
+                if (pending.none { paginationUrlIdentity(it) == nextIdentity }) pending.addLast(next)
             }
         }
 
