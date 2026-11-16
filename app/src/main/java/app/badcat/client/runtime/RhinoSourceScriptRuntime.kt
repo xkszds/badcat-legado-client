@@ -4,20 +4,29 @@ import app.badcat.engine.BookSource
 import app.badcat.engine.EngineErrorCode
 import app.badcat.engine.EngineResult
 import app.badcat.engine.SourceScriptRuntime
-import com.script.rhino.LegadoRhinoSandbox
+import com.script.ScriptBindings
+import com.script.rhino.RhinoScriptEngine
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withTimeout
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
- * Android host adapter for the bounded Rhino evaluator.
+ * Android host adapter for bounded source JavaScript.
  *
- * This adapter intentionally exposes only string bindings. It does not provide
- * Legado's java/http/cookie/cache/WebView objects and therefore is not a full
- * AnalyzeUrl or AnalyzeRule implementation.
+ * The current bridge intentionally exposes primitive string bindings only.
+ * It now keeps an isolated Rhino global per source, so common Legado scripts
+ * can retain source-level variables between search/detail/TOC/content calls.
+ * This is still not a complete AnalyzeUrl/AnalyzeRule host: java/http/cookie,
+ * WebView, login and cache service objects are not injected here.
  */
 class RhinoSourceScriptRuntime(
-    private val sandbox: LegadoRhinoSandbox = LegadoRhinoSandbox(),
+    private val timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS,
 ) : SourceScriptRuntime {
+
+    init {
+        require(timeoutMillis in 1L..MAX_TIMEOUT_MILLIS)
+    }
 
     override suspend fun evaluate(
         source: BookSource,
@@ -25,7 +34,38 @@ class RhinoSourceScriptRuntime(
         bindings: Map<String, String>,
     ): EngineResult<String> {
         return try {
-            EngineResult.Success(sandbox.evaluate(script, bindings).orEmpty())
+            require(script.isNotBlank()) { "Source JavaScript must not be blank" }
+            require(script.length <= MAX_SCRIPT_CHARS) { "Source JavaScript exceeds the size limit" }
+            require(bindings.size <= MAX_BINDINGS) { "Too many source JavaScript bindings" }
+            require(bindings.keys.all(BINDING_NAME::matches)) { "Invalid source JavaScript binding name" }
+            require(bindings.values.all { it.length <= MAX_BINDING_VALUE_CHARS }) {
+                "Source JavaScript binding exceeds the size limit"
+            }
+            require(bindings.values.sumOf { it.length } <= MAX_TOTAL_BINDING_CHARS) {
+                "Source JavaScript bindings exceed the total size limit"
+            }
+
+            val scope = ScriptBindings()
+            bindings.forEach { (name, value) -> scope[name] = value }
+            scope.chainTo(
+                RhinoScriptEngine.newStandardTopLevel(),
+                sourceGlobals.computeIfAbsent(source.id) {
+                    ScriptBindings.getSharedGlobalStateHandle(GLOBAL_KEY_PREFIX + it)
+                },
+            )
+            val result = withTimeout(timeoutMillis) {
+                RhinoScriptEngine.evalSuspend(script, scope)
+            }
+            when (result) {
+                null -> EngineResult.Success("")
+                is String -> EngineResult.Success(result)
+                is CharSequence -> EngineResult.Success(result.toString())
+                is Number, is Boolean -> EngineResult.Success(result.toString())
+                else -> EngineResult.Failure(
+                    EngineErrorCode.UNSUPPORTED_RULE,
+                    "Source JavaScript result must be a primitive value",
+                )
+            }
         } catch (error: TimeoutCancellationException) {
             EngineResult.Failure(
                 EngineErrorCode.RULE_TIMEOUT,
@@ -47,5 +87,24 @@ class RhinoSourceScriptRuntime(
                 error,
             )
         }
+    }
+
+    /** Drop source-level globals after a source is replaced or removed. */
+    fun clearSourceState(sourceId: String) {
+        if (sourceId.isBlank()) return
+        sourceGlobals.remove(sourceId)
+        ScriptBindings.removeSharedGlobalStates(GLOBAL_KEY_PREFIX + sourceId)
+    }
+
+    private companion object {
+        const val DEFAULT_TIMEOUT_MILLIS = 1_500L
+        const val MAX_TIMEOUT_MILLIS = 10_000L
+        const val MAX_SCRIPT_CHARS = 128 * 1024
+        const val MAX_BINDINGS = 32
+        const val MAX_BINDING_VALUE_CHARS = 64 * 1024
+        const val MAX_TOTAL_BINDING_CHARS = 128 * 1024
+        const val GLOBAL_KEY_PREFIX = "badcat-source:"
+        val BINDING_NAME = Regex("[A-Za-z_$][A-Za-z0-9_$]{0,63}")
+        val sourceGlobals = ConcurrentHashMap<String, com.script.SharedGlobalStateHandle>()
     }
 }
