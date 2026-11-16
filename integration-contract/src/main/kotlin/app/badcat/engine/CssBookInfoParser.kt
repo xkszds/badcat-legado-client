@@ -1,9 +1,8 @@
 package app.badcat.engine
 
 /**
- * CSS-only adapter for the official Legado BookInfoRule field names.
- * Init scripts, URL templates, JS and regex-based rule expansion are deliberately
- * rejected rather than interpreted as selectors.
+ * Bounded adapter for official Legado BookInfoRule field names.
+ * Script/template expansion and source-specific initialization remain unsupported.
  */
 class CssBookInfoParser {
 
@@ -51,7 +50,8 @@ class CssBookInfoParser {
             return when (val result = LegadoRuleExpressionDispatcher.evaluate(document, extractionRule)) {
                 is EngineResult.Failure -> result
                 is EngineResult.Success -> EngineResult.Success(
-                    LegadoRuleExpressionDispatcher.firstScalarValue(extractionRule, result.value)\n                        ?.trim()?.takeIf(String::isNotEmpty),
+                    LegadoRuleExpressionDispatcher.firstScalarValue(extractionRule, result.value)
+                        ?.trim()?.takeIf(String::isNotEmpty),
                 )
             }
         }
