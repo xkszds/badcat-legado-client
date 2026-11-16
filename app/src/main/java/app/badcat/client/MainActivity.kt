@@ -147,42 +147,7 @@ class MainActivity : Activity() {
         ).apply { topMargin = dp(5) })
     }
 
-    private fun buildBottomNavigation(): View = LinearLayout(this).apply {
-        orientation = LinearLayout.HORIZONTAL
-        gravity = Gravity.CENTER
-        setBackgroundColor(Color.WHITE)
-        elevation = dp(8).toFloat()
-        val destinations = listOf("搜索", "收藏夹", "我的")
-        destinations.forEachIndexed { index, label ->
-            val selected = index == 0
-            addView(LinearLayout(this@MainActivity).apply {
-                orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER
-                isClickable = true
-                isFocusable = true
-                setOnClickListener {
-                    when (index) {
-                        0 -> Unit
-                        1 -> startActivity(Intent(this@MainActivity, FavoritesActivity::class.java))
-                        2 -> startActivity(Intent(this@MainActivity, MyActivity::class.java))
-                    }
-                }
-                addView(TextView(this@MainActivity).apply {
-                    text = listOf("⌕", "▤", "♙")[index]
-                    textSize = 19f
-                    gravity = Gravity.CENTER
-                    setTextColor(if (selected) blue else muted)
-                })
-                addView(TextView(this@MainActivity).apply {
-                    text = label
-                    textSize = 11f
-                    gravity = Gravity.CENTER
-                    setTextColor(if (selected) blue else muted)
-                    typeface = if (selected) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
-                })
-            }, LinearLayout.LayoutParams(0, dp(58), 1f))
-        }
-    }
+    private fun buildBottomNavigation(): View = MainBottomNavigation.create(this, "search")
 
     private fun openSearch() {
         val query = keyword.text?.toString()?.trim().orEmpty()
