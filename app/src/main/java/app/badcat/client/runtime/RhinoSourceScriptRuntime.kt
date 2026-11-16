@@ -134,6 +134,25 @@ class RhinoSourceScriptRuntime(
         }
     }
 
+    override suspend fun getString(source: BookSource, key: String): EngineResult<String?> {
+        if (key.isBlank() || key.length > MAX_VARIABLE_KEY_CHARS) {
+            return EngineResult.Failure(EngineErrorCode.INVALID_SOURCE, "Source variable key is blank or too long")
+        }
+        return sourceLocks.computeIfAbsent(source.id) { Mutex() }.withLock {
+            EngineResult.Success(sourceKeyValueStore.get(source.id, key))
+        }
+    }
+
+    override suspend fun putString(source: BookSource, key: String, value: String): EngineResult<Unit> {
+        if (key.isBlank() || key.length > MAX_VARIABLE_KEY_CHARS || value.length > MAX_VARIABLE_VALUE_CHARS) {
+            return EngineResult.Failure(EngineErrorCode.INVALID_SOURCE, "Source variable key or value exceeds the configured limit")
+        }
+        return sourceLocks.computeIfAbsent(source.id) { Mutex() }.withLock {
+            sourceKeyValueStore.put(source.id, key, value)
+            EngineResult.Success(Unit)
+        }
+    }
+
     /**
      * Drop source-level globals after a source is replaced or removed.
      *
@@ -160,6 +179,8 @@ class RhinoSourceScriptRuntime(
         const val MAX_BINDING_VALUE_CHARS = 64 * 1024
         const val MAX_TOTAL_BINDING_CHARS = 128 * 1024
         const val MAX_TOTAL_SCRIPT_CHARS = 256 * 1024
+        const val MAX_VARIABLE_KEY_CHARS = 256
+        const val MAX_VARIABLE_VALUE_CHARS = 16 * 1024
         const val GLOBAL_KEY_PREFIX = "badcat-source:"
         val BINDING_NAME = Regex("[A-Za-z_$][A-Za-z0-9_$]{0,63}")
         val sourceScopes = ConcurrentHashMap<String, ScriptBindings>()

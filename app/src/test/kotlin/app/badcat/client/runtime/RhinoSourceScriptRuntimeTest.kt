@@ -251,4 +251,26 @@ class RhinoSourceScriptRuntimeTest {
         assertEquals("undefined", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
+    @Test
+    fun persistsSourceVariablesPerBookSourceAndClearsThemWithSourceState() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val first = BookSource(
+            id = "https://variables-one.example/",
+            name = "Variables one",
+            baseUrl = "https://variables-one.example/",
+        )
+        val second = BookSource(
+            id = "https://variables-two.example/",
+            name = "Variables two",
+            baseUrl = "https://variables-two.example/",
+        )
+
+        assertIs<EngineResult.Success<Unit>>(runtime.putString(first, "session", "one"))
+        assertEquals("one", assertIs<EngineResult.Success<String?>>(runtime.getString(first, "session")).value)
+        assertEquals(null, assertIs<EngineResult.Success<String?>>(runtime.getString(second, "session")).value)
+
+        runtime.clearSourceState(first.id)
+        assertEquals(null, assertIs<EngineResult.Success<String?>>(runtime.getString(first, "session")).value)
+    }
+
 }

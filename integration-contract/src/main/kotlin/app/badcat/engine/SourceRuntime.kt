@@ -70,6 +70,14 @@ interface SourceScriptRuntime {
         script: String,
         bindings: Map<String, String> = emptyMap(),
     ): EngineResult<String>
+
+    /** Persistent per-source variables used by AnalyzeRule's @get:{key}. */
+    suspend fun getString(source: BookSource, key: String): EngineResult<String?> =
+        EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Persistent source variables are unavailable")
+
+    /** Persistent per-source variables used by AnalyzeRule's @put:{...}. */
+    suspend fun putString(source: BookSource, key: String, value: String): EngineResult<Unit> =
+        EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Persistent source variables are unavailable")
 }
 
 /**

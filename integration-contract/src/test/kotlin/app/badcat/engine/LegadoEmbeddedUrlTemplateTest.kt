@@ -65,4 +65,45 @@ class LegadoEmbeddedUrlTemplateTest {
             assertIs<EngineResult.Failure>(result).code,
         )
     }
+    @Test
+    fun expandsPersistentGetAndPutTokensBeforeEmbeddedJavaScript() = kotlinx.coroutines.runBlocking {
+        val values = mutableMapOf<String, String>()
+        val source = BookSource(
+            id = "https://variables.example/",
+            name = "Variables",
+            baseUrl = "https://variables.example/",
+        )
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> {
+                assertEquals("render(result)", script)
+                assertEquals("page body", bindings["result"])
+                return EngineResult.Success("rendered")
+            }
+
+            override suspend fun getString(source: BookSource, key: String): EngineResult<String?> =
+                EngineResult.Success(values[key])
+
+            override suspend fun putString(source: BookSource, key: String, value: String): EngineResult<Unit> {
+                values[key] = value
+                return EngineResult.Success(Unit)
+            }
+        }
+
+        val result = LegadoEmbeddedRuleTemplate.resolve(
+            source = source,
+            template = """@put:{"token":"saved"}https://variables.example/{{render(result)}}?v=@get:{token}""",
+            result = "page body",
+            baseUrl = "https://variables.example/",
+            ruleName = "bookList",
+            scriptRuntime = runtime,
+        )
+
+        assertEquals("https://variables.example/rendered?v=saved", assertIs<EngineResult.Success<String>>(result).value)
+        assertEquals("saved", values["token"])
+    }
+
 }
