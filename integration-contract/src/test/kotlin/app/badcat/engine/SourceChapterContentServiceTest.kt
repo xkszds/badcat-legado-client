@@ -255,7 +255,7 @@ class SourceChapterContentServiceTest {
             ),
             requests,
         )
-        assertEquals("First page.\\n\\nSecond page.", result.value.text)
+        assertEquals("First page.\n\nSecond page.", result.value.text)
     }
 
     @Test
