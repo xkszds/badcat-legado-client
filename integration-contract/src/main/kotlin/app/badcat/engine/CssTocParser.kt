@@ -106,7 +106,7 @@ class CssTocParser {
 
     private fun normalizeLinkExpression(expression: String): String {
         val rule = expression.trim()
-        val explicitPath = rule.startsWith("@xpath:", true) ||
+        val explicitPath = rule.startsWith("@regex:", true) || rule.startsWith("@xpath:", true) ||
             rule.startsWith("@jsonpath:", true) || rule.startsWith("@json:", true) ||
             rule.startsWith("/")
         if (explicitPath) return rule
