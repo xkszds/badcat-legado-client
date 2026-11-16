@@ -34,7 +34,7 @@ class CssBookInfoParser {
 
         fun field(name: String): EngineResult<String?> {
             val expression = rules[name]?.takeIf(String::isNotBlank) ?: return EngineResult.Success(null)
-            if (expression.contains("@js", true) || expression.contains("{{") ||
+            if (expression.contains("@js:", true) || expression.contains("{{") ||
                 expression.contains("}}") || expression.contains("替换")
             ) {
                 return EngineResult.Failure(
