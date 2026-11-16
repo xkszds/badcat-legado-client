@@ -419,7 +419,12 @@ class FavoritesActivity : Activity() {
                         getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).edit().putBoolean("list_mode", listMode).apply()
                         refresh()
                     }
-                    "更新时间排序" -> {\n                        val newestFirst = getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).getBoolean("sort_newest_first", true)\n                        getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).edit().putBoolean("sort_newest_first", !newestFirst).apply()\n                        toast(if (!newestFirst) "已按最近加入排序" else "已按加入时间正序排列")\n                        refresh()\n                    }
+                    "更新时间排序" -> {
+                        val newestFirst = getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).getBoolean("sort_newest_first", true)
+                        getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).edit().putBoolean("sort_newest_first", !newestFirst).apply()
+                        toast(if (!newestFirst) "已按最近加入排序" else "已按加入时间正序排列")
+                        refresh()
+                    }
                     "开启小说文件夹", "关闭小说文件夹" -> {
                         folderMode = !folderMode; selectedFolderId = FavoriteBooks.DEFAULT_FOLDER_ID
                         getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).edit().putBoolean("folder_mode", folderMode).apply()
