@@ -125,8 +125,7 @@ class CssChapterContentParser {
         body.select("script,style,noscript,iframe").remove()
         body.select("br").forEach { it.replaceWith(TextNode("\n")) }
         body.select("p,div,section,article,li,h1,h2,h3,h4,h5,h6,blockquote").forEach {
-            it.appendChild(TextNode("
-"))
+            it.appendChild(TextNode("\n"))
         }
         body.wholeText()
             .replace('\u00a0', ' ')
