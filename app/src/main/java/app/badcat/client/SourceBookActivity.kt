@@ -144,8 +144,8 @@ class SourceBookActivity : Activity() {
                             putExtra(SourceChapterActivity.EXTRA_BOOK_NAME, bookName)
                             putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, saved)
                         })
-                    } else if (chapterList.childCount > 0) {
-                        chapterList.getChildAt(0).performClick()
+                    } else {
+                        allChapters.firstOrNull()?.let { openChapter(it) }
                     }
                 }
             }, LinearLayout.LayoutParams(0, dpBook(48), 1f).apply { leftMargin = dpBook(8) })
@@ -352,6 +352,16 @@ class SourceBookActivity : Activity() {
         renderChapterRows()
     }
 
+    private fun openChapter(chapter: BookChapter) {
+        startActivity(Intent(this, SourceChapterActivity::class.java).apply {
+            putExtra(SourceChapterActivity.EXTRA_SOURCE_ID, sourceId)
+            putExtra(SourceChapterActivity.EXTRA_BOOK_URL, bookUrl)
+            putExtra(SourceChapterActivity.EXTRA_BOOK_NAME, bookName)
+            putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, chapter.url)
+            putExtra(SourceChapterActivity.EXTRA_CHAPTER_TITLE, chapter.title)
+        })
+    }
+
     private fun renderChapterRows() {
         if (!::chapterRows.isInitialized) return
         chapterRows.removeAllViews()
@@ -372,15 +382,7 @@ class SourceBookActivity : Activity() {
                 textSize = 16f
                 setPadding(0, 12, 0, 12)
                 isClickable = true
-                setOnClickListener {
-                    startActivity(Intent(this@SourceBookActivity, SourceChapterActivity::class.java).apply {
-                        putExtra(SourceChapterActivity.EXTRA_SOURCE_ID, sourceId)
-                        putExtra(SourceChapterActivity.EXTRA_BOOK_URL, bookUrl)
-                        putExtra(SourceChapterActivity.EXTRA_BOOK_NAME, bookName)
-                        putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, chapter.url)
-                        putExtra(SourceChapterActivity.EXTRA_CHAPTER_TITLE, chapter.title)
-                    })
-                }
+                setOnClickListener { openChapter(chapter) }
             }, LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
