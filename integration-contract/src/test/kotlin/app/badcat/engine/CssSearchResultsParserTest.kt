@@ -3,6 +3,7 @@ package app.badcat.engine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 
 class CssSearchResultsParserTest {
