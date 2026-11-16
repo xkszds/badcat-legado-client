@@ -16,6 +16,8 @@ object LegadoRuleExpressionDispatcher {
     fun evaluateElements(document: SourceDocument, expression: String): EngineResult<List<String>> {
         val rule = expression.trim()
         return when {
+            rule.startsWith("@jsonpath:", true) || rule.startsWith("@json:", true) || rule.startsWith("$") ->
+                JsonPathRuleEvaluator.evaluateElements(document, rule)
             rule.startsWith("@regex:", true) ->
                 LegadoRegexElementEvaluator.evaluate(document.body, rule.substringAfter(':'))
             rule.startsWith(":") ->
