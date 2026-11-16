@@ -4,7 +4,6 @@ import java.net.URLDecoder
 import java.net.URLEncoder
 import java.security.MessageDigest
 import java.util.Base64
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Explicitly allow-listed subset of Legado's `java` helper for source scripts.
@@ -13,21 +12,20 @@ import java.util.concurrent.ConcurrentHashMap
  * reflection, filesystem, process, Android, network, Cookie or WebView access.
  * The small key/value store is isolated per book source and bounded in memory.
  */
-class RhinoSafeSourceJavaExtensions private constructor(
+class RhinoSafeSourceJavaExtensions(
     private val sourceId: String,
+    private val store: SourceScriptKeyValueStore,
 ) {
-    private val values: ConcurrentHashMap<String, String> =
-        sourceValues.computeIfAbsent(sourceId) { ConcurrentHashMap() }
 
     fun getString(key: String): String {
         requireValidKey(key)
-        return values[key].orEmpty()
+        return store.get(sourceId, key).orEmpty()
     }
 
     fun putString(key: String, value: String): String {
         requireValidKey(key)
         require(value.length <= MAX_VALUE_CHARS) { "Legado java.putString value exceeds the size limit" }
-        values[key] = value
+        store.put(sourceId, key, value)
         return value
     }
 
@@ -58,15 +56,5 @@ class RhinoSafeSourceJavaExtensions private constructor(
     companion object {
         private const val MAX_KEY_CHARS = 256
         private const val MAX_VALUE_CHARS = 16 * 1024
-        private val sourceValues = ConcurrentHashMap<String, ConcurrentHashMap<String, String>>()
-        private val instances = ConcurrentHashMap<String, RhinoSafeSourceJavaExtensions>()
-
-        fun forSource(sourceId: String): RhinoSafeSourceJavaExtensions =
-            instances.computeIfAbsent(sourceId) { RhinoSafeSourceJavaExtensions(it) }
-
-        fun clearSource(sourceId: String) {
-            sourceValues.remove(sourceId)
-            instances.remove(sourceId)
-        }
     }
 }

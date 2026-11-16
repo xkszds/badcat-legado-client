@@ -23,7 +23,9 @@ import kotlin.coroutines.cancellation.CancellationException
  */
 class RhinoSourceScriptRuntime(
     private val timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS,
+    private val sourceKeyValueStore: SourceScriptKeyValueStore = InMemorySourceScriptKeyValueStore,
 ) : SourceScriptRuntime {
+    private val javaExtensions = ConcurrentHashMap<String, RhinoSafeSourceJavaExtensions>()
 
     init {
         require(timeoutMillis in 1L..MAX_TIMEOUT_MILLIS)
@@ -80,7 +82,9 @@ class RhinoSourceScriptRuntime(
                 // Common, low-risk Legado helpers are exposed through a narrow
                 // source-scoped bridge. This shadows Rhino's package namespace;
                 // untrusted rules still cannot reach java.lang or Android APIs.
-                scope["java"] = RhinoSafeSourceJavaExtensions.forSource(source.id)
+                scope["java"] = javaExtensions.computeIfAbsent(source.id) {
+                    RhinoSafeSourceJavaExtensions(source.id, sourceKeyValueStore)
+                }
                 val result = try {
                     withTimeout(timeoutMillis) {
                         // jsLib declarations are installed once per source/library version.
@@ -143,7 +147,8 @@ class RhinoSourceScriptRuntime(
             sourceGlobals.remove(sourceId)
             sourceJsLibHashes.remove(sourceId)
             ScriptBindings.removeSharedGlobalStates(GLOBAL_KEY_PREFIX + sourceId)
-            RhinoSafeSourceJavaExtensions.clearSource(sourceId)
+            javaExtensions.remove(sourceId)
+            sourceKeyValueStore.clearSource(sourceId)
         }
     }
 

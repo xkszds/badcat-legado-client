@@ -28,7 +28,9 @@ import app.badcat.engine.SourceScriptRuntime
 class BadcatReadingEngineFactory(
     private val context: Context,
     private val requestClient: SourceRequestClient? = null,
-    private val scriptRuntime: SourceScriptRuntime = RhinoSourceScriptRuntime(),
+    private val scriptRuntime: SourceScriptRuntime = RhinoSourceScriptRuntime(
+        sourceKeyValueStore = SharedPreferencesSourceScriptKeyValueStore(context.applicationContext),
+    ),
     private val bookTextReplacement: BookTextReplacement = BookTextReplacement { text -> text },
 ) {
     private val catalog = FileBookSourceCatalog(context.applicationContext)
