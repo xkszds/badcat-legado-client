@@ -202,4 +202,40 @@ class SourceChapterContentServiceTest {
         assertEquals(listOf("https://reader.example/chapter/1"), client.requests)
     }
 
+    @Test
+    fun detectsNextContentUrlThatPointsToRedirectDestinationBeforeSecondRequest() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleContentJson = """{"content":"div#content","nextContentUrl":"a.next"}""",
+        )
+        val requestedUrl = "https://reader.example/chapter/start"
+        val redirectDestination = "https://reader.example/chapter/canonical"
+        val requests = mutableListOf<String>()
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                requests += request.url
+                return EngineResult.Success(
+                    SourceHttpResponse(
+                        200,
+                        redirectDestination,
+                        body = """<div id="content"><p>First page.</p></div><a class="next" href="$redirectDestination">Next</a>""",
+                    ),
+                )
+            }
+        }
+
+        val result = assertIs<EngineResult.Failure>(
+            SourceChapterContentService(SourceHttpGateway(client)).load(
+                source,
+                "https://reader.example/book/1",
+                BookChapter(0, "Chapter", requestedUrl),
+            ),
+        )
+
+        assertEquals(EngineErrorCode.PARSE, result.code)
+        assertEquals(listOf(requestedUrl), requests)
+    }
+
 }
