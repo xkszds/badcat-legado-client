@@ -205,6 +205,8 @@ class SourceChapterActivity : Activity() {
     private lateinit var nextButton: android.widget.Button
     private lateinit var readerScroll: android.webkit.WebView
     private lateinit var readerRoot: LinearLayout
+    private lateinit var chapterProgress: android.widget.SeekBar
+    private lateinit var chapterTitleView: TextView
     private lateinit var sourceId: String
     private lateinit var bookUrl: String
     private lateinit var bookName: String
@@ -266,74 +268,74 @@ class SourceChapterActivity : Activity() {
             isEnabled = false
             setOnClickListener { moveChapter(1) }
         }
-        val smaller = android.widget.Button(this).apply {
-            text = "A−"
-            setOnClickListener { changeTextSize(-1f) }
+        chapterTitleView = TextView(this).apply {
+            text = chapterTitle.ifBlank { bookName }
+            textSize = 16f
+            setTextColor(Color.rgb(55, 55, 55))
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            maxLines = 1
+            ellipsize = android.text.TextUtils.TruncateAt.END
         }
-        val larger = android.widget.Button(this).apply {
-            text = "A+"
-            setOnClickListener { changeTextSize(1f) }
+        val back = TextView(this).apply {
+            text = "‹"
+            textSize = 32f
+            gravity = android.view.Gravity.CENTER
+            setTextColor(Color.rgb(55, 55, 55))
+            setOnClickListener { finish() }
         }
-        val controls = LinearLayout(this).apply {
+        val more = TextView(this).apply {
+            text = "⋯"
+            textSize = 28f
+            gravity = android.view.Gravity.CENTER
+            setTextColor(Color.rgb(55, 55, 55))
+            setOnClickListener { showReaderTools() }
+        }
+        val topBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            addView(previousButton, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-            addView(smaller, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-            addView(larger, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-            addView(nextButton, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(dpReader(10), dpReader(4), dpReader(10), dpReader(4))
+            setBackgroundColor(Color.rgb(250, 250, 250))
+            addView(back, LinearLayout.LayoutParams(dpReader(42), dpReader(48)))
+            addView(chapterTitleView, LinearLayout.LayoutParams(0, dpReader(48), 1f))
+            addView(more, LinearLayout.LayoutParams(dpReader(42), dpReader(48)))
         }
-        val lineLess = android.widget.Button(this).apply {
-            text = "行距−"
-            setOnClickListener { changeLineSpacing(-0.1f) }
+        status = TextView(this).apply {
+            text = "正在加载目录…"
+            textSize = 12f
+            setTextColor(Color.GRAY)
+            setPadding(dpReader(18), dpReader(4), dpReader(18), dpReader(4))
+            setBackgroundColor(Color.rgb(250, 250, 250))
         }
-        val lineMore = android.widget.Button(this).apply {
-            text = "行距+"
-            setOnClickListener { changeLineSpacing(0.1f) }
+        chapterProgress = android.widget.SeekBar(this).apply {
+            max = 100
+            progress = 0
+            setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: android.widget.SeekBar?, progress: Int, fromUser: Boolean) = Unit
+                override fun onStartTrackingTouch(seekBar: android.widget.SeekBar?) = Unit
+                override fun onStopTrackingTouch(seekBar: android.widget.SeekBar?) {
+                    val target = seekBar?.progress ?: return
+                    if (chapters.isNotEmpty()) loadChapterAt(((chapters.lastIndex * target) / 100.0).toInt())
+                }
+            })
         }
-        val themeButton = android.widget.Button(this).apply {
-            text = "切换背景"
-            setOnClickListener { cycleReaderTheme() }
-        }
-        val cssButton = android.widget.Button(this).apply {
-            text = "CSS自定义"
-            setOnClickListener {
-                startActivity(Intent(this@SourceChapterActivity, ReaderCssActivity::class.java))
-            }
-        }
-        val chapterCatalog = android.widget.Button(this).apply {
-            text = "章节目录"
-            setOnClickListener { showChapterCatalog() }
-        }
-        val saveBookmark = android.widget.Button(this).apply {
-            text = "保存书签"
-            setOnClickListener { saveChapterBookmark() }
-        }
-        val jumpBookmark = android.widget.Button(this).apply {
-            text = "跳转书签"
-            setOnClickListener { jumpToChapterBookmark() }
-        }
-        val displayControls = LinearLayout(this).apply {
+        val bottomBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            addView(lineLess, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-            addView(lineMore, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-            addView(themeButton, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-            addView(cssButton, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        }
-        val bookmarkControls = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            addView(chapterCatalog, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-            addView(saveBookmark, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-            addView(jumpBookmark, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(dpReader(8), dpReader(3), dpReader(8), dpReader(3))
+            setBackgroundColor(Color.rgb(250, 250, 250))
+            addView(previousButton, LinearLayout.LayoutParams(0, dpReader(46), 1f))
+            addView(chapterProgress, LinearLayout.LayoutParams(0, dpReader(40), 2f))
+            addView(nextButton, LinearLayout.LayoutParams(0, dpReader(46), 1f))
         }
         readerRoot = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(12, 12, 12, 12)
+            setBackgroundColor(Color.WHITE)
+            addView(topBar)
             addView(status)
-            addView(controls)
-            addView(displayControls)
-            addView(bookmarkControls)
             addView(body, LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f,
             ))
+            addView(bottomBar)
         }
         readerScroll = body
         applyReaderTheme()
@@ -421,7 +423,8 @@ class SourceChapterActivity : Activity() {
         when (result) {
             is EngineResult.Success -> {
                 currentChapterTitle = result.value.title.ifBlank { chapter.title }
-                status.text = currentChapterTitle
+                status.text = "阅读中 · ${currentIndex + 1}/${chapters.size.coerceAtLeast(1)} 章"
+                chapterTitleView.text = currentChapterTitle
                 currentChapterText = result.value.text
                 renderReaderDocument()
                 currentChapterUrl = chapter.url
@@ -435,6 +438,7 @@ class SourceChapterActivity : Activity() {
         }
         previousButton.isEnabled = currentIndex > 0
         nextButton.isEnabled = currentIndex >= 0 && currentIndex < chapters.lastIndex
+        if (chapters.size > 1 && currentIndex >= 0) chapterProgress.progress = (currentIndex * 100 / chapters.lastIndex).coerceIn(0, 100)
         if (result is EngineResult.Success) {
             restoreCurrentScrollPosition()
             if (intent.getBooleanExtra(EXTRA_JUMP_TO_BOOKMARK, false)) {
@@ -480,6 +484,27 @@ class SourceChapterActivity : Activity() {
         }
         status.text = "已跳转到本章书签"
     }
+
+    private fun showReaderTools() {
+        val actions = arrayOf("字号减小", "字号增大", "行距减小", "行距增大", "切换背景", "CSS 自定义", "章节目录", "保存书签", "跳转本章书签")
+        android.app.AlertDialog.Builder(this)
+            .setTitle("阅读设置")
+            .setItems(actions) { _, index ->
+                when (index) {
+                    0 -> changeTextSize(-1f)
+                    1 -> changeTextSize(1f)
+                    2 -> changeLineSpacing(-0.1f)
+                    3 -> changeLineSpacing(0.1f)
+                    4 -> cycleReaderTheme()
+                    5 -> startActivity(Intent(this, ReaderCssActivity::class.java))
+                    6 -> showChapterCatalog()
+                    7 -> saveChapterBookmark()
+                    8 -> jumpToChapterBookmark()
+                }
+            }.show()
+    }
+
+    private fun dpReader(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun changeTextSize(delta: Float) {
         textSizeSp = (textSizeSp + delta).coerceIn(14f, 32f)
