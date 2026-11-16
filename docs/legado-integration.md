@@ -46,3 +46,11 @@ These boundaries are intentionally explicit: an imported source can be stored ev
 ## Current status
 
 The platform-neutral engine port, purification boundaries and source JSON codec are present. The Android host has a bounded Rhino evaluator with string bindings, but no complete Legado online rule runtime (AnalyzeUrl / AnalyzeRule host environment) or original Badcat UI integration yet. CI contract tests and debug APK assembly passed in [run #43707974288](https://github.com/xkszds/badcat-legado-client/actions/runs/43707974288); device installation and runtime validation remain outstanding.
+## 2026-11-16: rule-mode dispatch expansion
+
+- Added a shared Legado rule-expression dispatcher for explicit `@css:`, `@xpath:`, `@jsonpath:` / `@json:` prefixes.
+- Unprefixed selectors default to CSS; unambiguous XPath (`/`, `//`) and JSONPath (`$`) expressions are inferred. Ambiguous expressions are not guessed as XPath or JSONPath.
+- Search result item fields, book-detail scalar fields, TOC chapter scalar fields, and chapter-content/title scalar fields now use this dispatcher. The selector-stage adapter also infers parser modes when no explicit per-field override is supplied.
+- Collection roots `bookList` and `chapterList` remain CSS element collections in this iteration. XPath/JSONPath collection-root semantics, regex extraction, JS rule execution, Legado chained rule operations, filters, variable state, and full `AnalyzeRule` behavior are not claimed.
+- Tests cover default CSS, explicit XPath, explicit JSONPath, and fail-closed JS/regex dispatch, plus book-detail XPath/JSONPath fields.
+- This is an incremental compatibility improvement, not complete Legado engine parity. The next gate is connecting the script runtime to the full source rule pipeline and broadening collection/pagination semantics.
