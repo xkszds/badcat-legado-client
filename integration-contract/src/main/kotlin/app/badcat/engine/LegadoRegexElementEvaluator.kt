@@ -34,7 +34,7 @@ object LegadoRegexElementEvaluator {
         val stages = try {
             RuleExpressionTokenizer.splitTopLevel(rule, "&&")
         } catch (error: Exception) {
-            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Malformed regex collection rule", error)
+            return EngineResult.Failure(EngineErrorCode.PARSE, "Malformed regex collection rule", error)
         }
         if (stages.size > MAX_STAGES || stages.any { it.isBlank() || it.length > MAX_PATTERN_CHARACTERS }) {
             return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Regex rule exceeds stage or pattern limits")
