@@ -37,6 +37,13 @@ class SelectorLegadoRuleRuntime(
         val evaluated = linkedMapOf<String, List<String>>()
         for ((field, expression) in fields) {
             val configuredType = ruleTypes["${stage.name.lowercase()}.$field"]
+            // Some imported source objects contain non-selector metadata or
+            // legacy javascript: URL fragments in unrelated fields. Do not
+            // reinterpret those as CSS when the field has no explicit mode.
+            if (configuredType == null &&
+                !expression.trim().startsWith("@", ignoreCase = true) &&
+                expression.trim().startsWith("javascript:", ignoreCase = true)
+            ) continue
             val resolved = when (val dispatch = LegadoRuleExpressionDispatcher.resolve(expression)) {
                 is EngineResult.Failure -> return dispatch
                 is EngineResult.Success -> dispatch.value
