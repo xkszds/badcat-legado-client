@@ -27,7 +27,7 @@ import app.badcat.engine.SourceScriptRuntime
  */
 class BadcatReadingEngineFactory(
     context: Context,
-    private val requestClient: SourceRequestClient = OkHttpSourceRequestClient(),
+    private val requestClient: SourceRequestClient? = null,
     private val scriptRuntime: SourceScriptRuntime = RhinoSourceScriptRuntime(),
     private val bookTextReplacement: BookTextReplacement = BookTextReplacement { text -> text },
 ) {
@@ -35,8 +35,13 @@ class BadcatReadingEngineFactory(
     private val replaceRuleCatalog = FileReplaceRuleCatalog(context.applicationContext)
 
     fun create(): ReadingEngine {
+        val durableRequestClient = requestClient ?: OkHttpSourceRequestClient(
+            cookieJarProvider = { sourceId ->
+                SharedPreferencesSourceCookieJar(context.applicationContext, sourceId)
+            },
+        )
         val gateway = BadcatSourceHttpGatewayFactory(
-            client = requestClient,
+            client = durableRequestClient,
             scriptRuntime = scriptRuntime,
         ).create()
 
