@@ -56,9 +56,10 @@ class CssRuleEvaluatorTest {
         val ids = CssRuleEvaluator.evaluate(document, "img@attr(data-id)")
         val directIds = CssRuleEvaluator.evaluate(document, "img@data-id")
         val htmlValues = assertIs<EngineResult.Success<List<String>>>(html).value
-        assertEquals(1, htmlValues.size)
-        kotlin.test.assertTrue(htmlValues.single().contains("<a class=\"title\""))
-        kotlin.test.assertTrue(htmlValues.single().contains("<b>Novel</b>"))
+        assertEquals(2, htmlValues.size)
+        kotlin.test.assertTrue(htmlValues.first().contains("<a class=\"title\""))
+        kotlin.test.assertTrue(htmlValues.first().contains("<b>Novel</b>"))
+        kotlin.test.assertTrue(htmlValues.last().contains("Beta Novel"))
         assertEquals(
             listOf("one", "two"),
             assertIs<EngineResult.Success<List<String>>>(ids).value,
@@ -105,9 +106,11 @@ class CssRuleEvaluatorTest {
         )
 
         val all = CssRuleEvaluator.evaluate(document, "a.title:first-child@all")
-        val markup = assertIs<EngineResult.Success<List<String>>>(all).value.single()
-        kotlin.test.assertTrue(markup.startsWith("<a class=\"title\""))
-        kotlin.test.assertTrue(markup.contains("<b>Novel</b>"))
+        val markup = assertIs<EngineResult.Success<List<String>>>(all).value
+        assertEquals(2, markup.size)
+        kotlin.test.assertTrue(markup.first().startsWith("<a class=\"title\""))
+        kotlin.test.assertTrue(markup.first().contains("<b>Novel</b>"))
+        kotlin.test.assertTrue(markup.last().contains("Beta Novel"))
     }
 
     @Test
