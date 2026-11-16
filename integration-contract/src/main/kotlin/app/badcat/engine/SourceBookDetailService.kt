@@ -4,6 +4,7 @@ package app.badcat.engine
 class SourceBookDetailService(
     private val http: SourceHttpGateway,
     private val parser: CssBookInfoParser = CssBookInfoParser(),
+    private val scriptRuntime: SourceScriptRuntime? = null,
 ) {
     suspend fun load(
         source: BookSource,
@@ -19,6 +20,7 @@ class SourceBookDetailService(
                 "Book detail request for source '${source.id}' returned HTTP ${response.statusCode}",
             )
         }
-        return parser.parse(source, response, bookUrl)
+        return scriptRuntime?.let { parser.parseWithScripts(source, response, bookUrl, it) }
+            ?: parser.parse(source, response, bookUrl)
     }
 }
