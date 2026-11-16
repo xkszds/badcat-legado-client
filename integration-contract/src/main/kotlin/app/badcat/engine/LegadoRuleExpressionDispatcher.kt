@@ -12,6 +12,14 @@ data class ResolvedLegadoRuleExpression(
 )
 
 object LegadoRuleExpressionDispatcher {
+    fun evaluate(document: SourceDocument, expression: String): EngineResult<List<String>> {
+        val resolved = when (val result = resolve(expression)) {
+            is EngineResult.Failure -> return result
+            is EngineResult.Success -> result.value
+        }
+        return SelectorRuleEvaluator.evaluate(document, resolved.type, resolved.expression)
+    }
+
     fun resolve(expression: String): EngineResult<ResolvedLegadoRuleExpression> {
         val raw = expression.trim()
         if (raw.isEmpty()) {
