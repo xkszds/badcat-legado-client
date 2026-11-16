@@ -201,7 +201,11 @@ class ReaderCssActivity : Activity() {
                 val enabledValue = if (item.has("enabled")) {
                     item.opt("enabled") as? Boolean ?: error("方案 enabled 字段必须是布尔值")
                 } else false
-                val rulesJson = item.optJSONArray("rules") ?: JSONArray()
+                val rulesJson = if (!item.has("rules") || item.isNull("rules")) {
+                    JSONArray()
+                } else {
+                    item.optJSONArray("rules") ?: error("方案 rules 字段必须是数组")
+                }
                 require(rulesJson.length() <= MAX_RULES_PER_PROFILE) { "单套方案子选择器超过 $MAX_RULES_PER_PROFILE 条" }
                 val rules = (0 until rulesJson.length()).map { j ->
                     val rule = rulesJson.optJSONObject(j) ?: error("子选择器格式错误")
