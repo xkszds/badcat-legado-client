@@ -224,7 +224,7 @@ class CssTocParserTest {
         )
         val response = SourceHttpResponse(
             200, "https://reader.example/catalog",
-            body = """<ul><li class="chapter"><a href="/chapter/1">Regex Chapter</a></li><li>Ignored</li></ul>""",
+            body = """<ul><li class='chapter'><a href='/chapter/1'>Regex Chapter</a></li><li>Ignored</li></ul>""",
         )
         val page = assertIs<EngineResult.Success<ParsedTocPage>>(
             CssTocParser().parse(source, response, "https://reader.example/book"),

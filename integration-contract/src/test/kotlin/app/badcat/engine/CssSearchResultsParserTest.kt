@@ -179,7 +179,7 @@ class CssSearchResultsParserTest {
         )
         val response = SourceHttpResponse(
             200, "https://reader.example/search",
-            body = """<div class="book"><h3>Regex Novel</h3><a href="/book/1">Read</a></div><div class="other">Skip</div>""",
+            body = """<div class='book'><h3>Regex Novel</h3><a href='/book/1'>Read</a></div><div class='other'>Skip</div>""",
         )
         val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
             CssSearchResultsParser().parse(source, response),
