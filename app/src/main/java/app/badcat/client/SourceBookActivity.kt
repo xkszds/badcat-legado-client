@@ -215,6 +215,7 @@ class SourceChapterActivity : Activity() {
     private var lineSpacingMultiplier: Float = 1.15f
     private var readerTheme: Int = 0
     private var currentChapterText: String = ""
+    private var currentChapterTitle: String = ""
     private var pendingScrollY: Int? = null
     private var pendingBookmarkY: Int? = null
     private val preferences by lazy {
@@ -419,7 +420,8 @@ class SourceChapterActivity : Activity() {
     ) {
         when (result) {
             is EngineResult.Success -> {
-                status.text = result.value.title.ifBlank { chapter.title }
+                currentChapterTitle = result.value.title.ifBlank { chapter.title }
+                status.text = currentChapterTitle
                 currentChapterText = result.value.text
                 renderReaderDocument()
                 currentChapterUrl = chapter.url
@@ -458,8 +460,9 @@ class SourceChapterActivity : Activity() {
         val encoded = bookmarkKey.removePrefix("chapter_bookmark_")
         preferences.edit()
             .putInt(bookmarkKey, position)
-            .putString("chapter_bookmark_title_" + encoded, status.text.toString())
-            .putString("chapter_bookmark_book_" + encoded, bookName)
+            .putString("chapter_bookmark_title_" + encoded, currentChapterTitle.ifBlank { "章节书签" })
+            .putString("chapter_bookmark_book_" + encoded, bookName.ifBlank { "未命名小说" })
+            .putLong("chapter_bookmark_time_" + encoded, System.currentTimeMillis())
             .apply()
         status.text = "书签已保存（当前位置），可在「我的 - 书签管理」查看"
     }
