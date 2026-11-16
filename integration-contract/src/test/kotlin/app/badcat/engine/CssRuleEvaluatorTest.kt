@@ -181,4 +181,22 @@ class CssRuleEvaluatorTest {
         assertEquals(2, fragments.count { it.contains("Beta Novel") })
     }
 
+
+    @Test
+    fun appliesLegadoIndexSuffixesOnlyToCollectionExtraction() {
+        val last = CssRuleEvaluator.evaluateElements(document, "div.book.-1")
+        val selected = assertIs<EngineResult.Success<List<String>>>(last).value
+        assertEquals(1, selected.size)
+        kotlin.test.assertTrue(selected.single().contains("Beta Novel"))
+
+        val bracket = CssRuleEvaluator.evaluateElements(document, "div.book[0]")
+        val first = assertIs<EngineResult.Success<List<String>>>(bracket).value
+        assertEquals(1, first.size)
+        kotlin.test.assertTrue(first.single().contains("Alpha"))
+
+        // Scalar CSS evaluation is intentionally not given ElementsSingle suffix parsing.
+        val scalar = CssRuleEvaluator.evaluate(document, "div.book.-1@text")
+        assertIs<EngineResult.Failure>(scalar)
+    }
+
 }
