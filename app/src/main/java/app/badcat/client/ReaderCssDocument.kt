@@ -91,6 +91,14 @@ internal object ReaderCssDocument {
         }
     }.getOrDefault("")
 
+    internal fun duplicateSelectorGroups(selectorLabels: List<Pair<String, String>>): Map<String, List<String>> {
+        return selectorLabels.mapNotNull { (rawSelector, label) ->
+            val selector = sanitizeSelector(rawSelector) ?: return@mapNotNull null
+            selector to label
+        }.groupBy({ it.first }, { it.second })
+            .filterValues { it.size > 1 }
+    }
+
     internal fun scopeSelector(selector: String): String {
         // Scope each top-level selector independently. A comma inside :not(...)
         // or an attribute value is not a selector-group separator.
