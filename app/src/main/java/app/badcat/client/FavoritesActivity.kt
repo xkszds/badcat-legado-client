@@ -228,8 +228,15 @@ class FavoritesActivity : Activity() {
         }
         sectionTitle(if (selectedFolderId == FavoriteBooks.DEFAULT_FOLDER_ID) "小说" else folders.first { it.id == selectedFolderId }.name)
         } else { selectedFolderId = FavoriteBooks.DEFAULT_FOLDER_ID }
-        val sortByAddedAt = getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).getBoolean("sort_newest_first", true)
-        val visible = favoriteBooksInFolder(allBooks, selectedFolderId).let { books -> if (sortByAddedAt) books.sortedByDescending { it.addedAt } else books }
+        // Reading-history timestamps are the real last-read/update signal.
+        // Books without a reading record fall back to their original favorite time.
+        val lastReadAt = latestBookReadTimes()
+        val newestFirst = getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE)
+            .getBoolean("sort_newest_first", true)
+        val visible = favoriteBooksInFolder(allBooks, selectedFolderId).let { books ->
+            val sorted = books.sortedBy { lastReadAt[bookKey(it)] ?: it.addedAt }
+            if (newestFirst) sorted.reversed() else sorted
+        }
         if (visible.isEmpty()) {
             rootContent.addView(TextView(this).apply {
                 text = if (allBooks.isEmpty()) "还没有小说\n在小说详情页点击「加入收藏」，小说就会出现在这里。" else "这个文件夹还没有小说"
@@ -247,6 +254,27 @@ class FavoritesActivity : Activity() {
             rootContent.addView(row)
         }
         renderSelectionBar()
+    }
+
+    private fun latestBookReadTimes(): Map<String, Long> {
+        val raw = getSharedPreferences(ReadingHistoryActivity.PREFS, MODE_PRIVATE)
+            .getString(ReadingHistoryActivity.KEY, "[]").orEmpty()
+        return runCatching {
+            val records = JSONArray(raw)
+            buildMap {
+                for (index in 0 until records.length()) {
+                    val item = records.optJSONObject(index) ?: continue
+                    val sourceId = item.optString("sourceId")
+                    val bookUrl = item.optString("bookUrl")
+                    if (sourceId.isBlank() || bookUrl.isBlank()) continue
+                    val updatedAt = item.optLong("updatedAt", 0L)
+                    if (updatedAt > 0L) {
+                        val key = "$sourceId|$bookUrl"
+                        put(key, maxOf(get(key) ?: 0L, updatedAt))
+                    }
+                }
+            }
+        }.getOrDefault(emptyMap())
     }
 
     private fun folderCard(folder: FavoriteFolder, count: Int): View = LinearLayout(this).apply {
@@ -428,7 +456,7 @@ class FavoritesActivity : Activity() {
                     "更新时间排序" -> {
                         val newestFirst = getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).getBoolean("sort_newest_first", true)
                         getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).edit().putBoolean("sort_newest_first", !newestFirst).apply()
-                        toast(if (!newestFirst) "已按最近加入排序" else "已按加入时间正序排列")
+                        toast(if (!newestFirst) "已按更新时间倒序排列" else "已按更新时间正序排列")
                         refresh()
                     }
                     "开启小说文件夹", "关闭小说文件夹" -> {
