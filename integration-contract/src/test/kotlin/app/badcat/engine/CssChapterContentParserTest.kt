@@ -98,4 +98,23 @@ class CssChapterContentParserTest {
         assertEquals("Known title", result.title)
         assertEquals("Body text", result.text)
     }
+    @Test
+    fun dispatchesXPathForNextChapterPageLinks() {
+        val source = BookSource(
+            id = "fixture", name = "Fixture", baseUrl = "https://reader.example/",
+            ruleContentJson = """{
+                "content":"article",
+                "nextContentUrl":"@xpath://a[@class='next']/@href"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200, "https://reader.example/chapter/1",
+            body = """<article>Readable text</article><a class="next" href="/chapter/2">Next</a>""",
+        )
+        val chapter = assertIs<EngineResult.Success<ChapterContent>>(
+            CssChapterContentParser().parse(source, response, BookChapter(0, "One", response.finalUrl)),
+        ).value
+        assertEquals("https://reader.example/chapter/2", chapter.nextPageUrl)
+    }
+
 }

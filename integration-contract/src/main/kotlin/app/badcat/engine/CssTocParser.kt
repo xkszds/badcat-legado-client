@@ -79,17 +79,12 @@ class CssTocParser {
         val nextUrls = ArrayList<String>()
         val nextRule = rules["nextTocUrl"]?.takeIf(String::isNotBlank)
         if (nextRule != null) {
-            val trimmed = nextRule.trim()
-            val suffix = trimmed.substringAfterLast("@", "").lowercase()
-            val attribute = if (suffix == "src" || suffix == "attr(src)") "src" else "href"
-            val selector = trimmed.replace(
-                Regex("@(?:href|src|attr\\((?:href|src)\\))$", RegexOption.IGNORE_CASE),
-                "",
-            ).trim()
-            val values = runCatching {
-                Jsoup.parse(response.body, response.finalUrl).select(selector).map { it.attr(attribute) }
-            }.getOrElse {
-                return unsupported(source, "invalid nextTocUrl selector")
+            val values = when (val result = LegadoRuleExpressionDispatcher.evaluate(
+                root,
+                normalizeLinkExpression(nextRule),
+            )) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
             }
             for (value in values.filter(String::isNotBlank)) {
                 val url = runCatching { WebUrlResolver.resolve(response.finalUrl, value) }.getOrElse {
@@ -99,6 +94,21 @@ class CssTocParser {
             }
         }
         return EngineResult.Success(ParsedTocPage(chapters, nextUrls))
+    }
+
+    private fun normalizeLinkExpression(expression: String): String {
+        val rule = expression.trim()
+        val explicitPath = rule.startsWith("@xpath:", true) ||
+            rule.startsWith("@jsonpath:", true) || rule.startsWith("@json:", true) ||
+            rule.startsWith("/")
+        if (explicitPath) return rule
+        val normalized = rule
+            .replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
+            .replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
+        val suffix = normalized.substringAfterLast("@", "").lowercase()
+        return if (suffix in setOf("text", "owntext", "html", "attr(href)", "attr(src)") ||
+            normalized.contains("@attr(", true)
+        ) normalized else "$normalized@attr(href)"
     }
 
     private fun unsupported(source: BookSource, reason: String) =

@@ -53,16 +53,12 @@ class CssChapterContentParser {
         }
         val nextRule = rules["nextContentUrl"]?.trim().orEmpty()
         val nextUrl = if (nextRule.isEmpty()) null else {
-            val suffix = nextRule.substringAfterLast("@", "").lowercase()
-            val attribute = if (suffix == "src" || suffix == "attr(src)") "src" else "href"
-            val selector = nextRule.replace(
-                Regex("@(?:href|src|attr\\((?:href|src)\\))$", RegexOption.IGNORE_CASE),
-                "",
-            ).trim()
-            val rawLink = runCatching {
-                Jsoup.parse(response.body, response.finalUrl).select(selector).first()?.attr(attribute)
-            }.getOrElse {
-                return unsupported(source, "invalid nextContentUrl selector")
+            val rawLink = when (val result = LegadoRuleExpressionDispatcher.evaluate(
+                document,
+                normalizeLinkExpression(nextRule),
+            )) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value.firstOrNull()?.trim()?.takeIf(String::isNotEmpty)
             }
             if (rawLink.isNullOrBlank()) null else {
                 runCatching { WebUrlResolver.resolve(response.finalUrl, rawLink) }.getOrElse {
@@ -81,6 +77,21 @@ class CssChapterContentParser {
             )
         }
         return EngineResult.Success(ChapterContent(title, text, nextUrl))
+    }
+
+    private fun normalizeLinkExpression(expression: String): String {
+        val rule = expression.trim()
+        val explicitPath = rule.startsWith("@xpath:", true) ||
+            rule.startsWith("@jsonpath:", true) || rule.startsWith("@json:", true) ||
+            rule.startsWith("/")
+        if (explicitPath) return rule
+        val normalized = rule
+            .replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
+            .replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
+        val suffix = normalized.substringAfterLast("@", "").lowercase()
+        return if (suffix in setOf("text", "owntext", "html", "attr(href)", "attr(src)") ||
+            normalized.contains("@attr(", true)
+        ) normalized else "$normalized@attr(href)"
     }
 
     private fun evaluateOptional(
