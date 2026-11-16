@@ -28,7 +28,7 @@ class RhinoSourceScriptRuntime(
             EngineResult.Success(sandbox.evaluate(script, bindings).orEmpty())
         } catch (error: TimeoutCancellationException) {
             EngineResult.Failure(
-                EngineErrorCode.UNSUPPORTED_RULE,
+                EngineErrorCode.RULE_TIMEOUT,
                 "Source JavaScript exceeded the execution time limit",
                 error,
             )
