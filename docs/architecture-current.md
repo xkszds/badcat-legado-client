@@ -58,7 +58,7 @@ flowchart TB
 - 书源 JSON 编解码、受限 CSS 搜索/目录/章节解析及 HTTP 请求路径已建立。
 - 替换规则包含本地 JSON 导入导出、范围筛选、字面量替换与受限 Rhino 执行入口。
 - 搜索结果、书籍详情请求地址、封面/目录链接、目录章节链接和目录翻页链接统一限制为非空、无凭据的 HTTP(S) URL；相对链接按响应 URL 解析。
-- CSS 规则取值支持 `@CSS:` 前缀、`@textNodes`（仅直接文本节点，去除空白节点并以实际换行连接）、`@all`（返回匹配元素集合的 outerHTML）、`@html`（移除 script/style 后返回匹配元素集合的 outerHTML），并支持 Legado 风格的直接属性后缀（如 `@data-id`，跳过空值并去重）；仍属于受限 CSS 子集，不代表完整 Legado AnalyzeRule 兼容。
+- CSS 规则取值支持 `@CSS:` 前缀、`@textNodes`（仅直接文本节点，去除空白节点并以实际换行连接）、`@all`（按 Legado 行为返回匹配元素集合合并后的 outerHTML）、`@html`（移除 script/style 后返回匹配元素集合合并后的 outerHTML），并支持 Legado 风格的直接属性后缀（如 `@data-id`，跳过空值并去重）。搜索 `bookList` 与目录 `chapterList` 另走元素集合提取入口，逐项保留 HTML 节点边界，避免把多本书或多个章节合并为单个项目；仍属于受限 CSS 子集，不代表完整 Legado AnalyzeRule 兼容。
 - 书源 HTTP 重定向逐跳校验：拒绝带凭据的目标、显式非 HTTP(S) 协议与 HTTPS 降级到 HTTP，允许安全的跨域 HTTPS 跳转。
 - 目录与章节分页均设置页数上限；章节分页遇到请求 URL 或 HTTP 重定向后的最终 URL 循环、或页数超限时返回明确错误，不把部分正文伪装成完整成功结果。
 - 目录与章节分页的安全页数计数独立于 URL 循环别名集合：HTTP 重定向前后的 URL 都用于循环识别，但每次成功响应只计为一页，避免重定向被误算成额外分页。
