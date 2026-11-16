@@ -8,7 +8,7 @@ data class ParsedTocPage(
 )
 
 /**
- * CSS-only parser for official Legado TocRule fields.
+ * Bounded parser for official Legado TocRule fields; chapterList supports CSS and regex roots.
  * Pagination links are returned to the service; script formatting, VIP/pay,
  * volume semantics and full AnalyzeRule expressions are not interpreted.
  */
@@ -36,7 +36,7 @@ class CssTocParser {
         }
 
         val root = SourceDocument(response.finalUrl, response.body, response.contentType)
-        val items = when (val result = CssRuleEvaluator.evaluateElements(
+        val items = when (val result = LegadoRuleExpressionDispatcher.evaluateElements(
             root,
             listRule,
         )) {

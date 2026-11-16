@@ -167,4 +167,25 @@ class CssSearchResultsParserTest {
         assertIs<EngineResult.Failure>(CssSearchResultsParser().parse(source, response))
     }
 
+    @Test
+    fun extractsSearchCardsFromLegadoRegexBookList() {
+        val source = BookSource(
+            id = "fixture", name = "Fixture", baseUrl = "https://reader.example/",
+            ruleSearchJson = """{
+                "bookList":":<div class='book'>[\\s\\S]*?</div>",
+                "name":"h3@text",
+                "bookUrl":"a@href"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200, "https://reader.example/search",
+            body = """<div class="book"><h3>Regex Novel</h3><a href="/book/1">Read</a></div><div class="other">Skip</div>""",
+        )
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parse(source, response),
+        ).value
+        assertEquals(listOf("Regex Novel"), books.map { it.name })
+        assertEquals(listOf("https://reader.example/book/1"), books.map { it.bookUrl })
+    }
+
 }

@@ -212,4 +212,25 @@ class CssTocParserTest {
         assertEquals(listOf("https://reader.example/catalog?page=2"), page.nextPageUrls)
     }
 
+    @Test
+    fun extractsTocItemsFromLegadoRegexChapterList() {
+        val source = BookSource(
+            id = "fixture", name = "Fixture", baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":":<li class='chapter'>[\\s\\S]*?</li>",
+                "chapterName":"a@text",
+                "chapterUrl":"a@href"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200, "https://reader.example/catalog",
+            body = """<ul><li class="chapter"><a href="/chapter/1">Regex Chapter</a></li><li>Ignored</li></ul>""",
+        )
+        val page = assertIs<EngineResult.Success<ParsedTocPage>>(
+            CssTocParser().parse(source, response, "https://reader.example/book"),
+        ).value
+        assertEquals(listOf("Regex Chapter"), page.chapters.map { it.title })
+        assertEquals(listOf("https://reader.example/chapter/1"), page.chapters.map { it.url })
+    }
+
 }

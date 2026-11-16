@@ -12,6 +12,18 @@ data class ResolvedLegadoRuleExpression(
 )
 
 object LegadoRuleExpressionDispatcher {
+    /** Collection-root rules use Legado's all-in-one regex mode when prefixed with ':' or @regex:. */
+    fun evaluateElements(document: SourceDocument, expression: String): EngineResult<List<String>> {
+        val rule = expression.trim()
+        return when {
+            rule.startsWith("@regex:", true) ->
+                LegadoRegexElementEvaluator.evaluate(document.body, rule.substringAfter(':'))
+            rule.startsWith(":") ->
+                LegadoRegexElementEvaluator.evaluate(document.body, rule.substring(1))
+            else -> CssRuleEvaluator.evaluateElements(document, rule)
+        }
+    }
+
     fun evaluate(document: SourceDocument, expression: String): EngineResult<List<String>> {
         val resolved = when (val result = resolve(expression)) {
             is EngineResult.Failure -> return result

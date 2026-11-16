@@ -3,7 +3,7 @@ package app.badcat.engine
 import org.jsoup.Jsoup
 
 /**
- * Bounded CSS-only search result parser for the official Legado SearchRule
+ * Bounded search result parser for the official Legado SearchRule
  * field names. Each bookList element is evaluated independently so item
  * selectors are not accidentally applied to the whole response document.
  *
@@ -34,7 +34,7 @@ class CssSearchResultsParser {
         }
 
         val root = Jsoup.parse(response.body, response.finalUrl)
-        val items = when (val result = CssRuleEvaluator.evaluateElements(
+        val items = when (val result = LegadoRuleExpressionDispatcher.evaluateElements(
             SourceDocument(response.finalUrl, root.outerHtml(), response.contentType),
             listRule,
         )) {
