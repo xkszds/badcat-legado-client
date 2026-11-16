@@ -26,7 +26,7 @@ internal object MainBottomNavigation {
             elevation = context.dpNav(8).toFloat()
             listOf(
                 Triple("搜索", "⌕", "search"),
-                Triple("收藏夹", "▤", "favorites"),
+                Triple("收藏夹", "✿", "favorites"),
                 Triple("我的", "♙", "mine"),
             ).forEach { (label, glyph, key) ->
                 val isSelected = key == selected
