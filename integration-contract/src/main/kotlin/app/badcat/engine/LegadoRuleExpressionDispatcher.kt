@@ -53,17 +53,8 @@ object LegadoRuleExpressionDispatcher {
         expression: String,
         evaluateBranch: (String) -> EngineResult<List<String>>,
     ): EngineResult<List<String>> {
-        var branchFailure: EngineResult.Failure? = null
-        val values = try {
-            RuleCombinationEvaluator.evaluateNested(expression) { branch ->
-                when (val result = evaluateBranch(branch)) {
-                    is EngineResult.Success -> result.value
-                    is EngineResult.Failure -> {
-                        branchFailure = result
-                        emptyList()
-                    }
-                }
-            }
+        val split = try {
+            RuleExpressionTokenizer.splitByFirstTopLevelOperator(expression)
         } catch (error: Exception) {
             return EngineResult.Failure(
                 EngineErrorCode.UNSUPPORTED_RULE,
@@ -71,8 +62,38 @@ object LegadoRuleExpressionDispatcher {
                 error,
             )
         }
-        branchFailure?.let { return it }
-        return EngineResult.Success(values)
+        if (split.operator == null) return evaluateBranch(split.rules.single())
+
+        if (split.operator == "||") {
+            var firstFailure: EngineResult.Failure? = null
+            for (part in split.rules) {
+                when (val result = evaluateCombined(part, evaluateBranch)) {
+                    is EngineResult.Failure -> if (firstFailure == null) firstFailure = result
+                    is EngineResult.Success -> if (result.value.isNotEmpty()) return result
+                }
+            }
+            return firstFailure ?: EngineResult.Success(emptyList())
+        }
+
+        val branches = ArrayList<List<String>>()
+        for (part in split.rules) {
+            when (val result = evaluateCombined(part, evaluateBranch)) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> if (result.value.isNotEmpty()) branches += result.value
+            }
+        }
+        if (branches.isEmpty()) return EngineResult.Success(emptyList())
+        val combined = if (split.operator == "%%") {
+            buildList {
+                val rows = branches.maxOfOrNull { it.size } ?: 0
+                for (index in 0 until rows) {
+                    branches.forEach { it.getOrNull(index)?.let(::add) }
+                }
+            }
+        } else {
+            branches.flatten()
+        }
+        return EngineResult.Success(combined)
     }
 
     fun firstScalarValue(expression: String, values: List<String>): String? {
