@@ -91,6 +91,7 @@ class MyActivity : Activity() {
         body.addView(tools)
         scroll.addView(body)
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        root.addView(MainBottomNavigation.create(this, "mine"))
         setContentView(root)
     }
 
