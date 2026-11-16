@@ -5,6 +5,39 @@ import org.junit.Test
 
 class ReaderCssSelectorScopeTest {
     @Test
+    fun rendersRulesInInputOrderAndStopsAtTheConfiguredBudget() {
+        assertEquals(
+            ".reader-root .reader-paragraph{color:#111111}\\n.reader-root .reader-content{color:#222222}\\n",
+            ReaderCssDocument.renderRules(
+                listOf(
+                    ".reader-paragraph" to "color:#111111",
+                    ".reader-content" to "color:#222222",
+                    ".reader-root" to "color:#333333",
+                ),
+                maxRules = 2,
+            ),
+        )
+    }
+
+    @Test
+    fun invalidRulesDoNotConsumeTheActiveRuleBudget() {
+        assertEquals(
+            ".reader-root .reader-content{color:#222222}\\n",
+            ReaderCssDocument.renderRules(
+                listOf(
+                    ".reader-content)" to "color:#111111",
+                    ".reader-content" to "color:#222222",
+                ),
+                maxRules = 1,
+            ),
+        )
+    }
+
+    @Test
+    fun nonPositiveRuleBudgetProducesNoCss() {
+        assertEquals("", ReaderCssDocument.renderRules(listOf(".reader-content" to "color:#222222"), 0))
+    }
+    @Test
     fun scopesEachCommaSeparatedSelectorIndependently() {
         assertEquals(
             ".reader-root .reader-paragraph, .reader-root .reader-content",
