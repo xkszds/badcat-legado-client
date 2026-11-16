@@ -24,19 +24,25 @@ object RuleCombinationEvaluator {
     ): List<T> {
         val split = RuleExpressionTokenizer.splitByFirstTopLevelOperator(expression)
         if (split.operator == null) return evaluateRule(split.rules.single())
-        val branches = split.rules.map { part -> evaluateNested(part, evaluateRule) }
-        val nonEmpty = if (split.operator == "||") {
-            listOfNotNull(branches.firstOrNull { it.isNotEmpty() })
-        } else {
-            branches.filter { it.isNotEmpty() }
+        if (split.operator == "||") {
+            // Fallback is intentionally lazy: once a branch produces values,
+            // later branches must not run or turn a valid result into a failure.
+            for (part in split.rules) {
+                val values = evaluateNested(part, evaluateRule)
+                if (values.isNotEmpty()) return values
+            }
+            return emptyList()
         }
-        if (nonEmpty.isEmpty()) return emptyList()
+
+        val branches = split.rules.map { part -> evaluateNested(part, evaluateRule) }
+            .filter { it.isNotEmpty() }
+        if (branches.isEmpty()) return emptyList()
         return when (split.operator) {
             "%%" -> buildList {
-                val rows = nonEmpty.maxOfOrNull { it.size } ?: 0
-                for (index in 0 until rows) nonEmpty.forEach { it.getOrNull(index)?.let(::add) }
+                val rows = branches.maxOfOrNull { it.size } ?: 0
+                for (index in 0 until rows) branches.forEach { it.getOrNull(index)?.let(::add) }
             }
-            else -> nonEmpty.flatten()
+            else -> branches.flatten()
         }
     }
 
