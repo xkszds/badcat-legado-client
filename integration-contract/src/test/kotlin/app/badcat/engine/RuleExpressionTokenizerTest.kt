@@ -41,6 +41,18 @@ class RuleExpressionTokenizerTest {
     }
 
     @Test
+    fun preservesQuotedHtmlAttributesAndStagesInsideRegexBranches() {
+        val expression = """@regex:class="next" href="([^"]+)""""
+        assertEquals(
+            listOf(expression, "div.next"),
+            RuleExpressionTokenizer.splitTopLevel("$expression||div.next", "||"),
+        )
+
+        val staged = """@regex:<b>(.*?)</b>&&href="([^"]+)""""
+        assertEquals(null, RuleExpressionTokenizer.splitByFirstTopLevelOperator(staged).operator)
+    }
+
+    @Test
     fun rejectsMalformedGroupsAndUnknownDelimiter() {
         assertFailsWith<IllegalArgumentException> {
             RuleExpressionTokenizer.splitTopLevel("a[foo && b", "&&")
