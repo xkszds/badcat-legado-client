@@ -183,7 +183,7 @@ class SourceBookActivity : Activity() {
                     is EngineResult.Failure -> status.text = "详情加载失败（${detail.code}）：${detail.message}"
                     is EngineResult.Success -> {
                         val book = detail.value
-                        if (!book.coverUrl.isNullOrBlank()) loadCover(book.coverUrl)
+                        book.coverUrl?.takeIf { it.isNotBlank() }?.let { loadCover(it) }
                         detailTitle.text = book.name.ifBlank { bookName }
                         detailMetadata.text = buildString {
                             append(book.author?.takeIf { it.isNotBlank() }?.let { "作者：$it" } ?: "作者：未知")
