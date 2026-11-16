@@ -251,6 +251,10 @@ class ReaderCssActivity : Activity() {
                     settings.allowFileAccess = false
                     settings.allowContentAccess = false
                     isVerticalScrollBarEnabled = true
+                    layoutParams = LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        (320 * resources.displayMetrics.density).toInt(),
+                    )
                     loadDataWithBaseURL(
                         "https://reader.invalid/",
                         ReaderCssDocument.preview(this@ReaderCssActivity, selector.text.toString(), css.text.toString()),
