@@ -424,7 +424,7 @@ class SourceChapterActivity : Activity() {
                 renderReaderDocument()
                 currentChapterUrl = chapter.url
                 preferences.edit().putString(readingProgressKey(sourceId, bookUrl), chapter.url).apply()
-                ReadingHistoryActivity.save(this, sourceId, bookUrl, bookName.ifBlank { chapterTitle }, chapter.url, result.value.title.ifBlank { chapter.title })
+                ReadingHistoryActivity.save(this, sourceId, bookUrl, bookName.ifBlank { "未命名书籍" }, chapter.url, result.value.title.ifBlank { chapter.title })
             }
             is EngineResult.Failure -> status.text = "正文加载失败（${result.code}）：${result.message}"
         }
