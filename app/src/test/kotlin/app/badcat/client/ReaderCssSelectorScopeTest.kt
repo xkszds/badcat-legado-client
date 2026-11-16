@@ -94,6 +94,24 @@ class ReaderCssSelectorScopeTest {
     }
 
     @Test
+    fun normalizesPropertyNamesAndWhitespace() {
+        assertEquals(
+            "color:#abcdef;line-height:1.6",
+            ReaderCssDocument.sanitizeDeclarations(" COLOR : #abcdef ; Line-Height : 1.6 ;"),
+        )
+    }
+
+    @Test
+    fun rejectsCssRuleInjectionAndAtRuleFragments() {
+        assertEquals(
+            "color:#222222",
+            ReaderCssDocument.sanitizeDeclarations(
+                "color: #222222; font-size: 18px} body{display:none; @import: anything;",
+            ),
+        )
+    }
+
+    @Test
     fun reportsOnlyExactDuplicateSelectors() {
         assertEquals(
             mapOf(".reader-paragraph" to listOf("profile A / body", "profile B / paragraph")),
