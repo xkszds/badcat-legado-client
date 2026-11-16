@@ -3,6 +3,7 @@ package app.badcat.engine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlinx.coroutines.runBlocking
 
 class CssSearchResultsParserTest {
 
@@ -297,6 +298,62 @@ class CssSearchResultsParserTest {
         ).value
         assertEquals(listOf("Fallback card"), books.map { it.name })
         assertEquals(listOf("https://reader.example/fallback"), books.map { it.bookUrl })
+    }
+
+
+    @Test
+    fun executesJavaScriptBookListAndParsesReturnedHtmlFragments() = runBlocking {
+        val source = source(
+            """{"bookList":"@js:renderBooks(result)","name":"h2@text","bookUrl":"a@href"}""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/search",
+            body = "<div id='raw'>original response</div>",
+        )
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> {
+                assertEquals("renderBooks(result)", script)
+                assertEquals(response.body, bindings["result"])
+                assertEquals(response.finalUrl, bindings["baseUrl"])
+                assertEquals(source.id, bindings["sourceId"])
+                assertEquals("bookList", bindings["ruleName"])
+                return EngineResult.Success(
+                    """<article class="book"><h2>Script Novel</h2><a href="/book/script">Read</a></article>""",
+                )
+            }
+        }
+
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parseWithScripts(source, response, runtime),
+        ).value
+        assertEquals(1, books.size)
+        assertEquals("Script Novel", books.single().name)
+        assertEquals("https://reader.example/book/script", books.single().bookUrl)
+    }
+
+    @Test
+    fun rejectsBlankJavaScriptBookListWithoutExecutingRuntime() = runBlocking {
+        val source = source(
+            """{"bookList":"@js:   ","name":"h2@text","bookUrl":"a@href"}""",
+        )
+        val response = SourceHttpResponse(200, "https://reader.example/search", body = "<div></div>")
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> = error("Blank scripts must not execute")
+        }
+
+        val failure = assertIs<EngineResult.Failure>(
+            CssSearchResultsParser().parseWithScripts(source, response, runtime),
+        )
+        assertEquals(EngineErrorCode.UNSUPPORTED_RULE, failure.code)
     }
 
 }
