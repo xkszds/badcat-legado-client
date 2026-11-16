@@ -14,9 +14,14 @@ data class ResolvedLegadoRuleExpression(
 object LegadoRuleExpressionDispatcher {
     /** Collection-root rules support CSS/XPath/JSONPath and bounded regex branches. */
     fun evaluateElements(document: SourceDocument, expression: String): EngineResult<List<String>> {
-        val rule = expression.trim()
+        val parsed = LegadoRuleReplacement.parse(expression)
+        val rule = parsed.expression.trim()
         val allowUnprefixedRegexFallback = rule.contains("@regex:", ignoreCase = true) || rule.startsWith(":")
-        return evaluateCollectionBranches(document, rule, allowUnprefixedRegexFallback)
+        val evaluated = evaluateCollectionBranches(document, rule, allowUnprefixedRegexFallback)
+        return when (evaluated) {
+            is EngineResult.Failure -> evaluated
+            is EngineResult.Success -> parsed.apply(evaluated.value)
+        }
     }
 
     private fun evaluateCollectionBranches(
@@ -103,8 +108,9 @@ object LegadoRuleExpressionDispatcher {
         return EngineResult.Success(combined)
     }
 
-    fun evaluate(document: SourceDocument, expression: String): EngineResult<List<String>> =
-        evaluateCombined(expression) { branch ->
+    fun evaluate(document: SourceDocument, expression: String): EngineResult<List<String>> {
+        val parsed = LegadoRuleReplacement.parse(expression)
+        val evaluated = evaluateCombined(parsed.expression) { branch ->
             val scalarRule = branch.trim()
             if (scalarRule.startsWith("@regex:", ignoreCase = true)) {
                 LegadoRegexElementEvaluator.evaluateScalar(
@@ -119,6 +125,11 @@ object LegadoRuleExpressionDispatcher {
                 }
             }
         }
+        return when (evaluated) {
+            is EngineResult.Failure -> evaluated
+            is EngineResult.Success -> parsed.apply(evaluated.value)
+        }
+    }
 
     /**
      * Evaluate combined selectors through the same dispatcher used by search,

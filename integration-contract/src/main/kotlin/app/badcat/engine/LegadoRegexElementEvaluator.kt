@@ -150,6 +150,69 @@ object LegadoRegexElementEvaluator {
         }
     }
 
+    /**
+     * Bounded implementation of AnalyzeRule's `##regex##replacement` suffix.
+     * The deadline-aware CharSequence prevents a pathological replacement
+     * expression from monopolizing the source parser thread.
+     */
+    fun replace(
+        input: String,
+        expression: String,
+        replacement: String,
+        replaceFirst: Boolean = false,
+        timeoutMilliseconds: Long = DEFAULT_TIMEOUT_MILLISECONDS,
+    ): EngineResult<String> {
+        if (input.length > MAX_INPUT_CHARACTERS) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Regex replacement input exceeds the configured limit")
+        }
+        if (expression.length > MAX_PATTERN_CHARACTERS) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Regex replacement pattern exceeds the configured limit")
+        }
+        if (expression.isEmpty()) return EngineResult.Success(input)
+        if (timeoutMilliseconds !in 1..5_000) {
+            return EngineResult.Failure(EngineErrorCode.INVALID_SOURCE, "Regex timeout must be between 1 and 5000ms")
+        }
+        val compiled = try {
+            Pattern.compile(expression)
+        } catch (_: Exception) {
+            return EngineResult.Success(if (replaceFirst) replacement else input.replace(expression, replacement))
+        }
+        val started = System.nanoTime()
+        val deadline = timeoutMilliseconds * 1_000_000L
+        return try {
+            val matcher = compiled.matcher(DeadlineCharSequence(input, started, deadline))
+            val output = StringBuffer()
+            if (replaceFirst) {
+                if (!matcher.find()) return EngineResult.Success("")
+                matcher.appendReplacement(output, replacement)
+            } else {
+                while (matcher.find()) {
+                    matcher.appendReplacement(output, replacement)
+                    if (output.length > MAX_OUTPUT_CHARACTERS) {
+                        return EngineResult.Failure(
+                            EngineErrorCode.UNSUPPORTED_RULE,
+                            "Regex replacement output exceeds the configured limit",
+                        )
+                    }
+                }
+            }
+            matcher.appendTail(output)
+            if (output.length > MAX_OUTPUT_CHARACTERS) {
+                EngineResult.Failure(
+                    EngineErrorCode.UNSUPPORTED_RULE,
+                    "Regex replacement output exceeds the configured limit",
+                )
+            } else {
+                EngineResult.Success(output.toString())
+            }
+        } catch (timeout: RegexDeadlineExceeded) {
+            EngineResult.Failure(EngineErrorCode.RULE_TIMEOUT, "Legado regex replacement exceeded its time budget", timeout)
+        } catch (_: Exception) {
+            // Upstream falls back to literal replacement if regex replacement syntax fails.
+            EngineResult.Success(if (replaceFirst) replacement else input.replace(expression, replacement))
+        }
+    }
+
     /** Split Legado regex stages without treating quote characters as tokenizer strings. */
     private fun splitRegexStages(expression: String): List<String> {
         val stages = ArrayList<String>()
