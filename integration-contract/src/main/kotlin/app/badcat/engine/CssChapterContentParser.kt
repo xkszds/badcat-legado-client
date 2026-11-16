@@ -9,6 +9,101 @@ import org.jsoup.nodes.TextNode
  * replaceRegex, payAction, imageDecode, or contentBatch.
  */
 class CssChapterContentParser {
+    /** Executes bounded JavaScript content/title/next-page fields in production reads. */
+    suspend fun parseWithScripts(
+        source: BookSource,
+        response: SourceHttpResponse,
+        chapter: BookChapter,
+        scriptRuntime: SourceScriptRuntime,
+    ): EngineResult<ChapterContent> {
+        val rules = when (val result = SourceRuleResolver.resolveObject(source, SourceRuleStage.CONTENT)) {
+            is EngineResult.Failure -> return result
+            is EngineResult.Success -> result.value.fields
+        }
+        val contentRule = rules["content"]?.takeIf(String::isNotBlank)
+            ?: return unsupported(source, "missing content rule")
+        val document = SourceDocument(response.finalUrl, response.body, response.contentType)
+
+        suspend fun evaluateField(key: String, expression: String): EngineResult<String?> {
+            val trimmed = expression.trim()
+            if (trimmed.startsWith("@js:", true) || trimmed.startsWith("javascript:", true)) {
+                val script = trimmed.substringAfter(':').trim()
+                if (script.isBlank()) return unsupported(source, "empty JavaScript rule for '$key'")
+                return when (val result = scriptRuntime.evaluate(
+                    source,
+                    script,
+                    mapOf(
+                        "result" to response.body,
+                        "baseUrl" to response.finalUrl,
+                        "sourceUrl" to source.id,
+                        "sourceId" to source.id,
+                        "sourceName" to source.name,
+                        "ruleName" to key,
+                    ),
+                )) {
+                    is EngineResult.Failure -> result
+                    is EngineResult.Success -> EngineResult.Success(result.value.takeIf(String::isNotBlank))
+                }
+            }
+            val normalized = when (key) {
+                "nextContentUrl" -> normalizeLinkExpression(expression)
+                else -> expression
+            }
+            return when (val result = LegadoRuleExpressionDispatcher.evaluate(document, normalized)) {
+                is EngineResult.Failure -> result
+                is EngineResult.Success -> EngineResult.Success(
+                    LegadoRuleExpressionDispatcher.firstScalarValue(normalized, result.value)
+                        ?.trim()?.takeIf(String::isNotEmpty),
+                )
+            }
+        }
+
+        val contentValue = when {
+            contentRule.trim().startsWith("@js:", true) ||
+                contentRule.trim().startsWith("javascript:", true) -> when (val result = evaluateField("content", contentRule)) {
+                    is EngineResult.Failure -> return result
+                    is EngineResult.Success -> result.value
+                }
+            else -> when (val result = LegadoRuleExpressionDispatcher.evaluate(
+                document,
+                if (contentRule.contains("@", true)) contentRule else "$contentRule@html",
+            )) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value.joinToString("\n")
+            }
+        } ?: return EngineResult.Failure(
+            EngineErrorCode.NOT_FOUND,
+            "No chapter content matched source '${source.id}' rule",
+        )
+
+        val title = rules["title"]?.takeIf(String::isNotBlank)?.let {
+            when (val result = evaluateField("title", it)) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            }
+        }?.takeIf(String::isNotBlank) ?: chapter.title
+
+        val nextUrl = rules["nextContentUrl"]?.takeIf(String::isNotBlank)?.let {
+            when (val result = evaluateField("nextContentUrl", it)) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            }
+        }?.let { raw ->
+            runCatching { WebUrlResolver.resolve(response.finalUrl, raw) }.getOrElse {
+                return unsupported(source, "nextContentUrl must resolve to a credential-free HTTP(S) URL")
+            }
+        }
+
+        val text = htmlToReadableText(contentValue).orEmpty()
+        if (text.isBlank()) {
+            return EngineResult.Failure(
+                EngineErrorCode.NOT_FOUND,
+                "Chapter content is empty after HTML cleanup for source '${source.id}'",
+            )
+        }
+        return EngineResult.Success(ChapterContent(title, text, nextUrl))
+    }
+
     fun parse(
         source: BookSource,
         response: SourceHttpResponse,
