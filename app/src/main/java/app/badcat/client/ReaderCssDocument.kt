@@ -124,11 +124,8 @@ internal object ReaderCssDocument {
                         if (brackets == 0) return false
                         brackets--
                     }
-                    ',' -> if (parentheses == 0 && brackets == 0) {
-                        // Empty groups are invalid CSS and can make rules fail silently.
-                        val before = selector.substringBeforeLast(',', "").trim()
-                        if (before.isEmpty()) return false
-                    }
+                    // Group emptiness is checked after splitting below.
+                    ',' -> Unit
                 }
             }
         }
