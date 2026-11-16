@@ -85,7 +85,16 @@ internal object LegadoElementIndex {
                     if ((start < 0 && end < 0) || (start >= size && end >= size)) continue
                     start = start.coerceIn(0, size - 1)
                     end = end.coerceIn(0, size - 1)
-                    val step = kotlin.math.abs(term.step).coerceAtLeast(1)
+                    if (start == end || term.step >= size) {
+                        indexes += start
+                        continue
+                    }
+                    // Mirrors ElementsSingle's negative-step normalization.
+                    val step = when {
+                        term.step > 0 -> term.step
+                        -term.step < size -> term.step + size
+                        else -> 1
+                    }.coerceAtLeast(1)
                     if (start <= end) {
                         var index = start
                         while (index <= end) {
