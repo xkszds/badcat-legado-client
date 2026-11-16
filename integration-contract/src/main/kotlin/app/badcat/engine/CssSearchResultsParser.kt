@@ -100,18 +100,45 @@ class CssSearchResultsParser {
         }
         val listRule = rules["bookList"]?.takeIf(String::isNotBlank)
             ?: return unsupported(source, "missing bookList rule")
-        if (listRule.contains("@js:", true) || listRule.contains("{{")) {
-            return unsupported(source, "JavaScript collection-root rules")
-        }
-        if (hasNonHtmlOutputSuffix(listRule)) {
-            return unsupported(source, "bookList must return element HTML")
-        }
-        val items = when (val result = LegadoRuleExpressionDispatcher.evaluateElements(
-            SourceDocument(response.finalUrl, response.body, response.contentType),
-            listRule,
-        )) {
-            is EngineResult.Failure -> return result
-            is EngineResult.Success -> result.value
+        val rootExpression = listRule.trim()
+        val items = if (rootExpression.startsWith("@js:", true) ||
+            rootExpression.startsWith("javascript:", true)
+        ) {
+            val script = rootExpression.substringAfter(':').trim()
+            if (script.isBlank()) return unsupported(source, "empty JavaScript bookList")
+            val rendered = when (val result = scriptRuntime.evaluate(
+                source = source,
+                script = script,
+                bindings = mapOf(
+                    "result" to response.body,
+                    "baseUrl" to response.finalUrl,
+                    "sourceUrl" to source.id,
+                    "sourceId" to source.id,
+                    "sourceName" to source.name,
+                    "ruleName" to "bookList",
+                ),
+            )) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            }
+            // Collection-root scripts must return HTML fragments. Parse only
+            // direct body children so card-level selectors remain isolated.
+            val fragment = org.jsoup.Jsoup.parseBodyFragment(rendered)
+            fragment.body().children().map { it.outerHtml() }
+        } else {
+            if (rootExpression.contains("{{")) {
+                return unsupported(source, "bookList interpolation")
+            }
+            if (hasNonHtmlOutputSuffix(listRule)) {
+                return unsupported(source, "bookList must return element HTML")
+            }
+            when (val result = LegadoRuleExpressionDispatcher.evaluateElements(
+                SourceDocument(response.finalUrl, response.body, response.contentType),
+                listRule,
+            )) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            }
         }
 
         suspend fun fieldValue(key: String, itemHtml: String): EngineResult<String?> {
