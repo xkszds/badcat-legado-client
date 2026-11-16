@@ -105,7 +105,7 @@ class CssSearchResultsParser {
         }?.let { value ->
             if (key == "bookUrl" || key == "coverUrl") {
                 return try {
-                    WebUrlResolver.resolve(response.finalUrl, value)
+                    WebUrlResolver.resolve(itemDocument.url, value)
                 } catch (_: Exception) {
                     throw UnsupportedSearchRule(source.id, "$key must resolve to an HTTP(S) URL")
                 }
