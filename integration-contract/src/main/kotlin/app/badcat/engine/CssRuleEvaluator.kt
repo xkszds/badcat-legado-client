@@ -115,7 +115,7 @@ object CssRuleEvaluator {
                 escaped = false
                 return@forEachIndexed
             }
-            if (char == '\\\\') {
+            if (char == '\\') {
                 escaped = true
                 return@forEachIndexed
             }
