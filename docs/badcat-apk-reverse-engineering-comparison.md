@@ -62,3 +62,12 @@ APK 中还包含 `assets/libjiagu.so`，以及一个文件头不是标准 DEX ma
 ## 6. 最近构建状态
 
 书架改造提交 `519cdc24df6fc9b2e850164338a292043c1dedf7` 的 GitHub Actions run `43848666949` 已通过：契约测试、Rhino 宿主测试、Debug APK 组装和产物上传全部成功。上传的 APK Artifact 大小 4,782,473 bytes，Artifact SHA-256 为 `ba8e293e37fb8c91103e5d721eb3883d11b0ac88606995cb9314d1ff5e82dabe`。这仅证明 CI 通过，不代表真机验收或原版 UI 复刻完成。
+
+
+## 7. 配套 DEX 归档交叉核验（2026-11-16）
+
+本轮同时重新读取用户 Library 中的 `com.hhm.verticalsearch.zip`。它包含 7 个 DEX 文件，并非 Java/Kotlin 源码工程。与 APK 对照后，ZIP 的 classes.dex、classes2.dex 与 APK 对应文件大小和 DEX 头部 ID 数量相同，但 SHA-256 不同；ZIP classes4.dex/classes5.dex/classes6.dex 分别与 APK classes3.dex/classes4.dex/classes5.dex 在大小和头部数量上对应，但哈希也不同。只有 ZIP classes7.dex 与 APK classes6.dex（284 bytes）字节完全一致。ZIP 另含 11,193,804-byte 的 classes3.dex，头部 class_def 数量为 7，需独立检查，不能仅凭名称判断用途。
+
+完整逐项哈希、头部计数、编号映射和限制见 [原版 APK 与配套 DEX 归档核对记录](reference-archive-comparison-2026-11-16.md)。
+
+本轮没有把 APK/ZIP 二进制本体谎称为已提交到 GitHub：当前可用的 GitHub 写入通道虽支持文本和 Git blob，但本轮工具链没有将大型本地文件字节直接传入 blob 请求的通路。原始材料仍在用户上传文件库中；仓库已保存可复核的 SHA-256 和结构清单。后续方法体反编译、二进制 XML 解码与真机视觉对照仍待工具链补齐。
