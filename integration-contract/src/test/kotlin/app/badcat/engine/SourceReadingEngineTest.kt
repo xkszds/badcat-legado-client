@@ -423,4 +423,61 @@ class SourceReadingEngineTest {
         assertEquals(false, requested)
     }
 
+    @Test
+    fun runsAtJsSearchUrlThroughTheImportedSourceReadingFlow() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            searchUrl = "https://reader.example/search?q=@js:return result + key",
+            ruleSearchJson = """{"bookList":"div.result","name":"h2@text","bookUrl":"a@href"}""",
+        )
+        val requests = mutableListOf<String>()
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                requests += request.url
+                return EngineResult.Success(
+                    SourceHttpResponse(
+                        statusCode = 200,
+                        finalUrl = request.url,
+                        body = """<div class="result"><h2>Script Novel</h2><a href="/book/1">Open</a></div>""",
+                    ),
+                )
+            }
+        }
+        val evaluator = object : LegadoEmbeddedScriptEvaluator {
+            override suspend fun evaluate(script: String, key: String, page: Int): EngineResult<Any?> =
+                EngineResult.Success("unused")
+
+            override suspend fun evaluateWithResult(
+                script: String,
+                key: String,
+                page: Int,
+                result: String,
+            ): EngineResult<Any?> {
+                assertEquals("return result + key", script)
+                assertEquals("https://reader.example/search?q=", result)
+                assertEquals("cat", key)
+                assertEquals(1, page)
+                return EngineResult.Success(result + key)
+            }
+        }
+        val gateway = SourceHttpGateway(client, evaluator)
+        val engine = SourceReadingEngine(
+            catalog = BookSourceCatalog { EngineResult.Success(listOf(source)) },
+            searchUrlResolver = BookSourceSearchUrlResolver(),
+            searchService = SourceSearchService(gateway),
+            detailService = SourceBookDetailService(gateway),
+            tocService = SourceTocService(gateway),
+            contentService = SourceChapterContentService(gateway),
+        )
+
+        val candidates = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            engine.search("fixture", "cat"),
+        ).value
+        assertEquals("Script Novel", candidates.single().name)
+        assertEquals("https://reader.example/book/1", candidates.single().bookUrl)
+        assertEquals(listOf("https://reader.example/search?q=cat"), requests)
+    }
+
 }
