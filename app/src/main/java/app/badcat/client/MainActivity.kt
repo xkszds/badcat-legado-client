@@ -20,6 +20,7 @@ class MainActivity : Activity() {
     private lateinit var keyword: EditText
     private lateinit var typeLabel: TextView
     private var contentType = "小说"
+    private var appliedHomeLayoutMode = "integrated"
 
     private val blue = Color.rgb(55, 137, 222)
     private val ink = Color.rgb(48, 55, 66)
@@ -30,6 +31,7 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         window.statusBarColor = blue
         window.navigationBarColor = Color.WHITE
+        appliedHomeLayoutMode = homeLayoutMode()
         @Suppress("DEPRECATION")
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
         setContentView(buildHome())
@@ -46,24 +48,25 @@ class MainActivity : Activity() {
     }
 
     private fun buildHeader(): View = LinearLayout(this).apply {
+        val smallTitle = homeLayoutMode() == "small"
         orientation = LinearLayout.VERTICAL
         gravity = Gravity.CENTER_HORIZONTAL
-        setPadding(dp(20), dp(20), dp(20), dp(22))
+        setPadding(dp(20), dp(if (smallTitle) 14 else 20), dp(20), dp(if (smallTitle) 18 else 22))
         background = rounded(blue, 0, 0, 0, 22, 22)
 
         addView(TextView(this@MainActivity).apply {
             text = "坏坏猫"
-            textSize = 25f
+            textSize = if (smallTitle) 16f else 23f
             gravity = Gravity.CENTER
             setTextColor(Color.WHITE)
             typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
             letterSpacing = 0.035f
             includeFontPadding = false
-        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(42)))
+        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(if (smallTitle) 28 else 36)))
 
         addView(buildSearchBar(), LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, dp(50)
-        ).apply { topMargin = dp(15) })
+        ).apply { topMargin = dp(if (smallTitle) 8 else 11) })
     }
 
     private fun buildSearchBar(): View = LinearLayout(this).apply {
@@ -170,6 +173,18 @@ class MainActivity : Activity() {
             dp(tl).toFloat(), dp(tl).toFloat(), dp(tr).toFloat(), dp(tr).toFloat(),
             dp(br).toFloat(), dp(br).toFloat(), dp(bl).toFloat(), dp(bl).toFloat()
         )
+    }
+
+    private fun homeLayoutMode(): String = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
+        .getString("home_layout_mode", "integrated")?.takeIf { it == "small" || it == "integrated" } ?: "integrated"
+
+    override fun onResume() {
+        super.onResume()
+        val selected = homeLayoutMode()
+        if (selected != appliedHomeLayoutMode) {
+            appliedHomeLayoutMode = selected
+            recreate()
+        }
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
