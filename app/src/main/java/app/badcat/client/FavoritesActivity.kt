@@ -143,7 +143,7 @@ class FavoritesActivity : Activity() {
             setPadding(dp(18), dp(16), dp(14), dp(12))
             setBackgroundColor(Color.WHITE)
         }
-        header.addView(View(this), LinearLayout.LayoutParams(0, dp(1), 1f))
+        header.addView(View(this), LinearLayout.LayoutParams(dp(104), dp(1)))
         val title = TextView(this).apply {
             text = selectedType
             textSize = 27f
@@ -156,13 +156,14 @@ class FavoritesActivity : Activity() {
                 val types = arrayOf("小说", "漫画", "其他")
                 AlertDialog.Builder(this@FavoritesActivity).setItems(types) { _, which ->
                     selectedType = types[which]
+                    title.text = selectedType
                     selectedFolderId = FavoriteBooks.DEFAULT_FOLDER_ID
                     refresh()
                 }.show()
                 true
             }
         }
-        header.addView(title, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 2f))
+        header.addView(title, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         header.addView(LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -175,7 +176,7 @@ class FavoritesActivity : Activity() {
             val more = actionText("⋮") {}
             more.setOnClickListener { showMoreMenu(more) }
             addView(more)
-        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         root.addView(header)
         val scroll = ScrollView(this)
         rootContent = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(14), dp(14), dp(20)) }
