@@ -44,16 +44,42 @@ class SelectorLegadoRuleRuntime(
                 !expression.trim().startsWith("@", ignoreCase = true) &&
                 expression.trim().startsWith("javascript:", ignoreCase = true)
             ) continue
-            val resolved = when (val dispatch = LegadoRuleExpressionDispatcher.resolve(expression)) {
-                is EngineResult.Failure -> return dispatch
-                is EngineResult.Success -> dispatch.value
+            var branchFailure: EngineResult.Failure? = null
+            val values = try {
+                RuleCombinationEvaluator.evaluateNested(expression) { branch ->
+                    val resolved = if (configuredType != null) {
+                        ResolvedLegadoRuleExpression(configuredType, branch).let { EngineResult.Success(it) }
+                    } else {
+                        when (val dispatch = LegadoRuleExpressionDispatcher.resolve(branch)) {
+                            is EngineResult.Failure -> {
+                                branchFailure = dispatch
+                                null
+                            }
+                            is EngineResult.Success -> dispatch.value
+                        }
+                    } ?: return@evaluateNested emptyList()
+
+                    when (val result = SelectorRuleEvaluator.evaluate(
+                        document,
+                        resolved.type,
+                        resolved.expression,
+                    )) {
+                        is EngineResult.Success -> result.value
+                        is EngineResult.Failure -> {
+                            branchFailure = result
+                            emptyList()
+                        }
+                    }
+                }
+            } catch (error: Exception) {
+                return EngineResult.Failure(
+                    EngineErrorCode.UNSUPPORTED_RULE,
+                    "Invalid ${stage.name.lowercase()} rule expression for field '$field'",
+                    error,
+                )
             }
-            val type = configuredType ?: resolved.type
-            val executableExpression = if (configuredType != null) expression else resolved.expression
-            when (val result = SelectorRuleEvaluator.evaluate(document, type, executableExpression)) {
-                is EngineResult.Success -> evaluated[field] = result.value
-                is EngineResult.Failure -> return result
-            }
+            branchFailure?.let { return it }
+            evaluated[field] = values
         }
 
         if (evaluated.isEmpty()) {
