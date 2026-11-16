@@ -34,10 +34,9 @@ class CssSearchResultsParser {
         }
 
         val root = Jsoup.parse(response.body, response.finalUrl)
-        val items = when (val result = SelectorRuleEvaluator.evaluate(
+        val items = when (val result = CssRuleEvaluator.evaluateElements(
             SourceDocument(response.finalUrl, root.outerHtml(), response.contentType),
-            SelectorRuleType.CSS,
-            normalizeHtmlOutput(listRule),
+            listRule,
         )) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
