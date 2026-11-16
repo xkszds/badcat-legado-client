@@ -28,7 +28,7 @@ class CssSearchResultsParser {
                 EngineErrorCode.UNSUPPORTED_RULE,
                 "Source '${source.id}' has no ${stage.name.lowercase()} bookList rule",
             )
-        if (listRule.contains("@js", ignoreCase = true) || listRule.contains("{{")) {
+        if (listRule.contains("@js:", ignoreCase = true) || listRule.contains("{{")) {
             return unsupported(source, "JavaScript or interpolation in bookList")
         }
         if (hasNonHtmlOutputSuffix(listRule)) {
@@ -87,7 +87,7 @@ class CssSearchResultsParser {
         itemDocument: SourceDocument,
     ): String? {
         val expression = rules[key]?.takeIf(String::isNotBlank) ?: return null
-        if (expression.contains("@js", ignoreCase = true) || expression.contains("{{")) {
+        if (expression.contains("@js:", ignoreCase = true) || expression.contains("{{")) {
             throw UnsupportedSearchRule(source.id, key)
         }
         val extractionRule = when (key) {
