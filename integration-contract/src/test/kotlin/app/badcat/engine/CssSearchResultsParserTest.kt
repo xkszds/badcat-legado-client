@@ -284,7 +284,7 @@ class CssSearchResultsParserTest {
     @Test
     fun fallsBackFromInvalidRegexBranchesToCssSearchRules() {
         val source = source(
-            """{"bookList":"@regex:[||div.secondary","name":"@regex:[||h2@text","bookUrl":"a@href"}""",
+            """{"bookList":"@regex:a{2,1}||div.secondary","name":"@regex:a{2,1}||h2@text","bookUrl":"a@href"}""",
         )
         val response = SourceHttpResponse(
             statusCode = 200,
