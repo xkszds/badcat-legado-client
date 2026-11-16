@@ -50,6 +50,6 @@ class LegadoElementIndexTest {
     fun rejectsMalformedIndexSuffixes() {
         assertNull(LegadoElementIndex.parse("li.item[]"))
         assertNull(LegadoElementIndex.parse("li.item[1:2:3:4]"))
-        assertNull(LegadoElementIndex.parse("li.item[1:0]"))
+        assertNull(LegadoElementIndex.parse("li.item[1:2:0]"))
     }
 }
