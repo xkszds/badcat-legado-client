@@ -107,7 +107,7 @@ internal object ReaderCssDocument {
                 val selector = sanitizeSelector(selectorRaw) ?: continue
                 val declarations = sanitizeDeclarations(declarationsRaw)
                 if (declarations.isEmpty()) continue
-                val renderedRule = "${scopeSelector(selector)}{$declarations}\\n"
+                val renderedRule = "${scopeSelector(selector)}{$declarations}\n"
                 if (length + renderedRule.length > maxChars) break
                 append(renderedRule)
                 applied++
