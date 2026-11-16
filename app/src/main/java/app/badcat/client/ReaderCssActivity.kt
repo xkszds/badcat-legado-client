@@ -165,7 +165,7 @@ class ReaderCssActivity : Activity() {
     private fun manageProfile(id: String) {
         val profile = readProfiles().firstOrNull { it.id == id } ?: return
         val labels = profile.rules.map { "${it.name.ifBlank { it.selector }}\n${it.selector}" }.toTypedArray()
-        val actions = arrayOf("添加子选择器", "编辑方案名称和备注", "编辑已有子选择器", "删除子选择器", "上移子选择器（调整优先级）", "下移子选择器（调整优先级）")
+        val actions = arrayOf("添加子选择器", "编辑方案名称和备注", "编辑已有子选择器", "删除子选择器", "上移子选择器（调整优先级）", "下移子选择器（调整优先级）", "预览整套方案（全部子选择器）")
         android.app.AlertDialog.Builder(this).setTitle(profile.name)
             .setItems(actions) { _, which ->
                 when (which) {
@@ -201,8 +201,34 @@ class ReaderCssActivity : Activity() {
                                     message.text = "子选择器顺序已调整；后面的规则在 CSS 层叠中优先"
                                 }
                             }.show()
+                    6 -> showProfilePreview(id)
                 }
             }.setNegativeButton("关闭", null).show()
+    }
+
+    private fun showProfilePreview(profileId: String) {
+        val profile = readProfiles().firstOrNull { it.id == profileId } ?: return
+        val preview = android.webkit.WebView(this).apply {
+            settings.javaScriptEnabled = false
+            settings.domStorageEnabled = false
+            settings.allowFileAccess = false
+            settings.allowContentAccess = false
+            isVerticalScrollBarEnabled = true
+            loadDataWithBaseURL(
+                "https://reader.invalid/",
+                ReaderCssDocument.previewRules(
+                    this@ReaderCssActivity,
+                    profile.rules.map { it.selector to it.css },
+                ),
+                "text/html", "UTF-8", null,
+            )
+        }
+        android.app.AlertDialog.Builder(this)
+            .setTitle("方案预览：${profile.name}")
+            .setView(preview)
+            .setPositiveButton("关闭", null)
+            .show()
+            .setOnDismissListener { preview.destroy() }
     }
 
     private fun editRule(profileId: String, index: Int?) {
