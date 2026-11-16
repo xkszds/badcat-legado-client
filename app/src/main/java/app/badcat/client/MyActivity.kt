@@ -149,7 +149,13 @@ class MyActivity : Activity() {
             "bookmarks" -> startActivity(Intent(this, BookmarkActivity::class.java))
             "sources" -> startActivity(Intent(this, SourceCatalogActivity::class.java))
             "downloads" -> startActivity(Intent(this, DownloadManagementActivity::class.java))
-            "messages", "feedback", "sync" -> toast("该功能尚未接入")
+            "messages" -> startActivity(Intent(this, MessageCenterActivity::class.java))
+            "sync" -> startActivity(Intent(this, FavoriteSyncActivity::class.java))
+            "feedback" -> startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_SUBJECT, "坏坏猫客户端意见反馈")
+                putExtra(Intent.EXTRA_TEXT, "坏坏猫客户端版本：0.1.0-integration\\n\\n问题描述：\\n\\n复现步骤：\\n\\n设备型号与 Android 版本：")
+            }, "发送意见反馈"))
             "replace" -> startActivity(Intent(this, ReplaceRuleActivity::class.java))
             "share" -> startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
