@@ -164,18 +164,16 @@ class SelectorLegadoRuleRuntimeTest {
     }
 
     @Test
-    fun rejectsScriptAndRegexWithoutTheirDedicatedRuntime(): Unit = runBlocking {
+    fun rejectsJavaScriptWithoutAnInjectedScriptRuntime(): Unit = runBlocking {
         val source = BookSource("https://reader.example/", "Fixture", "https://reader.example/")
         val runtime = SelectorLegadoRuleRuntime()
-        for (expression in listOf("@js:java.lang.System.exit(0)", "@regex:chapter.*")) {
-            val result = runtime.evaluate(
-                SourceRuleStage.SEARCH,
-                """{"bookList":"$expression"}""",
-                source,
-                SourceDocument("https://reader.example/", "<p>ignored</p>"),
-            )
-            assertEquals(EngineErrorCode.UNSUPPORTED_RULE, assertIs<EngineResult.Failure>(result).code)
-        }
+        val result = runtime.evaluate(
+            SourceRuleStage.SEARCH,
+            """{"bookList":"@js:java.lang.System.exit(0)"}""",
+            source,
+            SourceDocument("https://reader.example/", "<p>ignored</p>"),
+        )
+        assertEquals(EngineErrorCode.UNSUPPORTED_RULE, assertIs<EngineResult.Failure>(result).code)
     }
 
     @Test
