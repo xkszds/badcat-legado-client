@@ -1,6 +1,7 @@
 package app.badcat.client
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
@@ -9,18 +10,15 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 
-/**
- * Search landing screen rebuilt to follow the original Badcat composition:
- * blue title/search header, content-type tabs, and the original three bottom
- * destinations (Search, Favorites, Mine). Removed promotional shortcuts stay
- * absent; search remains connected to the source-backed result screen.
- */
+/** Minimal original-style search landing page: centered title and one search bar. */
 class MainActivity : Activity() {
     private lateinit var keyword: EditText
+    private lateinit var typeLabel: TextView
     private var contentType = "小说"
 
     private val blue = Color.rgb(55, 137, 222)
@@ -40,121 +38,119 @@ class MainActivity : Activity() {
     private fun buildHome(): View = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
         setBackgroundColor(page)
-
-        val body = LinearLayout(this@MainActivity).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
-            )
-            addView(buildHeader())
-            addView(View(this@MainActivity), LinearLayout.LayoutParams(1, 0, 1f))
-        }
-        addView(body)
-        addView(buildBottomNavigation())
+        addView(buildHeader())
+        addView(View(this@MainActivity), LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
+        ))
+        addView(MainBottomNavigation.create(this@MainActivity, "search"))
     }
 
     private fun buildHeader(): View = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
-        gravity = Gravity.CENTER_VERTICAL
-        setPadding(dp(22), dp(22), dp(22), dp(22))
+        gravity = Gravity.CENTER_HORIZONTAL
+        setPadding(dp(20), dp(20), dp(20), dp(22))
         background = rounded(blue, 0, 0, 0, 22, 22)
+
         addView(TextView(this@MainActivity).apply {
             text = "坏坏猫"
-            textSize = 36f
-            gravity = Gravity.START
+            textSize = 25f
+            gravity = Gravity.CENTER
             setTextColor(Color.WHITE)
-            typeface = Typeface.create("casual", Typeface.NORMAL)
-            letterSpacing = 0.06f
+            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+            letterSpacing = 0.035f
             includeFontPadding = false
-        })
-        addView(TextView(this@MainActivity).apply {
-            text = "发现好书，开始阅读"
-            textSize = 14f
-            gravity = Gravity.START
-            setTextColor(Color.WHITE)
-            alpha = 0.9f
-            setPadding(0, dp(5), 0, dp(10))
-        })
-        addView(buildSearchPanel())
+        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(42)))
+
+        addView(buildSearchBar(), LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(50)
+        ).apply { topMargin = dp(15) })
     }
 
-    private fun buildSearchPanel(): View = LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        setPadding(0, dp(4), 0, 0)
+    private fun buildSearchBar(): View = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        background = rounded(Color.WHITE, 25)
+        setPadding(dp(5), 0, dp(5), 0)
+        elevation = dp(2).toFloat()
 
-        val typeRow = LinearLayout(this@MainActivity).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.START
+        typeLabel = TextView(this@MainActivity).apply {
+            text = "小说 ▾"
+            textSize = 14f
+            gravity = Gravity.CENTER
+            setTextColor(blue)
+            typeface = Typeface.DEFAULT_BOLD
+            setPadding(dp(12), 0, dp(12), 0)
+            isClickable = true
+            isFocusable = true
+            contentDescription = "选择搜索类型，当前$contentType"
+            setOnClickListener { chooseContentType() }
         }
-        val typeLabels = listOf("小说", "漫画", "综合")
-        fun refreshTypes() {
-            for (index in 0 until typeRow.childCount) {
-                val chip = typeRow.getChildAt(index) as TextView
-                val selected = chip.text.toString() == contentType
-                chip.setTextColor(if (selected) Color.WHITE else Color.WHITE)
-                chip.typeface = if (selected) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
-                chip.alpha = if (selected) 1f else 0.72f
-            }
-        }
-        typeLabels.forEach { label ->
-            typeRow.addView(TextView(this@MainActivity).apply {
-                text = label
-                textSize = 14f
-                gravity = Gravity.CENTER
-                setPadding(dp(4), dp(8), dp(22), dp(8))
-                setOnClickListener {
-                    contentType = label
-                    refreshTypes()
-                }
-            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(42)))
-        }
-        addView(typeRow)
-        refreshTypes()
+        addView(typeLabel, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT
+        ))
 
-        val searchRow = LinearLayout(this@MainActivity).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            background = rounded(Color.WHITE, 24)
-            elevation = dp(2).toFloat()
-            setPadding(dp(14), 0, dp(6), 0)
-        }
+        addView(View(this@MainActivity).apply {
+            setBackgroundColor(Color.rgb(230, 234, 239))
+        }, LinearLayout.LayoutParams(dp(1), dp(24)))
+
         keyword = EditText(this@MainActivity).apply {
-            hint = "请输入书名、作者或关键字"
+            hint = "搜索书籍"
             textSize = 15f
             setSingleLine(true)
             setTextColor(ink)
             setHintTextColor(muted)
             background = null
-            setPadding(0, dp(12), 0, dp(12))
-            imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH
+            setPadding(dp(11), 0, dp(4), 0)
+            imeOptions = EditorInfo.IME_ACTION_SEARCH
             setOnEditorActionListener { _, actionId, _ ->
-                if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                     openSearch()
                     true
                 } else false
             }
         }
-        searchRow.addView(keyword, LinearLayout.LayoutParams(0, dp(50), 1f))
-        searchRow.addView(TextView(this@MainActivity).apply {
-            text = "搜索"
-            textSize = 14f
+        addView(keyword, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
+
+        addView(TextView(this@MainActivity).apply {
+            text = "⌕"
+            textSize = 27f
             gravity = Gravity.CENTER
-            setTextColor(blue)
-            background = rounded(Color.rgb(238, 245, 255), 20)
-            setPadding(dp(16), dp(10), dp(16), dp(10))
+            setTextColor(Color.WHITE)
+            background = rounded(blue, 22)
             isClickable = true
             isFocusable = true
+            contentDescription = "搜索书籍"
             setOnClickListener { openSearch() }
-        })
-        addView(searchRow, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
-        ).apply { topMargin = dp(5) })
+        }, LinearLayout.LayoutParams(dp(42), dp(42)))
     }
 
-    private fun buildBottomNavigation(): View = MainBottomNavigation.create(this, "search")
+    private fun chooseContentType() {
+        val types = arrayOf("小说", "漫画", "综合")
+        val selected = types.indexOf(contentType).coerceAtLeast(0)
+        AlertDialog.Builder(this)
+            .setTitle("选择搜索类型")
+            .setSingleChoiceItems(types, selected) { dialog, which ->
+                contentType = types[which]
+                typeLabel.text = "$contentType ▾"
+                typeLabel.contentDescription = "选择搜索类型，当前$contentType"
+                keyword.hint = when (contentType) {
+                    "漫画" -> "搜索漫画"
+                    "综合" -> "综合搜索"
+                    else -> "搜索书籍"
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
 
     private fun openSearch() {
         val query = keyword.text?.toString()?.trim().orEmpty()
+        if (query.isBlank()) {
+            keyword.error = "请输入书名或作者"
+            keyword.requestFocus()
+            return
+        }
         startActivity(Intent(this, SourceSearchActivity::class.java).apply {
             putExtra(SourceSearchActivity.EXTRA_INITIAL_QUERY, query)
             putExtra(SourceSearchActivity.EXTRA_CONTENT_TYPE, contentType)
