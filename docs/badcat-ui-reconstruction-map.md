@@ -30,7 +30,7 @@ Related class evidence includes `MainActivity`, `SearchActivity`, `SearchResultA
 The four uploaded reference-screen descriptions establish these baselines:
 
 1. **Reader:** warm beige background, dark large reading text, top reader toolbar, bottom chapter progress and catalog/source-switch/brightness/settings actions.
-2. **Favorites:** white background, top filter/work/book-sticker area, grouped shelf-card grid, bottom navigation for search/favorites/cat-space/profile.
+2. **Favorites:** white background, novel-only collection tab (no book-sticker tab), grouped shelf-card grid, bottom navigation for search/favorites/profile.
 3. **Search home:** blue cat-themed header, novel/comic/all category switch, rounded search field, shortcut entries and four-item bottom navigation.
 4. **Search results:** back action, type dropdown, keyword field, search button and multiple source tabs.
 
@@ -120,3 +120,15 @@ Search-screen implementation:
 - The content-type selector cycles through `小说 / 漫画 / 综合` and retains the selected type in the screen state. Actual source-side content-type filtering is not yet implemented.
 
 This remains an initial View-based reconstruction. Exact original visual matching, source-side type semantics, race-safe cancellation for overlapping searches, and physical-device verification remain open.
+
+
+## 2026-11-16 follow-up: favorites and personal center
+
+User-directed changes:
+- Favorites no longer exposes a book-sticker/notes category. The collection is labeled `小说`; folder organization remains available.
+- Removed the entire `猫咪福利社` section from the personal center.
+- Renamed the personal-center entry from `书贴管理` to `书签管理`.
+- Added a central bookmark manager backed by the same `badcat_reading_progress` preference keys used by the reader. It lists saved chapter positions, opens the corresponding chapter at the saved position, and can delete individual bookmarks.
+- New reader bookmarks also persist book/chapter labels for the manager. Existing bookmarks without labels remain readable using a URL-derived chapter fallback.
+
+The personal center currently shows only implemented routes: reading history, bookmark manager, source catalog and replacement rules. No fake download, messaging, sync, welfare or community actions are displayed. Visual fidelity to the screenshot and physical-device verification remain open.
