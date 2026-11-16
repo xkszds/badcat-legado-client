@@ -193,4 +193,51 @@ class CssChapterContentParserTest {
     }
 
 
+    @Test
+    fun expandsEmbeddedContentTitleAndNextPageRules() = runBlocking {
+        val source = BookSource(
+            id = "https://reader.example/",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleContentJson = """{
+                "content":"{{buildContentRule(result)}}",
+                "title":"{{buildTitleRule(result)}}",
+                "nextContentUrl":"{{buildNextRule(result)}}"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/chapter/1",
+            body = """
+                <h1>Embedded chapter title</h1>
+                <article><p>Embedded chapter text.</p></article>
+                <a class="next" href="/chapter/2">Next</a>
+            """.trimIndent(),
+        )
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> = when (script) {
+                "buildContentRule(result)" -> EngineResult.Success("article@html")
+                "buildTitleRule(result)" -> EngineResult.Success("h1@text")
+                "buildNextRule(result)" -> EngineResult.Success("a.next@href")
+                else -> error("Unexpected embedded content script: $script")
+            }
+        }
+
+        val content = assertIs<EngineResult.Success<ChapterContent>>(
+            CssChapterContentParser().parseWithScripts(
+                source,
+                response,
+                BookChapter(0, "Fallback", response.finalUrl),
+                runtime,
+            ),
+        ).value
+        assertEquals("Embedded chapter title", content.title)
+        assertEquals("Embedded chapter text.", content.text)
+        assertEquals("https://reader.example/chapter/2", content.nextPageUrl)
+    }
+
 }

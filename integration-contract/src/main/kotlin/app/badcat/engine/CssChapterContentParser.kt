@@ -25,7 +25,20 @@ class CssChapterContentParser {
         val document = SourceDocument(response.finalUrl, response.body, response.contentType)
 
         suspend fun evaluateField(key: String, expression: String): EngineResult<String?> {
-            val trimmed = expression.trim()
+            var trimmed = expression.trim()
+            if (trimmed.contains("{{")) {
+                trimmed = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
+                    source = source,
+                    template = trimmed,
+                    result = response.body,
+                    baseUrl = response.finalUrl,
+                    ruleName = key,
+                    scriptRuntime = scriptRuntime,
+                )) {
+                    is EngineResult.Failure -> return expanded
+                    is EngineResult.Success -> expanded.value
+                }
+            }
             if (trimmed.startsWith("@js:", true) || trimmed.startsWith("javascript:", true)) {
                 val script = trimmed.substringAfter(':').trim()
                 if (script.isBlank()) return unsupported(source, "empty JavaScript rule for '$key'")
@@ -46,8 +59,8 @@ class CssChapterContentParser {
                 }
             }
             val normalized = when (key) {
-                "nextContentUrl" -> normalizeLinkExpression(expression)
-                else -> expression
+                "nextContentUrl" -> normalizeLinkExpression(trimmed)
+                else -> trimmed
             }
             return when (val result = LegadoRuleExpressionDispatcher.evaluate(document, normalized)) {
                 is EngineResult.Failure -> result
@@ -58,15 +71,29 @@ class CssChapterContentParser {
             }
         }
 
+        var resolvedContentRule = contentRule.trim()
+        if (resolvedContentRule.contains("{{")) {
+            resolvedContentRule = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
+                source = source,
+                template = resolvedContentRule,
+                result = response.body,
+                baseUrl = response.finalUrl,
+                ruleName = "content",
+                scriptRuntime = scriptRuntime,
+            )) {
+                is EngineResult.Failure -> return expanded
+                is EngineResult.Success -> expanded.value
+            }
+        }
         val contentValue = when {
-            contentRule.trim().startsWith("@js:", true) ||
-                contentRule.trim().startsWith("javascript:", true) -> when (val result = evaluateField("content", contentRule)) {
+            resolvedContentRule.startsWith("@js:", true) ||
+                resolvedContentRule.startsWith("javascript:", true) -> when (val result = evaluateField("content", resolvedContentRule)) {
                     is EngineResult.Failure -> return result
                     is EngineResult.Success -> result.value
                 }
             else -> when (val result = LegadoRuleExpressionDispatcher.evaluate(
                 document,
-                if (contentRule.contains("@", true)) contentRule else "$contentRule@html",
+                if (resolvedContentRule.contains("@", true)) resolvedContentRule else "$resolvedContentRule@html",
             )) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value.joinToString("\n")
