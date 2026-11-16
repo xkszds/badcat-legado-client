@@ -125,4 +125,25 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(source.id)
     }
 
+    @Test
+    fun resetsLexicalScopeWhenSourceJsLibChanges() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val sourceV1 = BookSource(
+            id = "https://edited-source.example/",
+            name = "Edited source",
+            baseUrl = "https://edited-source.example/",
+            jsLib = "const editedPrefix = 'old'; function editedValue() { return editedPrefix; }",
+        )
+        val sourceV2 = sourceV1.copy(
+            jsLib = "const editedPrefix = 'new'; function editedValue() { return editedPrefix; }",
+        )
+
+        val beforeEdit = runtime.evaluate(sourceV1, "editedValue()")
+        val afterEdit = runtime.evaluate(sourceV2, "editedValue()")
+
+        assertEquals("old", (beforeEdit as EngineResult.Success).value)
+        assertEquals("new", (afterEdit as EngineResult.Success).value)
+        runtime.clearSourceState(sourceV1.id)
+    }
+
 }
