@@ -71,6 +71,44 @@ class SourceTocServiceTest {
     }
 
     @Test
+    fun detectsTocCyclesWhenOnlyTheUrlFragmentChanges() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"ul.chapters li",
+                "chapterName":"a@text",
+                "chapterUrl":"a@href",
+                "nextTocUrl":"a.next"
+            }""",
+        )
+        val requests = mutableListOf<String>()
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                requests += request.url
+                return EngineResult.Success(
+                    SourceHttpResponse(
+                        200,
+                        "https://reader.example/canonical-toc#first",
+                        body = """<ul class="chapters"><li><a href="/chapter/1">Chapter One</a></li></ul><a class="next" href="/canonical-toc#second">Next</a>""",
+                    ),
+                )
+            }
+        }
+
+        val result = assertIs<EngineResult.Failure>(
+            SourceTocService(SourceHttpGateway(client)).load(
+                source,
+                "https://reader.example/book/1",
+            ),
+        )
+
+        assertEquals(EngineErrorCode.PARSE, result.code)
+        assertEquals(listOf("https://reader.example/book/1"), requests)
+    }
+
+    @Test
     fun reportsPartialTocWhenPageSafetyLimitIsReached() = runBlocking {
         val source = BookSource(
             id = "fixture",
