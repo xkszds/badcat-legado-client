@@ -13,19 +13,23 @@ data class ResolvedLegadoRuleExpression(
 
 object LegadoRuleExpressionDispatcher {
     /** Collection-root rules use Legado's all-in-one regex mode when prefixed with ':' or @regex:. */
-    fun evaluateElements(document: SourceDocument, expression: String): EngineResult<List<String>> =
-        evaluateCombined(expression) { branch ->
-            val rule = branch.trim()
-            when {
-                rule.startsWith("@jsonpath:", true) || rule.startsWith("@json:", true) || rule.startsWith("$") ->
-                    JsonPathRuleEvaluator.evaluateElements(document, rule)
-                rule.startsWith("@regex:", true) ->
-                    LegadoRegexElementEvaluator.evaluate(document.body, rule.substringAfter(':'))
-                rule.startsWith(":") ->
-                    LegadoRegexElementEvaluator.evaluate(document.body, rule.substring(1))
-                else -> CssRuleEvaluator.evaluateElements(document, rule)
+    fun evaluateElements(document: SourceDocument, expression: String): EngineResult<List<String>> {
+        val rule = expression.trim()
+        return when {
+            rule.startsWith("@regex:", true) ->
+                LegadoRegexElementEvaluator.evaluate(document.body, rule.substringAfter(':'))
+            rule.startsWith(":") ->
+                LegadoRegexElementEvaluator.evaluate(document.body, rule.substring(1))
+            else -> when (val resolved = resolve(rule)) {
+                is EngineResult.Failure -> resolved
+                is EngineResult.Success -> when (resolved.value.type) {
+                    SelectorRuleType.CSS -> CssRuleEvaluator.evaluateElements(document, rule)
+                    SelectorRuleType.XPATH -> XPathRuleEvaluator.evaluateElements(document, rule)
+                    SelectorRuleType.JSON_PATH -> JsonPathRuleEvaluator.evaluateElements(document, rule)
+                }
             }
         }
+    }
 
     fun evaluate(document: SourceDocument, expression: String): EngineResult<List<String>> =
         evaluateCombined(expression) { branch ->
