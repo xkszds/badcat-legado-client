@@ -30,8 +30,6 @@ class MyActivity : Activity() {
         }
         val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         top.addView(label("我的", 18f, ink), LinearLayout.LayoutParams(0, dp(42), 1f))
-        top.addView(label("☼", 26f, blue).apply { setOnClickListener { toast("主题设置尚未接入") } })
-        top.addView(label("⚙", 25f, ink).apply { setPadding(dp(22), 0, 0, 0); setOnClickListener { toast("个人设置尚未接入") } })
         profile.addView(top)
         val identity = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         identity.addView(TextView(this).apply {
@@ -49,7 +47,7 @@ class MyActivity : Activity() {
                 setOnClickListener { editNickname(this) }
                 contentDescription = "点击修改昵称"
             })
-            addView(label("阅读时长：—    获得的收藏数：${FavoriteBooks.all(this@MyActivity).size}", 12f, muted).apply { setPadding(0, dp(9), 0, 0) })
+            addView(label("收藏了 ${FavoriteBooks.all(this@MyActivity).size} 本小说", 12f, muted).apply { setPadding(0, dp(9), 0, 0) })
         }, LinearLayout.LayoutParams(0, -2, 1f))
         profile.addView(identity)
         root.addView(profile)
@@ -62,13 +60,10 @@ class MyActivity : Activity() {
             setPadding(dp(16), dp(15), dp(16), dp(16))
         }
         tools.addView(label("常用功能", 18f, ink, true).apply { setPadding(0, 0, 0, dp(12)) })
+        // Only show destinations that have a real implementation.
         val entries = listOf(
-            "我的消息" to "messages",
             "历史记录" to "history",
             "书签管理" to "bookmarks",
-            "下载管理" to "downloads",
-            "意见反馈" to "feedback",
-            "同步收藏夹" to "sync",
             "分享坏坏猫" to "share",
             "书源管理" to "sources",
             "正文替换规则" to "replace"
@@ -84,8 +79,7 @@ class MyActivity : Activity() {
                     isFocusable = true
                     addView(label(when (key) {
                         "history" -> "◷"; "bookmarks" -> "◇"; "sources" -> "▤"
-                        "replace" -> "≋"; "sync" -> "☁"; "downloads" -> "↓"
-                        "feedback" -> "▣"; "share" -> "↗"; else -> "···"
+                        "replace" -> "≋"; else -> "↗"
                     }, 25f, blue))
                     addView(label(title, 12f, ink).apply { setPadding(0, dp(5), 0, 0) })
                     setOnClickListener { openTool(key) }
@@ -136,7 +130,7 @@ class MyActivity : Activity() {
                 type = "text/plain"
                 putExtra(Intent.EXTRA_TEXT, "坏坏猫阅读客户端")
             }, "分享"))
-            else -> toast("该功能尚未接入")
+            else -> Unit
         }
     }
 
