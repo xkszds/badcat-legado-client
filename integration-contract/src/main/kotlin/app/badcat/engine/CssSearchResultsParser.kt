@@ -7,9 +7,9 @@ import org.jsoup.Jsoup
  * field names. Each bookList element is evaluated independently so item
  * selectors are not accidentally applied to the whole response document.
  *
- * Bounded regex is supported for the collection root only. Full AnalyzeRule
- * semantics (JS, regex field extraction, variable interpolation, filters,
- * chained per-item rule modes and direct-detail detection) remain unsupported.
+ * Bounded regex is supported for collection roots and scalar fields. Full
+ * AnalyzeRule semantics (JS, variable interpolation, filters, chained per-item
+ * rule modes and direct-detail detection) remain unsupported.
  */
 class CssSearchResultsParser {
 
@@ -96,7 +96,8 @@ class CssSearchResultsParser {
             extractionRule,
         )) {
             is EngineResult.Failure -> throw SearchParseFailure(result)
-            is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(extractionRule, result.value)\n                ?.trim()?.takeIf(String::isNotEmpty)
+            is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(extractionRule, result.value)
+                ?.trim()?.takeIf(String::isNotEmpty)
         }?.let { value ->
             if (key == "bookUrl" || key == "coverUrl") {
                 return try {
