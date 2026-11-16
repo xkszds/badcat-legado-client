@@ -25,6 +25,52 @@ class SourceTocServiceTest {
     }
 
     @Test
+    fun redirectAliasesDoNotConsumeTheTocPageSafetyLimit() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"ul.chapters li",
+                "chapterName":"a@text",
+                "chapterUrl":"a@href",
+                "nextTocUrl":"a.next"
+            }""",
+        )
+        val requests = mutableListOf<String>()
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                requests += request.url
+                val secondPage = request.url.endsWith("/page-2")
+                val finalUrl = if (secondPage) {
+                    "https://reader.example/canonical-2"
+                } else {
+                    "https://reader.example/canonical-1"
+                }
+                val body = if (secondPage) {
+                    """<ul class="chapters"><li><a href="/chapter/2">Chapter Two</a></li></ul>"""
+                } else {
+                    """<ul class="chapters"><li><a href="/chapter/1">Chapter One</a></li></ul><a class="next" href="/page-2">Next</a>"""
+                }
+                return EngineResult.Success(SourceHttpResponse(200, finalUrl, body = body))
+            }
+        }
+
+        val result = assertIs<EngineResult.Success<List<BookChapter>>>(
+            SourceTocService(SourceHttpGateway(client), maxPages = 2).load(
+                source,
+                "https://reader.example/book/1",
+            ),
+        )
+
+        assertEquals(
+            listOf("https://reader.example/book/1", "https://reader.example/page-2"),
+            requests,
+        )
+        assertEquals(listOf("Chapter One", "Chapter Two"), result.value.map { it.title })
+    }
+
+    @Test
     fun reportsPartialTocWhenPageSafetyLimitIsReached() = runBlocking {
         val source = BookSource(
             id = "fixture",
