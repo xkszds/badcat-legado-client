@@ -82,3 +82,11 @@ modes remain outside this increment.
 - The cache is bounded to 64 MiB total and 4 MiB per chapter. Fresh entries (12 hours) avoid a network request; expired entries are used only as fallback when the network request fails.
 - Cache write failures do not block successful reading. Cache behavior is covered by contract tests for fresh hits and offline fallback.
 - This cache does not yet replace upstream Legado's complete Room cache, batch prefetch or cache-management UI.
+
+
+### Recursive mixed selectors and JSONPath collection roots (2026-11-16)
+
+- CSS, XPath and JSONPath scalar evaluators now use the recursive list-combination evaluator for mixed nested `&&`, `||` and `%%` expressions; regression tests cover mixed nesting.
+- Search/explore collection roots now accept JSONPath expressions (including `@jsonpath:` and `@json:`) and serialize each selected JSON value as an independent fragment.
+- Search result fields are evaluated against the selected fragment through the shared CSS/XPath/JSONPath dispatcher, so JSONPath bookList items can use JSONPath name, URL and author fields instead of being incorrectly parsed as HTML.
+- This remains a bounded adapter: full upstream AnalyzeRule interpolation, JavaScript, chained transforms and every source-specific suffix are not claimed as complete.
