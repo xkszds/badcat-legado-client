@@ -426,4 +426,23 @@ class CssSearchResultsParserTest {
         assertEquals("https://reader.example/embedded", books.single().bookUrl)
     }
 
+    @Test
+    fun extractsScalarRegexCaptureGroupFromLegacyColonRule() {
+        val source = source(
+            """{"bookList":"div.book","name":":<h3>(.*?)</h3>","bookUrl":"a@href"}""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/search",
+            body = """<div class="book"><h3>Legacy Regex Title</h3><a href="/book/legacy">Read</a></div>""",
+        )
+
+        val book = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parse(source, response),
+        ).value.single()
+
+        assertEquals("Legacy Regex Title", book.name)
+        assertEquals("https://reader.example/book/legacy", book.bookUrl)
+    }
+
 }

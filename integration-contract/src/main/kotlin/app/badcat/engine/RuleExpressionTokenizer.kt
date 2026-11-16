@@ -42,7 +42,9 @@ object RuleExpressionTokenizer {
         var index = 0
         // Determine the current branch mode once; recompute only after a split.
         // Avoid allocating a growing substring for every scanned character.
-        var regexBranch = expression.trimStart().startsWith("@regex:", ignoreCase = true)
+        var regexBranch = expression.trimStart().let {
+            it.startsWith("@regex:", ignoreCase = true) || it.startsWith(":")
+        }
 
         while (index < expression.length) {
             val char = expression[index]
@@ -82,8 +84,9 @@ object RuleExpressionTokenizer {
                         parts += expression.substring(start, index).trim()
                         index += delimiter.length
                         start = index
-                        regexBranch = expression.substring(start).trimStart()
-                            .startsWith("@regex:", ignoreCase = true)
+                        regexBranch = expression.substring(start).trimStart().let {
+                            it.startsWith("@regex:", ignoreCase = true) || it.startsWith(":")
+                        }
                     }
                     else -> index++
                 }
