@@ -115,4 +115,17 @@ class LegadoRegexElementEvaluatorTest {
     }
 
 
+
+    @Test
+    fun scalarRegexSupportsQuotedHtmlAttributesAndCharacterClassOperators() {
+        val result = LegadoRegexElementEvaluator.evaluateScalar(
+            """<a class="book">Regex Novel</a>""",
+            """<a class="book">([\\s\\S]*?)</a>""",
+        )
+        assertEquals(
+            listOf("""<a class="book">Regex Novel</a>""", "Regex Novel"),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
 }
