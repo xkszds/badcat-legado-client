@@ -47,7 +47,10 @@ object BookCoverLoader {
                 if (bounds.outWidth <= 0 || bounds.outHeight <= 0 || bounds.outWidth > 8_000 || bounds.outHeight > 8_000) return@execute
                 val sample = maxOf(1, Integer.highestOneBit(maxOf(bounds.outWidth / 720, bounds.outHeight / 960)))
                 val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample }) ?: return@execute
-                reference.get()?.let { view -> view.post { if (view.tag == rawUrl) view.setImageBitmap(bitmap) } }
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    val imageView = reference.get()
+                    if (imageView != null && imageView.tag == rawUrl) imageView.setImageBitmap(bitmap)
+                }
             } catch (_: Exception) {
                 // Leave the placeholder visible.
             } finally {
