@@ -56,3 +56,11 @@ See [the architecture plan](docs/architecture.md), [upstream baseline](docs/lega
 
 - [原版 APK 与配套 DEX 归档核对记录](docs/reference-archive-comparison-2026-11-16.md)
 - [APK 页面与增强客户端差距报告](docs/badcat-apk-reverse-engineering-comparison.md)
+
+
+### 原版 APK / 解包重建 / 截图对照
+
+- [多版本 APK、DEX 归档与原版 UI 截图对照](docs/reference-build-chain-and-visual-diff.md)
+- [DEX 归档核对更正](docs/reference-archive-comparison-2026-11-16.md)
+- [原版 APK 页面差距报告](docs/badcat-apk-reverse-engineering-comparison.md)
+- [参考材料索引](reference/README.md)
