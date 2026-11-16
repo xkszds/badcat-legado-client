@@ -15,15 +15,8 @@ object JsonPathRuleEvaluator {
             return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "JSONPath rule is blank")
         }
 
-        if (RuleCombinationEvaluator.hasNestedTopLevelOperator(rule)) {
-            return EngineResult.Failure(
-                EngineErrorCode.UNSUPPORTED_RULE,
-                "Nested JSONPath list-combination operators are not supported",
-            )
-        }
-
         return try {
-            val values = RuleCombinationEvaluator.evaluate(rule) { part ->
+            val values = RuleCombinationEvaluator.evaluateNested(rule) { part ->
                 val result = try {
                     JsonPath.parse(document.body).read<Any?>(part)
                 } catch (_: com.jayway.jsonpath.PathNotFoundException) {
