@@ -76,6 +76,38 @@ class SelectorLegadoRuleRuntimeTest {
     }
 
     @Test
+    fun appliesLegadoFallbackAndUnionOperatorsToSelectorFields(): Unit = runBlocking {
+        val source = BookSource("https://reader.example/", "Fixture", "https://reader.example/")
+        val runtime = SelectorLegadoRuleRuntime()
+        val document = SourceDocument(
+            "https://reader.example/search",
+            """<div class="first">Alpha</div><div class="second">Beta</div>""",
+        )
+
+        val fallback = runtime.evaluate(
+            SourceRuleStage.SEARCH,
+            """{"bookList":"div.missing||div.second"}""",
+            source,
+            document,
+        )
+        assertEquals(
+            listOf(mapOf("bookList" to "Beta")),
+            assertIs<EngineResult.Success<List<Map<String, String>>>>(fallback).value,
+        )
+
+        val union = runtime.evaluate(
+            SourceRuleStage.SEARCH,
+            """{"bookList":"div.first&&div.second"}""",
+            source,
+            document,
+        )
+        assertEquals(
+            listOf(mapOf("bookList" to "Alpha"), mapOf("bookList" to "Beta")),
+            assertIs<EngineResult.Success<List<Map<String, String>>>>(union).value,
+        )
+    }
+
+    @Test
     fun dispatchesExplicitXPathAndJsonPathFields(): Unit = runBlocking {
         val source = BookSource("https://reader.example/", "Fixture", "https://reader.example/")
         val runtime = SelectorLegadoRuleRuntime()
