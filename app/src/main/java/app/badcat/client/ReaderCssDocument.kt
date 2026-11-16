@@ -179,7 +179,7 @@ internal object ReaderCssDocument {
         return value
     }
 
-    private fun sanitizeDeclarations(raw: String): String {
+    internal fun sanitizeDeclarations(raw: String): String {
         if (raw.length > 4000) return ""
         return raw.split(';').mapNotNull { declaration ->
             val colon = declaration.indexOf(':')
