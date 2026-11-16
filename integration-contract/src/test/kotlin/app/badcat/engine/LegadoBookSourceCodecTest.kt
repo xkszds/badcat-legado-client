@@ -219,4 +219,49 @@ class LegadoBookSourceCodecTest {
             LegadoBookSourceCodec.decode(duplicate)
         }
     }
+
+    @Test
+    fun rejectsExcessiveJsonNestingBeforeParsing() {
+        val json = """{"bookSourceUrl":"https://depth.example","bookSourceName":"Depth","future":""" +
+            "[".repeat(LegadoBookSourceCodec.MAX_JSON_NESTING) + "0" +
+            "]".repeat(LegadoBookSourceCodec.MAX_JSON_NESTING) + "}"
+        assertFailsWith<IllegalArgumentException> {
+            LegadoBookSourceCodec.decode(json)
+        }
+    }
+
+    @Test
+    fun boundsSourceCountAndPerSourceFieldCount() {
+        val sources = List(LegadoBookSourceCodec.MAX_SOURCES + 1) { index ->
+            """{"bookSourceUrl":"https://$index.example","bookSourceName":"Source $index"}"""
+        }
+        assertFailsWith<IllegalArgumentException> {
+            LegadoBookSourceCodec.decode(sources.joinToString(prefix = "[", postfix = "]"))
+        }
+
+        val fields = buildString {
+            append("""{"bookSourceUrl":"https://fields.example","bookSourceName":"Fields"""")
+            repeat(LegadoBookSourceCodec.MAX_FIELDS_PER_SOURCE) { index ->
+                append(""","future$index":$index""")
+            }
+            append("}")
+        }
+        assertFailsWith<IllegalArgumentException> {
+            LegadoBookSourceCodec.decode(fields)
+        }
+    }
+
+    @Test
+    fun rejectsOversizedAndDuplicateSourceExports() {
+        val source = LegadoBookSourceCodec.decode(
+            """{"bookSourceUrl":"https://export.example","bookSourceName":"Export"}"""
+        ).single()
+        assertFailsWith<IllegalArgumentException> {
+            LegadoBookSourceCodec.encode(List(LegadoBookSourceCodec.MAX_SOURCES + 1) { source })
+        }
+        assertFailsWith<IllegalArgumentException> {
+            LegadoBookSourceCodec.encode(listOf(source, source))
+        }
+    }
+
 }
