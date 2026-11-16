@@ -15,6 +15,7 @@ class SourceSearchService(
         page: Int? = null,
         keyword: String = "",
     ): EngineResult<List<BookCandidate>> {
+        MainJsSourceGuard.failure(source, "search")?.let { return it }
         if (!source.enabled) {
             return EngineResult.Failure(
                 EngineErrorCode.INVALID_SOURCE,

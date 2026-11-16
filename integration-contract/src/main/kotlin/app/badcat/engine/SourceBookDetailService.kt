@@ -10,6 +10,7 @@ class SourceBookDetailService(
         source: BookSource,
         bookUrl: String,
     ): EngineResult<BookDetail> {
+        MainJsSourceGuard.failure(source, "book detail")?.let { return it }
         val response = when (val result = http.execute(source, bookUrl)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value

@@ -15,6 +15,7 @@ class SourceExploreService(
         page: Int? = null,
         keyword: String = "",
     ): EngineResult<List<BookCandidate>> {
+        MainJsSourceGuard.failure(source, "explore")?.let { return it }
         if (!source.enabled || !source.enabledExplore) {
             return EngineResult.Failure(
                 EngineErrorCode.INVALID_SOURCE,
