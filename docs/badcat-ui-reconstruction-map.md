@@ -187,3 +187,11 @@ The personal center currently shows only implemented routes: reading history, bo
 - The “全部小说” folder is an aggregate view across the default and custom folders. A folder selected by its own ID shows only that folder's books. Unit tests cover aggregate counts and custom-folder filtering.
 - The development reader exposes persisted font size, line spacing, theme cycling, reset-to-default, chapter navigation, scroll progress, and the CSS profile editor.
 - These are functional improvements to the current development screens; they do **not** establish pixel-level parity with the original screenshots.真机运行、布局对照和完整原版导航仍需单独验收。
+
+## Main UI reconstruction pass (2026-11-16)
+
+- Added a shared three-destination bottom navigation component for the primary app surfaces: 搜索 / 收藏夹 / 我的. The removed destinations and shortcuts (喵星、排行榜、今日抽奖、赚取现金) are intentionally not brought back.
+- Home, Favorites, and My now use the same navigation component, selected-state treatment, icon/label spacing, white elevated navigation surface, and destination routing.
+- Updated the Android launcher/app display label to 坏坏猫.
+- Favorites and My retain their own scrollable content above the persistent bottom navigation. The source-search page remains a focused search workflow with its own result pagination rather than being treated as a root tab.
+- This is a shared navigation and visual-consistency pass, not a claim of pixel-perfect reconstruction. Original screenshots still need device-side comparison for typography, exact dimensions, icons, spacing, status/navigation bars, and scrolling behavior. Detail, chapter catalog, and reader surfaces remain separate task flows.
