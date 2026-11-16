@@ -161,7 +161,7 @@ class ReaderCssActivity : Activity() {
                             }
                         }))
                 }
-            }.toString(2)
+            }.toString()
             contentResolver.openOutputStream(uri)?.bufferedWriter(Charsets.UTF_8)?.use {
                 it.write(payload)
             } ?: error("无法创建导出文件")
@@ -611,7 +611,7 @@ class ReaderCssActivity : Activity() {
         private const val KEY_PROFILES = "profiles_v1"
         private const val REQUEST_EXPORT = 4101
         private const val REQUEST_IMPORT = 4102
-        private const val MAX_IMPORT_BYTES = 1024 * 1024
+        private const val MAX_IMPORT_BYTES = 8 * 1024 * 1024
         private const val MAX_PROFILES = 100
         private const val MAX_RULES_PER_PROFILE = 120
         private const val MAX_PROFILE_JSON_CHARS = 8 * 1024 * 1024
