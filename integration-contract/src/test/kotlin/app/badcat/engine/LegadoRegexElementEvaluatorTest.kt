@@ -128,4 +128,17 @@ class LegadoRegexElementEvaluatorTest {
         )
     }
 
+
+    @Test
+    fun collectionRegexSupportsQuotedHtmlAttributes() {
+        val result = LegadoRegexElementEvaluator.evaluate(
+            """<div class="book">One</div><div class="book">Two</div>""",
+            """<div class="book">.*?</div>""",
+        )
+        assertEquals(
+            listOf("""<div class="book">One</div>""", """<div class="book">Two</div>"""),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
 }
