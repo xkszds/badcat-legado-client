@@ -88,7 +88,7 @@ class LegadoRegexElementEvaluatorTest {
     fun scalarRegexReturnsFirstMatchAndCaptureGroups() {
         val result = LegadoRegexElementEvaluator.evaluateScalar(
             "Title: Regex Novel; Author: Writer",
-            """Title:\\s*(Regex\\s+Novel);\\s*Author:\\s*(Writer)""",
+            """Title:\s*(Regex\s+Novel);\s*Author:\s*(Writer)""",
         )
         assertEquals(
             listOf("Title: Regex Novel; Author: Writer", "Regex Novel", "Writer"),
@@ -100,7 +100,7 @@ class LegadoRegexElementEvaluatorTest {
     fun scalarRegexSupportsChainedExtractionAndNoMatch() {
         val result = LegadoRegexElementEvaluator.evaluateScalar(
             "<section><h1>Regex Novel</h1></section><section><h1>Other</h1></section>",
-            """<section>[\\s\\S]*?</section> && <h1>(.*?)</h1>""",
+            """<section>[\s\S]*?</section> && <h1>(.*?)</h1>""",
         )
         assertEquals(
             listOf("<h1>Regex Novel</h1>", "Regex Novel"),
