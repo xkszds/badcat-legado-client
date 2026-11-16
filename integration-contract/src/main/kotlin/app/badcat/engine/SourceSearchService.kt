@@ -14,6 +14,12 @@ class SourceSearchService(
         page: Int? = null,
         keyword: String = "",
     ): EngineResult<List<BookCandidate>> {
+        if (!source.enabled) {
+            return EngineResult.Failure(
+                EngineErrorCode.INVALID_SOURCE,
+                "Search is disabled for source '${source.id}'",
+            )
+        }
         val response = when (val result = http.execute(source, searchRuleUrl, page, keyword)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
