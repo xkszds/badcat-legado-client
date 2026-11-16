@@ -141,7 +141,11 @@ class SourceHttpGatewayTest {
             )
         }
         assertIs<EngineResult.Success<SourceHttpResponse>>(result)
-        assertEquals("https://reader.example/search?q=cat-2", requireNotNull(client.captured).url)
+        val actualUrl = requireNotNull(client.captured).url
+        kotlin.test.assertTrue(
+            actualUrl == "https://reader.example/search?q=cat-2",
+            "Unexpected URL after @js expansion: $actualUrl",
+        )
     }
 
     @Test
