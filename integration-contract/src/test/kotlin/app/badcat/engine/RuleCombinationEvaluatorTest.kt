@@ -63,4 +63,26 @@ class RuleCombinationEvaluatorTest {
         assertEquals(2, split.rules.size)
         assertEquals("""primary[data-x="x || y"]""", split.rules[0])
     }
+    @Test
+    fun nestedFallbackDoesNotEvaluateLaterBranchesAfterAHit() {
+        val visited = mutableListOf<String>()
+        val result = RuleCombinationEvaluator.evaluateNested("primary || secondary || third") {
+            visited += it
+            fixture[it].orEmpty()
+        }
+
+        assertEquals(listOf("A", "B"), result)
+        assertEquals(listOf("primary"), visited)
+    }
+
+    @Test
+    fun nestedPercentPercentInterleavesEachBranchByPosition() {
+        assertEquals(
+            listOf("A", "C", "D", "B", "E", "F"),
+            RuleCombinationEvaluator.evaluateNested("primary %% secondary %% third") {
+                fixture[it].orEmpty()
+            },
+        )
+    }
+
 }
