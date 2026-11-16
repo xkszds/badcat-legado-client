@@ -128,25 +128,31 @@ class SourceHttpGatewayTest {
     @Test
     fun evaluatesUpstreamAtJsUrlRulesBeforeUriResolution() {
         val client = RecordingClient()
-        val evaluator = LegadoEmbeddedScriptEvaluator { script, key, page ->
-            assertEquals("return key + page", script)
-            EngineResult.Success("$key-$page")
+        val evaluator = object : LegadoEmbeddedScriptEvaluator {
+            override suspend fun evaluate(script: String, key: String, page: Int): EngineResult<Any?> =
+                EngineResult.Success("unused")
+
+            override suspend fun evaluateWithResult(
+                script: String,
+                key: String,
+                page: Int,
+                result: String,
+            ): EngineResult<Any?> {
+                assertEquals("return result + key + '-' + page", script)
+                assertEquals("https://reader.example/search?q=", result)
+                return EngineResult.Success("$result$key-$page")
+            }
         }
         val result = kotlinx.coroutines.runBlocking {
             SourceHttpGateway(client, evaluator).execute(
                 source(),
-                "https://reader.example/search?q=@js:return key + page",
+                "https://reader.example/search?q=@js:return result + key + '-' + page",
                 key = "cat",
                 page = 2,
             )
         }
         assertIs<EngineResult.Success<SourceHttpResponse>>(result)
-        val actualUrl = requireNotNull(client.captured).url
-        println("DEBUG @js resolved URL: $actualUrl")
-        kotlin.test.assertTrue(
-            actualUrl == "https://reader.example/search?q=cat-2",
-            "Unexpected URL after @js expansion: $actualUrl",
-        )
+        assertEquals("https://reader.example/search?q=cat-2", requireNotNull(client.captured).url)
     }
 
     @Test
