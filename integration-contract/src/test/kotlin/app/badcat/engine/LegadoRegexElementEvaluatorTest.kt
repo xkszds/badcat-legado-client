@@ -54,4 +54,16 @@ class LegadoRegexElementEvaluatorTest {
             ).code,
         )
     }
+    @Test
+    fun extractsHtmlWithSingleQuotedAttributesAndRegexCharacterClasses() {
+        val result = LegadoRegexElementEvaluator.evaluate(
+            """<div class='book'><h3>Regex Novel</h3></div><div class='other'>Skip</div>""",
+            """<div[^>]*book[^>]*>[\\s\\S]*?</div>""",
+        )
+        assertEquals(
+            listOf("""<div class='book'><h3>Regex Novel</h3></div>"""),
+            assertIs<EngineResult.Success<List<String>>>(result, "Regex evaluation failed: $result").value,
+        )
+    }
+
 }

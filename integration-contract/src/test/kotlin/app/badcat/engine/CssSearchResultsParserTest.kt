@@ -51,8 +51,10 @@ class CssSearchResultsParserTest {
             """.trimIndent(),
         )
 
+        val parsed = CssSearchResultsParser().parse(source, response)
         val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
-            CssSearchResultsParser().parse(source, response),
+            parsed,
+            "Regex-root search parsing failed: $parsed",
         ).value
 
         assertEquals(1, books.size)
