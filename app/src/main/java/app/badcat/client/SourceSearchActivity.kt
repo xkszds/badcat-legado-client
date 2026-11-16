@@ -384,6 +384,7 @@ class SourceSearchActivity : Activity() {
                         putExtra(SourceBookActivity.EXTRA_SOURCE_ID, item.sourceId)
                         putExtra(SourceBookActivity.EXTRA_BOOK_URL, item.bookUrl)
                         putExtra(SourceBookActivity.EXTRA_BOOK_NAME, item.name)
+                        putExtra(SourceBookActivity.EXTRA_BOOK_COVER_URL, item.coverUrl)
                     })
                 }
                 addView(TextView(this@SourceSearchActivity).apply {
