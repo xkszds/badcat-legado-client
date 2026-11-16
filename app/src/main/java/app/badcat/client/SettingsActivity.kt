@@ -1,6 +1,7 @@
 package app.badcat.client
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
@@ -60,6 +61,12 @@ class SettingsActivity : Activity() {
             background = rounded(Color.WHITE, 14)
             setPadding(dp(16), dp(4), dp(16), dp(4))
         }
+        val currentLayout = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
+            .getString("home_layout_mode", "integrated") ?: "integrated"
+        addSetting(group, "布局", "主页样式：" + if (currentLayout == "small") "坏坏猫小字" else "整合在一起") {
+            showHomeLayoutOptions()
+        }
+        addDivider(group)
         addSetting(group, "阅读界面自定义", "管理 CSS 方案、子选择器和阅读样式") {
             startActivity(Intent(this, ReaderCssActivity::class.java))
         }
@@ -81,6 +88,22 @@ class SettingsActivity : Activity() {
         })
         root.addView(content)
         setContentView(root)
+    }
+
+    private fun showHomeLayoutOptions() {
+        val prefs = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
+        val options = arrayOf("坏坏猫小字", "整合在一起")
+        val current = prefs.getString("home_layout_mode", "integrated") ?: "integrated"
+        val selected = if (current == "small") 0 else 1
+        AlertDialog.Builder(this)
+            .setTitle("主页布局")
+            .setSingleChoiceItems(options, selected) { dialog, which ->
+                prefs.edit().putString("home_layout_mode", if (which == 0) "small" else "integrated").apply()
+                dialog.dismiss()
+                recreate()
+            }
+            .setNegativeButton("取消", null)
+            .show()
     }
 
     private fun addSetting(parent: LinearLayout, title: String, subtitle: String, action: () -> Unit) {
