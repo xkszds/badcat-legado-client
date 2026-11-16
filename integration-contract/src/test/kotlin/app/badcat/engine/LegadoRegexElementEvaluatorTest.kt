@@ -31,6 +31,22 @@ class LegadoRegexElementEvaluatorTest {
     }
 
     @Test
+    fun dispatcherSupportsFallbackBetweenRegexCollectionRules() {
+        val document = SourceDocument(
+            url = "https://example.test/books",
+            body = "<li>Fallback book</li>",
+        )
+        val result = LegadoRuleExpressionDispatcher.evaluateElements(
+            document,
+            "@regex:missing||@regex:<li>[\\s\\S]*?</li>",
+        )
+        assertEquals(
+            listOf("<li>Fallback book</li>"),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
+    @Test
     fun rejectsInvalidPatternsAndOversizedStageLists() {
         assertEquals(
             EngineErrorCode.PARSE,
