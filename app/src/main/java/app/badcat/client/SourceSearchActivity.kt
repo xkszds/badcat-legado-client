@@ -299,7 +299,17 @@ class SourceSearchActivity : Activity() {
                 isFocusable = true
                 setOnClickListener {
                     selectedSourcePosition = index
+                    currentPage = 1
                     renderSourceTabs()
+                    if (::keywordInput.isInitialized && keywordInput.text.toString().isNotBlank()) {
+                        search()
+                    } else {
+                        status.text = if (index == 0) {
+                            "已选择全部书源"
+                        } else {
+                            "已选择书源：$label"
+                        }
+                    }
                 }
             }, LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, dp(34)
