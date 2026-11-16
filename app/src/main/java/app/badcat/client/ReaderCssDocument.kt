@@ -5,6 +5,8 @@ import org.json.JSONArray
 
 /** Builds a local, script-free reader document and applies bounded user CSS profiles. */
 internal object ReaderCssDocument {
+    // 100 profiles × 120 child selectors; keep rendering bounded without truncating valid saved profiles.
+    private const val MAX_ACTIVE_RULES = 12_000
     private val allowedProperties = setOf(
         "color", "background-color", "font-size", "font-weight", "font-style",
         "font-family", "line-height", "letter-spacing", "text-align", "text-indent",
@@ -78,7 +80,7 @@ internal object ReaderCssDocument {
                 if (!profile.optBoolean("enabled", false)) continue
                 val rules = profile.optJSONArray("rules") ?: continue
                 for (j in 0 until rules.length()) {
-                    if (count >= 120) return@buildString
+                    if (count >= MAX_ACTIVE_RULES) return@buildString
                     val rule = rules.optJSONObject(j) ?: continue
                     val selector = sanitizeSelector(rule.optString("selector")) ?: continue
                     val declarations = sanitizeDeclarations(rule.optString("css"))
