@@ -179,6 +179,63 @@ class SelectorLegadoRuleRuntimeTest {
     }
 
     @Test
+    fun executesJavaScriptRuleFieldThroughInjectedBoundedRuntime(): Unit = runBlocking {
+        val source = BookSource(
+            id = "https://reader.example/source.json",
+            name = "Fixture source",
+            baseUrl = "https://reader.example/",
+        )
+        var capturedScript = ""
+        var capturedBindings: Map<String, String> = emptyMap()
+        val scriptRuntime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> {
+                capturedScript = script
+                capturedBindings = bindings
+                return EngineResult.Success("JavaScript result")
+            }
+        }
+        val runtime = SelectorLegadoRuleRuntime(scriptRuntime = scriptRuntime)
+        val result = runtime.evaluate(
+            SourceRuleStage.SEARCH,
+            """{"bookList":"@js:result.toUpperCase()"}""",
+            source,
+            SourceDocument("https://reader.example/search", "<p>source body</p>"),
+        )
+
+        assertEquals("result.toUpperCase()", capturedScript)
+        assertEquals("<p>source body</p>", capturedBindings["result"])
+        assertEquals("https://reader.example/search", capturedBindings["baseUrl"])
+        assertEquals("https://reader.example/source.json", capturedBindings["sourceUrl"])
+        assertEquals(
+            listOf(mapOf("bookList" to "JavaScript result")),
+            assertIs<EngineResult.Success<List<Map<String, String>>>>(result).value,
+        )
+    }
+
+    @Test
+    fun evaluatesExplicitRegexCollectionFields(): Unit = runBlocking {
+        val source = BookSource("https://reader.example/", "Fixture", "https://reader.example/")
+        val runtime = SelectorLegadoRuleRuntime()
+        val result = runtime.evaluate(
+            SourceRuleStage.SEARCH,
+            """{"bookList":"@regex:<a>(.*?)</a>"}""",
+            source,
+            SourceDocument(
+                "https://reader.example/search",
+                "<a>Alpha</a><a>Beta</a>",
+            ),
+        )
+        assertEquals(
+            listOf(mapOf("bookList" to "<a>Alpha</a>"), mapOf("bookList" to "<a>Beta</a>")),
+            assertIs<EngineResult.Success<List<Map<String, String>>>>(result).value,
+        )
+    }
+
+    @Test
     fun rejectsNonObjectRuleJson(): Unit = runBlocking {
         val source = BookSource("id", "Fixture", "https://reader.example/")
         val runtime = SelectorLegadoRuleRuntime(mapOf("search.bookList" to SelectorRuleType.CSS))
