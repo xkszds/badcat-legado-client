@@ -28,7 +28,7 @@ Examples:
 }
 ```
 
-Enter the selector in the selector field and declarations (without braces) in the CSS field. Each child selector can have its own display name and note. Multiple enabled profiles are applied in saved order; later matching declarations participate later in the CSS cascade.
+Enter the selector in the selector field and declarations (without braces) in the CSS field. The editor includes quick-insert presets for the reader root, content container, all paragraphs, first paragraph, second paragraph, and last paragraph. Each child selector can have its own display name and note. Rules can be moved up or down; their saved order controls the order in which matching declarations are emitted, so later matching declarations normally win when specificity is equal. The `.reader-root` selector targets the outer reader wrapper directly.
 
 ## Safety and current limits
 
