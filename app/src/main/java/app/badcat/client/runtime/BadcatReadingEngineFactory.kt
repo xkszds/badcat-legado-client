@@ -60,6 +60,7 @@ class BadcatReadingEngineFactory(
                     fallback = bookTextReplacement,
                     jsEvaluator = RhinoLegadoJsReplacementEvaluator(),
                 ),
+                cache = FileChapterContentCache(context.applicationContext),
             ),
         )
     }
