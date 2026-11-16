@@ -37,6 +37,18 @@ class RuleCombinationEvaluatorTest {
     }
 
     @Test
+    fun recursivelyEvaluatesMixedTopLevelOperators() {
+        assertEquals(
+            listOf("A", "B", "C"),
+            RuleCombinationEvaluator.evaluateNested("primary && secondary || third") { fixture[it].orEmpty() },
+        )
+        assertEquals(
+            listOf("A", "B"),
+            RuleCombinationEvaluator.evaluateNested("primary || secondary && third") { fixture[it].orEmpty() },
+        )
+    }
+
+    @Test
     fun detectsOnlyMixedNestedTopLevelCombinations() {
         assertEquals(false, RuleCombinationEvaluator.hasNestedTopLevelOperator("primary && secondary && third"))
         assertEquals(true, RuleCombinationEvaluator.hasNestedTopLevelOperator("primary && secondary || third"))
