@@ -198,6 +198,7 @@ class SourceBookActivity : Activity() {
             addView(chapterList)
         }
         setContentView(ScrollView(this).apply { addView(root) })
+        currentCoverUrl?.let { loadCover(it) }
         if (sourceId.isBlank() || bookUrl.isBlank()) {
             status.text = "缺少书源或书籍地址"
         } else {
@@ -356,6 +357,15 @@ class SourceBookActivity : Activity() {
         val query = if (::catalogSearch.isInitialized) catalogSearch.text.toString().trim() else ""
         val matching = allChapters.filter { query.isBlank() || it.title.contains(query, ignoreCase = true) }
         val ordered = if (reverseCatalog) matching.asReversed() else matching
+        if (ordered.isEmpty()) {
+            chapterRows.addView(TextView(this).apply {
+                text = if (query.isBlank()) "目录为空" else "没有匹配的章节"
+                textSize = 13f
+                setTextColor(Color.GRAY)
+                setPadding(0, dpBook(14), 0, dpBook(14))
+            })
+            return
+        }
         ordered.forEach { chapter ->
             chapterRows.addView(TextView(this).apply {
                 text = "${chapter.index + 1}. ${chapter.title}"
