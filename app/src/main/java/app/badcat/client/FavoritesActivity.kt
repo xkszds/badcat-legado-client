@@ -125,6 +125,7 @@ object FavoriteBooks {
 class FavoritesActivity : Activity() {
     private lateinit var rootContent: LinearLayout
     private var selectedFolderId = FavoriteBooks.DEFAULT_FOLDER_ID
+    private var selectedType = "小说"
     private val blue = Color.rgb(55, 137, 222)
     private val ink = Color.rgb(48, 55, 66)
     private val muted = Color.rgb(135, 145, 158)
@@ -142,18 +143,39 @@ class FavoritesActivity : Activity() {
             setPadding(dp(18), dp(16), dp(14), dp(12))
             setBackgroundColor(Color.WHITE)
         }
-        header.addView(TextView(this).apply {
-            text = "小说"; textSize = 22f; typeface = Typeface.DEFAULT_BOLD; setTextColor(ink)
-        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        header.addView(actionText("＋ 文件夹") {
+        header.addView(View(this), LinearLayout.LayoutParams(0, dp(1), 1f))
+        val title = TextView(this).apply {
+            text = selectedType
+            textSize = 27f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(ink)
+            gravity = Gravity.CENTER
+            isClickable = true
+            isFocusable = true
+            setOnLongClickListener {
+                val types = arrayOf("小说", "漫画", "其他")
+                AlertDialog.Builder(this@FavoritesActivity).setItems(types) { _, which ->
+                    selectedType = types[which]
+                    selectedFolderId = FavoriteBooks.DEFAULT_FOLDER_ID
+                    refresh()
+                }.show()
+                true
+            }
+        }
+        header.addView(title, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 2f))
+        header.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(actionText("＋ 文件夹") {
             promptFolderName("新建文件夹") { name ->
                 if (!FavoriteBooks.createFolder(this, name)) toast("文件夹名称无效或已存在")
                 refresh()
             }
         })
-        val more = actionText("⋮") {}
-        more.setOnClickListener { showMoreMenu(more) }
-        header.addView(more)
+            val more = actionText("⋮") {}
+            more.setOnClickListener { showMoreMenu(more) }
+            addView(more)
+        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         root.addView(header)
         val scroll = ScrollView(this)
         rootContent = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(14), dp(14), dp(20)) }
@@ -171,6 +193,16 @@ class FavoritesActivity : Activity() {
         val folders = FavoriteBooks.folders(this)
         if (folders.none { it.id == selectedFolderId }) selectedFolderId = FavoriteBooks.DEFAULT_FOLDER_ID
         val allBooks = FavoriteBooks.all(this)
+        if (selectedType != "小说") {
+            rootContent.addView(TextView(this).apply {
+                text = "暂无" + selectedType + "收藏"
+                textSize = 15f
+                setTextColor(muted)
+                gravity = Gravity.CENTER
+                setPadding(dp(12), dp(100), dp(12), dp(100))
+            })
+            return
+        }
         sectionTitle("小说文件夹")
         folders.chunked(3).forEach { group ->
             val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
