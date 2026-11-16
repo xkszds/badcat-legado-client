@@ -58,6 +58,21 @@ class JsonPathRuleEvaluatorTest {
     }
 
     @Test
+    fun appliesFallbackToJsonPathCollectionRules() {
+        val result = LegadoRuleExpressionDispatcher.evaluateElements(
+            document,
+            "@jsonpath:$.missing[*]||@jsonpath:$.books[*]",
+        )
+        assertEquals(
+            listOf(
+                """{"name":"Alpha","author":"A"}""",
+                """{"name":"Beta","author":"B"}""",
+            ),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
+    @Test
     fun reportsMalformedJsonPath() {
         val result = JsonPathRuleEvaluator.evaluate(document, "$.books[")
         assertIs<EngineResult.Failure>(result)
