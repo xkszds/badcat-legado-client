@@ -14,7 +14,7 @@ import android.widget.TextView
 class MyActivity : Activity() {
     private val ink = Color.rgb(48, 52, 60)
     private val muted = Color.rgb(145, 151, 160)
-    private val blue = Color.rgb(75, 143, 226)
+    private val blue = Color.rgb(55, 137, 222)
     private val page = Color.rgb(247, 248, 250)
 
     override fun onCreate(savedInstanceState: Bundle?) {
