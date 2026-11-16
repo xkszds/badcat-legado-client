@@ -214,6 +214,51 @@ class SourceChapterContentServiceTest {
     }
 
     @Test
+    fun redirectAliasesDoNotConsumeTheChapterPageSafetyLimit() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleContentJson = """{"content":"div#content","nextContentUrl":"a.next"}""",
+        )
+        val requests = mutableListOf<String>()
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                requests += request.url
+                val secondPage = request.url.endsWith("/canonical/chapter-2")
+                val finalUrl = if (secondPage) {
+                    "https://reader.example/canonical/chapter-2"
+                } else {
+                    "https://reader.example/canonical/chapter-1"
+                }
+                val body = if (secondPage) {
+                    """<div id="content"><p>Second page.</p></div>"""
+                } else {
+                    """<div id="content"><p>First page.</p></div><a class="next" href="chapter-2">Next</a>"""
+                }
+                return EngineResult.Success(SourceHttpResponse(200, finalUrl, body = body))
+            }
+        }
+
+        val result = assertIs<EngineResult.Success<ChapterContent>>(
+            SourceChapterContentService(SourceHttpGateway(client), maxPages = 2).load(
+                source,
+                "https://reader.example/book/1",
+                BookChapter(0, "Chapter", "https://reader.example/chapter/1"),
+            ),
+        )
+
+        assertEquals(
+            listOf(
+                "https://reader.example/chapter/1",
+                "https://reader.example/canonical/chapter-2",
+            ),
+            requests,
+        )
+        assertEquals("First page.\\n\\nSecond page.", result.value.text)
+    }
+
+    @Test
     fun reportsChapterPaginationSafetyLimitInsteadOfReturningPartialText() = runBlocking {
         val source = BookSource(
             id = "fixture",
