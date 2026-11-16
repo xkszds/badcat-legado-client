@@ -50,7 +50,6 @@ class MainActivity : Activity() {
             )
             addView(buildHeader())
             addView(buildSearchPanel())
-            addView(buildOriginalShortcuts())
             addView(View(this@MainActivity), LinearLayout.LayoutParams(1, 0, 1f))
         }
         addView(body)
@@ -148,54 +147,12 @@ class MainActivity : Activity() {
         ).apply { topMargin = dp(5) })
     }
 
-    /**
-     * Recreates the three shortcut positions from the reference home screen.
-     * These are intentionally presentation-only until their original service
-     * contracts have been verified; they do not launch unrelated dev screens.
-     */
-    private fun buildOriginalShortcuts(): View = LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        setPadding(dp(22), dp(23), dp(22), dp(8))
-        val row = LinearLayout(this@MainActivity).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-        }
-        val shortcuts = listOf(
-            Triple("🏆", "排行榜", Color.rgb(255, 183, 77)),
-            Triple("🎁", "今日抽奖", Color.rgb(239, 112, 130)),
-            Triple("💰", "赚取现金", Color.rgb(91, 177, 151)),
-        )
-        shortcuts.forEach { (symbol, label, tint) ->
-            val item = LinearLayout(this@MainActivity).apply {
-                orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER
-                addView(TextView(this@MainActivity).apply {
-                    text = symbol
-                    textSize = 25f
-                    gravity = Gravity.CENTER
-                    setTextColor(Color.WHITE)
-                    background = rounded(tint, 30)
-                    layoutParams = LinearLayout.LayoutParams(dp(58), dp(58))
-                })
-                addView(TextView(this@MainActivity).apply {
-                    text = label
-                    textSize = 13f
-                    gravity = Gravity.CENTER
-                    setTextColor(ink)
-                    setPadding(0, dp(9), 0, 0)
-                })
-            }
-            row.addView(item, LinearLayout.LayoutParams(0, dp(92), 1f))
-        }
-        addView(row)
-    }
-
     private fun buildBottomNavigation(): View = LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER
         setBackgroundColor(Color.WHITE)
         elevation = dp(8).toFloat()
-        val destinations = listOf("搜索", "收藏夹", "喵星", "我的")
+        val destinations = listOf("搜索", "收藏夹", "我的")
         destinations.forEachIndexed { index, label ->
             val selected = index == 0
             addView(LinearLayout(this@MainActivity).apply {
@@ -207,12 +164,11 @@ class MainActivity : Activity() {
                     when (index) {
                         0 -> Unit
                         1 -> startActivity(Intent(this@MainActivity, FavoritesActivity::class.java))
-                        2 -> startActivity(Intent(this@MainActivity, CatSpaceActivity::class.java))
-                        3 -> startActivity(Intent(this@MainActivity, MyActivity::class.java))
+                        2 -> startActivity(Intent(this@MainActivity, MyActivity::class.java))
                     }
                 }
                 addView(TextView(this@MainActivity).apply {
-                    text = listOf("⌕", "▤", "✿", "♙")[index]
+                    text = listOf("⌕", "▤", "♙")[index]
                     textSize = 19f
                     gravity = Gravity.CENTER
                     setTextColor(if (selected) blue else muted)
