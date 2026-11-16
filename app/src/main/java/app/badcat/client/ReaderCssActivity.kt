@@ -271,13 +271,18 @@ class ReaderCssActivity : Activity() {
             .setView(box).setNegativeButton("取消", null)
             .setPositiveButton("保存") { _, _ ->
                 val label = name.text.toString().trim()
-                if (label.isEmpty()) {
-                    message.text = "方案名称不能为空"
+                val noteText = note.text.toString().trim()
+                if (label.isEmpty() || label.length > 100 || noteText.length > 500) {
+                    message.text = "方案名称需为 1-100 字，备注不能超过 500 字"
                     return@setPositiveButton
                 }
                 val old = readProfiles()
-                val updated = existing?.copy(name = label, note = note.text.toString().trim())
-                    ?: Profile(UUID.randomUUID().toString(), label, note.text.toString().trim(), true, emptyList())
+                if (existing == null && old.size >= MAX_PROFILES) {
+                    message.text = "最多保存 $MAX_PROFILES 套方案"
+                    return@setPositiveButton
+                }
+                val updated = existing?.copy(name = label, note = noteText)
+                    ?: Profile(UUID.randomUUID().toString(), label, noteText, true, emptyList())
                 saveProfiles(if (existing == null) old + updated else old.map { if (it.id == updated.id) updated else it })
                 refresh()
             }.show()
@@ -458,13 +463,23 @@ class ReaderCssActivity : Activity() {
             .setNegativeButton("取消", null)
             .setPositiveButton("保存") { _, _ ->
                 val selectorText = selector.text.toString().trim()
-                if (selectorText.isEmpty()) {
-                    message.text = "CSS 选择器不能为空"
+                val ruleName = name.text.toString().trim()
+                val ruleNote = note.text.toString().trim()
+                val cssText = css.text.toString().trim()
+                if (ReaderCssDocument.sanitizeSelector(selectorText) == null) {
+                    message.text = "CSS 选择器格式无效或超过 240 字，请检查括号、引号和分组"
                     return@setPositiveButton
                 }
-                val rule = SelectorRule(name.text.toString().trim(), note.text.toString().trim(),
-                    selectorText, css.text.toString().trim())
+                if (ruleName.length > 100 || ruleNote.length > 500 || cssText.length > 4000) {
+                    message.text = "名称最多 100 字、备注最多 500 字、CSS 最多 4000 字"
+                    return@setPositiveButton
+                }
+                val rule = SelectorRule(ruleName, ruleNote, selectorText, cssText)
                 val current = readProfiles()
+                if (index == null && (current.firstOrNull { it.id == profileId }?.rules?.size ?: 0) >= MAX_RULES_PER_PROFILE) {
+                    message.text = "每套方案最多 $MAX_RULES_PER_PROFILE 条子选择器"
+                    return@setPositiveButton
+                }
                 saveProfiles(current.map { p ->
                     if (p.id != profileId) p else {
                         val rules = p.rules.toMutableList()
