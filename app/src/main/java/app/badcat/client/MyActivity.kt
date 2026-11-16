@@ -21,6 +21,7 @@ class MyActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        sourceEntryRevealed = getSharedPreferences("badcat_profile", MODE_PRIVATE).getBoolean("show_source_entry", false)
         window.statusBarColor = Color.WHITE
         window.navigationBarColor = Color.WHITE
         window.decorView.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
@@ -105,6 +106,7 @@ class MyActivity : Activity() {
                 versionTapCount++
                 if (versionTapCount >= 5 && !sourceEntryRevealed) {
                     sourceEntryRevealed = true
+                    getSharedPreferences("badcat_profile", MODE_PRIVATE).edit().putBoolean("show_source_entry", true).apply()
                     versionTapCount = 0
                     android.widget.Toast.makeText(this@MyActivity, "书源管理入口已显示", android.widget.Toast.LENGTH_SHORT).show()
                     recreate()
