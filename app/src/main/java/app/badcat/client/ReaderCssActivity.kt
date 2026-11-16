@@ -50,6 +50,16 @@ class ReaderCssActivity : Activity() {
             text = "＋ 新建 CSS 方案"
             setOnClickListener { editProfile(null) }
         })
+        val quickActions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        quickActions.addView(Button(this).apply {
+            text = "添加默认方案"
+            setOnClickListener { addDefaultProfile() }
+        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        quickActions.addView(Button(this).apply {
+            text = "检查选择器冲突"
+            setOnClickListener { showSelectorConflicts() }
+        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        root.addView(quickActions)
         val transfer = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
         }
@@ -188,6 +198,7 @@ class ReaderCssActivity : Activity() {
                     val ruleName = rule.optString("name")
                     val ruleNote = rule.optString("note")
                     require(selector.length <= 240 && css.length <= 4000) { "选择器或 CSS 内容过长" }
+                    require(ReaderCssDocument.sanitizeSelector(selector) != null) { "导入文件包含无效 CSS 选择器" }
                     require(ruleName.length <= 100 && ruleNote.length <= 500) { "子选择器名称或备注过长" }
                     SelectorRule(ruleName, ruleNote, selector, css)
                 }
@@ -300,6 +311,9 @@ class ReaderCssActivity : Activity() {
             "下移子选择器（调整优先级）",
             "预览整套方案（全部子选择器）",
             "复制已有子选择器",
+            "复制整套方案",
+            "添加默认阅读样式",
+            "检查选择器冲突",
         )
         android.app.AlertDialog.Builder(this).setTitle(profile.name)
             .setItems(actions) { _, which ->
@@ -352,8 +366,80 @@ class ReaderCssActivity : Activity() {
                                 refresh()
                                 message.text = "已复制子选择器，可继续修改名称、备注、选择器和样式"
                             }.show()
+                    8 -> duplicateProfile(id)
+                    9 -> addDefaultProfile()
+                    10 -> showSelectorConflicts()
                 }
             }.setNegativeButton("关闭", null).show()
+    }
+
+    private fun duplicateProfile(profileId: String) {
+        val source = readProfiles().firstOrNull { it.id == profileId } ?: return
+        val profiles = readProfiles()
+        if (profiles.size >= MAX_PROFILES) {
+            message.text = "最多保存 $MAX_PROFILES 套方案"
+            return
+        }
+        val copy = source.copy(
+            id = UUID.randomUUID().toString(),
+            name = (source.name.ifBlank { "CSS 方案" }) + " 副本",
+            note = if (source.note.isBlank()) "由“${source.name}”复制" else source.note + "（复制）",
+            enabled = false,
+        )
+        saveProfiles(profiles + copy)
+        refresh()
+        message.text = "整套方案已复制；副本默认关闭，确认后可单独启用"
+    }
+
+    private fun addDefaultProfile() {
+        val profiles = readProfiles()
+        if (profiles.size >= MAX_PROFILES) {
+            message.text = "最多保存 $MAX_PROFILES 套方案"
+            return
+        }
+        val default = Profile(
+            id = UUID.randomUUID().toString(),
+            name = "默认阅读样式",
+            note = "基础阅读排版，可按需修改；默认关闭，不会覆盖现有方案",
+            enabled = false,
+            rules = listOf(
+                SelectorRule("正文容器", "阅读区域内边距", ".reader-content", "padding: 0;"),
+                SelectorRule("正文段落", "常规段落排版", ".reader-paragraph", "font-size: 18px; line-height: 1.8; text-indent: 2em; margin-bottom: 1em;"),
+                SelectorRule("首段", "首段取消额外上边距", ".reader-paragraph:first-child", "margin-top: 0;"),
+            ),
+        )
+        saveProfiles(profiles + default)
+        refresh()
+        message.text = "已添加默认阅读样式；默认关闭，可先预览再启用"
+    }
+
+    private fun showSelectorConflicts() {
+        val profiles = readProfiles().filter { it.enabled }
+        val occurrences = profiles.flatMap { profile ->
+            profile.rules.mapNotNull { rule ->
+                val selector = ReaderCssDocument.sanitizeSelector(rule.selector) ?: return@mapNotNull null
+                selector to "${profile.name} / ${rule.name.ifBlank { selector }}"
+            }
+        }
+        val conflicts = occurrences.groupBy({ it.first }, { it.second })
+            .filterValues { it.size > 1 }
+        if (conflicts.isEmpty()) {
+            android.app.AlertDialog.Builder(this)
+                .setTitle("选择器冲突检查")
+                .setMessage("当前启用的方案中，没有发现完全相同的选择器重复项。注意：不同但相互匹配的选择器仍可能产生 CSS 层叠影响。")
+                .setPositiveButton("知道了", null)
+                .show()
+            return
+        }
+        val report = conflicts.entries.joinToString("\n\n") { (selector, owners) ->
+            "$selector\n" + owners.joinToString("\n") { "• $it" } +
+                "\n提示：这些规则可能同时命中相同节点，后输出的声明可能覆盖先输出的声明。"
+        }
+        android.app.AlertDialog.Builder(this)
+            .setTitle("发现 ${conflicts.size} 组重复选择器")
+            .setMessage(report)
+            .setPositiveButton("知道了", null)
+            .show()
     }
 
     private fun showProfilePreview(profileId: String) {
