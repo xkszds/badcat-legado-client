@@ -240,7 +240,12 @@ class SourceChapterActivity : Activity() {
         readerTheme = preferences.getInt("reader_theme", 0).coerceIn(0, 2)
 
         status = TextView(this).apply { text = "正在加载目录…" }
-        body = android.webkit.WebView(this).apply {
+        body = object : android.webkit.WebView(this) {
+            override fun onScrollChanged(l: Int, t: Int, oldl: Int, oldt: Int) {
+                super.onScrollChanged(l, t, oldl, oldt)
+                updateReaderProgress()
+            }
+        }.apply {
             settings.javaScriptEnabled = false
             settings.domStorageEnabled = false
             settings.allowFileAccess = false
@@ -255,6 +260,7 @@ class SourceChapterActivity : Activity() {
                     pendingBookmarkY = null
                     pendingScrollY = null
                     if (target != null) view.post { view.scrollTo(0, target) }
+                    view.post { updateReaderProgress() }
                 }
             }
         }
@@ -314,7 +320,8 @@ class SourceChapterActivity : Activity() {
                 override fun onStartTrackingTouch(seekBar: android.widget.SeekBar?) = Unit
                 override fun onStopTrackingTouch(seekBar: android.widget.SeekBar?) {
                     val target = seekBar?.progress ?: return
-                    if (chapters.isNotEmpty()) loadChapterAt(((chapters.lastIndex * target) / 100.0).toInt())
+                    val maxScroll = (body.contentHeight * body.scale - body.height).toInt().coerceAtLeast(0)
+                    body.post { body.scrollTo(0, (maxScroll * target / 100).coerceAtLeast(0)) }
                 }
             })
         }
@@ -380,6 +387,13 @@ class SourceChapterActivity : Activity() {
         pendingScrollY = savedY
     }
 
+    private fun updateReaderProgress() {
+        if (!::chapterProgress.isInitialized || !::body.isInitialized) return
+        val maxScroll = (body.contentHeight * body.scale - body.height).toInt().coerceAtLeast(0)
+        chapterProgress.progress = if (maxScroll == 0) 0 else
+            (body.scrollY * 100 / maxScroll).coerceIn(0, 100)
+    }
+
     private fun moveChapter(delta: Int) {
         loadChapterAt(currentIndex + delta)
     }
@@ -438,7 +452,6 @@ class SourceChapterActivity : Activity() {
         }
         previousButton.isEnabled = currentIndex > 0
         nextButton.isEnabled = currentIndex >= 0 && currentIndex < chapters.lastIndex
-        if (chapters.size > 1 && currentIndex >= 0) chapterProgress.progress = (currentIndex * 100 / chapters.lastIndex).coerceIn(0, 100)
         if (result is EngineResult.Success) {
             restoreCurrentScrollPosition()
             if (intent.getBooleanExtra(EXTRA_JUMP_TO_BOOKMARK, false)) {
