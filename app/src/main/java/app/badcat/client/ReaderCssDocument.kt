@@ -92,13 +92,43 @@ internal object ReaderCssDocument {
     }.getOrDefault("")
 
     private fun scopeSelector(selector: String): String {
-        // Do not prefix selectors already targeting the reader root, including
-        // compound class/id/pseudo/attribute selectors.
-        val rootPrefix = ".reader-root"
-        val isRootSelector = selector.startsWith(rootPrefix) &&
-            (selector.length == rootPrefix.length ||
-                selector[rootPrefix.length] in charArrayOf(' ', '.', '#', ':', '[', '>', '+', '~'))
-        return if (isRootSelector) selector else "$rootPrefix $selector"
+        // Scope each top-level selector independently. A comma inside :not(...)
+        // or an attribute value is not a selector-group separator.
+        return splitSelectorGroups(selector).joinToString(", ") { group ->
+            val value = group.trim()
+            val rootPrefix = ".reader-root"
+            val isRootSelector = value.startsWith(rootPrefix) &&
+                (value.length == rootPrefix.length ||
+                    value[rootPrefix.length] in charArrayOf(' ', '.', '#', ':', '[', '>', '+', '~'))
+            if (isRootSelector) value else "$rootPrefix $value"
+        }
+    }
+
+    private fun splitSelectorGroups(selector: String): List<String> {
+        val groups = mutableListOf<String>()
+        var start = 0
+        var parentheses = 0
+        var brackets = 0
+        var quote: Char? = null
+        selector.forEachIndexed { index, char ->
+            if (quote != null) {
+                if (char == quote && (index == 0 || selector[index - 1] != '\\\\')) quote = null
+            } else {
+                when (char) {
+                    '\\'', '"' -> quote = char
+                    '(' -> parentheses++
+                    ')' -> parentheses--
+                    '[' -> brackets++
+                    ']' -> brackets--
+                    ',' -> if (parentheses == 0 && brackets == 0) {
+                        groups += selector.substring(start, index)
+                        start = index + 1
+                    }
+                }
+            }
+        }
+        groups += selector.substring(start)
+        return groups
     }
     private fun sanitizeSelector(raw: String): String? {
         val value = raw.trim()
