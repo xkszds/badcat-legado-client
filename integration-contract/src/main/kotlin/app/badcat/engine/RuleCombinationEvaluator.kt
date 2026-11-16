@@ -46,6 +46,50 @@ object RuleCombinationEvaluator {
         }
     }
 
+    /**
+     * Result-aware variant used by selector runtimes. A failed || branch is
+     * allowed to fall through to a later successful branch; failures in &&/%%
+     * remain visible instead of being silently converted to empty values.
+     */
+    fun <T> evaluateNestedResult(
+        expression: String,
+        evaluateRule: (String) -> EngineResult<List<T>>,
+    ): EngineResult<List<T>> {
+        val split = RuleExpressionTokenizer.splitByFirstTopLevelOperator(expression)
+        if (split.operator == null) return evaluateRule(split.rules.single())
+
+        if (split.operator == "||") {
+            var firstFailure: EngineResult.Failure? = null
+            for (part in split.rules) {
+                when (val result = evaluateNestedResult(part, evaluateRule)) {
+                    is EngineResult.Failure -> if (firstFailure == null) firstFailure = result
+                    is EngineResult.Success -> if (result.value.isNotEmpty()) return result
+                }
+            }
+            return firstFailure ?: EngineResult.Success(emptyList())
+        }
+
+        val branches = ArrayList<List<T>>()
+        for (part in split.rules) {
+            when (val result = evaluateNestedResult(part, evaluateRule)) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> if (result.value.isNotEmpty()) branches += result.value
+            }
+        }
+        if (branches.isEmpty()) return EngineResult.Success(emptyList())
+        val combined = if (split.operator == "%%") {
+            buildList {
+                val rows = branches.maxOfOrNull { it.size } ?: 0
+                for (index in 0 until rows) {
+                    branches.forEach { it.getOrNull(index)?.let(::add) }
+                }
+            }
+        } else {
+            branches.flatten()
+        }
+        return EngineResult.Success(combined)
+    }
+
     fun <T> evaluate(
         expression: String,
         evaluateRule: (String) -> List<T>,
