@@ -10,6 +10,8 @@ class SourceChapterContentService(
     private val textReplacement: BookTextReplacement = BookTextReplacement { it },
     private val scopedTextReplacement: ScopedBookTextReplacement? = null,
     private val maxPages: Int = 20,
+    private val cache: ChapterContentCache? = null,
+    private val cacheTtlMillis: Long = 12L * 60 * 60 * 1000,
 ) {
     suspend fun load(
         source: BookSource,
@@ -22,6 +24,20 @@ class SourceChapterContentService(
                 EngineErrorCode.INVALID_SOURCE,
                 "Book URL, chapter URL and positive maxPages are required",
             )
+        }
+
+        if (cacheTtlMillis < 0) {
+            return EngineResult.Failure(EngineErrorCode.INVALID_SOURCE, "cacheTtlMillis must not be negative")
+        }
+        val cached = try {
+            cache?.get(source.id, bookUrl, chapter.url)
+        } catch (cancelled: java.util.concurrent.CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            null
+        }
+        if (cached != null && System.currentTimeMillis() - cached.savedAtEpochMillis in 0..cacheTtlMillis) {
+            return EngineResult.Success(cached.content)
         }
 
         var currentUrl = chapter.url
@@ -39,11 +55,11 @@ class SourceChapterContentService(
                 )
             }
             val response = when (val result = http.execute(source, currentUrl)) {
-                is EngineResult.Failure -> return result
+                is EngineResult.Failure -> return cached?.let { EngineResult.Success(it.content) } ?: result
                 is EngineResult.Success -> result.value
             }
             if (response.statusCode !in 200..299) {
-                return EngineResult.Failure(
+                return cached?.let { EngineResult.Success(it.content) } ?: EngineResult.Failure(
                     EngineErrorCode.NETWORK,
                     "Chapter content request for source '${source.id}' returned HTTP ${response.statusCode}",
                 )
@@ -83,7 +99,7 @@ class SourceChapterContentService(
         }
 
         val combinedText = pageTexts.joinToString("\n\n")
-        return runCatching<EngineResult<ChapterContent>> {
+        val finalContent = try {
             val replacementContext = LegadoReplacementContext(
                 book = LegadoReplacementBookContext(
                     bookUrl = bookUrl,
@@ -104,25 +120,36 @@ class SourceChapterContentService(
                 chapterText = combinedText,
                 context = replacementContext,
             )
-            EngineResult.Success(
-                ChapterContent(
-                    title = replaced?.title ?: title,
-                    text = replaced?.text ?: textReplacement.replace(combinedText),
-                ),
+            ChapterContent(
+                title = replaced?.title ?: title,
+                text = replaced?.text ?: textReplacement.replace(combinedText),
             )
-        }.getOrElse {
+        } catch (error: Exception) {
             // Preserve structured coroutine cancellation instead of converting it
             // into an ordinary chapter parsing failure.
-            if (it is java.util.concurrent.CancellationException) throw it
-            EngineResult.Failure(
-                when (it) {
+            if (error is java.util.concurrent.CancellationException) throw error
+            return EngineResult.Failure(
+                when (error) {
                     is LegadoRegexTimeoutException -> EngineErrorCode.RULE_TIMEOUT
                     is UnsupportedOperationException -> EngineErrorCode.UNSUPPORTED_RULE
                     else -> EngineErrorCode.PARSE
                 },
                 "Chapter text replacement failed for source '${source.id}'",
-                it,
+                error,
             )
         }
+        try {
+            cache?.put(
+                source.id,
+                bookUrl,
+                chapter.url,
+                CachedChapterContent(finalContent, System.currentTimeMillis()),
+            )
+        } catch (cancelled: java.util.concurrent.CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            // A cache write failure must not discard successfully loaded chapter text.
+        }
+        return EngineResult.Success(finalContent)
     }
 }
