@@ -12,11 +12,12 @@ A clean-room integration workspace for combining the Badcat 1.5.0.5 client exper
 
 ## Current status
 
-The repository now has a passing CI Debug build for the latest code commit `61fb8240cdf4`: [GitHub Actions #43844875160](https://github.com/xkszds/badcat-legado-client/actions/runs/43844875160). Contract tests, bounded Rhino host tests, Android Debug APK assembly and artifact upload all succeeded. The artifact is 4,766,215 bytes (SHA-256 `040a7d9f536d261e6e572a4995f81a749e092b3ccbba1969cc1b9590a3b8ecba`). A documentation-only follow-up commit `681c8ddc640e` also passed tests, APK assembly and upload; its Actions run is completing post-job cleanup.
+The latest repository commit at the time of this update is `e226dd6b559c`. Its GitHub Actions run [#43845483951](https://github.com/xkszds/badcat-legado-client/actions/runs/43845483951) passed all steps: contract tests, bounded Rhino host tests, Android Debug APK assembly and artifact upload. The artifact `badcat-legado-debug` is 4,766,218 bytes (SHA-256 `9a09984e4b6a0250348c4f523b47fa61fda1bd5cebb3f89ef241ab424a2c2fdb`).
 
 **This is still a buildable integration prototype, not a reconstruction of the original Badcat UI and not a release-ready reader.** The app contains a temporary launcher and development-only source import/export, search, detail, TOC and chapter-reader screens. The host has a bounded CSS parser subset and a bounded Rhino replacement evaluator, not Legado's complete `AnalyzeUrl` / `AnalyzeRule` environment with all parser modes, HTTP, cookie, cache and host objects. Original Badcat WebView ad filtering, AdMark and PPRule behavior have not been ported. Physical-device installation, runtime, UI parity and purification parity remain unverified.
 
 See [the project completion checklist](docs/project-completion-checklist.md) for the completed work, outstanding P0/P1 gates and recommended order.
+
 ## Repository map
 
 - `app/` — temporary Android host shell and development validation screens; not the final UI.
@@ -42,7 +43,7 @@ See [the project completion checklist](docs/project-completion-checklist.md) for
 
 1. Complete the Legado app-layer rule environment: `AnalyzeUrl` / `AnalyzeRule`, HTTP and cookie context, parser/runtime globals, and source-specific helper objects.
 2. Expand fixture-backed search/detail/catalog/content and JavaScript rule tests against representative real-world source definitions.
-3. Reconstruct the original Badcat UI screens and navigation from the read-only resource/screenshot baseline; see `docs/badcat-ui-reconstruction-map.md`.
+3. Reconstruct the original Badcat UI screens and navigation from the read-only resource/screenshot baseline; see [the UI reconstruction map](docs/badcat-ui-reconstruction-map.md).
 4. Connect the adapter to those screens without changing their navigation unnecessarily.
 5. Map and integrate existing purification behavior by content domain.
 6. Install the debug build on the target Android device and run import, search, detail, TOC, chapter navigation, progress, bookmark and reader-setting regression tests.
