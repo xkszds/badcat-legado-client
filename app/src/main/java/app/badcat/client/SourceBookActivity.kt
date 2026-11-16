@@ -277,6 +277,12 @@ class SourceChapterActivity : Activity() {
             text = "切换背景"
             setOnClickListener { cycleReaderTheme() }
         }
+        val cssButton = android.widget.Button(this).apply {
+            text = "CSS自定义"
+            setOnClickListener {
+                startActivity(Intent(this@SourceChapterActivity, ReaderCssActivity::class.java))
+            }
+        }
         val chapterCatalog = android.widget.Button(this).apply {
             text = "章节目录"
             setOnClickListener { showChapterCatalog() }
@@ -294,6 +300,7 @@ class SourceChapterActivity : Activity() {
             addView(lineLess, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
             addView(lineMore, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
             addView(themeButton, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            addView(cssButton, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         }
         val bookmarkControls = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
