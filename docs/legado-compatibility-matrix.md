@@ -14,7 +14,7 @@ and must not be treated as full BookSource/AnalyzeRule compatibility.
 | HTTP transport | Partial | Async OkHttp, redirects with HTTPS downgrade prevention, per-source cookie jar, headers, common methods, response size cap, charset, retry | Legado DNS overrides, WebView requests, advanced request body and cookie semantics need coverage |
 | Search result fields | Partial | CSS element collection for bookList; CSS/XPath/JSONPath scalar extraction dispatch; relative book/cover URL resolution | Collection root remains CSS-only; JS, regex, filters, chained rules, interpolation and direct-detail detection are not supported |
 | Book detail | Partial | Name/author/intro/cover/latest chapter/TOC URL; CSS/XPath/JSONPath scalar extraction | JS, regex, replacement chains, variables and source-specific init scripts are not supported |
-| TOC | Partial | CSS chapter collection; CSS/XPath/JSONPath scalar title and URL extraction; multi-page pagination and cycle guards | Collection root and next-page link extraction are CSS-only; volume grouping, VIP/pay and script formatting are not implemented |
+| TOC | Partial | CSS chapter collection; CSS/XPath/JSONPath scalar title, chapter URL and next-page link extraction; multi-page pagination and cycle guards | Collection root remains CSS-only; volume grouping, VIP/pay and script formatting are not implemented |
 | Chapter content | Partial | CSS/XPath/JSONPath extraction, title and next-page URL; HTML-to-readable-text conversion; pagination and replacement hook | JS/webJs/callBackJs, sourceRegex, replaceRegex, payAction, imageDecode and contentBatch are not implemented |
 | Selector expressions | Partial | Explicit @css:, @xpath:, @jsonpath: / @json:; unprefixed CSS default; unambiguous XPath and JSONPath inference | Complete upstream expression grammar, selector filters and mixed parser chains are not implemented |
 | JavaScript | Partial | Pinned Rhino sandbox for bounded string-only script evaluation and replacement helper | Full Legado Java/http/cookie/cache/WebView bindings, source mainJs/jsLib and stage-specific AnalyzeRule execution are not integrated |
@@ -28,7 +28,7 @@ and must not be treated as full BookSource/AnalyzeRule compatibility.
 The shared rule-expression dispatcher now routes scalar extraction fields to CSS,
 XPath or JSONPath based on explicit prefixes or unambiguous expression shape.
 It is wired into search item fields, book detail fields, TOC chapter fields and
-chapter content/title fields. The selector-stage adapter uses the same dispatcher.
+chapter content/title fields. The selector-stage adapter uses the same dispatcher. TOC next-page and chapter next-content links also use the shared dispatcher, so XPath/JSONPath scalar links are no longer hard-coded to CSS.
 
 The dispatcher deliberately fails closed for explicit @js: and @regex: forms. It
 does not infer JavaScript or regex from arbitrary text. Search bookList, TOC
