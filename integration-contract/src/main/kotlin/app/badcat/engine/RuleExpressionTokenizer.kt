@@ -44,6 +44,12 @@ object RuleExpressionTokenizer {
         while (index < expression.length) {
             val char = expression[index]
 
+            // Regex rules contain literal quotes around HTML attributes and
+            // character classes such as [^"]. Those quotes are regex syntax,
+            // not tokenizer string delimiters.
+            val regexBranch = expression.substring(start, index).trimStart()
+                .startsWith("@regex:", ignoreCase = true)
+
             if (quote != null) {
                 when {
                     char == '\\' -> index = (index + 2).coerceAtMost(expression.length)
@@ -54,7 +60,7 @@ object RuleExpressionTokenizer {
             }
 
             when {
-                char == '"' || char == '\'' -> {
+                !regexBranch && (char == '"' || char == '\'') -> {
                     quote = char
                     index++
                 }
