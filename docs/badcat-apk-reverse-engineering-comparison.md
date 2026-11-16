@@ -75,7 +75,7 @@ APK 中还包含 `assets/libjiagu.so`，以及一个文件头不是标准 DEX ma
 
 ## 8. 多版本 APK / 解包重建包交叉核验与截图对照
 
-本轮发现用户文件库中还存在旧壳 APK（package `com.hhm.verticalsearch`、Application `com.stub.StubApp`）、DEX ZIP、未签名重建 APK、v1 测试签名 APK，以及当前 24.6 MB 变体（package `com.hhm.verticalsearci`、Application `HuaYueApplication`）。重建 APK 与当前 24.6 MB 变体的七份根 DEX 哈希逐个完全相同；重建 APK 与 ZIP 映射来源在 DEX header byte 32 之后完全相同，重建头部 SHA-1/Adler-32 全部通过。完整样本哈希和差异见 [APK、DEX 归档、重建包与原版界面对照](reference-build-chain-and-visual-diff.md)。
+本轮发现用户文件库中还存在原始签名旧壳 APK（22.46 MB，package `com.hhm.verticalsearch`、Application `com.stub.StubApp`、证书 CN=hhm）、DEX ZIP、未签名重建 APK、v1 测试签名 APK，以及当前会话上传的 24.6 MB 变体（package `com.hhm.verticalsearci`、Application `HuaYueApplication`、证书 CN=Android）。文件库基础文件名 `坏坏猫_1.5.0.5.apk` 与当前会话同名上传件不是同一文件；SHA-256 已分别记录。重建 APK 与当前 24.6 MB 变体的七份根 DEX 哈希逐个完全相同；重建 APK 与 ZIP 映射来源在 DEX header byte 32 之后完全相同，重建头部 SHA-1/Adler-32 全部通过。完整样本哈希和差异见 [APK、DEX 归档、重建包与原版界面对照](reference-build-chain-and-visual-diff.md)。
 
 同时检查了用户提供的 2026-11-15 四张原版截图：首页、收藏夹、搜索页和阅读器。当前首页、收藏夹、书源搜索页仍是开发骨架；收藏页虽有三列卡片，但缺原版“筛选 / 作品-书贴 / 更多”顶栏和原版分类卡片组合；搜索页仍为源 Spinner 验证界面；阅读器工具栏和底部控制层仍未按截图还原。截图逐项差异与下一步实施顺序已写入新报告。
 
