@@ -35,9 +35,16 @@ object LegadoRuleExpressionDispatcher {
         input: String,
         expression: String,
     ): EngineResult<List<String>> {
+        val normalizedExpression = expression.trim().let {
+            when {
+                it.startsWith("@regex:", true) -> it.substringAfter(':').trim()
+                it.startsWith(":") -> it.substring(1).trim()
+                else -> it
+            }
+        }
         val split = try {
             val candidates = listOf("||", "%%").mapNotNull { operator ->
-                val parts = RuleExpressionTokenizer.splitTopLevel(expression, operator)
+                val parts = RuleExpressionTokenizer.splitTopLevel(normalizedExpression, operator)
                 if (parts.size > 1) Triple(parts.first().length, operator, parts) else null
             }
             candidates.minByOrNull { it.first }
@@ -47,7 +54,7 @@ object LegadoRuleExpressionDispatcher {
                 "Invalid combined Legado regex collection rule",
                 error,
             )
-        } ?: return LegadoRegexElementEvaluator.evaluate(input, expression)
+        } ?: return LegadoRegexElementEvaluator.evaluate(input, normalizedExpression)
 
         if (split.second == "||") {
             var firstFailure: EngineResult.Failure? = null
