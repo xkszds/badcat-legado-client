@@ -176,3 +176,5 @@ The personal center currently shows only implemented routes: reading history, bo
 - The application manifest now declares `INTERNET`, which is required for source search, detail, chapter content and cover requests. Cleartext HTTP is enabled to retain compatibility with legacy HTTP-based book sources; this permits unencrypted transport, so HTTPS sources are preferable when available.
 - Removed a duplicate `BookmarkActivity` manifest declaration found during the integration audit.
 - Chapter filtering and display-order transformation were extracted into the platform-neutral `ChapterCatalogQuery` helper and covered by unit tests; filtering/reversal does not rewrite chapter indices or URLs.
+
+- The book detail “开始阅读” action now opens the first real `BookChapter` directly when no saved progress exists. It no longer assumes the first child in the catalog container is a chapter row (the container may begin with continue-reading or bookmark actions).
