@@ -9,7 +9,7 @@ package app.badcat.engine
  * AnalyzeRule implementation.
  */
 class SelectorLegadoRuleRuntime(
-    private val ruleTypes: Map<String, SelectorRuleType>,
+    private val ruleTypes: Map<String, SelectorRuleType> = emptyMap(),
 ) : LegadoRuleRuntime {
 
     override suspend fun evaluate(
@@ -36,8 +36,14 @@ class SelectorLegadoRuleRuntime(
 
         val evaluated = linkedMapOf<String, List<String>>()
         for ((field, expression) in fields) {
-            val type = ruleTypes["${stage.name.lowercase()}.$field"] ?: continue
-            when (val result = SelectorRuleEvaluator.evaluate(document, type, expression)) {
+            val configuredType = ruleTypes["${stage.name.lowercase()}.$field"]
+            val resolved = when (val dispatch = LegadoRuleExpressionDispatcher.resolve(expression)) {
+                is EngineResult.Failure -> return dispatch
+                is EngineResult.Success -> dispatch.value
+            }
+            val type = configuredType ?: resolved.type
+            val executableExpression = if (configuredType != null) expression else resolved.expression
+            when (val result = SelectorRuleEvaluator.evaluate(document, type, executableExpression)) {
                 is EngineResult.Success -> evaluated[field] = result.value
                 is EngineResult.Failure -> return result
             }
