@@ -140,7 +140,10 @@ class LegadoBookSourceCodecTest {
             """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad type","bookSourceType":"web"}""",
             """{"bookSourceUrl":"https://bad.example","bookSourceName":"Fractional type","bookSourceType":1.5}""",
             """{"bookSourceUrl":"https://bad.example","bookSourceName":"Overflow type","bookSourceType":2147483648}""",
-            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad header","header":{"User-Agent":"x"}}"""
+            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad header","header":{"User-Agent":"x"}}""",
+            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad review flag","enabledReview":"true"}""",
+            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad order","customOrder":1.25}""",
+            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad pattern","bookUrlPattern":42}"""
         )
         malformedSources.forEach { json ->
             assertFailsWith<IllegalArgumentException> {
@@ -262,6 +265,15 @@ class LegadoBookSourceCodecTest {
         assertFailsWith<IllegalArgumentException> {
             LegadoBookSourceCodec.encode(listOf(source, source))
         }
+    }
+
+
+    @Test
+    fun acceptsLongTimestampsAndValidUpstreamMetadata() {
+        val source = LegadoBookSourceCodec.decode(
+            """{"bookSourceUrl":"https://metadata.example","bookSourceName":"Metadata","bookUrlPattern":"https://metadata.example/book/*","enabledReview":false,"customOrder":12,"weight":3,"lastUpdateTime":1760000000000,"respondTime":2400}"""
+        ).single()
+        assertEquals("Metadata", source.name)
     }
 
 }
