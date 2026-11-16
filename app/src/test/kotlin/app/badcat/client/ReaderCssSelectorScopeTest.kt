@@ -7,7 +7,7 @@ class ReaderCssSelectorScopeTest {
     @Test
     fun rendersRulesInInputOrderAndStopsAtTheConfiguredBudget() {
         assertEquals(
-            ".reader-root .reader-paragraph{color:#111111}\\n.reader-root .reader-content{color:#222222}\\n",
+            ".reader-root .reader-paragraph{color:#111111}\n.reader-root .reader-content{color:#222222}\n",
             ReaderCssDocument.renderRules(
                 listOf(
                     ".reader-paragraph" to "color:#111111",
@@ -22,7 +22,7 @@ class ReaderCssSelectorScopeTest {
     @Test
     fun invalidRulesDoNotConsumeTheActiveRuleBudget() {
         assertEquals(
-            ".reader-root .reader-content{color:#222222}\\n",
+            ".reader-root .reader-content{color:#222222}\n",
             ReaderCssDocument.renderRules(
                 listOf(
                     ".reader-content)" to "color:#111111",
