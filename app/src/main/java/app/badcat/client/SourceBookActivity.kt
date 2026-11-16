@@ -172,7 +172,7 @@ class SourceBookActivity : Activity() {
                 catalogSearch = android.widget.EditText(this@SourceBookActivity).apply {
                     hint = "搜索章节名称"
                     textSize = 13f
-                    singleLine = true
+                    isSingleLine = true
                     setPadding(dpBook(10), 0, dpBook(8), 0)
                     background = android.graphics.drawable.GradientDrawable().apply {
                         setColor(Color.rgb(246, 247, 249))
