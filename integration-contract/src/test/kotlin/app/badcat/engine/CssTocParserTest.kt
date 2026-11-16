@@ -253,7 +253,7 @@ class CssTocParserTest {
         val source = BookSource(
             id = "fixture", name = "Fixture", baseUrl = "https://reader.example/",
             ruleTocJson = """{
-                "chapterList":":<li[^>]*chapter[^>]*>[\\s\\S]*?</li>",
+                "chapterList":"@regex:<li[^>]*chapter[^>]*>[\\s\\S]*?</li>",
                 "chapterName":"a@text",
                 "chapterUrl":"a@href"
             }""",
