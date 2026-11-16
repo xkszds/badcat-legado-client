@@ -1,6 +1,6 @@
 # Reader CSS customization
 
-The development reader exposes a local CSS profile editor from the reading controls. Profiles are stored on-device in the app's private preferences and are independent of book-source rules.
+The development reader exposes a local CSS profile editor from the reading controls. Profiles can be exported to a JSON file or imported through Android's document picker; imports are appended without overwriting existing profiles. Import files are limited to 1 MB, 100 profiles, and 120 child selectors per profile, with bounded field lengths. Profiles are stored on-device in the app's private preferences and are independent of book-source rules.
 
 ## Document structure
 
