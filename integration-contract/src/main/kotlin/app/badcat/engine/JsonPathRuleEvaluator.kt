@@ -13,27 +13,45 @@ object JsonPathRuleEvaluator {
     /** Select JSON values as independent JSON fragments for bookList/chapterList stages. */
     fun evaluateElements(document: SourceDocument, expression: String): EngineResult<List<String>> {
         val raw = expression.trim()
-        val rule = when {
-            raw.startsWith("@jsonpath:", true) -> raw.substringAfter(':').trim()
-            raw.startsWith("@json:", true) -> raw.substringAfter(':').trim()
-            else -> raw
-        }
-        if (rule.isEmpty()) {
+        if (raw.isEmpty()) {
             return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "JSONPath collection rule is blank")
         }
         return try {
-            val selected = JsonPath.parse(document.body).read<Any?>(rule)
-            val values = when (selected) {
-                null -> emptyList()
-                is Iterable<*> -> selected.mapNotNull { value ->
-                    value?.let { Gson().toJson(normalizeJsonValue(it)) }
+            RuleCombinationEvaluator.evaluateNestedResult(raw) { branch ->
+                val rule = branch.trim().let {
+                    when {
+                        it.startsWith("@jsonpath:", true) -> it.substringAfter(':').trim()
+                        it.startsWith("@json:", true) -> it.substringAfter(':').trim()
+                        else -> it
+                    }
                 }
-                is Array<*> -> selected.mapNotNull { value ->
-                    value?.let { Gson().toJson(normalizeJsonValue(it)) }
+                if (rule.isEmpty()) {
+                    EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "JSONPath collection rule is blank")
+                } else {
+                    try {
+                        val selected = JsonPath.parse(document.body).read<Any?>(rule)
+                        val values = when (selected) {
+                            null -> emptyList()
+                            is Iterable<*> -> selected.mapNotNull { value ->
+                                value?.let { Gson().toJson(normalizeJsonValue(it)) }
+                            }
+                            is Array<*> -> selected.mapNotNull { value ->
+                                value?.let { Gson().toJson(normalizeJsonValue(it)) }
+                            }
+                            else -> listOf(Gson().toJson(normalizeJsonValue(selected)))
+                        }
+                        EngineResult.Success(values)
+                    } catch (_: com.jayway.jsonpath.PathNotFoundException) {
+                        EngineResult.Success(emptyList())
+                    } catch (error: Exception) {
+                        EngineResult.Failure(
+                            EngineErrorCode.PARSE,
+                            "JSONPath collection evaluation failed: ${error.message ?: error::class.java.simpleName}",
+                            error,
+                        )
+                    }
                 }
-                else -> listOf(Gson().toJson(normalizeJsonValue(selected)))
             }
-            EngineResult.Success(values)
         } catch (error: Exception) {
             EngineResult.Failure(
                 EngineErrorCode.PARSE,
