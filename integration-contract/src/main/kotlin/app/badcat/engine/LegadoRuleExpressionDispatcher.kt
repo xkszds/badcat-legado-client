@@ -12,54 +12,57 @@ data class ResolvedLegadoRuleExpression(
 )
 
 object LegadoRuleExpressionDispatcher {
-    /** Collection-root rules use Legado's all-in-one regex mode when prefixed with ':' or @regex:. */
-    fun evaluateElements(document: SourceDocument, expression: String): EngineResult<List<String>> {
-        val rule = expression.trim()
-        return when {
-            rule.startsWith("@regex:", true) ->
-                evaluateRegexElementsWithFallback(document.body, rule.substringAfter(':'))
-            rule.startsWith(":") ->
-                evaluateRegexElementsWithFallback(document.body, rule.substring(1))
-            else -> when (val resolved = resolve(rule)) {
-                is EngineResult.Failure -> resolved
-                is EngineResult.Success -> when (resolved.value.type) {
-                    SelectorRuleType.CSS -> CssRuleEvaluator.evaluateElements(document, rule)
-                    SelectorRuleType.XPATH -> XPathRuleEvaluator.evaluateElements(document, rule)
-                    SelectorRuleType.JSON_PATH -> JsonPathRuleEvaluator.evaluateElements(document, rule)
-                }
-            }
-        }
-    }
+    /** Collection-root rules support CSS/XPath/JSONPath and bounded regex branches. */
+    fun evaluateElements(document: SourceDocument, expression: String): EngineResult<List<String>> =
+        evaluateCollectionBranches(document, expression.trim())
 
-    private fun evaluateRegexElementsWithFallback(
-        input: String,
+    private fun evaluateCollectionBranches(
+        document: SourceDocument,
         expression: String,
     ): EngineResult<List<String>> {
-        val normalizedExpression = expression.trim().let {
-            when {
-                it.startsWith("@regex:", true) -> it.substringAfter(':').trim()
-                it.startsWith(":") -> it.substring(1).trim()
-                else -> it
-            }
+        val normalized = expression.trim()
+        if (normalized.isEmpty()) {
+            return EngineResult.Failure(
+                EngineErrorCode.UNSUPPORTED_RULE,
+                "Legado collection rule is blank",
+            )
         }
         val split = try {
             val candidates = listOf("||", "%%").mapNotNull { operator ->
-                val parts = RuleExpressionTokenizer.splitTopLevel(normalizedExpression, operator)
+                val parts = RuleExpressionTokenizer.splitTopLevel(normalized, operator)
                 if (parts.size > 1) Triple(parts.first().length, operator, parts) else null
             }
             candidates.minByOrNull { it.first }
         } catch (error: Exception) {
             return EngineResult.Failure(
                 EngineErrorCode.UNSUPPORTED_RULE,
-                "Invalid combined Legado regex collection rule",
+                "Invalid combined Legado collection rule",
                 error,
             )
-        } ?: return LegadoRegexElementEvaluator.evaluate(input, normalizedExpression)
+        }
+
+        if (split == null) {
+            val leaf = normalized.trim()
+            return when {
+                leaf.startsWith("@regex:", ignoreCase = true) ->
+                    LegadoRegexElementEvaluator.evaluate(document.body, leaf.substringAfter(':'))
+                leaf.startsWith(":") ->
+                    LegadoRegexElementEvaluator.evaluate(document.body, leaf.substring(1))
+                else -> when (val resolved = resolve(leaf)) {
+                    is EngineResult.Failure -> resolved
+                    is EngineResult.Success -> when (resolved.value.type) {
+                        SelectorRuleType.CSS -> CssRuleEvaluator.evaluateElements(document, leaf)
+                        SelectorRuleType.XPATH -> XPathRuleEvaluator.evaluateElements(document, leaf)
+                        SelectorRuleType.JSON_PATH -> JsonPathRuleEvaluator.evaluateElements(document, leaf)
+                    }
+                }
+            }
+        }
 
         if (split.second == "||") {
             var firstFailure: EngineResult.Failure? = null
             for (branch in split.third) {
-                when (val result = evaluateRegexElementsWithFallback(input, branch)) {
+                when (val result = evaluateCollectionBranches(document, branch)) {
                     is EngineResult.Failure -> if (firstFailure == null) firstFailure = result
                     is EngineResult.Success -> if (result.value.isNotEmpty()) return result
                 }
@@ -69,7 +72,7 @@ object LegadoRuleExpressionDispatcher {
 
         val branches = ArrayList<List<String>>()
         for (branch in split.third) {
-            when (val result = evaluateRegexElementsWithFallback(input, branch)) {
+            when (val result = evaluateCollectionBranches(document, branch)) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> if (result.value.isNotEmpty()) branches += result.value
             }
