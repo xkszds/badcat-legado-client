@@ -284,15 +284,24 @@ class CssSearchResultsParser {
             throw UnsupportedSearchRule(source.id, key)
         }
         val extractionRule = when (key) {
-            "bookUrl" -> expression.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
-            "coverUrl" -> expression.replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
+            "bookUrl" -> LegadoRuleReplacement.transformExpression(expression) {
+                it.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
+            }
+            "coverUrl" -> LegadoRuleReplacement.transformExpression(expression) {
+                it.replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
+            }
             else -> expression
         }
         val extracted = if (legacyRegexMode) {
-            when (val result = LegadoRegexElementEvaluator.evaluateScalar(itemDocument.body, extractionRule)) {
+            val parsed = LegadoRuleReplacement.parse(extractionRule)
+            val raw = when (val result = LegadoRegexElementEvaluator.evaluateScalar(itemDocument.body, parsed.expression)) {
                 is EngineResult.Failure -> throw SearchParseFailure(result)
                 is EngineResult.Success -> (result.value.getOrNull(1) ?: result.value.firstOrNull())
                     ?.trim()?.takeIf(String::isNotEmpty)
+            }
+            if (raw == null) null else when (val replaced = parsed.apply(listOf(raw))) {
+                is EngineResult.Failure -> throw SearchParseFailure(replaced)
+                is EngineResult.Success -> replaced.value.firstOrNull()?.trim()?.takeIf(String::isNotEmpty)
             }
         } else {
             when (val result = LegadoRuleExpressionDispatcher.evaluate(itemDocument, extractionRule)) {
@@ -330,11 +339,11 @@ class CssSearchResultsParser {
         rule.trim().endsWith("@html", ignoreCase = true)
 
     private fun hasNonHtmlOutputSuffix(rule: String): Boolean {
-        val root = rule.trim()
+        val root = LegadoRuleReplacement.parse(rule).expression.trim()
         if (root.startsWith(":") || root.startsWith("@regex:", ignoreCase = true)) return false
-        val split = RuleExpressionTokenizer.splitByFirstTopLevelOperator(rule)
+        val split = RuleExpressionTokenizer.splitByFirstTopLevelOperator(root)
         if (split.operator != null) return split.rules.any(::hasNonHtmlOutputSuffix)
-        val value = rule.trim()
+        val value = root
         return listOf("@text", "@ownText", "@href", "@src", "@tag")
             .any { value.endsWith(it, ignoreCase = true) } ||
             Regex("@attr\\([^)]*\\)$", RegexOption.IGNORE_CASE).containsMatchIn(value)

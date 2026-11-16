@@ -86,10 +86,10 @@ class CssTocParser {
                     is EngineResult.Success -> EngineResult.Success(result.value.trim().takeIf(String::isNotEmpty))
                 }
             }
-            val normalized = if (key == "chapterUrl") trimmed
-                .replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
-                .replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
-            else trimmed
+            val normalized = if (key == "chapterUrl") LegadoRuleReplacement.transformExpression(trimmed) {
+                it.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
+                    .replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
+            } else trimmed
             if (legacyRegexMode) {
                 return when (val result = LegadoRegexElementEvaluator.evaluateScalar(itemHtml, normalized)) {
                     is EngineResult.Failure -> result
@@ -241,7 +241,12 @@ class CssTocParser {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
             } ?: continue
-            val rawUrl = when (val result = extract(item, rules["chapterUrl"]?.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")?.replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)"))) {
+            val rawUrl = when (val result = extract(item, rules["chapterUrl"]?.let {
+                LegadoRuleReplacement.transformExpression(it) { expression ->
+                    expression.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
+                        .replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
+                }
+            })) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
             }
@@ -288,20 +293,22 @@ class CssTocParser {
         return EngineResult.Success(ParsedTocPage(chapters, nextUrls))
     }
 
-    private fun normalizeLinkExpression(expression: String): String {
-        val rule = expression.trim()
-        val explicitPath = rule.startsWith("@regex:", true) || rule.startsWith("@xpath:", true) ||
-            rule.startsWith("@jsonpath:", true) || rule.startsWith("@json:", true) ||
-            rule.startsWith("/") || rule.startsWith("$")
-        if (explicitPath) return rule
-        val normalized = rule
-            .replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
-            .replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
-        val suffix = normalized.substringAfterLast("@", "").lowercase()
-        return if (suffix in setOf("text", "owntext", "html", "attr(href)", "attr(src)") ||
-            normalized.contains("@attr(", true)
-        ) normalized else "$normalized@attr(href)"
-    }
+    private fun normalizeLinkExpression(expression: String): String =
+        LegadoRuleReplacement.transformExpression(expression) { raw ->
+            val rule = raw.trim()
+            val explicitPath = rule.startsWith("@regex:", true) || rule.startsWith("@xpath:", true) ||
+                rule.startsWith("@jsonpath:", true) || rule.startsWith("@json:", true) ||
+                rule.startsWith("/") || rule.startsWith("$")
+            if (explicitPath) rule else {
+                val normalized = rule
+                    .replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
+                    .replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
+                val suffix = normalized.substringAfterLast("@", "").lowercase()
+                if (suffix in setOf("text", "owntext", "html", "attr(href)", "attr(src)") ||
+                    normalized.contains("@attr(", true)
+                ) normalized else "$normalized@attr(href)"
+            }
+        }
 
     private fun unsupported(source: BookSource, reason: String) =
         EngineResult.Failure(

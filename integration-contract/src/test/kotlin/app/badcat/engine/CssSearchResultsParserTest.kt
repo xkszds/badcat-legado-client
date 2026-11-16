@@ -445,4 +445,22 @@ class CssSearchResultsParserTest {
         assertEquals("https://reader.example/book/legacy", book.bookUrl)
     }
 
+    @Test
+    fun appliesReplacementSuffixToBookUrlFieldAfterAttributeExtraction() {
+        val source = source(
+            """{"bookList":"div.book","name":"h3@text","bookUrl":"a@href##/book/##/novel/"}""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/search",
+            body = """<div class="book"><h3>Replacement title</h3><a href="/book/123">Read</a></div>""",
+        )
+
+        val book = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parse(source, response),
+        ).value.single()
+
+        assertEquals("https://reader.example/novel/123", book.bookUrl)
+    }
+
 }

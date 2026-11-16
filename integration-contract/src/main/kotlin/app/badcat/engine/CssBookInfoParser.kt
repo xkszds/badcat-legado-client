@@ -68,8 +68,12 @@ class CssBookInfoParser {
                 }
             }
             val normalized = when (name) {
-                "coverUrl" -> trimmed.replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
-                "tocUrl" -> trimmed.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
+                "coverUrl" -> LegadoRuleReplacement.transformExpression(trimmed) {
+                    it.replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
+                }
+                "tocUrl" -> LegadoRuleReplacement.transformExpression(trimmed) {
+                    it.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
+                }
                 else -> trimmed
             }
             return when (val result = LegadoRuleExpressionDispatcher.evaluate(document, normalized)) {
@@ -164,8 +168,12 @@ class CssBookInfoParser {
                 )
             }
             val extractionRule = when (name) {
-                "coverUrl" -> expression.replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
-                "tocUrl" -> expression.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
+                "coverUrl" -> LegadoRuleReplacement.transformExpression(expression) {
+                    it.replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
+                }
+                "tocUrl" -> LegadoRuleReplacement.transformExpression(expression) {
+                    it.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
+                }
                 else -> expression
             }
             return when (val result = LegadoRuleExpressionDispatcher.evaluate(document, extractionRule)) {

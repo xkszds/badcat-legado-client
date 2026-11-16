@@ -8,16 +8,11 @@ data class ParsedLegadoRule(
     val replaceRegex: String? = null,
     val replacement: String = "",
     val replaceFirst: Boolean = false,
-    private val separatorCount: Int = 0,
+    private val suffix: String = "",
 ) {
     fun withExpression(value: String): ParsedLegadoRule = copy(expression = value)
 
-    fun toRuleString(): String = when (separatorCount) {
-        0 -> expression
-        1 -> "$expression##${replaceRegex.orEmpty()}"
-        2 -> "$expression##${replaceRegex.orEmpty()}##$replacement"
-        else -> "$expression##${replaceRegex.orEmpty()}##$replacement##"
-    }
+    fun toRuleString(): String = expression + suffix
 
     fun apply(values: List<String>): EngineResult<List<String>> {
         val pattern = replaceRegex?.takeIf(String::isNotEmpty) ?: return EngineResult.Success(values)
@@ -38,6 +33,11 @@ data class ParsedLegadoRule(
 }
 
 object LegadoRuleReplacement {
+    fun transformExpression(expression: String, transform: (String) -> String): String {
+        val parsed = parse(expression)
+        return parsed.withExpression(transform(parsed.expression)).toRuleString()
+    }
+
     fun parse(expression: String): ParsedLegadoRule {
         val parts = expression.split("##", limit = 4)
         if (parts.size == 1) return ParsedLegadoRule(expression = expression)
@@ -46,7 +46,7 @@ object LegadoRuleReplacement {
             replaceRegex = parts.getOrNull(1).orEmpty(),
             replacement = parts.getOrNull(2).orEmpty(),
             replaceFirst = parts.size > 3,
-            separatorCount = parts.size - 1,
+            suffix = expression.substring(parts[0].length),
         )
     }
 }
