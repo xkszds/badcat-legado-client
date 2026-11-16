@@ -382,8 +382,8 @@ class ReaderCssActivity : Activity() {
         }
         val copy = source.copy(
             id = UUID.randomUUID().toString(),
-            name = (source.name.ifBlank { "CSS 方案" }) + " 副本",
-            note = if (source.note.isBlank()) "由“${source.name}”复制" else source.note + "（复制）",
+            name = ((source.name.ifBlank { "CSS 方案" }) + " 副本").take(100),
+            note = (if (source.note.isBlank()) "由“${source.name}”复制" else source.note + "（复制）").take(500),
             enabled = false,
         )
         saveProfiles(profiles + copy)
