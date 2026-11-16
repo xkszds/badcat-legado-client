@@ -80,6 +80,110 @@ class CssSearchResultsParser {
         return EngineResult.Success(candidates.distinctBy { it.bookUrl })
     }
 
+    /**
+     * Asynchronous variant used by the production search/explore services.
+     * It executes bounded @js field rules per isolated result card; the ordinary
+     * parse() API remains synchronous and fail-closed for callers without a script host.
+     */
+    suspend fun parseWithScripts(
+        source: BookSource,
+        response: SourceHttpResponse,
+        scriptRuntime: SourceScriptRuntime,
+        stage: SourceRuleStage = SourceRuleStage.SEARCH,
+    ): EngineResult<List<BookCandidate>> {
+        require(stage == SourceRuleStage.SEARCH || stage == SourceRuleStage.EXPLORE) {
+            "Search-result parser only supports search and explore stages"
+        }
+        val rules = when (val result = SourceRuleResolver.resolveObject(source, stage)) {
+            is EngineResult.Failure -> return result
+            is EngineResult.Success -> result.value.fields
+        }
+        val listRule = rules["bookList"]?.takeIf(String::isNotBlank)
+            ?: return unsupported(source, "missing bookList rule")
+        if (listRule.contains("@js:", true) || listRule.contains("{{")) {
+            return unsupported(source, "JavaScript collection-root rules")
+        }
+        if (hasNonHtmlOutputSuffix(listRule)) {
+            return unsupported(source, "bookList must return element HTML")
+        }
+        val items = when (val result = LegadoRuleExpressionDispatcher.evaluateElements(
+            SourceDocument(response.finalUrl, response.body, response.contentType),
+            listRule,
+        )) {
+            is EngineResult.Failure -> return result
+            is EngineResult.Success -> result.value
+        }
+
+        suspend fun fieldValue(key: String, itemHtml: String): EngineResult<String?> {
+            val expression = rules[key]?.takeIf(String::isNotBlank) ?: return EngineResult.Success(null)
+            val trimmed = expression.trim()
+            if (trimmed.startsWith("@js:", true) || trimmed.startsWith("javascript:", true)) {
+                val script = trimmed.substringAfter(':').trim()
+                if (script.isBlank()) return unsupported(source, "empty JavaScript rule for '$key'")
+                val evaluated = when (val result = scriptRuntime.evaluate(
+                    source = source,
+                    script = script,
+                    bindings = mapOf(
+                        "result" to itemHtml,
+                        "baseUrl" to response.finalUrl,
+                        "sourceUrl" to source.id,
+                        "sourceId" to source.id,
+                        "sourceName" to source.name,
+                        "ruleName" to key,
+                    ),
+                )) {
+                    is EngineResult.Failure -> return result
+                    is EngineResult.Success -> result.value.trim().takeIf(String::isNotEmpty)
+                }
+                if (evaluated == null) return EngineResult.Success(null)
+                if (key == "bookUrl" || key == "coverUrl") {
+                    return runCatching { WebUrlResolver.resolve(response.finalUrl, evaluated) }.fold(
+                        onSuccess = { EngineResult.Success(it) },
+                        onFailure = { unsupported(source, "$key script result must be a credential-free HTTP(S) URL") },
+                    )
+                }
+                return EngineResult.Success(evaluated)
+            }
+            return try {
+                EngineResult.Success(field(source, rules, key, SourceDocument(response.finalUrl, itemHtml, response.contentType)))
+            } catch (failure: SearchParseFailure) {
+                failure.failure
+            } catch (failure: UnsupportedSearchRule) {
+                unsupported(source, failure.message ?: "unsupported search field")
+            }
+        }
+
+        val candidates = ArrayList<BookCandidate>()
+        for (item in items) {
+            val name = when (val result = fieldValue("name", item)) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            } ?: continue
+            val bookUrl = when (val result = fieldValue("bookUrl", item)) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            }?.takeIf(String::isNotBlank) ?: continue
+            val author = when (val result = fieldValue("author", item)) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            }
+            val cover = when (val result = fieldValue("coverUrl", item)) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            }
+            val latest = when (val result = fieldValue("lastChapter", item)) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            }
+            val intro = when (val result = fieldValue("intro", item)) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            }
+            candidates += BookCandidate(source.id, name, author, bookUrl, cover, latest, intro)
+        }
+        return EngineResult.Success(candidates.distinctBy { it.bookUrl })
+    }
+
     private fun field(
         source: BookSource,
         rules: Map<String, String>,
