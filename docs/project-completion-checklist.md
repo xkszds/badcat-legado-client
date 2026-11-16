@@ -25,7 +25,8 @@
 - [x] 阅读记录页：章节成功加载后按书源+书籍去重保存最近章节，首页快捷入口可打开记录，点击记录继续阅读，长按可仅删除历史记录（不删除书签/收藏）。
 - [x] 阅读 CSS 多方案、子选择器命名/备注、启停、复制、排序、预览、冲突提示、导入导出和资源上限。
 - [x] CSS 选择器、净化器、规则顺序与输出大小的单元测试。
-- [x] 最新仓库提交 `e226dd6b559c` 的 CI 全部步骤通过：契约测试、受限 Rhino 宿主测试、Android Debug APK 组装和产物上传均成功。Actions：[run #43845483951](https://github.com/xkszds/badcat-legado-client/actions/runs/43845483951)。产物 `badcat-legado-debug` 为 4,766,218 bytes，SHA-256 `9a09984e4b6a0250348c4f523b47fa61fda1bd5cebb3f89ef241ab424a2c2fdb`。
+- [x] 先前基线提交 `e226dd6b559c` 的 CI 曾全部通过：契约测试、受限 Rhino 宿主测试、Android Debug APK 组装和产物上传均成功。Actions：[run #43845483951](https://github.com/xkszds/badcat-legado-client/actions/runs/43845483951)。该产物不是当前分支构建。
+- [ ] 当前分支提交 `05e3a0238e07` 的最新 Actions [run #43897534456](https://github.com/xkszds/badcat-legado-client/actions/runs/43897534456) 失败；必须先取得失败日志、修复并重新通过完整 CI，才能生成当前分支 APK。
 
 ## 尚未完成（主要交付阻塞项）
 
@@ -60,3 +61,12 @@
 3. 用方法级证据恢复坏坏猫净化，不把字符串猜测当实现规格。
 4. 接入 UI，做自动化截图/流程测试和真机回归。
 5. 最后处理 GPL 对应源码、依赖许可证、正式签名和 Release 交付。
+
+
+## Latest batch status (2026-11-16)
+
+- Working branch: `fix/favorites-search-ui`; latest inspected head: `05e3a0238e077f011cfa5a7486078038f49d6f9a`.
+- Pull request: [#2](https://github.com/xkszds/badcat-legado-client/pull/2), still open and mergeable at the last inspection.
+- New code in this batch includes recursive mixed CSS/XPath/JSONPath scalar rules, JSONPath collection extraction for search/TOC, per-item JSONPath search fields, and explicit `@js:` marker disambiguation.
+- Latest current-head CI run failed. Workflow log retrieval was unavailable in the latest attempt; do not infer that current-head tests or APK assembly passed.
+- The full second category remains incomplete: full upstream AnalyzeRule/AnalyzeUrl semantics and JS host bindings, login/session helpers, source corpus compatibility, original UI integration, purification migration, device acceptance and release signing are still open gates.
