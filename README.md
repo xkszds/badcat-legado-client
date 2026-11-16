@@ -50,3 +50,9 @@ See [the project completion checklist](docs/project-completion-checklist.md) for
 7. Establish GPL-3.0 source/notices compliance and a separate release-signing process before distribution.
 
 See [the architecture plan](docs/architecture.md), [upstream baseline](docs/legado-upstream-baseline.md), [integration gates](docs/legado-integration.md) and [licensing checklist](docs/licensing.md).
+
+
+### 原版 APK 与配套 DEX 对照
+
+- [原版 APK 与配套 DEX 归档核对记录](docs/reference-archive-comparison-2026-11-16.md)
+- [APK 页面与增强客户端差距报告](docs/badcat-apk-reverse-engineering-comparison.md)
