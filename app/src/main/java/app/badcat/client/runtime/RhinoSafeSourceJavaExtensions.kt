@@ -10,7 +10,7 @@ import java.util.Base64
  *
  * This object is deliberately not a general Java bridge: no class lookup,
  * reflection, filesystem, process, Android, network, Cookie or WebView access.
- * The small key/value store is isolated per book source and bounded in memory.
+ * The small key/value store is isolated per book source, size-bounded, and backed by the host's storage adapter.
  */
 class RhinoSafeSourceJavaExtensions(
     private val sourceId: String,

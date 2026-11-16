@@ -111,6 +111,25 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun safeJavaStorageSurvivesRuntimeRecreationWhenStoreIsDurable() = runBlocking {
+        val store = InMemorySourceScriptKeyValueStore
+        val source = BookSource(
+            id = "https://persistent-safe-java.example/",
+            name = "Persistent safe Java source",
+            baseUrl = "https://persistent-safe-java.example/",
+        )
+        val firstRuntime = RhinoSourceScriptRuntime(sourceKeyValueStore = store)
+        val secondRuntime = RhinoSourceScriptRuntime(sourceKeyValueStore = store)
+
+        val written = firstRuntime.evaluate(source, "java.putString('refreshToken', 'persisted')")
+        val read = secondRuntime.evaluate(source, "java.getString('refreshToken')")
+
+        assertEquals("persisted", (written as EngineResult.Success).value)
+        assertEquals("persisted", (read as EngineResult.Success).value)
+        secondRuntime.clearSourceState(source.id)
+    }
+
+    @Test
     fun isolatesSafeJavaStorageBetweenBookSources() = runBlocking {
         val runtime = RhinoSourceScriptRuntime()
         val first = BookSource("https://safe-first.example/", "First", "https://safe-first.example/")
