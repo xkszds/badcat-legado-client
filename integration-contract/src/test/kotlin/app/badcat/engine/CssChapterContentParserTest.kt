@@ -125,8 +125,8 @@ class CssChapterContentParserTest {
             baseUrl = "https://reader.example/",
             ruleContentJson = """{
                 "content":"article@html",
-                "title":"@regex:<h1 class=\\\"title\\\">(.*?)</h1>",
-                "nextContentUrl":"@regex:class=\\\"next\\\" href=\\\"([^\\\"]+)\\\""
+                "title":"@regex:<h1 class=\"title\">(.*?)</h1>",
+                "nextContentUrl":"@regex:class=\"next\" href=\"([^\"]+)\""
             }""",
         )
         val response = SourceHttpResponse(
