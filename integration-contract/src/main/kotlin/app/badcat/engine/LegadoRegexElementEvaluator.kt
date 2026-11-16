@@ -165,7 +165,7 @@ object LegadoRegexElementEvaluator {
                 index++
                 continue
             }
-            if (char == '\\\\') {
+            if (char == '\\') {
                 escaped = true
                 index++
                 continue
