@@ -159,6 +159,7 @@ class FavoritesActivity : Activity() {
         rootContent = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(14), dp(14), dp(20)) }
         scroll.addView(rootContent)
         root.addView(scroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+        root.addView(MainBottomNavigation.create(this, "favorites"))
         setContentView(root)
         refresh()
     }
