@@ -124,6 +124,8 @@ object CssRuleEvaluator {
                     .takeIf(String::isNotEmpty) ?: return null
                 ParsedExpression(selector, ValueMode.ATTRIBUTE, attribute)
             }
+            suffix.matches(Regex("[A-Za-z_:][A-Za-z0-9_.:-]*")) ->
+                ParsedExpression(selector, ValueMode.ATTRIBUTE, suffix)
             else -> null
         }
     }
