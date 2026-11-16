@@ -97,7 +97,10 @@ object CssRuleEvaluator {
                     )
                     return@evaluate emptyList()
                 }
-                Jsoup.parse(document.body, document.url).select(parsed.selector).map { it.outerHtml() }
+                val indexedRule = LegadoElementIndex.parse(part)
+                val selector = indexedRule?.selector ?: parsed.selector
+                val matched = Jsoup.parse(document.body, document.url).select(selector).map { it.outerHtml() }
+                if (indexedRule == null) matched else LegadoElementIndex.apply(matched, indexedRule)
             }
             if (firstFailure != null && values.isEmpty()) firstFailure!! else EngineResult.Success(values)
         }.getOrElse {
