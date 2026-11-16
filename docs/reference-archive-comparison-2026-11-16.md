@@ -20,7 +20,7 @@ APK 副本与当前会话挂载的 APK SHA-256 完全一致。ZIP 可正常读�
 | 条目 | 文件大小 | DEX magic | SHA-256 |
 |---|---:|---|---|
 | `assets/A3AEECD8.dex` | 65,160 | 非标准 DEX magic（`cf774cc79b2101cd`） | `f0ead1ad60e0cc310c1a40685c28fc7a69aa346604552816c51dd3c1718a1e76` |
-| `assets/AdDex.4.0.1.dex` | 171,696 | dex035 | `25380360545288fee582ce904d926952f7f0627f8f191b55643e5e876e56e56da9f` |
+| `assets/AdDex.4.0.1.dex` | 171,696 | dex035 | `25380360545288fee582ce904d926952f7f0627f8f191b55643e5e876e56da9f` |
 | `classes.dex` | 6,034,028 | dex035 | `fb06064cebf1b0acaa6ec2b17c732a054b847265b5d3c5616d6dc96957a44b59` |
 | `classes2.dex` | 5,978,116 | dex035 | `a7c02ed2ab5aa42fcc0077bb375dc743df73bd330856e804762da4f89480b6b0` |
 | `classes3.dex` | 3,525,160 | dex035 | `3de70eb07bfed2125ed08a911c18e4fc97b261b3369086a428c2f9e20d2f7905` |
