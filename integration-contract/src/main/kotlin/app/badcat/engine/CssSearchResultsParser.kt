@@ -96,7 +96,7 @@ class CssSearchResultsParser {
             extractionRule,
         )) {
             is EngineResult.Failure -> throw SearchParseFailure(result)
-            is EngineResult.Success -> result.value.firstOrNull()?.trim()?.takeIf(String::isNotEmpty)
+            is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(extractionRule, result.value)\n                ?.trim()?.takeIf(String::isNotEmpty)
         }?.let { value ->
             if (key == "bookUrl" || key == "coverUrl") {
                 return try {
