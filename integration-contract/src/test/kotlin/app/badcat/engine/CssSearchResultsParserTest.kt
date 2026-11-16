@@ -98,8 +98,10 @@ class CssSearchResultsParserTest {
             contentType = "application/json",
         )
 
+        val parsed = CssSearchResultsParser().parse(source, response)
         val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
-            CssSearchResultsParser().parse(source, response),
+            parsed,
+            "JSONPath search parsing returned: $parsed",
         ).value
 
         assertEquals(listOf("JSON Alpha", "JSON Beta"), books.map { it.name })
