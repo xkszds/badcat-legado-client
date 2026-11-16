@@ -5,6 +5,8 @@
         android:label="Badcat Legado Integration"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        <activity android:name=".MyActivity" android:exported="false" />
+        <activity android:name=".CatSpaceActivity" android:exported="false" />
         <activity android:name=".ReaderCssActivity" android:exported="false" />
         <activity android:name=".ReplaceRuleActivity" android:exported="false" />
         <activity android:name=".FavoritesActivity" android:exported="false" />
