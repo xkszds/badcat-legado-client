@@ -132,7 +132,7 @@ class FavoritesActivity : Activity() {
             setBackgroundColor(Color.WHITE)
         }
         header.addView(TextView(this).apply {
-            text = "我的收藏"; textSize = 22f; typeface = Typeface.DEFAULT_BOLD; setTextColor(ink)
+            text = "收藏夹"; textSize = 22f; typeface = Typeface.DEFAULT_BOLD; setTextColor(ink)
         }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         header.addView(actionText("＋ 文件夹") {
             promptFolderName("新建文件夹") { name ->
@@ -159,7 +159,7 @@ class FavoritesActivity : Activity() {
         val folders = FavoriteBooks.folders(this)
         if (folders.none { it.id == selectedFolderId }) selectedFolderId = FavoriteBooks.DEFAULT_FOLDER_ID
         val allBooks = FavoriteBooks.all(this)
-        sectionTitle("文件夹")
+        sectionTitle("小说文件夹")
         folders.chunked(3).forEach { group ->
             val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
             group.forEach { folder ->
@@ -169,11 +169,11 @@ class FavoritesActivity : Activity() {
             repeat(3 - group.size) { row.addView(View(this), LinearLayout.LayoutParams(0, dp(94), 1f).apply { marginEnd = dp(7) }) }
             rootContent.addView(row)
         }
-        sectionTitle(if (selectedFolderId == FavoriteBooks.DEFAULT_FOLDER_ID) "全部收藏" else folders.first { it.id == selectedFolderId }.name)
+        sectionTitle(if (selectedFolderId == FavoriteBooks.DEFAULT_FOLDER_ID) "小说" else folders.first { it.id == selectedFolderId }.name)
         val visible = allBooks.filter { it.folderId == selectedFolderId }
         if (visible.isEmpty()) {
             rootContent.addView(TextView(this).apply {
-                text = if (allBooks.isEmpty()) "书架还是空的\n在书籍详情页点击「加入收藏」，作品就会出现在这里。" else "这个文件夹还没有书籍"
+                text = if (allBooks.isEmpty()) "书架还是空的\n在书籍详情页点击「加入收藏」，小说就会出现在这里。" else "这个文件夹还没有书籍"
                 textSize = 14f; setTextColor(muted); gravity = Gravity.CENTER
                 setPadding(dp(12), dp(38), dp(12), dp(38))
             })
