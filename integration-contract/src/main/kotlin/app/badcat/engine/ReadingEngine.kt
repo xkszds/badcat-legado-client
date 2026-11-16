@@ -14,6 +14,16 @@ interface ReadingEngine {
         keyword: String,
     ): EngineResult<List<BookCandidate>>
 
+    /** Explore is a distinct Legado stage; legacy adapters may remain search-only. */
+    suspend fun explore(
+        sourceId: String,
+        keyword: String = "",
+        page: Int = 1,
+    ): EngineResult<List<BookCandidate>> = EngineResult.Failure(
+        EngineErrorCode.UNSUPPORTED_RULE,
+        "This reading engine does not support source exploration",
+    )
+
     /**
      * Loads one search-result page. Existing engine adapters remain compatible:
      * page one delegates to [search], while unsupported later pages fail closed.
