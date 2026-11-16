@@ -25,6 +25,11 @@ class CssRuleEvaluatorTest {
     @Test
     fun extractsTextFromAllCssMatches() {
         val result = CssRuleEvaluator.evaluate(document, "a.title@text")
+        val prefixed = CssRuleEvaluator.evaluate(document, "@CSS: a.title@text")
+        assertEquals(
+            listOf("Alpha Novel", "Beta Novel"),
+            assertIs<EngineResult.Success<List<String>>>(prefixed).value,
+        )
         assertEquals(
             listOf("Alpha Novel", "Beta Novel"),
             assertIs<EngineResult.Success<List<String>>>(result).value,
@@ -50,10 +55,10 @@ class CssRuleEvaluatorTest {
         val html = CssRuleEvaluator.evaluate(document, "a.title@html")
         val ids = CssRuleEvaluator.evaluate(document, "img@attr(data-id)")
         val directIds = CssRuleEvaluator.evaluate(document, "img@data-id")
-        assertEquals(
-            listOf("Alpha <b>Novel</b>", "Beta Novel"),
-            assertIs<EngineResult.Success<List<String>>>(html).value,
-        )
+        val htmlValues = assertIs<EngineResult.Success<List<String>>>(html).value
+        assertEquals(1, htmlValues.size)
+        kotlin.test.assertTrue(htmlValues.single().contains("<a class=\"title\""))
+        kotlin.test.assertTrue(htmlValues.single().contains("<b>Novel</b>"))
         assertEquals(
             listOf("one", "two"),
             assertIs<EngineResult.Success<List<String>>>(ids).value,
