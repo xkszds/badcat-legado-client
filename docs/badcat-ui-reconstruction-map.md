@@ -175,3 +175,4 @@ The personal center currently shows only implemented routes: reading history, bo
 - Automated build/test status is tracked separately; none of these UI changes should be considered device-verified until installed and exercised on Android hardware.
 - The application manifest now declares `INTERNET`, which is required for source search, detail, chapter content and cover requests. Cleartext HTTP is enabled to retain compatibility with legacy HTTP-based book sources; this permits unencrypted transport, so HTTPS sources are preferable when available.
 - Removed a duplicate `BookmarkActivity` manifest declaration found during the integration audit.
+- Chapter filtering and display-order transformation were extracted into the platform-neutral `ChapterCatalogQuery` helper and covered by unit tests; filtering/reversal does not rewrite chapter indices or URLs.
