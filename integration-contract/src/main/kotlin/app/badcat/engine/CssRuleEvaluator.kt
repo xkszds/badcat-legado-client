@@ -131,7 +131,6 @@ object CssRuleEvaluator {
                 char == ')' -> if (parenthesisDepth > 0) parenthesisDepth--
                 char == '@' && bracketDepth == 0 && parenthesisDepth == 0 -> marker = index
             }
-            }
         }
         return marker
     }
