@@ -106,7 +106,7 @@ class MainActivity : Activity() {
                     contentType = label
                     refreshTypes()
                 }
-            }, LinearLayout.LayoutParams(0, dp(42), 1f))
+            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(42)))
         }
         addView(typeRow)
         refreshTypes()
