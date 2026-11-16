@@ -586,23 +586,6 @@ class SourceChapterActivity : Activity() {
         loadInitial(chapterTitle)
     }
 
-    override fun onResume() {
-        super.onResume()
-        if (::body.isInitialized && currentChapterText.isNotBlank()) {
-            readingSessionStartedAt = android.os.SystemClock.elapsedRealtime()
-        }
-    }
-
-    override fun onPause() {
-        if (readingSessionStartedAt > 0L) {
-            val elapsed = (android.os.SystemClock.elapsedRealtime() - readingSessionStartedAt).coerceAtLeast(0L)
-            val stats = getSharedPreferences("badcat_reading_stats", MODE_PRIVATE)
-            stats.edit().putLong("total_reading_ms", stats.getLong("total_reading_ms", 0L) + elapsed).apply()
-            readingSessionStartedAt = 0L
-        }
-        super.onPause()
-    }
-
     private fun loadInitial(fallbackTitle: String) {
         worker.execute {
             val toc = runBlocking { safeEngineCall { engine.chapters(sourceId, bookUrl) } }
@@ -830,11 +813,18 @@ class SourceChapterActivity : Activity() {
         if (::body.isInitialized && currentChapterText.isNotEmpty()) {
             pendingScrollY = body.scrollY
             renderReaderDocument()
+            if (readingSessionStartedAt == 0L) readingSessionStartedAt = android.os.SystemClock.elapsedRealtime()
         }
     }
 
     override fun onPause() {
         saveCurrentScrollPosition()
+        if (readingSessionStartedAt > 0L) {
+            val elapsed = (android.os.SystemClock.elapsedRealtime() - readingSessionStartedAt).coerceAtLeast(0L)
+            val stats = getSharedPreferences("badcat_reading_stats", MODE_PRIVATE)
+            stats.edit().putLong("total_reading_ms", stats.getLong("total_reading_ms", 0L) + elapsed).apply()
+            readingSessionStartedAt = 0L
+        }
         super.onPause()
     }
 
