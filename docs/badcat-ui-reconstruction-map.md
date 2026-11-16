@@ -104,3 +104,19 @@ Implemented in `MainActivity.kt`:
 - The old home-page row of four development shortcuts was removed.
 
 This is a structural first pass, not screenshot parity. The current home remains a programmatic Android View layout; a Compose migration is not yet implemented. Exact spacing, icon artwork, shortcut actions and the original bottom-navigation icons still require screenshot/device comparison and verified service behavior.
+
+
+## 2026-11-16 follow-up: home simplification and search screen
+
+User-directed home adjustments:
+- Removed the entire home shortcut area (including the former ranking, lottery and cash-entry shortcuts).
+- Bottom navigation now contains only `搜索 / 收藏夹 / 我的`; the former `喵星` destination is removed from the visible navigation.
+
+Search-screen implementation:
+- Replaced the development Spinner + utility-button layout with a user-facing hierarchy: back/type selector, rounded keyword field, horizontal source tabs, copyright disclaimer, result list and bottom pagination.
+- Source tabs are populated from enabled Legado sources. “全部” searches all eligible sources; each individual tab filters to one source.
+- Search still calls the existing `ReadingEngine.searchPage`, deduplicates by source ID + book URL, and opens the existing book-detail flow.
+- Empty/loading/error states are explicit. No legacy channel names or service endpoints are fabricated; the tab labels reflect actual imported sources.
+- The content-type selector cycles through `小说 / 漫画 / 综合` and retains the selected type in the screen state. Actual source-side content-type filtering is not yet implemented.
+
+This remains an initial View-based reconstruction. Exact original visual matching, source-side type semantics, race-safe cancellation for overlapping searches, and physical-device verification remain open.
