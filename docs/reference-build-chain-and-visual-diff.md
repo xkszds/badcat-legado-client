@@ -7,13 +7,13 @@
 
 | 样本 | 大小 | SHA-256 | Manifest package | Application | 说明 |
 |---|---:|---|---|---|---|
-| 旧壳 APK `坏坏猫_1.5.0.5(1).apk` | 22,460,988 | `fb35e9e4c876e5cb99e00f7010a40c2f060d20b2aa392500983862ab7e91ff33` | `com.hhm.verticalsearch` | `com.stub.StubApp` | 仅有一个根目录 classes.dex，内容为壳 DEX |
+| 原始签名 APK `坏坏猫_1.5.0.5.apk`（Library；与 `(1).apk` 字节相同） | 22,460,988 | `fb35e9e4c876e5cb99e00f7010a40c2f060d20b2aa392500983862ab7e91ff33` | `com.hhm.verticalsearch` | `com.stub.StubApp` | 原签名 CN=hhm；仅有一个根目录 classes.dex，内容为壳 DEX |
 | DEX 归档 `com.hhm.verticalsearch.zip` | 19,708,863 | `f747fa1c684ef568e3da1d857dbebdcbb7687e2db4c58a4390282948f5681d10` | — | — | 7 个 DEX：五个业务 DEX、一个原壳 DEX、一个空占位 DEX |
 | 重建未签名包 `坏坏猫_1.5.0.5_unwrapped_unsigned.apk` | 24,412,961 | `a3fd8273e79efe76f3b6a3662b03ec6870e76741ead60da36edc176533afcbb7` | `com.hhm.verticalsearch` | `com.search.verticalsearch.common.HuaYueApplication` | 七个根 DEX；保留资源与 native 库 |
 | 重建测试签名包 `坏坏猫_1.5.0.5_test_signed_v1.apk` | 24,740,194 | `4862de046e50a19fdbf0acd0a567a23c2bf8acaf3b8006445525a7e16e24ba8e` | `com.hhm.verticalsearch` | `HuaYueApplication` | 与未签名包内容一致，仅增加三项 META-INF v1 签名文件 |
-| 当前 24.6 MB APK `坏坏猫_1.5.0.5(5).apk` | 24,608,277 | `a62c16d99547854ff313f229649762f2d7898b4e2e0dc66574df4c43fa62480e` | `com.hhm.verticalsearci` | `HuaYueApplication` | 与重建包的七个 DEX 完全一致；Manifest package 与资源表不同 |
+| 当前会话 24.6 MB 变体 `坏坏猫_1.5.0.5.apk` / Library `坏坏猫_1.5.0.5(5).apk` | 24,608,277 | `a62c16d99547854ff313f229649762f2d7898b4e2e0dc66574df4c43fa62480e` | `com.hhm.verticalsearci` | `HuaYueApplication` | 与重建包七个 DEX 完全一致；Manifest package 与资源表不同；签名 CN=Android，不是原版 CN=hhm |
 
-注意：`com.hhm.verticalsearch` 与 `com.hhm.verticalsearci` 是两个不同 package id。不能把它们当作同一安装身份。当前 24.6 MB APK 可能是相同业务代码的另一包名变体；仅凭当前证据不推断其签名来源或发布关系。
+注意：Library 中原始文件 `坏坏猫_1.5.0.5.apk`（22,460,988 bytes）与 `坏坏猫_1.5.0.5(1).apk` 是同一 SHA-256；当前会话中同名 `坏坏猫_1.5.0.5.apk` 是另一份 24,608,277-byte 文件。两者不能按文件名视作同一 APK。\n\n`com.hhm.verticalsearch` 与 `com.hhm.verticalsearci` 是两个不同 package id。旧壳 APK 证书为 `CN=hhm`，SHA-256 指纹 `F9:E0:52:9E:65:8F:F1:53:3D:93:21:FB:5F:CC:37:26:25:D9:85:3B:3C:F4:FA:26:26:71:4C:08:05:F3:07:E9`；当前 24.6 MB 变体证书为 `CN=Android`，SHA-256 指纹 `A4:0D:A8:0A:59:D1:70:CA:A9:50:CF:15:C1:8C:45:4D:47:A3:9B:26:98:9D:8B:64:0E:CD:74:5B:A7:1B:F5:DC`。因此当前 24.6 MB 文件不是原签名 APK；不能把它当成原版签名身份。
 
 ## 2. DEX ZIP 的真实分组与重建映射
 
@@ -56,7 +56,7 @@
 
 因此可以确认：**当前 24.6 MB APK 与重建未签名包使用相同的七份 DEX 字节码；差别集中在包名/Manifest、资源表和签名。** 这比单纯字符串相同更强，足以将当前 APK 的 DEX 作为重建链的代码对照基线。
 
-重建测试签名包与未签名包相比，全部 3,174 个原有条目内容完全相同，仅增加三项 `META-INF/HHM-TEST.*` 签名文件。当前容器使用 `jarsigner -verify` 对测试签名包复核，结果为 `jar verified`。这是 JAR/v1 自签名验证，不代表 Android v2/v3 签名或 zipalign 已完成，也不代表安装/启动通过。
+重建测试签名包与未签名包相比，全部 3,174 个原有条目内容完全相同，仅增加三项 `META-INF/HHM-TEST.*` 签名文件。测试证书为 `CN=HHM Test Build`，SHA-256 指纹 `72:A5:E8:26:7F:D6:1A:DF:1F:0F:FA:68:7A:DC:0E:F8:8D:DA:2A:9B:55:85:CD:66:F4:35:19:22:60:8B:E9:7E`。当前容器使用 `jarsigner -verify` 对测试签名包复核，结果为 `jar verified`。这是 JAR/v1 自签名验证，不代表 Android v2/v3 签名或 zipalign 已完成，也不代表安装/启动通过。
 
 ## 4. 加固残留与运行验证边界
 
