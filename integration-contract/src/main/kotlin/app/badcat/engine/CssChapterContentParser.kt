@@ -63,7 +63,7 @@ class CssChapterContentParser {
                     }
                     return result
                 }
-                is EngineResult.Success -> result.value.firstOrNull()?.trim()?.takeIf(String::isNotEmpty)
+                is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(\n                    normalizeLinkExpression(nextRule), result.value,\n                )?.trim()?.takeIf(String::isNotEmpty)
             }
             if (rawLink.isNullOrBlank()) null else {
                 runCatching { WebUrlResolver.resolve(response.finalUrl, rawLink) }.getOrElse {
@@ -112,7 +112,7 @@ class CssChapterContentParser {
         return when (val result = LegadoRuleExpressionDispatcher.evaluate(document, normalized.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)").replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)"))) {
             is EngineResult.Failure -> result
             is EngineResult.Success -> EngineResult.Success(
-                result.value.firstOrNull()?.trim()?.takeIf(String::isNotEmpty),
+                LegadoRuleExpressionDispatcher.firstScalarValue(normalized, result.value)\n                    ?.trim()?.takeIf(String::isNotEmpty),
             )
         }
     }
