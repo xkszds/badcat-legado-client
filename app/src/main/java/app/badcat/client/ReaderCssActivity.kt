@@ -15,6 +15,8 @@ import android.widget.TextView
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
+import java.nio.ByteBuffer
+import java.nio.charset.CodingErrorAction
 
 /** Local editor for named reader CSS profiles and their page-child selector rules. */
 class ReaderCssActivity : Activity() {
@@ -180,7 +182,10 @@ class ReaderCssActivity : Activity() {
                 }
                 output.toByteArray()
             }
-            val json = bytes.toString(Charsets.UTF_8)
+            val json = Charsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT)
+                .decode(ByteBuffer.wrap(bytes)).toString()
             val array = JSONArray(json)
             require(array.length() in 1..MAX_PROFILES) { "方案数量必须为 1-$MAX_PROFILES" }
             (0 until array.length()).map { i ->
