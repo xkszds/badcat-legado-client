@@ -384,4 +384,45 @@ class CssSearchResultsParserTest {
         assertEquals(listOf("Writer A", "Writer B"), books.map { it.author })
     }
 
+    @Test
+    fun expandsEmbeddedJavaScriptInBookListAndSearchFields() = runBlocking {
+        val source = source(
+            """{"bookList":"{{buildListRule(result)}}","name":"{{buildNameRule(result)}}","bookUrl":"a@href"}""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/search",
+            body = """<div class="book"><h2>Embedded title</h2><a href="/embedded">Read</a></div>""",
+        )
+        val scripts = mutableListOf<String>()
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> {
+                scripts += script
+                return when (script) {
+                    "buildListRule(result)" -> {
+                        assertEquals(response.body, bindings["result"])
+                        EngineResult.Success("div.book")
+                    }
+                    "buildNameRule(result)" -> {
+                        assertTrue(bindings["result"]!!.contains("Embedded title"))
+                        EngineResult.Success("h2@text")
+                    }
+                    else -> error("Unexpected embedded script: $script")
+                }
+            }
+        }
+
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parseWithScripts(source, response, runtime),
+        ).value
+
+        assertEquals(listOf("buildListRule(result)", "buildNameRule(result)"), scripts)
+        assertEquals("Embedded title", books.single().name)
+        assertEquals("https://reader.example/embedded", books.single().bookUrl)
+    }
+
 }

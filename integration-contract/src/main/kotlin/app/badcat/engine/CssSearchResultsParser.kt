@@ -100,7 +100,20 @@ class CssSearchResultsParser {
         }
         val listRule = rules["bookList"]?.takeIf(String::isNotBlank)
             ?: return unsupported(source, "missing bookList rule")
-        val rootExpression = listRule.trim()
+        var rootExpression = listRule.trim()
+        if (rootExpression.contains("{{")) {
+            rootExpression = when (val expanded = expandEmbeddedRule(
+                source = source,
+                template = rootExpression,
+                result = response.body,
+                baseUrl = response.finalUrl,
+                ruleName = "bookList",
+                scriptRuntime = scriptRuntime,
+            )) {
+                is EngineResult.Failure -> return expanded
+                is EngineResult.Success -> expanded.value
+            }
+        }
         val items = if (rootExpression.startsWith("@js:", true) ||
             rootExpression.startsWith("javascript:", true)
         ) {
@@ -140,9 +153,9 @@ class CssSearchResultsParser {
             }
         } else {
             if (rootExpression.contains("{{")) {
-                return unsupported(source, "bookList interpolation")
+                return unsupported(source, "unresolved bookList interpolation")
             }
-            if (hasNonHtmlOutputSuffix(listRule)) {
+            if (hasNonHtmlOutputSuffix(rootExpression)) {
                 return unsupported(source, "bookList must return element HTML")
             }
             when (val result = LegadoRuleExpressionDispatcher.evaluateElements(
@@ -156,7 +169,20 @@ class CssSearchResultsParser {
 
         suspend fun fieldValue(key: String, itemHtml: String): EngineResult<String?> {
             val expression = rules[key]?.takeIf(String::isNotBlank) ?: return EngineResult.Success(null)
-            val trimmed = expression.trim()
+            var trimmed = expression.trim()
+            if (trimmed.contains("{{")) {
+                trimmed = when (val expanded = expandEmbeddedRule(
+                    source = source,
+                    template = trimmed,
+                    result = itemHtml,
+                    baseUrl = response.finalUrl,
+                    ruleName = key,
+                    scriptRuntime = scriptRuntime,
+                )) {
+                    is EngineResult.Failure -> return expanded
+                    is EngineResult.Success -> expanded.value
+                }
+            }
             if (trimmed.startsWith("@js:", true) || trimmed.startsWith("javascript:", true)) {
                 val script = trimmed.substringAfter(':').trim()
                 if (script.isBlank()) return unsupported(source, "empty JavaScript rule for '$key'")
@@ -185,7 +211,13 @@ class CssSearchResultsParser {
                 return EngineResult.Success(evaluated)
             }
             return try {
-                EngineResult.Success(field(source, rules, key, SourceDocument(response.finalUrl, itemHtml, response.contentType)))
+                EngineResult.Success(field(
+                    source,
+                    rules,
+                    key,
+                    SourceDocument(response.finalUrl, itemHtml, response.contentType),
+                    expressionOverride = trimmed,
+                ))
             } catch (failure: SearchParseFailure) {
                 failure.failure
             } catch (failure: UnsupportedSearchRule) {
@@ -224,13 +256,57 @@ class CssSearchResultsParser {
         return EngineResult.Success(candidates.distinctBy { it.bookUrl })
     }
 
+    private suspend fun expandEmbeddedRule(
+        source: BookSource,
+        template: String,
+        result: String,
+        baseUrl: String,
+        ruleName: String,
+        scriptRuntime: SourceScriptRuntime,
+    ): EngineResult<String> {
+        val evaluator = object : LegadoEmbeddedScriptEvaluator {
+            override suspend fun evaluate(
+                script: String,
+                key: String,
+                page: Int,
+            ): EngineResult<Any?> = evaluateWithResult(script, key, page, result)
+
+            override suspend fun evaluateWithResult(
+                script: String,
+                key: String,
+                page: Int,
+                result: String,
+            ): EngineResult<Any?> = when (val evaluated = scriptRuntime.evaluate(
+                source = source,
+                script = script,
+                bindings = mapOf(
+                    "result" to result,
+                    "baseUrl" to baseUrl,
+                    "sourceUrl" to source.id,
+                    "sourceId" to source.id,
+                    "sourceName" to source.name,
+                    "ruleName" to ruleName,
+                    "key" to key,
+                    "page" to page.toString(),
+                ),
+            )) {
+                is EngineResult.Failure -> evaluated
+                is EngineResult.Success -> EngineResult.Success(evaluated.value)
+            }
+        }
+        return LegadoEmbeddedUrlTemplate.resolve(template, key = "", evaluator = evaluator)
+    }
+
     private fun field(
         source: BookSource,
         rules: Map<String, String>,
         key: String,
         itemDocument: SourceDocument,
+        expressionOverride: String? = null,
     ): String? {
-        val expression = rules[key]?.takeIf(String::isNotBlank) ?: return null
+        val expression = expressionOverride?.takeIf(String::isNotBlank)
+            ?: rules[key]?.takeIf(String::isNotBlank)
+            ?: return null
         if (expression.contains("@js:", ignoreCase = true) || expression.contains("{{")) {
             throw UnsupportedSearchRule(source.id, key)
         }
