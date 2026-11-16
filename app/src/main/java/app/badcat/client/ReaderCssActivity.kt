@@ -2,6 +2,8 @@ package app.badcat.client
 
 import android.app.Activity
 import android.os.Bundle
+import android.content.Intent
+import android.net.Uri
 import android.view.ViewGroup
 import android.text.InputType
 import android.widget.Button
@@ -48,6 +50,36 @@ class ReaderCssActivity : Activity() {
             text = "＋ 新建 CSS 方案"
             setOnClickListener { editProfile(null) }
         })
+        val transfer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+        transfer.addView(Button(this).apply {
+            text = "导出方案"
+            setOnClickListener {
+                startActivityForResult(
+                    Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                        type = "application/json"
+                        putExtra(Intent.EXTRA_TITLE, "reader-css-profiles.json")
+                    },
+                    REQUEST_EXPORT,
+                )
+            }
+        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        transfer.addView(Button(this).apply {
+            text = "导入方案"
+            setOnClickListener {
+                startActivityForResult(
+                    Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                        type = "application/json"
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    },
+                    REQUEST_IMPORT,
+                )
+            }
+        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        root.addView(transfer)
         list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(list)
         message = TextView(this).apply { setPadding(0, 12, 0, 0) }
@@ -85,6 +117,94 @@ class ReaderCssActivity : Activity() {
                 .put("note", profile.note).put("enabled", profile.enabled).put("rules", rules))
         }
         prefs.edit().putString(KEY_PROFILES, array.toString()).apply()
+    }
+
+    @Deprecated("Uses the platform document picker for broad Android compatibility")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode != Activity.RESULT_OK) return
+        val uri = data?.data ?: return
+        when (requestCode) {
+            REQUEST_EXPORT -> exportProfiles(uri)
+            REQUEST_IMPORT -> importProfiles(uri)
+        }
+    }
+
+    private fun exportProfiles(uri: Uri) {
+        runCatching {
+            val payload = JSONArray().apply {
+                readProfiles().forEach { profile ->
+                    put(JSONObject().put("id", profile.id).put("name", profile.name)
+                        .put("note", profile.note).put("enabled", profile.enabled)
+                        .put("rules", JSONArray().apply {
+                            profile.rules.forEach { rule ->
+                                put(JSONObject().put("name", rule.name).put("note", rule.note)
+                                    .put("selector", rule.selector).put("css", rule.css))
+                            }
+                        }))
+                }
+            }.toString(2)
+            contentResolver.openOutputStream(uri)?.bufferedWriter(Charsets.UTF_8)?.use {
+                it.write(payload)
+            } ?: error("无法创建导出文件")
+        }.onSuccess {
+            message.text = "CSS 方案已导出"
+        }.onFailure {
+            message.text = "导出失败：${it.message ?: "文件写入错误"}"
+        }
+    }
+
+    private fun importProfiles(uri: Uri) {
+        val imported = runCatching {
+            val input = contentResolver.openInputStream(uri) ?: error("无法读取所选文件")
+            val bytes = input.use { stream ->
+                val output = java.io.ByteArrayOutputStream()
+                val buffer = ByteArray(8192)
+                var total = 0
+                while (true) {
+                    val count = stream.read(buffer)
+                    if (count < 0) break
+                    total += count
+                    require(total <= MAX_IMPORT_BYTES) { "文件超过 1 MB 限制" }
+                    output.write(buffer, 0, count)
+                }
+                output.toByteArray()
+            }
+            val json = bytes.toString(Charsets.UTF_8)
+            val array = JSONArray(json)
+            require(array.length() in 1..MAX_PROFILES) { "方案数量必须为 1-$MAX_PROFILES" }
+            (0 until array.length()).map { i ->
+                val item = array.optJSONObject(i) ?: error("第 ${i + 1} 套方案格式错误")
+                val name = item.optString("name").trim()
+                require(name.isNotEmpty() && name.length <= 100) { "第 ${i + 1} 套方案名称无效" }
+                val note = item.optString("note")
+                require(note.length <= 500) { "方案备注过长" }
+                val rulesJson = item.optJSONArray("rules") ?: JSONArray()
+                require(rulesJson.length() <= MAX_RULES_PER_PROFILE) { "单套方案子选择器超过 $MAX_RULES_PER_PROFILE 条" }
+                val rules = (0 until rulesJson.length()).map { j ->
+                    val rule = rulesJson.optJSONObject(j) ?: error("子选择器格式错误")
+                    val selector = rule.optString("selector")
+                    val css = rule.optString("css")
+                    val ruleName = rule.optString("name")
+                    val ruleNote = rule.optString("note")
+                    require(selector.length <= 240 && css.length <= 4000) { "选择器或 CSS 内容过长" }
+                    require(ruleName.length <= 100 && ruleNote.length <= 500) { "子选择器名称或备注过长" }
+                    SelectorRule(ruleName, ruleNote, selector, css)
+                }
+                Profile(UUID.randomUUID().toString(), name, note, item.optBoolean("enabled", true), rules)
+            }
+        }.getOrElse {
+            message.text = "导入失败：${it.message ?: "文件格式无效"}"
+            return
+        }
+        val existing = readProfiles()
+        if (existing.size + imported.size > MAX_PROFILES) {
+            message.text = "导入失败：现有方案与导入方案总数不能超过 $MAX_PROFILES 套"
+            return
+        }
+        saveProfiles(existing + imported)
+        refresh()
+        message.text = "成功导入 ${imported.size} 套 CSS 方案；原有方案未覆盖"
     }
 
     private fun refresh() {
@@ -357,5 +477,12 @@ class ReaderCssActivity : Activity() {
             }.show()
     }
 
-    companion object { private const val KEY_PROFILES = "profiles_v1" }
+    companion object {
+        private const val KEY_PROFILES = "profiles_v1"
+        private const val REQUEST_EXPORT = 4101
+        private const val REQUEST_IMPORT = 4102
+        private const val MAX_IMPORT_BYTES = 1024 * 1024
+        private const val MAX_PROFILES = 100
+        private const val MAX_RULES_PER_PROFILE = 120
+    }
 }
