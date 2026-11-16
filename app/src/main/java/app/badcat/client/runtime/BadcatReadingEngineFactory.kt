@@ -26,7 +26,7 @@ import app.badcat.engine.SourceScriptRuntime
  * applies imported Legado title/content rules with bounded regex before the optional host hook.
  */
 class BadcatReadingEngineFactory(
-    context: Context,
+    private val context: Context,
     private val requestClient: SourceRequestClient? = null,
     private val scriptRuntime: SourceScriptRuntime = RhinoSourceScriptRuntime(),
     private val bookTextReplacement: BookTextReplacement = BookTextReplacement { text -> text },
