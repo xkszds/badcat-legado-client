@@ -42,10 +42,14 @@ class RuleExpressionTokenizerTest {
 
     @Test
     fun preservesQuotedHtmlAttributesAndStagesInsideRegexBranches() {
-        val expression = """@regex:class="next" href="([^"]+)""""
+        val expression = """@regex:class="next||previous" href="([^"]+)""""
         assertEquals(
             listOf(expression, "div.next"),
             RuleExpressionTokenizer.splitTopLevel("$expression||div.next", "||"),
+        )
+        assertEquals(
+            listOf(expression),
+            RuleExpressionTokenizer.splitTopLevel(expression, "||"),
         )
 
         val staged = """@regex:<b>(.*?)</b>&&href="([^"]+)""""
