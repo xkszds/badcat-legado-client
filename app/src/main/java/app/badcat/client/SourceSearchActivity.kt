@@ -230,12 +230,17 @@ class SourceSearchActivity : Activity() {
     }
 
     private fun cycleContentType() {
-        contentType = when (contentType) {
-            "小说" -> "漫画"
-            "漫画" -> "综合"
-            else -> "小说"
-        }
-        typeSelector.text = "$contentType  ▾"
+        val types = arrayOf("小说", "漫画", "综合")
+        val selected = types.indexOf(contentType).coerceAtLeast(0)
+        android.app.AlertDialog.Builder(this)
+            .setTitle("选择内容类型")
+            .setSingleChoiceItems(types, selected) { dialog, which ->
+                contentType = types[which]
+                typeSelector.text = "$contentType  ▾"
+                dialog.dismiss()
+            }
+            .setNegativeButton("取消", null)
+            .show()
     }
 
     private fun loadSources() {
