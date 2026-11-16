@@ -126,6 +126,7 @@ class FavoritesActivity : Activity() {
     private lateinit var rootContent: LinearLayout
     private var selectedFolderId = FavoriteBooks.DEFAULT_FOLDER_ID
     private var selectedType = "小说"
+    private var showFolderPreview = false
     private val blue = Color.rgb(55, 137, 222)
     private val ink = Color.rgb(48, 55, 66)
     private val muted = Color.rgb(135, 145, 158)
@@ -205,6 +206,7 @@ class FavoritesActivity : Activity() {
             return
         }
         sectionTitle("小说文件夹")
+        showFolderPreview = getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).getBoolean("folder_preview", false)
         folders.chunked(3).forEach { group ->
             val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
             group.forEach { folder ->
@@ -244,6 +246,15 @@ class FavoritesActivity : Activity() {
         addView(TextView(this@FavoritesActivity).apply { text = "▰"; textSize = 24f; setTextColor(blue) })
         addView(TextView(this@FavoritesActivity).apply { text = folder.name; textSize = 12f; maxLines = 1; setTextColor(ink); gravity = Gravity.CENTER })
         addView(TextView(this@FavoritesActivity).apply { text = "$count 本小说"; textSize = 10f; setTextColor(muted) })
+        if (showFolderPreview && count > 0) {
+            favoriteBooksInFolder(FavoriteBooks.all(this@FavoritesActivity), folder.id).take(2).forEach { book ->
+                addView(TextView(this@FavoritesActivity).apply {
+                    text = book.name; textSize = 9f; maxLines = 1
+                    ellipsize = android.text.TextUtils.TruncateAt.END
+                    setTextColor(muted); gravity = Gravity.CENTER
+                })
+            }
+        }
     }
 
     private fun bookCard(book: FavoriteBook): View = LinearLayout(this).apply {
@@ -310,9 +321,16 @@ class FavoritesActivity : Activity() {
 
     private fun showMoreMenu(anchor: View) {
         PopupMenu(this, anchor).apply {
-            menu.add("新建文件夹"); menu.add("管理文件夹"); menu.add("返回全部小说")
+            menu.add("新建文件夹"); menu.add("管理文件夹")
+            menu.add(if (showFolderPreview) "关闭文件夹书籍预览" else "开启文件夹书籍预览")
+            menu.add("返回全部小说")
             setOnMenuItemClickListener { item ->
                 when (item.title.toString()) {
+                    "开启文件夹书籍预览", "关闭文件夹书籍预览" -> {
+                        showFolderPreview = !showFolderPreview
+                        getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).edit().putBoolean("folder_preview", showFolderPreview).apply()
+                        refresh()
+                    }
                     "新建文件夹" -> promptFolderName("新建文件夹") { name ->
                         if (!FavoriteBooks.createFolder(this@FavoritesActivity, name)) toast("文件夹名称无效或已存在")
                         refresh()
