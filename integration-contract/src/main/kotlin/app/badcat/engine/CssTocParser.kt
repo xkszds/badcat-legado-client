@@ -31,7 +31,7 @@ class CssTocParser {
             return unsupported(source, "missing chapterUrl rule")
         }
         if (listOf(listRule, rules["chapterName"], rules["chapterUrl"], rules["nextTocUrl"])
-                .filterNotNull().any { it.contains("@js", true) || it.contains("{{") || it.contains("}}") }) {
+                .filterNotNull().any { it.contains("@js:", true) || it.contains("{{") || it.contains("}}") }) {
             return unsupported(source, "JavaScript or interpolation")
         }
 
