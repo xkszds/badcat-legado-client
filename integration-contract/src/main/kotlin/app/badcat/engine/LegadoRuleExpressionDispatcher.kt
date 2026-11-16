@@ -13,12 +13,16 @@ data class ResolvedLegadoRuleExpression(
 
 object LegadoRuleExpressionDispatcher {
     /** Collection-root rules support CSS/XPath/JSONPath and bounded regex branches. */
-    fun evaluateElements(document: SourceDocument, expression: String): EngineResult<List<String>> =
-        evaluateCollectionBranches(document, expression.trim())
+    fun evaluateElements(document: SourceDocument, expression: String): EngineResult<List<String>> {
+        val rule = expression.trim()
+        val allowUnprefixedRegexFallback = rule.contains("@regex:", ignoreCase = true) || rule.startsWith(":")
+        return evaluateCollectionBranches(document, rule, allowUnprefixedRegexFallback)
+    }
 
     private fun evaluateCollectionBranches(
         document: SourceDocument,
         expression: String,
+        allowUnprefixedRegexFallback: Boolean,
     ): EngineResult<List<String>> {
         val normalized = expression.trim()
         if (normalized.isEmpty()) {
@@ -43,26 +47,35 @@ object LegadoRuleExpressionDispatcher {
 
         if (split == null) {
             val leaf = normalized.trim()
-            return when {
-                leaf.startsWith("@regex:", ignoreCase = true) ->
-                    LegadoRegexElementEvaluator.evaluate(document.body, leaf.substringAfter(':'))
-                leaf.startsWith(":") ->
-                    LegadoRegexElementEvaluator.evaluate(document.body, leaf.substring(1))
-                else -> when (val resolved = resolve(leaf)) {
-                    is EngineResult.Failure -> resolved
-                    is EngineResult.Success -> when (resolved.value.type) {
-                        SelectorRuleType.CSS -> CssRuleEvaluator.evaluateElements(document, leaf)
-                        SelectorRuleType.XPATH -> XPathRuleEvaluator.evaluateElements(document, leaf)
-                        SelectorRuleType.JSON_PATH -> JsonPathRuleEvaluator.evaluateElements(document, leaf)
-                    }
+            if (leaf.startsWith("@regex:", ignoreCase = true)) {
+                return LegadoRegexElementEvaluator.evaluate(document.body, leaf.substringAfter(':'))
+            }
+            if (leaf.startsWith(":")) {
+                return LegadoRegexElementEvaluator.evaluate(document.body, leaf.substring(1))
+            }
+            val selectorResult = when (val resolved = resolve(leaf)) {
+                is EngineResult.Failure -> resolved
+                is EngineResult.Success -> when (resolved.value.type) {
+                    SelectorRuleType.CSS -> CssRuleEvaluator.evaluateElements(document, leaf)
+                    SelectorRuleType.XPATH -> XPathRuleEvaluator.evaluateElements(document, leaf)
+                    SelectorRuleType.JSON_PATH -> JsonPathRuleEvaluator.evaluateElements(document, leaf)
                 }
+            }
+            // In a mixed rule whose root explicitly opts into regex, later branches
+            // may be legacy unprefixed regex fragments. Prefer a valid selector;
+            // only retry as regex when selector parsing itself fails.
+            if (allowUnprefixedRegexFallback && selectorResult is EngineResult.Failure) {
+                val regexResult = LegadoRegexElementEvaluator.evaluate(document.body, leaf)
+                if (regexResult is EngineResult.Success) regexResult else selectorResult
+            } else {
+                selectorResult
             }
         }
 
         if (split.second == "||") {
             var firstFailure: EngineResult.Failure? = null
             for (branch in split.third) {
-                when (val result = evaluateCollectionBranches(document, branch)) {
+                when (val result = evaluateCollectionBranches(document, branch, allowUnprefixedRegexFallback)) {
                     is EngineResult.Failure -> if (firstFailure == null) firstFailure = result
                     is EngineResult.Success -> if (result.value.isNotEmpty()) return result
                 }
