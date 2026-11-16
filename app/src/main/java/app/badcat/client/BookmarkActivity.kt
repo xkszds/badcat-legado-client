@@ -20,6 +20,7 @@ private data class ReaderBookmark(
     val bookName: String,
     val chapterTitle: String,
     val scrollY: Int,
+    val savedAt: Long,
 )
 
 class BookmarkActivity : Activity() {
@@ -60,8 +61,9 @@ class BookmarkActivity : Activity() {
             prefs.getString("chapter_bookmark_book_" + raw, null).orEmpty().ifBlank { "未命名小说" },
             prefs.getString(titleKey, null).orEmpty().ifBlank { decoded[2].substringAfterLast('/').take(48).ifBlank { "章节书签" } },
             value.coerceAtLeast(0),
+            prefs.getLong("chapter_bookmark_time_" + raw, 0L),
         )
-    }.sortedByDescending { it.key }
+    }.sortedWith(compareByDescending<ReaderBookmark> { it.savedAt }.thenByDescending { it.key })
 
     private fun refresh() {
         content.removeAllViews()
@@ -109,7 +111,8 @@ class BookmarkActivity : Activity() {
                                 val raw = item.key.removePrefix("chapter_bookmark_")
                                 prefs.edit().remove(item.key)
                                     .remove("chapter_bookmark_title_" + raw)
-                                    .remove("chapter_bookmark_book_" + raw).apply()
+                                    .remove("chapter_bookmark_book_" + raw)
+                                    .remove("chapter_bookmark_time_" + raw).apply()
                                 refresh()
                             }.show()
                     })
