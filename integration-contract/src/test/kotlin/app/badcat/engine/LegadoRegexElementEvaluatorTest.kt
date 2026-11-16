@@ -34,7 +34,7 @@ class LegadoRegexElementEvaluatorTest {
         assertEquals(
             EngineErrorCode.PARSE,
             assertIs<EngineResult.Failure>(
-                LegadoRegexElementEvaluator.evaluate("body", "*"),
+                LegadoRegexElementEvaluator.evaluate("body", "["),
             ).code,
         )
         assertEquals(
