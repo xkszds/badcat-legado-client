@@ -696,9 +696,9 @@ class SourceChapterActivity : Activity() {
     }
 
     private fun showReaderTools() {
-        val actions = arrayOf("字号减小", "字号增大", "行距减小", "行距增大", "切换背景", "CSS 自定义", "章节目录", "保存书签", "跳转本章书签")
+        val actions = arrayOf("字号减小", "字号增大", "行距减小", "行距增大", "切换背景", "CSS 自定义", "章节目录", "保存书签", "跳转本章书签", "恢复默认阅读设置")
         android.app.AlertDialog.Builder(this)
-            .setTitle("阅读设置")
+            .setTitle("阅读设置 · " + textSizeSp.toInt() + "sp · 行距 " + lineSpacingMultiplier)
             .setItems(actions) { _, index ->
                 when (index) {
                     0 -> changeTextSize(-1f)
@@ -710,10 +710,22 @@ class SourceChapterActivity : Activity() {
                     6 -> showChapterCatalog()
                     7 -> saveChapterBookmark()
                     8 -> jumpToChapterBookmark()
+                    9 -> resetReaderSettings()
                 }
             }.show()
     }
 
+    private fun resetReaderSettings() {
+        textSizeSp = 18f
+        lineSpacingMultiplier = 1.15f
+        readerTheme = 0
+        preferences.edit()
+            .putFloat("reader_text_size", textSizeSp)
+            .putFloat("reader_line_spacing", lineSpacingMultiplier)
+            .putInt("reader_theme", readerTheme)
+            .apply()
+        applyReaderTheme()
+    }
     private fun dpReader(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun changeTextSize(delta: Float) {
