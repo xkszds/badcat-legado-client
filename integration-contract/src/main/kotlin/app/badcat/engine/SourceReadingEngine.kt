@@ -18,12 +18,35 @@ class SourceReadingEngine(
     private val detailService: SourceBookDetailService,
     private val tocService: SourceTocService,
     private val contentService: SourceChapterContentService,
+    private val exploreService: SourceExploreService? = null,
 ) : ReadingEngine {
 
     override suspend fun sources(): EngineResult<List<BookSource>> = catalog.all()
 
     override suspend fun search(sourceId: String, keyword: String): EngineResult<List<BookCandidate>> =
         searchPage(sourceId, keyword, 1)
+
+    override suspend fun explore(
+        sourceId: String,
+        keyword: String,
+        page: Int,
+    ): EngineResult<List<BookCandidate>> {
+        if (page < 1) {
+            return EngineResult.Failure(
+                EngineErrorCode.INVALID_SOURCE,
+                "Explore page must be positive",
+            )
+        }
+        val service = exploreService ?: return EngineResult.Failure(
+            EngineErrorCode.UNSUPPORTED_RULE,
+            "This reading engine has no explore service configured",
+        )
+        val source = when (val result = findSource(sourceId)) {
+            is EngineResult.Failure -> return result
+            is EngineResult.Success -> result.value
+        }
+        return service.explore(source, page = page, keyword = keyword)
+    }
 
     override suspend fun searchPage(
         sourceId: String,
