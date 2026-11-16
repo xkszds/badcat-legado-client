@@ -32,6 +32,8 @@ class OkHttpSourceRequestClient(
     private val readTimeoutSeconds: Long = 30,
     private val writeTimeoutSeconds: Long = 30,
     private val maxResponseBytes: Long = 8L * 1024 * 1024,
+    /** Optional host-owned cookie persistence; jars remain isolated by source ID. */
+    private val cookieJarProvider: ((String) -> CookieJar)? = null,
 ) : SourceRequestClient {
 
     private val cookieJars = ConcurrentHashMap<String, MemorySourceCookieJar>()
@@ -113,7 +115,8 @@ class OkHttpSourceRequestClient(
         val key = request.sourceId + if (request.useCookieJar) "|cookies" else "|no-cookies"
         val baseClient = clients.computeIfAbsent(key) {
             val jar = if (request.useCookieJar) {
-                cookieJars.computeIfAbsent(request.sourceId) { MemorySourceCookieJar() }
+                cookieJarProvider?.invoke(request.sourceId)
+                    ?: cookieJars.computeIfAbsent(request.sourceId) { MemorySourceCookieJar() }
             } else {
                 NoSourceCookies
             }
