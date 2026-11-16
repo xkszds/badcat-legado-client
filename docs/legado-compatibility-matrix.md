@@ -22,7 +22,7 @@ and must not be treated as full BookSource/AnalyzeRule compatibility.
 | Regex | Partial | Bounded regex replacement; staged collection roots for search/TOC; scalar capture-group extraction for search, detail, TOC and chapter title/next-page fields | Full upstream regex filter suffixes and every AnalyzeRule combination are not implemented |
 | Replace rules | Partial | Scope, include/exclude matching, order, literal/regex replacement, optional JS evaluator hook | Not equivalent to all upstream Legado replace-rule and source-specific replacement behavior |
 | Reader CSS profiles | Implemented | Multiple named profiles, notes, child selector rules, import/export, preview, sanitization and limits | Requires device UI/reader regression testing |
-| Reading flow | Partial | Search → detail → TOC → chapter content → next-page aggregation → reading progress | Real-source corpus, live network behavior and physical-device acceptance remain outstanding |
+| Reading flow | Partial | Search → detail → TOC → chapter content → next-page aggregation → reading progress; parsed chapter cache with 12-hour freshness and stale offline fallback | Real-source corpus, live network behavior and physical-device acceptance remain outstanding |
 
 ## Parser dispatch increment (2026-11-16)
 
@@ -74,3 +74,11 @@ modes remain outside this increment.
 - Cookie name/value, domain, path, expiry, host-only, secure and HttpOnly attributes are restored across process restarts; source jars remain isolated.
 - Android backup is disabled for the app, so the cookie preference file is not included in app backup.
 - This does not implement Legado login UI, loginCheckJs, JavaScript cookie APIs, WebView cookies or full upstream cookie semantics. Validate against representative authenticated sources on-device.
+
+
+### Parsed chapter cache (2026-11-16)
+
+- The default Android engine stores parsed and purified chapter text in an app-private disk cache keyed by source, book and chapter.
+- The cache is bounded to 64 MiB total and 4 MiB per chapter. Fresh entries (12 hours) avoid a network request; expired entries are used only as fallback when the network request fails.
+- Cache write failures do not block successful reading. Cache behavior is covered by contract tests for fresh hits and offline fallback.
+- This cache does not yet replace upstream Legado's complete Room cache, batch prefetch or cache-management UI.
