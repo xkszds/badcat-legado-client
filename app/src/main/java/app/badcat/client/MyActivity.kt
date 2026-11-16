@@ -98,7 +98,7 @@ class MyActivity : Activity() {
             tools.addView(row)
         }
         body.addView(tools)
-        body.addView(label("版本号  " + BuildConfig.VERSION_NAME, 11f, muted).apply {
+        body.addView(label("版本号  " + "0.1.0-integration", 11f, muted).apply {
             gravity = Gravity.CENTER
             setPadding(0, dp(18), 0, dp(10))
             isClickable = true
