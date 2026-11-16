@@ -210,4 +210,35 @@ class CssBookInfoParserTest {
     }
 
 
+    @Test
+    fun expandsEmbeddedBookInfoFieldRules() = runBlocking {
+        val source = BookSource(
+            id = "https://reader.example/",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleBookInfoJson = """{"name":"{{buildNameRule(result)}}" }""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/book/10",
+            body = "<h1>Embedded novel</h1>",
+        )
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> {
+                assertEquals("buildNameRule(result)", script)
+                assertEquals(response.body, bindings["result"])
+                return EngineResult.Success("h1@text")
+            }
+        }
+
+        val detail = assertIs<EngineResult.Success<BookDetail>>(
+            CssBookInfoParser().parseWithScripts(source, response, response.finalUrl, runtime),
+        ).value
+        assertEquals("Embedded novel", detail.name)
+    }
+
 }

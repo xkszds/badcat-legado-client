@@ -353,4 +353,46 @@ class CssTocParserTest {
         assertEquals(listOf("https://reader.example/catalog?page=2"), page.nextPageUrls)
     }
 
+    @Test
+    fun expandsEmbeddedChapterListAndRowRules() = runBlocking {
+        val source = BookSource(
+            id = "https://reader.example/",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"{{buildListRule(result)}}",
+                "chapterName":"{{buildNameRule(result)}}",
+                "chapterUrl":"a@href"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/catalog",
+            body = """<ul class="chapters"><li><a href="/chapter/1">Embedded chapter</a></li></ul>""",
+        )
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> = when (script) {
+                "buildListRule(result)" -> {
+                    assertEquals(response.body, bindings["result"])
+                    EngineResult.Success("ul.chapters li")
+                }
+                "buildNameRule(result)" -> {
+                    assertEquals(true, bindings["result"]!!.contains("Embedded chapter"))
+                    EngineResult.Success("a@text")
+                }
+                else -> error("Unexpected embedded TOC script: $script")
+            }
+        }
+
+        val page = assertIs<EngineResult.Success<ParsedTocPage>>(
+            CssTocParser().parseWithScripts(source, response, "https://reader.example/book", runtime),
+        ).value
+        assertEquals(listOf("Embedded chapter"), page.chapters.map { it.title })
+        assertEquals(listOf("https://reader.example/chapter/1"), page.chapters.map { it.url })
+    }
+
 }

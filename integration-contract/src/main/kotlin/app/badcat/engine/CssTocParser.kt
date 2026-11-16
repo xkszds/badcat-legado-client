@@ -26,11 +26,25 @@ class CssTocParser {
         }
         val listRule = rules["chapterList"]?.takeIf(String::isNotBlank)
             ?: return unsupported(source, "missing chapterList rule")
-        if (listOf(listRule).any { it.contains("@js:", true) || it.contains("{{") }) {
+        var resolvedListRule = listRule.trim()
+        if (resolvedListRule.contains("{{")) {
+            resolvedListRule = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
+                source = source,
+                template = resolvedListRule,
+                result = response.body,
+                baseUrl = response.finalUrl,
+                ruleName = "chapterList",
+                scriptRuntime = scriptRuntime,
+            )) {
+                is EngineResult.Failure -> return expanded
+                is EngineResult.Success -> expanded.value
+            }
+        }
+        if (resolvedListRule.contains("@js:", true) || resolvedListRule.contains("{{")) {
             return unsupported(source, "JavaScript collection-root rules")
         }
         val root = SourceDocument(response.finalUrl, response.body, response.contentType)
-        val items = when (val result = LegadoRuleExpressionDispatcher.evaluateElements(root, listRule)) {
+        val items = when (val result = LegadoRuleExpressionDispatcher.evaluateElements(root, resolvedListRule)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
         }
@@ -38,7 +52,20 @@ class CssTocParser {
         suspend fun extract(itemHtml: String, key: String): EngineResult<String?> {
             val expression = rules[key]?.takeIf(String::isNotBlank)
                 ?: return EngineResult.Success(null)
-            val trimmed = expression.trim()
+            var trimmed = expression.trim()
+            if (trimmed.contains("{{")) {
+                trimmed = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
+                    source = source,
+                    template = trimmed,
+                    result = itemHtml,
+                    baseUrl = response.finalUrl,
+                    ruleName = key,
+                    scriptRuntime = scriptRuntime,
+                )) {
+                    is EngineResult.Failure -> return expanded
+                    is EngineResult.Success -> expanded.value
+                }
+            }
             if (trimmed.startsWith("@js:", true) || trimmed.startsWith("javascript:", true)) {
                 val script = trimmed.substringAfter(':').trim()
                 if (script.isBlank()) return unsupported(source, "empty JavaScript rule for '$key'")
@@ -58,10 +85,10 @@ class CssTocParser {
                     is EngineResult.Success -> EngineResult.Success(result.value.trim().takeIf(String::isNotEmpty))
                 }
             }
-            val normalized = if (key == "chapterUrl") expression
+            val normalized = if (key == "chapterUrl") trimmed
                 .replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
                 .replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
-            else expression
+            else trimmed
             return when (val result = LegadoRuleExpressionDispatcher.evaluate(
                 SourceDocument(response.finalUrl, itemHtml, response.contentType),
                 normalized,
@@ -90,7 +117,20 @@ class CssTocParser {
             chapters += BookChapter(chapters.size, title, url)
         }
 
-        val nextRule = rules["nextTocUrl"]?.trim().orEmpty()
+        var nextRule = rules["nextTocUrl"]?.trim().orEmpty()
+        if (nextRule.contains("{{")) {
+            nextRule = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
+                source = source,
+                template = nextRule,
+                result = response.body,
+                baseUrl = response.finalUrl,
+                ruleName = "nextTocUrl",
+                scriptRuntime = scriptRuntime,
+            )) {
+                is EngineResult.Failure -> return expanded
+                is EngineResult.Success -> expanded.value
+            }
+        }
         val nextUrls = if (nextRule.isBlank()) emptyList() else {
             val raw = if (nextRule.startsWith("@js:", true) || nextRule.startsWith("javascript:", true)) {
                 val script = nextRule.substringAfter(':').trim()

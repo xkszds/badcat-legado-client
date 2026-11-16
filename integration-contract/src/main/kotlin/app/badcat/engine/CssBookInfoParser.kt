@@ -32,7 +32,20 @@ class CssBookInfoParser {
 
         suspend fun field(name: String): EngineResult<String?> {
             val expression = rules[name]?.takeIf(String::isNotBlank) ?: return EngineResult.Success(null)
-            val trimmed = expression.trim()
+            var trimmed = expression.trim()
+            if (trimmed.contains("{{")) {
+                trimmed = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
+                    source = source,
+                    template = trimmed,
+                    result = response.body,
+                    baseUrl = response.finalUrl,
+                    ruleName = name,
+                    scriptRuntime = scriptRuntime,
+                )) {
+                    is EngineResult.Failure -> return expanded
+                    is EngineResult.Success -> expanded.value
+                }
+            }
             if (trimmed.startsWith("@js:", true) || trimmed.startsWith("javascript:", true)) {
                 val script = trimmed.substringAfter(':').trim()
                 if (script.isBlank()) return EngineResult.Failure(
@@ -55,9 +68,9 @@ class CssBookInfoParser {
                 }
             }
             val normalized = when (name) {
-                "coverUrl" -> expression.replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
-                "tocUrl" -> expression.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
-                else -> expression
+                "coverUrl" -> trimmed.replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
+                "tocUrl" -> trimmed.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
+                else -> trimmed
             }
             return when (val result = LegadoRuleExpressionDispatcher.evaluate(document, normalized)) {
                 is EngineResult.Failure -> result
