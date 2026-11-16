@@ -30,6 +30,17 @@ internal fun favoriteBooksInFolder(books: List<FavoriteBook>, folderId: String):
 internal fun favoriteBookCountInFolder(books: List<FavoriteBook>, folderId: String): Int =
     if (folderId == FavoriteBooks.DEFAULT_FOLDER_ID) books.size else books.count { it.folderId == folderId }
 
+internal fun sortFavoriteBooksByLastRead(
+    books: List<FavoriteBook>,
+    lastReadAt: Map<String, Long>,
+    newestFirst: Boolean,
+): List<FavoriteBook> {
+    val timestamp: (FavoriteBook) -> Long = {
+        lastReadAt[it.sourceId + "|" + it.bookUrl] ?: it.addedAt
+    }
+    return if (newestFirst) books.sortedByDescending(timestamp) else books.sortedBy(timestamp)
+}
+
 object FavoriteBooks {
     private const val PREFS = "badcat_favorites"
     private const val KEY = "books"
@@ -233,10 +244,11 @@ class FavoritesActivity : Activity() {
         val lastReadAt = latestBookReadTimes()
         val newestFirst = getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE)
             .getBoolean("sort_newest_first", true)
-        val visible = favoriteBooksInFolder(allBooks, selectedFolderId).let { books ->
-            val sorted = books.sortedBy { lastReadAt[bookKey(it)] ?: it.addedAt }
-            if (newestFirst) sorted.reversed() else sorted
-        }
+        val visible = sortFavoriteBooksByLastRead(
+            favoriteBooksInFolder(allBooks, selectedFolderId),
+            lastReadAt,
+            newestFirst,
+        )
         if (visible.isEmpty()) {
             rootContent.addView(TextView(this).apply {
                 text = if (allBooks.isEmpty()) "还没有小说\n在小说详情页点击「加入收藏」，小说就会出现在这里。" else "这个文件夹还没有小说"
