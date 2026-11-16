@@ -429,6 +429,8 @@ class SourceChapterActivity : Activity() {
     private var currentChapterTitle: String = ""
     private var pendingScrollY: Int? = null
     private var pendingBookmarkY: Int? = null
+    private var readerDocumentVersion: Long = 0L
+    private var latestReaderBaseUrl: String = "https://reader.invalid/"
     private var readingSessionStartedAt: Long = 0L
     private val preferences by lazy {
         getSharedPreferences("badcat_reading_progress", MODE_PRIVATE)
@@ -466,6 +468,9 @@ class SourceChapterActivity : Activity() {
             webViewClient = object : android.webkit.WebViewClient() {
                 override fun onPageFinished(view: android.webkit.WebView, url: String?) {
                     super.onPageFinished(view, url)
+                    // Ignore callbacks from an older HTML load; only the newest document
+                    // may consume the pending bookmark/scroll restoration position.
+                    if (url != latestReaderBaseUrl) return
                     val target = pendingBookmarkY ?: pendingScrollY
                     pendingBookmarkY = null
                     pendingScrollY = null
@@ -784,6 +789,13 @@ class SourceChapterActivity : Activity() {
 
     private fun renderReaderDocument() {
         if (!::body.isInitialized || currentChapterText.isEmpty()) return
+        // Keep the current reading position when changing font, spacing, theme or CSS.
+        // A saved chapter position/bookmark already queued for restoration takes priority.
+        if (currentChapterUrl.isNotBlank() && pendingBookmarkY == null && pendingScrollY == null &&
+            body.contentHeight > 0
+        ) {
+            pendingScrollY = body.scrollY.coerceAtLeast(0)
+        }
         val (background, foreground) = when (readerTheme) {
             1 -> Color.rgb(244, 234, 211) to Color.rgb(75, 61, 43)
             2 -> Color.rgb(28, 30, 34) to Color.rgb(220, 222, 226)
@@ -792,7 +804,8 @@ class SourceChapterActivity : Activity() {
         val html = ReaderCssDocument.build(
             this, currentChapterText, textSizeSp, lineSpacingMultiplier, background, foreground,
         )
-        body.loadDataWithBaseURL("https://reader.invalid/", html, "text/html", "UTF-8", null)
+        latestReaderBaseUrl = "https://reader.invalid/${++readerDocumentVersion}/"
+        body.loadDataWithBaseURL(latestReaderBaseUrl, html, "text/html", "UTF-8", null)
     }
 
     private fun applyReaderTheme() {
