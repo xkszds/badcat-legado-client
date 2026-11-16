@@ -29,7 +29,7 @@ class MyActivity : Activity() {
             setBackgroundColor(Color.WHITE)
         }
         val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        top.addView(label("修改资料", 18f, ink), LinearLayout.LayoutParams(0, dp(42), 1f))
+        top.addView(label("我的", 18f, ink), LinearLayout.LayoutParams(0, dp(42), 1f))
         top.addView(label("☼", 26f, blue).apply { setOnClickListener { toast("主题设置尚未接入") } })
         top.addView(label("⚙", 25f, ink).apply { setPadding(dp(22), 0, 0, 0); setOnClickListener { toast("个人设置尚未接入") } })
         profile.addView(top)
@@ -41,7 +41,14 @@ class MyActivity : Activity() {
         identity.addView(LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(14), 0, 0, 0)
-            addView(label("坏坏猫用户", 21f, ink, true))
+            addView(label(
+                getSharedPreferences("badcat_profile", MODE_PRIVATE).getString("nickname", "坏坏猫用户") ?: "坏坏猫用户",
+                21f, ink, true
+            ).apply {
+                isClickable = true
+                setOnClickListener { editNickname(this) }
+                contentDescription = "点击修改昵称"
+            })
             addView(label("阅读时长：—    获得的收藏数：${FavoriteBooks.all(this@MyActivity).size}", 12f, muted).apply { setPadding(0, dp(9), 0, 0) })
         }, LinearLayout.LayoutParams(0, -2, 1f))
         profile.addView(identity)
@@ -93,6 +100,30 @@ class MyActivity : Activity() {
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         root.addView(MainBottomNavigation.create(this, "mine"))
         setContentView(root)
+    }
+
+    private fun editNickname(target: TextView) {
+        val input = android.widget.EditText(this).apply {
+            setText(target.text)
+            hint = "输入昵称"
+            setSingleLine(true)
+            setSelection(text.length)
+        }
+        android.app.AlertDialog.Builder(this)
+            .setTitle("修改昵称")
+            .setView(input)
+            .setNegativeButton("取消", null)
+            .setPositiveButton("保存") { _, _ ->
+                val value = input.text.toString().trim().take(24)
+                if (value.isNotBlank()) {
+                    getSharedPreferences("badcat_profile", MODE_PRIVATE).edit()
+                        .putString("nickname", value).apply()
+                    target.text = value
+                } else {
+                    toast("昵称不能为空")
+                }
+            }
+            .show()
     }
 
     private fun openTool(key: String) {
