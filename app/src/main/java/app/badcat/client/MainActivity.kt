@@ -14,12 +14,10 @@ import android.widget.LinearLayout
 import android.widget.TextView
 
 /**
- * Modern, lightweight home shell.
- *
- * The original Badcat screen is the visual/behavioral reference. This screen
- * keeps the user-requested three destinations (Search, Favorites, Mine),
- * while search continues to use the Legado-backed source engine.
- * Legacy implementation details are not copied into the new client.
+ * Search landing screen rebuilt to follow the original Badcat composition:
+ * blue title/search header, content-type tabs, and the original three bottom
+ * destinations (Search, Favorites, Mine). Removed promotional shortcuts stay
+ * absent; search remains connected to the source-backed result screen.
  */
 class MainActivity : Activity() {
     private lateinit var keyword: EditText
@@ -49,7 +47,6 @@ class MainActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
             )
             addView(buildHeader())
-            addView(buildSearchPanel())
             addView(View(this@MainActivity), LinearLayout.LayoutParams(1, 0, 1f))
         }
         addView(body)
@@ -58,13 +55,13 @@ class MainActivity : Activity() {
 
     private fun buildHeader(): View = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
-        gravity = Gravity.CENTER
-        setPadding(dp(22), dp(24), dp(22), dp(25))
-        background = rounded(blue, 24, 0, 0, 24, 24)
+        gravity = Gravity.CENTER_VERTICAL
+        setPadding(dp(22), dp(22), dp(22), dp(22))
+        background = rounded(blue, 0, 0, 0, 22, 22)
         addView(TextView(this@MainActivity).apply {
             text = "坏坏猫"
             textSize = 36f
-            gravity = Gravity.CENTER
+            gravity = Gravity.START
             setTextColor(Color.WHITE)
             typeface = Typeface.create("casual", Typeface.NORMAL)
             letterSpacing = 0.06f
@@ -73,28 +70,30 @@ class MainActivity : Activity() {
         addView(TextView(this@MainActivity).apply {
             text = "发现好书，开始阅读"
             textSize = 14f
-            gravity = Gravity.CENTER
+            gravity = Gravity.START
             setTextColor(Color.WHITE)
             alpha = 0.9f
-            setPadding(0, dp(8), 0, 0)
+            setPadding(0, dp(5), 0, dp(10))
         })
+        addView(buildSearchPanel())
     }
 
     private fun buildSearchPanel(): View = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
-        setPadding(dp(18), dp(12), dp(18), dp(8))
+        setPadding(0, dp(4), 0, 0)
 
         val typeRow = LinearLayout(this@MainActivity).apply {
             orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
+            gravity = Gravity.START
         }
         val typeLabels = listOf("小说", "漫画", "综合")
         fun refreshTypes() {
             for (index in 0 until typeRow.childCount) {
                 val chip = typeRow.getChildAt(index) as TextView
                 val selected = chip.text.toString() == contentType
-                chip.setTextColor(if (selected) blue else muted)
+                chip.setTextColor(if (selected) Color.WHITE else Color.WHITE)
                 chip.typeface = if (selected) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+                chip.alpha = if (selected) 1f else 0.72f
             }
         }
         typeLabels.forEach { label ->
@@ -102,7 +101,7 @@ class MainActivity : Activity() {
                 text = label
                 textSize = 14f
                 gravity = Gravity.CENTER
-                setPadding(dp(22), dp(9), dp(22), dp(9))
+                setPadding(dp(4), dp(8), dp(22), dp(8))
                 setOnClickListener {
                     contentType = label
                     refreshTypes()
@@ -120,7 +119,7 @@ class MainActivity : Activity() {
             setPadding(dp(14), 0, dp(6), 0)
         }
         keyword = EditText(this@MainActivity).apply {
-            hint = "输入书名或作者"
+            hint = "请输入书名、作者或关键字"
             textSize = 15f
             setSingleLine(true)
             setTextColor(ink)
@@ -140,9 +139,9 @@ class MainActivity : Activity() {
             text = "搜索"
             textSize = 14f
             gravity = Gravity.CENTER
-            setTextColor(Color.WHITE)
-            background = rounded(blue, 20)
-            setPadding(dp(18), dp(10), dp(18), dp(10))
+            setTextColor(blue)
+            background = rounded(Color.rgb(238, 245, 255), 20)
+            setPadding(dp(16), dp(10), dp(16), dp(10))
             isClickable = true
             isFocusable = true
             setOnClickListener { openSearch() }
