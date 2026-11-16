@@ -63,6 +63,29 @@ class RhinoSourceScriptRuntimeTest {
         assertTrue(result is EngineResult.Failure)
     }
     @Test
+    fun serializesConcurrentEvaluationForOneSource() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val source = BookSource(
+            id = "https://concurrent.example/",
+            name = "Concurrent source",
+            baseUrl = "https://concurrent.example/",
+            jsLib = "const concurrentPrefix = 'ok'; function concurrentValue(n) { return concurrentPrefix + n; }",
+        )
+
+        val results = kotlinx.coroutines.coroutineScope {
+            (1..12).map { index ->
+                kotlinx.coroutines.async(kotlinx.coroutines.Dispatchers.Default) {
+                    runtime.evaluate(source, "concurrentValue('$index')")
+                }
+            }.map { it.await() }
+        }
+
+        assertEquals(12, results.size)
+        assertTrue(results.all { it is EngineResult.Success })
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun initializesLexicalJsLibDeclarationsOnlyOnce() = runBlocking {
         val runtime = RhinoSourceScriptRuntime()
         val source = BookSource(
