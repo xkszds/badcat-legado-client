@@ -47,6 +47,14 @@ class SourceChapterContentService(
                     "Chapter content request for source '${source.id}' returned HTTP ${response.statusCode}",
                 )
             }
+            // Redirect targets are canonical pagination identities too. Record them
+            // before parsing so a next link to the final URL is detected immediately.
+            if (response.finalUrl != currentUrl && !visited.add(response.finalUrl)) {
+                return EngineResult.Failure(
+                    EngineErrorCode.PARSE,
+                    "Chapter content pagination contains a redirect URL cycle for source '${source.id}'",
+                )
+            }
             val parsed = when (val result = parser.parse(source, response, chapter)) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
