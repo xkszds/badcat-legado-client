@@ -41,4 +41,4 @@ Enter the selector in the selector field and declarations (without braces) in th
 - This feature changes the development reader's content presentation only; it does not alter the original Badcat APK.
 
 
-Imported profiles preserve an explicit Boolean enabled flag; if that field is absent, the profile defaults to disabled to avoid unexpectedly activating incomplete backup data. Import also rejects fields whose JSON types are incorrect instead of coercing numbers or text into names, selectors, CSS declarations, or enabled states.
+Imported profiles preserve an explicit Boolean enabled flag; if that field is absent, the profile defaults to disabled to avoid unexpectedly activating incomplete backup data. Import also rejects fields whose JSON types are incorrect instead of coercing numbers or text into names, selectors, CSS declarations, enabled states, or rule collections.
