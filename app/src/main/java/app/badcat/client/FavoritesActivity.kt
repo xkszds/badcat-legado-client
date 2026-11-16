@@ -145,7 +145,8 @@ class FavoritesActivity : Activity() {
             setBackgroundColor(Color.WHITE)
         }
         header.addView(View(this), LinearLayout.LayoutParams(dp(104), dp(1)))
-        val title = TextView(this).apply {
+        lateinit var title: TextView
+        title = TextView(this).apply {
             text = selectedType
             textSize = 27f
             typeface = Typeface.DEFAULT_BOLD
@@ -170,7 +171,7 @@ class FavoritesActivity : Activity() {
             gravity = Gravity.CENTER_VERTICAL
             addView(actionText("＋ 文件夹") {
             promptFolderName("新建文件夹") { name ->
-                if (!FavoriteBooks.createFolder(this, name)) toast("文件夹名称无效或已存在")
+                if (!FavoriteBooks.createFolder(this@FavoritesActivity, name)) toast("文件夹名称无效或已存在")
                 refresh()
             }
         })
