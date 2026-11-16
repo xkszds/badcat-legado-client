@@ -16,17 +16,10 @@ object XPathRuleEvaluator {
             return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "XPath rule is blank")
         }
 
-        if (RuleCombinationEvaluator.hasNestedTopLevelOperator(rule)) {
-            return EngineResult.Failure(
-                EngineErrorCode.UNSUPPORTED_RULE,
-                "Nested XPath list-combination operators are not supported",
-            )
-        }
-
         return try {
             val parsed = Jsoup.parse(document.body, document.url)
             val context = JXDocument.create(parsed)
-            val values = RuleCombinationEvaluator.evaluate(rule) { part ->
+            val values = RuleCombinationEvaluator.evaluateNested(rule) { part ->
                 context.selN(part).orEmpty().map { it.asString() }
             }
             EngineResult.Success(values)
