@@ -37,32 +37,36 @@ internal object MainBottomNavigation {
                     isFocusable = true
                     contentDescription = label
                     setOnClickListener {
-                        when (key) {
-                            "search" -> if (context !is MainActivity) {
-                                context.startActivity(Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
-                            }
-                            "favorites" -> if (context !is FavoritesActivity) {
-                                context.startActivity(Intent(context, FavoritesActivity::class.java))
-                            }
-                            "mine" -> if (context !is MyActivity) {
-                                context.startActivity(Intent(context, MyActivity::class.java))
-                            }
+                        val intent = when (key) {
+                            "search" -> if (context !is MainActivity) Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP) else null
+                            "favorites" -> if (context !is FavoritesActivity) Intent(context, FavoritesActivity::class.java) else null
+                            "mine" -> if (context !is MyActivity) Intent(context, MyActivity::class.java) else null
+                            else -> null
+                        }
+                        if (intent != null) {
+                            context.startActivity(intent)
+                            if (context is android.app.Activity) context.overridePendingTransition(0, 0)
                         }
                     }
                     addView(TextView(context).apply {
                         text = glyph
-                        textSize = 21f
+                        textSize = 25f
                         gravity = Gravity.CENTER
+                        includeFontPadding = false
                         setTextColor(if (isSelected) active else inactive)
+                        if (isSelected) {
+                            scaleX = 1.06f
+                            scaleY = 1.06f
+                        }
                     })
                     addView(TextView(context).apply {
                         text = label
-                        textSize = 11f
+                        textSize = 12f
                         gravity = Gravity.CENTER
                         setTextColor(if (isSelected) active else inactive)
                         typeface = if (isSelected) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
                     })
-                }, LinearLayout.LayoutParams(0, context.dpNav(58), 1f))
+                }, LinearLayout.LayoutParams(0, context.dpNav(64), 1f))
             }
         }
 }
