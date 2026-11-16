@@ -19,6 +19,7 @@
 - [x] Legado 替换规则本地目录、JSON 编解码、启用/范围筛选、字面量与受限正则替换。
 - [x] 有边界的 Rhino 替换规则执行器；仅支持受限上下文，不等同完整 Legado JS 环境。
 - [x] 开发阅读页的章节阅读、进度/书签基础能力与 CSS 自定义方案管理。
+- [x] 阅读记录页：章节成功加载后按书源+书籍去重保存最近章节，首页快捷入口可打开记录，点击记录继续阅读，长按可仅删除历史记录（不删除书签/收藏）。
 - [x] 阅读 CSS 多方案、子选择器命名/备注、启停、复制、排序、预览、冲突提示、导入导出和资源上限。
 - [x] CSS 选择器、净化器、规则顺序与输出大小的单元测试。
 - [x] 最新仓库提交 `e226dd6b559c` 的 CI 全部步骤通过：契约测试、受限 Rhino 宿主测试、Android Debug APK 组装和产物上传均成功。Actions：[run #43845483951](https://github.com/xkszds/badcat-legado-client/actions/runs/43845483951)。产物 `badcat-legado-debug` 为 4,766,218 bytes，SHA-256 `9a09984e4b6a0250348c4f523b47fa61fda1bd5cebb3f89ef241ab424a2c2fdb`。
