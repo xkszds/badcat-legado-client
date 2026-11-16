@@ -9,22 +9,19 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
-import app.badcat.client.runtime.BadcatReadingEngineFactory
-import app.badcat.engine.ReadingEngine
 
 /**
- * First-pass reconstruction of the Badcat search-home structure.
+ * Modern, lightweight home shell.
  *
- * Geometry and colors are based on the supplied reference descriptions;
- * exact pixel parity still requires decoded original resources and device screenshots.
+ * The original Badcat screen is the visual/behavioral reference. This screen
+ * deliberately keeps the original four destinations and three shortcut roles,
+ * while the search action continues to use the Legado-backed source engine.
+ * Legacy implementation details are not copied into the new client.
  */
 class MainActivity : Activity() {
-    private lateinit var readingEngine: ReadingEngine
     private lateinit var keyword: EditText
     private var contentType = "小说"
 
@@ -37,35 +34,32 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         window.statusBarColor = blue
         window.navigationBarColor = Color.WHITE
+        @Suppress("DEPRECATION")
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-        readingEngine = BadcatReadingEngineFactory(applicationContext).create()
         setContentView(buildHome())
     }
 
-    private fun buildHome(): View {
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundColor(page)
-        }
-        val content = LinearLayout(this).apply {
+    private fun buildHome(): View = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        setBackgroundColor(page)
+
+        val body = LinearLayout(this@MainActivity).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
             )
+            addView(buildHeader())
+            addView(buildSearchPanel())
+            addView(buildOriginalShortcuts())
+            addView(View(this@MainActivity), LinearLayout.LayoutParams(1, 0, 1f))
         }
-        content.addView(buildHeader())
-        content.addView(buildSearchPanel())
-        content.addView(buildShortcuts())
-        val spacer = View(this)
-        content.addView(spacer, LinearLayout.LayoutParams(1, 0, 1f))
-        root.addView(content)
-        root.addView(buildBottomNavigation())
-        return root
+        addView(body)
+        addView(buildBottomNavigation())
     }
 
     private fun buildHeader(): View = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
-        setPadding(dp(22), dp(18), dp(22), dp(28))
+        setPadding(dp(22), dp(18), dp(22), dp(25))
         background = rounded(blue, 24, 0, 0, 24, 24)
         addView(TextView(this@MainActivity).apply {
             text = "坏坏猫"
@@ -84,31 +78,36 @@ class MainActivity : Activity() {
 
     private fun buildSearchPanel(): View = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
-        setPadding(dp(18), dp(18), dp(18), dp(8))
+        setPadding(dp(18), dp(12), dp(18), dp(8))
+
         val typeRow = LinearLayout(this@MainActivity).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
         }
-        listOf("小说", "漫画", "全部").forEach { label ->
-            val chip = TextView(this@MainActivity).apply {
+        val typeLabels = listOf("小说", "漫画", "综合")
+        fun refreshTypes() {
+            for (index in 0 until typeRow.childCount) {
+                val chip = typeRow.getChildAt(index) as TextView
+                val selected = chip.text.toString() == contentType
+                chip.setTextColor(if (selected) blue else muted)
+                chip.typeface = if (selected) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+            }
+        }
+        typeLabels.forEach { label ->
+            typeRow.addView(TextView(this@MainActivity).apply {
                 text = label
                 textSize = 14f
                 gravity = Gravity.CENTER
                 setPadding(dp(22), dp(9), dp(22), dp(9))
                 setOnClickListener {
                     contentType = label
-                    for (i in 0 until typeRow.childCount) {
-                        val child = typeRow.getChildAt(i) as TextView
-                        child.setTextColor(if (child.text == contentType) blue else muted)
-                        child.typeface = if (child.text == contentType) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
-                    }
+                    refreshTypes()
                 }
-                setTextColor(if (label == contentType) blue else muted)
-                typeface = if (label == contentType) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
-            }
-            typeRow.addView(chip, LinearLayout.LayoutParams(0, dp(42), 1f))
+            }, LinearLayout.LayoutParams(0, dp(42), 1f))
         }
         addView(typeRow)
+        refreshTypes()
+
         val searchRow = LinearLayout(this@MainActivity).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -124,70 +123,69 @@ class MainActivity : Activity() {
             setHintTextColor(muted)
             background = null
             setPadding(0, dp(12), 0, dp(12))
+            imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH
+            setOnEditorActionListener { _, actionId, _ ->
+                if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                    openSearch()
+                    true
+                } else false
+            }
         }
         searchRow.addView(keyword, LinearLayout.LayoutParams(0, dp(50), 1f))
-        val go = TextView(this@MainActivity).apply {
+        searchRow.addView(TextView(this@MainActivity).apply {
             text = "搜索"
             textSize = 14f
             gravity = Gravity.CENTER
             setTextColor(Color.WHITE)
             background = rounded(blue, 20)
             setPadding(dp(18), dp(10), dp(18), dp(10))
+            isClickable = true
+            isFocusable = true
             setOnClickListener { openSearch() }
-        }
-        searchRow.addView(go)
+        })
         addView(searchRow, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
-        ).apply { topMargin = dp(8) })
+        ).apply { topMargin = dp(5) })
     }
 
-    private fun buildShortcuts(): View = LinearLayout(this).apply {
+    /**
+     * Recreates the three shortcut positions from the reference home screen.
+     * These are intentionally presentation-only until their original service
+     * contracts have been verified; they do not launch unrelated dev screens.
+     */
+    private fun buildOriginalShortcuts(): View = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
-        setPadding(dp(20), dp(20), dp(20), dp(8))
-        addView(TextView(this@MainActivity).apply {
-            text = "快捷入口"
-            textSize = 16f
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(ink)
-            setPadding(0, 0, 0, dp(12))
-        })
+        setPadding(dp(22), dp(23), dp(22), dp(8))
         val row = LinearLayout(this@MainActivity).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
         }
         val shortcuts = listOf(
-            Triple("书源管理", "导入与整理", { openSourceCatalog() }),
-            Triple("搜索书籍", "多源检索", { openSearch() }),
-            Triple("阅读记录", "继续上次阅读", { startActivity(Intent(this@MainActivity, ReadingHistoryActivity::class.java)) }),
-            Triple("替换规则", "Legado正文规则", { startActivity(Intent(this@MainActivity, ReplaceRuleActivity::class.java)) }),
+            Triple("♛", "排行榜", Color.rgb(255, 183, 77)),
+            Triple("🎁", "今日抽奖", Color.rgb(239, 112, 130)),
+            Triple("♥", "赚取现金", Color.rgb(91, 177, 151)),
         )
-        shortcuts.forEach { (title, subtitle, action) ->
-            val card = LinearLayout(this@MainActivity).apply {
+        shortcuts.forEach { (symbol, label, tint) ->
+            val item = LinearLayout(this@MainActivity).apply {
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER
-                background = rounded(Color.WHITE, 14)
-                setPadding(dp(5), dp(14), dp(5), dp(14))
-                isClickable = true
-                isFocusable = true
-                setOnClickListener { action() }
                 addView(TextView(this@MainActivity).apply {
-                    text = title
-                    textSize = 13f
-                    typeface = Typeface.DEFAULT_BOLD
-                    setTextColor(ink)
+                    text = symbol
+                    textSize = 25f
                     gravity = Gravity.CENTER
+                    setTextColor(Color.WHITE)
+                    background = rounded(tint, 30)
+                    layoutParams = LinearLayout.LayoutParams(dp(58), dp(58))
                 })
                 addView(TextView(this@MainActivity).apply {
-                    text = subtitle
-                    textSize = 10f
-                    setTextColor(muted)
+                    text = label
+                    textSize = 13f
                     gravity = Gravity.CENTER
-                    setPadding(0, dp(5), 0, 0)
+                    setTextColor(ink)
+                    setPadding(0, dp(9), 0, 0)
                 })
             }
-            row.addView(card, LinearLayout.LayoutParams(0, dp(82), 1f).apply {
-                marginEnd = dp(7)
-            })
+            row.addView(item, LinearLayout.LayoutParams(0, dp(92), 1f))
         }
         addView(row)
     }
@@ -197,24 +195,36 @@ class MainActivity : Activity() {
         gravity = Gravity.CENTER
         setBackgroundColor(Color.WHITE)
         elevation = dp(8).toFloat()
-        listOf("搜索", "收藏", "猫咪空间", "我的").forEachIndexed { index, label ->
-            val item = TextView(this@MainActivity).apply {
-                text = label
-                textSize = 12f
+        val destinations = listOf("搜索", "收藏夹", "喵星", "我的")
+        destinations.forEachIndexed { index, label ->
+            val selected = index == 0
+            addView(LinearLayout(this@MainActivity).apply {
+                orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER
-                setPadding(dp(2), dp(13), dp(2), dp(13))
-                setTextColor(if (index == 0) blue else muted)
-                typeface = if (index == 0) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+                isClickable = true
+                isFocusable = true
                 setOnClickListener {
                     when (index) {
                         0 -> Unit
                         1 -> startActivity(Intent(this@MainActivity, FavoritesActivity::class.java))
-                        2 -> Toast.makeText(this@MainActivity, "猫咪空间入口待接入", Toast.LENGTH_SHORT).show()
-                        3 -> openSourceCatalog()
+                        2 -> startActivity(Intent(this@MainActivity, ReadingHistoryActivity::class.java))
+                        3 -> startActivity(Intent(this@MainActivity, SourceCatalogActivity::class.java))
                     }
                 }
-            }
-            addView(item, LinearLayout.LayoutParams(0, dp(54), 1f))
+                addView(TextView(this@MainActivity).apply {
+                    text = listOf("⌕", "▤", "✿", "♙")[index]
+                    textSize = 19f
+                    gravity = Gravity.CENTER
+                    setTextColor(if (selected) blue else muted)
+                })
+                addView(TextView(this@MainActivity).apply {
+                    text = label
+                    textSize = 11f
+                    gravity = Gravity.CENTER
+                    setTextColor(if (selected) blue else muted)
+                    typeface = if (selected) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+                })
+            }, LinearLayout.LayoutParams(0, dp(58), 1f))
         }
     }
 
@@ -224,10 +234,6 @@ class MainActivity : Activity() {
             putExtra(SourceSearchActivity.EXTRA_INITIAL_QUERY, query)
             putExtra(SourceSearchActivity.EXTRA_CONTENT_TYPE, contentType)
         })
-    }
-
-    private fun openSourceCatalog() {
-        startActivity(Intent(this, SourceCatalogActivity::class.java))
     }
 
     private fun rounded(
