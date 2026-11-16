@@ -426,8 +426,7 @@ class ReaderCssActivity : Activity() {
                 selector to "${profile.name} / ${rule.name.ifBlank { selector }}"
             }
         }
-        val conflicts = occurrences.groupBy({ it.first }, { it.second })
-            .filterValues { it.size > 1 }
+        val conflicts = ReaderCssDocument.duplicateSelectorGroups(occurrences)
         if (conflicts.isEmpty()) {
             android.app.AlertDialog.Builder(this)
                 .setTitle("选择器冲突检查")
