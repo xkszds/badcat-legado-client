@@ -72,7 +72,7 @@ class ReaderCssSelectorScopeTest {
         assertEquals(
             "font-size:18px;line-height:1.8;color:#555555",
             ReaderCssDocument.sanitizeDeclarations(
-                "font-size: 18px;\\nline-height: 1.8;\\ncolor: #555555;",
+                "font-size: 18px;\nline-height: 1.8;\ncolor: #555555;",
             ),
         )
     }
