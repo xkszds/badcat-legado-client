@@ -90,7 +90,7 @@ class CssChapterContentParser {
         val rule = expression.trim()
         val explicitPath = rule.startsWith("@regex:", true) || rule.startsWith("@xpath:", true) ||
             rule.startsWith("@jsonpath:", true) || rule.startsWith("@json:", true) ||
-            rule.startsWith("/")
+            rule.startsWith("/") || rule.startsWith("$")
         if (explicitPath) return rule
         val normalized = rule
             .replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
