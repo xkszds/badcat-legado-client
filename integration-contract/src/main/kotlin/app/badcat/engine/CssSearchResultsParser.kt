@@ -121,10 +121,23 @@ class CssSearchResultsParser {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
             }
-            // Collection-root scripts must return HTML fragments. Parse only
-            // direct body children so card-level selectors remain isolated.
-            val fragment = org.jsoup.Jsoup.parseBodyFragment(rendered)
-            fragment.body().children().map { it.outerHtml() }
+            // A script can return serialized JSON arrays or HTML fragments.
+            // Preserve each JSON object as its own document for JSONPath field rules.
+            val trimmed = rendered.trim()
+            if (trimmed.startsWith("[")) {
+                runCatching {
+                    val array = com.google.gson.JsonParser.parseString(trimmed).asJsonArray
+                    array.map { element ->
+                        require(element.isJsonObject || element.isJsonArray)
+                        element.toString()
+                    }
+                }.getOrElse {
+                    return unsupported(source, "JavaScript bookList must return a valid JSON array or HTML fragments")
+                }
+            } else {
+                val fragment = org.jsoup.Jsoup.parseBodyFragment(rendered)
+                fragment.body().children().map { it.outerHtml() }
+            }
         } else {
             if (rootExpression.contains("{{")) {
                 return unsupported(source, "bookList interpolation")
