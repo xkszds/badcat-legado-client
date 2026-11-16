@@ -125,4 +125,51 @@ class SourceHttpGatewayTest {
         )
         assertTrue(client.captured == null)
     }
+    @Test
+    fun evaluatesUpstreamAtJsUrlRulesBeforeUriResolution() {
+        val client = RecordingClient()
+        val evaluator = LegadoEmbeddedScriptEvaluator { script, key, page ->
+            assertEquals("return key + page", script)
+            EngineResult.Success("$key-$page")
+        }
+        val result = kotlinx.coroutines.runBlocking {
+            SourceHttpGateway(client, evaluator).execute(
+                source(),
+                "https://reader.example/search?q=@js:return key + page",
+                key = "cat",
+                page = 2,
+            )
+        }
+        assertIs<EngineResult.Success<SourceHttpResponse>>(result)
+        assertEquals("https://reader.example/search?q=cat-2", requireNotNull(client.captured).url)
+    }
+
+    @Test
+    fun evaluatesJsTagWithCurrentResultBindingAndPreservesSuffix() {
+        val client = RecordingClient()
+        val evaluator = object : LegadoEmbeddedScriptEvaluator {
+            override suspend fun evaluate(script: String, key: String, page: Int): EngineResult<Any?> =
+                EngineResult.Success("unused")
+
+            override suspend fun evaluateWithResult(
+                script: String,
+                key: String,
+                page: Int,
+                result: String,
+            ): EngineResult<Any?> {
+                assertEquals("return result + '/next'", script)
+                assertEquals("https://reader.example/chapter/1", result)
+                return EngineResult.Success("$result/next")
+            }
+        }
+        val result = kotlinx.coroutines.runBlocking {
+            SourceHttpGateway(client, evaluator).execute(
+                source(),
+                "https://reader.example/chapter/1<js>return result + '/next'</js>",
+            )
+        }
+        assertIs<EngineResult.Success<SourceHttpResponse>>(result)
+        assertEquals("https://reader.example/chapter/1/next", requireNotNull(client.captured).url)
+    }
+
 }

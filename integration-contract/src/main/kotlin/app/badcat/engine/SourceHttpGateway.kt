@@ -25,18 +25,36 @@ class SourceHttpGateway(
         }
 
         val evaluator = if (embeddedScriptEvaluatorProvider != null) embeddedScriptEvaluatorProvider.invoke(source) else embeddedScriptEvaluator
-        val expandedRuleUrl = if (ruleUrl.contains("{{") && evaluator != null) {
-            when (val result = LegadoEmbeddedUrlTemplate.resolve(
-                template = ruleUrl,
+        var expandedRuleUrl = ruleUrl
+        if (LegadoUrlScriptRule.containsRule(expandedRuleUrl)) {
+            val scriptEvaluator = evaluator ?: return EngineResult.Failure(
+                EngineErrorCode.UNSUPPORTED_RULE,
+                "This URL uses Legado @js syntax but no bounded script evaluator is configured",
+            )
+            expandedRuleUrl = when (val result = LegadoUrlScriptRule.resolve(
+                ruleUrl = expandedRuleUrl,
                 key = key,
-                evaluator = evaluator,
+                page = page ?: 1,
+                evaluator = scriptEvaluator,
+            )) {
+                is EngineResult.Success -> result.value
+                is EngineResult.Failure -> return result
+            }
+        }
+        if (expandedRuleUrl.contains("{{")) {
+            val templateEvaluator = evaluator ?: return EngineResult.Failure(
+                EngineErrorCode.UNSUPPORTED_RULE,
+                "This URL uses embedded Legado JavaScript but no bounded script evaluator is configured",
+            )
+            expandedRuleUrl = when (val result = LegadoEmbeddedUrlTemplate.resolve(
+                template = expandedRuleUrl,
+                key = key,
+                evaluator = templateEvaluator,
                 page = page ?: 1,
             )) {
                 is EngineResult.Success -> result.value
                 is EngineResult.Failure -> return result
             }
-        } else {
-            ruleUrl
         }
 
         val resolved = when (val result = LegadoUrlResolver.resolve(

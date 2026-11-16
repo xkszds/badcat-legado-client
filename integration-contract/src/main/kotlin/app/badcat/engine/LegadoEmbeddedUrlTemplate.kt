@@ -10,6 +10,14 @@ package app.badcat.engine
  */
 fun interface LegadoEmbeddedScriptEvaluator {
     suspend fun evaluate(script: String, key: String, page: Int): EngineResult<Any?>
+
+    /** Optional current-result binding used by upstream AnalyzeUrl @js rules. */
+    suspend fun evaluateWithResult(
+        script: String,
+        key: String,
+        page: Int,
+        result: String,
+    ): EngineResult<Any?> = evaluate(script, key, page)
 }
 
 object LegadoEmbeddedUrlTemplate {

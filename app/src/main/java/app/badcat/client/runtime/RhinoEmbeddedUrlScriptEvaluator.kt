@@ -15,8 +15,19 @@ class RhinoEmbeddedUrlScriptEvaluator(
     private val runtime: SourceScriptRuntime = RhinoSourceScriptRuntime(),
 ) : LegadoEmbeddedScriptEvaluator {
     override suspend fun evaluate(script: String, key: String, page: Int): EngineResult<Any?> =
-        when (val result = runtime.evaluate(source, script, mapOf("key" to key, "page" to page.toString()))) {
-            is EngineResult.Success -> EngineResult.Success(result.value)
-            is EngineResult.Failure -> result
-        }
+        evaluateWithResult(script, key, page, "")
+
+    override suspend fun evaluateWithResult(
+        script: String,
+        key: String,
+        page: Int,
+        result: String,
+    ): EngineResult<Any?> = when (val evaluated = runtime.evaluate(
+        source,
+        script,
+        mapOf("key" to key, "page" to page.toString(), "result" to result),
+    )) {
+        is EngineResult.Success -> EngineResult.Success(evaluated.value)
+        is EngineResult.Failure -> evaluated
+    }
 }

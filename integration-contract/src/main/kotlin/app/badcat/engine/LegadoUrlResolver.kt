@@ -143,6 +143,7 @@ object LegadoUrlResolver {
 
     private fun containsScript(value: String): Boolean =
         value.contains("@js", ignoreCase = true) ||
+            value.contains("<js>", ignoreCase = true) ||
             value.contains("{{") ||
             value.contains("}}")
 
