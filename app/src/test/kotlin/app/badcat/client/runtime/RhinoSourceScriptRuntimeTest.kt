@@ -63,3 +63,21 @@ class RhinoSourceScriptRuntimeTest {
         assertTrue(result is EngineResult.Failure)
     }
 }
+    @Test
+    fun initializesLexicalJsLibDeclarationsOnlyOnce() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val source = BookSource(
+            id = "https://lexical.example/",
+            name = "Lexical source",
+            baseUrl = "https://lexical.example/",
+            jsLib = "const fixturePrefix = 'hello '; function lexicalGreeting(name) { return fixturePrefix + name; }",
+        )
+
+        val first = runtime.evaluate(source, "lexicalGreeting('one')")
+        val second = runtime.evaluate(source, "lexicalGreeting('two')")
+
+        assertEquals("hello one", (first as EngineResult.Success).value)
+        assertEquals("hello two", (second as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
