@@ -8,6 +8,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import kotlin.test.assertIs
 import org.junit.Test
 
 class RhinoSourceScriptRuntimeTest {
