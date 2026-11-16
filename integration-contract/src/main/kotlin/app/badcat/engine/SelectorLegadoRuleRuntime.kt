@@ -44,32 +44,24 @@ class SelectorLegadoRuleRuntime(
                 !expression.trim().startsWith("@", ignoreCase = true) &&
                 expression.trim().startsWith("javascript:", ignoreCase = true)
             ) continue
-            var branchFailure: EngineResult.Failure? = null
             val values = try {
-                RuleCombinationEvaluator.evaluateNested(expression) { branch ->
+                when (val result = RuleCombinationEvaluator.evaluateNestedResult(expression) { branch ->
                     val resolved = if (configuredType != null) {
                         ResolvedLegadoRuleExpression(configuredType, branch).let { EngineResult.Success(it) }
                     } else {
-                        when (val dispatch = LegadoRuleExpressionDispatcher.resolve(branch)) {
-                            is EngineResult.Failure -> {
-                                branchFailure = dispatch
-                                null
-                            }
-                            is EngineResult.Success -> dispatch.value
-                        }
-                    } ?: return@evaluateNested emptyList()
-
-                    when (val result = SelectorRuleEvaluator.evaluate(
-                        document,
-                        resolved.type,
-                        resolved.expression,
-                    )) {
-                        is EngineResult.Success -> result.value
-                        is EngineResult.Failure -> {
-                            branchFailure = result
-                            emptyList()
-                        }
+                        LegadoRuleExpressionDispatcher.resolve(branch)
                     }
+                    when (resolved) {
+                        is EngineResult.Failure -> resolved
+                        is EngineResult.Success -> SelectorRuleEvaluator.evaluate(
+                            document,
+                            resolved.value.type,
+                            resolved.value.expression,
+                        )
+                    }
+                }) {
+                    is EngineResult.Failure -> return result
+                    is EngineResult.Success -> result.value
                 }
             } catch (error: Exception) {
                 return EngineResult.Failure(
@@ -78,7 +70,6 @@ class SelectorLegadoRuleRuntime(
                     error,
                 )
             }
-            branchFailure?.let { return it }
             evaluated[field] = values
         }
 
