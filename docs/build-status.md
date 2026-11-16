@@ -1,5 +1,13 @@
 ## Latest implementation update (2026-11-16)
 
+- Corrected chapter-content pagination page accounting: redirect request aliases and final URLs are tracked for cycle detection, while the safety limit counts only successfully parsed content pages. The implementation already uses a separate `pageCount`; this update adds a regression fixture proving two pages that each redirect still fit a two-page limit.
+- Regression test commit: `825c2d5aae8b`; GitHub Actions run [#43827758043](https://github.com/xkszds/badcat-legado-client/actions/runs/43827758043) completed successfully, including contract tests, bounded Rhino host tests, Android Debug APK assembly and artifact upload.
+- Artifact: `badcat-legado-debug`, 4,722,660 bytes, SHA-256 `111d6605081ad2e472438b0f092ea6da258417c3cb8e528464f754bdc96c56e9`.
+- The initial test commit `01b5e2c74597` failed only because the expected test string encoded newline characters incorrectly; the assertion was corrected in `825c2d5aae8b`. A subsequent diagnostic-only test commit is running separately.
+- This validates automated contract tests and APK assembly only. Physical-device installation/runtime, complete Legado compatibility, original Badcat UI parity and original purification parity remain unverified.
+
+## Latest implementation update (2026-11-16)
+
 - Chapter-content pagination now records each successful HTTP response's final redirect URL as a visited pagination identity. A subsequent next-page link targeting that canonical URL is rejected as a cycle before issuing a duplicate request.
 - Added a regression fixture where the chapter request redirects to `/canonical-chapter` and the parsed next-page link points back to that final URL; the expected behavior is a typed `PARSE` failure after exactly one HTTP request.
 - Implementation commit: `6fd9cae85d8f`; regression test commit: `8f8d51e9b823`.
