@@ -87,6 +87,30 @@ class CssSearchResultsParserTest {
     }
 
     @Test
+    fun parsesJsonPathBookListAndJsonPathFields() {
+        val source = source(
+            """{"bookList":"@jsonpath:$.books[*]","name":"$.name","bookUrl":"$.url","author":"$.author"}""",
+        )
+        val response = SourceHttpResponse(
+            statusCode = 200,
+            finalUrl = "https://reader.example/search",
+            body = """{"books":[{"name":"JSON Alpha","url":"/json/1","author":"A"},{"name":"JSON Beta","url":"/json/2","author":"B"}]}""",
+            contentType = "application/json",
+        )
+
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parse(source, response),
+        ).value
+
+        assertEquals(listOf("JSON Alpha", "JSON Beta"), books.map { it.name })
+        assertEquals(
+            listOf("https://reader.example/json/1", "https://reader.example/json/2"),
+            books.map { it.bookUrl },
+        )
+        assertEquals(listOf("A", "B"), books.map { it.author })
+    }
+
+    @Test
     fun rejectsScalarExtractionSuffixOnBookList() {
         val source = source(
             """{"bookList":"div.book@text","name":"h2@text","bookUrl":"a@href"}""",
