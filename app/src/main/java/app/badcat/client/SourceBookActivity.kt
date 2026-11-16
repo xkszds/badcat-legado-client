@@ -32,6 +32,8 @@ class SourceBookActivity : Activity() {
     private lateinit var bookName: String
     private lateinit var status: TextView
     private lateinit var chapterList: LinearLayout
+    private lateinit var detailTitle: TextView
+    private lateinit var detailMetadata: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -82,13 +84,13 @@ class SourceBookActivity : Activity() {
                 cornerRadius = dpBook(8).toFloat()
             }
         }
-        val title = TextView(this).apply {
+        detailTitle = TextView(this).apply {
             text = bookName
             textSize = 21f
             setTextColor(Color.rgb(40, 44, 52))
             setTypeface(typeface, android.graphics.Typeface.BOLD)
         }
-        val metadata = TextView(this).apply {
+        detailMetadata = TextView(this).apply {
             text = "书源详情 · 目录加载中"
             textSize = 13f
             setTextColor(Color.GRAY)
@@ -101,8 +103,8 @@ class SourceBookActivity : Activity() {
             addView(LinearLayout(this@SourceBookActivity).apply {
                 orientation = LinearLayout.VERTICAL
                 setPadding(dpBook(14), 0, 0, 0)
-                addView(title)
-                addView(metadata)
+                addView(detailTitle)
+                addView(detailMetadata)
             }, LinearLayout.LayoutParams(0, -2, 1f))
         }
         val actions = LinearLayout(this).apply {
@@ -168,8 +170,8 @@ class SourceBookActivity : Activity() {
                     is EngineResult.Failure -> status.text = "详情加载失败（${detail.code}）：${detail.message}"
                     is EngineResult.Success -> {
                         val book = detail.value
-                        title.text = book.name.ifBlank { bookName }
-                        metadata.text = buildString {
+                        detailTitle.text = book.name.ifBlank { bookName }
+                        detailMetadata.text = buildString {
                             append(book.author?.takeIf { it.isNotBlank() }?.let { "作者：$it" } ?: "作者：未知")
                             book.latestChapter?.takeIf { it.isNotBlank() }?.let { append("\n最新：").append(it) }
                         }
