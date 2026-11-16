@@ -158,7 +158,7 @@ class MainActivity : Activity() {
         val shortcuts = listOf(
             Triple("书源管理", "导入与整理", { openSourceCatalog() }),
             Triple("搜索书籍", "多源检索", { openSearch() }),
-            Triple("阅读进度", "继续阅读", { Toast.makeText(this@MainActivity, "阅读记录入口正在接入", Toast.LENGTH_SHORT).show() }),
+            Triple("阅读记录", "继续上次阅读", { startActivity(Intent(this@MainActivity, ReadingHistoryActivity::class.java)) }),
             Triple("替换规则", "Legado正文规则", { startActivity(Intent(this@MainActivity, ReplaceRuleActivity::class.java)) }),
         )
         shortcuts.forEach { (title, subtitle, action) ->
