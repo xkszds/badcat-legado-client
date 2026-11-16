@@ -28,6 +28,17 @@ class SourceExploreServiceTest {
         }
     }
 
+    private fun gateway(client: SourceRequestClient) = SourceHttpGateway(
+        client,
+        embeddedScriptEvaluator = LegadoEmbeddedScriptEvaluator { script, key, page ->
+            when (script.trim()) {
+                "page" -> EngineResult.Success(page.toString())
+                "key" -> EngineResult.Success(key)
+                else -> EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Unexpected template")
+            }
+        },
+    )
+
     private fun source(
         enabled: Boolean = true,
         enabledExplore: Boolean = true,
@@ -52,7 +63,7 @@ class SourceExploreServiceTest {
     @Test
     fun exploresUsingExploreRulesAndResolvesRelativeBookUrls() = runBlocking {
         val client = FixtureClient()
-        val service = SourceExploreService(SourceHttpGateway(client))
+        val service = SourceExploreService(gateway(client))
 
         val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
             service.explore(source(), page = 3, keyword = "猫"),
