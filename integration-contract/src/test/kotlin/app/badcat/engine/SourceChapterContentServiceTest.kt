@@ -179,6 +179,41 @@ class SourceChapterContentServiceTest {
     }
 
     @Test
+    fun detectsChapterCycleWhenNextLinkTargetsRedirectDestination() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleContentJson = """{"content":"div#content","nextContentUrl":"a.next"}""",
+        )
+        val requested = mutableListOf<String>()
+        val canonicalUrl = "https://reader.example/canonical-chapter"
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                requested += request.url
+                return EngineResult.Success(
+                    SourceHttpResponse(
+                        200,
+                        canonicalUrl,
+                        body = """<div id="content"><p>First page.</p></div><a class="next" href="/canonical-chapter">Next</a>""",
+                    ),
+                )
+            }
+        }
+
+        val result = assertIs<EngineResult.Failure>(
+            SourceChapterContentService(SourceHttpGateway(client)).load(
+                source,
+                "https://reader.example/book/1",
+                BookChapter(0, "Chapter", "https://reader.example/chapter/1"),
+            ),
+        )
+
+        assertEquals(EngineErrorCode.PARSE, result.code)
+        assertEquals(listOf("https://reader.example/chapter/1"), requested)
+    }
+
+    @Test
     fun reportsChapterPaginationSafetyLimitInsteadOfReturningPartialText() = runBlocking {
         val source = BookSource(
             id = "fixture",
