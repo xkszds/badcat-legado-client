@@ -192,52 +192,6 @@ object LegadoRegexElementEvaluator {
     }
 
 
-    /**
-     * Regex rules have their own quoting semantics: double quotes are ordinary
-     * pattern characters (for example HTML attribute matchers), not selector
-     * string delimiters. Split only outside regex character classes and groups.
-     */
-    private fun splitRegexStages(expression: String): List<String> {
-        val stages = ArrayList<String>()
-        var start = 0
-        var index = 0
-        var escaped = false
-        var characterClassDepth = 0
-        var groupDepth = 0
-        while (index < expression.length) {
-            val char = expression[index]
-            if (escaped) {
-                escaped = false
-                index++
-                continue
-            }
-            if (char == '\\\\') {
-                escaped = true
-                index++
-                continue
-            }
-            when (char) {
-                '[' -> characterClassDepth++
-                ']' -> if (characterClassDepth > 0) characterClassDepth--
-                '(' -> if (characterClassDepth == 0) groupDepth++
-                ')' -> if (characterClassDepth == 0 && groupDepth > 0) groupDepth--
-            }
-            if (characterClassDepth == 0 && groupDepth == 0 && expression.startsWith("&&", index)) {
-                val stage = expression.substring(start, index).trim()
-                require(stage.isNotEmpty()) { "Regex stage must not be blank" }
-                stages += stage
-                index += 2
-                start = index
-            } else {
-                index++
-            }
-        }
-        val finalStage = expression.substring(start).trim()
-        require(finalStage.isNotEmpty()) { "Regex stage must not be blank" }
-        stages += finalStage
-        return stages
-    }
-
     private class RegexDeadlineExceeded : RuntimeException("Regex evaluation deadline exceeded")
 
     private class DeadlineCharSequence(
