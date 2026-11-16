@@ -134,7 +134,7 @@ internal object ReaderCssDocument {
         val value = raw.trim()
         if (value.isEmpty() || value.length > 240) return null
         if (value.contains('<') || value.contains("</")) return null
-        if (!value.matches(Regex("""[A-Za-z0-9_#.*\s>+~:()\[\]='\-]+"""))) return null
+        if (!value.matches(Regex("""[A-Za-z0-9_#.*,\s>+~:()\[\]='\-]+"""))) return null
         if (value.contains("url", true) || value.contains("expression", true) ||
             value.contains("@") || value.contains("{") || value.contains("}")) return null
         return value
@@ -148,7 +148,7 @@ internal object ReaderCssDocument {
             val property = declaration.substring(0, colon).trim().lowercase()
             val value = declaration.substring(colon + 1).trim()
             if (property !in allowedProperties || value.isEmpty() || value.length > 160) return@mapNotNull null
-            if (!value.matches(Regex("""[A-Za-z0-9_#.*\s>+~:()\[\]='\-]+"""))) return@mapNotNull null
+            if (!value.matches(Regex("""[A-Za-z0-9_#.*,\s>+~:()\[\]='\-]+"""))) return@mapNotNull null
             if (value.contains("url", true) || value.contains("expression", true) ||
                 value.contains("javascript", true) || value.contains("important", true)) return@mapNotNull null
             "$property:$value"
