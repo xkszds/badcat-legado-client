@@ -70,7 +70,8 @@ object CssRuleEvaluator {
         expression: String,
     ): EngineResult<List<String>> {
         val rawRule = expression.trim()
-        val rule = if (rawRule.startsWith("@CSS:", ignoreCase = true)) rawRule.substring(5).trim() else rawRule
+        val explicitCss = rawRule.startsWith("@CSS:", ignoreCase = true)
+        val rule = if (explicitCss) rawRule.substring(5).trim() else rawRule
         if (rule.isEmpty()) return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "CSS rule is blank")
         return runCatching {
             if (RuleCombinationEvaluator.hasNestedTopLevelOperator(rule)) {
@@ -97,7 +98,7 @@ object CssRuleEvaluator {
                     )
                     return@evaluate emptyList()
                 }
-                val indexedRule = LegadoElementIndex.parse(part)
+                val indexedRule = if (explicitCss) null else LegadoElementIndex.parse(part)
                 val selector = indexedRule?.selector ?: parsed.selector
                 val matched = Jsoup.parse(document.body, document.url).select(selector).map { it.outerHtml() }
                 if (indexedRule == null) matched else LegadoElementIndex.apply(matched, indexedRule)
