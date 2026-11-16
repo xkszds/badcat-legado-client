@@ -192,7 +192,7 @@ class ReaderCssActivity : Activity() {
         val name = EditText(this).apply { hint = "子选择器名称"; setText(old?.name.orEmpty()) }
         val note = EditText(this).apply { hint = "备注 / 用途"; setText(old?.note.orEmpty()) }
         val selector = EditText(this).apply {
-            hint = "CSS 选择器，例如 .content 或 #chapter"
+            hint = "CSS 选择器，例如 .reader-content、.reader-paragraph:nth-child(2)"
             setText(old?.selector.orEmpty())
         }
         val css = EditText(this).apply {
@@ -226,7 +226,7 @@ class ReaderCssActivity : Activity() {
                     }
                 })
                 refresh()
-                message.text = "子选择器已保存（当前仅保存配置，页面样式注入仍待接入）"
+                message.text = "子选择器已保存，返回阅读页即可应用"
             }.show()
     }
 
