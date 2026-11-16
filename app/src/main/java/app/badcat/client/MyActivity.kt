@@ -30,8 +30,8 @@ class MyActivity : Activity() {
         }
         val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         top.addView(label("修改资料", 18f, ink), LinearLayout.LayoutParams(0, dp(42), 1f))
-        top.addView(label("☼", 26f, blue))
-        top.addView(label("⚙", 25f, ink).apply { setPadding(dp(22), 0, 0, 0) })
+        top.addView(label("☼", 26f, blue).apply { setOnClickListener { toast("主题设置尚未接入") } })
+        top.addView(label("⚙", 25f, ink).apply { setPadding(dp(22), 0, 0, 0); setOnClickListener { toast("个人设置尚未接入") } })
         profile.addView(top)
         val identity = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         identity.addView(TextView(this).apply {
@@ -104,9 +104,11 @@ class MyActivity : Activity() {
                 type = "text/plain"
                 putExtra(Intent.EXTRA_TEXT, "坏坏猫阅读客户端")
             }, "分享"))
-            else -> Unit
+            else -> toast("该功能尚未接入")
         }
     }
+
+    private fun toast(message: String) = android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show()
 
     private fun label(value: String, size: Float, color: Int, bold: Boolean = false) = TextView(this).apply {
         text = value; textSize = size; setTextColor(color)
