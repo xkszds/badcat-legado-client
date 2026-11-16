@@ -123,13 +123,14 @@ object CssRuleEvaluator {
                 if (char == quote) quote = null
                 return@forEachIndexed
             }
-            when (char) {
-                '\\'', '"' -> quote = char
-                '[' -> bracketDepth++
-                ']' -> if (bracketDepth > 0) bracketDepth--
-                '(' -> parenthesisDepth++
-                ')' -> if (parenthesisDepth > 0) parenthesisDepth--
-                '@' -> if (bracketDepth == 0 && parenthesisDepth == 0) marker = index
+            when {
+                char == 39.toChar() || char == '"' -> quote = char
+                char == '[' -> bracketDepth++
+                char == ']' -> if (bracketDepth > 0) bracketDepth--
+                char == '(' -> parenthesisDepth++
+                char == ')' -> if (parenthesisDepth > 0) parenthesisDepth--
+                char == '@' && bracketDepth == 0 && parenthesisDepth == 0 -> marker = index
+            }
             }
         }
         return marker
