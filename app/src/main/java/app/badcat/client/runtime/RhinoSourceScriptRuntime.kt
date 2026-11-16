@@ -50,6 +50,15 @@ class RhinoSourceScriptRuntime(
             require(script.length + jsLib.length <= MAX_TOTAL_SCRIPT_CHARS) {
                 "Source JavaScript and library exceed the combined size limit"
             }
+            val jsLibHash = jsLib.takeIf(String::isNotBlank)?.let(::scriptHash)
+            val previousJsLibHash = sourceJsLibHashes[source.id]
+            if (previousJsLibHash != null && previousJsLibHash != jsLibHash) {
+                // A source may be edited in place. Reset its old global scope so
+                // top-level let/const declarations from the previous library do not collide.
+                sourceGlobals.remove(source.id)
+                ScriptBindings.removeSharedGlobalStates(GLOBAL_KEY_PREFIX + source.id)
+                sourceJsLibHashes.remove(source.id)
+            }
 
             val scope = ScriptBindings()
             bindings.forEach { (name, value) -> scope[name] = value }
@@ -60,10 +69,13 @@ class RhinoSourceScriptRuntime(
                 },
             )
             val result = withTimeout(timeoutMillis) {
-                // Legado jsLib is source-scoped shared code. Evaluate it in the same
-                // isolated scope before each rule so its functions are available to
-                // search/detail/TOC/content scripts without exposing host capabilities.
-                if (jsLib.isNotBlank()) RhinoScriptEngine.evalSuspend(jsLib, scope)
+                // jsLib declarations are installed once per source/library version.
+                // Re-evaluating top-level let/const declarations on every request
+                // would cause duplicate lexical declaration errors.
+                if (jsLibHash != null && sourceJsLibHashes[source.id] == null) {
+                    RhinoScriptEngine.evalSuspend(jsLib, scope)
+                    sourceJsLibHashes[source.id] = jsLibHash
+                }
                 RhinoScriptEngine.evalSuspend(script, scope)
             }
             when (result) {
@@ -103,6 +115,7 @@ class RhinoSourceScriptRuntime(
     fun clearSourceState(sourceId: String) {
         if (sourceId.isBlank()) return
         sourceGlobals.remove(sourceId)
+        sourceJsLibHashes.remove(sourceId)
         ScriptBindings.removeSharedGlobalStates(GLOBAL_KEY_PREFIX + sourceId)
     }
 
@@ -116,5 +129,11 @@ class RhinoSourceScriptRuntime(
         const val GLOBAL_KEY_PREFIX = "badcat-source:"
         val BINDING_NAME = Regex("[A-Za-z_$][A-Za-z0-9_$]{0,63}")
         val sourceGlobals = ConcurrentHashMap<String, com.script.SharedGlobalStateHandle>()
+        val sourceJsLibHashes = ConcurrentHashMap<String, String>()
+
+        fun scriptHash(script: String): String =
+            java.security.MessageDigest.getInstance("SHA-256")
+                .digest(script.toByteArray(Charsets.UTF_8))
+                .joinToString("") { byte -> "%02x".format(byte) }
     }
 }
