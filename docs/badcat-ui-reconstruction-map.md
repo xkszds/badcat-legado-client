@@ -132,3 +132,11 @@ User-directed changes:
 - New reader bookmarks also persist book/chapter labels for the manager. Existing bookmarks without labels remain readable using a URL-derived chapter fallback.
 
 The personal center currently shows only implemented routes: reading history, bookmark manager, source catalog and replacement rules. No fake download, messaging, sync, welfare or community actions are displayed. Visual fidelity to the screenshot and physical-device verification remain open.
+
+
+## 2026-11-16 follow-up: bookmark metadata integrity
+
+- Reader bookmark metadata now records the stable chapter title rather than reusing the transient status label. This prevents a later save after a bookmark jump from overwriting the chapter title with a status message.
+- New bookmarks record a save timestamp; the manager sorts newest first and removes timestamp metadata when a bookmark is deleted.
+- Existing bookmarks without timestamps remain visible and sort after timestamped entries; existing book/title fallbacks remain intact.
+- The saved scroll offset continues to be restored after the chapter document finishes loading. This is code-path verification only; WebView scroll restoration still requires physical-device testing with long chapters and different display settings.
