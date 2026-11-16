@@ -7,6 +7,7 @@ package app.badcat.engine
 class SourceSearchService(
     private val http: SourceHttpGateway,
     private val parser: CssSearchResultsParser = CssSearchResultsParser(),
+    private val scriptRuntime: SourceScriptRuntime? = null,
 ) {
     suspend fun search(
         source: BookSource,
@@ -30,6 +31,6 @@ class SourceSearchService(
                 "Search request for source '${source.id}' returned HTTP ${response.statusCode}",
             )
         }
-        return parser.parse(source, response)
+        return scriptRuntime?.let { parser.parseWithScripts(source, response, it) } ?: parser.parse(source, response)
     }
 }
