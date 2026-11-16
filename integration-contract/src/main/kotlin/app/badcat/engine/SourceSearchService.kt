@@ -31,6 +31,8 @@ class SourceSearchService(
                 "Search request for source '${source.id}' returned HTTP ${response.statusCode}",
             )
         }
-        return scriptRuntime?.let { parser.parseWithScripts(source, response, it) } ?: parser.parse(source, response)
+        return scriptRuntime?.let {
+            parser.parseWithScripts(source, response, it, key = keyword, page = page ?: 1)
+        } ?: parser.parse(source, response)
     }
 }

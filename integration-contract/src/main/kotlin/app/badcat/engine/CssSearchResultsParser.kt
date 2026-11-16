@@ -90,6 +90,8 @@ class CssSearchResultsParser {
         response: SourceHttpResponse,
         scriptRuntime: SourceScriptRuntime,
         stage: SourceRuleStage = SourceRuleStage.SEARCH,
+        key: String = "",
+        page: Int = 1,
     ): EngineResult<List<BookCandidate>> {
         require(stage == SourceRuleStage.SEARCH || stage == SourceRuleStage.EXPLORE) {
             "Search-result parser only supports search and explore stages"
@@ -102,13 +104,15 @@ class CssSearchResultsParser {
             ?: return unsupported(source, "missing bookList rule")
         var rootExpression = listRule.trim()
         if (rootExpression.contains("{{")) {
-            rootExpression = when (val expanded = expandEmbeddedRule(
+            rootExpression = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
                 source = source,
                 template = rootExpression,
                 result = response.body,
                 baseUrl = response.finalUrl,
                 ruleName = "bookList",
                 scriptRuntime = scriptRuntime,
+                key = key,
+                page = page,
             )) {
                 is EngineResult.Failure -> return expanded
                 is EngineResult.Success -> expanded.value
@@ -129,6 +133,8 @@ class CssSearchResultsParser {
                     "sourceId" to source.id,
                     "sourceName" to source.name,
                     "ruleName" to "bookList",
+                    "key" to key,
+                    "page" to page.toString(),
                 ),
             )) {
                 is EngineResult.Failure -> return result
@@ -171,13 +177,15 @@ class CssSearchResultsParser {
             val expression = rules[key]?.takeIf(String::isNotBlank) ?: return EngineResult.Success(null)
             var trimmed = expression.trim()
             if (trimmed.contains("{{")) {
-                trimmed = when (val expanded = expandEmbeddedRule(
+                trimmed = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
                     source = source,
                     template = trimmed,
                     result = itemHtml,
                     baseUrl = response.finalUrl,
                     ruleName = key,
                     scriptRuntime = scriptRuntime,
+                    key = key,
+                    page = page,
                 )) {
                     is EngineResult.Failure -> return expanded
                     is EngineResult.Success -> expanded.value
@@ -196,6 +204,8 @@ class CssSearchResultsParser {
                         "sourceId" to source.id,
                         "sourceName" to source.name,
                         "ruleName" to key,
+                        "key" to key,
+                        "page" to page.toString(),
                     ),
                 )) {
                     is EngineResult.Failure -> return result
@@ -254,47 +264,6 @@ class CssSearchResultsParser {
             candidates += BookCandidate(source.id, name, author, bookUrl, cover, latest, intro)
         }
         return EngineResult.Success(candidates.distinctBy { it.bookUrl })
-    }
-
-    private suspend fun expandEmbeddedRule(
-        source: BookSource,
-        template: String,
-        result: String,
-        baseUrl: String,
-        ruleName: String,
-        scriptRuntime: SourceScriptRuntime,
-    ): EngineResult<String> {
-        val evaluator = object : LegadoEmbeddedScriptEvaluator {
-            override suspend fun evaluate(
-                script: String,
-                key: String,
-                page: Int,
-            ): EngineResult<Any?> = evaluateWithResult(script, key, page, result)
-
-            override suspend fun evaluateWithResult(
-                script: String,
-                key: String,
-                page: Int,
-                result: String,
-            ): EngineResult<Any?> = when (val evaluated = scriptRuntime.evaluate(
-                source = source,
-                script = script,
-                bindings = mapOf(
-                    "result" to result,
-                    "baseUrl" to baseUrl,
-                    "sourceUrl" to source.id,
-                    "sourceId" to source.id,
-                    "sourceName" to source.name,
-                    "ruleName" to ruleName,
-                    "key" to key,
-                    "page" to page.toString(),
-                ),
-            )) {
-                is EngineResult.Failure -> evaluated
-                is EngineResult.Success -> EngineResult.Success(evaluated.value)
-            }
-        }
-        return LegadoEmbeddedUrlTemplate.resolve(template, key = "", evaluator = evaluator)
     }
 
     private fun field(
