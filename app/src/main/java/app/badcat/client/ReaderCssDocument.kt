@@ -49,12 +49,13 @@ internal object ReaderCssDocument {
         }
         val bg = String.format("#%06X", 0xFFFFFF and android.graphics.Color.WHITE)
         val fg = String.format("#%06X", 0xFFFFFF and android.graphics.Color.rgb(35, 35, 35))
+        val previewFontSize = 18f * context.resources.displayMetrics.scaledDensity
         return """
             <!doctype html><html><head><meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <style>
             html,body{margin:0;padding:0;background:$bg;color:$fg}
-            body{font-size:18px;line-height:1.7;font-family:sans-serif}
+            body{font-size:${previewFontSize}px;line-height:1.7;font-family:sans-serif}
             .reader-root{padding:16px 20px}
             .reader-paragraph{margin:0 0 1em;text-indent:2em}
             $css
