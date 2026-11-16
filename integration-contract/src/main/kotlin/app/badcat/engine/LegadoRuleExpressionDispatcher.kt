@@ -13,32 +13,66 @@ data class ResolvedLegadoRuleExpression(
 
 object LegadoRuleExpressionDispatcher {
     /** Collection-root rules use Legado's all-in-one regex mode when prefixed with ':' or @regex:. */
-    fun evaluateElements(document: SourceDocument, expression: String): EngineResult<List<String>> {
-        val rule = expression.trim()
-        return when {
-            rule.startsWith("@jsonpath:", true) || rule.startsWith("@json:", true) || rule.startsWith("$") ->
-                JsonPathRuleEvaluator.evaluateElements(document, rule)
-            rule.startsWith("@regex:", true) ->
-                LegadoRegexElementEvaluator.evaluate(document.body, rule.substringAfter(':'))
-            rule.startsWith(":") ->
-                LegadoRegexElementEvaluator.evaluate(document.body, rule.substring(1))
-            else -> CssRuleEvaluator.evaluateElements(document, rule)
+    fun evaluateElements(document: SourceDocument, expression: String): EngineResult<List<String>> =
+        evaluateCombined(expression) { branch ->
+            val rule = branch.trim()
+            when {
+                rule.startsWith("@jsonpath:", true) || rule.startsWith("@json:", true) || rule.startsWith("$") ->
+                    JsonPathRuleEvaluator.evaluateElements(document, rule)
+                rule.startsWith("@regex:", true) ->
+                    LegadoRegexElementEvaluator.evaluate(document.body, rule.substringAfter(':'))
+                rule.startsWith(":") ->
+                    LegadoRegexElementEvaluator.evaluate(document.body, rule.substring(1))
+                else -> CssRuleEvaluator.evaluateElements(document, rule)
+            }
         }
-    }
 
-    fun evaluate(document: SourceDocument, expression: String): EngineResult<List<String>> {
-        val scalarRule = expression.trim()
-        if (scalarRule.startsWith("@regex:", ignoreCase = true)) {
-            return LegadoRegexElementEvaluator.evaluateScalar(
-                document.body,
-                scalarRule.substringAfter(':'),
+    fun evaluate(document: SourceDocument, expression: String): EngineResult<List<String>> =
+        evaluateCombined(expression) { branch ->
+            val scalarRule = branch.trim()
+            if (scalarRule.startsWith("@regex:", ignoreCase = true)) {
+                LegadoRegexElementEvaluator.evaluateScalar(
+                    document.body,
+                    scalarRule.substringAfter(':'),
+                )
+            } else {
+                when (val resolved = resolve(branch)) {
+                    is EngineResult.Failure -> resolved
+                    is EngineResult.Success ->
+                        SelectorRuleEvaluator.evaluate(document, resolved.value.type, resolved.value.expression)
+                }
+            }
+        }
+
+    /**
+     * Evaluate combined selectors through the same dispatcher used by search,
+     * detail, TOC and content parsing. The first non-empty || branch wins;
+     * && concatenates results and %% interleaves rows.
+     */
+    private fun evaluateCombined(
+        expression: String,
+        evaluateBranch: (String) -> EngineResult<List<String>>,
+    ): EngineResult<List<String>> {
+        var branchFailure: EngineResult.Failure? = null
+        val values = try {
+            RuleCombinationEvaluator.evaluateNested(expression) { branch ->
+                when (val result = evaluateBranch(branch)) {
+                    is EngineResult.Success -> result.value
+                    is EngineResult.Failure -> {
+                        branchFailure = result
+                        emptyList()
+                    }
+                }
+            }
+        } catch (error: Exception) {
+            return EngineResult.Failure(
+                EngineErrorCode.UNSUPPORTED_RULE,
+                "Invalid combined Legado rule expression",
+                error,
             )
         }
-        val resolved = when (val result = resolve(expression)) {
-            is EngineResult.Failure -> return result
-            is EngineResult.Success -> result.value
-        }
-        return SelectorRuleEvaluator.evaluate(document, resolved.type, resolved.expression)
+        branchFailure?.let { return it }
+        return EngineResult.Success(values)
     }
 
     fun firstScalarValue(expression: String, values: List<String>): String? {
