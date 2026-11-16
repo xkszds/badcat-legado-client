@@ -5,6 +5,7 @@ class SourceTocService(
     private val http: SourceHttpGateway,
     private val parser: CssTocParser = CssTocParser(),
     private val maxPages: Int = 20,
+    private val scriptRuntime: SourceScriptRuntime? = null,
 ) {
     suspend fun load(source: BookSource, bookUrl: String, tocUrl: String? = null): EngineResult<List<BookChapter>> {
         if (maxPages < 1) {
@@ -43,7 +44,8 @@ class SourceTocService(
                     "TOC pagination contains a redirect URL cycle",
                 )
             }
-            val page = when (val result = parser.parse(source, response, bookUrl)) {
+            val page = when (val result = scriptRuntime?.let { parser.parseWithScripts(source, response, bookUrl, it) }
+                ?: parser.parse(source, response, bookUrl)) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
             }
