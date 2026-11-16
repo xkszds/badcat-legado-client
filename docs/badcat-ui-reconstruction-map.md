@@ -164,3 +164,12 @@ The personal center currently shows only implemented routes: reading history, bo
 - Cover requests accept only HTTP(S), use bounded connect/read timeouts, reject declared or streamed payloads above 2 MiB, validate image dimensions, and decode a downsampled bitmap. Failed or unavailable covers retain a local placeholder.
 - The introduction is collapsed to four lines by default and can be tapped to expand/collapse.
 - The book detail/catalog screen is still a structural reconstruction. Catalog filtering/sorting, original screenshot parity, and physical-device verification remain open.
+
+## 2026-11-16 follow-up: catalog, favorite covers, and reader settings
+
+- The book detail catalog now includes a chapter-title filter and a reversible order toggle. Filtering is performed against the loaded chapter list; chapter URLs and original chapter indices remain unchanged when opening a result.
+- Favorite records now optionally persist `coverUrl`. The field is backward-compatible with existing saved JSON records that do not contain it.
+- Search results pass the source cover URL into book detail. Once detail metadata loads, the latest cover URL is also written back to an existing favorite.
+- The favorites grid now loads source covers through a shared bounded image loader. Requests accept HTTP(S), enforce connect/read timeouts, cap streamed image bytes at 2 MiB, validate dimensions and downsample before display. Failed loads retain a placeholder.
+- Reader settings now show the current font size and line spacing and include a restore-default action for font size, line spacing and theme. Existing CSS profile editor and selector-level customization remain available.
+- Automated build/test status is tracked separately; none of these UI changes should be considered device-verified until installed and exercised on Android hardware.
