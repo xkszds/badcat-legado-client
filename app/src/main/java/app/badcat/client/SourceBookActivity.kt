@@ -689,6 +689,7 @@ class SourceChapterActivity : Activity() {
                 status.text = "阅读中 · ${currentIndex + 1}/${chapters.size.coerceAtLeast(1)} 章"
                 chapterTitleView.text = currentChapterTitle
                 currentChapterText = result.value.text
+                if (readingSessionStartedAt == 0L) readingSessionStartedAt = android.os.SystemClock.elapsedRealtime()
                 renderReaderDocument()
                 currentChapterUrl = chapter.url
                 preferences.edit().putString(readingProgressKey(sourceId, bookUrl), chapter.url).apply()
