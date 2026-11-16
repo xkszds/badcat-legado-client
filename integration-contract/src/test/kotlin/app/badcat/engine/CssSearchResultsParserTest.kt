@@ -281,4 +281,22 @@ class CssSearchResultsParserTest {
         assertEquals(listOf("https://reader.example/fallback"), books.map { it.bookUrl })
     }
 
+    @Test
+    fun fallsBackFromInvalidRegexBranchesToCssSearchRules() {
+        val source = source(
+            """{"bookList":"@regex:[||div.secondary","name":"@regex:[||h2@text","bookUrl":"a@href"}""",
+        )
+        val response = SourceHttpResponse(
+            statusCode = 200,
+            finalUrl = "https://reader.example/search",
+            body = """<div class="secondary"><h2>Fallback card</h2><a href="/fallback">open</a></div>""",
+        )
+
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parse(source, response),
+        ).value
+        assertEquals(listOf("Fallback card"), books.map { it.name })
+        assertEquals(listOf("https://reader.example/fallback"), books.map { it.bookUrl })
+    }
+
 }
