@@ -190,4 +190,24 @@ class CssSearchResultsParserTest {
         assertEquals(listOf("https://reader.example/book/1"), books.map { it.bookUrl })
     }
 
+
+    @Test
+    fun extractsRegexCaptureGroupFromScalarSearchFields() {
+        val source = source(
+            """{"bookList":"div.book","name":"@regex:<h3>(.*?)</h3>","bookUrl":"a@href"}""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/search",
+            body = """<div class="book"><h3>Regex Search Title</h3><a href="/book/regex">Read</a></div>""",
+        )
+
+        val book = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parse(source, response),
+        ).value.single()
+
+        assertEquals("Regex Search Title", book.name)
+        assertEquals("https://reader.example/book/regex", book.bookUrl)
+    }
+
 }
