@@ -260,4 +260,25 @@ class CssSearchResultsParserTest {
         assertEquals(listOf("https://reader.example/book/quoted"), books.map { it.bookUrl })
     }
 
+    @Test
+    fun appliesFallbackAndUnionOperatorsToRealSearchFields() {
+        val source = source(
+            """{"bookList":"div.missing||div.secondary","name":"h2.primary@text||h2.fallback@text","bookUrl":"a@href"}""",
+        )
+        val response = SourceHttpResponse(
+            statusCode = 200,
+            finalUrl = "https://reader.example/search",
+            body = """
+                <div class="secondary"><h2 class="fallback">Fallback title</h2><a href="/fallback">open</a></div>
+                <div class="primary"><h2 class="primary">Primary title</h2><a href="/primary">open</a></div>
+            """.trimIndent(),
+        )
+
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parse(source, response),
+        ).value
+        assertEquals(listOf("Fallback title"), books.map { it.name })
+        assertEquals(listOf("https://reader.example/fallback"), books.map { it.bookUrl })
+    }
+
 }
