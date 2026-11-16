@@ -429,6 +429,7 @@ class SourceChapterActivity : Activity() {
     private var currentChapterTitle: String = ""
     private var pendingScrollY: Int? = null
     private var pendingBookmarkY: Int? = null
+    private var lastScrollPositionPersistedAt: Long = 0L
     private var readerDocumentVersion: Long = 0L
     private var latestReaderBaseUrl: String = "https://reader.invalid/"
     private var readingSessionStartedAt: Long = 0L
@@ -456,6 +457,7 @@ class SourceChapterActivity : Activity() {
             override fun onScrollChanged(l: Int, t: Int, oldl: Int, oldt: Int) {
                 super.onScrollChanged(l, t, oldl, oldt)
                 updateReaderProgress()
+                persistScrollPositionIfNeeded()
             }
         }.apply {
             settings.javaScriptEnabled = false
@@ -612,8 +614,30 @@ class SourceChapterActivity : Activity() {
     private fun saveCurrentScrollPosition() {
         if (!::readerScroll.isInitialized || currentChapterUrl.isBlank()) return
         preferences.edit()
-            .putInt(chapterScrollPositionKey(sourceId, bookUrl, currentChapterUrl), readerScroll.scrollY)
+            .putInt(
+                chapterScrollPositionKey(sourceId, bookUrl, currentChapterUrl),
+                readerScroll.scrollY.coerceAtLeast(0),
+            )
             .apply()
+        lastScrollPositionPersistedAt = android.os.SystemClock.elapsedRealtime()
+    }
+
+    /**
+     * Persist during long reading sessions as well as on pause/chapter changes.
+     * This limits writes to roughly one per second while reducing progress loss
+     * if Android kills the process before onPause can run.
+     */
+    private fun persistScrollPositionIfNeeded() {
+        if (currentChapterUrl.isBlank()) return
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (now - lastScrollPositionPersistedAt < SCROLL_POSITION_SAVE_INTERVAL_MS) return
+        preferences.edit()
+            .putInt(
+                chapterScrollPositionKey(sourceId, bookUrl, currentChapterUrl),
+                body.scrollY.coerceAtLeast(0),
+            )
+            .apply()
+        lastScrollPositionPersistedAt = now
     }
 
     private fun restoreCurrentScrollPosition() {
@@ -847,6 +871,8 @@ class SourceChapterActivity : Activity() {
     }
 
     companion object {
+        private const val SCROLL_POSITION_SAVE_INTERVAL_MS = 1_000L
+
         const val EXTRA_SOURCE_ID = "reader_source_id"
         const val EXTRA_BOOK_URL = "reader_book_url"
         const val EXTRA_BOOK_NAME = "reader_book_name"
