@@ -207,7 +207,7 @@ class ReaderCssActivity : Activity() {
                     require(ruleName.length <= 100 && ruleNote.length <= 500) { "子选择器名称或备注过长" }
                     SelectorRule(ruleName, ruleNote, selector, css)
                 }
-                Profile(UUID.randomUUID().toString(), name, note, item.optBoolean("enabled", true), rules)
+                Profile(UUID.randomUUID().toString(), name, note, item.optBoolean("enabled", false), rules)
             }
         }.getOrElse {
             message.text = "导入失败：${it.message ?: "文件格式无效"}"
