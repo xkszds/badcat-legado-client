@@ -42,7 +42,7 @@ object FavoriteBooks {
                 }
             }
         }.getOrDefault(emptyList())
-        return listOf(FavoriteFolder(DEFAULT_FOLDER_ID, "默认书架")) + saved
+        return listOf(FavoriteFolder(DEFAULT_FOLDER_ID, "全部小说")) + saved
     }
 
     fun all(context: Context): List<FavoriteBook> {
@@ -132,7 +132,7 @@ class FavoritesActivity : Activity() {
             setBackgroundColor(Color.WHITE)
         }
         header.addView(TextView(this).apply {
-            text = "收藏夹"; textSize = 22f; typeface = Typeface.DEFAULT_BOLD; setTextColor(ink)
+            text = "小说"; textSize = 22f; typeface = Typeface.DEFAULT_BOLD; setTextColor(ink)
         }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         header.addView(actionText("＋ 文件夹") {
             promptFolderName("新建文件夹") { name ->
@@ -173,7 +173,7 @@ class FavoritesActivity : Activity() {
         val visible = allBooks.filter { it.folderId == selectedFolderId }
         if (visible.isEmpty()) {
             rootContent.addView(TextView(this).apply {
-                text = if (allBooks.isEmpty()) "还没有小说\n在书籍详情页点击「加入收藏」，小说就会出现在这里。" else "这个文件夹还没有小说"
+                text = if (allBooks.isEmpty()) "还没有小说\n在小说详情页点击「加入收藏」，小说就会出现在这里。" else "这个文件夹还没有小说"
                 textSize = 14f; setTextColor(muted); gravity = Gravity.CENTER
                 setPadding(dp(12), dp(38), dp(12), dp(38))
             })
@@ -198,7 +198,7 @@ class FavoritesActivity : Activity() {
         setOnLongClickListener { showFolderActions(folder); true }
         addView(TextView(this@FavoritesActivity).apply { text = "▰"; textSize = 24f; setTextColor(blue) })
         addView(TextView(this@FavoritesActivity).apply { text = folder.name; textSize = 12f; maxLines = 1; setTextColor(ink); gravity = Gravity.CENTER })
-        addView(TextView(this@FavoritesActivity).apply { text = "$count 本"; textSize = 10f; setTextColor(muted) })
+        addView(TextView(this@FavoritesActivity).apply { text = "$count 本小说"; textSize = 10f; setTextColor(muted) })
     }
 
     private fun bookCard(book: FavoriteBook): View = LinearLayout(this).apply {
@@ -228,7 +228,7 @@ class FavoritesActivity : Activity() {
                     refresh()
                 }
                 "删除文件夹" -> AlertDialog.Builder(this).setTitle("删除文件夹")
-                    .setMessage("删除后，文件夹内的书籍会移动到默认书架，不会删除书籍。")
+                    .setMessage("删除后，文件夹内的书籍会移动到「全部小说」，不会删除书籍。")
                     .setNegativeButton("取消", null)
                     .setPositiveButton("删除") { _, _ ->
                         FavoriteBooks.deleteFolder(this, folder.id)
@@ -258,7 +258,7 @@ class FavoritesActivity : Activity() {
 
     private fun showMoreMenu(anchor: View) {
         PopupMenu(this, anchor).apply {
-            menu.add("新建文件夹"); menu.add("管理文件夹"); menu.add("返回默认书架")
+            menu.add("新建文件夹"); menu.add("管理文件夹"); menu.add("返回全部小说")
             setOnMenuItemClickListener { item ->
                 when (item.title.toString()) {
                     "新建文件夹" -> promptFolderName("新建文件夹") { name ->
@@ -271,7 +271,7 @@ class FavoritesActivity : Activity() {
                         else AlertDialog.Builder(this@FavoritesActivity).setTitle("文件夹管理")
                             .setItems(folders.map { it.name }.toTypedArray()) { _, i -> showFolderActions(folders[i]) }.show()
                     }
-                    "返回默认书架" -> { selectedFolderId = FavoriteBooks.DEFAULT_FOLDER_ID; refresh() }
+                    "返回全部小说" -> { selectedFolderId = FavoriteBooks.DEFAULT_FOLDER_ID; refresh() }
                 }
                 true
             }
