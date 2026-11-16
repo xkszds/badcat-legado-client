@@ -165,6 +165,8 @@ class FavoritesActivity : Activity() {
                     selectedType = types[which]
                     title.text = selectedType
                     selectedFolderId = FavoriteBooks.DEFAULT_FOLDER_ID
+                    selectedBooks.clear()
+                    selectionMode = false
                     refresh()
                 }.show()
                 true
@@ -198,6 +200,10 @@ class FavoritesActivity : Activity() {
         if (folders.none { it.id == selectedFolderId }) selectedFolderId = FavoriteBooks.DEFAULT_FOLDER_ID
         val allBooks = FavoriteBooks.all(this)
         if (selectedType != "小说") {
+            selectedBooks.clear()
+            selectionMode = false
+            bottomActions.removeAllViews()
+            bottomActions.visibility = View.GONE
             rootContent.addView(TextView(this).apply {
                 text = "暂无" + selectedType + "收藏"
                 textSize = 15f
