@@ -64,3 +64,8 @@ See [the architecture plan](docs/architecture.md), [upstream baseline](docs/lega
 - [DEX 归档核对更正](docs/reference-archive-comparison-2026-11-16.md)
 - [原版 APK 页面差距报告](docs/badcat-apk-reverse-engineering-comparison.md)
 - [参考材料索引](reference/README.md)
+
+
+### Modern implementation policy
+
+The original app is the UI/behavior reference, not a legacy code template. The new client uses modern Kotlin/Android architecture (Compose where appropriate, ViewModel/StateFlow, repositories and explicit data migrations) while preserving the original navigation, visual language and user-visible behavior. See [modern implementation policy](docs/architecture.md#modern-implementation-policy-confirmed-2026-11-16).
