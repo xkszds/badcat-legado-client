@@ -31,7 +31,7 @@ APK 中还包含 `assets/libjiagu.so`，以及一个文件头不是标准 DEX ma
 | 搜索结果 | `SearchResultActivity`；`activity_search_result.xml`、`fragment_search_result.xml`、`fragment_search_result_root.xml`、`item_book_search_result*.xml`、`item_comic_search_result.xml` | 当前搜索结果由书源检索流程展示 | 缺原版结果页布局、来源/类型切换、结果卡片样式、空态和加载状态的完整重建 |
 | 书籍详情 | `BookDetailActivity`、`ComicDetailActivity`；`activity_book_detail.xml`、`layout_book_detail_head.xml` | `SourceBookActivity.kt` | 当前明确是“开发验证界面”，不能算原版详情页；收藏按钮和目录列表也尚未复刻原版结构 |
 | 章节目录 | `ChapterListActivity`；`activity_chapter_lsit.xml`、`frag_chapterlist_catalog.xml`、`frag_chapterlist_catalog_wap.xml`、`item_chapter_list.xml`、`frag_chapterlist_bookmark.xml` | 当前目录由书源详情流程直接展示 | 缺原版目录页、书签目录、来源切换和目录操作布局 |
-| 收藏/书架 | `FavoritesFolderActivity`；`FavoritesAdapter`、`FavoritesFolderEntity`、`DbBookShelf`、`DbBookCache`、`DbTxtCache`、`DbComicCache`；`activity_favorites.xml`、`activity_favorites_folder.xml`、`fragment_favorites_novel.xml`、`item_favorites_grid.xml`、`item_favorites_grid_folder.xml`、`dialog_favorites_folder.xml`、`dialog_favorites_rename.xml`、`popup_favorites_more.xml` | `FavoritesActivity.kt` 是单列纵向列表，数据保存在本地 SharedPreferences | 差距很大：没有原版文件夹层级、三列网格、文件夹创建/重命名/删除、顶部筛选和更多菜单，也没有原版数据库模型 |
+| 收藏/书架 | `FavoritesFolderActivity`；`FavoritesAdapter`、`FavoritesFolderEntity`、`DbBookShelf`、`DbBookCache`、`DbTxtCache`、`DbComicCache`；`activity_favorites.xml`、`activity_favorites_folder.xml`、`fragment_favorites_novel.xml`、`item_favorites_grid.xml`、`item_favorites_grid_folder.xml`、`dialog_favorites_folder.xml`、`dialog_favorites_rename.xml`、`popup_favorites_more.xml` | `FavoritesActivity.kt` 已改为三列文件夹/书籍卡片，支持新建、重命名、删除文件夹，移动/移出收藏 | 结构已向文件夹网格靠拢，但仍是新写的简化 UI；未核实原版卡片尺寸、排序筛选、弹窗细节、数据库实体字段、图片封面和空态布局，不能称为 UI 复刻 |
 | 阅读记录 | `ReadRecordActivity`、`ReadRecordAdapter`、`ReadRecordEntity`；`activity_read_record.xml`、`fragment_read_record.xml`、`item_read_record.xml` | `ReadingHistoryActivity.kt` 已保存书源/书籍/最近章节并支持继续阅读、删除历史 | 核心记录能力已存在，但当前页面是新写的简化页面，不是原版阅读记录 UI；数据模型也未与原版记录格式对应 |
 | 阅读器 | `WapReadActivity`、`XstLocalReadActivity`、`ComicTransReadActivity`；`activity_base_read.xml`、`activity_read_setting.xml`、`action_view_chapter_bar_wap.xml`、`layout_wapread.xml` | 当前书源章节阅读页与 CSS 自定义编辑器 | 阅读流程与 CSS 配置已有基础能力，但原版顶部/底部操作栏、翻页模式、阅读设置、字体/背景/亮度等尚未逐项对照复刻 |
 | 净化/广告规则 | `SettingAdBlockActivity`；`activity_ad_block.xml`、`item_setting_ad_block.xml`；DEX 中可见 `ADBlockUtils`、`AdBlockPresenter`、`DbAdMark`、`sens.Pp.PPRule`、`sens.AdMark.AdMarkRuleItem` 等符号 | 当前主要是 Legado 正文替换规则与受限 JS 执行器 | 不能等同原版广告净化。WebView 注入、AdMark 服务和 PPRule 的真实数据/执行行为仍未迁移 |
@@ -47,8 +47,8 @@ APK 中还包含 `assets/libjiagu.so`，以及一个文件头不是标准 DEX ma
 ## 4. 反编译与源码上传边界
 
 - APK 是编译后的二进制包，不包含可直接恢复的完整原始 Kotlin/Java 工程、Gradle 配置、构建脚本和全部资源源文件。
-- 本次环境可直接读取 APK 目录、Manifest、DEX 元数据/字符串和资源路径；当前没有 JADX、Apktool 等反编译器，也没有 Android 模拟器，因此**本报告不声称已经完成 Java/Kotlin 源码反编译或真机截图比对**。
-- 不把原始 APK、第三方 SDK 代码或未经授权的完整反编译源码复制到公开 GitHub 仓库。已上传的是本项目自行整理的结构核对报告和可验证元数据；原 APK 继续作为本地只读基线。
+- 本次环境可直接读取 APK 目录、Manifest、标准 DEX 元数据/字符串和资源路径。进一步核对确认：`classes.dex` 至 `classes5.dex` 是标准 DEX；`classes6.dex`、`classes7.dex` 体积很小；`assets/AdDex.4.0.1.dex` 是标准 DEX；`assets/A3AEECD8.dex` 不是标准 DEX 文件头；同时存在 `assets/libjiagu.so`。类名字符串确认 `FavoritesFolderActivity` / `FavoritesAdapter` 位于 `classes2.dex`，`FavoritesFolderEntity` 位于 `classes.dex`，`SearchResultActivity` 的类描述也在标准 DEX 中。当前容器没有 JADX、Apktool、aapt2 等反编译工具，且不能从网络下载工具，因此**尚未完成 Java/Kotlin 方法体反编译、二进制 XML 解码或真机截图比对**。
+- 用户已明确授权对其上传 APK 进行分析。该授权足以支持本项目对上传文件开展本地研究，但不自动证明 APK 内第三方 SDK/组件也可公开再分发。故当前仍不把原始 APK 或第三方完整反编译源码复制到公开 GitHub；已上传的是本项目自行整理的结构核对报告和可验证元数据。
 - 后续若补齐反编译工具，将优先提取并分析与本项目有关的页面/规则调用链；只把自写的适配代码、接口说明、测试和不含原版受保护实现的结构笔记提交到仓库。
 
 ## 5. 下一轮执行顺序
@@ -61,4 +61,4 @@ APK 中还包含 `assets/libjiagu.so`，以及一个文件头不是标准 DEX ma
 
 ## 6. 最近构建状态
 
-阅读记录修复提交 `287188b484a70ca22cd6500b3840c3c553af561b` 的 GitHub Actions run `43847173022` 已通过：契约测试、Rhino 宿主测试、Debug APK 组装和产物上传全部成功。产物大小 4,770,881 bytes，Artifact SHA-256 为 `cc5412547bf4638a45c76a73aaf5eb733f1996a39b7a07963ac34f8fe102196c`。这仅证明 CI 通过，不代表真机验收或原版 UI 复刻完成。
+书架改造提交 `519cdc24df6fc9b2e850164338a292043c1dedf7` 的 GitHub Actions run `43848666949` 已通过：契约测试、Rhino 宿主测试、Debug APK 组装和产物上传全部成功。上传的 APK Artifact 大小 4,782,473 bytes，Artifact SHA-256 为 `ba8e293e37fb8c91103e5d721eb3883d11b0ac88606995cb9314d1ff5e82dabe`。这仅证明 CI 通过，不代表真机验收或原版 UI 复刻完成。
