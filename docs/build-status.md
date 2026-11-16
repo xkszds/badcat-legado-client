@@ -1,3 +1,12 @@
+## Latest implementation update (2026-11-16)
+
+- Chapter-content pagination now records each successful HTTP response's final redirect URL as a visited pagination identity. A subsequent next-page link targeting that canonical URL is rejected as a cycle before issuing a duplicate request.
+- Added a regression fixture where the chapter request redirects to `/canonical-chapter` and the parsed next-page link points back to that final URL; the expected behavior is a typed `PARSE` failure after exactly one HTTP request.
+- Implementation commit: `6fd9cae85d8f`; regression test commit: `8f8d51e9b823`.
+- GitHub Actions runs #43826998580 and #43827018055 both completed contract tests and Android Debug APK assembly and uploaded `badcat-legado-debug` artifacts. At the last poll, both jobs were still in post-job cleanup, with no failed steps reported.
+- Run #43827018055 artifact: 4,722,555 bytes, SHA-256 `a7cef2a8ccb206dd9fe7f80773c8843058103b86c9d8461404bf01354e06c6ca`.
+- This confirms CI contract tests and APK assembly only. It does not confirm installation, runtime behavior on a physical device, full Legado rule compatibility, original Badcat UI parity, or original Badcat purification parity.
+
 
 ## Latest implementation update (2026-11-15)
 
