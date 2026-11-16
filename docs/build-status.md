@@ -1,3 +1,11 @@
+## Latest implementation update (2026-11-16)
+
+- Hardened chapter-content pagination against redirect-destination loops: the service now records each non-empty post-redirect URL in the visited set before parsing the next-page link. If `nextContentUrl` points back to that redirect destination, the engine returns a typed `PARSE` failure before making a duplicate HTTP request.
+- Added a deterministic regression fixture in `SourceChapterContentServiceTest` that simulates a chapter URL redirecting to a canonical URL and then pointing its next-page rule back to that same canonical URL. The expected request count is one.
+- Opened draft PR [#1](https://github.com/xkszds/badcat-legado-client/pull/1) on branch `automation/chapter-redirect-cycle-guard-20261116`. The original APK and user data were not modified.
+- Re-checked the official [Legado repository](https://github.com/LegadoTeam/legado) on 2026-11-16: its latest commit remains the pinned `330e606c4d57e08adc056ff8ab7a4132c784da9a`; the GPL-3.0 license, Gradle 8.14.4, AGP 8.13.2, Kotlin 2.4.20, compile SDK 36 and `:app` / `:modules:book` / `:modules:rhino` module boundary remain consistent with the pin. The upstream `App.kt` startup registers source/rule model wrappers for Rhino, confirming that the app-layer runtime initialization is not supplied by the two library modules alone.
+- Validation boundary: both edited code files were read back from the PR branch and their new content was confirmed. No CI run/status has yet been reported for this PR. The last verified CI debug build is run `43719899764` at commit `a89b7d494f16b7b7d587f95e649dc711a9f3aa96`, which is 110 commits behind the current main head; it does not validate this patch or current main. This environment has Java 21 but no Gradle executable or Android SDK, so no local Gradle test, APK assembly, installation or device test is claimed.
+
 
 ## Latest implementation update (2026-11-15)
 
