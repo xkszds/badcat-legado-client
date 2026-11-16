@@ -17,8 +17,8 @@ import android.widget.TextView
  * Modern, lightweight home shell.
  *
  * The original Badcat screen is the visual/behavioral reference. This screen
- * deliberately keeps the original four destinations and three shortcut roles,
- * while the search action continues to use the Legado-backed source engine.
+ * keeps the user-requested three destinations (Search, Favorites, Mine),
+ * while search continues to use the Legado-backed source engine.
  * Legacy implementation details are not copied into the new client.
  */
 class MainActivity : Activity() {
