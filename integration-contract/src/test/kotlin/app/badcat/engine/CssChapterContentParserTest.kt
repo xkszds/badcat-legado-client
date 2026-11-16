@@ -3,6 +3,7 @@ package app.badcat.engine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlinx.coroutines.runBlocking
 
 class CssChapterContentParserTest {
     @Test
@@ -39,6 +40,50 @@ class CssChapterContentParserTest {
         assertEquals("Chapter One", result.title)
         assertEquals("First paragraph.\nSecond paragraph.", result.text)
         assertEquals("https://reader.example/chapter/2", result.nextPageUrl)
+    }
+
+    @Test
+    fun executesJavaScriptContentAndNextPageRules() = runBlocking {
+        val source = BookSource(
+            id = "https://reader.example/",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleContentJson = """{
+                "content":"@js:extractContent(result)",
+                "title":"@js:extractTitle(result)",
+                "nextContentUrl":"@js:nextPage(result)"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/chapter/1",
+            body = "<article>raw page</article>",
+        )
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> = EngineResult.Success(
+                when (script) {
+                    "extractContent(result)" -> "<p>Script paragraph.</p>"
+                    "extractTitle(result)" -> "Script chapter"
+                    "nextPage(result)" -> "/chapter/2"
+                    else -> error("Unexpected script")
+                },
+            )
+        }
+        val content = assertIs<EngineResult.Success<ChapterContent>>(
+            CssChapterContentParser().parseWithScripts(
+                source,
+                response,
+                BookChapter(0, "Fallback", response.finalUrl),
+                runtime,
+            ),
+        ).value
+        assertEquals("Script chapter", content.title)
+        assertEquals("Script paragraph.", content.text)
+        assertEquals("https://reader.example/chapter/2", content.nextPageUrl)
     }
 
     @Test
