@@ -38,6 +38,27 @@ class ReaderCssSelectorScopeTest {
         assertEquals("", ReaderCssDocument.renderRules(listOf(".reader-content" to "color:#222222"), 0))
     }
     @Test
+    fun rendererStopsBeforeExceedingTheCssCharacterBudget() {
+        val rules = listOf(
+            ".reader-content" to "color:#111111",
+            ".reader-paragraph" to "color:#222222",
+        )
+        val firstRule = ".reader-root .reader-content{color:#111111}\n"
+        assertEquals(
+            firstRule,
+            ReaderCssDocument.renderRules(rules, maxRules = 10, maxChars = firstRule.length),
+        )
+    }
+
+    @Test
+    fun rendererProducesNoCssForNonPositiveCharacterBudget() {
+        assertEquals(
+            "",
+            ReaderCssDocument.renderRules(listOf(".reader-content" to "color:#222222"), maxChars = 0),
+        )
+    }
+
+    @Test
     fun scopesEachCommaSeparatedSelectorIndependently() {
         assertEquals(
             ".reader-root .reader-paragraph, .reader-root .reader-content",
