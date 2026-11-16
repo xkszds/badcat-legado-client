@@ -53,6 +53,43 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun evaluatesUrlScriptWithSafeSourceMetadataAndRequestValues() = runBlocking {
+        val source = BookSource(
+            id = "https://reader.example/source.json",
+            name = "Fixture source",
+            baseUrl = "https://reader.example/",
+        )
+        val evaluator = RhinoEmbeddedUrlScriptEvaluator(source, RhinoSourceScriptRuntime())
+
+        val result = evaluator.evaluateWithResult(
+            script = "baseUrl + '|' + sourceName + '|' + sourceId + '|' + key + '|' + page + '|' + result",
+            key = "cat",
+            page = 3,
+            result = "previous",
+        )
+
+        assertEquals(
+            "https://reader.example/|Fixture source|https://reader.example/source.json|cat|3|previous",
+            (result as EngineResult.Success).value,
+        )
+        RhinoSourceScriptRuntime().clearSourceState(source.id)
+    }
+
+    @Test
+    fun urlScriptsCannotAccessJavaRuntime() = runBlocking {
+        val source = BookSource(
+            id = "https://restricted.example/",
+            name = "Restricted source",
+            baseUrl = "https://restricted.example/",
+        )
+        val result = RhinoEmbeddedUrlScriptEvaluator(source, RhinoSourceScriptRuntime())
+            .evaluate("Packages.java.lang.Runtime.getRuntime().availableProcessors()", "", 1)
+
+        assertTrue(result is EngineResult.Failure)
+        RhinoSourceScriptRuntime().clearSourceState(source.id)
+    }
+
+    @Test
     fun rejectsOversizedSourceJsLibBeforeEvaluation() = runBlocking {
         val source = BookSource(
             id = "https://oversized.example/",
