@@ -43,6 +43,35 @@ class SourceSearchServiceTest {
     }
 
     @Test
+    fun executesJavaScriptFieldRulesOnEachSearchCardThroughProductionService() = runBlocking {
+        val client = FixtureClient()
+        val calls = mutableListOf<Pair<String, String>>()
+        val scriptRuntime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> {
+                calls += script to bindings["result"].orEmpty()
+                return EngineResult.Success("Script title")
+            }
+        }
+        val scriptedSource = source().copy(
+            ruleSearchJson = """{"bookList":"div.book","name":"@js:extractTitle(result)","bookUrl":"a@href"}""",
+        )
+        val result = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            SourceSearchService(SourceHttpGateway(client), scriptRuntime = scriptRuntime).search(
+                scriptedSource,
+                "https://reader.example/search?q=cat",
+            ),
+        )
+        assertEquals(listOf("Script title"), result.value.map { it.name })
+        assertEquals(1, calls.size)
+        assertEquals("extractTitle(result)", calls.single().first)
+        assertEquals(true, calls.single().second.contains("Search Novel"))
+    }
+
+    @Test
     fun parsesEnabledSourceSearchResults() = runBlocking {
         val client = FixtureClient()
         val result = assertIs<EngineResult.Success<List<BookCandidate>>>(
