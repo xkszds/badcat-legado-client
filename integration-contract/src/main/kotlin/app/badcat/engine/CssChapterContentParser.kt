@@ -27,7 +27,7 @@ class CssChapterContentParser {
             rules["nextContentUrl"],
         ).filterNotNull()
         if (expressions.any {
-                it.contains("@js", true) || it.contains("{{") || it.contains("}}")
+                it.contains("@js:", true) || it.contains("{{") || it.contains("}}")
             } || !rules["webJs"].isNullOrBlank() || !rules["callBackJs"].isNullOrBlank()) {
             return unsupported(source, "JavaScript or interpolation")
         }
