@@ -17,9 +17,10 @@ internal object ReaderCssDocument {
               background: Int, foreground: Int): String {
         val css = activeCss(context)
         val paragraphs = text.replace("\r\n", "\n").replace('\r', '\n')
-            .split(Regex("\n{2,}"))
+            .lineSequence()
+            .map(String::trim)
             .filter(String::isNotBlank)
-            .joinToString("") { "<p class=\"reader-paragraph\">${escape(it).replace("\n", "<br>")}</p>" }
+            .joinToString("") { "<p class=\"reader-paragraph\">${escape(it)}</p>" }
         val bg = String.format("#%06X", 0xFFFFFF and background)
         val fg = String.format("#%06X", 0xFFFFFF and foreground)
         return """
