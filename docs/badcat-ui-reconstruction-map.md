@@ -156,3 +156,11 @@ The personal center currently shows only implemented routes: reading history, bo
 - Dragging the slider seeks within the current chapter; previous/next buttons and the chapter catalog remain responsible for chapter navigation.
 - Progress is recalculated on WebView scroll and after document load/scroll restoration. Stored pixel scroll offsets remain the persistence source, avoiding a second conflicting progress store.
 - Physical-device validation is still required for very long chapters, font/CSS changes, and WebView content-height recalculation.
+
+
+## 2026-11-16 follow-up: book detail cover and introduction
+
+- Book detail now reads the cover URL from the engine's `BookDetail.coverUrl` field and loads it off the main thread.
+- Cover requests accept only HTTP(S), use bounded connect/read timeouts, reject declared or streamed payloads above 2 MiB, validate image dimensions, and decode a downsampled bitmap. Failed or unavailable covers retain a local placeholder.
+- The introduction is collapsed to four lines by default and can be tapped to expand/collapse.
+- The book detail/catalog screen is still a structural reconstruction. Catalog filtering/sorting, original screenshot parity, and physical-device verification remain open.
