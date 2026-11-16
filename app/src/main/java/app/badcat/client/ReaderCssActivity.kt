@@ -242,10 +242,33 @@ class ReaderCssActivity : Activity() {
                     .show()
             }
         }
+        val previewButton = Button(this).apply {
+            text = "预览当前样式"
+            setOnClickListener {
+                val preview = android.webkit.WebView(this@ReaderCssActivity).apply {
+                    settings.javaScriptEnabled = false
+                    settings.domStorageEnabled = false
+                    settings.allowFileAccess = false
+                    settings.allowContentAccess = false
+                    isVerticalScrollBarEnabled = true
+                    loadDataWithBaseURL(
+                        "https://reader.invalid/",
+                        ReaderCssDocument.preview(this@ReaderCssActivity, selector.text.toString(), css.text.toString()),
+                        "text/html", "UTF-8", null,
+                    )
+                }
+                android.app.AlertDialog.Builder(this@ReaderCssActivity)
+                    .setTitle("阅读页样式预览")
+                    .setView(preview)
+                    .setPositiveButton("关闭") { _, _ -> preview.destroy() }
+                    .show()
+            }
+        }
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(20, 4, 20, 4)
             addView(name); addView(note); addView(presetButton); addView(selector); addView(css)
+            addView(previewButton)
             addView(TextView(this@ReaderCssActivity).apply {
                 text = "仅支持增强阅读器生成的正文节点。示例：font-size: 18px; line-height: 1.8; color: #555555;"
                 textSize = 12f
