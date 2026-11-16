@@ -62,7 +62,6 @@ class RhinoSourceScriptRuntimeTest {
 
         assertTrue(result is EngineResult.Failure)
     }
-}
     @Test
     fun initializesLexicalJsLibDeclarationsOnlyOnce() = runBlocking {
         val runtime = RhinoSourceScriptRuntime()
@@ -80,4 +79,4 @@ class RhinoSourceScriptRuntimeTest {
         assertEquals("hello two", (second as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
-
+}
