@@ -18,6 +18,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import app.badcat.client.runtime.BadcatReadingEngineFactory
 import app.badcat.engine.BookChapter
+import app.badcat.engine.ChapterCatalogQuery
 import app.badcat.engine.EngineResult
 import app.badcat.engine.ReadingEngine
 import java.util.concurrent.Executors
@@ -355,8 +356,7 @@ class SourceBookActivity : Activity() {
         if (!::chapterRows.isInitialized) return
         chapterRows.removeAllViews()
         val query = if (::catalogSearch.isInitialized) catalogSearch.text.toString().trim() else ""
-        val matching = allChapters.filter { query.isBlank() || it.title.contains(query, ignoreCase = true) }
-        val ordered = if (reverseCatalog) matching.asReversed() else matching
+        val ordered = ChapterCatalogQuery.apply(allChapters, query, reverseCatalog)
         if (ordered.isEmpty()) {
             chapterRows.addView(TextView(this).apply {
                 text = if (query.isBlank()) "目录为空" else "没有匹配的章节"
