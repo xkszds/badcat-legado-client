@@ -359,10 +359,15 @@ class ReaderCssActivity : Activity() {
                     7 -> if (profile.rules.isEmpty()) message.text = "请先添加子选择器" else
                         android.app.AlertDialog.Builder(this).setTitle("选择要复制的子选择器")
                             .setItems(labels) { _, index ->
-                                val source = profile.rules.getOrNull(index) ?: return@setItems
+                                val latest = readProfiles().firstOrNull { it.id == id } ?: return@setItems
+                                if (latest.rules.size >= MAX_RULES_PER_PROFILE) {
+                                    message.text = "每套方案最多 $MAX_RULES_PER_PROFILE 条子选择器"
+                                    return@setItems
+                                }
+                                val source = latest.rules.getOrNull(index) ?: return@setItems
                                 val copy = source.copy(
-                                    name = (source.name.ifBlank { "子选择器" }) + " 副本",
-                                    note = source.note,
+                                    name = ((source.name.ifBlank { "子选择器" }) + " 副本").take(100),
+                                    note = source.note.take(500),
                                 )
                                 saveProfiles(readProfiles().map { p ->
                                     if (p.id == id) p.copy(rules = p.rules.toMutableList().apply { add(index + 1, copy) })
