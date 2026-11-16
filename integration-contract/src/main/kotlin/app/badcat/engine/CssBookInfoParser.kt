@@ -51,7 +51,7 @@ class CssBookInfoParser {
             return when (val result = LegadoRuleExpressionDispatcher.evaluate(document, extractionRule)) {
                 is EngineResult.Failure -> result
                 is EngineResult.Success -> EngineResult.Success(
-                    (if (extractionRule.trim().startsWith("@regex:", ignoreCase = true)) {\n                        result.value.getOrNull(1) ?: result.value.firstOrNull()\n                    } else {\n                        result.value.firstOrNull()\n                    })?.trim()?.takeIf(String::isNotEmpty),
+                    LegadoRuleExpressionDispatcher.firstScalarValue(extractionRule, result.value)\n                        ?.trim()?.takeIf(String::isNotEmpty),
                 )
             }
         }
