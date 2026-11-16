@@ -59,6 +59,9 @@ data class LegadoBookSource(
 object LegadoBookSourceCodec {
 
     const val MAX_IMPORT_BYTES = 5 * 1024 * 1024
+    const val MAX_SOURCES = 2_000
+    const val MAX_JSON_NESTING = 64
+    const val MAX_FIELDS_PER_SOURCE = 512
 
     /** Decode bounded UTF-8 documents without silently replacing malformed byte sequences. */
     fun decodeUtf8ToString(bytes: ByteArray): String {
@@ -76,11 +79,15 @@ object LegadoBookSourceCodec {
         require(json.toByteArray(Charsets.UTF_8).size <= MAX_IMPORT_BYTES) {
             "Book-source JSON exceeds the 5 MiB import limit"
         }
+        validateJsonNesting(json)
         val root = JsonParser.parseString(json)
         val entries = when {
             root.isJsonArray -> root.asJsonArray.toList()
             root.isJsonObject -> listOf(root)
             else -> throw IllegalArgumentException("Book source JSON must be an object or array")
+        }
+        require(entries.size <= MAX_SOURCES) {
+            "Book-source document exceeds the $MAX_SOURCES source limit"
         }
 
         val decoded = entries.mapIndexed { index, element ->
@@ -106,16 +113,60 @@ object LegadoBookSourceCodec {
     }
 
     fun encode(sources: List<LegadoBookSource>): String {
+        require(sources.size <= MAX_SOURCES) {
+            "Book-source export exceeds the $MAX_SOURCES source limit"
+        }
+        val duplicateIds = sources.groupingBy { it.sourceId }.eachCount().filterValues { it > 1 }.keys
+        require(duplicateIds.isEmpty()) {
+            "Duplicate bookSourceUrl values: \${duplicateIds.joinToString()}"
+        }
         val array = JsonArray()
         sources.forEach { source ->
             val parsed = JsonParser.parseString(source.rawJson)
             require(parsed.isJsonObject) { "Stored source JSON is not an object: ${source.sourceId}" }
             array.add(parsed)
         }
-        return array.toString()
+        return array.toString().also { encoded ->
+            require(encoded.toByteArray(Charsets.UTF_8).size <= MAX_IMPORT_BYTES) {
+                "Book-source export exceeds the 5 MiB size limit"
+            }
+        }
+    }
+
+    private fun validateJsonNesting(json: String) {
+        var depth = 0
+        var inString = false
+        var escaped = false
+        for (char in json) {
+            if (inString) {
+                when {
+                    escaped -> escaped = false
+                    char == '\\' -> escaped = true
+                    char == '"' -> inString = false
+                }
+                continue
+            }
+            when (char) {
+                '"' -> inString = true
+                '{', '[' -> {
+                    depth++
+                    require(depth <= MAX_JSON_NESTING) {
+                        "Book-source JSON exceeds the maximum nesting depth of $MAX_JSON_NESTING"
+                    }
+                }
+                '}', ']' -> {
+                    depth--
+                    require(depth >= 0) { "Book-source JSON has unbalanced container delimiters" }
+                }
+            }
+        }
+        require(!inString && depth == 0) { "Book-source JSON has unterminated strings or containers" }
     }
 
     private fun decodeObject(source: JsonObject, index: Int): LegadoBookSource {
+        require(source.entrySet().size <= MAX_FIELDS_PER_SOURCE) {
+            "Book source at index $index exceeds the $MAX_FIELDS_PER_SOURCE field limit"
+        }
         validateKnownFieldTypes(source, index)
         val sourceId = source.stringOrNull("bookSourceUrl")
             ?.takeIf(String::isNotBlank)
