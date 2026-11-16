@@ -219,7 +219,13 @@ class FavoritesActivity : Activity() {
             })
         }
         setOnLongClickListener { showBookActions(book); true }
-        addView(TextView(this@FavoritesActivity).apply { text = "📖"; textSize = 28f; setPadding(0, dp(3), 0, dp(5)) })
+        addView(android.widget.ImageView(this@FavoritesActivity).apply {
+            contentDescription = "小说封面"
+            scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+            background = rounded(Color.rgb(235, 239, 245), 5)
+            clipToOutline = true
+            BookCoverLoader.load(this, book.coverUrl)
+        }, LinearLayout.LayoutParams(dp(72), dp(94)))
         addView(TextView(this@FavoritesActivity).apply { text = book.name; textSize = 12f; maxLines = 2; gravity = Gravity.CENTER; setTextColor(ink) })
         addView(TextView(this@FavoritesActivity).apply { text = book.sourceId; textSize = 9f; maxLines = 1; setTextColor(muted); setPadding(0, dp(4), 0, 0) })
     }
