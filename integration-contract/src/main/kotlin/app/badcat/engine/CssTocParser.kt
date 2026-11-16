@@ -90,7 +90,9 @@ class CssTocParser {
                     }
                     return result
                 }
-                is EngineResult.Success -> result.value
+                is EngineResult.Success -> listOfNotNull(
+                    LegadoRuleExpressionDispatcher.firstScalarValue(normalizeLinkExpression(nextRule), result.value),
+                )
             }
             for (value in values.filter(String::isNotBlank)) {
                 val url = runCatching { WebUrlResolver.resolve(response.finalUrl, value) }.getOrElse {
