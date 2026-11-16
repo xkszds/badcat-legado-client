@@ -12,6 +12,7 @@ class SourceChapterContentService(
     private val maxPages: Int = 20,
     private val cache: ChapterContentCache? = null,
     private val cacheTtlMillis: Long = 12L * 60 * 60 * 1000,
+    private val scriptRuntime: SourceScriptRuntime? = null,
 ) {
     suspend fun load(
         source: BookSource,
@@ -75,7 +76,8 @@ class SourceChapterContentService(
                     "Chapter content pagination contains a redirect URL cycle for source '${source.id}'",
                 )
             }
-            val parsed = when (val result = parser.parse(source, response, chapter)) {
+            val parsed = when (val result = scriptRuntime?.let { parser.parseWithScripts(source, response, chapter, it) }
+                ?: parser.parse(source, response, chapter)) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
             }
