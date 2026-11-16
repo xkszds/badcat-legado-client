@@ -78,3 +78,16 @@ Treat exact colors, spacing, icon assets, typography and control states as value
 - Do not remove original native libraries or protection-related components based solely on names. Do not bypass signatures, integrity checks or access controls.
 - Do not claim an APK can replace the installed original app. A separately signed test build needs an isolated package identity/device and must not overwrite user data.
 - Preserve the original APK and research inputs unchanged.
+
+
+## Modern implementation, same experience
+
+The old application is not a code template. Rebuild its visible behavior with modern Kotlin/Android components while treating the screenshots and observed flows as acceptance criteria.
+
+- Compose is preferred for new screen implementation and state-driven UI, with interoperability for existing Android Views/WebView where necessary.
+- Preserve the original visual language rather than accepting default Material 3 colors, shapes, typography or spacing.
+- Use ViewModel + StateFlow for screen state, repositories for data access and the existing engine adapter for Legado operations.
+- Migrate existing SharedPreferences data deliberately before moving structured entities to Room or settings to DataStore.
+- Keep rendering and UI independent from source parsing, network requests and replacement rules.
+- Add screenshot tests for layout fidelity and UI tests for actions/navigation. A screen is not complete merely because it compiles.
+- Reuse original assets only where their use is authorized and technically appropriate; otherwise recreate equivalent assets without changing their visual role.
