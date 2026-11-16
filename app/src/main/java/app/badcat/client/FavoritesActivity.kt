@@ -222,7 +222,8 @@ class FavoritesActivity : Activity() {
         }
         sectionTitle(if (selectedFolderId == FavoriteBooks.DEFAULT_FOLDER_ID) "小说" else folders.first { it.id == selectedFolderId }.name)
         } else { selectedFolderId = FavoriteBooks.DEFAULT_FOLDER_ID }
-        val sortByAddedAt = getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).getBoolean("sort_newest_first", true)\n        val visible = favoriteBooksInFolder(allBooks, selectedFolderId).let { books -> if (sortByAddedAt) books.sortedByDescending { it.addedAt } else books }
+        val sortByAddedAt = getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).getBoolean("sort_newest_first", true)
+        val visible = favoriteBooksInFolder(allBooks, selectedFolderId).let { books -> if (sortByAddedAt) books.sortedByDescending { it.addedAt } else books }
         if (visible.isEmpty()) {
             rootContent.addView(TextView(this).apply {
                 text = if (allBooks.isEmpty()) "还没有小说\n在小说详情页点击「加入收藏」，小说就会出现在这里。" else "这个文件夹还没有小说"
