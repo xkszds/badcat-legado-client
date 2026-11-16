@@ -88,8 +88,10 @@ class CssTocParserTest {
             contentType = "application/json",
         )
 
+        val parsed = CssTocParser().parse(source, response, "https://reader.example/book")
         val page = assertIs<EngineResult.Success<ParsedTocPage>>(
-            CssTocParser().parse(source, response, "https://reader.example/book"),
+            parsed,
+            "JSONPath TOC parsing returned: $parsed",
         ).value
 
         assertEquals(listOf("JSON Chapter 1", "JSON Chapter 2"), page.chapters.map { it.title })
