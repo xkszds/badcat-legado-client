@@ -24,6 +24,12 @@ import java.util.UUID
 data class FavoriteFolder(val id: String, val name: String)
 data class FavoriteBook(val sourceId: String, val bookUrl: String, val name: String, val folderId: String = FavoriteBooks.DEFAULT_FOLDER_ID, val coverUrl: String? = null)
 
+internal fun favoriteBooksInFolder(books: List<FavoriteBook>, folderId: String): List<FavoriteBook> =
+    if (folderId == FavoriteBooks.DEFAULT_FOLDER_ID) books else books.filter { it.folderId == folderId }
+
+internal fun favoriteBookCountInFolder(books: List<FavoriteBook>, folderId: String): Int =
+    if (folderId == FavoriteBooks.DEFAULT_FOLDER_ID) books.size else books.count { it.folderId == folderId }
+
 object FavoriteBooks {
     private const val PREFS = "badcat_favorites"
     private const val KEY = "books"
@@ -168,14 +174,14 @@ class FavoritesActivity : Activity() {
         folders.chunked(3).forEach { group ->
             val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
             group.forEach { folder ->
-                row.addView(folderCard(folder, allBooks.count { it.folderId == folder.id }),
+                row.addView(folderCard(folder, favoriteBookCountInFolder(allBooks, folder.id)),
                     LinearLayout.LayoutParams(0, dp(94), 1f).apply { marginEnd = dp(7); bottomMargin = dp(8) })
             }
             repeat(3 - group.size) { row.addView(View(this), LinearLayout.LayoutParams(0, dp(94), 1f).apply { marginEnd = dp(7) }) }
             rootContent.addView(row)
         }
         sectionTitle(if (selectedFolderId == FavoriteBooks.DEFAULT_FOLDER_ID) "小说" else folders.first { it.id == selectedFolderId }.name)
-        val visible = allBooks.filter { it.folderId == selectedFolderId }
+        val visible = favoriteBooksInFolder(allBooks, selectedFolderId)
         if (visible.isEmpty()) {
             rootContent.addView(TextView(this).apply {
                 text = if (allBooks.isEmpty()) "还没有小说\n在小说详情页点击「加入收藏」，小说就会出现在这里。" else "这个文件夹还没有小说"
