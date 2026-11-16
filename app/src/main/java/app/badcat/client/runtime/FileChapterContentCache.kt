@@ -63,9 +63,6 @@ class FileChapterContentCache(context: Context) : ChapterContentCache {
         value: CachedChapterContent,
     ) = withContext(Dispatchers.IO) {
         chapterCacheMutex.withLock {
-            if (value.content.text.toByteArray(Charsets.UTF_8).size > MAX_ENTRY_BYTES) {
-                return@withLock
-            }
             val target = AtomicFile(cacheFile(sourceId, bookUrl, chapterUrl))
             val json = JSONObject().apply {
                 put("title", value.content.title)
@@ -74,9 +71,11 @@ class FileChapterContentCache(context: Context) : ChapterContentCache {
                 put("previousChapterUrl", value.content.previousChapterUrl)
                 put("savedAt", value.savedAtEpochMillis)
             }
+            val encoded = json.toString().toByteArray(Charsets.UTF_8)
+            if (encoded.size > MAX_ENTRY_BYTES) return@withLock
             val output = target.startWrite()
             try {
-                output.write(json.toString().toByteArray(Charsets.UTF_8))
+                output.write(encoded)
                 output.flush()
                 target.finishWrite(output)
                 prune()
