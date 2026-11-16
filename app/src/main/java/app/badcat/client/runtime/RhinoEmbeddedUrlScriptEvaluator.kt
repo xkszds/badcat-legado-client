@@ -17,6 +17,12 @@ class RhinoEmbeddedUrlScriptEvaluator(
     override suspend fun evaluate(script: String, key: String, page: Int): EngineResult<Any?> =
         evaluateWithResult(script, key, page, "")
 
+    override suspend fun getString(key: String): EngineResult<String?> =
+        runtime.getString(source, key)
+
+    override suspend fun putString(key: String, value: String): EngineResult<Unit> =
+        runtime.putString(source, key, value)
+
     override suspend fun evaluateWithResult(
         script: String,
         key: String,

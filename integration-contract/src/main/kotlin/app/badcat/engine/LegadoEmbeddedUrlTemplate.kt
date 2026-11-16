@@ -18,6 +18,14 @@ fun interface LegadoEmbeddedScriptEvaluator {
         page: Int,
         result: String,
     ): EngineResult<Any?> = evaluate(script, key, page)
+
+    /** Optional persistent source variables used by AnalyzeRule @get:{key}. */
+    suspend fun getString(key: String): EngineResult<String?> =
+        EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Persistent source variables are unavailable")
+
+    /** Optional persistent source variables used by AnalyzeRule @put:{...}. */
+    suspend fun putString(key: String, value: String): EngineResult<Unit> =
+        EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Persistent source variables are unavailable")
 }
 
 object LegadoEmbeddedUrlTemplate {

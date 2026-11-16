@@ -106,4 +106,32 @@ class LegadoEmbeddedUrlTemplateTest {
         assertEquals("saved", values["token"])
     }
 
+    @Test
+    fun expandsPersistentGetAndPutTokensInUrlRules() = kotlinx.coroutines.runBlocking {
+        val values = mutableMapOf<String, String>()
+        val evaluator = object : LegadoEmbeddedScriptEvaluator {
+            override suspend fun evaluate(script: String, key: String, page: Int): EngineResult<Any?> =
+                EngineResult.Success("rendered")
+
+            override suspend fun getString(key: String): EngineResult<String?> =
+                EngineResult.Success(values[key])
+
+            override suspend fun putString(key: String, value: String): EngineResult<Unit> {
+                values[key] = value
+                return EngineResult.Success(Unit)
+            }
+        }
+
+        val result = LegadoEmbeddedRuleTemplate.resolve(
+            template = """@put:{"session":"ready"}https://example.test/{{path}}?session=@get:{session}""",
+            key = "book",
+            page = 2,
+            result = "https://example.test/",
+            evaluator = evaluator,
+        )
+
+        assertEquals("https://example.test/rendered?session=ready", assertIs<EngineResult.Success<String>>(result).value)
+        assertEquals("ready", values["session"])
+    }
+
 }
