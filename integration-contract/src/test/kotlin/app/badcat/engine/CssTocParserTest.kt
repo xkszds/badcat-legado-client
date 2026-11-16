@@ -256,4 +256,28 @@ class CssTocParserTest {
         assertEquals(listOf("Regex Chapter"), page.chapters.map { it.title })
     }
 
+
+    @Test
+    fun extractsRegexCaptureGroupForNextTocPageUrl() {
+        val source = BookSource(
+            id = "fixture", name = "Fixture", baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"ul.chapters li",
+                "chapterName":"a@text",
+                "chapterUrl":"a@href",
+                "nextTocUrl":"@regex:class=\\"next\\" href=\\"([^\\"]+)\\""
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200, "https://reader.example/catalog?page=1",
+            body = """<ul class="chapters"><li><a href="/chapter/1">One</a></li></ul><a class="next" href="/catalog?page=2">Next</a>""",
+        )
+
+        val page = assertIs<EngineResult.Success<ParsedTocPage>>(
+            CssTocParser().parse(source, response, "https://reader.example/book"),
+        ).value
+
+        assertEquals(listOf("https://reader.example/catalog?page=2"), page.nextPageUrls)
+    }
+
 }
