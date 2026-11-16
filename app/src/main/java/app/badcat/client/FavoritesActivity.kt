@@ -22,7 +22,7 @@ import org.json.JSONObject
 import java.util.UUID
 
 data class FavoriteFolder(val id: String, val name: String)
-data class FavoriteBook(val sourceId: String, val bookUrl: String, val name: String, val folderId: String = FavoriteBooks.DEFAULT_FOLDER_ID)
+data class FavoriteBook(val sourceId: String, val bookUrl: String, val name: String, val folderId: String = FavoriteBooks.DEFAULT_FOLDER_ID, val coverUrl: String? = null)
 
 object FavoriteBooks {
     private const val PREFS = "badcat_favorites"
@@ -55,7 +55,7 @@ object FavoriteBooks {
                 val url = item.optString("bookUrl")
                 if (source.isBlank() || url.isBlank()) null
                 else FavoriteBook(source, url, item.optString("name").ifBlank { "未命名书籍" },
-                    item.optString("folderId").ifBlank { DEFAULT_FOLDER_ID })
+                    item.optString("folderId").ifBlank { DEFAULT_FOLDER_ID }, item.optString("coverUrl").takeIf { it.isNotBlank() })
             }
         }.getOrDefault(emptyList())
     }
@@ -63,10 +63,15 @@ object FavoriteBooks {
     fun contains(context: Context, sourceId: String, bookUrl: String): Boolean =
         all(context).any { it.sourceId == sourceId && it.bookUrl == bookUrl }
 
-    fun add(context: Context, sourceId: String, bookUrl: String, name: String): Boolean {
+    fun add(context: Context, sourceId: String, bookUrl: String, name: String, coverUrl: String? = null): Boolean {
         if (sourceId.isBlank() || bookUrl.isBlank() || contains(context, sourceId, bookUrl)) return false
-        save(context, all(context).toMutableList().apply { add(0, FavoriteBook(sourceId, bookUrl, name.ifBlank { "未命名书籍" })) })
+        save(context, all(context).toMutableList().apply { add(0, FavoriteBook(sourceId, bookUrl, name.ifBlank { "未命名书籍" }, coverUrl = coverUrl)) })
         return true
+    }
+
+    fun updateCover(context: Context, sourceId: String, bookUrl: String, coverUrl: String?) {
+        if (coverUrl.isNullOrBlank()) return
+        save(context, all(context).map { if (it.sourceId == sourceId && it.bookUrl == bookUrl) it.copy(coverUrl = coverUrl) else it })
     }
 
     fun remove(context: Context, sourceId: String, bookUrl: String) {
@@ -106,7 +111,7 @@ object FavoriteBooks {
 
     private fun save(context: Context, books: List<FavoriteBook>) {
         val json = JSONArray()
-        books.forEach { json.put(JSONObject().put("sourceId", it.sourceId).put("bookUrl", it.bookUrl).put("name", it.name).put("folderId", it.folderId)) }
+        books.forEach { json.put(JSONObject().put("sourceId", it.sourceId).put("bookUrl", it.bookUrl).put("name", it.name).put("folderId", it.folderId).put("coverUrl", it.coverUrl.orEmpty())) }
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY, json.toString()).apply()
     }
 }
@@ -210,6 +215,7 @@ class FavoritesActivity : Activity() {
                 putExtra(SourceBookActivity.EXTRA_SOURCE_ID, book.sourceId)
                 putExtra(SourceBookActivity.EXTRA_BOOK_URL, book.bookUrl)
                 putExtra(SourceBookActivity.EXTRA_BOOK_NAME, book.name)
+                putExtra(SourceBookActivity.EXTRA_BOOK_COVER_URL, book.coverUrl)
             })
         }
         setOnLongClickListener { showBookActions(book); true }
