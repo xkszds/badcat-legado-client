@@ -47,6 +47,22 @@ class LegadoRegexElementEvaluatorTest {
     }
 
     @Test
+    fun dispatcherInterleavesRegexCollectionBranches() {
+        val document = SourceDocument(
+            url = "https://example.test/books",
+            body = "<li>A</li><li>B</li>",
+        )
+        val result = LegadoRuleExpressionDispatcher.evaluateElements(
+            document,
+            "@regex:<li>A</li>%%<li>B</li>",
+        )
+        assertEquals(
+            listOf("<li>A</li>", "<li>B</li>"),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
+    @Test
     fun rejectsInvalidPatternsAndOversizedStageLists() {
         assertEquals(
             EngineErrorCode.PARSE,
