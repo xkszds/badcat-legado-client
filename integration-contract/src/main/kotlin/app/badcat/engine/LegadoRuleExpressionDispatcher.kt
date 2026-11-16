@@ -17,9 +17,9 @@ object LegadoRuleExpressionDispatcher {
         val rule = expression.trim()
         return when {
             rule.startsWith("@regex:", true) ->
-                LegadoRegexElementEvaluator.evaluate(document.body, rule.substringAfter(':'))
+                evaluateRegexElementsWithFallback(document.body, rule.substringAfter(':'))
             rule.startsWith(":") ->
-                LegadoRegexElementEvaluator.evaluate(document.body, rule.substring(1))
+                evaluateRegexElementsWithFallback(document.body, rule.substring(1))
             else -> when (val resolved = resolve(rule)) {
                 is EngineResult.Failure -> resolved
                 is EngineResult.Success -> when (resolved.value.type) {
@@ -29,6 +29,31 @@ object LegadoRuleExpressionDispatcher {
                 }
             }
         }
+    }
+
+    private fun evaluateRegexElementsWithFallback(
+        input: String,
+        expression: String,
+    ): EngineResult<List<String>> {
+        val branches = try {
+            RuleExpressionTokenizer.splitTopLevel(expression, "||")
+        } catch (error: Exception) {
+            return EngineResult.Failure(
+                EngineErrorCode.UNSUPPORTED_RULE,
+                "Invalid combined Legado regex collection rule",
+                error,
+            )
+        }
+        if (branches.size == 1) return LegadoRegexElementEvaluator.evaluate(input, branches.single())
+
+        var firstFailure: EngineResult.Failure? = null
+        for (branch in branches) {
+            when (val result = LegadoRegexElementEvaluator.evaluate(input, branch)) {
+                is EngineResult.Failure -> if (firstFailure == null) firstFailure = result
+                is EngineResult.Success -> if (result.value.isNotEmpty()) return result
+            }
+        }
+        return firstFailure ?: EngineResult.Success(emptyList())
     }
 
     fun evaluate(document: SourceDocument, expression: String): EngineResult<List<String>> =
