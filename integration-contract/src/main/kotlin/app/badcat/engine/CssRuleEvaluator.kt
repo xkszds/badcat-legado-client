@@ -103,8 +103,40 @@ object CssRuleEvaluator {
 
     private enum class ValueMode { TEXT, TEXT_NODES, OWN_TEXT, HTML, ALL, HREF, SRC, TAG, ATTRIBUTE }
 
+    private fun findSuffixMarker(expression: String): Int {
+        var quote: Char? = null
+        var escaped = false
+        var bracketDepth = 0
+        var parenthesisDepth = 0
+        var marker = -1
+
+        expression.forEachIndexed { index, char ->
+            if (escaped) {
+                escaped = false
+                return@forEachIndexed
+            }
+            if (char == '\\\\') {
+                escaped = true
+                return@forEachIndexed
+            }
+            if (quote != null) {
+                if (char == quote) quote = null
+                return@forEachIndexed
+            }
+            when (char) {
+                '\\'', '"' -> quote = char
+                '[' -> bracketDepth++
+                ']' -> if (bracketDepth > 0) bracketDepth--
+                '(' -> parenthesisDepth++
+                ')' -> if (parenthesisDepth > 0) parenthesisDepth--
+                '@' -> if (bracketDepth == 0 && parenthesisDepth == 0) marker = index
+            }
+        }
+        return marker
+    }
+
     private fun parseExpression(expression: String): ParsedExpression? {
-        val marker = expression.lastIndexOf('@')
+        val marker = findSuffixMarker(expression)
         if (marker < 0) {
             return ParsedExpression(expression, ValueMode.TEXT)
         }
