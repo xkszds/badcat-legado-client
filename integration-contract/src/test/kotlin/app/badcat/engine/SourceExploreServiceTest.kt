@@ -90,7 +90,7 @@ class SourceExploreServiceTest {
     fun reportsNonSuccessfulHttpStatus() = runBlocking {
         val client = FixtureClient(status = 503)
         val result = assertIs<EngineResult.Failure>(
-            SourceExploreService(SourceHttpGateway(client)).explore(source()),
+            SourceExploreService(gateway(client)).explore(source()),
         )
         assertEquals(EngineErrorCode.NETWORK, result.code)
     }
