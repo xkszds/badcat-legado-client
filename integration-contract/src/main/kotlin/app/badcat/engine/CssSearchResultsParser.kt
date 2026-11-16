@@ -7,9 +7,9 @@ import org.jsoup.Jsoup
  * field names. Each bookList element is evaluated independently so item
  * selectors are not accidentally applied to the whole response document.
  *
- * Full AnalyzeRule semantics (JS, regex, JSONPath/XPath per-item dispatch,
- * variable interpolation, filters and direct-detail detection) remain outside
- * this adapter and are reported as unsupported.
+ * Bounded regex is supported for the collection root only. Full AnalyzeRule
+ * semantics (JS, regex field extraction, variable interpolation, filters,
+ * chained per-item rule modes and direct-detail detection) remain unsupported.
  */
 class CssSearchResultsParser {
 
