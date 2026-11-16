@@ -200,8 +200,9 @@ object LegadoBookSourceCodec {
 
     private fun validateKnownFieldTypes(source: JsonObject, index: Int) {
         val stringFields = listOf(
-            "bookSourceUrl", "bookSourceName", "bookSourceGroup", "header",
-            "jsLib", "loginUrl", "exploreUrl", "searchUrl", "mainJs",
+            "bookSourceUrl", "bookSourceName", "bookSourceGroup", "bookUrlPattern",
+            "header", "jsLib", "loginUrl", "loginUi", "loginCheckJs", "concurrentRate",
+            "bookSourceComment", "exploreUrl", "searchUrl", "mainJs",
         )
         stringFields.forEach { key ->
             val value = source.get(key) ?: return@forEach
@@ -209,17 +210,28 @@ object LegadoBookSourceCodec {
                 "Book source at index $index has a non-string '$key' field"
             }
         }
-        listOf("enabled", "enabledExplore", "enabledCookieJar").forEach { key ->
+        listOf("enabled", "enabledExplore", "enabledCookieJar", "enabledReview").forEach { key ->
             val value = source.get(key) ?: return@forEach
             require(value.isJsonNull || (value.isJsonPrimitive && value.asJsonPrimitive.isBoolean)) {
                 "Book source at index $index has a non-boolean '$key' field"
             }
         }
-        source.get("bookSourceType")?.let { value ->
-            require(value.isJsonPrimitive && value.asJsonPrimitive.isNumber &&
-                runCatching { value.asBigDecimal.intValueExact() }.isSuccess
-            ) {
-                "Book source at index $index has an invalid 'bookSourceType' field"
+        val integerFields = mapOf(
+            "bookSourceType" to Int.MIN_VALUE..Int.MAX_VALUE,
+            "customOrder" to Int.MIN_VALUE..Int.MAX_VALUE,
+            "weight" to Int.MIN_VALUE..Int.MAX_VALUE,
+            "lastUpdateTime" to Int.MIN_VALUE..Int.MAX_VALUE,
+            "respondTime" to Int.MIN_VALUE..Int.MAX_VALUE,
+        )
+        integerFields.forEach { (key, range) ->
+            source.get(key)?.let { value ->
+                require(value.isJsonNull || (
+                    value.isJsonPrimitive && value.asJsonPrimitive.isNumber &&
+                        runCatching { value.asBigDecimal.intValueExact() }.getOrNull()?.let(range::contains) == true
+                    )
+                ) {
+                    "Book source at index $index has an invalid '$key' field"
+                }
             }
         }
         listOf("ruleExplore", "ruleSearch", "ruleBookInfo", "ruleToc", "ruleContent").forEach { key ->
