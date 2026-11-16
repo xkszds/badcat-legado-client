@@ -39,6 +39,15 @@ object LegadoRuleExpressionDispatcher {
         return SelectorRuleEvaluator.evaluate(document, resolved.type, resolved.expression)
     }
 
+    fun firstScalarValue(expression: String, values: List<String>): String? {
+        if (values.isEmpty()) return null
+        return if (expression.trim().startsWith("@regex:", ignoreCase = true)) {
+            values.getOrNull(1) ?: values.firstOrNull()
+        } else {
+            values.firstOrNull()
+        }
+    }
+
     fun resolve(expression: String): EngineResult<ResolvedLegadoRuleExpression> {
         val raw = expression.trim()
         if (raw.isEmpty()) {
