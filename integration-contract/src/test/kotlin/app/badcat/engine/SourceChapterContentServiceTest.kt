@@ -297,6 +297,49 @@ class SourceChapterContentServiceTest {
         )
     }
 
+
+    @Test
+    fun returnsFreshCachedChapterWithoutNetworkRequest() = runBlocking {
+        val source = BookSource(id = "fixture", name = "Fixture", baseUrl = "https://reader.example/")
+        val chapter = BookChapter(0, "Cached", "https://reader.example/chapter/1")
+        val client = FixtureClient()
+        val cachedContent = ChapterContent("Cached title", "Saved chapter text")
+        val cache = object : ChapterContentCache {
+            override suspend fun get(sourceId: String, bookUrl: String, chapterUrl: String) =
+                CachedChapterContent(cachedContent, System.currentTimeMillis())
+            override suspend fun put(sourceId: String, bookUrl: String, chapterUrl: String, value: CachedChapterContent) = Unit
+        }
+        val result = assertIs<EngineResult.Success<ChapterContent>>(
+            SourceChapterContentService(http = SourceHttpGateway(client), cache = cache).load(
+                source, "https://reader.example/book/1", chapter,
+            ),
+        )
+        assertEquals(cachedContent, result.value)
+        assertEquals(emptyList(), client.requests)
+    }
+
+    @Test
+    fun fallsBackToExpiredCachedChapterWhenNetworkFails() = runBlocking {
+        val source = BookSource(id = "fixture", name = "Fixture", baseUrl = "https://reader.example/")
+        val chapter = BookChapter(0, "Cached", "https://reader.example/chapter/1")
+        val cachedContent = ChapterContent("Offline title", "Offline chapter text")
+        val cache = object : ChapterContentCache {
+            override suspend fun get(sourceId: String, bookUrl: String, chapterUrl: String) =
+                CachedChapterContent(cachedContent, System.currentTimeMillis() - 60_000)
+            override suspend fun put(sourceId: String, bookUrl: String, chapterUrl: String, value: CachedChapterContent) = Unit
+        }
+        val failingClient = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest) =
+                EngineResult.Failure(EngineErrorCode.NETWORK, "offline")
+        }
+        val result = assertIs<EngineResult.Success<ChapterContent>>(
+            SourceChapterContentService(http = SourceHttpGateway(failingClient), cache = cache).load(
+                source, "https://reader.example/book/1", chapter,
+            ),
+        )
+        assertEquals(cachedContent, result.value)
+    }
+
     @Test
     fun reportsChapterPaginationSafetyLimitInsteadOfReturningPartialText() = runBlocking {
         val source = BookSource(
