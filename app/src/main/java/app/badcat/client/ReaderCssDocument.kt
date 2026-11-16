@@ -104,6 +104,39 @@ internal object ReaderCssDocument {
         }
     }
 
+    private fun hasBalancedSelectorSyntax(selector: String): Boolean {
+        var parentheses = 0
+        var brackets = 0
+        var quote: Char? = null
+        selector.forEach { char ->
+            if (quote != null) {
+                if (char == quote) quote = null
+            } else {
+                when (char) {
+                    '\'', '"' -> quote = char
+                    '(' -> parentheses++
+                    ')' -> {
+                        if (parentheses == 0) return false
+                        parentheses--
+                    }
+                    '[' -> brackets++
+                    ']' -> {
+                        if (brackets == 0) return false
+                        brackets--
+                    }
+                    ',' -> if (parentheses == 0 && brackets == 0) {
+                        // Empty groups are invalid CSS and can make rules fail silently.
+                        val before = selector.substringBeforeLast(',', "").trim()
+                        if (before.isEmpty()) return false
+                    }
+                }
+            }
+        }
+        if (quote != null || parentheses != 0 || brackets != 0) return false
+        val groups = splitSelectorGroups(selector)
+        return groups.isNotEmpty() && groups.all { it.isNotBlank() }
+    }
+
     private fun splitSelectorGroups(selector: String): List<String> {
         val groups = mutableListOf<String>()
         var start = 0
@@ -130,11 +163,12 @@ internal object ReaderCssDocument {
         groups += selector.substring(start)
         return groups
     }
-    private fun sanitizeSelector(raw: String): String? {
+    internal fun sanitizeSelector(raw: String): String? {
         val value = raw.trim()
         if (value.isEmpty() || value.length > 240) return null
         if (value.contains('<') || value.contains("</")) return null
         if (!value.matches(Regex("""[A-Za-z0-9_#.*,\s>+~:()\[\]='\-]+"""))) return null
+        if (!hasBalancedSelectorSyntax(value)) return null
         if (value.contains("url", true) || value.contains("expression", true) ||
             value.contains("@") || value.contains("{") || value.contains("}")) return null
         return value
