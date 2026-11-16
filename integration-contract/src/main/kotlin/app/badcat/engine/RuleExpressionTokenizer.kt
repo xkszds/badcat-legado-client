@@ -13,6 +13,8 @@ data class RuleExpressionParts(
 
 object RuleExpressionTokenizer {
 
+    const val MAX_RULE_EXPRESSION_LENGTH = 16 * 1024
+
     private val supportedDelimiters = setOf("&&", "||", "%%")
 
     fun splitByFirstTopLevelOperator(expression: String): RuleExpressionParts {
@@ -26,6 +28,9 @@ object RuleExpressionTokenizer {
     }
 
     fun splitTopLevel(expression: String, delimiter: String): List<String> {
+        require(expression.length <= MAX_RULE_EXPRESSION_LENGTH) {
+            "Rule expression exceeds the $MAX_RULE_EXPRESSION_LENGTH character limit"
+        }
         require(delimiter in supportedDelimiters) {
             "Unsupported rule delimiter: $delimiter"
         }
@@ -40,8 +45,11 @@ object RuleExpressionTokenizer {
             val char = expression[index]
 
             if (quote != null) {
-                if (char == quote) quote = null
-                index++
+                when {
+                    char == '\\' -> index = (index + 2).coerceAtMost(expression.length)
+                    char == quote -> { quote = null; index++ }
+                    else -> index++
+                }
                 continue
             }
 
