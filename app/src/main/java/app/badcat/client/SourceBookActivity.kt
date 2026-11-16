@@ -2,6 +2,10 @@ package app.badcat.client
 
 import android.app.Activity
 import android.graphics.Color
+import android.graphics.BitmapFactory
+import android.widget.ImageView
+import java.net.HttpURLConnection
+import java.net.URL
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -33,6 +37,7 @@ class SourceBookActivity : Activity() {
     private lateinit var chapterList: LinearLayout
     private lateinit var detailTitle: TextView
     private lateinit var detailMetadata: TextView
+    private lateinit var coverView: ImageView
     private var introExpanded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,15 +86,16 @@ class SourceBookActivity : Activity() {
                 text = "小说详情"; textSize = 18f; setTextColor(Color.DKGRAY)
             })
         }
-        val cover = TextView(this).apply {
-            text = "📖"
-            textSize = 42f
-            gravity = android.view.Gravity.CENTER
-            setTextColor(Color.WHITE)
+        coverView = ImageView(this).apply {
+            contentDescription = "小说封面"
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            setBackgroundColor(Color.rgb(111, 151, 194))
             background = android.graphics.drawable.GradientDrawable().apply {
                 setColor(Color.rgb(111, 151, 194))
                 cornerRadius = dpBook(8).toFloat()
             }
+            clipToOutline = true
+            setImageResource(android.R.drawable.ic_menu_gallery)
         }
         detailTitle = TextView(this).apply {
             text = bookName
@@ -106,7 +112,7 @@ class SourceBookActivity : Activity() {
         val summary = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.TOP
-            addView(cover, LinearLayout.LayoutParams(dpBook(92), dpBook(124)))
+            addView(coverView, LinearLayout.LayoutParams(dpBook(92), dpBook(124)))
             addView(LinearLayout(this@SourceBookActivity).apply {
                 orientation = LinearLayout.VERTICAL
                 setPadding(dpBook(14), 0, 0, 0)
@@ -177,6 +183,7 @@ class SourceBookActivity : Activity() {
                     is EngineResult.Failure -> status.text = "详情加载失败（${detail.code}）：${detail.message}"
                     is EngineResult.Success -> {
                         val book = detail.value
+                        if (!book.coverUrl.isNullOrBlank()) loadCover(book.coverUrl)
                         detailTitle.text = book.name.ifBlank { bookName }
                         detailMetadata.text = buildString {
                             append(book.author?.takeIf { it.isNotBlank() }?.let { "作者：$it" } ?: "作者：未知")
@@ -197,6 +204,47 @@ class SourceBookActivity : Activity() {
         }
     }
 
+    private fun loadCover(rawUrl: String) {
+        worker.execute {
+            var connection: HttpURLConnection? = null
+            try {
+                val url = URL(rawUrl)
+                require(url.protocol == "http" || url.protocol == "https")
+                connection = (url.openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 8_000
+                    readTimeout = 8_000
+                    instanceFollowRedirects = true
+                    setRequestProperty("Accept", "image/*")
+                }
+                connection.connect()
+                if (connection.responseCode !in 200..299) return@execute
+                if (connection.contentLength > 2 * 1024 * 1024) return@execute
+                val bytes = connection.inputStream.use { input ->
+                    val output = java.io.ByteArrayOutputStream()
+                    val buffer = ByteArray(8 * 1024)
+                    var total = 0
+                    while (true) {
+                        val count = input.read(buffer)
+                        if (count < 0) break
+                        total += count
+                        if (total > 2 * 1024 * 1024) return@execute
+                        output.write(buffer, 0, count)
+                    }
+                    output.toByteArray()
+                }
+                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+                if (bounds.outWidth <= 0 || bounds.outHeight <= 0 || bounds.outWidth > 8_000 || bounds.outHeight > 8_000) return@execute
+                val sample = maxOf(1, Integer.highestOneBit(maxOf(bounds.outWidth / 720, bounds.outHeight / 960)))
+                val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample }) ?: return@execute
+                mainHandler.post { if (!isFinishing && !isDestroyed) coverView.setImageBitmap(bitmap) }
+            } catch (_: Exception) {
+                // Keep the local placeholder when a source cover is unavailable.
+            } finally {
+                connection?.disconnect()
+            }
+        }
+    }
     private fun showChapters(chapters: List<BookChapter>) {
         chapterList.removeAllViews()
         status.append("\n\n目录：${chapters.size} 章（点击章节开始阅读）")
