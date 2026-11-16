@@ -54,14 +54,15 @@ object RuleExpressionTokenizer {
             if (quote != null) {
                 when {
                     char == '\\' -> index = (index + 2).coerceAtMost(expression.length)
-                    char == quote -> { quote = null; index++ }
+                    char == quote && !(regexBranch && stack.lastOrNull() == '[') -> { quote = null; index++ }
                     else -> index++
                 }
                 continue
             }
 
             when {
-                !regexBranch && (char == '"' || char == '\'') -> {
+                (char == '"' || char == '\'') &&
+                    !(regexBranch && stack.lastOrNull() == '[') -> {
                     quote = char
                     index++
                 }
