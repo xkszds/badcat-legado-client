@@ -97,6 +97,20 @@ class MyActivity : Activity() {
             tools.addView(row)
         }
         body.addView(tools)
+        body.addView(label("版本号  " + BuildConfig.VERSION_NAME, 11f, muted).apply {
+            gravity = Gravity.CENTER
+            setPadding(0, dp(18), 0, dp(10))
+            isClickable = true
+            setOnClickListener {
+                versionTapCount++
+                if (versionTapCount >= 5 && !sourceEntryRevealed) {
+                    sourceEntryRevealed = true
+                    versionTapCount = 0
+                    android.widget.Toast.makeText(this@MyActivity, "书源管理入口已显示", android.widget.Toast.LENGTH_SHORT).show()
+                    recreate()
+                }
+            }
+        })
         scroll.addView(body)
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         root.addView(MainBottomNavigation.create(this, "mine"))
@@ -132,6 +146,8 @@ class MyActivity : Activity() {
             "history" -> startActivity(Intent(this, ReadingHistoryActivity::class.java))
             "bookmarks" -> startActivity(Intent(this, BookmarkActivity::class.java))
             "sources" -> startActivity(Intent(this, SourceCatalogActivity::class.java))
+            "downloads" -> startActivity(Intent(this, DownloadManagementActivity::class.java))
+            "messages", "feedback", "sync" -> toast("该功能尚未接入")
             "replace" -> startActivity(Intent(this, ReplaceRuleActivity::class.java))
             "share" -> startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
@@ -139,6 +155,11 @@ class MyActivity : Activity() {
             }, "分享"))
             else -> Unit
         }
+    }
+
+    private fun formatReadingTime(): String {
+        val totalMinutes = getSharedPreferences("badcat_reading_stats", MODE_PRIVATE).getLong("total_reading_ms", 0L) / 60_000L
+        return (totalMinutes / 60).toString() + "小时" + (totalMinutes % 60) + "分"
     }
 
     private fun toast(message: String) = android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show()
