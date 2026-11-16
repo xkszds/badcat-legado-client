@@ -76,9 +76,7 @@ class CssChapterContentParser {
 
         val text = contentValues.mapNotNull(::htmlToReadableText)
             .filter(String::isNotBlank)
-            .joinToString("
-
-")
+            .joinToString("\n\n")
         if (text.isBlank()) {
             return EngineResult.Failure(
                 EngineErrorCode.NOT_FOUND,
@@ -125,8 +123,7 @@ class CssChapterContentParser {
     private fun htmlToReadableText(html: String): String? = runCatching {
         val body = Jsoup.parseBodyFragment(html).body()
         body.select("script,style,noscript,iframe").remove()
-        body.select("br").forEach { it.replaceWith(TextNode("
-")) }
+        body.select("br").forEach { it.replaceWith(TextNode("\n")) }
         body.select("p,div,section,article,li,h1,h2,h3,h4,h5,h6,blockquote").forEach {
             it.appendChild(TextNode("
 "))
@@ -136,8 +133,7 @@ class CssChapterContentParser {
             .lineSequence()
             .map(String::trim)
             .filter(String::isNotEmpty)
-            .joinToString("
-")
+            .joinToString("\n")
     }.getOrNull()
 
     private fun unsupported(source: BookSource, reason: String) =
