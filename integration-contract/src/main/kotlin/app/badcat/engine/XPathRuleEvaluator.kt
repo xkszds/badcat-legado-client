@@ -10,6 +10,44 @@ import org.seimicrawler.xpath.JXDocument
  */
 object XPathRuleEvaluator {
 
+    /** Select independent XPath nodes for bookList/chapterList collection rules. */
+    fun evaluateElements(document: SourceDocument, expression: String): EngineResult<List<String>> {
+        val raw = expression.trim()
+        if (raw.isEmpty()) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "XPath collection rule is blank")
+        }
+        return try {
+            val context = JXDocument.create(Jsoup.parse(document.body, document.url))
+            RuleCombinationEvaluator.evaluateNestedResult(raw) { branch ->
+                val rule = branch.trim().let {
+                    if (it.startsWith("@xpath:", ignoreCase = true)) it.substringAfter(':').trim() else it
+                }
+                if (rule.isEmpty()) {
+                    EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "XPath collection rule is blank")
+                } else {
+                    try {
+                        val nodes = context.selN(rule).orEmpty()
+                        EngineResult.Success(nodes.map { node ->
+                            if (node.isElement) node.asElement().outerHtml() else node.asString()
+                        })
+                    } catch (error: Exception) {
+                        EngineResult.Failure(
+                            EngineErrorCode.PARSE,
+                            "XPath collection evaluation failed: ${error.message ?: error::class.java.simpleName}",
+                            error,
+                        )
+                    }
+                }
+            }
+        } catch (error: Exception) {
+            EngineResult.Failure(
+                EngineErrorCode.PARSE,
+                "XPath collection evaluation failed: ${error.message ?: error::class.java.simpleName}",
+                error,
+            )
+        }
+    }
+
     fun evaluate(document: SourceDocument, expression: String): EngineResult<List<String>> {
         val rule = expression.trim()
         if (rule.isEmpty()) {
