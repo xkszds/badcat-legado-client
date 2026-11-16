@@ -35,6 +35,10 @@ class SourceBookActivity : Activity() {
     private lateinit var bookName: String
     private lateinit var status: TextView
     private lateinit var chapterList: LinearLayout
+    private lateinit var chapterRows: LinearLayout
+    private lateinit var catalogSearch: android.widget.EditText
+    private var allChapters: List<BookChapter> = emptyList()
+    private var reverseCatalog = false
     private lateinit var detailTitle: TextView
     private lateinit var detailMetadata: TextView
     private lateinit var coverView: ImageView
@@ -160,6 +164,35 @@ class SourceBookActivity : Activity() {
                 setTypeface(typeface, android.graphics.Typeface.BOLD)
                 setPadding(0, dpBook(14), 0, dpBook(8))
             })
+            val catalogTools = LinearLayout(this@SourceBookActivity).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                catalogSearch = android.widget.EditText(this@SourceBookActivity).apply {
+                    hint = "搜索章节名称"
+                    textSize = 13f
+                    singleLine = true
+                    setPadding(dpBook(10), 0, dpBook(8), 0)
+                    background = android.graphics.drawable.GradientDrawable().apply {
+                        setColor(Color.rgb(246, 247, 249))
+                        cornerRadius = dpBook(8).toFloat()
+                    }
+                    addTextChangedListener(object : android.text.TextWatcher {
+                        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+                        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { renderChapterRows() }
+                        override fun afterTextChanged(s: android.text.Editable?) = Unit
+                    })
+                }
+                addView(catalogSearch, LinearLayout.LayoutParams(0, dpBook(42), 1f))
+                addView(Button(this@SourceBookActivity).apply {
+                    text = "倒序"
+                    setOnClickListener {
+                        reverseCatalog = !reverseCatalog
+                        text = if (reverseCatalog) "正序" else "倒序"
+                        renderChapterRows()
+                    }
+                })
+            }
+            addView(catalogTools)
             addView(chapterList)
         }
         setContentView(ScrollView(this).apply { addView(root) })
@@ -246,6 +279,7 @@ class SourceBookActivity : Activity() {
         }
     }
     private fun showChapters(chapters: List<BookChapter>) {
+        allChapters = chapters
         chapterList.removeAllViews()
         status.append("\n\n目录：${chapters.size} 章（点击章节开始阅读）")
         val savedChapterUrl = getSharedPreferences("badcat_reading_progress", MODE_PRIVATE)
@@ -305,8 +339,19 @@ class SourceBookActivity : Activity() {
                 }
             })
         }
-        chapters.forEach { chapter ->
-            chapterList.addView(TextView(this).apply {
+        chapterRows = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        chapterList.addView(chapterRows)
+        renderChapterRows()
+    }
+
+    private fun renderChapterRows() {
+        if (!::chapterRows.isInitialized) return
+        chapterRows.removeAllViews()
+        val query = if (::catalogSearch.isInitialized) catalogSearch.text.toString().trim() else ""
+        val matching = allChapters.filter { query.isBlank() || it.title.contains(query, ignoreCase = true) }
+        val ordered = if (reverseCatalog) matching.asReversed() else matching
+        ordered.forEach { chapter ->
+            chapterRows.addView(TextView(this).apply {
                 text = "${chapter.index + 1}. ${chapter.title}"
                 textSize = 16f
                 setPadding(0, 12, 0, 12)
