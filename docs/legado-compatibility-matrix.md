@@ -90,3 +90,9 @@ modes remain outside this increment.
 - Search/explore collection roots now accept JSONPath expressions (including `@jsonpath:` and `@json:`) and serialize each selected JSON value as an independent fragment.
 - Search result fields are evaluated against the selected fragment through the shared CSS/XPath/JSONPath dispatcher, so JSONPath bookList items can use JSONPath name, URL and author fields instead of being incorrectly parsed as HTML.
 - This remains a bounded adapter: full upstream AnalyzeRule interpolation, JavaScript, chained transforms and every source-specific suffix are not claimed as complete.
+
+
+### JSONPath script-marker disambiguation (2026-11-16)
+
+- Script detection now requires the explicit `@js:` marker. It no longer mistakes `@jsonpath:` / `@json:` rules for JavaScript merely because the marker shares the `@js` prefix.
+- The same guard is applied to search/explore, TOC, book-info and chapter-content parser paths.
