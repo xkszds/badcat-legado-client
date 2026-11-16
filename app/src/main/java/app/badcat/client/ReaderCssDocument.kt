@@ -97,7 +97,7 @@ internal object ReaderCssDocument {
                 val selector = sanitizeSelector(selectorRaw) ?: continue
                 val declarations = sanitizeDeclarations(declarationsRaw)
                 if (declarations.isEmpty()) continue
-                append(scopeSelector(selector)).append('{').append(declarations).append("}\\n")
+                append(scopeSelector(selector)).append('{').append(declarations).append("}\n")
                 applied++
             }
         }
