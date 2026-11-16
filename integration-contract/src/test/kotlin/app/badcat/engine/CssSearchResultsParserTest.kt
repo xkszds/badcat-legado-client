@@ -427,9 +427,9 @@ class CssSearchResultsParserTest {
     }
 
     @Test
-    fun extractsScalarRegexCaptureGroupFromLegacyColonRule() {
+    fun appliesLegacyAllInOneRegexModeToBookListAndScalarFields() {
         val source = source(
-            """{"bookList":"div.book","name":":<h3>(.*?)</h3>","bookUrl":"a@href"}""",
+            """{"bookList":":<div class=\"book\">.*?</div>","name":"<h3>(.*?)</h3>","bookUrl":"href=\"([^\"]+)\""}""",
         )
         val response = SourceHttpResponse(
             200,

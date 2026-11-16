@@ -38,6 +38,7 @@ class CssSearchResultsParser {
         // Preserve the original response bytes/text for regex roots; Jsoup.outerHtml()
         // normalizes attribute quotes and can change the meaning of an imported regex.
         val document = SourceDocument(response.finalUrl, response.body, response.contentType)
+        val legacyRegexMode = listRule.trim().startsWith(":")
         val items = when (val result = LegadoRuleExpressionDispatcher.evaluateElements(
             document,
             listRule,
@@ -53,17 +54,17 @@ class CssSearchResultsParser {
                 // Keep the selected fragment as a SourceDocument so each field is
                 // evaluated by the same CSS/XPath/JSONPath dispatcher as its root.
                 val itemDocument = SourceDocument(response.finalUrl, itemHtml, response.contentType)
-                val name = field(source, rules, "name", itemDocument) ?: continue
-                val bookUrl = field(source, rules, "bookUrl", itemDocument)
+                val name = field(source, rules, "name", itemDocument, legacyRegexMode = legacyRegexMode) ?: continue
+                val bookUrl = field(source, rules, "bookUrl", itemDocument, legacyRegexMode = legacyRegexMode)
                     ?.takeIf(String::isNotBlank) ?: continue
                 candidates += BookCandidate(
                     sourceId = source.id,
                     name = name,
-                    author = field(source, rules, "author", itemDocument),
+                    author = field(source, rules, "author", itemDocument, legacyRegexMode = legacyRegexMode),
                     bookUrl = bookUrl,
-                    coverUrl = field(source, rules, "coverUrl", itemDocument),
-                    latestChapter = field(source, rules, "lastChapter", itemDocument),
-                    intro = field(source, rules, "intro", itemDocument),
+                    coverUrl = field(source, rules, "coverUrl", itemDocument, legacyRegexMode = legacyRegexMode),
+                    latestChapter = field(source, rules, "lastChapter", itemDocument, legacyRegexMode = legacyRegexMode),
+                    intro = field(source, rules, "intro", itemDocument, legacyRegexMode = legacyRegexMode),
                 )
             }
         } catch (failure: SearchParseFailure) {
@@ -118,6 +119,7 @@ class CssSearchResultsParser {
                 is EngineResult.Success -> expanded.value
             }
         }
+        val legacyRegexMode = rootExpression.startsWith(":")
         val items = if (rootExpression.startsWith("@js:", true) ||
             rootExpression.startsWith("javascript:", true)
         ) {
@@ -227,6 +229,7 @@ class CssSearchResultsParser {
                     key,
                     SourceDocument(response.finalUrl, itemHtml, response.contentType),
                     expressionOverride = trimmed,
+                    legacyRegexMode = legacyRegexMode,
                 ))
             } catch (failure: SearchParseFailure) {
                 failure.failure
@@ -272,6 +275,7 @@ class CssSearchResultsParser {
         key: String,
         itemDocument: SourceDocument,
         expressionOverride: String? = null,
+        legacyRegexMode: Boolean = false,
     ): String? {
         val expression = expressionOverride?.takeIf(String::isNotBlank)
             ?: rules[key]?.takeIf(String::isNotBlank)
@@ -284,14 +288,20 @@ class CssSearchResultsParser {
             "coverUrl" -> expression.replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
             else -> expression
         }
-        return when (val result = LegadoRuleExpressionDispatcher.evaluate(
-            itemDocument,
-            extractionRule,
-        )) {
-            is EngineResult.Failure -> throw SearchParseFailure(result)
-            is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(extractionRule, result.value)
-                ?.trim()?.takeIf(String::isNotEmpty)
-        }?.let { value ->
+        val extracted = if (legacyRegexMode) {
+            when (val result = LegadoRegexElementEvaluator.evaluateScalar(itemDocument.body, extractionRule)) {
+                is EngineResult.Failure -> throw SearchParseFailure(result)
+                is EngineResult.Success -> (result.value.getOrNull(1) ?: result.value.firstOrNull())
+                    ?.trim()?.takeIf(String::isNotEmpty)
+            }
+        } else {
+            when (val result = LegadoRuleExpressionDispatcher.evaluate(itemDocument, extractionRule)) {
+                is EngineResult.Failure -> throw SearchParseFailure(result)
+                is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(extractionRule, result.value)
+                    ?.trim()?.takeIf(String::isNotEmpty)
+            }
+        }
+        return extracted?.let { value ->
             if (key == "bookUrl" || key == "coverUrl") {
                 return try {
                     WebUrlResolver.resolve(itemDocument.url, value)

@@ -17,9 +17,12 @@ object RuleExpressionTokenizer {
 
     private val supportedDelimiters = setOf("&&", "||", "%%")
 
-    fun splitByFirstTopLevelOperator(expression: String): RuleExpressionParts {
+    fun splitByFirstTopLevelOperator(
+        expression: String,
+        allowLeadingColonRegex: Boolean = false,
+    ): RuleExpressionParts {
         val candidates = supportedDelimiters.mapNotNull { delimiter ->
-            val parts = splitTopLevel(expression, delimiter)
+            val parts = splitTopLevel(expression, delimiter, allowLeadingColonRegex)
             if (parts.size > 1) Triple(parts.first().length, delimiter, parts) else null
         }
         val first = candidates.minByOrNull { it.first }
@@ -27,7 +30,11 @@ object RuleExpressionTokenizer {
         return RuleExpressionParts(first.second, first.third)
     }
 
-    fun splitTopLevel(expression: String, delimiter: String): List<String> {
+    fun splitTopLevel(
+        expression: String,
+        delimiter: String,
+        allowLeadingColonRegex: Boolean = false,
+    ): List<String> {
         require(expression.length <= MAX_RULE_EXPRESSION_LENGTH) {
             "Rule expression exceeds the $MAX_RULE_EXPRESSION_LENGTH character limit"
         }
@@ -42,9 +49,12 @@ object RuleExpressionTokenizer {
         var index = 0
         // Determine the current branch mode once; recompute only after a split.
         // Avoid allocating a growing substring for every scanned character.
-        var regexBranch = expression.trimStart().let {
-            it.startsWith("@regex:", ignoreCase = true) || it.startsWith(":")
+        fun isRegexBranch(value: String): Boolean {
+            val trimmed = value.trimStart()
+            return trimmed.startsWith("@regex:", ignoreCase = true) ||
+                (allowLeadingColonRegex && trimmed.startsWith(":"))
         }
+        var regexBranch = isRegexBranch(expression)
 
         while (index < expression.length) {
             val char = expression[index]
@@ -84,9 +94,7 @@ object RuleExpressionTokenizer {
                         parts += expression.substring(start, index).trim()
                         index += delimiter.length
                         start = index
-                        regexBranch = expression.substring(start).trimStart().let {
-                            it.startsWith("@regex:", ignoreCase = true) || it.startsWith(":")
-                        }
+                        regexBranch = isRegexBranch(expression.substring(start))
                     }
                     else -> index++
                 }
@@ -127,8 +135,7 @@ object RuleExpressionTokenizer {
                     parts += expression.substring(start, index).trim()
                     index += delimiter.length
                     start = index
-                    regexBranch = expression.substring(start).trimStart()
-                        .startsWith("@regex:", ignoreCase = true)
+                    regexBranch = isRegexBranch(expression.substring(start))
                 }
                 else -> index++
             }

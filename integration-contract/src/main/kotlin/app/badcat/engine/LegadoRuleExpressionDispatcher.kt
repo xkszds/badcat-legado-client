@@ -32,7 +32,10 @@ object LegadoRuleExpressionDispatcher {
             )
         }
         val split = try {
-            RuleExpressionTokenizer.splitByFirstTopLevelOperator(normalized)
+            RuleExpressionTokenizer.splitByFirstTopLevelOperator(
+                normalized,
+                allowLeadingColonRegex = true,
+            )
         } catch (error: Exception) {
             return EngineResult.Failure(
                 EngineErrorCode.UNSUPPORTED_RULE,
@@ -103,13 +106,11 @@ object LegadoRuleExpressionDispatcher {
     fun evaluate(document: SourceDocument, expression: String): EngineResult<List<String>> =
         evaluateCombined(expression) { branch ->
             val scalarRule = branch.trim()
-            if (scalarRule.startsWith("@regex:", ignoreCase = true) || scalarRule.startsWith(":")) {
-                val pattern = if (scalarRule.startsWith("@regex:", ignoreCase = true)) {
-                    scalarRule.substringAfter(':')
-                } else {
-                    scalarRule.substring(1)
-                }
-                LegadoRegexElementEvaluator.evaluateScalar(document.body, pattern)
+            if (scalarRule.startsWith("@regex:", ignoreCase = true)) {
+                LegadoRegexElementEvaluator.evaluateScalar(
+                    document.body,
+                    scalarRule.substringAfter(':'),
+                )
             } else {
                 when (val resolved = resolve(branch)) {
                     is EngineResult.Failure -> resolved
@@ -173,9 +174,7 @@ object LegadoRuleExpressionDispatcher {
 
     fun firstScalarValue(expression: String, values: List<String>): String? {
         if (values.isEmpty()) return null
-        return if (expression.trim().startsWith("@regex:", ignoreCase = true) ||
-            expression.trim().startsWith(":")
-        ) {
+        return if (expression.trim().startsWith("@regex:", ignoreCase = true)) {
             values.getOrNull(1) ?: values.firstOrNull()
         } else {
             values.firstOrNull()
