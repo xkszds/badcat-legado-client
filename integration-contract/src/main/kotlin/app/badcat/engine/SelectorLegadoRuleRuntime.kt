@@ -10,6 +10,7 @@ package app.badcat.engine
  */
 class SelectorLegadoRuleRuntime(
     private val ruleTypes: Map<String, SelectorRuleType> = emptyMap(),
+    private val scriptRuntime: SourceScriptRuntime = UnsupportedSourceScriptRuntime,
 ) : LegadoRuleRuntime {
 
     override suspend fun evaluate(
@@ -44,31 +45,58 @@ class SelectorLegadoRuleRuntime(
                 !expression.trim().startsWith("@", ignoreCase = true) &&
                 expression.trim().startsWith("javascript:", ignoreCase = true)
             ) continue
-            val values = try {
-                when (val result = RuleCombinationEvaluator.evaluateNestedResult(expression) { branch ->
-                    val resolved = if (configuredType != null) {
-                        ResolvedLegadoRuleExpression(configuredType, branch).let { EngineResult.Success(it) }
+            val trimmedExpression = expression.trim()
+            val values = when {
+                trimmedExpression.startsWith("@js:", ignoreCase = true) ||
+                    trimmedExpression.startsWith("javascript:", ignoreCase = true) -> {
+                    val script = if (trimmedExpression.startsWith("@js:", ignoreCase = true)) {
+                        trimmedExpression.substringAfter(':').trim()
                     } else {
-                        LegadoRuleExpressionDispatcher.resolve(branch)
+                        trimmedExpression.substringAfter(':').trim()
                     }
-                    when (resolved) {
-                        is EngineResult.Failure -> resolved
-                        is EngineResult.Success -> SelectorRuleEvaluator.evaluate(
-                            document,
-                            resolved.value.type,
-                            resolved.value.expression,
+                    if (script.isBlank()) {
+                        return EngineResult.Failure(
+                            EngineErrorCode.UNSUPPORTED_RULE,
+                            "Empty JavaScript rule for field '$field'",
                         )
                     }
-                }) {
-                    is EngineResult.Failure -> return result
-                    is EngineResult.Success -> result.value
+                    when (val result = scriptRuntime.evaluate(
+                        source = source,
+                        script = script,
+                        bindings = mapOf(
+                            "result" to document.body,
+                            "baseUrl" to document.url,
+                            "sourceUrl" to source.id,
+                            "sourceId" to source.id,
+                            "sourceName" to source.name,
+                            "ruleName" to field,
+                        ),
+                    )) {
+                        is EngineResult.Failure -> return result
+                        is EngineResult.Success -> listOf(result.value)
+                    }
                 }
-            } catch (error: Exception) {
-                return EngineResult.Failure(
-                    EngineErrorCode.UNSUPPORTED_RULE,
-                    "Invalid ${stage.name.lowercase()} rule expression for field '$field'",
-                    error,
-                )
+                configuredType != null -> {
+                    when (val result = RuleCombinationEvaluator.evaluateNestedResult(expression) { branch ->
+                        SelectorRuleEvaluator.evaluate(document, configuredType, branch)
+                    }) {
+                        is EngineResult.Failure -> return result
+                        is EngineResult.Success -> result.value
+                    }
+                }
+                trimmedExpression.startsWith("@regex:", ignoreCase = true) ||
+                    trimmedExpression.startsWith(":") -> {
+                    when (val result = LegadoRuleExpressionDispatcher.evaluateElements(document, trimmedExpression)) {
+                        is EngineResult.Failure -> return result
+                        is EngineResult.Success -> result.value
+                    }
+                }
+                else -> {
+                    when (val result = LegadoRuleExpressionDispatcher.evaluate(document, expression)) {
+                        is EngineResult.Failure -> return result
+                        is EngineResult.Success -> result.value
+                    }
+                }
             }
             evaluated[field] = values
         }
