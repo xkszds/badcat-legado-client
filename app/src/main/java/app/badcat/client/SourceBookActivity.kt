@@ -454,10 +454,14 @@ class SourceChapterActivity : Activity() {
             return
         }
         val position = readerScroll.scrollY.coerceAtLeast(0)
+        val bookmarkKey = chapterBookmarkKey(sourceId, bookUrl, currentChapterUrl)
+        val encoded = bookmarkKey.removePrefix("chapter_bookmark_")
         preferences.edit()
-            .putInt(chapterBookmarkKey(sourceId, bookUrl, currentChapterUrl), position)
+            .putInt(bookmarkKey, position)
+            .putString("chapter_bookmark_title_" + encoded, status.text.toString())
+            .putString("chapter_bookmark_book_" + encoded, bookName)
             .apply()
-        status.text = "书签已保存（当前位置）"
+        status.text = "书签已保存（当前位置），可在「我的 - 书签管理」查看"
     }
 
     private fun jumpToChapterBookmark() {
