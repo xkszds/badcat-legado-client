@@ -100,7 +100,7 @@ object LegadoRegexElementEvaluator {
             return EngineResult.Failure(EngineErrorCode.INVALID_SOURCE, "Regex timeout must be between 1 and 5000ms")
         }
         val stages = try {
-            RuleExpressionTokenizer.splitTopLevel(rule, "&&")
+            splitRegexStages(rule)
         } catch (error: Exception) {
             return EngineResult.Failure(EngineErrorCode.PARSE, "Malformed regex scalar rule", error)
         }
