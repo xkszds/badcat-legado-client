@@ -51,8 +51,12 @@ internal object ReaderCssDocument {
                     val selector = sanitizeSelector(rule.optString("selector")) ?: continue
                     val declarations = sanitizeDeclarations(rule.optString("css"))
                     if (declarations.isNotEmpty()) {
-                        append(".reader-root ").append(selector).append('{')
-                            .append(declarations).append("}\n")
+                        val scopedSelector = if (selector == ".reader-root" || selector.startsWith(".reader-root ")) {
+                            selector
+                        } else {
+                            ".reader-root $selector"
+                        }
+                        append(scopedSelector).append('{').append(declarations).append("}\n")
                         count++
                     }
                 }
