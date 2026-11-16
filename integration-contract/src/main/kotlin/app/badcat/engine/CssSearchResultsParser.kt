@@ -16,15 +16,19 @@ class CssSearchResultsParser {
     fun parse(
         source: BookSource,
         response: SourceHttpResponse,
+        stage: SourceRuleStage = SourceRuleStage.SEARCH,
     ): EngineResult<List<BookCandidate>> {
-        val rules = when (val result = SourceRuleResolver.resolveObject(source, SourceRuleStage.SEARCH)) {
+        require(stage == SourceRuleStage.SEARCH || stage == SourceRuleStage.EXPLORE) {
+            "Search-result parser only supports search and explore stages"
+        }
+        val rules = when (val result = SourceRuleResolver.resolveObject(source, stage)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value.fields
         }
         val listRule = rules["bookList"]?.takeIf(String::isNotBlank)
             ?: return EngineResult.Failure(
                 EngineErrorCode.UNSUPPORTED_RULE,
-                "Source '${source.id}' has no search bookList rule",
+                "Source '${source.id}' has no ${stage.name.lowercase()} bookList rule",
             )
         if (listRule.contains("@js", ignoreCase = true) || listRule.contains("{{")) {
             return unsupported(source, "JavaScript or interpolation in bookList")
@@ -140,7 +144,7 @@ class CssSearchResultsParser {
     private fun unsupported(source: BookSource, detail: String) =
         EngineResult.Failure(
             EngineErrorCode.UNSUPPORTED_RULE,
-            "Source '${source.id}' search rule requires unsupported feature: $detail",
+            "Source '${source.id}' ${stage.name.lowercase()} rule requires unsupported feature: $detail",
         )
 
     private class UnsupportedSearchRule(sourceId: String, field: String) :
