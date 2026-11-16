@@ -220,14 +220,23 @@ object LegadoBookSourceCodec {
             "bookSourceType" to Int.MIN_VALUE..Int.MAX_VALUE,
             "customOrder" to Int.MIN_VALUE..Int.MAX_VALUE,
             "weight" to Int.MIN_VALUE..Int.MAX_VALUE,
-            "lastUpdateTime" to Int.MIN_VALUE..Int.MAX_VALUE,
-            "respondTime" to Int.MIN_VALUE..Int.MAX_VALUE,
         )
         integerFields.forEach { (key, range) ->
             source.get(key)?.let { value ->
                 require(value.isJsonNull || (
                     value.isJsonPrimitive && value.asJsonPrimitive.isNumber &&
                         runCatching { value.asBigDecimal.intValueExact() }.getOrNull()?.let(range::contains) == true
+                    )
+                ) {
+                    "Book source at index $index has an invalid '$key' field"
+                }
+            }
+        }
+        listOf("lastUpdateTime", "respondTime").forEach { key ->
+            source.get(key)?.let { value ->
+                require(value.isJsonNull || (
+                    value.isJsonPrimitive && value.asJsonPrimitive.isNumber &&
+                        runCatching { value.asBigDecimal.longValueExact() }.isSuccess
                     )
                 ) {
                     "Book source at index $index has an invalid '$key' field"
