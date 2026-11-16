@@ -165,7 +165,7 @@ class ReaderCssActivity : Activity() {
     private fun manageProfile(id: String) {
         val profile = readProfiles().firstOrNull { it.id == id } ?: return
         val labels = profile.rules.map { "${it.name.ifBlank { it.selector }}\n${it.selector}" }.toTypedArray()
-        val actions = arrayOf("添加子选择器", "编辑方案名称和备注", "编辑已有子选择器", "删除子选择器")
+        val actions = arrayOf("添加子选择器", "编辑方案名称和备注", "编辑已有子选择器", "删除子选择器", "上移子选择器（调整优先级）", "下移子选择器（调整优先级）")
         android.app.AlertDialog.Builder(this).setTitle(profile.name)
             .setItems(actions) { _, which ->
                 when (which) {
@@ -181,6 +181,25 @@ class ReaderCssActivity : Activity() {
                                     if (p.id == id) p.copy(rules = p.rules.filterIndexed { i, _ -> i != index }) else p
                                 })
                                 refresh()
+                            }.show()
+                    4, 5 -> if (profile.rules.size < 2) message.text = "至少需要两个子选择器才能调整顺序" else
+                        android.app.AlertDialog.Builder(this).setTitle("选择要${if (which == 4) "上移" else "下移"}的子选择器")
+                            .setItems(labels) { _, index ->
+                                val target = if (which == 4) index - 1 else index + 1
+                                if (target !in profile.rules.indices) {
+                                    message.text = "已经到达${if (which == 4) "最前" else "最后"}位置"
+                                } else {
+                                    saveProfiles(readProfiles().map { p ->
+                                        if (p.id != id) p else {
+                                            val reordered = p.rules.toMutableList()
+                                            val selected = reordered.removeAt(index)
+                                            reordered.add(target, selected)
+                                            p.copy(rules = reordered)
+                                        }
+                                    })
+                                    refresh()
+                                    message.text = "子选择器顺序已调整；后面的规则在 CSS 层叠中优先"
+                                }
                             }.show()
                 }
             }.setNegativeButton("关闭", null).show()
@@ -201,10 +220,36 @@ class ReaderCssActivity : Activity() {
             minLines = 3
             gravity = android.view.Gravity.TOP
         }
+        val presetButton = Button(this).apply {
+            text = "插入常用页面选择器"
+            setOnClickListener {
+                val presets = arrayOf(
+                    ".reader-root — 阅读页整体",
+                    ".reader-content — 正文容器",
+                    ".reader-paragraph — 所有段落",
+                    ".reader-paragraph:first-child — 第一段",
+                    ".reader-paragraph:nth-child(2) — 第二段",
+                    ".reader-paragraph:last-child — 最后一段",
+                )
+                val values = arrayOf(
+                    ".reader-root", ".reader-content", ".reader-paragraph",
+                    ".reader-paragraph:first-child", ".reader-paragraph:nth-child(2)",
+                    ".reader-paragraph:last-child",
+                )
+                android.app.AlertDialog.Builder(this@ReaderCssActivity)
+                    .setTitle("选择要插入的选择器")
+                    .setItems(presets) { _, selected -> selector.setText(values[selected]) }
+                    .show()
+            }
+        }
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(20, 4, 20, 4)
-            addView(name); addView(note); addView(selector); addView(css)
+            addView(name); addView(note); addView(presetButton); addView(selector); addView(css)
+            addView(TextView(this@ReaderCssActivity).apply {
+                text = "仅支持增强阅读器生成的正文节点。示例：font-size: 18px; line-height: 1.8; color: #555555;"
+                textSize = 12f
+            })
         }
         android.app.AlertDialog.Builder(this).setTitle(if (old == null) "添加页面子选择器" else "编辑页面子选择器")
             .setView(ScrollView(this).apply { addView(box) })
