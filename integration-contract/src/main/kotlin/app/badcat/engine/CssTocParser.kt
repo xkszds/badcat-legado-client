@@ -13,6 +13,118 @@ data class ParsedTocPage(
  * volume semantics and full AnalyzeRule expressions are not interpreted.
  */
 class CssTocParser {
+    /** Executes bounded JavaScript chapter fields for each isolated TOC row. */
+    suspend fun parseWithScripts(
+        source: BookSource,
+        response: SourceHttpResponse,
+        bookUrl: String,
+        scriptRuntime: SourceScriptRuntime,
+    ): EngineResult<ParsedTocPage> {
+        val rules = when (val result = SourceRuleResolver.resolveObject(source, SourceRuleStage.TOC)) {
+            is EngineResult.Failure -> return result
+            is EngineResult.Success -> result.value.fields
+        }
+        val listRule = rules["chapterList"]?.takeIf(String::isNotBlank)
+            ?: return unsupported(source, "missing chapterList rule")
+        if (listOf(listRule).any { it.contains("@js:", true) || it.contains("{{") }) {
+            return unsupported(source, "JavaScript collection-root rules")
+        }
+        val root = SourceDocument(response.finalUrl, response.body, response.contentType)
+        val items = when (val result = LegadoRuleExpressionDispatcher.evaluateElements(root, listRule)) {
+            is EngineResult.Failure -> return result
+            is EngineResult.Success -> result.value
+        }
+
+        suspend fun extract(itemHtml: String, key: String): EngineResult<String?> {
+            val expression = rules[key]?.takeIf(String::isNotBlank)
+                ?: return EngineResult.Success(null)
+            val trimmed = expression.trim()
+            if (trimmed.startsWith("@js:", true) || trimmed.startsWith("javascript:", true)) {
+                val script = trimmed.substringAfter(':').trim()
+                if (script.isBlank()) return unsupported(source, "empty JavaScript rule for '$key'")
+                return when (val result = scriptRuntime.evaluate(
+                    source,
+                    script,
+                    mapOf(
+                        "result" to itemHtml,
+                        "baseUrl" to response.finalUrl,
+                        "sourceUrl" to source.id,
+                        "sourceId" to source.id,
+                        "sourceName" to source.name,
+                        "ruleName" to key,
+                    ),
+                )) {
+                    is EngineResult.Failure -> result
+                    is EngineResult.Success -> EngineResult.Success(result.value.trim().takeIf(String::isNotEmpty))
+                }
+            }
+            val normalized = if (key == "chapterUrl") expression
+                .replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
+                .replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
+            else expression
+            return when (val result = LegadoRuleExpressionDispatcher.evaluate(
+                SourceDocument(response.finalUrl, itemHtml, response.contentType),
+                normalized,
+            )) {
+                is EngineResult.Failure -> result
+                is EngineResult.Success -> EngineResult.Success(
+                    LegadoRuleExpressionDispatcher.firstScalarValue(normalized, result.value)
+                        ?.trim()?.takeIf(String::isNotEmpty),
+                )
+            }
+        }
+
+        val chapters = ArrayList<BookChapter>()
+        for (item in items) {
+            val title = when (val result = extract(item, "chapterName")) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            } ?: continue
+            val rawUrl = when (val result = extract(item, "chapterUrl")) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            } ?: continue
+            val url = runCatching { WebUrlResolver.resolve(response.finalUrl, rawUrl) }.getOrElse {
+                return unsupported(source, "chapterUrl must resolve to a credential-free HTTP(S) URL")
+            }
+            chapters += BookChapter(chapters.size, title, url)
+        }
+
+        val nextRule = rules["nextTocUrl"]?.trim().orEmpty()
+        val nextUrls = if (nextRule.isBlank()) emptyList() else {
+            val raw = if (nextRule.startsWith("@js:", true) || nextRule.startsWith("javascript:", true)) {
+                val script = nextRule.substringAfter(':').trim()
+                when (val result = scriptRuntime.evaluate(
+                    source,
+                    script,
+                    mapOf(
+                        "result" to response.body,
+                        "baseUrl" to response.finalUrl,
+                        "sourceUrl" to source.id,
+                        "sourceId" to source.id,
+                        "sourceName" to source.name,
+                        "ruleName" to "nextTocUrl",
+                    ),
+                )) {
+                    is EngineResult.Failure -> return result
+                    is EngineResult.Success -> result.value.trim()
+                }
+            } else {
+                val normalized = normalizeLinkExpression(nextRule)
+                when (val result = LegadoRuleExpressionDispatcher.evaluate(root, normalized)) {
+                    is EngineResult.Failure -> return result
+                    is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(normalized, result.value).orEmpty()
+                }
+            }
+            if (raw.isBlank()) emptyList() else listOf(
+                runCatching { WebUrlResolver.resolve(response.finalUrl, raw) }.getOrElse {
+                    return unsupported(source, "nextTocUrl must resolve to a credential-free HTTP(S) URL")
+                },
+            ).filter { it != response.finalUrl }
+        }
+        return EngineResult.Success(ParsedTocPage(chapters, nextUrls.distinct()))
+    }
+
     fun parse(
         source: BookSource,
         response: SourceHttpResponse,
