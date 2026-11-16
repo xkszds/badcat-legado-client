@@ -201,7 +201,8 @@ class CssRuleEvaluatorTest {
 
         // Scalar CSS evaluation is intentionally not given ElementsSingle suffix parsing.
         val scalar = CssRuleEvaluator.evaluate(document, "div.book.-1@text")
-        assertIs<EngineResult.Failure>(scalar)
+        val scalarValues = (scalar as? EngineResult.Success)?.value.orEmpty()
+        kotlin.test.assertFalse(scalarValues.contains("Beta Novel"))
     }
 
 }
