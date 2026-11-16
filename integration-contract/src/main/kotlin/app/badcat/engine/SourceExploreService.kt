@@ -7,6 +7,7 @@ package app.badcat.engine
 class SourceExploreService(
     private val http: SourceHttpGateway,
     private val parser: CssSearchResultsParser = CssSearchResultsParser(),
+    private val scriptRuntime: SourceScriptRuntime? = null,
 ) {
     suspend fun explore(
         source: BookSource,
@@ -37,6 +38,7 @@ class SourceExploreService(
                 "Explore request for source '${source.id}' returned HTTP ${response.statusCode}",
             )
         }
-        return parser.parse(source, response, SourceRuleStage.EXPLORE)
+        return scriptRuntime?.let { parser.parseWithScripts(source, response, it, SourceRuleStage.EXPLORE) }
+            ?: parser.parse(source, response, SourceRuleStage.EXPLORE)
     }
 }
