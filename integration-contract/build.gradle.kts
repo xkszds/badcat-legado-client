@@ -22,4 +22,9 @@ dependencies {
 
 tasks.test {
     useJUnit()
+    testLogging {
+        events("failed", "standardOut", "standardError")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStandardStreams = true
+    }
 }
