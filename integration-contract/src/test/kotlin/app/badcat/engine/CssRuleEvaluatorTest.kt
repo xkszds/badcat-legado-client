@@ -73,6 +73,21 @@ class CssRuleEvaluatorTest {
         )
     }
 
+
+    @Test
+    fun extractsLegadoTextNodesAndAllModes() {
+        val textNodes = CssRuleEvaluator.evaluate(document, "a.title@textNodes")
+        assertEquals(
+            listOf("Alpha", "Beta Novel"),
+            assertIs<EngineResult.Success<List<String>>>(textNodes).value,
+        )
+
+        val all = CssRuleEvaluator.evaluate(document, "a.title:first-child@all")
+        val markup = assertIs<EngineResult.Success<List<String>>>(all).value.single()
+        kotlin.test.assertTrue(markup.startsWith("<a class=\"title\""))
+        kotlin.test.assertTrue(markup.contains("<b>Novel</b>"))
+    }
+
     @Test
     fun combinesCssRulesWithLegadoOperators() {
         val fallback = CssRuleEvaluator.evaluate(
