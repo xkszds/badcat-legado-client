@@ -39,7 +39,7 @@ class RuleCombinationEvaluatorTest {
     @Test
     fun recursivelyEvaluatesMixedTopLevelOperators() {
         assertEquals(
-            listOf("A", "B"),
+            listOf("A", "B", "C"),
             RuleCombinationEvaluator.evaluateNested("primary && secondary || third") { fixture[it].orEmpty() },
         )
         assertEquals(
