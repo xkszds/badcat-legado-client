@@ -32,7 +32,7 @@ object LegadoRegexElementEvaluator {
             return EngineResult.Failure(EngineErrorCode.INVALID_SOURCE, "Regex timeout must be between 1 and 5000ms")
         }
         val stages = try {
-            RuleExpressionTokenizer.splitTopLevel(rule, "&&")
+            splitRegexStages(rule)
         } catch (error: Exception) {
             return EngineResult.Failure(EngineErrorCode.PARSE, "Malformed regex collection rule", error)
         }
@@ -148,6 +148,47 @@ object LegadoRegexElementEvaluator {
         } catch (error: Exception) {
             EngineResult.Failure(EngineErrorCode.PARSE, "Legado regex scalar rule could not be evaluated", error)
         }
+    }
+
+    /** Split Legado regex stages without treating quote characters as tokenizer strings. */
+    private fun splitRegexStages(expression: String): List<String> {
+        val stages = ArrayList<String>()
+        var start = 0
+        var index = 0
+        var escaped = false
+        var inCharacterClass = false
+        var groupDepth = 0
+        while (index < expression.length) {
+            val char = expression[index]
+            if (escaped) {
+                escaped = false
+                index++
+                continue
+            }
+            if (char == '\\\\') {
+                escaped = true
+                index++
+                continue
+            }
+            if (inCharacterClass) {
+                if (char == ']') inCharacterClass = false
+                index++
+                continue
+            }
+            when (char) {
+                '[' -> { inCharacterClass = true; index++ }
+                '(' -> { groupDepth++; index++ }
+                ')' -> { if (groupDepth > 0) groupDepth--; index++ }
+                '&' -> if (groupDepth == 0 && expression.startsWith("&&", index)) {
+                    stages += expression.substring(start, index).trim()
+                    index += 2
+                    start = index
+                } else index++
+                else -> index++
+            }
+        }
+        stages += expression.substring(start).trim()
+        return stages
     }
 
     private class RegexDeadlineExceeded : RuntimeException("Regex evaluation deadline exceeded")
