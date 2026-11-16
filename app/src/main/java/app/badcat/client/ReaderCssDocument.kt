@@ -7,6 +7,8 @@ import org.json.JSONArray
 internal object ReaderCssDocument {
     // 100 profiles × 120 child selectors; keep rendering bounded without truncating valid saved profiles.
     private const val MAX_ACTIVE_RULES = 12_000
+    private const val MAX_ACTIVE_CSS_CHARS = 1_000_000
+    private const val MAX_PROFILE_JSON_CHARS = 8 * 1024 * 1024
     private val allowedProperties = setOf(
         "color", "background-color", "font-size", "font-weight", "font-style",
         "font-family", "line-height", "letter-spacing", "text-align", "text-indent",
@@ -72,13 +74,17 @@ internal object ReaderCssDocument {
 
     private fun activeCss(context: Context): String = runCatching {
         val prefs = context.getSharedPreferences("reader_css_profiles", Context.MODE_PRIVATE)
-        val profiles = JSONArray(prefs.getString("profiles_v1", "[]"))
+        val rawProfiles = prefs.getString("profiles_v1", "[]") ?: "[]"
+        require(rawProfiles.length <= MAX_PROFILE_JSON_CHARS) { "Reader CSS profile data exceeds the safe read limit" }
+        val profiles = JSONArray(rawProfiles)
         val rules = buildList {
             for (i in 0 until profiles.length()) {
+                if (size >= MAX_ACTIVE_RULES) break
                 val profile = profiles.optJSONObject(i) ?: continue
                 if (!profile.optBoolean("enabled", false)) continue
                 val profileRules = profile.optJSONArray("rules") ?: continue
                 for (j in 0 until profileRules.length()) {
+                    if (size >= MAX_ACTIVE_RULES) break
                     val rule = profileRules.optJSONObject(j) ?: continue
                     add(rule.optString("selector") to rule.optString("css"))
                 }
@@ -88,8 +94,12 @@ internal object ReaderCssDocument {
     }.getOrDefault("")
 
     /** Applies valid rules in profile/list order; rejected rules do not consume the render budget. */
-    internal fun renderRules(rules: List<Pair<String, String>>, maxRules: Int = MAX_ACTIVE_RULES): String {
-        if (maxRules <= 0) return ""
+    internal fun renderRules(
+        rules: List<Pair<String, String>>,
+        maxRules: Int = MAX_ACTIVE_RULES,
+        maxChars: Int = MAX_ACTIVE_CSS_CHARS,
+    ): String {
+        if (maxRules <= 0 || maxChars <= 0) return ""
         return buildString {
             var applied = 0
             for ((selectorRaw, declarationsRaw) in rules) {
@@ -97,7 +107,9 @@ internal object ReaderCssDocument {
                 val selector = sanitizeSelector(selectorRaw) ?: continue
                 val declarations = sanitizeDeclarations(declarationsRaw)
                 if (declarations.isEmpty()) continue
-                append(scopeSelector(selector)).append('{').append(declarations).append("}\n")
+                val renderedRule = "${scopeSelector(selector)}{$declarations}\\n"
+                if (length + renderedRule.length > maxChars) break
+                append(renderedRule)
                 applied++
             }
         }
