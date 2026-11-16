@@ -10,6 +10,7 @@ import app.badcat.engine.OkHttpSourceRequestClient
 import app.badcat.engine.ReadingEngine
 import app.badcat.engine.SourceBookDetailService
 import app.badcat.engine.SourceChapterContentService
+import app.badcat.engine.SourceExploreService
 import app.badcat.engine.SourceReadingEngine
 import app.badcat.engine.SourceSearchService
 import app.badcat.engine.SourceTocService
@@ -43,6 +44,7 @@ class BadcatReadingEngineFactory(
             catalog = catalog,
             searchUrlResolver = BookSourceSearchUrlResolver(),
             searchService = SourceSearchService(gateway),
+            exploreService = SourceExploreService(gateway),
             detailService = SourceBookDetailService(gateway),
             tocService = SourceTocService(gateway),
             contentService = SourceChapterContentService(
