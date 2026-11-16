@@ -127,6 +127,8 @@ class CssSearchResultsParser {
         rule.trim().endsWith("@html", ignoreCase = true)
 
     private fun hasNonHtmlOutputSuffix(rule: String): Boolean {
+        val root = rule.trim()
+        if (root.startsWith(":") || root.startsWith("@regex:", ignoreCase = true)) return false
         val split = RuleExpressionTokenizer.splitByFirstTopLevelOperator(rule)
         if (split.operator != null) return split.rules.any(::hasNonHtmlOutputSuffix)
         val value = rule.trim()
