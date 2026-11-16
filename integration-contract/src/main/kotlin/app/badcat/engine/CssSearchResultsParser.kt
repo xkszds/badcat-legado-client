@@ -89,9 +89,8 @@ class CssSearchResultsParser {
             "coverUrl" -> expression.replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
             else -> expression
         }
-        return when (val result = SelectorRuleEvaluator.evaluate(
+        return when (val result = LegadoRuleExpressionDispatcher.evaluate(
             SourceDocument(response.finalUrl, item.outerHtml(), response.contentType),
-            SelectorRuleType.CSS,
             extractionRule,
         )) {
             is EngineResult.Failure -> throw SearchParseFailure(result)
