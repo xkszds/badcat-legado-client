@@ -8,9 +8,9 @@ and must not be treated as full BookSource/AnalyzeRule compatibility.
 
 | Area | Current state | Supported behavior | Known gaps / acceptance work |
 |---|---|---|---|
-| BookSource JSON | Partial | Single object or array import; bounded strict UTF-8; required URL/name validation; known-field type validation; duplicate source URL rejection; raw JSON retained so unknown fields survive export; enabled flag edits preserve unknown fields | Validate more upstream field types and source schema variants against a real-world fixture corpus |
+| BookSource JSON | Partial | Single object or array import; strict UTF-8; 5 MiB, 2,000-source, 64-level nesting and 512-field-per-source limits; known metadata/rule type checks; duplicate URL rejection; unknown-field-preserving export and enabled edits | Validate remaining upstream fields against a real-world source corpus; source runtime is still partial |
 | Source management | Partial | Imported sources can be stored, enabled/disabled, selected and exported | Verify bulk import/export and persistence on device; improve source diagnostics |
-| Search URL | Partial | Absolute/relative HTTP(S), page tokens, URL options for method/headers/body/timeout/retry/redirects/charset; bounded query encoding; pure @js and <js> rules with string-only key/page/result bindings | Full Legado java/http/cookie/cache/WebView objects, webView, dnsIp, resolveIp, type, URL-option js/bodyJs and login/session state are not supported |
+| Search URL | Partial | Absolute/relative HTTP(S), page tokens, URL options for method/headers/body/timeout/retry/redirects/charset; bounded query encoding; pure @js and <js> URL expressions with string-only key/page/result bindings | Full Legado java/http/cookie/cache/WebView objects, webView, dnsIp, resolveIp, type, URL-option js/bodyJs and login/session state are not supported |
 | HTTP transport | Partial | Async OkHttp, redirects with HTTPS downgrade prevention, per-source cookie jar, headers, common methods, response size cap, charset, retry | Legado DNS overrides, WebView requests, advanced request body and cookie semantics need coverage |
 | Search result fields | Partial | CSS or bounded regex collection for bookList; CSS/XPath/JSONPath and bounded regex scalar extraction; relative book/cover URL resolution | Regex and collection limits apply; JS, filters, interpolation and direct-detail detection are not supported |
 | Book detail | Partial | Name/author/intro/cover/latest chapter/TOC URL; CSS/XPath/JSONPath and bounded regex scalar extraction | JS, replacement chains, variables and source-specific init scripts are not supported |
@@ -18,7 +18,7 @@ and must not be treated as full BookSource/AnalyzeRule compatibility.
 | Chapter content | Partial | CSS/XPath/JSONPath content extraction; CSS/XPath/JSONPath and bounded regex title/next-page URL; HTML-to-readable-text conversion; pagination and replacement hook | Regex chapter-body transforms, JS/webJs/callBackJs, sourceRegex, replaceRegex, payAction, imageDecode and contentBatch are not implemented |
 | Selector expressions | Partial | Explicit @css:, @xpath:, @jsonpath: / @json:; unprefixed CSS default; unambiguous XPath and JSONPath inference | Complete upstream expression grammar, selector filters and mixed parser chains are not implemented |
 | JavaScript | Partial | Pinned Rhino sandbox for bounded string-only script evaluation; URL @js/<js> supports key/page/result strings; replacement helper | Full Legado Java/http/cookie/cache/WebView bindings, source mainJs/jsLib and stage-specific AnalyzeRule execution are not integrated |
-| Regex | Partial | Bounded regex replacement plus staged regex collection roots for search and TOC | Regex scalar-field extraction and full AnalyzeRule regex chains are not yet connected |
+| Regex | Partial | Bounded regex replacement; staged collection roots for search/TOC; scalar capture-group extraction for search, detail, TOC and chapter title/next-page fields | Full upstream regex filter suffixes and every AnalyzeRule combination are not implemented |
 | Replace rules | Partial | Scope, include/exclude matching, order, literal/regex replacement, optional JS evaluator hook | Not equivalent to all upstream Legado replace-rule and source-specific replacement behavior |
 | Reader CSS profiles | Implemented | Multiple named profiles, notes, child selector rules, import/export, preview, sanitization and limits | Requires device UI/reader regression testing |
 | Reading flow | Partial | Search → detail → TOC → chapter content → next-page aggregation → reading progress | Real-source corpus, live network behavior and physical-device acceptance remain outstanding |
@@ -30,12 +30,7 @@ XPath or JSONPath based on explicit prefixes or unambiguous expression shape.
 It is wired into search item fields, book detail fields, TOC chapter fields and
 chapter content/title fields. The selector-stage adapter uses the same dispatcher. TOC next-page and chapter next-content links also use the shared dispatcher, so XPath/JSONPath scalar links are no longer hard-coded to CSS.
 
-The scalar dispatcher deliberately fails closed for explicit @js: and @regex:
-forms and does not infer JavaScript or regex from arbitrary text. Collection
-roots have a separate explicit path: CSS selectors use Jsoup, while a leading
-colon or @regex: selects the bounded regex collection evaluator. Regex collection
-is not enabled for scalar fields. Search and TOC item fields continue to use the
-shared CSS/XPath/JSONPath scalar dispatcher.
+The scalar dispatcher handles explicit @regex: rules through the bounded capture-group evaluator and routes CSS/XPath/JSONPath through their dedicated parsers. Explicit @js: remains fail-closed in selector fields unless a specific script-capable execution path is wired. Collection roots have a separate explicit path: CSS selectors use Jsoup, while a leading colon or @regex: selects the bounded regex collection evaluator.
 
 ## Acceptance gate for declaring Legado engine complete
 
@@ -54,9 +49,9 @@ regex collection rules, as well as explicit `@regex:` roots. The evaluator
 preserves full matches in source order and supports bounded multi-stage
 `&&` extraction. It enforces input, pattern, stage, match-count, output-size
 and execution-time budgets, returning a timeout or unsupported-rule result
-rather than silently treating an unsafe rule as CSS. Scalar regex fields,
-full upstream regex filter syntax and other AnalyzeRule modes remain outside
-this increment.
+rather than silently treating an unsafe rule as CSS. Scalar regex extraction is
+covered separately below; full upstream regex filter syntax and other AnalyzeRule
+modes remain outside this increment.
 
 
 ### Bounded regex scalar extraction (2026-11-16)
