@@ -33,17 +33,18 @@ class SharedPreferencesSourceCookieJar(
 
     init {
         synchronized(lock) {
-            decode(preferences.getString(storageKey, null)).forEach { cookie ->
-                if (cookie.expiresAt > System.currentTimeMillis()) {
-                    cookies[cookieKey(cookie)] = cookie
-                }
-            }
+            reloadLocked()
+            removeExpiredLocked(System.currentTimeMillis())
             persistLocked()
         }
     }
 
     override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
         synchronized(lock) {
+            // A second engine instance (for example, search and reader screens)
+            // may own another jar for this source. Reload under the shared key lock
+            // before merging so an older in-memory snapshot cannot erase its cookies.
+            reloadLocked()
             val now = System.currentTimeMillis()
             cookies.forEach { cookie ->
                 val key = cookieKey(cookie)
@@ -56,9 +57,20 @@ class SharedPreferencesSourceCookieJar(
     }
 
     override fun loadForRequest(url: HttpUrl): List<Cookie> = synchronized(lock) {
+        // Keep independently-created clients for the same source in sync.
+        reloadLocked()
         removeExpiredLocked(System.currentTimeMillis())
         persistLocked()
         cookies.values.filter { it.matches(url) }
+    }
+
+    private fun reloadLocked() {
+        cookies.clear()
+        decode(preferences.getString(storageKey, null)).forEach { cookie ->
+            if (cookie.expiresAt > System.currentTimeMillis()) {
+                cookies[cookieKey(cookie)] = cookie
+            }
+        }
     }
 
     private fun removeExpiredLocked(now: Long) {
