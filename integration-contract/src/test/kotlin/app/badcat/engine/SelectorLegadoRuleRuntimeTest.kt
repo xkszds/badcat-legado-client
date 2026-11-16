@@ -60,20 +60,61 @@ class SelectorLegadoRuleRuntimeTest {
     }
 
     @Test
-    fun failsWhenNoFieldsHaveExplicitSelectorModes(): Unit = runBlocking {
-        val source = BookSource(
-            id = "https://reader.example/",
-            name = "Fixture",
-            baseUrl = "https://reader.example/",
-        )
-        val runtime = SelectorLegadoRuleRuntime(emptyMap())
+    fun defaultsUnprefixedLegadoSelectorsToCss(): Unit = runBlocking {
+        val source = BookSource("https://reader.example/", "Fixture", "https://reader.example/")
+        val runtime = SelectorLegadoRuleRuntime()
         val result = runtime.evaluate(
             SourceRuleStage.SEARCH,
-            """{"bookList":"div.book"}""",
+            """{"bookList":"div.book@text"}""",
             source,
             SourceDocument("https://reader.example/", "<div class='book'>Alpha</div>"),
         )
-        assertIs<EngineResult.Failure>(result)
+        assertEquals(
+            listOf(mapOf("bookList" to "Alpha")),
+            assertIs<EngineResult.Success<List<Map<String, String>>>>(result).value,
+        )
+    }
+
+    @Test
+    fun dispatchesExplicitXPathAndJsonPathFields(): Unit = runBlocking {
+        val source = BookSource("https://reader.example/", "Fixture", "https://reader.example/")
+        val runtime = SelectorLegadoRuleRuntime()
+        val html = runtime.evaluate(
+            SourceRuleStage.SEARCH,
+            """{"bookList":"@xpath://div[@class='book']/text()"}""",
+            source,
+            SourceDocument("https://reader.example/", "<div class='book'>XPath book</div>"),
+        )
+        assertEquals(
+            listOf(mapOf("bookList" to "XPath book")),
+            assertIs<EngineResult.Success<List<Map<String, String>>>>(html).value,
+        )
+
+        val json = runtime.evaluate(
+            SourceRuleStage.SEARCH,
+            """{"bookList":"@jsonpath:$.books[*].name"}""",
+            source,
+            SourceDocument("https://reader.example/", """{"books":[{"name":"One"},{"name":"Two"}]}"""),
+        )
+        assertEquals(
+            listOf(mapOf("bookList" to "One"), mapOf("bookList" to "Two")),
+            assertIs<EngineResult.Success<List<Map<String, String>>>>(json).value,
+        )
+    }
+
+    @Test
+    fun rejectsScriptAndRegexWithoutTheirDedicatedRuntime(): Unit = runBlocking {
+        val source = BookSource("https://reader.example/", "Fixture", "https://reader.example/")
+        val runtime = SelectorLegadoRuleRuntime()
+        for (expression in listOf("@js:java.lang.System.exit(0)", "@regex:chapter.*")) {
+            val result = runtime.evaluate(
+                SourceRuleStage.SEARCH,
+                """{"bookList":"$expression"}""",
+                source,
+                SourceDocument("https://reader.example/", "<p>ignored</p>"),
+            )
+            assertEquals(EngineErrorCode.UNSUPPORTED_RULE, assertIs<EngineResult.Failure>(result).code)
+        }
     }
 
     @Test
