@@ -70,7 +70,11 @@ object CssRuleEvaluator {
         return runCatching {
             val doc = Jsoup.parse(document.body, document.url)
             val elements = doc.select(parsed.selector)
-            EngineResult.Success(elements.map { extract(it, parsed.valueMode, parsed.attribute) })
+            val values = when (parsed.valueMode) {
+                ValueMode.ALL -> listOf(elements.outerHtml()).filter(String::isNotEmpty)
+                else -> elements.map { extract(it, parsed.valueMode, parsed.attribute) }
+            }
+            EngineResult.Success(values)
         }.getOrElse {
             EngineResult.Failure(
                 EngineErrorCode.PARSE,
@@ -86,7 +90,7 @@ object CssRuleEvaluator {
         val attribute: String? = null,
     )
 
-    private enum class ValueMode { TEXT, OWN_TEXT, HTML, HREF, SRC, TAG, ATTRIBUTE }
+    private enum class ValueMode { TEXT, TEXT_NODES, OWN_TEXT, HTML, ALL, HREF, SRC, TAG, ATTRIBUTE }
 
     private fun parseExpression(expression: String): ParsedExpression? {
         val marker = expression.lastIndexOf('@')
@@ -101,10 +105,14 @@ object CssRuleEvaluator {
         return when {
             suffix.equals("text", ignoreCase = true) ->
                 ParsedExpression(selector, ValueMode.TEXT)
+            suffix.equals("textNodes", ignoreCase = true) ->
+                ParsedExpression(selector, ValueMode.TEXT_NODES)
             suffix.equals("ownText", ignoreCase = true) ->
                 ParsedExpression(selector, ValueMode.OWN_TEXT)
             suffix.equals("html", ignoreCase = true) ->
                 ParsedExpression(selector, ValueMode.HTML)
+            suffix.equals("all", ignoreCase = true) ->
+                ParsedExpression(selector, ValueMode.ALL)
             suffix.equals("href", ignoreCase = true) ->
                 ParsedExpression(selector, ValueMode.HREF)
             suffix.equals("src", ignoreCase = true) ->
@@ -126,8 +134,10 @@ object CssRuleEvaluator {
         attribute: String?,
     ): String = when (mode) {
         ValueMode.TEXT -> element.text()
+        ValueMode.TEXT_NODES -> element.textNodes().map { it.text().trim() }.filter(String::isNotEmpty).joinToString("\\n")
         ValueMode.OWN_TEXT -> element.ownText()
         ValueMode.HTML -> element.html()
+        ValueMode.ALL -> element.outerHtml()
         ValueMode.HREF -> element.absUrl("href").ifEmpty { element.attr("href") }
         ValueMode.SRC -> element.absUrl("src").ifEmpty { element.attr("src") }
         ValueMode.TAG -> element.tagName()
