@@ -46,6 +46,18 @@ class JsonPathRuleEvaluatorTest {
     }
 
     @Test
+    fun selectsJsonCollectionEntriesAsIndependentFragments() {
+        val result = JsonPathRuleEvaluator.evaluateElements(document, "$.books[*]")
+        assertEquals(
+            listOf(
+                """{"name":"Alpha","author":"A"}""",
+                """{"name":"Beta","author":"B"}""",
+            ),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
+    @Test
     fun reportsMalformedJsonPath() {
         val result = JsonPathRuleEvaluator.evaluate(document, "$.books[")
         assertIs<EngineResult.Failure>(result)
