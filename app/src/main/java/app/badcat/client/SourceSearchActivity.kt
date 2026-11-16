@@ -63,6 +63,12 @@ class SourceSearchActivity : Activity() {
         engine = BadcatReadingEngineFactory(applicationContext).create()
         contentType = intent.getStringExtra(EXTRA_CONTENT_TYPE)
             ?.takeIf { it in listOf("小说", "漫画", "综合") } ?: "小说"
+        status = TextView(this).apply {
+            textSize = 13f
+            setTextColor(muted)
+            setPadding(0, 0, 0, dp(10))
+        }
+        results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
