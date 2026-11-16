@@ -165,12 +165,16 @@ class SourceSearchActivity : Activity() {
             isFocusable = true
             setOnClickListener { search() }
         }
-        field.addView(searchButton, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT, dp(36)
-        ))
-        addView(field, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
-        ))
+        field.addView(TextView(this@SourceSearchActivity).apply {
+            text = "×"; textSize = 23f; gravity = Gravity.CENTER; setTextColor(muted)
+            setPadding(dp(8), 0, dp(6), 0)
+            setOnClickListener { keywordInput.text?.clear(); keywordInput.requestFocus() }
+        }, LinearLayout.LayoutParams(dp(34), dp(40)))
+        addView(field, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(10) })
+        searchButton.background = null
+        searchButton.setTextColor(ink)
+        searchButton.setPadding(dp(5), 0, dp(5), 0)
+        addView(searchButton, LinearLayout.LayoutParams(dp(48), dp(44)))
     }
 
     private fun buildSourceStrip(): View = LinearLayout(this).apply {
@@ -275,7 +279,7 @@ class SourceSearchActivity : Activity() {
                             search()
                         }
                     }
-                    is EngineResult.Failure -> status.text = "读取书源失败：${result.message}"
+                    is EngineResult.Failure -> showServerError("服务器异常：${result.message}") { loadSources() }
                 }
             }
         }
@@ -378,12 +382,10 @@ class SourceSearchActivity : Activity() {
             })
         }
         if (items.isEmpty()) {
-            results.addView(TextView(this).apply {
-                text = "暂未找到相关书籍"
-                textSize = 14f
-                gravity = Gravity.CENTER
-                setTextColor(muted)
-                setPadding(0, dp(42), 0, dp(42))
+            if (failures.isNotEmpty()) showServerError("当前服务出了点问题，请稍候再试") { search() }
+            else results.addView(TextView(this).apply {
+                text = "暂未找到相关书籍"; textSize = 14f; gravity = Gravity.CENTER
+                setTextColor(muted); setPadding(0, dp(42), 0, dp(42))
             })
             return
         }
@@ -446,6 +448,28 @@ class SourceSearchActivity : Activity() {
                 ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply { bottomMargin = dp(10) })
         }
+    }
+
+    private fun showServerError(message: String, retry: () -> Unit) {
+        status.text = ""
+        results.removeAllViews()
+        results.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(dp(20), dp(150), dp(20), dp(80))
+            addView(TextView(this@SourceSearchActivity).apply {
+                text = "服务器异常"; textSize = 20f; setTextColor(ink); gravity = Gravity.CENTER
+            })
+            addView(TextView(this@SourceSearchActivity).apply {
+                text = message; textSize = 14f; setTextColor(muted); gravity = Gravity.CENTER
+                setPadding(0, dp(10), 0, dp(22))
+            })
+            addView(TextView(this@SourceSearchActivity).apply {
+                text = "刷新重试"; textSize = 16f; gravity = Gravity.CENTER; setTextColor(Color.WHITE)
+                background = rounded(blue, 28); setPadding(dp(52), dp(13), dp(52), dp(13))
+                setOnClickListener { retry() }
+            })
+        })
     }
 
     private fun resultMeta(value: String) = TextView(this).apply {
