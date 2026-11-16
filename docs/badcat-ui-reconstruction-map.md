@@ -198,3 +198,10 @@ The personal center currently shows only implemented routes: reading history, bo
 - The reader now has a dedicated lower action strip for chapter catalog, reading theme/brightness cycle, and reader settings, separate from previous/next chapter and scroll progress controls.
 - Search content type now opens an explicit three-choice selector instead of cycling blindly through types.
 - The My page title and profile affordance are clarified; tapping the displayed nickname edits and persists a local profile nickname (up to 24 characters).- Search result cards now use the same asynchronous, bounded cover loader as book details and favorites, with a fixed portrait thumbnail beside title/author/latest-chapter/intro metadata.- Search source/channel chips now immediately rerun the current keyword against the newly selected source (or all sources), reset pagination to page 1, and show a selection status when no keyword has been entered.
+
+## 2026-11-16 follow-up: personal-center truthfulness and search channel behavior
+
+- Removed message, download, feedback and favorites-sync tiles because there is no implemented destination/service behind them. The personal center now exposes only reading history, bookmark management, source management, replacement rules and the working share action.
+- Removed the theme/settings glyphs that previously displayed “not connected” placeholder toasts. Removed the unavailable reading-duration placeholder; the profile now shows the real local favorite count.
+- Selecting a search source now resets pagination and immediately reruns the current keyword for that source; selecting “全部” reruns all eligible sources. When no keyword is present, the selected channel is stated without issuing a search.
+- These changes improve behavioral honesty and consistency; they do not substitute for screenshot comparison or device validation.
