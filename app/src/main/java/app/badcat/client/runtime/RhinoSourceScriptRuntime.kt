@@ -137,6 +137,7 @@ class RhinoSourceScriptRuntime(
         const val MAX_BINDINGS = 32
         const val MAX_BINDING_VALUE_CHARS = 64 * 1024
         const val MAX_TOTAL_BINDING_CHARS = 128 * 1024
+        const val MAX_TOTAL_SCRIPT_CHARS = 256 * 1024
         const val GLOBAL_KEY_PREFIX = "badcat-source:"
         val BINDING_NAME = Regex("[A-Za-z_$][A-Za-z0-9_$]{0,63}")
         val sourceGlobals = ConcurrentHashMap<String, com.script.SharedGlobalStateHandle>()
