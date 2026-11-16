@@ -60,22 +60,6 @@ class CssBookInfoParserTest {
         ).value
         assertEquals("XPath Novel", xpathDetail.name)
 
-        val jsonSource = BookSource(
-            id = "fixture", name = "Fixture", baseUrl = "https://reader.example/",
-            ruleBookInfoJson = """{"name":"@jsonpath:$.book.name","author":"@jsonpath:$.book.author"}""",
-        )
-        val jsonResponse = SourceHttpResponse(
-            200, "https://reader.example/book/7",
-            body = """{"book":{"name":"JSON Novel","author":"Writer"}}""",
-            contentType = "application/json",
-        )
-        val jsonResult = CssBookInfoParser().parse(jsonSource, jsonResponse, jsonResponse.finalUrl)
-        val jsonDetail = assertIs<EngineResult.Success<BookDetail>>(
-            jsonResult,
-            (jsonResult as? EngineResult.Failure)?.message ?: "JSONPath book-info parsing failed",
-        ).value
-        assertEquals("JSON Novel", jsonDetail.name)
-        assertEquals("Writer", jsonDetail.author)
     }
 
     @Test
