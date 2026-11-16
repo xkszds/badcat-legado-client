@@ -24,6 +24,12 @@ object CssRuleEvaluator {
         if (rule.isEmpty()) {
             return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "CSS rule is blank")
         }
+        if (RuleCombinationEvaluator.hasNestedTopLevelOperator(rule)) {
+            return EngineResult.Failure(
+                EngineErrorCode.UNSUPPORTED_RULE,
+                "Mixed nested CSS list operators are not supported by the bounded CSS evaluator",
+            )
+        }
 
         return runCatching {
             val outerSplit = RuleExpressionTokenizer.splitByFirstTopLevelOperator(rule)
