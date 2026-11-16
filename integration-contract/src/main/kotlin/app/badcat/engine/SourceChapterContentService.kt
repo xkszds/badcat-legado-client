@@ -47,6 +47,16 @@ class SourceChapterContentService(
                     "Chapter content request for source '${source.id}' returned HTTP ${response.statusCode}",
                 )
             }
+            // Record the post-redirect URL as visited too. If nextContentUrl points
+            // back to the redirect destination, stop before issuing a duplicate request.
+            if (response.finalUrl.isNotBlank() && response.finalUrl != currentUrl &&
+                !visited.add(response.finalUrl)
+            ) {
+                return EngineResult.Failure(
+                    EngineErrorCode.PARSE,
+                    "Chapter content pagination contains a redirect URL cycle for source '${source.id}'",
+                )
+            }
             val parsed = when (val result = parser.parse(source, response, chapter)) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
