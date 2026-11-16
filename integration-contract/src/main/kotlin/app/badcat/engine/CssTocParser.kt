@@ -83,7 +83,12 @@ class CssTocParser {
                 root,
                 normalizeLinkExpression(nextRule),
             )) {
-                is EngineResult.Failure -> return result
+                is EngineResult.Failure -> {
+                    if (result.code == EngineErrorCode.PARSE) {
+                        return unsupported(source, "invalid nextTocUrl selector")
+                    }
+                    return result
+                }
                 is EngineResult.Success -> result.value
             }
             for (value in values.filter(String::isNotBlank)) {
