@@ -36,9 +36,9 @@ class CssTocParser {
         }
 
         val root = SourceDocument(response.finalUrl, response.body, response.contentType)
-        val items = when (val result = SelectorRuleEvaluator.evaluate(
-            root, SelectorRuleType.CSS,
-            if (listRule.contains("@html", true)) listRule else "$listRule@html",
+        val items = when (val result = CssRuleEvaluator.evaluateElements(
+            root,
+            listRule,
         )) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
