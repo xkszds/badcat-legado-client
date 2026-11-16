@@ -52,7 +52,8 @@ class CssTocParser {
             )) {
                 is EngineResult.Failure -> result
                 is EngineResult.Success -> EngineResult.Success(
-                    LegadoRuleExpressionDispatcher.firstScalarValue(expression, result.value)\n                        ?.trim()?.takeIf(String::isNotEmpty),
+                    LegadoRuleExpressionDispatcher.firstScalarValue(expression, result.value)
+                        ?.trim()?.takeIf(String::isNotEmpty),
                 )
             }
         }
