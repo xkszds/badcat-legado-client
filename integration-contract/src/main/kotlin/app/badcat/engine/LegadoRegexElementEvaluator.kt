@@ -78,6 +78,78 @@ object LegadoRegexElementEvaluator {
         }
     }
 
+
+    /**
+     * Bounded port of Legado AnalyzeByRegex.getElement for scalar rule fields.
+     * Intermediate stages concatenate full matches; the final stage returns
+     * capture group 0 and every capture group from the first matching result.
+     */
+    fun evaluateScalar(
+        input: String,
+        expression: String,
+        timeoutMilliseconds: Long = DEFAULT_TIMEOUT_MILLISECONDS,
+    ): EngineResult<List<String>> {
+        val rule = expression.trim()
+        if (rule.isEmpty()) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Legado regex scalar rule is blank")
+        }
+        if (input.length > MAX_INPUT_CHARACTERS) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Regex input exceeds the configured limit")
+        }
+        if (timeoutMilliseconds !in 1..5_000) {
+            return EngineResult.Failure(EngineErrorCode.INVALID_SOURCE, "Regex timeout must be between 1 and 5000ms")
+        }
+        val stages = try {
+            RuleExpressionTokenizer.splitTopLevel(rule, "&&")
+        } catch (error: Exception) {
+            return EngineResult.Failure(EngineErrorCode.PARSE, "Malformed regex scalar rule", error)
+        }
+        if (stages.size > MAX_STAGES || stages.any { it.isBlank() || it.length > MAX_PATTERN_CHARACTERS }) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Regex rule exceeds stage or pattern limits")
+        }
+
+        val started = System.nanoTime()
+        val deadline = timeoutMilliseconds * 1_000_000L
+        var current = input
+        return try {
+            for ((stageIndex, sourcePattern) in stages.withIndex()) {
+                val matcher = Pattern.compile(sourcePattern).matcher(
+                    DeadlineCharSequence(current, started, deadline),
+                )
+                if (stageIndex == stages.lastIndex) {
+                    if (!matcher.find()) return EngineResult.Success(emptyList())
+                    return EngineResult.Success(
+                        (0..matcher.groupCount()).map { matcher.group(it).orEmpty() },
+                    )
+                }
+                val nextInput = StringBuilder()
+                var count = 0
+                while (matcher.find()) {
+                    if (++count > MAX_MATCHES) {
+                        return EngineResult.Failure(
+                            EngineErrorCode.UNSUPPORTED_RULE,
+                            "Regex scalar stage produced too many matches",
+                        )
+                    }
+                    val match = matcher.group()
+                    if (nextInput.length.toLong() + match.length > MAX_OUTPUT_CHARACTERS) {
+                        return EngineResult.Failure(
+                            EngineErrorCode.UNSUPPORTED_RULE,
+                            "Regex scalar intermediate output exceeds the configured limit",
+                        )
+                    }
+                    nextInput.append(match)
+                }
+                current = nextInput.toString()
+            }
+            EngineResult.Success(emptyList())
+        } catch (timeout: RegexDeadlineExceeded) {
+            EngineResult.Failure(EngineErrorCode.RULE_TIMEOUT, "Legado regex scalar rule exceeded its time budget", timeout)
+        } catch (error: Exception) {
+            EngineResult.Failure(EngineErrorCode.PARSE, "Legado regex scalar rule could not be evaluated", error)
+        }
+    }
+
     private class RegexDeadlineExceeded : RuntimeException("Regex evaluation deadline exceeded")
 
     private class DeadlineCharSequence(

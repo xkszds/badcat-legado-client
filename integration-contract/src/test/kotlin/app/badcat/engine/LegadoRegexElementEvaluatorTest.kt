@@ -84,4 +84,35 @@ class LegadoRegexElementEvaluatorTest {
         assertTrue(elapsedMillis < 1_000, "Regex deadline was not enforced promptly: ${elapsedMillis}ms")
     }
 
+    @Test
+    fun scalarRegexReturnsFirstMatchAndCaptureGroups() {
+        val result = LegadoRegexElementEvaluator.evaluateScalar(
+            "Title: Regex Novel; Author: Writer",
+            """Title:\\s*(Regex\\s+Novel);\\s*Author:\\s*(Writer)""",
+        )
+        assertEquals(
+            listOf("Title: Regex Novel; Author: Writer", "Regex Novel", "Writer"),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
+    @Test
+    fun scalarRegexSupportsChainedExtractionAndNoMatch() {
+        val result = LegadoRegexElementEvaluator.evaluateScalar(
+            "<section><h1>Regex Novel</h1></section><section><h1>Other</h1></section>",
+            """<section>[\\s\\S]*?</section> && <h1>(.*?)</h1>""",
+        )
+        assertEquals(
+            listOf("<h1>Regex Novel</h1>", "Regex Novel"),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+        assertEquals(
+            emptyList(),
+            assertIs<EngineResult.Success<List<String>>>(
+                LegadoRegexElementEvaluator.evaluateScalar("nothing", "title:(.*)"),
+            ).value,
+        )
+    }
+
+
 }

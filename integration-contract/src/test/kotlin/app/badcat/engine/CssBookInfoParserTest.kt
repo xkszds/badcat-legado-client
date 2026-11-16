@@ -150,4 +150,28 @@ class CssBookInfoParserTest {
         assertIs<EngineResult.Failure>(CssBookInfoParser().parse(tocSource, response, response.finalUrl))
     }
 
+    @Test
+    fun parsesRegexScalarBookNameAndAuthorFields() {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleBookInfoJson = """{
+                "name":"@regex:<h1>(.*?)</h1>",
+                "author":"@regex:Author:\\s*(.*?)<"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/book/regex",
+            body = "<h1>Regex Novel</h1><p>Author: Regex Writer</p>",
+        )
+        val detail = assertIs<EngineResult.Success<BookDetail>>(
+            CssBookInfoParser().parse(source, response, response.finalUrl),
+        ).value
+        assertEquals("Regex Novel", detail.name)
+        assertEquals("Author: Regex Writer", detail.author)
+    }
+
+
 }

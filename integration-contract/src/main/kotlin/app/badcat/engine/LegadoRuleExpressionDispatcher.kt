@@ -25,6 +25,13 @@ object LegadoRuleExpressionDispatcher {
     }
 
     fun evaluate(document: SourceDocument, expression: String): EngineResult<List<String>> {
+        val scalarRule = expression.trim()
+        if (scalarRule.startsWith("@regex:", ignoreCase = true)) {
+            return LegadoRegexElementEvaluator.evaluateScalar(
+                document.body,
+                scalarRule.substringAfter(':'),
+            )
+        }
         val resolved = when (val result = resolve(expression)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value

@@ -12,7 +12,7 @@ and must not be treated as full BookSource/AnalyzeRule compatibility.
 | Source management | Partial | Imported sources can be stored, enabled/disabled, selected and exported | Verify bulk import/export and persistence on device; improve source diagnostics |
 | Search URL | Partial | Absolute/relative HTTP(S), page tokens, URL options for method/headers/body/timeout/retry/redirects/charset; bounded query encoding; pure @js and <js> rules with string-only key/page/result bindings | Full Legado java/http/cookie/cache/WebView objects, webView, dnsIp, resolveIp, type, URL-option js/bodyJs and login/session state are not supported |
 | HTTP transport | Partial | Async OkHttp, redirects with HTTPS downgrade prevention, per-source cookie jar, headers, common methods, response size cap, charset, retry | Legado DNS overrides, WebView requests, advanced request body and cookie semantics need coverage |
-| Search result fields | Partial | CSS or bounded regex collection for bookList; CSS/XPath/JSONPath scalar extraction dispatch; relative book/cover URL resolution | Regex collection roots are bounded and available; JS, filters, per-field regex, interpolation and direct-detail detection are not supported |
+| Search result fields | Partial | CSS or bounded regex collection for bookList; CSS/XPath/JSONPath and bounded regex scalar extraction; relative book/cover URL resolution | Regex collection roots are bounded and available; JS, filters, per-field regex, interpolation and direct-detail detection are not supported |
 | Book detail | Partial | Name/author/intro/cover/latest chapter/TOC URL; CSS/XPath/JSONPath scalar extraction | JS, regex, replacement chains, variables and source-specific init scripts are not supported |
 | TOC | Partial | CSS or bounded regex chapter collection; CSS/XPath/JSONPath scalar title, chapter URL and next-page link extraction; multi-page pagination and cycle guards | Regex chapter collection roots are bounded and available; volume grouping, VIP/pay and script formatting are not implemented |
 | Chapter content | Partial | CSS/XPath/JSONPath extraction, title and next-page URL; HTML-to-readable-text conversion; pagination and replacement hook | JS/webJs/callBackJs, sourceRegex, replaceRegex, payAction, imageDecode and contentBatch are not implemented |
@@ -57,3 +57,11 @@ and execution-time budgets, returning a timeout or unsupported-rule result
 rather than silently treating an unsafe rule as CSS. Scalar regex fields,
 full upstream regex filter syntax and other AnalyzeRule modes remain outside
 this increment.
+
+
+### Bounded regex scalar extraction (2026-11-16)
+
+- Added an explicit `@regex:` scalar path matching the pinned Legado `AnalyzeByRegex.getElement` behavior: intermediate `&&` stages concatenate full matches; the final stage returns group 0 and capture groups from its first match.
+- The scalar path shares the regex input, pattern, stage, match, output and deadline limits with collection extraction.
+- Book-info scalar fields can now use bounded regex in addition to CSS, XPath and JSONPath.
+- This does not implement every upstream regex/filter suffix or JavaScript transformation.
