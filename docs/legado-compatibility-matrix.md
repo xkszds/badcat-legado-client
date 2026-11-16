@@ -61,3 +61,4 @@ modes remain outside this increment.
 - The scalar path shares the regex input, pattern, stage, match, output and deadline limits with collection extraction.
 - Book-info scalar fields can now use bounded regex in addition to CSS, XPath and JSONPath.
 - This does not implement every upstream regex/filter suffix or JavaScript transformation.
+\n\n### Search source enablement guard (2026-11-16)\n\n- Search service now rejects disabled sources before calling the HTTP gateway.\n- A dedicated contract test verifies the disabled path makes zero transport requests and the enabled path still parses results and resolves relative book URLs.\n
