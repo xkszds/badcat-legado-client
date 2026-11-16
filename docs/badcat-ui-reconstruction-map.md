@@ -91,3 +91,16 @@ The old application is not a code template. Rebuild its visible behavior with mo
 - Keep rendering and UI independent from source parsing, network requests and replacement rules.
 - Add screenshot tests for layout fidelity and UI tests for actions/navigation. A screen is not complete merely because it compiles.
 - Reuse original assets only where their use is authorized and technically appropriate; otherwise recreate equivalent assets without changing their visual role.
+
+
+## 2026-11-16 implementation update: first home-shell pass
+
+Implemented in `MainActivity.kt`:
+- Search content types are now `小说 / 漫画 / 综合`, and the selected type is passed into the existing source-search route.
+- The home shortcut strip now has the original three roles and labels: `排行榜 / 今日抽奖 / 赚取现金`; they are deliberately presentation-only until their service/API contracts are verified. They do not launch unrelated development tools.
+- Bottom navigation now uses the original four labels: `搜索 / 收藏夹 / 喵星 / 我的`.
+- Favorites routes to the existing shelf. `我的` routes to a dedicated tools hub with working entries for source catalog, reading history and replacement rules.
+- `喵星` has its own explicit destination shell. It currently states that the original service contract is not verified; no fabricated community feed is shown.
+- The old home-page row of four development shortcuts was removed.
+
+This is a structural first pass, not screenshot parity. The current home remains a programmatic Android View layout; a Compose migration is not yet implemented. Exact spacing, icon artwork, shortcut actions and the original bottom-navigation icons still require screenshot/device comparison and verified service behavior.
