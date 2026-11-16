@@ -52,4 +52,19 @@ class LegadoElementIndexTest {
         assertNull(LegadoElementIndex.parse("li.item[1:2:3:4]"))
         assertNull(LegadoElementIndex.parse("li.item[1:2:0]"))
     }
+
+    @Test
+    fun supportsBracketExclusionAndLegadoReverseSentinel() {
+        val excluded = LegadoElementIndex.parse("li.item[!0, -1]")!!
+        val reversed = LegadoElementIndex.parse("li.item[-1:0]")!!
+        assertEquals(listOf("b", "c", "d"), LegadoElementIndex.apply(items, excluded))
+        assertEquals(listOf("e", "d", "c", "b", "a"), LegadoElementIndex.apply(items, reversed))
+    }
+
+    @Test
+    fun appliesLegadoNegativeStepNormalization() {
+        val parsed = LegadoElementIndex.parse("li.item[0:4:-1]")!!
+        assertEquals(listOf("a", "e"), LegadoElementIndex.apply(items, parsed))
+    }
+
 }
