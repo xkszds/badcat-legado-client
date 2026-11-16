@@ -229,6 +229,7 @@ class FavoritesActivity : Activity() {
                 textSize = 14f; setTextColor(muted); gravity = Gravity.CENTER
                 setPadding(dp(12), dp(38), dp(12), dp(38))
             })
+            renderSelectionBar()
             return
         }
         if (listMode) visible.forEach { book -> rootContent.addView(bookListRow(book), LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(8) }) }
