@@ -40,27 +40,110 @@ class SourceBookActivity : Activity() {
         bookName = intent.getStringExtra(EXTRA_BOOK_NAME).orEmpty()
         engine = BadcatReadingEngineFactory(applicationContext).create()
 
-        status = TextView(this).apply { text = "正在加载书籍详情…" }
+        status = TextView(this).apply {
+            text = "正在加载书籍详情…"
+            textSize = 14f
+            setTextColor(Color.rgb(90, 94, 102))
+            setPadding(0, dpBook(12), 0, dpBook(12))
+        }
         chapterList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        val favoriteButton = Button(this).apply {
+            text = if (FavoriteBooks.contains(this@SourceBookActivity, sourceId, bookUrl)) "已收藏" else "加入收藏"
+            setOnClickListener {
+                val added = FavoriteBooks.add(this@SourceBookActivity, sourceId, bookUrl, bookName)
+                text = if (added) "已收藏" else "已收藏"
+                android.widget.Toast.makeText(
+                    this@SourceBookActivity,
+                    if (added) "已加入小说收藏" else "这本小说已经收藏",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(0, 0, 0, dpBook(16))
+            addView(TextView(this@SourceBookActivity).apply {
+                text = "‹"; textSize = 32f; setTextColor(Color.DKGRAY)
+                gravity = android.view.Gravity.CENTER
+                setOnClickListener { finish() }
+            }, LinearLayout.LayoutParams(dpBook(42), dpBook(48)))
+            addView(TextView(this@SourceBookActivity).apply {
+                text = "小说详情"; textSize = 18f; setTextColor(Color.DKGRAY)
+            })
+        }
+        val cover = TextView(this).apply {
+            text = "📖"
+            textSize = 42f
+            gravity = android.view.Gravity.CENTER
+            setTextColor(Color.WHITE)
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(Color.rgb(111, 151, 194))
+                cornerRadius = dpBook(8).toFloat()
+            }
+        }
+        val title = TextView(this).apply {
+            text = bookName
+            textSize = 21f
+            setTextColor(Color.rgb(40, 44, 52))
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        }
+        val metadata = TextView(this).apply {
+            text = "书源详情 · 目录加载中"
+            textSize = 13f
+            setTextColor(Color.GRAY)
+            setPadding(0, dpBook(8), 0, 0)
+        }
+        val summary = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.TOP
+            addView(cover, LinearLayout.LayoutParams(dpBook(92), dpBook(124)))
+            addView(LinearLayout(this@SourceBookActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dpBook(14), 0, 0, 0)
+                addView(title)
+                addView(metadata)
+            }, LinearLayout.LayoutParams(0, -2, 1f))
+        }
+        val actions = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, dpBook(14), 0, dpBook(14))
+            addView(favoriteButton, LinearLayout.LayoutParams(0, dpBook(48), 1f))
+            addView(Button(this@SourceBookActivity).apply {
+                text = "开始阅读"
+                setOnClickListener {
+                    val saved = getSharedPreferences("badcat_reading_progress", MODE_PRIVATE)
+                        .getString(readingProgressKey(sourceId, bookUrl), null)
+                    if (!saved.isNullOrBlank()) {
+                        startActivity(Intent(this@SourceBookActivity, SourceChapterActivity::class.java).apply {
+                            putExtra(SourceChapterActivity.EXTRA_SOURCE_ID, sourceId)
+                            putExtra(SourceChapterActivity.EXTRA_BOOK_URL, bookUrl)
+                            putExtra(SourceChapterActivity.EXTRA_BOOK_NAME, bookName)
+                            putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, saved)
+                        })
+                    } else if (chapterList.childCount > 0) {
+                        chapterList.getChildAt(0).performClick()
+                    }
+                }
+            }, LinearLayout.LayoutParams(0, dpBook(48), 1f).apply { leftMargin = dpBook(8) })
+        }
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(24, 24, 24, 24)
+            setPadding(dpBook(18), dpBook(12), dpBook(18), dpBook(24))
+            setBackgroundColor(Color.WHITE)
+            addView(header)
+            addView(summary)
+            addView(actions)
             addView(TextView(this@SourceBookActivity).apply {
-                text = "书籍详情与目录（开发验证界面）"
-                textSize = 20f
+                text = "内容简介"; textSize = 17f; setTextColor(Color.DKGRAY)
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
             })
             addView(status)
-            addView(Button(this@SourceBookActivity).apply {
-                text = if (FavoriteBooks.contains(this@SourceBookActivity, sourceId, bookUrl)) "已加入收藏" else "加入收藏"
-                setOnClickListener {
-                    val added = FavoriteBooks.add(this@SourceBookActivity, sourceId, bookUrl, bookName)
-                    text = if (added) "已加入收藏" else "已在收藏夹"
-                    android.widget.Toast.makeText(
-                        this@SourceBookActivity,
-                        if (added) "已加入收藏夹" else "这本书已经收藏",
-                        android.widget.Toast.LENGTH_SHORT
-                    ).show()
-                }
+            addView(TextView(this@SourceBookActivity).apply {
+                text = "章节目录"; textSize = 17f; setTextColor(Color.DKGRAY)
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                setPadding(0, dpBook(14), 0, dpBook(8))
             })
             addView(chapterList)
         }
@@ -71,6 +154,8 @@ class SourceBookActivity : Activity() {
             loadBook()
         }
     }
+
+    private fun dpBook(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun loadBook() {
         worker.execute {
@@ -83,12 +168,12 @@ class SourceBookActivity : Activity() {
                     is EngineResult.Failure -> status.text = "详情加载失败（${detail.code}）：${detail.message}"
                     is EngineResult.Success -> {
                         val book = detail.value
-                        status.text = buildString {
-                            append(book.name.ifBlank { bookName })
-                            book.author?.let { append("\n作者：").append(it) }
-                            book.latestChapter?.let { append("\n最新章节：").append(it) }
-                            book.intro?.takeIf { it.isNotBlank() }?.let { append("\n\n").append(it) }
+                        title.text = book.name.ifBlank { bookName }
+                        metadata.text = buildString {
+                            append(book.author?.takeIf { it.isNotBlank() }?.let { "作者：$it" } ?: "作者：未知")
+                            book.latestChapter?.takeIf { it.isNotBlank() }?.let { append("\n最新：").append(it) }
                         }
+                        status.text = book.intro?.takeIf { it.isNotBlank() } ?: "暂无简介"
                         when (toc) {
                             is EngineResult.Success -> showChapters(toc.value)
                             is EngineResult.Failure -> status.append("\n\n目录加载失败（${toc.code}）：${toc.message}")
