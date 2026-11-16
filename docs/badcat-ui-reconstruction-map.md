@@ -173,3 +173,5 @@ The personal center currently shows only implemented routes: reading history, bo
 - The favorites grid now loads source covers through a shared bounded image loader. Requests accept HTTP(S), enforce connect/read timeouts, cap streamed image bytes at 2 MiB, validate dimensions and downsample before display. Failed loads retain a placeholder.
 - Reader settings now show the current font size and line spacing and include a restore-default action for font size, line spacing and theme. Existing CSS profile editor and selector-level customization remain available.
 - Automated build/test status is tracked separately; none of these UI changes should be considered device-verified until installed and exercised on Android hardware.
+- The application manifest now declares `INTERNET`, which is required for source search, detail, chapter content and cover requests. Cleartext HTTP is enabled to retain compatibility with legacy HTTP-based book sources; this permits unencrypted transport, so HTTPS sources are preferable when available.
+- Removed a duplicate `BookmarkActivity` manifest declaration found during the integration audit.
