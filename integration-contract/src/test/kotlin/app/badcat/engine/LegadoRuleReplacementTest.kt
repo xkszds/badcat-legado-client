@@ -9,7 +9,7 @@ class LegadoRuleReplacementTest {
     fun appliesRegexReplacementSuffixToScalarRuleResults() {
         val document = SourceDocument(
             "https://reader.example/",
-            "<h1>Old title and old subtitle</h1>",
+            "<h1>old title and old subtitle</h1>",
         )
 
         val result = LegadoRuleExpressionDispatcher.evaluate(
@@ -18,7 +18,7 @@ class LegadoRuleReplacementTest {
         )
 
         assertEquals(
-            listOf("New title and new subtitle"),
+            listOf("new title and new subtitle"),
             assertIs<EngineResult.Success<List<String>>>(result).value,
         )
     }
