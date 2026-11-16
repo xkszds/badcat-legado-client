@@ -183,7 +183,7 @@ class ReaderCssActivity : Activity() {
                     val count = stream.read(buffer)
                     if (count < 0) break
                     total += count
-                    require(total <= MAX_IMPORT_BYTES) { "文件超过 8 MiB 限制" }
+                    require(total <= MAX_IMPORT_BYTES) { "文件超过 24 MiB 限制" }
                     output.write(buffer, 0, count)
                 }
                 output.toByteArray()
@@ -611,7 +611,7 @@ class ReaderCssActivity : Activity() {
         private const val KEY_PROFILES = "profiles_v1"
         private const val REQUEST_EXPORT = 4101
         private const val REQUEST_IMPORT = 4102
-        private const val MAX_IMPORT_BYTES = 8 * 1024 * 1024
+        private const val MAX_IMPORT_BYTES = 24 * 1024 * 1024
         private const val MAX_PROFILES = 100
         private const val MAX_RULES_PER_PROFILE = 120
         private const val MAX_PROFILE_JSON_CHARS = 8 * 1024 * 1024
