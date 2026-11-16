@@ -34,6 +34,22 @@ class XPathRuleEvaluatorTest {
     }
 
     @Test
+    fun extractsXPathElementsForBookAndChapterCollections() {
+        val source = SourceDocument(
+            url = "https://example.test/books",
+            body = """<div class="book">Alpha</div><div class="book">Beta</div>""",
+        )
+        val result = LegadoRuleExpressionDispatcher.evaluateElements(
+            source,
+            "@xpath://div[@class='missing']||@xpath://div[@class='book']",
+        )
+        assertEquals(
+            listOf("<div class=\"book\">Alpha</div>", "<div class=\"book\">Beta</div>"),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
+    @Test
     fun combinesXPathFallbackRules() {
         val result = XPathRuleEvaluator.evaluate(
             document,
