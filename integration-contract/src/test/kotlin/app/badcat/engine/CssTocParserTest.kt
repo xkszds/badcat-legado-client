@@ -72,6 +72,35 @@ class CssTocParserTest {
     }
 
     @Test
+    fun parsesJsonPathChapterListAndPaginationLinks() {
+        val source = BookSource(
+            id = "fixture", name = "Fixture", baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"@jsonpath:$.chapters[*]",
+                "chapterName":"$.title",
+                "chapterUrl":"$.url",
+                "nextTocUrl":"$.next"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200, "https://reader.example/catalog?page=1",
+            body = """{"chapters":[{"title":"JSON Chapter 1","url":"/chapter/1"},{"title":"JSON Chapter 2","url":"/chapter/2"}],"next":"/catalog?page=2"}""",
+            contentType = "application/json",
+        )
+
+        val page = assertIs<EngineResult.Success<ParsedTocPage>>(
+            CssTocParser().parse(source, response, "https://reader.example/book"),
+        ).value
+
+        assertEquals(listOf("JSON Chapter 1", "JSON Chapter 2"), page.chapters.map { it.title })
+        assertEquals(
+            listOf("https://reader.example/chapter/1", "https://reader.example/chapter/2"),
+            page.chapters.map { it.url },
+        )
+        assertEquals(listOf("https://reader.example/catalog?page=2"), page.nextPageUrls)
+    }
+
+    @Test
     fun rejectsScriptBasedTocRules() {
         val source = BookSource(
             id = "fixture",
