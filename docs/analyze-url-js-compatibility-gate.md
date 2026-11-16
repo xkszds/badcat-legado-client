@@ -58,4 +58,4 @@ Consequently, enabling the sandbox directly inside the current static resolver w
 
 ## Verification
 
-This document records a source-level audit only. It does not enable JavaScript source rules, and it does not claim a successful build, test run, CI run, device validation, or APK.
+This document records a bounded compatibility gate, not a claim of full upstream parity. The current branch has a successful GitHub Actions debug build and test run; the generated debug APK is available as the `badcat-legado-debug` workflow artifact. Device validation and the unsupported upstream script/host behaviors listed above remain outstanding.
