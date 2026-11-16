@@ -265,7 +265,7 @@ class CssTocParserTest {
                 "chapterList":"ul.chapters li",
                 "chapterName":"a@text",
                 "chapterUrl":"a@href",
-                "nextTocUrl":"@regex:class=\\"next\\" href=\\"([^\\"]+)\\""
+                "nextTocUrl":"@regex:class=\"next\" href=\"([^\"]+)\""
             }""",
         )
         val response = SourceHttpResponse(
