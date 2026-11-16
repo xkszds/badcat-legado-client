@@ -35,25 +35,43 @@ object LegadoRuleExpressionDispatcher {
         input: String,
         expression: String,
     ): EngineResult<List<String>> {
-        val branches = try {
-            RuleExpressionTokenizer.splitTopLevel(expression, "||")
+        val split = try {
+            val candidates = listOf("||", "%%").mapNotNull { operator ->
+                val parts = RuleExpressionTokenizer.splitTopLevel(expression, operator)
+                if (parts.size > 1) Triple(parts.first().length, operator, parts) else null
+            }
+            candidates.minByOrNull { it.first }
         } catch (error: Exception) {
             return EngineResult.Failure(
                 EngineErrorCode.UNSUPPORTED_RULE,
                 "Invalid combined Legado regex collection rule",
                 error,
             )
-        }
-        if (branches.size == 1) return LegadoRegexElementEvaluator.evaluate(input, branches.single())
+        } ?: return LegadoRegexElementEvaluator.evaluate(input, expression)
 
-        var firstFailure: EngineResult.Failure? = null
-        for (branch in branches) {
-            when (val result = LegadoRegexElementEvaluator.evaluate(input, branch)) {
-                is EngineResult.Failure -> if (firstFailure == null) firstFailure = result
-                is EngineResult.Success -> if (result.value.isNotEmpty()) return result
+        if (split.second == "||") {
+            var firstFailure: EngineResult.Failure? = null
+            for (branch in split.third) {
+                when (val result = evaluateRegexElementsWithFallback(input, branch)) {
+                    is EngineResult.Failure -> if (firstFailure == null) firstFailure = result
+                    is EngineResult.Success -> if (result.value.isNotEmpty()) return result
+                }
+            }
+            return firstFailure ?: EngineResult.Success(emptyList())
+        }
+
+        val branches = ArrayList<List<String>>()
+        for (branch in split.third) {
+            when (val result = evaluateRegexElementsWithFallback(input, branch)) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> if (result.value.isNotEmpty()) branches += result.value
             }
         }
-        return firstFailure ?: EngineResult.Success(emptyList())
+        if (branches.isEmpty()) return EngineResult.Success(emptyList())
+        return EngineResult.Success(buildList {
+            val rows = branches.maxOfOrNull { it.size } ?: 0
+            for (index in 0 until rows) branches.forEach { it.getOrNull(index)?.let(::add) }
+        })
     }
 
     fun evaluate(document: SourceDocument, expression: String): EngineResult<List<String>> =
