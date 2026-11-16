@@ -7,116 +7,116 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
-import android.view.View
 import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.TextView
 
-/** Personal center: only routes backed by implemented features are shown. */
+/** Personal hub with the requested bookmark entry and no welfare section. */
 class MyActivity : Activity() {
-    private val ink = Color.rgb(48, 55, 66)
-    private val muted = Color.rgb(135, 145, 158)
-    private val blue = Color.rgb(55, 137, 222)
+    private val ink = Color.rgb(48, 52, 60)
+    private val muted = Color.rgb(145, 151, 160)
+    private val blue = Color.rgb(75, 143, 226)
+    private val page = Color.rgb(247, 248, 250)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.statusBarColor = Color.WHITE
         window.navigationBarColor = Color.WHITE
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-        val root = LinearLayout(this).apply {
+        window.decorView.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(page) }
+        val profile = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.rgb(247, 249, 252))
+            setPadding(dp(22), dp(24), dp(22), dp(22))
+            setBackgroundColor(Color.WHITE)
         }
-        val scroll = ScrollView(this)
-        val content = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        content.addView(profileHeader())
-        content.addView(sectionCard())
-        scroll.addView(content)
+        val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        top.addView(label("修改资料", 18f, ink), LinearLayout.LayoutParams(0, dp(42), 1f))
+        top.addView(label("☼", 26f, blue))
+        top.addView(label("⚙", 25f, ink).apply { setPadding(dp(22), 0, 0, 0) })
+        profile.addView(top)
+        val identity = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        identity.addView(TextView(this).apply {
+            text = "🐱"; textSize = 42f; gravity = Gravity.CENTER
+            background = rounded(Color.rgb(245, 246, 248), 48)
+        }, LinearLayout.LayoutParams(dp(76), dp(76)))
+        identity.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14), 0, 0, 0)
+            addView(label("坏坏猫用户", 21f, ink, true))
+            addView(label("阅读时长：—    获得的收藏数：${FavoriteBooks.all(this@MyActivity).size}", 12f, muted).apply { setPadding(0, dp(9), 0, 0) })
+        }, LinearLayout.LayoutParams(0, -2, 1f))
+        profile.addView(identity)
+        root.addView(profile)
+
+        val scroll = android.widget.ScrollView(this)
+        val body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(16), dp(14), dp(24)) }
+        val tools = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = rounded(Color.WHITE, 16)
+            setPadding(dp(16), dp(15), dp(16), dp(16))
+        }
+        tools.addView(label("常用功能", 18f, ink, true).apply { setPadding(0, 0, 0, dp(12)) })
+        val entries = listOf(
+            "我的消息" to "messages",
+            "历史记录" to "history",
+            "书签管理" to "bookmarks",
+            "下载管理" to "downloads",
+            "意见反馈" to "feedback",
+            "同步收藏夹" to "sync",
+            "分享坏坏猫" to "share",
+            "书源管理" to "sources",
+            "正文替换规则" to "replace"
+        )
+        entries.chunked(4).forEach { group ->
+            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            group.forEach { (title, key) ->
+                val cell = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    gravity = Gravity.CENTER
+                    setPadding(dp(3), dp(10), dp(3), dp(10))
+                    isClickable = true
+                    isFocusable = true
+                    addView(label(when (key) {
+                        "history" -> "◷"; "bookmarks" -> "◇"; "sources" -> "▤"
+                        "replace" -> "≋"; "sync" -> "☁"; "downloads" -> "↓"
+                        "feedback" -> "▣"; "share" -> "↗"; else -> "···"
+                    }, 25f, blue))
+                    addView(label(title, 12f, ink).apply { setPadding(0, dp(5), 0, 0) })
+                    setOnClickListener { openTool(key) }
+                }
+                row.addView(cell, LinearLayout.LayoutParams(0, dp(78), 1f))
+            }
+            repeat(4 - group.size) { row.addView(android.view.View(this), LinearLayout.LayoutParams(0, dp(78), 1f)) }
+            tools.addView(row)
+        }
+        body.addView(tools)
+        scroll.addView(body)
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         setContentView(root)
     }
 
-    private fun profileHeader(): View = LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        setPadding(dp(20), dp(24), dp(20), dp(24))
-        setBackgroundColor(Color.WHITE)
-        addView(TextView(this@MyActivity).apply {
-            text = "我的"; textSize = 22f; setTextColor(ink)
-        })
-        val identity = LinearLayout(this@MyActivity).apply {
-            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-            setPadding(0, dp(22), 0, dp(4))
+    private fun openTool(key: String) {
+        when (key) {
+            "history" -> startActivity(Intent(this, ReadingHistoryActivity::class.java))
+            "bookmarks" -> startActivity(Intent(this, BookmarkActivity::class.java))
+            "sources" -> startActivity(Intent(this, SourceCatalogActivity::class.java))
+            "replace" -> startActivity(Intent(this, ReplaceRuleActivity::class.java))
+            "share" -> startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, "坏坏猫阅读客户端")
+            }, "分享"))
+            else -> Unit
         }
-        identity.addView(TextView(this@MyActivity).apply {
-            text = "🐱"; textSize = 38f; gravity = Gravity.CENTER
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL; setColor(Color.rgb(245, 247, 250))
-            }
-        }, LinearLayout.LayoutParams(dp(66), dp(66)))
-        identity.addView(LinearLayout(this@MyActivity).apply {
-            orientation = LinearLayout.VERTICAL; setPadding(dp(14), 0, 0, 0)
-            addView(TextView(this@MyActivity).apply {
-                text = "阅读中心"; textSize = 19f; typeface = Typeface.DEFAULT_BOLD; setTextColor(ink)
-            })
-            addView(TextView(this@MyActivity).apply {
-                text = "管理阅读记录、小说书签和书源"
-                textSize = 12f; setTextColor(muted); setPadding(0, dp(7), 0, 0)
-            })
-        })
-        addView(identity)
     }
 
-    private fun sectionCard(): View = LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        setPadding(dp(18), dp(18), dp(18), dp(18))
-        background = GradientDrawable().apply {
-            setColor(Color.WHITE); cornerRadius = dp(14).toFloat()
-        }
-        val params = LinearLayout.LayoutParams(-1, -2).apply {
-            setMargins(dp(14), dp(14), dp(14), dp(14))
-        }
-        addView(TextView(this@MyActivity).apply {
-            text = "常用功能"; textSize = 18f; typeface = Typeface.DEFAULT_BOLD
-            setTextColor(ink); setPadding(0, 0, 0, dp(18))
-        })
-        val entries = listOf(
-            Entry("◷", "阅读记录", "继续阅读或管理历史记录") {
-                startActivity(Intent(this@MyActivity, ReadingHistoryActivity::class.java))
-            },
-            Entry("▣", "书签管理", "查看和打开小说阅读书签") {
-                startActivity(Intent(this@MyActivity, BookmarkActivity::class.java))
-            },
-            Entry("◇", "书源管理", "导入、启用和整理阅读书源") {
-                startActivity(Intent(this@MyActivity, SourceCatalogActivity::class.java))
-            },
-            Entry("≋", "正文替换规则", "管理 Legado 正文替换规则") {
-                startActivity(Intent(this@MyActivity, ReplaceRuleActivity::class.java))
-            },
-        )
-        entries.chunked(2).forEach { pair ->
-            val row = LinearLayout(this@MyActivity).apply { orientation = LinearLayout.HORIZONTAL }
-            pair.forEach { entry ->
-                row.addView(LinearLayout(this@MyActivity).apply {
-                    orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-                    setPadding(dp(5), dp(10), dp(5), dp(15))
-                    isClickable = true; isFocusable = true
-                    setOnClickListener { entry.action() }
-                    addView(TextView(this@MyActivity).apply {
-                        text = entry.icon; textSize = 26f; gravity = Gravity.CENTER
-                        setTextColor(blue)
-                    }, LinearLayout.LayoutParams(dp(54), dp(54)))
-                    addView(TextView(this@MyActivity).apply {
-                        text = entry.title; textSize = 14f; gravity = Gravity.CENTER
-                        setTextColor(ink)
-                    })
-                }, LinearLayout.LayoutParams(0, -2, 1f))
-            }
-            if (pair.size == 1) row.addView(View(this@MyActivity), LinearLayout.LayoutParams(0, 1, 1f))
-            addView(row)
-        }
-        layoutParams = params
+    private fun label(value: String, size: Float, color: Int, bold: Boolean = false) = TextView(this).apply {
+        text = value; textSize = size; setTextColor(color)
+        if (bold) typeface = Typeface.DEFAULT_BOLD
+        gravity = Gravity.CENTER_VERTICAL
     }
 
-    private data class Entry(val icon: String, val title: String, val detail: String, val action: () -> Unit)
+    private fun rounded(color: Int, radius: Int) = GradientDrawable().apply {
+        setColor(color); cornerRadius = dp(radius).toFloat()
+    }
+
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 }
