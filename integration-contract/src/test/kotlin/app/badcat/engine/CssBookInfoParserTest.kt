@@ -3,6 +3,7 @@ package app.badcat.engine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlinx.coroutines.runBlocking
 
 class CssBookInfoParserTest {
 
@@ -60,6 +61,41 @@ class CssBookInfoParserTest {
         ).value
         assertEquals("XPath Novel", xpathDetail.name)
 
+    }
+
+    @Test
+    fun executesJavaScriptBookInfoFieldsWithSourceMetadata() = runBlocking {
+        val source = BookSource(
+            id = "https://reader.example/",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleBookInfoJson = """{"name":"@js:extractName(result)","author":"p.author@text"}""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/book/9",
+            body = "<h1>Script title</h1><p class='author'>Writer</p>",
+        )
+        val seen = mutableMapOf<String, String>()
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> {
+                seen.putAll(bindings)
+                assertEquals("extractName(result)", script)
+                return EngineResult.Success("Resolved title")
+            }
+        }
+        val detail = assertIs<EngineResult.Success<BookDetail>>(
+            CssBookInfoParser().parseWithScripts(source, response, response.finalUrl, runtime),
+        ).value
+        assertEquals("Resolved title", detail.name)
+        assertEquals("Writer", detail.author)
+        assertEquals("https://reader.example/", seen["sourceId"])
+        assertEquals("https://reader.example/book/9", seen["baseUrl"])
+        assertEquals(response.body, seen["result"])
     }
 
     @Test
