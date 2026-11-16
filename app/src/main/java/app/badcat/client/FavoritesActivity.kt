@@ -22,7 +22,7 @@ import org.json.JSONObject
 import java.util.UUID
 
 data class FavoriteFolder(val id: String, val name: String)
-data class FavoriteBook(val sourceId: String, val bookUrl: String, val name: String, val folderId: String = FavoriteBooks.DEFAULT_FOLDER_ID, val coverUrl: String? = null)
+data class FavoriteBook(val sourceId: String, val bookUrl: String, val name: String, val folderId: String = FavoriteBooks.DEFAULT_FOLDER_ID, val coverUrl: String? = null, val addedAt: Long = System.currentTimeMillis())
 
 internal fun favoriteBooksInFolder(books: List<FavoriteBook>, folderId: String): List<FavoriteBook> =
     if (folderId == FavoriteBooks.DEFAULT_FOLDER_ID) books else books.filter { it.folderId == folderId }
@@ -61,7 +61,7 @@ object FavoriteBooks {
                 val url = item.optString("bookUrl")
                 if (source.isBlank() || url.isBlank()) null
                 else FavoriteBook(source, url, item.optString("name").ifBlank { "未命名书籍" },
-                    item.optString("folderId").ifBlank { DEFAULT_FOLDER_ID }, item.optString("coverUrl").takeIf { it.isNotBlank() })
+                    item.optString("folderId").ifBlank { DEFAULT_FOLDER_ID }, item.optString("coverUrl").takeIf { it.isNotBlank() }, item.optLong("addedAt", index.toLong()))
             }
         }.getOrDefault(emptyList())
     }
@@ -117,7 +117,7 @@ object FavoriteBooks {
 
     private fun save(context: Context, books: List<FavoriteBook>) {
         val json = JSONArray()
-        books.forEach { json.put(JSONObject().put("sourceId", it.sourceId).put("bookUrl", it.bookUrl).put("name", it.name).put("folderId", it.folderId).put("coverUrl", it.coverUrl.orEmpty())) }
+        books.forEach { json.put(JSONObject().put("sourceId", it.sourceId).put("bookUrl", it.bookUrl).put("name", it.name).put("folderId", it.folderId).put("coverUrl", it.coverUrl.orEmpty()).put("addedAt", it.addedAt)) }
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY, json.toString()).apply()
     }
 }
@@ -222,7 +222,7 @@ class FavoritesActivity : Activity() {
         }
         sectionTitle(if (selectedFolderId == FavoriteBooks.DEFAULT_FOLDER_ID) "小说" else folders.first { it.id == selectedFolderId }.name)
         } else { selectedFolderId = FavoriteBooks.DEFAULT_FOLDER_ID }
-        val visible = favoriteBooksInFolder(allBooks, selectedFolderId)
+        val sortByAddedAt = getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).getBoolean("sort_newest_first", true)\n        val visible = favoriteBooksInFolder(allBooks, selectedFolderId).let { books -> if (sortByAddedAt) books.sortedByDescending { it.addedAt } else books }
         if (visible.isEmpty()) {
             rootContent.addView(TextView(this).apply {
                 text = if (allBooks.isEmpty()) "还没有小说\n在小说详情页点击「加入收藏」，小说就会出现在这里。" else "这个文件夹还没有小说"
@@ -417,7 +417,7 @@ class FavoritesActivity : Activity() {
                         getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).edit().putBoolean("list_mode", listMode).apply()
                         refresh()
                     }
-                    "更新时间排序" -> toast("已按最近加入顺序排列")
+                    "更新时间排序" -> {\n                        val newestFirst = getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).getBoolean("sort_newest_first", true)\n                        getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).edit().putBoolean("sort_newest_first", !newestFirst).apply()\n                        toast(if (!newestFirst) "已按最近加入排序" else "已按加入时间正序排列")\n                        refresh()\n                    }
                     "开启小说文件夹", "关闭小说文件夹" -> {
                         folderMode = !folderMode; selectedFolderId = FavoriteBooks.DEFAULT_FOLDER_ID
                         getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).edit().putBoolean("folder_mode", folderMode).apply()
