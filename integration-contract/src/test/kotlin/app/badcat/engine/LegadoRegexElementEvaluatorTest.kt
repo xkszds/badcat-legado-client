@@ -9,7 +9,7 @@ class LegadoRegexElementEvaluatorTest {
     fun extractsFullMatchesInOrder() {
         val result = LegadoRegexElementEvaluator.evaluate(
             "<li>One</li><li>Two</li>",
-            "<li>[\\s\\S]*?</li>",
+            "<li>[\s\S]*?</li>",
         )
         assertEquals(
             listOf("<li>One</li>", "<li>Two</li>"),
@@ -21,7 +21,7 @@ class LegadoRegexElementEvaluatorTest {
     fun appliesChainedRegexStagesToPriorMatches() {
         val result = LegadoRegexElementEvaluator.evaluate(
             "<section><li>One</li></section><section><li>Two</li></section>",
-            "<section>[\\s\\S]*?</section> && <li>[\\s\\S]*?</li>",
+            "<section>[\s\S]*?</section> && <li>[\s\S]*?</li>",
         )
         assertEquals(
             listOf("<li>One</li>", "<li>Two</li>"),
