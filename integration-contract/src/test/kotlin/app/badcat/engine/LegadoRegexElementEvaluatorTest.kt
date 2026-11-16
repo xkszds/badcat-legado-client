@@ -3,6 +3,7 @@ package app.badcat.engine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 class LegadoRegexElementEvaluatorTest {
     @Test
@@ -60,11 +61,27 @@ class LegadoRegexElementEvaluatorTest {
             """<div class='book'><h3>Regex Novel</h3></div><div class='other'>Skip</div>""",
             """(?s)<div.*?book.*?>.*?</div>""",
         )
-        println("REGEX EVALUATOR RESULT: $result")
         assertEquals(
             listOf("""<div class='book'><h3>Regex Novel</h3></div>"""),
             assertIs<EngineResult.Success<List<String>>>(result, "Regex evaluation failed: $result").value,
         )
+    }
+
+    @Test
+    fun enforcesDeadlineDuringCatastrophicBacktracking() {
+        val input = "a".repeat(100_000) + "!"
+        val started = System.nanoTime()
+        val result = LegadoRegexElementEvaluator.evaluate(
+            input,
+            "^(a+)+$",
+            timeoutMilliseconds = 10,
+        )
+        val elapsedMillis = (System.nanoTime() - started) / 1_000_000
+        assertEquals(
+            EngineErrorCode.RULE_TIMEOUT,
+            assertIs<EngineResult.Failure>(result).code,
+        )
+        assertTrue(elapsedMillis < 1_000, "Regex deadline was not enforced promptly: ${elapsedMillis}ms")
     }
 
 }
