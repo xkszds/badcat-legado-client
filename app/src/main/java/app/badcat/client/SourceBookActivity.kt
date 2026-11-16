@@ -543,6 +543,27 @@ class SourceChapterActivity : Activity() {
             addView(chapterProgress, LinearLayout.LayoutParams(0, dpReader(40), 2f))
             addView(nextButton, LinearLayout.LayoutParams(0, dpReader(46), 1f))
         }
+        val readerActions = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER
+            setPadding(dpReader(8), dpReader(3), dpReader(8), dpReader(3))
+            setBackgroundColor(Color.rgb(250, 250, 250))
+            fun action(label: String, onClick: () -> Unit) {
+                addView(TextView(this@SourceChapterActivity).apply {
+                    text = label
+                    textSize = 12f
+                    gravity = android.view.Gravity.CENTER
+                    setTextColor(Color.rgb(75, 125, 185))
+                    isClickable = true
+                    isFocusable = true
+                    setPadding(dpReader(10), dpReader(9), dpReader(10), dpReader(9))
+                    setOnClickListener { onClick() }
+                }, LinearLayout.LayoutParams(0, dpReader(40), 1f))
+            }
+            action("目录") { showChapterCatalog() }
+            action("亮度") { cycleReaderTheme() }
+            action("设置") { showReaderTools() }
+        }
         readerRoot = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.WHITE)
@@ -551,6 +572,7 @@ class SourceChapterActivity : Activity() {
             addView(body, LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f,
             ))
+            addView(readerActions)
             addView(bottomBar)
         }
         readerScroll = body
