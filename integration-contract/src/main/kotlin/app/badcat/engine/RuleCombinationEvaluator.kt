@@ -33,7 +33,7 @@ object RuleCombinationEvaluator {
 
         return if (split.operator == "%%") {
             buildList {
-                val maxRows = results.first().size
+                val maxRows = results.maxOfOrNull { it.size } ?: 0
                 for (index in 0 until maxRows) {
                     for (result in results) {
                         result.getOrNull(index)?.let(::add)
