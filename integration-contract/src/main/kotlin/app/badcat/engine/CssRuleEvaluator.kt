@@ -60,6 +60,51 @@ object CssRuleEvaluator {
         }
     }
 
+    /**
+     * Select element nodes for collection fields such as bookList/chapterList.
+     * Unlike scalar @html/@all extraction, collection parsing must retain one
+     * HTML fragment per matched node so callers can evaluate each item in isolation.
+     */
+    internal fun evaluateElements(
+        document: SourceDocument,
+        expression: String,
+    ): EngineResult<List<String>> {
+        val rawRule = expression.trim()
+        val rule = if (rawRule.startsWith("@CSS:", ignoreCase = true)) rawRule.substring(5).trim() else rawRule
+        if (rule.isEmpty()) return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "CSS rule is blank")
+        return runCatching {
+            if (RuleCombinationEvaluator.hasNestedTopLevelOperator(rule)) {
+                return@runCatching EngineResult.Failure(
+                    EngineErrorCode.UNSUPPORTED_RULE,
+                    "Nested CSS list-combination operators are not supported",
+                )
+            }
+            var firstFailure: EngineResult.Failure? = null
+            val values = RuleCombinationEvaluator.evaluate(rule) { part ->
+                val parsed = parseExpression(part) ?: run {
+                    if (firstFailure == null) firstFailure = EngineResult.Failure(
+                        EngineErrorCode.UNSUPPORTED_RULE,
+                        "Unsupported CSS collection rule: $part",
+                    )
+                    return@evaluate emptyList()
+                }
+                if (parsed.valueMode != ValueMode.TEXT && parsed.valueMode != ValueMode.HTML &&
+                    parsed.valueMode != ValueMode.ALL
+                ) {
+                    if (firstFailure == null) firstFailure = EngineResult.Failure(
+                        EngineErrorCode.UNSUPPORTED_RULE,
+                        "Collection rule must select elements, not scalar values",
+                    )
+                    return@evaluate emptyList()
+                }
+                Jsoup.parse(document.body, document.url).select(parsed.selector).map { it.outerHtml() }
+            }
+            if (firstFailure != null && values.isEmpty()) firstFailure!! else EngineResult.Success(values)
+        }.getOrElse {
+            EngineResult.Failure(EngineErrorCode.PARSE, "CSS collection selection failed: ${it.message}", it)
+        }
+    }
+
     private fun evaluateSingle(
         document: SourceDocument,
         expression: String,
@@ -74,10 +119,10 @@ object CssRuleEvaluator {
             val doc = Jsoup.parse(document.body, document.url)
             val elements = doc.select(parsed.selector)
             val values = when (parsed.valueMode) {
-                ValueMode.ALL -> elements.map { it.outerHtml() }.filter(String::isNotEmpty)
+                ValueMode.ALL -> listOf(elements.outerHtml()).filter(String::isNotEmpty)
                 ValueMode.HTML -> {
-                    elements.forEach { it.select("script, style").remove() }
-                    elements.map { it.outerHtml() }.filter(String::isNotEmpty)
+                    elements.select("script, style").remove()
+                    listOf(elements.outerHtml()).filter(String::isNotEmpty)
                 }
                 ValueMode.ATTRIBUTE -> elements.map { it.attr(parsed.attribute.orEmpty()) }
                     .filter(String::isNotBlank)
