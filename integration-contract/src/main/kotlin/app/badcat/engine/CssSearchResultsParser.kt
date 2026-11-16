@@ -160,7 +160,7 @@ class CssSearchResultsParser {
             }
             when (val result = LegadoRuleExpressionDispatcher.evaluateElements(
                 SourceDocument(response.finalUrl, response.body, response.contentType),
-                listRule,
+                rootExpression,
             )) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
