@@ -2,6 +2,9 @@ package app.badcat.client.runtime
 
 import app.badcat.engine.BookSource
 import app.badcat.engine.EngineResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -72,9 +75,9 @@ class RhinoSourceScriptRuntimeTest {
             jsLib = "const concurrentPrefix = 'ok'; function concurrentValue(n) { return concurrentPrefix + n; }",
         )
 
-        val results = kotlinx.coroutines.coroutineScope {
+        val results = coroutineScope {
             (1..12).map { index ->
-                kotlinx.coroutines.async(kotlinx.coroutines.Dispatchers.Default) {
+                async(Dispatchers.Default) {
                     runtime.evaluate(source, "concurrentValue('$index')")
                 }
             }.map { it.await() }
