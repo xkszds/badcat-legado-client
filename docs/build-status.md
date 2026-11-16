@@ -1,3 +1,12 @@
+## Pagination URL identity hardening (2026-11-16)
+
+- Added a shared pagination identity helper that strips URL fragments before loop detection. TOC pending-page deduplication also compares fragment-free identities.
+- Added chapter and TOC regressions where only the fragment changes between the redirect's final URL and the next-page link; both must fail with a typed parse error after exactly one request.
+- Implementation commits: `47f8cd3f4ee2` (identity helper), `df60dbfe3ef8` (chapter service), `1888f0d52d2b` (TOC service). Regression test commits: `35de54fad493` (chapter) and `bbd49679b375` (TOC).
+- Run [#43828525378](https://github.com/xkszds/badcat-legado-client/actions/runs/43828525378) for `bbd49679b375` passed contract tests, bounded Rhino host tests, and Android Debug APK assembly; artifact upload completed. Artifact: 4,723,309 bytes, SHA-256 `42c7da1a07078276f7e045a756e44e825e6a1875d28a3aea6b4db35fdb1de42e`. GitHub Actions was still in post-job cleanup at last poll.
+- Run [#43828479790](https://github.com/xkszds/badcat-legado-client/actions/runs/43828479790) for the TOC implementation also completed successfully; artifact 4,723,305 bytes, SHA-256 `60bfe6db723d95774ce428db9121d23bdfc2f36bf84fb907a14022a5178fbc0b`.
+- This validates the automated contract suite and APK assembly, not real-device installation/runtime, full Legado compatibility, original Badcat UI parity or original purification parity.
+
 ## Latest implementation update (2026-11-16)
 
 - Corrected chapter-content pagination page accounting: redirect request aliases and final URLs are tracked for cycle detection, while the safety limit counts only successfully parsed content pages. The implementation already uses a separate `pageCount`; this update adds a regression fixture proving two pages that each redirect still fit a two-page limit.
