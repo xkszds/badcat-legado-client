@@ -429,6 +429,7 @@ class SourceChapterActivity : Activity() {
     private var currentChapterTitle: String = ""
     private var pendingScrollY: Int? = null
     private var pendingBookmarkY: Int? = null
+    private var readingSessionStartedAt: Long = 0L
     private val preferences by lazy {
         getSharedPreferences("badcat_reading_progress", MODE_PRIVATE)
     }
@@ -583,6 +584,23 @@ class SourceChapterActivity : Activity() {
             return
         }
         loadInitial(chapterTitle)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::body.isInitialized && currentChapterText.isNotBlank()) {
+            readingSessionStartedAt = android.os.SystemClock.elapsedRealtime()
+        }
+    }
+
+    override fun onPause() {
+        if (readingSessionStartedAt > 0L) {
+            val elapsed = (android.os.SystemClock.elapsedRealtime() - readingSessionStartedAt).coerceAtLeast(0L)
+            val stats = getSharedPreferences("badcat_reading_stats", MODE_PRIVATE)
+            stats.edit().putLong("total_reading_ms", stats.getLong("total_reading_ms", 0L) + elapsed).apply()
+            readingSessionStartedAt = 0L
+        }
+        super.onPause()
     }
 
     private fun loadInitial(fallbackTitle: String) {
