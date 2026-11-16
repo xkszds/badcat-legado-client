@@ -48,21 +48,59 @@ object RuleExpressionTokenizer {
             val char = expression[index]
 
             // Regex rules contain literal quotes around HTML attributes and
-            // character classes such as [^"]. Those quotes are regex syntax,
-            // not tokenizer string delimiters.
+            // character classes such as [^"]. Track quotes only to protect
+            // separators, while still tracking regex groups inside attributes.
+            if (regexBranch) {
+                when {
+                    char == '\\' -> index = (index + 2).coerceAtMost(expression.length)
+                    char == '"' || char == '\'' -> {
+                        if (stack.lastOrNull() == '[') {
+                            index++
+                        } else if (quote == null) {
+                            quote = char
+                            index++
+                        } else if (char == quote) {
+                            quote = null
+                            index++
+                        } else {
+                            index++
+                        }
+                    }
+                    char == '(' || char == '[' -> {
+                        stack.addLast(char)
+                        index++
+                    }
+                    char == ')' || char == ']' -> {
+                        val expected = if (char == ')') '(' else '['
+                        require(stack.isNotEmpty() && stack.removeLast() == expected) {
+                            "Unbalanced rule expression near index $index"
+                        }
+                        index++
+                    }
+                    quote == null && stack.isEmpty() && delimiter != "&&" &&
+                        expression.startsWith(delimiter, index) -> {
+                        parts += expression.substring(start, index).trim()
+                        index += delimiter.length
+                        start = index
+                        regexBranch = expression.substring(start).trimStart()
+                            .startsWith("@regex:", ignoreCase = true)
+                    }
+                    else -> index++
+                }
+                continue
+            }
 
             if (quote != null) {
                 when {
                     char == '\\' -> index = (index + 2).coerceAtMost(expression.length)
-                    char == quote && !(regexBranch && stack.lastOrNull() == '[') -> { quote = null; index++ }
+                    char == quote -> { quote = null; index++ }
                     else -> index++
                 }
                 continue
             }
 
             when {
-                (char == '"' || char == '\'') &&
-                    !(regexBranch && stack.lastOrNull() == '[') -> {
+                char == '"' || char == '\'' -> {
                     quote = char
                     index++
                 }
@@ -82,8 +120,7 @@ object RuleExpressionTokenizer {
                     }
                     index++
                 }
-                stack.isEmpty() && !(regexBranch && delimiter == "&&") &&
-                    expression.startsWith(delimiter, index) -> {
+                stack.isEmpty() && expression.startsWith(delimiter, index) -> {
                     parts += expression.substring(start, index).trim()
                     index += delimiter.length
                     start = index
