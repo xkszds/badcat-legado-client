@@ -73,25 +73,35 @@ internal object ReaderCssDocument {
     private fun activeCss(context: Context): String = runCatching {
         val prefs = context.getSharedPreferences("reader_css_profiles", Context.MODE_PRIVATE)
         val profiles = JSONArray(prefs.getString("profiles_v1", "[]"))
-        buildString {
-            var count = 0
+        val rules = buildList {
             for (i in 0 until profiles.length()) {
                 val profile = profiles.optJSONObject(i) ?: continue
                 if (!profile.optBoolean("enabled", false)) continue
-                val rules = profile.optJSONArray("rules") ?: continue
-                for (j in 0 until rules.length()) {
-                    if (count >= MAX_ACTIVE_RULES) return@buildString
-                    val rule = rules.optJSONObject(j) ?: continue
-                    val selector = sanitizeSelector(rule.optString("selector")) ?: continue
-                    val declarations = sanitizeDeclarations(rule.optString("css"))
-                    if (declarations.isNotEmpty()) {
-                        append(scopeSelector(selector)).append('{').append(declarations).append("}\n")
-                        count++
-                    }
+                val profileRules = profile.optJSONArray("rules") ?: continue
+                for (j in 0 until profileRules.length()) {
+                    val rule = profileRules.optJSONObject(j) ?: continue
+                    add(rule.optString("selector") to rule.optString("css"))
                 }
             }
         }
+        renderRules(rules)
     }.getOrDefault("")
+
+    /** Applies valid rules in profile/list order; rejected rules do not consume the render budget. */
+    internal fun renderRules(rules: List<Pair<String, String>>, maxRules: Int = MAX_ACTIVE_RULES): String {
+        if (maxRules <= 0) return ""
+        return buildString {
+            var applied = 0
+            for ((selectorRaw, declarationsRaw) in rules) {
+                if (applied >= maxRules) break
+                val selector = sanitizeSelector(selectorRaw) ?: continue
+                val declarations = sanitizeDeclarations(declarationsRaw)
+                if (declarations.isEmpty()) continue
+                append(scopeSelector(selector)).append('{').append(declarations).append("}\\n")
+                applied++
+            }
+        }
+    }
 
     internal fun duplicateSelectorGroups(selectorLabels: List<Pair<String, String>>): Map<String, List<String>> {
         return selectorLabels.mapNotNull { (rawSelector, label) ->
