@@ -13,12 +13,15 @@ class JsonPathRuleEvaluatorTest {
     )
 
     @Test
-    fun rejectsMixedNestedCombinationOperators() {
+    fun evaluatesMixedNestedCombinationOperators() {
         val result = JsonPathRuleEvaluator.evaluate(
             document,
-            "$.books[*].name && $.meta.count || $.missing",
+            "$.books[*].name && $.books[*].author || $.missing",
         )
-        assertIs<EngineResult.Failure>(result)
+        assertEquals(
+            listOf("Alpha", "Beta", "A", "B"),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
     }
 
     @Test
