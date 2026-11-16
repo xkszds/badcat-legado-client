@@ -71,3 +71,12 @@ APK 中还包含 `assets/libjiagu.so`，以及一个文件头不是标准 DEX ma
 完整逐项哈希、头部计数、编号映射和限制见 [原版 APK 与配套 DEX 归档核对记录](reference-archive-comparison-2026-11-16.md)。
 
 本轮没有把 APK/ZIP 二进制本体谎称为已提交到 GitHub：当前可用的 GitHub 写入通道虽支持文本和 Git blob，但本轮工具链没有将大型本地文件字节直接传入 blob 请求的通路。原始材料仍在用户上传文件库中；仓库已保存可复核的 SHA-256 和结构清单。后续方法体反编译、二进制 XML 解码与真机视觉对照仍待工具链补齐。
+
+
+## 8. 多版本 APK / 解包重建包交叉核验与截图对照
+
+本轮发现用户文件库中还存在旧壳 APK（package `com.hhm.verticalsearch`、Application `com.stub.StubApp`）、DEX ZIP、未签名重建 APK、v1 测试签名 APK，以及当前 24.6 MB 变体（package `com.hhm.verticalsearci`、Application `HuaYueApplication`）。重建 APK 与当前 24.6 MB 变体的七份根 DEX 哈希逐个完全相同；重建 APK 与 ZIP 映射来源在 DEX header byte 32 之后完全相同，重建头部 SHA-1/Adler-32 全部通过。完整样本哈希和差异见 [APK、DEX 归档、重建包与原版界面对照](reference-build-chain-and-visual-diff.md)。
+
+同时检查了用户提供的 2026-11-15 四张原版截图：首页、收藏夹、搜索页和阅读器。当前首页、收藏夹、书源搜索页仍是开发骨架；收藏页虽有三列卡片，但缺原版“筛选 / 作品-书贴 / 更多”顶栏和原版分类卡片组合；搜索页仍为源 Spinner 验证界面；阅读器工具栏和底部控制层仍未按截图还原。截图逐项差异与下一步实施顺序已写入新报告。
+
+本轮已把用户文件库中的重建脚本、StubApp 兼容桩、DEX 头部校验工具、第一/二阶段审计报告及第十一/十二轮资源清单作为文本/源码提交到 Private 仓库的 `reference/` 目录。原始 APK/ZIP/JPG 二进制仍保留在用户文件库；当前连接器未提供将本地大文件字节直接流式写入 GitHub blob 的通路，因此没有声称这些二进制已上传。
