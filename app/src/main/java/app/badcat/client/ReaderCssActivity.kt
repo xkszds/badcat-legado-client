@@ -183,7 +183,7 @@ class ReaderCssActivity : Activity() {
                     val count = stream.read(buffer)
                     if (count < 0) break
                     total += count
-                    require(total <= MAX_IMPORT_BYTES) { "文件超过 1 MB 限制" }
+                    require(total <= MAX_IMPORT_BYTES) { "文件超过 8 MiB 限制" }
                     output.write(buffer, 0, count)
                 }
                 output.toByteArray()
