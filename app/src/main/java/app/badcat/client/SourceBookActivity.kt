@@ -200,10 +200,10 @@ class SourceChapterActivity : Activity() {
     private val mainHandler = Handler(Looper.getMainLooper())
     private lateinit var engine: ReadingEngine
     private lateinit var status: TextView
-    private lateinit var body: TextView
+    private lateinit var body: android.webkit.WebView
     private lateinit var previousButton: android.widget.Button
     private lateinit var nextButton: android.widget.Button
-    private lateinit var readerScroll: ScrollView
+    private lateinit var readerScroll: android.webkit.WebView
     private lateinit var readerRoot: LinearLayout
     private lateinit var sourceId: String
     private lateinit var bookUrl: String
@@ -214,6 +214,7 @@ class SourceChapterActivity : Activity() {
     private var textSizeSp: Float = 18f
     private var lineSpacingMultiplier: Float = 1.15f
     private var readerTheme: Int = 0
+    private var currentChapterText: String = ""
     private val preferences by lazy {
         getSharedPreferences("badcat_reading_progress", MODE_PRIVATE)
     }
@@ -234,11 +235,14 @@ class SourceChapterActivity : Activity() {
         readerTheme = preferences.getInt("reader_theme", 0).coerceIn(0, 2)
 
         status = TextView(this).apply { text = "正在加载目录…" }
-        body = TextView(this).apply {
-            textSize = textSizeSp
-            setTextIsSelectable(true)
-            setPadding(20, 16, 20, 24)
-            setLineSpacing(6f, lineSpacingMultiplier)
+        body = android.webkit.WebView(this).apply {
+            settings.javaScriptEnabled = false
+            settings.domStorageEnabled = false
+            settings.allowFileAccess = false
+            settings.allowContentAccess = false
+            settings.setSupportMultipleWindows(false)
+            isVerticalScrollBarEnabled = false
+            setBackgroundColor(Color.WHITE)
         }
         previousButton = android.widget.Button(this).apply {
             text = "上一章"
@@ -315,11 +319,13 @@ class SourceChapterActivity : Activity() {
             addView(controls)
             addView(displayControls)
             addView(bookmarkControls)
-            addView(body)
+            addView(body, LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f,
+            ))
         }
-        readerScroll = ScrollView(this).apply { addView(readerRoot) }
+        readerScroll = body
         applyReaderTheme()
-        setContentView(readerScroll)
+        setContentView(readerRoot)
         if (sourceId.isBlank() || bookUrl.isBlank() || currentChapterUrl.isBlank()) {
             status.text = "缺少书源、书籍地址或章节地址"
             return
@@ -405,7 +411,8 @@ class SourceChapterActivity : Activity() {
         when (result) {
             is EngineResult.Success -> {
                 status.text = result.value.title.ifBlank { chapter.title }
-                body.text = result.value.text
+                currentChapterText = result.value.text
+                renderReaderDocument()
                 currentChapterUrl = chapter.url
                 preferences.edit().putString(readingProgressKey(sourceId, bookUrl), chapter.url).apply()
             }
@@ -461,13 +468,13 @@ class SourceChapterActivity : Activity() {
 
     private fun changeTextSize(delta: Float) {
         textSizeSp = (textSizeSp + delta).coerceIn(14f, 32f)
-        body.textSize = textSizeSp
+        renderReaderDocument()
         preferences.edit().putFloat("reader_text_size", textSizeSp).apply()
     }
 
     private fun changeLineSpacing(delta: Float) {
         lineSpacingMultiplier = (lineSpacingMultiplier + delta).coerceIn(1.0f, 2.0f)
-        body.setLineSpacing(6f, lineSpacingMultiplier)
+        renderReaderDocument()
         preferences.edit().putFloat("reader_line_spacing", lineSpacingMultiplier).apply()
     }
 
@@ -475,6 +482,19 @@ class SourceChapterActivity : Activity() {
         readerTheme = (readerTheme + 1) % 3
         preferences.edit().putInt("reader_theme", readerTheme).apply()
         applyReaderTheme()
+    }
+
+    private fun renderReaderDocument() {
+        if (!::body.isInitialized || currentChapterText.isEmpty()) return
+        val (background, foreground) = when (readerTheme) {
+            1 -> Color.rgb(244, 234, 211) to Color.rgb(75, 61, 43)
+            2 -> Color.rgb(28, 30, 34) to Color.rgb(220, 222, 226)
+            else -> Color.WHITE to Color.rgb(35, 35, 35)
+        }
+        val html = ReaderCssDocument.build(
+            this, currentChapterText, textSizeSp, lineSpacingMultiplier, background, foreground,
+        )
+        body.loadDataWithBaseURL("https://reader.invalid/", html, "text/html", "UTF-8", null)
     }
 
     private fun applyReaderTheme() {
@@ -485,7 +505,8 @@ class SourceChapterActivity : Activity() {
         }
         readerRoot.setBackgroundColor(background)
         readerScroll.setBackgroundColor(background)
-        body.setTextColor(foreground)
+        body.setBackgroundColor(background)
+        if (currentChapterText.isNotEmpty()) renderReaderDocument()
         status.setTextColor(foreground)
     }
 
