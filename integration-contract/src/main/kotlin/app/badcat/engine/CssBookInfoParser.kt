@@ -48,7 +48,7 @@ class CssBookInfoParser {
                 "tocUrl" -> expression.replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
                 else -> expression
             }
-            return when (val result = SelectorRuleEvaluator.evaluate(document, SelectorRuleType.CSS, extractionRule)) {
+            return when (val result = LegadoRuleExpressionDispatcher.evaluate(document, extractionRule)) {
                 is EngineResult.Failure -> result
                 is EngineResult.Success -> EngineResult.Success(
                     result.value.firstOrNull()?.trim()?.takeIf(String::isNotEmpty),
