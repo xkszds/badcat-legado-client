@@ -36,16 +36,22 @@ internal object ReaderCssDocument {
         """.trimIndent()
     }
 
-    fun preview(context: Context, selectorRaw: String, declarationsRaw: String): String {
-        val selector = sanitizeSelector(selectorRaw)
-        val declarations = sanitizeDeclarations(declarationsRaw)
-        val css = if (selector == null || declarations.isEmpty()) "" else {
-            val scoped = if (selector == ".reader-root" || selector.startsWith(".reader-root ")) {
-                selector
-            } else {
-                ".reader-root $selector"
+    fun preview(context: Context, selectorRaw: String, declarationsRaw: String): String =
+        previewRules(context, listOf(selectorRaw to declarationsRaw))
+
+    fun previewRules(context: Context, rules: List<Pair<String, String>>): String {
+        val css = buildString {
+            rules.take(120).forEach { (selectorRaw, declarationsRaw) ->
+                val selector = sanitizeSelector(selectorRaw) ?: return@forEach
+                val declarations = sanitizeDeclarations(declarationsRaw)
+                if (declarations.isEmpty()) return@forEach
+                val scoped = if (selector == ".reader-root" || selector.startsWith(".reader-root ")) {
+                    selector
+                } else {
+                    ".reader-root $selector"
+                }
+                append(scoped).append('{').append(declarations).append("}\\n")
             }
-            "$scoped{$declarations}"
         }
         val bg = String.format("#%06X", 0xFFFFFF and android.graphics.Color.WHITE)
         val fg = String.format("#%06X", 0xFFFFFF and android.graphics.Color.rgb(35, 35, 35))
