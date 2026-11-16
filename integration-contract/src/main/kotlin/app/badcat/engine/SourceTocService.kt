@@ -14,8 +14,9 @@ class SourceTocService(
         pending.add(tocUrl?.takeIf(String::isNotBlank) ?: bookUrl)
         val visited = HashSet<String>()
         val chapters = ArrayList<BookChapter>()
+        var pageCount = 0
 
-        while (pending.isNotEmpty() && visited.size < maxPages) {
+        while (pending.isNotEmpty() && pageCount < maxPages) {
             val url = pending.removeFirst()
             if (!visited.add(url)) continue
             val response = when (val result = http.execute(source, url)) {
@@ -28,6 +29,7 @@ class SourceTocService(
                     "TOC request for source '${source.id}' returned HTTP ${response.statusCode}",
                 )
             }
+            pageCount++
             // Track the post-redirect URL as well as the requested URL. A source
             // may point its next-page link at the redirect destination, which
             // would otherwise trigger one redundant fetch before cycle detection.
@@ -55,7 +57,7 @@ class SourceTocService(
             }
         }
 
-        if (pending.isNotEmpty()) {
+        if (pending.isNotEmpty() && pageCount >= maxPages) {
             return EngineResult.Failure(
                 EngineErrorCode.PARSE,
                 "TOC pagination exceeded the $maxPages page safety limit",
