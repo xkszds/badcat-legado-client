@@ -25,7 +25,18 @@ class RhinoEmbeddedUrlScriptEvaluator(
     ): EngineResult<Any?> = when (val evaluated = runtime.evaluate(
         source,
         script,
-        mapOf("key" to key, "page" to page.toString(), "result" to result),
+        mapOf(
+            "key" to key,
+            "page" to page.toString(),
+            "result" to result,
+            // Legado URL scripts commonly resolve relative URLs and branch by source metadata.
+            // Keep these as primitive values: never expose Android Context, Java reflection,
+            // HTTP clients, cookie stores, or filesystem objects to untrusted source scripts.
+            "baseUrl" to source.baseUrl,
+            "sourceUrl" to source.id,
+            "sourceId" to source.id,
+            "sourceName" to source.name,
+        ),
     )) {
         is EngineResult.Success -> EngineResult.Success(evaluated.value)
         is EngineResult.Failure -> evaluated
