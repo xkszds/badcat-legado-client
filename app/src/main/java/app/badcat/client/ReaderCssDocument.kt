@@ -45,7 +45,7 @@ internal object ReaderCssDocument {
                 val selector = sanitizeSelector(selectorRaw) ?: return@forEach
                 val declarations = sanitizeDeclarations(declarationsRaw)
                 if (declarations.isEmpty()) return@forEach
-                append(scopeSelector(selector)).append('{').append(declarations).append("}\\n")
+                append(scopeSelector(selector)).append('{').append(declarations).append("}\n")
             }
         }
         val bg = String.format("#%06X", 0xFFFFFF and android.graphics.Color.WHITE)
