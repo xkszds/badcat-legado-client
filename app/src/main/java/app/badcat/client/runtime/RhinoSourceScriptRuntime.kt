@@ -8,6 +8,8 @@ import com.script.ScriptBindings
 import com.script.rhino.RhinoScriptEngine
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -33,7 +35,8 @@ class RhinoSourceScriptRuntime(
         script: String,
         bindings: Map<String, String>,
     ): EngineResult<String> {
-        return try {
+        return sourceLocks.computeIfAbsent(source.id) { Mutex() }.withLock {
+            try {
             require(script.isNotBlank()) { "Source JavaScript must not be blank" }
             require(script.length <= MAX_SCRIPT_CHARS) { "Source JavaScript exceeds the size limit" }
             require(bindings.size <= MAX_BINDINGS) { "Too many source JavaScript bindings" }
@@ -109,6 +112,7 @@ class RhinoSourceScriptRuntime(
                 error,
             )
         }
+        }
     }
 
     /** Drop source-level globals after a source is replaced or removed. */
@@ -129,6 +133,7 @@ class RhinoSourceScriptRuntime(
         const val GLOBAL_KEY_PREFIX = "badcat-source:"
         val BINDING_NAME = Regex("[A-Za-z_$][A-Za-z0-9_$]{0,63}")
         val sourceGlobals = ConcurrentHashMap<String, com.script.SharedGlobalStateHandle>()
+        val sourceLocks = ConcurrentHashMap<String, Mutex>()
         val sourceJsLibHashes = ConcurrentHashMap<String, String>()
 
         fun scriptHash(script: String): String =
