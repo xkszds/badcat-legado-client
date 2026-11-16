@@ -55,7 +55,7 @@ APK 副本与当前会话挂载的 APK SHA-256 完全一致。ZIP 可正常读�
 | `assets/AdDex.4.0.1.dex` | 无 | ZIP 中未发现对应项 |
 | `assets/A3AEECD8.dex` | 无 | ZIP 中未发现对应项 |
 
-ZIP 另有一个 11,193,804-byte 的 `classes3.dex`。它的标准 DEX 头部声明的 string/type/proto/field/method/class_def 数量分别为 874/74/345/23/497/7；文件大小远大于其 DEX 头部映射区所需规模。该现象需要进一步检查文件尾部、映射表和实际类定义，当前不能仅凭文件名或大小判断它是完整代码、壳数据还是拼接载荷。
+对上述五组主要 DEX 做了 DEX string_ids 解码后，APK 与 ZIP 的字符串集合逐项完全相同（classes.dex 44,323 项、classes2.dex 36,397 项、classes3/classes4 对应组 25,011 项、classes4/classes5 对应组 41,640 项、classes5/classes6 对应组 20,334 项）；但除 284-byte 文件外二进制哈希仍不同。因此编号映射有字符串池证据支持，但这不证明方法指令字节相同，也不证明 ZIP 是原 APK 的逐字节解包副本。\n\nZIP 另有一个 11,193,804-byte 的 `classes3.dex`。它的标准 DEX 头部声明 string/type/proto/field/method/class_def 数量分别为 874/74/345/23/497/7。字符串表可见 `com.stub.StubApp`、`com.qihoo.util.DtcLoader`、`/data/data/PACKAGENAME/lib/libjgdtc.so` 等加载器相关符号；这支持它属于壳/加载器相关 DEX 的判断，但仅凭字符串还不能还原其加载时序或完整保护机制。
 
 原版 APK 的 `assets/A3AEECD8.dex` 不是标准 DEX magic，且 APK 同时包含 `assets/libjiagu.so`。这说明原版还存在不能直接按普通 DEX 处理的载荷；本轮没有尝试绕过壳保护或访问控制。
 
@@ -67,7 +67,7 @@ ZIP 另有一个 11,193,804-byte 的 `classes3.dex`。它的标准 DEX 头部声
 - `classes2.dex`：`FavoritesFolderActivity.java`、`FavoritesFolderDialog.java`、`FavoritesFolderManager.java`、`FavoritesRenameDialog.java`、`FavoritesPopupMore.java`、`MainActivity` 及相关匿名内部类。
 - APK 资源目录中存在收藏夹文件夹、收藏网格、重命名弹窗、首页、搜索、搜索结果、详情、目录和阅读器等编译布局资源。完整页面差距仍以 `badcat-apk-reverse-engineering-comparison.md` 为主报告。
 
-配套 ZIP 的前两个 DEX 可读出与 APK 对应 DEX 相同的字符串数量和部分相同类名；但二进制哈希不同。该 ZIP 是 DEX 归档，不是可直接打开的 Java/Kotlin 源码工程：其中没有 Gradle 工程结构、源代码目录或资源源码树。
+配套 ZIP 的五组主要 DEX 与 APK 对应 DEX 的字符串集合完全一致，且编号映射如上；但二进制哈希不同。该 ZIP 是 DEX 归档，不是可直接打开的 Java/Kotlin 源码工程：其中没有 Gradle 工程结构、源代码目录或资源源码树。
 
 ## 5. 上传范围与限制
 
