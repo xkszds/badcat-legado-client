@@ -46,9 +46,8 @@ class CssTocParser {
 
         fun extract(itemHtml: String, expression: String?): EngineResult<String?> {
             if (expression.isNullOrBlank()) return EngineResult.Success(null)
-            return when (val result = SelectorRuleEvaluator.evaluate(
+            return when (val result = LegadoRuleExpressionDispatcher.evaluate(
                 SourceDocument(response.finalUrl, itemHtml, response.contentType),
-                SelectorRuleType.CSS,
                 expression,
             )) {
                 is EngineResult.Failure -> result
