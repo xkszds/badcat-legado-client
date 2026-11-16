@@ -194,6 +194,13 @@ class CssRuleEvaluatorTest {
         assertEquals(1, first.size)
         kotlin.test.assertTrue(first.single().contains("Alpha"))
 
+        // Upstream @CSS: rules bypass ElementsSingle index processing.
+        val explicitCss = CssRuleEvaluator.evaluateElements(document, "@CSS: div.book.0")
+        assertEquals(
+            emptyList(),
+            assertIs<EngineResult.Success<List<String>>>(explicitCss).value,
+        )
+
         // Scalar CSS evaluation is intentionally not given ElementsSingle suffix parsing.
         val scalar = CssRuleEvaluator.evaluate(document, "div.book.-1@text")
         assertIs<EngineResult.Failure>(scalar)
