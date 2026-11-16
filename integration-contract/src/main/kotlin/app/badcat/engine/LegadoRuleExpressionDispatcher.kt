@@ -64,7 +64,7 @@ object LegadoRuleExpressionDispatcher {
             // In a mixed rule whose root explicitly opts into regex, later branches
             // may be legacy unprefixed regex fragments. Prefer a valid selector;
             // only retry as regex when selector parsing itself fails.
-            if (allowUnprefixedRegexFallback && selectorResult is EngineResult.Failure) {
+            return if (allowUnprefixedRegexFallback && selectorResult is EngineResult.Failure) {
                 val regexResult = LegadoRegexElementEvaluator.evaluate(document.body, leaf)
                 if (regexResult is EngineResult.Success) regexResult else selectorResult
             } else {
@@ -85,7 +85,7 @@ object LegadoRuleExpressionDispatcher {
 
         val branches = ArrayList<List<String>>()
         for (branch in split.third) {
-            when (val result = evaluateCollectionBranches(document, branch)) {
+            when (val result = evaluateCollectionBranches(document, branch, allowUnprefixedRegexFallback)) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> if (result.value.isNotEmpty()) branches += result.value
             }
