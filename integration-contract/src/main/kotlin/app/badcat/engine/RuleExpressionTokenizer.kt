@@ -40,6 +40,9 @@ object RuleExpressionTokenizer {
         var quote: Char? = null
         var start = 0
         var index = 0
+        // Determine the current branch mode once; recompute only after a split.
+        // Avoid allocating a growing substring for every scanned character.
+        var regexBranch = expression.trimStart().startsWith("@regex:", ignoreCase = true)
 
         while (index < expression.length) {
             val char = expression[index]
@@ -47,8 +50,6 @@ object RuleExpressionTokenizer {
             // Regex rules contain literal quotes around HTML attributes and
             // character classes such as [^"]. Those quotes are regex syntax,
             // not tokenizer string delimiters.
-            val regexBranch = expression.substring(start, index).trimStart()
-                .startsWith("@regex:", ignoreCase = true)
 
             if (quote != null) {
                 when {
@@ -85,6 +86,8 @@ object RuleExpressionTokenizer {
                     parts += expression.substring(start, index).trim()
                     index += delimiter.length
                     start = index
+                    regexBranch = expression.substring(start).trimStart()
+                        .startsWith("@regex:", ignoreCase = true)
                 }
                 else -> index++
             }
