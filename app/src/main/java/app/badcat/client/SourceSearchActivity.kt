@@ -392,28 +392,45 @@ class SourceSearchActivity : Activity() {
                         putExtra(SourceBookActivity.EXTRA_BOOK_COVER_URL, item.coverUrl)
                     })
                 }
-                addView(TextView(this@SourceSearchActivity).apply {
-                    text = item.name
-                    textSize = 16f
-                    typeface = Typeface.DEFAULT_BOLD
-                    setTextColor(ink)
-                })
-                item.author?.takeIf { it.isNotBlank() }?.let { author ->
-                    addView(resultMeta("作者：$author"))
-                }
-                item.latestChapter?.takeIf { it.isNotBlank() }?.let { chapter ->
-                    addView(resultMeta("最新：$chapter"))
-                }
-                item.intro?.takeIf { it.isNotBlank() }?.let { intro ->
+                val info = LinearLayout(this@SourceSearchActivity).apply {
+                    orientation = LinearLayout.VERTICAL
                     addView(TextView(this@SourceSearchActivity).apply {
-                        text = intro
-                        textSize = 12f
-                        maxLines = 2
-                        setTextColor(muted)
-                        setPadding(0, dp(6), 0, 0)
+                        text = item.name
+                        textSize = 16f
+                        typeface = Typeface.DEFAULT_BOLD
+                        setTextColor(ink)
                     })
+                    item.author?.takeIf { it.isNotBlank() }?.let { author ->
+                        addView(resultMeta("作者：$author"))
+                    }
+                    item.latestChapter?.takeIf { it.isNotBlank() }?.let { chapter ->
+                        addView(resultMeta("最新：$chapter"))
+                    }
+                    item.intro?.takeIf { it.isNotBlank() }?.let { intro ->
+                        addView(TextView(this@SourceSearchActivity).apply {
+                            text = intro
+                            textSize = 12f
+                            maxLines = 2
+                            setTextColor(muted)
+                            setPadding(0, dp(6), 0, 0)
+                        })
+                    }
+                    addView(resultMeta("书源：${item.sourceId}"))
                 }
-                addView(resultMeta("书源：${item.sourceId}"))
+                addView(LinearLayout(this@SourceSearchActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.TOP
+                    addView(android.widget.ImageView(this@SourceSearchActivity).apply {
+                        contentDescription = "小说封面"
+                        scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+                        background = rounded(Color.rgb(235, 239, 245), 5)
+                        clipToOutline = true
+                        BookCoverLoader.load(this, item.coverUrl)
+                    }, LinearLayout.LayoutParams(dp(62), dp(84)))
+                    addView(info, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                        marginStart = dp(12)
+                    })
+                })
             }, LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
