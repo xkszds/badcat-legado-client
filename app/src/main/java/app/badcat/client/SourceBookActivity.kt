@@ -215,6 +215,8 @@ class SourceChapterActivity : Activity() {
     private var lineSpacingMultiplier: Float = 1.15f
     private var readerTheme: Int = 0
     private var currentChapterText: String = ""
+    private var pendingScrollY: Int? = null
+    private var pendingBookmarkY: Int? = null
     private val preferences by lazy {
         getSharedPreferences("badcat_reading_progress", MODE_PRIVATE)
     }
@@ -243,6 +245,15 @@ class SourceChapterActivity : Activity() {
             settings.setSupportMultipleWindows(false)
             isVerticalScrollBarEnabled = false
             setBackgroundColor(Color.WHITE)
+            webViewClient = object : android.webkit.WebViewClient() {
+                override fun onPageFinished(view: android.webkit.WebView, url: String?) {
+                    super.onPageFinished(view, url)
+                    val target = pendingBookmarkY ?: pendingScrollY
+                    pendingBookmarkY = null
+                    pendingScrollY = null
+                    if (target != null) view.post { view.scrollTo(0, target) }
+                }
+            }
         }
         previousButton = android.widget.Button(this).apply {
             text = "上一章"
@@ -363,9 +374,7 @@ class SourceChapterActivity : Activity() {
             chapterScrollPositionKey(sourceId, bookUrl, currentChapterUrl),
             0,
         ).coerceAtLeast(0)
-        readerScroll.post {
-            readerScroll.post { readerScroll.scrollTo(0, savedY) }
-        }
+        pendingScrollY = savedY
     }
 
     private fun moveChapter(delta: Int) {
@@ -432,9 +441,7 @@ class SourceChapterActivity : Activity() {
                     -1,
                 )
                 if (bookmarkY >= 0) {
-                    readerScroll.post {
-                        readerScroll.post { readerScroll.scrollTo(0, bookmarkY) }
-                    }
+                    pendingBookmarkY = bookmarkY
                 }
             }
         }
@@ -508,6 +515,14 @@ class SourceChapterActivity : Activity() {
         body.setBackgroundColor(background)
         if (currentChapterText.isNotEmpty()) renderReaderDocument()
         status.setTextColor(foreground)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::body.isInitialized && currentChapterText.isNotEmpty()) {
+            pendingScrollY = body.scrollY
+            renderReaderDocument()
+        }
     }
 
     override fun onPause() {
