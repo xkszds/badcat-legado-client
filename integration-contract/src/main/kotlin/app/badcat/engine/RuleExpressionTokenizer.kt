@@ -80,7 +80,8 @@ object RuleExpressionTokenizer {
                     }
                     index++
                 }
-                stack.isEmpty() && expression.startsWith(delimiter, index) -> {
+                stack.isEmpty() && !(regexBranch && delimiter == "&&") &&
+                    expression.startsWith(delimiter, index) -> {
                     parts += expression.substring(start, index).trim()
                     index += delimiter.length
                     start = index
