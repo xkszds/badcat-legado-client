@@ -144,7 +144,7 @@ class CssSearchResultsParser {
     private fun unsupported(source: BookSource, detail: String) =
         EngineResult.Failure(
             EngineErrorCode.UNSUPPORTED_RULE,
-            "Source '${source.id}' ${stage.name.lowercase()} rule requires unsupported feature: $detail",
+            "Source '${source.id}' search/explore rule requires unsupported feature: $detail",
         )
 
     private class UnsupportedSearchRule(sourceId: String, field: String) :
