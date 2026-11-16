@@ -3,6 +3,7 @@ package app.badcat.engine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlinx.coroutines.runBlocking
 
 class CssTocParserTest {
     @Test
@@ -268,6 +269,42 @@ class CssTocParserTest {
         assertEquals(listOf("https://reader.example/chapter/1"), page.chapters.map { it.url })
     }
 
+
+    @Test
+    fun executesJavaScriptChapterFieldsWithIsolatedItemContext() = runBlocking {
+        val source = BookSource(
+            id = "https://reader.example/",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"ul.chapters li",
+                "chapterName":"@js:chapterTitle(result)",
+                "chapterUrl":"a@href"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200, "https://reader.example/catalog",
+            body = """<ul class="chapters"><li><a href="/chapter/1">One</a></li><li><a href="/chapter/2">Two</a></li></ul>""",
+        )
+        val seen = mutableListOf<String>()
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> {
+                seen += bindings["result"].orEmpty()
+                return EngineResult.Success(if (seen.size == 1) "Chapter A" else "Chapter B")
+            }
+        }
+        val page = assertIs<EngineResult.Success<ParsedTocPage>>(
+            CssTocParser().parseWithScripts(source, response, "https://reader.example/book", runtime),
+        ).value
+        assertEquals(listOf("Chapter A", "Chapter B"), page.chapters.map { it.title })
+        assertEquals(2, seen.size)
+        assertEquals(true, seen.first().contains("One"))
+        assertEquals(true, seen.last().contains("Two"))
+    }
 
     @Test
     fun extractsRegexCaptureGroupForChapterTitles() {
