@@ -254,8 +254,13 @@ class SourceChapterContentServiceTest {
                 "https://reader.example/canonical/chapter-2",
             ),
             requests,
+            "Unexpected request sequence: $requests",
         )
-        assertEquals("First page.\n\nSecond page.", result.value.text)
+        assertEquals(
+            "First page.\n\nSecond page.",
+            result.value.text,
+            "Unexpected combined text: ${result.value.text.replace("\n", "<LF>")}",
+        )
     }
 
     @Test
