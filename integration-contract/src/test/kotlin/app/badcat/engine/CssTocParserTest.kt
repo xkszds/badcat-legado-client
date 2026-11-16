@@ -279,6 +279,7 @@ class CssTocParserTest {
 
         val page = assertIs<EngineResult.Success<ParsedTocPage>>(
             CssTocParser().parse(source, response, "https://reader.example/book"),
+            "TOC regex pagination result: ${CssTocParser().parse(source, response, "https://reader.example/book")}",
         ).value
 
         assertEquals(listOf("https://reader.example/catalog?page=2"), page.nextPageUrls)
