@@ -58,20 +58,25 @@ class MainActivity : Activity() {
 
     private fun buildHeader(): View = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
-        setPadding(dp(22), dp(18), dp(22), dp(25))
+        gravity = Gravity.CENTER
+        setPadding(dp(22), dp(24), dp(22), dp(25))
         background = rounded(blue, 24, 0, 0, 24, 24)
         addView(TextView(this@MainActivity).apply {
             text = "坏坏猫"
-            textSize = 26f
+            textSize = 36f
+            gravity = Gravity.CENTER
             setTextColor(Color.WHITE)
-            typeface = Typeface.DEFAULT_BOLD
+            typeface = Typeface.create("casual", Typeface.NORMAL)
+            letterSpacing = 0.06f
+            includeFontPadding = false
         })
         addView(TextView(this@MainActivity).apply {
             text = "发现好书，开始阅读"
-            textSize = 13f
+            textSize = 14f
+            gravity = Gravity.CENTER
             setTextColor(Color.WHITE)
             alpha = 0.9f
-            setPadding(0, dp(5), 0, 0)
+            setPadding(0, dp(8), 0, 0)
         })
     }
 
