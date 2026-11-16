@@ -117,7 +117,7 @@ class ReaderCssActivity : Activity() {
         }
     }.getOrDefault(emptyList())
 
-    private fun saveProfiles(profiles: List<Profile>) {
+    private fun saveProfiles(profiles: List<Profile>): Boolean {
         val array = JSONArray()
         profiles.forEach { profile ->
             val rules = JSONArray()
@@ -128,7 +128,13 @@ class ReaderCssActivity : Activity() {
             array.put(JSONObject().put("id", profile.id).put("name", profile.name)
                 .put("note", profile.note).put("enabled", profile.enabled).put("rules", rules))
         }
-        prefs.edit().putString(KEY_PROFILES, array.toString()).apply()
+        val serialized = array.toString()
+        if (serialized.length > MAX_PROFILE_JSON_CHARS) {
+            message.text = "保存失败：全部 CSS 方案数据超过 ${MAX_PROFILE_JSON_CHARS / (1024 * 1024)} MB 安全上限；请精简备注或 CSS 内容"
+            return false
+        }
+        prefs.edit().putString(KEY_PROFILES, serialized).apply()
+        return true
     }
 
     @Deprecated("Uses the platform document picker for broad Android compatibility")
@@ -229,9 +235,10 @@ class ReaderCssActivity : Activity() {
             message.text = "导入失败：现有方案与导入方案总数不能超过 $MAX_PROFILES 套"
             return
         }
-        saveProfiles(existing + imported)
-        refresh()
-        message.text = "成功导入 ${imported.size} 套 CSS 方案；原有方案未覆盖"
+        if (saveProfiles(existing + imported)) {
+            refresh()
+            message.text = "成功导入 ${imported.size} 套 CSS 方案；原有方案未覆盖"
+        }
     }
 
     private fun refresh() {
@@ -257,9 +264,9 @@ class ReaderCssActivity : Activity() {
                 text = "启用此方案"
                 isChecked = profile.enabled
                 setOnCheckedChangeListener { _, checked ->
-                    saveProfiles(readProfiles().map {
+                    if (!saveProfiles(readProfiles().map {
                         if (it.id == profile.id) it.copy(enabled = checked) else it
-                    })
+                    })) refresh()
                 }
             })
             card.addView(Button(this).apply {
@@ -273,8 +280,7 @@ class ReaderCssActivity : Activity() {
                         .setMessage("删除方案“${profile.name}”及其全部子选择器？")
                         .setNegativeButton("取消", null)
                         .setPositiveButton("删除") { _, _ ->
-                            saveProfiles(readProfiles().filterNot { it.id == profile.id })
-                            refresh()
+                            if (saveProfiles(readProfiles().filterNot { it.id == profile.id })) refresh()
                         }.show()
                 }
             })
@@ -310,8 +316,7 @@ class ReaderCssActivity : Activity() {
                 }
                 val updated = existing?.copy(name = label, note = noteText)
                     ?: Profile(UUID.randomUUID().toString(), label, noteText, true, emptyList())
-                saveProfiles(if (existing == null) old + updated else old.map { if (it.id == updated.id) updated else it })
-                refresh()
+                if (saveProfiles(if (existing == null) old + updated else old.map { if (it.id == updated.id) updated else it })) refresh()
             }.show()
     }
 
@@ -342,10 +347,9 @@ class ReaderCssActivity : Activity() {
                     3 -> if (profile.rules.isEmpty()) message.text = "没有可删除的子选择器" else
                         android.app.AlertDialog.Builder(this).setTitle("选择要删除的子选择器")
                             .setItems(labels) { _, index ->
-                                saveProfiles(readProfiles().map { p ->
+                                if (saveProfiles(readProfiles().map { p ->
                                     if (p.id == id) p.copy(rules = p.rules.filterIndexed { i, _ -> i != index }) else p
-                                })
-                                refresh()
+                                })) refresh()
                             }.show()
                     4, 5 -> if (profile.rules.size < 2) message.text = "至少需要两个子选择器才能调整顺序" else
                         android.app.AlertDialog.Builder(this).setTitle("选择要${if (which == 4) "上移" else "下移"}的子选择器")
@@ -354,16 +358,17 @@ class ReaderCssActivity : Activity() {
                                 if (target !in profile.rules.indices) {
                                     message.text = "已经到达${if (which == 4) "最前" else "最后"}位置"
                                 } else {
-                                    saveProfiles(readProfiles().map { p ->
+                                    if (saveProfiles(readProfiles().map { p ->
                                         if (p.id != id) p else {
                                             val reordered = p.rules.toMutableList()
                                             val selected = reordered.removeAt(index)
                                             reordered.add(target, selected)
                                             p.copy(rules = reordered)
                                         }
-                                    })
-                                    refresh()
-                                    message.text = "子选择器顺序已调整；后面的规则在 CSS 层叠中优先"
+                                    })) {
+                                        refresh()
+                                        message.text = "子选择器顺序已调整；后面的规则在 CSS 层叠中优先"
+                                    }
                                 }
                             }.show()
                     6 -> showProfilePreview(id)
@@ -380,12 +385,13 @@ class ReaderCssActivity : Activity() {
                                     name = ((source.name.ifBlank { "子选择器" }) + " 副本").take(100),
                                     note = source.note.take(500),
                                 )
-                                saveProfiles(readProfiles().map { p ->
+                                if (saveProfiles(readProfiles().map { p ->
                                     if (p.id == id) p.copy(rules = p.rules.toMutableList().apply { add(index + 1, copy) })
                                     else p
-                                })
-                                refresh()
-                                message.text = "已复制子选择器，可继续修改名称、备注、选择器和样式"
+                                })) {
+                                    refresh()
+                                    message.text = "已复制子选择器，可继续修改名称、备注、选择器和样式"
+                                }
                             }.show()
                     8 -> duplicateProfile(id)
                     9 -> addDefaultProfile()
@@ -407,9 +413,10 @@ class ReaderCssActivity : Activity() {
             note = (if (source.note.isBlank()) "由“${source.name}”复制" else source.note + "（复制）").take(500),
             enabled = false,
         )
-        saveProfiles(profiles + copy)
-        refresh()
-        message.text = "整套方案已复制；副本默认关闭，确认后可单独启用"
+        if (saveProfiles(profiles + copy)) {
+            refresh()
+            message.text = "整套方案已复制；副本默认关闭，确认后可单独启用"
+        }
     }
 
     private fun addDefaultProfile() {
@@ -429,9 +436,10 @@ class ReaderCssActivity : Activity() {
                 SelectorRule("首段", "首段取消额外上边距", ".reader-paragraph:first-child", "margin-top: 0;"),
             ),
         )
-        saveProfiles(profiles + default)
-        refresh()
-        message.text = "已添加默认阅读样式；默认关闭，可先预览再启用"
+        if (saveProfiles(profiles + default)) {
+            refresh()
+            message.text = "已添加默认阅读样式；默认关闭，可先预览再启用"
+        }
     }
 
     private fun showSelectorConflicts() {
@@ -586,15 +594,16 @@ class ReaderCssActivity : Activity() {
                     message.text = "每套方案最多 $MAX_RULES_PER_PROFILE 条子选择器"
                     return@setPositiveButton
                 }
-                saveProfiles(current.map { p ->
+                if (saveProfiles(current.map { p ->
                     if (p.id != profileId) p else {
                         val rules = p.rules.toMutableList()
                         if (index == null) rules.add(rule) else if (index in rules.indices) rules[index] = rule
                         p.copy(rules = rules)
                     }
-                })
-                refresh()
-                message.text = "子选择器已保存，返回阅读页即可应用"
+                })) {
+                    refresh()
+                    message.text = "子选择器已保存，返回阅读页即可应用"
+                }
             }.show()
     }
 
@@ -605,5 +614,6 @@ class ReaderCssActivity : Activity() {
         private const val MAX_IMPORT_BYTES = 1024 * 1024
         private const val MAX_PROFILES = 100
         private const val MAX_RULES_PER_PROFILE = 120
+        private const val MAX_PROFILE_JSON_CHARS = 8 * 1024 * 1024
     }
 }
