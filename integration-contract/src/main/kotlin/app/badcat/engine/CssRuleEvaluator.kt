@@ -74,10 +74,10 @@ object CssRuleEvaluator {
             val doc = Jsoup.parse(document.body, document.url)
             val elements = doc.select(parsed.selector)
             val values = when (parsed.valueMode) {
-                ValueMode.ALL -> listOf(elements.outerHtml()).filter(String::isNotEmpty)
+                ValueMode.ALL -> elements.map { it.outerHtml() }.filter(String::isNotEmpty)
                 ValueMode.HTML -> {
-                    elements.select("script, style").remove()
-                    listOf(elements.outerHtml()).filter(String::isNotEmpty)
+                    elements.forEach { it.select("script, style").remove() }
+                    elements.map { it.outerHtml() }.filter(String::isNotEmpty)
                 }
                 ValueMode.ATTRIBUTE -> elements.map { it.attr(parsed.attribute.orEmpty()) }
                     .filter(String::isNotBlank)
