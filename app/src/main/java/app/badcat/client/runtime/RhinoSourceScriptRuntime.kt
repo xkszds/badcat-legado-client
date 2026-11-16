@@ -50,19 +50,26 @@ class RhinoSourceScriptRuntime(
                 }
 
                 val jsLib = source.jsLib.orEmpty()
+                val mainJs = source.mainJs.orEmpty()
                 require(jsLib.length <= MAX_SCRIPT_CHARS) { "Source JavaScript library exceeds the size limit" }
-                require(script.length + jsLib.length <= MAX_TOTAL_SCRIPT_CHARS) {
-                    "Source JavaScript and library exceed the combined size limit"
+                require(mainJs.length <= MAX_SCRIPT_CHARS) { "Source mainJs exceeds the size limit" }
+                require(script.length + jsLib.length + mainJs.length <= MAX_TOTAL_SCRIPT_CHARS) {
+                    "Source JavaScript, library and mainJs exceed the combined size limit"
                 }
                 val jsLibHash = jsLib.takeIf(String::isNotBlank)?.let(::scriptHash)
+                val mainJsHash = mainJs.takeIf(String::isNotBlank)?.let(::scriptHash)
                 val previousJsLibHash = sourceJsLibHashes[source.id]
-                if (previousJsLibHash != null && previousJsLibHash != jsLibHash) {
+                val previousMainJsHash = sourceMainJsHashes[source.id]
+                if ((previousJsLibHash != null && previousJsLibHash != jsLibHash) ||
+                    (previousMainJsHash != null && previousMainJsHash != mainJsHash)
+                ) {
                     // A source may be edited in place. Reset its old global scope so
                     // top-level let/const declarations from the previous library do not collide.
                     sourceScopes.remove(source.id)
                     sourceGlobals.remove(source.id)
                     ScriptBindings.removeSharedGlobalStates(GLOBAL_KEY_PREFIX + source.id)
                     sourceJsLibHashes.remove(source.id)
+                    sourceMainJsHashes.remove(source.id)
                 }
 
                 // Keep one VarScope per source. A shared globalThis alone is not
@@ -93,6 +100,12 @@ class RhinoSourceScriptRuntime(
                         if (jsLibHash != null && sourceJsLibHashes[source.id] == null) {
                             RhinoScriptEngine.evalSuspend(jsLib, scope)
                             sourceJsLibHashes[source.id] = jsLibHash
+                        }
+                        // mainJs is source initialization code, not a per-request
+                        // rule. Run it once after jsLib and before the first rule.
+                        if (mainJsHash != null && sourceMainJsHashes[source.id] == null) {
+                            RhinoScriptEngine.evalSuspend(mainJs, scope)
+                            sourceMainJsHashes[source.id] = mainJsHash
                         }
                         RhinoScriptEngine.evalSuspend(script, scope)
                     }
@@ -146,6 +159,7 @@ class RhinoSourceScriptRuntime(
             sourceScopes.remove(sourceId)
             sourceGlobals.remove(sourceId)
             sourceJsLibHashes.remove(sourceId)
+            sourceMainJsHashes.remove(sourceId)
             ScriptBindings.removeSharedGlobalStates(GLOBAL_KEY_PREFIX + sourceId)
             javaExtensions.remove(sourceId)
             sourceKeyValueStore.clearSource(sourceId)
@@ -166,6 +180,7 @@ class RhinoSourceScriptRuntime(
         val sourceGlobals = ConcurrentHashMap<String, com.script.SharedGlobalStateHandle>()
         val sourceLocks = ConcurrentHashMap<String, Mutex>()
         val sourceJsLibHashes = ConcurrentHashMap<String, String>()
+        val sourceMainJsHashes = ConcurrentHashMap<String, String>()
 
         fun scriptHash(script: String): String =
             java.security.MessageDigest.getInstance("SHA-256")
