@@ -33,6 +33,17 @@ class MyActivity : Activity() {
         }
         val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         top.addView(label("我的", 18f, ink), LinearLayout.LayoutParams(0, dp(42), 1f))
+        top.addView(TextView(this).apply {
+            text = "⚙"
+            textSize = 23f
+            gravity = Gravity.CENTER
+            setTextColor(ink)
+            isClickable = true
+            isFocusable = true
+            contentDescription = "设置"
+            setPadding(dp(12), 0, dp(2), 0)
+            setOnClickListener { startActivity(Intent(this@MyActivity, SettingsActivity::class.java)) }
+        }, LinearLayout.LayoutParams(dp(44), dp(42)))
         profile.addView(top)
         val identity = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         identity.addView(TextView(this).apply {
