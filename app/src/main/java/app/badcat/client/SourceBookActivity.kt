@@ -20,8 +20,7 @@ import java.util.concurrent.Executors
 import kotlinx.coroutines.runBlocking
 
 /**
- * Development-only book detail/TOC flow. It deliberately does not imitate
- * or replace the original Badcat detail page.
+ * Book detail and table-of-contents screen backed by the selected reading source.
  */
 class SourceBookActivity : Activity() {
     private val worker = Executors.newSingleThreadExecutor()
@@ -34,6 +33,7 @@ class SourceBookActivity : Activity() {
     private lateinit var chapterList: LinearLayout
     private lateinit var detailTitle: TextView
     private lateinit var detailMetadata: TextView
+    private var introExpanded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,6 +47,13 @@ class SourceBookActivity : Activity() {
             textSize = 14f
             setTextColor(Color.rgb(90, 94, 102))
             setPadding(0, dpBook(12), 0, dpBook(12))
+            maxLines = 4
+            ellipsize = android.text.TextUtils.TruncateAt.END
+            setOnClickListener {
+                introExpanded = !introExpanded
+                maxLines = if (introExpanded) Int.MAX_VALUE else 4
+                ellipsize = if (introExpanded) null else android.text.TextUtils.TruncateAt.END
+            }
         }
         chapterList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val favoriteButton = Button(this).apply {
@@ -176,6 +183,9 @@ class SourceBookActivity : Activity() {
                             book.latestChapter?.takeIf { it.isNotBlank() }?.let { append("\n最新：").append(it) }
                         }
                         status.text = book.intro?.takeIf { it.isNotBlank() } ?: "暂无简介"
+                        status.contentDescription = if (book.intro.isNullOrBlank()) "暂无简介" else "点击展开或收起简介"
+                        status.maxLines = 4
+                        introExpanded = false
                         when (toc) {
                             is EngineResult.Success -> showChapters(toc.value)
                             is EngineResult.Failure -> status.append("\n\n目录加载失败（${toc.code}）：${toc.message}")
