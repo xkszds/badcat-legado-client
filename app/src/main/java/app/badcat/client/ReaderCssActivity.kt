@@ -190,24 +190,31 @@ class ReaderCssActivity : Activity() {
             require(array.length() in 1..MAX_PROFILES) { "方案数量必须为 1-$MAX_PROFILES" }
             (0 until array.length()).map { i ->
                 val item = array.optJSONObject(i) ?: error("第 ${i + 1} 套方案格式错误")
-                val name = item.optString("name").trim()
+                fun optionalString(json: JSONObject, key: String): String {
+                    if (!json.has(key) || json.isNull(key)) return ""
+                    return json.opt(key) as? String ?: error("字段 $key 必须是字符串")
+                }
+                val name = optionalString(item, "name").trim()
                 require(name.isNotEmpty() && name.length <= 100) { "第 ${i + 1} 套方案名称无效" }
-                val note = item.optString("note")
+                val note = optionalString(item, "note")
                 require(note.length <= 500) { "方案备注过长" }
+                val enabledValue = if (item.has("enabled")) {
+                    item.opt("enabled") as? Boolean ?: error("方案 enabled 字段必须是布尔值")
+                } else false
                 val rulesJson = item.optJSONArray("rules") ?: JSONArray()
                 require(rulesJson.length() <= MAX_RULES_PER_PROFILE) { "单套方案子选择器超过 $MAX_RULES_PER_PROFILE 条" }
                 val rules = (0 until rulesJson.length()).map { j ->
                     val rule = rulesJson.optJSONObject(j) ?: error("子选择器格式错误")
-                    val selector = rule.optString("selector")
-                    val css = rule.optString("css")
-                    val ruleName = rule.optString("name")
-                    val ruleNote = rule.optString("note")
+                    val selector = optionalString(rule, "selector")
+                    val css = optionalString(rule, "css")
+                    val ruleName = optionalString(rule, "name")
+                    val ruleNote = optionalString(rule, "note")
                     require(selector.length <= 240 && css.length <= 4000) { "选择器或 CSS 内容过长" }
                     require(ReaderCssDocument.sanitizeSelector(selector) != null) { "导入文件包含无效 CSS 选择器" }
                     require(ruleName.length <= 100 && ruleNote.length <= 500) { "子选择器名称或备注过长" }
                     SelectorRule(ruleName, ruleNote, selector, css)
                 }
-                Profile(UUID.randomUUID().toString(), name, note, item.optBoolean("enabled", false), rules)
+                Profile(UUID.randomUUID().toString(), name, note, enabledValue, rules)
             }
         }.getOrElse {
             message.text = "导入失败：${it.message ?: "文件格式无效"}"
