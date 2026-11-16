@@ -67,6 +67,7 @@ class FileChapterContentCache(context: Context) : ChapterContentCache {
             }
             prune()
         }.also { if (it.isFailure) temporary.delete() }
+        Unit
     }
 
     private fun cacheFile(sourceId: String, bookUrl: String, chapterUrl: String): File {
