@@ -37,81 +37,81 @@ class RhinoSourceScriptRuntime(
     ): EngineResult<String> {
         return sourceLocks.computeIfAbsent(source.id) { Mutex() }.withLock {
             try {
-            require(script.isNotBlank()) { "Source JavaScript must not be blank" }
-            require(script.length <= MAX_SCRIPT_CHARS) { "Source JavaScript exceeds the size limit" }
-            require(bindings.size <= MAX_BINDINGS) { "Too many source JavaScript bindings" }
-            require(bindings.keys.all(BINDING_NAME::matches)) { "Invalid source JavaScript binding name" }
-            require(bindings.values.all { it.length <= MAX_BINDING_VALUE_CHARS }) {
-                "Source JavaScript binding exceeds the size limit"
-            }
-            require(bindings.values.sumOf { it.length } <= MAX_TOTAL_BINDING_CHARS) {
-                "Source JavaScript bindings exceed the total size limit"
-            }
-
-            val jsLib = source.jsLib.orEmpty()
-            require(jsLib.length <= MAX_SCRIPT_CHARS) { "Source JavaScript library exceeds the size limit" }
-            require(script.length + jsLib.length <= MAX_TOTAL_SCRIPT_CHARS) {
-                "Source JavaScript and library exceed the combined size limit"
-            }
-            val jsLibHash = jsLib.takeIf(String::isNotBlank)?.let(::scriptHash)
-            val previousJsLibHash = sourceJsLibHashes[source.id]
-            if (previousJsLibHash != null && previousJsLibHash != jsLibHash) {
-                // A source may be edited in place. Reset its old global scope so
-                // top-level let/const declarations from the previous library do not collide.
-                sourceGlobals.remove(source.id)
-                ScriptBindings.removeSharedGlobalStates(GLOBAL_KEY_PREFIX + source.id)
-                sourceJsLibHashes.remove(source.id)
-            }
-
-            val scope = ScriptBindings()
-            bindings.forEach { (name, value) -> scope[name] = value }
-            scope.chainTo(
-                RhinoScriptEngine.newStandardTopLevel(),
-                sourceGlobals.computeIfAbsent(source.id) {
-                    ScriptBindings.getSharedGlobalStateHandle(GLOBAL_KEY_PREFIX + it)
-                },
-            )
-            val result = withTimeout(timeoutMillis) {
-                // jsLib declarations are installed once per source/library version.
-                // Re-evaluating top-level let/const declarations on every request
-                // would cause duplicate lexical declaration errors.
-                if (jsLibHash != null && sourceJsLibHashes[source.id] == null) {
-                    RhinoScriptEngine.evalSuspend(jsLib, scope)
-                    sourceJsLibHashes[source.id] = jsLibHash
+                require(script.isNotBlank()) { "Source JavaScript must not be blank" }
+                require(script.length <= MAX_SCRIPT_CHARS) { "Source JavaScript exceeds the size limit" }
+                require(bindings.size <= MAX_BINDINGS) { "Too many source JavaScript bindings" }
+                require(bindings.keys.all(BINDING_NAME::matches)) { "Invalid source JavaScript binding name" }
+                require(bindings.values.all { it.length <= MAX_BINDING_VALUE_CHARS }) {
+                    "Source JavaScript binding exceeds the size limit"
                 }
-                RhinoScriptEngine.evalSuspend(script, scope)
-            }
-            when (result) {
-                null -> EngineResult.Success("")
-                is String -> EngineResult.Success(result)
-                is CharSequence -> EngineResult.Success(result.toString())
-                is Number, is Boolean -> EngineResult.Success(result.toString())
-                else -> EngineResult.Failure(
+                require(bindings.values.sumOf { it.length } <= MAX_TOTAL_BINDING_CHARS) {
+                    "Source JavaScript bindings exceed the total size limit"
+                }
+
+                val jsLib = source.jsLib.orEmpty()
+                require(jsLib.length <= MAX_SCRIPT_CHARS) { "Source JavaScript library exceeds the size limit" }
+                require(script.length + jsLib.length <= MAX_TOTAL_SCRIPT_CHARS) {
+                    "Source JavaScript and library exceed the combined size limit"
+                }
+                val jsLibHash = jsLib.takeIf(String::isNotBlank)?.let(::scriptHash)
+                val previousJsLibHash = sourceJsLibHashes[source.id]
+                if (previousJsLibHash != null && previousJsLibHash != jsLibHash) {
+                    // A source may be edited in place. Reset its old global scope so
+                    // top-level let/const declarations from the previous library do not collide.
+                    sourceGlobals.remove(source.id)
+                    ScriptBindings.removeSharedGlobalStates(GLOBAL_KEY_PREFIX + source.id)
+                    sourceJsLibHashes.remove(source.id)
+                }
+
+                val scope = ScriptBindings()
+                bindings.forEach { (name, value) -> scope[name] = value }
+                scope.chainTo(
+                    RhinoScriptEngine.newStandardTopLevel(),
+                    sourceGlobals.computeIfAbsent(source.id) {
+                        ScriptBindings.getSharedGlobalStateHandle(GLOBAL_KEY_PREFIX + it)
+                    },
+                )
+                val result = withTimeout(timeoutMillis) {
+                    // jsLib declarations are installed once per source/library version.
+                    // Re-evaluating top-level let/const declarations on every request
+                    // would cause duplicate lexical declaration errors.
+                    if (jsLibHash != null && sourceJsLibHashes[source.id] == null) {
+                        RhinoScriptEngine.evalSuspend(jsLib, scope)
+                        sourceJsLibHashes[source.id] = jsLibHash
+                    }
+                    RhinoScriptEngine.evalSuspend(script, scope)
+                }
+                when (result) {
+                    null -> EngineResult.Success("")
+                    is String -> EngineResult.Success(result)
+                    is CharSequence -> EngineResult.Success(result.toString())
+                    is Number, is Boolean -> EngineResult.Success(result.toString())
+                    else -> EngineResult.Failure(
+                        EngineErrorCode.UNSUPPORTED_RULE,
+                        "Source JavaScript result must be a primitive value",
+                    )
+                }
+            } catch (error: TimeoutCancellationException) {
+                EngineResult.Failure(
+                    EngineErrorCode.RULE_TIMEOUT,
+                    "Source JavaScript exceeded the execution time limit",
+                    error,
+                )
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: IllegalArgumentException) {
+                EngineResult.Failure(
                     EngineErrorCode.UNSUPPORTED_RULE,
-                    "Source JavaScript result must be a primitive value",
+                    error.message ?: "Unsupported JavaScript input or result",
+                    error,
+                )
+            } catch (error: Exception) {
+                EngineResult.Failure(
+                    EngineErrorCode.PARSE,
+                    error.message ?: "Source JavaScript evaluation failed",
+                    error,
                 )
             }
-        } catch (error: TimeoutCancellationException) {
-            EngineResult.Failure(
-                EngineErrorCode.RULE_TIMEOUT,
-                "Source JavaScript exceeded the execution time limit",
-                error,
-            )
-        } catch (error: CancellationException) {
-            throw error
-        } catch (error: IllegalArgumentException) {
-            EngineResult.Failure(
-                EngineErrorCode.UNSUPPORTED_RULE,
-                error.message ?: "Unsupported JavaScript input or result",
-                error,
-            )
-        } catch (error: Exception) {
-            EngineResult.Failure(
-                EngineErrorCode.PARSE,
-                error.message ?: "Source JavaScript evaluation failed",
-                error,
-            )
-        }
         }
     }
 
