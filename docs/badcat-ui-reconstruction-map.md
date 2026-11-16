@@ -148,3 +148,11 @@ The personal center currently shows only implemented routes: reading history, bo
 - Chapter progress seeks through the loaded table of contents. The tools menu retains font size, line spacing, background, CSS profiles, chapter catalog, save bookmark, and jump-to-bookmark actions.
 - Existing source-engine loading, reading history, per-chapter scroll persistence, and bookmark position restoration remain in the reader activity.
 - This is a structural first pass, not a pixel-perfect reproduction of the original reader; no device rendering or touch-accuracy validation has been performed yet.
+
+
+## 2026-11-16 follow-up: reader position slider
+
+- The bottom reader slider now reflects the current WebView scroll percentage within the loaded chapter, rather than the chapter's ordinal position in the TOC.
+- Dragging the slider seeks within the current chapter; previous/next buttons and the chapter catalog remain responsible for chapter navigation.
+- Progress is recalculated on WebView scroll and after document load/scroll restoration. Stored pixel scroll offsets remain the persistence source, avoiding a second conflicting progress store.
+- Physical-device validation is still required for very long chapters, font/CSS changes, and WebView content-height recalculation.
