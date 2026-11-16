@@ -90,6 +90,39 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun exposesOnlyAllowListedSourceJavaHelpers() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val source = BookSource(
+            id = "https://safe-java.example/",
+            name = "Safe Java source",
+            baseUrl = "https://safe-java.example/",
+        )
+        val stored = runtime.evaluate(
+            source,
+            "java.putString('token', 'source-value'); java.getString('token')",
+        )
+        val digest = runtime.evaluate(source, "java.md5Encode('abc')")
+        val encoded = runtime.evaluate(source, "java.urlEncode('a b')")
+
+        assertEquals("source-value", (stored as EngineResult.Success).value)
+        assertEquals("900150983cd24fb0d6963f7d28e17f72", (digest as EngineResult.Success).value)
+        assertEquals("a+b", (encoded as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
+    fun isolatesSafeJavaStorageBetweenBookSources() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val first = BookSource("https://safe-first.example/", "First", "https://safe-first.example/")
+        val second = BookSource("https://safe-second.example/", "Second", "https://safe-second.example/")
+        runtime.evaluate(first, "java.putString('session', 'first')")
+        val result = runtime.evaluate(second, "java.getString('session')")
+        assertEquals("", (result as EngineResult.Success).value)
+        runtime.clearSourceState(first.id)
+        runtime.clearSourceState(second.id)
+    }
+
+    @Test
     fun rejectsOversizedSourceJsLibBeforeEvaluation() = runBlocking {
         val source = BookSource(
             id = "https://oversized.example/",

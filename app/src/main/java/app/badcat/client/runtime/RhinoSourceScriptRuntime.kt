@@ -16,11 +16,10 @@ import kotlin.coroutines.cancellation.CancellationException
 /**
  * Android host adapter for bounded source JavaScript.
  *
- * The current bridge intentionally exposes primitive string bindings only.
- * It now keeps an isolated Rhino global per source, so common Legado scripts
- * can retain source-level variables between search/detail/TOC/content calls.
- * This is still not a complete AnalyzeUrl/AnalyzeRule host: java/http/cookie,
- * WebView, login and cache service objects are not injected here.
+ * The host keeps an isolated Rhino global per source and exposes only a small
+ * allow-listed java helper (string state, digest, Base64 and URL encoding).
+ * It never exposes Java package reflection, Android Context, filesystem,
+ * arbitrary network, cookies, WebView or process APIs.
  */
 class RhinoSourceScriptRuntime(
     private val timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS,
@@ -78,6 +77,10 @@ class RhinoSourceScriptRuntime(
                     }
                 }
                 bindings.forEach { (name, value) -> scope[name] = value }
+                // Common, low-risk Legado helpers are exposed through a narrow
+                // source-scoped bridge. This shadows Rhino's package namespace;
+                // untrusted rules still cannot reach java.lang or Android APIs.
+                scope["java"] = RhinoSafeSourceJavaExtensions.forSource(source.id)
                 val result = try {
                     withTimeout(timeoutMillis) {
                         // jsLib declarations are installed once per source/library version.
@@ -140,6 +143,7 @@ class RhinoSourceScriptRuntime(
             sourceGlobals.remove(sourceId)
             sourceJsLibHashes.remove(sourceId)
             ScriptBindings.removeSharedGlobalStates(GLOBAL_KEY_PREFIX + sourceId)
+            RhinoSafeSourceJavaExtensions.clearSource(sourceId)
         }
     }
 
