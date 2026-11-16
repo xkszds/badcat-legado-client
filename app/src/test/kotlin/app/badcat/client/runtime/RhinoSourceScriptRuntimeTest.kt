@@ -105,4 +105,24 @@ class RhinoSourceScriptRuntimeTest {
         assertEquals("hello two", (second as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
+    @Test
+    fun clearsSourceGlobalsUnderTheEvaluationLock() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val source = BookSource(
+            id = "https://clear-state.example/",
+            name = "Clear state source",
+            baseUrl = "https://clear-state.example/",
+        )
+
+        val initialized = runtime.evaluate(source, "var temporaryValue = 'kept'; temporaryValue")
+        val beforeClear = runtime.evaluate(source, "temporaryValue")
+        runtime.clearSourceState(source.id)
+        val afterClear = runtime.evaluate(source, "typeof temporaryValue")
+
+        assertEquals("kept", (initialized as EngineResult.Success).value)
+        assertEquals("kept", (beforeClear as EngineResult.Success).value)
+        assertEquals("undefined", (afterClear as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
 }
