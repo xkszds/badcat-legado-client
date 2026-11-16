@@ -31,7 +31,8 @@ class SourceChapterContentService(
         var pageCount = 0
 
         while (currentUrl.isNotBlank() && pageCount < maxPages) {
-            if (!visited.add(currentUrl)) {
+            val requestedIdentity = paginationUrlIdentity(currentUrl)
+            if (!visited.add(requestedIdentity)) {
                 return EngineResult.Failure(
                     EngineErrorCode.PARSE,
                     "Chapter content pagination contains a URL cycle for source '${source.id}'",
@@ -49,7 +50,10 @@ class SourceChapterContentService(
             }
             // Redirect targets are canonical pagination identities too. Record them
             // before parsing so a next link to the final URL is detected immediately.
-            if (response.finalUrl != currentUrl && !visited.add(response.finalUrl)) {
+            val finalIdentity = paginationUrlIdentity(response.finalUrl)
+            if (finalIdentity.isNotBlank() && finalIdentity != requestedIdentity &&
+                !visited.add(finalIdentity)
+            ) {
                 return EngineResult.Failure(
                     EngineErrorCode.PARSE,
                     "Chapter content pagination contains a redirect URL cycle for source '${source.id}'",
