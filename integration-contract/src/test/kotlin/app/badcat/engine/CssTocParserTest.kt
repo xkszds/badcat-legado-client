@@ -395,4 +395,30 @@ class CssTocParserTest {
         assertEquals(listOf("https://reader.example/chapter/1"), page.chapters.map { it.url })
     }
 
+    @Test
+    fun appliesLegacyAllInOneRegexModeToTocRows() {
+        val source = BookSource(
+            id = "https://reader.example/",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":":<li>.*?</li>",
+                "chapterName":"<a[^>]*>(.*?)</a>",
+                "chapterUrl":"href=\"([^\"]+)\""
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/catalog",
+            body = """<ul><li><a href="/chapter/legacy">Legacy Chapter</a></li></ul>""",
+        )
+
+        val page = assertIs<EngineResult.Success<ParsedTocPage>>(
+            CssTocParser().parse(source, response, "https://reader.example/book"),
+        ).value
+
+        assertEquals(listOf("Legacy Chapter"), page.chapters.map { it.title })
+        assertEquals(listOf("https://reader.example/chapter/legacy"), page.chapters.map { it.url })
+    }
+
 }

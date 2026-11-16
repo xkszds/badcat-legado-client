@@ -43,6 +43,7 @@ class CssTocParser {
         if (resolvedListRule.contains("@js:", true) || resolvedListRule.contains("{{")) {
             return unsupported(source, "JavaScript collection-root rules")
         }
+        val legacyRegexMode = resolvedListRule.startsWith(":")
         val root = SourceDocument(response.finalUrl, response.body, response.contentType)
         val items = when (val result = LegadoRuleExpressionDispatcher.evaluateElements(root, resolvedListRule)) {
             is EngineResult.Failure -> return result
@@ -89,6 +90,15 @@ class CssTocParser {
                 .replace(Regex("@href$", RegexOption.IGNORE_CASE), "@attr(href)")
                 .replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
             else trimmed
+            if (legacyRegexMode) {
+                return when (val result = LegadoRegexElementEvaluator.evaluateScalar(itemHtml, normalized)) {
+                    is EngineResult.Failure -> result
+                    is EngineResult.Success -> EngineResult.Success(
+                        (result.value.getOrNull(1) ?: result.value.firstOrNull())
+                            ?.trim()?.takeIf(String::isNotEmpty),
+                    )
+                }
+            }
             return when (val result = LegadoRuleExpressionDispatcher.evaluate(
                 SourceDocument(response.finalUrl, itemHtml, response.contentType),
                 normalized,
@@ -149,6 +159,11 @@ class CssTocParser {
                     is EngineResult.Failure -> return result
                     is EngineResult.Success -> result.value.trim()
                 }
+            } else if (legacyRegexMode) {
+                when (val result = LegadoRegexElementEvaluator.evaluateScalar(response.body, nextRule)) {
+                    is EngineResult.Failure -> return result
+                    is EngineResult.Success -> (result.value.getOrNull(1) ?: result.value.firstOrNull()).orEmpty()
+                }
             } else {
                 val normalized = normalizeLinkExpression(nextRule)
                 when (val result = LegadoRuleExpressionDispatcher.evaluate(root, normalized)) {
@@ -187,6 +202,7 @@ class CssTocParser {
             return unsupported(source, "JavaScript or interpolation")
         }
 
+        val legacyRegexMode = listRule.trim().startsWith(":")
         val root = SourceDocument(response.finalUrl, response.body, response.contentType)
         val items = when (val result = LegadoRuleExpressionDispatcher.evaluateElements(
             root,
@@ -198,6 +214,15 @@ class CssTocParser {
 
         fun extract(itemHtml: String, expression: String?): EngineResult<String?> {
             if (expression.isNullOrBlank()) return EngineResult.Success(null)
+            if (legacyRegexMode) {
+                return when (val result = LegadoRegexElementEvaluator.evaluateScalar(itemHtml, expression)) {
+                    is EngineResult.Failure -> result
+                    is EngineResult.Success -> EngineResult.Success(
+                        (result.value.getOrNull(1) ?: result.value.firstOrNull())
+                            ?.trim()?.takeIf(String::isNotEmpty),
+                    )
+                }
+            }
             return when (val result = LegadoRuleExpressionDispatcher.evaluate(
                 SourceDocument(response.finalUrl, itemHtml, response.contentType),
                 expression,
@@ -232,19 +257,26 @@ class CssTocParser {
         val nextUrls = ArrayList<String>()
         val nextRule = rules["nextTocUrl"]?.takeIf(String::isNotBlank)
         if (nextRule != null) {
-            val values = when (val result = LegadoRuleExpressionDispatcher.evaluate(
-                root,
-                normalizeLinkExpression(nextRule),
-            )) {
-                is EngineResult.Failure -> {
-                    if (result.code == EngineErrorCode.PARSE) {
-                        return unsupported(source, "invalid nextTocUrl selector")
-                    }
-                    return result
+            val values = if (legacyRegexMode) {
+                when (val result = LegadoRegexElementEvaluator.evaluateScalar(response.body, nextRule)) {
+                    is EngineResult.Failure -> return result
+                    is EngineResult.Success -> listOfNotNull(result.value.getOrNull(1) ?: result.value.firstOrNull())
                 }
-                is EngineResult.Success -> listOfNotNull(
-                    LegadoRuleExpressionDispatcher.firstScalarValue(normalizeLinkExpression(nextRule), result.value),
-                )
+            } else {
+                when (val result = LegadoRuleExpressionDispatcher.evaluate(
+                    root,
+                    normalizeLinkExpression(nextRule),
+                )) {
+                    is EngineResult.Failure -> {
+                        if (result.code == EngineErrorCode.PARSE) {
+                            return unsupported(source, "invalid nextTocUrl selector")
+                        }
+                        return result
+                    }
+                    is EngineResult.Success -> listOfNotNull(
+                        LegadoRuleExpressionDispatcher.firstScalarValue(normalizeLinkExpression(nextRule), result.value),
+                    )
+                }
             }
             for (value in values.filter(String::isNotBlank)) {
                 val url = runCatching { WebUrlResolver.resolve(response.finalUrl, value) }.getOrElse {
