@@ -22,4 +22,8 @@ dependencies {
 
 tasks.test {
     useJUnit()
+    testLogging {
+        events("failed", "standardOut", "standardError")
+        showStandardStreams = true
+    }
 }
