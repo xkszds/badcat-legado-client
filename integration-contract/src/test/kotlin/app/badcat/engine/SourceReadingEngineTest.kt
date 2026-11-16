@@ -480,4 +480,65 @@ class SourceReadingEngineTest {
         assertEquals(listOf("https://reader.example/search?q=cat"), requests)
     }
 
+
+    @Test
+    fun routesExploreThroughTheExploreStageOfAnImportedSource() = runBlocking {
+        val source = BookSource(
+            id = "explore",
+            name = "Explore",
+            baseUrl = "https://reader.example/",
+            exploreUrl = "/explore",
+            enabledExplore = true,
+            ruleExploreJson = """{"bookList":"div.book","name":"h2@text","bookUrl":"a@href"}""",
+        )
+        val gateway = SourceHttpGateway(object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> =
+                EngineResult.Success(
+                    SourceHttpResponse(
+                        200,
+                        request.url,
+                        body = """<div class="book"><h2>Explore result</h2><a href="/book/2">Open</a></div>""",
+                    ),
+                )
+        })
+        val engine = SourceReadingEngine(
+            catalog = BookSourceCatalog { EngineResult.Success(listOf(source)) },
+            searchUrlResolver = BookSourceSearchUrlResolver(),
+            searchService = SourceSearchService(gateway),
+            detailService = SourceBookDetailService(gateway),
+            tocService = SourceTocService(gateway),
+            contentService = SourceChapterContentService(gateway),
+            exploreService = SourceExploreService(gateway),
+        )
+
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            engine.explore("explore", page = 1),
+        ).value
+        assertEquals(listOf("Explore result"), books.map { it.name })
+    }
+
+    @Test
+    fun rejectsExploreWhenTheSourceHasItDisabled() = runBlocking {
+        val source = BookSource(
+            id = "explore-off",
+            name = "Explore off",
+            baseUrl = "https://reader.example/",
+            enabledExplore = false,
+            exploreUrl = "/explore",
+        )
+        val gateway = SourceHttpGateway(NoNetworkClient())
+        val engine = SourceReadingEngine(
+            catalog = BookSourceCatalog { EngineResult.Success(listOf(source)) },
+            searchUrlResolver = BookSourceSearchUrlResolver(),
+            searchService = SourceSearchService(gateway),
+            detailService = SourceBookDetailService(gateway),
+            tocService = SourceTocService(gateway),
+            contentService = SourceChapterContentService(gateway),
+            exploreService = SourceExploreService(gateway),
+        )
+
+        val failure = assertIs<EngineResult.Failure>(engine.explore("explore-off"))
+        assertEquals(EngineErrorCode.INVALID_SOURCE, failure.code)
+    }
+
 }
