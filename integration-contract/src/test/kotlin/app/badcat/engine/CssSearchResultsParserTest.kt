@@ -356,4 +356,32 @@ class CssSearchResultsParserTest {
         assertEquals(EngineErrorCode.UNSUPPORTED_RULE, failure.code)
     }
 
+
+    @Test
+    fun parsesJsonArrayReturnedByJavaScriptBookListWithJsonPathFields() = runBlocking {
+        val source = source(
+            """{"bookList":"@js:buildJson(result)","name":"$.name","bookUrl":"$.url","author":"$.author"}""",
+        )
+        val response = SourceHttpResponse(200, "https://reader.example/search", body = "raw")
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> = EngineResult.Success(
+                """[{"name":"JSON Script A","url":"/a","author":"Writer A"},{"name":"JSON Script B","url":"/b","author":"Writer B"}]""",
+            )
+        }
+
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parseWithScripts(source, response, runtime),
+        ).value
+        assertEquals(listOf("JSON Script A", "JSON Script B"), books.map { it.name })
+        assertEquals(
+            listOf("https://reader.example/a", "https://reader.example/b"),
+            books.map { it.bookUrl },
+        )
+        assertEquals(listOf("Writer A", "Writer B"), books.map { it.author })
+    }
+
 }
