@@ -156,4 +156,29 @@ class CssRuleEvaluatorTest {
         val malformed = CssRuleEvaluator.evaluate(document, "a[")
         assertIs<EngineResult.Failure>(malformed)
     }
+
+    @Test
+    fun selectsCollectionElementsAsIndependentHtmlFragments() {
+        val items = CssRuleEvaluator.evaluateElements(document, "div.book")
+        val fragments = assertIs<EngineResult.Success<List<String>>>(items).value
+
+        assertEquals(2, fragments.size)
+        kotlin.test.assertTrue(fragments[0].contains("Alpha"))
+        kotlin.test.assertTrue(fragments[0].contains("First intro"))
+        kotlin.test.assertFalse(fragments[0].contains("Beta Novel"))
+        kotlin.test.assertTrue(fragments[1].contains("Beta Novel"))
+        kotlin.test.assertTrue(fragments[1].contains("Second intro"))
+        kotlin.test.assertFalse(fragments[1].contains("Alpha"))
+    }
+
+    @Test
+    fun collectionExtractionKeepsTopLevelCombinationBranchesSeparate() {
+        val items = CssRuleEvaluator.evaluateElements(document, "div.book && div.book")
+        val fragments = assertIs<EngineResult.Success<List<String>>>(items).value
+
+        assertEquals(4, fragments.size)
+        assertEquals(2, fragments.count { it.contains("Alpha") })
+        assertEquals(2, fragments.count { it.contains("Beta Novel") })
+    }
+
 }
