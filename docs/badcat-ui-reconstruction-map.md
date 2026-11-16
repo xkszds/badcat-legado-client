@@ -196,3 +196,5 @@ The personal center currently shows only implemented routes: reading history, bo
 - Favorites and My retain their own scrollable content above the persistent bottom navigation. The source-search page remains a focused search workflow with its own result pagination rather than being treated as a root tab.
 - This is a shared navigation and visual-consistency pass, not a claim of pixel-perfect reconstruction. Original screenshots still need device-side comparison for typography, exact dimensions, icons, spacing, status/navigation bars, and scrolling behavior. Detail, chapter catalog, and reader surfaces remain separate task flows.
 - The reader now has a dedicated lower action strip for chapter catalog, reading theme/brightness cycle, and reader settings, separate from previous/next chapter and scroll progress controls.
+- Search content type now opens an explicit three-choice selector instead of cycling blindly through types.
+- The My page title and profile affordance are clarified; tapping the displayed nickname edits and persists a local profile nickname (up to 24 characters).
