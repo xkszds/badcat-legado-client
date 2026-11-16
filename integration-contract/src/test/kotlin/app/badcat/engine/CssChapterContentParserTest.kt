@@ -117,4 +117,35 @@ class CssChapterContentParserTest {
         assertEquals("https://reader.example/chapter/2", chapter.nextPageUrl)
     }
 
+    @Test
+    fun extractsRegexCaptureGroupsForChapterTitleAndNextPageUrl() {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleContentJson = """{
+                "content":"article@html",
+                "title":"@regex:<h1 class=\\\"title\\\">(.*?)</h1>",
+                "nextContentUrl":"@regex:class=\\\"next\\\" href=\\\"([^\\\"]+)\\\""
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/chapter/1",
+            body = """<h1 class="title">Regex Chapter</h1><article><p>Readable text.</p></article><a class="next" href="/chapter/2">Next</a>""",
+        )
+        val result = assertIs<EngineResult.Success<ChapterContent>>(
+            CssChapterContentParser().parse(
+                source,
+                response,
+                BookChapter(0, "Fallback", response.finalUrl),
+            ),
+        ).value
+
+        assertEquals("Regex Chapter", result.title)
+        assertEquals("Readable text.", result.text)
+        assertEquals("https://reader.example/chapter/2", result.nextPageUrl)
+    }
+
+
 }
