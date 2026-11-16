@@ -49,6 +49,7 @@ class CssRuleEvaluatorTest {
     fun extractsHtmlAndNamedAttribute() {
         val html = CssRuleEvaluator.evaluate(document, "a.title@html")
         val ids = CssRuleEvaluator.evaluate(document, "img@attr(data-id)")
+        val directIds = CssRuleEvaluator.evaluate(document, "img@data-id")
         assertEquals(
             listOf("Alpha <b>Novel</b>", "Beta Novel"),
             assertIs<EngineResult.Success<List<String>>>(html).value,
@@ -56,6 +57,10 @@ class CssRuleEvaluatorTest {
         assertEquals(
             listOf("one", "two"),
             assertIs<EngineResult.Success<List<String>>>(ids).value,
+        )
+        assertEquals(
+            listOf("one", "two"),
+            assertIs<EngineResult.Success<List<String>>>(directIds).value,
         )
     }
 
@@ -126,7 +131,7 @@ class CssRuleEvaluatorTest {
 
     @Test
     fun rejectsUnsupportedSuffixAndMalformedSelector() {
-        val unsupported = CssRuleEvaluator.evaluate(document, "a.title@unknown")
+        val unsupported = CssRuleEvaluator.evaluate(document, "a.title@attr()")
         assertIs<EngineResult.Failure>(unsupported)
 
         val malformed = CssRuleEvaluator.evaluate(document, "a[")
