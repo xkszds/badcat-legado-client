@@ -43,12 +43,14 @@ class SourceBookActivity : Activity() {
     private lateinit var detailMetadata: TextView
     private lateinit var coverView: ImageView
     private var introExpanded = false
+    private var currentCoverUrl: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         sourceId = intent.getStringExtra(EXTRA_SOURCE_ID).orEmpty()
         bookUrl = intent.getStringExtra(EXTRA_BOOK_URL).orEmpty()
         bookName = intent.getStringExtra(EXTRA_BOOK_NAME).orEmpty()
+        currentCoverUrl = intent.getStringExtra(EXTRA_BOOK_COVER_URL)
         engine = BadcatReadingEngineFactory(applicationContext).create()
 
         status = TextView(this).apply {
@@ -68,7 +70,7 @@ class SourceBookActivity : Activity() {
         val favoriteButton = Button(this).apply {
             text = if (FavoriteBooks.contains(this@SourceBookActivity, sourceId, bookUrl)) "已收藏" else "加入收藏"
             setOnClickListener {
-                val added = FavoriteBooks.add(this@SourceBookActivity, sourceId, bookUrl, bookName)
+                val added = FavoriteBooks.add(this@SourceBookActivity, sourceId, bookUrl, bookName, currentCoverUrl)
                 text = if (added) "已收藏" else "已收藏"
                 android.widget.Toast.makeText(
                     this@SourceBookActivity,
@@ -216,7 +218,11 @@ class SourceBookActivity : Activity() {
                     is EngineResult.Failure -> status.text = "详情加载失败（${detail.code}）：${detail.message}"
                     is EngineResult.Success -> {
                         val book = detail.value
-                        book.coverUrl?.takeIf { it.isNotBlank() }?.let { loadCover(it) }
+                        book.coverUrl?.takeIf { it.isNotBlank() }?.let { coverUrl ->
+                            currentCoverUrl = coverUrl
+                            FavoriteBooks.updateCover(this@SourceBookActivity, sourceId, bookUrl, coverUrl)
+                            loadCover(coverUrl)
+                        }
                         detailTitle.text = book.name.ifBlank { bookName }
                         detailMetadata.text = buildString {
                             append(book.author?.takeIf { it.isNotBlank() }?.let { "作者：$it" } ?: "作者：未知")
@@ -381,6 +387,7 @@ class SourceBookActivity : Activity() {
         const val EXTRA_SOURCE_ID = "source_id"
         const val EXTRA_BOOK_URL = "book_url"
         const val EXTRA_BOOK_NAME = "book_name"
+        const val EXTRA_BOOK_COVER_URL = "book_cover_url"
     }
 }
 
