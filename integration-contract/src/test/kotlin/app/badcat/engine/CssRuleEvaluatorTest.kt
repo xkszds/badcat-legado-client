@@ -11,7 +11,7 @@ class CssRuleEvaluatorTest {
         body = """
             <html><body>
               <div class="book"><a class="title" href="/book/1">  Alpha <b>Novel</b> </a>
-                <img src="/covers/1.jpg" data-id="one">
+                <img src="/covers/1.jpg" data-id="one" data-label="@cover">
                 <p class="intro">First intro</p>
               </div>
               <div class="book"><a class="title" href="/book/2">Beta Novel</a>
@@ -66,6 +66,18 @@ class CssRuleEvaluatorTest {
         assertEquals(
             listOf("one", "two"),
             assertIs<EngineResult.Success<List<String>>>(directIds).value,
+        )
+    }
+
+    @Test
+    fun ignoresAtSignsInsideQuotedCssAttributeValues() {
+        val result = CssRuleEvaluator.evaluate(
+            document,
+            """img[data-label="@cover"]@data-id""",
+        )
+        assertEquals(
+            listOf("one"),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
         )
     }
 
