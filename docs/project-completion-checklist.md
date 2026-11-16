@@ -1,6 +1,6 @@
 # 项目完成情况与剩余工作清单
 
-更新时间：2026-11-16
+更新时间：2026-11-16 18:08（UTC+8）
 
 ## 项目定位
 
@@ -21,14 +21,13 @@
 - [x] 开发阅读页的章节阅读、进度/书签基础能力与 CSS 自定义方案管理。
 - [x] 阅读 CSS 多方案、子选择器命名/备注、启停、复制、排序、预览、冲突提示、导入导出和资源上限。
 - [x] CSS 选择器、净化器、规则顺序与输出大小的单元测试。
-- [x] 最新代码提交 `61fb8240cdf4` 的 CI 全部步骤通过并上传 Debug APK： [run #43844875160](https://github.com/xkszds/badcat-legado-client/actions/runs/43844875160)。产物 4,766,215 bytes，SHA-256 `040a7d9f536d261e6e572a4995f81a749e092b3ccbba1969cc1b9590a3b8ecba`。
-- [x] 文档提交 `681c8ddc640e` 的测试、打包和上传步骤也已成功，产物 4,766,219 bytes，SHA-256 `0f7495f04baa5cade22a912d0df848319eb226ef05a5a8f1ec5942a33f6efd3a`；GitHub Actions 最后清理步骤仍显示运行中：[run #43844881409](https://github.com/xkszds/badcat-legado-client/actions/runs/43844881409)。
+- [x] 最新仓库提交 `e226dd6b559c` 的 CI 全部步骤通过：契约测试、受限 Rhino 宿主测试、Android Debug APK 组装和产物上传均成功。Actions：[run #43845483951](https://github.com/xkszds/badcat-legado-client/actions/runs/43845483951)。产物 `badcat-legado-debug` 为 4,766,218 bytes，SHA-256 `9a09984e4b6a0250348c4f523b47fa61fda1bd5cebb3f89ef241ab424a2c2fdb`。
 
 ## 尚未完成（主要交付阻塞项）
 
 ### P0：必须完成才能称为目标客户端
 
-- [ ] **原版 UI 还原**：逐页重建主界面、四个底部导航、搜索首页/结果、书籍详情、目录、书架/文件夹、阅读页和设置页；以原 APK 资源和参考截图逐屏比对。当前临时 Launcher/开发页不等于原版 UI。
+- [ ] **原版 UI 还原**：逐页重建主界面、四个底部导航、搜索首页/结果、书籍详情、目录、书架/文件夹、阅读页和设置页；以原 APK 资源和参考截图逐屏比对。当前 MainActivity 仍有临时快捷入口；“猫咪空间”和“我的”是未接入的提示/临时入口，不能视为原版页面。
 - [ ] **完整 Legado 规则运行时**：补齐上游模型和规则实体、AnalyzeRule/AnalyzeUrl、CSS/XPath/JSONPath 等解析、JS 绑定、请求头/Cookie/缓存/代理等宿主环境，以及初始化/持久化依赖。当前 CSS 解析器和 Rhino 都只是有界子集。
 - [ ] **端到端适配**：将完整引擎接入原版搜索、详情、目录、阅读和书架 UI，验证来源切换、错误呈现、章节导航和离线/缓存策略。
 - [ ] **原版净化功能迁移**：通过方法级证据确认 ADBlockUtils、AdBlockPresenter、AdMark 服务、PPRule 的真实数据结构、调用时机与行为；分别实现 WebView/页面广告过滤、AdMark、目录/分页/视频规则。现有 Legado 正文替换不能代替这些功能。
@@ -47,7 +46,7 @@
 - 已有书源导入不代表所有 Legado 书源都能运行。
 - 已有 CSS 阅读自定义仅针对客户端生成的阅读 DOM，不是任意网站原始页面 DOM。
 - 已有 Legado 替换规则不代表坏坏猫原有广告净化、AdMark、PPRule 已移植。
-- 现有书签/进度为开发阅读器基础能力，不代表原版阅读体验和完整数据模型。
+- 已有书签/进度为开发阅读器基础能力，不代表原版阅读体验和完整数据模型。
 - 原 APK 必须保持只读；新客户端使用独立包身份，不覆盖原应用或其数据。
 
 ## 建议执行顺序
