@@ -1,9 +1,8 @@
 package app.badcat.engine
 
 /**
- * Runs the CSS-only search-result path. Embedded URL expressions are delegated
- * to the opt-in gateway evaluator, which expands them before URL encoding.
- * The @js URL form remains unsupported.
+ * Runs the bounded search-result parser. URL script expressions are handled by
+ * the gateway's opt-in, string-only Rhino evaluator before the HTTP request.
  */
 class SourceSearchService(
     private val http: SourceHttpGateway,
@@ -15,12 +14,6 @@ class SourceSearchService(
         page: Int? = null,
         keyword: String = "",
     ): EngineResult<List<BookCandidate>> {
-        if (searchRuleUrl.contains("@js", ignoreCase = true)) {
-            return EngineResult.Failure(
-                EngineErrorCode.UNSUPPORTED_RULE,
-                "Search URL for source '${source.id}' uses the unsupported @js form",
-            )
-        }
         val response = when (val result = http.execute(source, searchRuleUrl, page, keyword)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value

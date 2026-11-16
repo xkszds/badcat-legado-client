@@ -4,9 +4,8 @@ package app.badcat.engine
  * Resolves the search URL stored on an imported Legado source.
  *
  * The URL expression itself is deliberately left intact: the HTTP gateway
- * performs the bounded {{...}} expansion with the actual keyword before URI
- * parsing and parameter encoding. @js and other full AnalyzeUrl behaviors are
- * not interpreted here.
+ * evaluates the bounded @js/<js> and {{...}} forms with the actual keyword
+ * before URI parsing and parameter encoding.
  */
 class BookSourceSearchUrlResolver : SearchUrlResolver {
     override suspend fun resolve(
@@ -30,12 +29,6 @@ class BookSourceSearchUrlResolver : SearchUrlResolver {
             return EngineResult.Failure(
                 EngineErrorCode.INVALID_SOURCE,
                 "Book source '${source.id}' has no searchUrl",
-            )
-        }
-        if (searchUrl.contains("@js", ignoreCase = true)) {
-            return EngineResult.Failure(
-                EngineErrorCode.UNSUPPORTED_RULE,
-                "Search URL for source '${source.id}' uses unsupported @js syntax",
             )
         }
         return EngineResult.Success(searchUrl)

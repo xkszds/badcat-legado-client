@@ -35,12 +35,10 @@ class BookSourceSearchUrlResolverTest {
     }
 
     @Test
-    fun rejectsUnsupportedAtJsForm() = runBlocking {
-        val result = resolver.resolve(source("/search@js"), "cat")
-        assertEquals(
-            EngineErrorCode.UNSUPPORTED_RULE,
-            assertIs<EngineResult.Failure>(result).code,
-        )
+    fun preservesAtJsFormForBoundedGatewayEvaluation() = runBlocking {
+        val rule = "https://reader.example/search?q=@js:return result + key"
+        val result = resolver.resolve(source(rule), "cat")
+        assertEquals(rule, assertIs<EngineResult.Success<String>>(result).value)
     }
 
     @Test
