@@ -325,6 +325,15 @@ class SourceSearchActivity : Activity() {
         if (resetPage) currentPage = 1
         previousPageButton.isEnabled = false
         nextPageButton.isEnabled = false
+        if (contentType != "小说") {
+            results.removeAllViews()
+            status.text = if (contentType == "漫画") {
+                "漫画类型的专用书源解析尚未接入。当前不会把小说书源结果误显示为漫画。"
+            } else {
+                "综合搜索聚合尚未接入。当前只支持已导入的 Legado 小说书源搜索。"
+            }
+            return
+        }
         val requestedPage = currentPage
         val selectedSources = if (selectedSourcePosition == 0) enabledSources
             else listOfNotNull(enabledSources.getOrNull(selectedSourcePosition - 1))
