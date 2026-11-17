@@ -26,7 +26,7 @@
 - [x] 阅读 CSS 多方案、子选择器命名/备注、启停、复制、排序、预览、冲突提示、导入导出和资源上限。
 - [x] CSS 选择器、净化器、规则顺序与输出大小的单元测试。
 - [x] 先前基线提交 `e226dd6b559c` 的 CI 曾全部通过：契约测试、受限 Rhino 宿主测试、Android Debug APK 组装和产物上传均成功。Actions：[run #43845483951](https://github.com/xkszds/badcat-legado-client/actions/runs/43845483951)。该产物不是当前分支构建。
-- [ ] 当前分支最新 UI/阅读记录改动仍需完整 CI 验证；最近一次可确认通过的构建是 d67dc03779ad 对应 Actions run #44061473137（该版本不包含后续首页布局改动）。
+- [x] 当前统一开发分支 `fix/favorites-search-ui` 的提交 `106134128b648b57579cfb86431a1aef63b07d2d` 已通过完整 CI：362 项契约测试、受限 Rhino 宿主测试、Android Debug APK 组装及产物上传均成功。Actions：[run #44173422055](https://github.com/xkszds/badcat-legado-client/actions/runs/44173422055)。APK 仅为 Debug 构建，仍需真机验收。
 
 ## 尚未完成（主要交付阻塞项）
 
@@ -123,3 +123,11 @@
 - These tests join the PPRule video URL hardening/tests already included in `9f12c7c`; no DOM-removal behavior is inferred for opaque AdMark `markRules`.
 - The current working branch contains this additional UI/CSS test batch; wait for its own CI before syncing it to the unified main line or publishing a new APK.
 - Remaining project gates are still substantial: full upstream Legado AnalyzeRule/AnalyzeUrl and JS host compatibility, original UI page-by-page parity, complete Badcat AdMark/PPRule behavior, end-to-end source corpus testing, Android device acceptance, and release/source-license delivery.
+
+
+## 2026-11-18 unified parallel continuation
+
+- All five workstreams continue on the shared `fix/favorites-search-ui` branch; the verified unified CI baseline is `106134128b648b57579cfb86431a1aef63b07d2d` (run #44173422055).
+- Legado contract tests (362), bounded Rhino host tests, Android Debug APK assembly and artifact upload all passed for that exact commit. Artifact SHA-256: `a0227b5b66675954a12e8b544a1d788a1b836bf00e5a57fa8999fcc3007b5339`.
+- Reader/UI stability: cover image loading now needs a bounded pending-work queue; this is being added with an executor contract test to prevent unbounded task accumulation during rapid list scrolling.
+- Passing CI does not close the remaining P0 gates: full upstream Legado compatibility, full original UI parity, complete AdMark/PPRule behavior, real-device acceptance and release signing remain incomplete.

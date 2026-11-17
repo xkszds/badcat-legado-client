@@ -5,11 +5,13 @@ import android.widget.ImageView
 import java.lang.ref.WeakReference
 import java.net.HttpURLConnection
 import java.net.URL
-import java.util.concurrent.Executors
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 /** Small bounded loader for source-provided book covers. */
 object BookCoverLoader {
-    private val worker = Executors.newFixedThreadPool(3)
+    private val worker = createBookCoverExecutor()
 
     fun load(target: ImageView, rawUrl: String?) {
         // Invalidate any in-flight request before validating the replacement URL.
@@ -93,3 +95,17 @@ object BookCoverLoader {
     private const val MAX_REDIRECTS = 5
     private val REDIRECT_CODES = setOf(300, 301, 302, 303, 307, 308)
 }
+
+
+/** Keeps bursts of rapid scrolling from accumulating an unbounded number of cover requests. */
+internal fun createBookCoverExecutor(): ThreadPoolExecutor = ThreadPoolExecutor(
+    WORKER_COUNT,
+    WORKER_COUNT,
+    0L,
+    TimeUnit.MILLISECONDS,
+    ArrayBlockingQueue(MAX_PENDING_REQUESTS),
+    ThreadPoolExecutor.DiscardOldestPolicy(),
+)
+
+private const val WORKER_COUNT = 3
+private const val MAX_PENDING_REQUESTS = 48
