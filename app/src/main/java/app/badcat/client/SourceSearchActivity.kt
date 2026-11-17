@@ -52,7 +52,6 @@ class SourceSearchActivity : Activity() {
     private lateinit var status: TextView
     private lateinit var results: LinearLayout
     private lateinit var sourceTabs: LinearLayout
-    private lateinit var typeSelector: TextView
     private var currentPage = 1
     private var selectedSourcePosition = 0
     private var contentType = "小说"
@@ -99,7 +98,7 @@ class SourceSearchActivity : Activity() {
     private fun buildToolbar(): View = LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
-        setPadding(dp(14), dp(10), dp(16), dp(10))
+        setPadding(dp(14), dp(6), dp(16), dp(6))
         setBackgroundColor(Color.WHITE)
         addView(TextView(this@SourceSearchActivity).apply {
             text = "‹"
@@ -108,73 +107,43 @@ class SourceSearchActivity : Activity() {
             setTextColor(ink)
             setOnClickListener { finish() }
         }, LinearLayout.LayoutParams(dp(42), dp(44)))
-        typeSelector = TextView(this@SourceSearchActivity).apply {
-            text = "$contentType  ▾"
-            textSize = 15f
-            gravity = Gravity.CENTER
-            setTextColor(ink)
-            setPadding(dp(10), 0, dp(10), 0)
-            setOnClickListener { cycleContentType() }
-        }
-        addView(typeSelector)
         addView(TextView(this@SourceSearchActivity).apply {
-            text = "书籍搜索"
-            textSize = 15f
-            setTextColor(muted)
-            setPadding(dp(12), 0, 0, 0)
+            text = "搜索"
+            textSize = 16f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(ink)
+            setPadding(dp(8), 0, 0, 0)
         })
     }
 
-    private fun buildSearchControls(): View = LinearLayout(this).apply {
-        orientation = LinearLayout.HORIZONTAL
-        gravity = Gravity.CENTER_VERTICAL
-        setPadding(dp(14), dp(12), dp(14), dp(12))
-        setBackgroundColor(Color.WHITE)
-        val field = LinearLayout(this@SourceSearchActivity).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            background = rounded(Color.rgb(246, 247, 249), 22)
-            setPadding(dp(14), 0, dp(8), 0)
+    private fun buildSearchControls(): View {
+        val appearance = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
+            .getString("home_layout_mode", "integrated") ?: "integrated"
+        val sharedBar = BadcatSearchBarView(
+            context = this,
+            initialQuery = intent.getStringExtra(EXTRA_INITIAL_QUERY).orEmpty(),
+            initialType = contentType,
+            appearance = appearance,
+            onSearch = { query, type ->
+                contentType = type
+                keywordInput.setText(query)
+                search()
+            },
+            onTypeChanged = { selected ->
+                contentType = selected
+                if (::keywordInput.isInitialized && keywordInput.text.toString().isNotBlank()) search()
+            },
+        )
+        keywordInput = sharedBar.input
+        searchButton = sharedBar.searchAction
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14), dp(7), dp(14), dp(7))
+            setBackgroundColor(Color.WHITE)
+            addView(sharedBar, LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(if (appearance == "small") 44 else 48)
+            ))
         }
-        keywordInput = EditText(this@SourceSearchActivity).apply {
-            hint = "输入书名或作者"
-            textSize = 14f
-            setSingleLine(true)
-            setTextColor(ink)
-            setHintTextColor(muted)
-            background = null
-            setPadding(0, dp(10), 0, dp(10))
-            setText(intent.getStringExtra(EXTRA_INITIAL_QUERY).orEmpty())
-            imeOptions = EditorInfo.IME_ACTION_SEARCH
-            setOnEditorActionListener { _, actionId, _ ->
-                if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                    search()
-                    true
-                } else false
-            }
-        }
-        field.addView(keywordInput, LinearLayout.LayoutParams(0, dp(44), 1f))
-        searchButton = TextView(this@SourceSearchActivity).apply {
-            text = "搜索"
-            textSize = 14f
-            gravity = Gravity.CENTER
-            setTextColor(Color.WHITE)
-            background = rounded(blue, 20)
-            setPadding(dp(18), 0, dp(18), 0)
-            isClickable = true
-            isFocusable = true
-            setOnClickListener { search() }
-        }
-        field.addView(TextView(this@SourceSearchActivity).apply {
-            text = "×"; textSize = 23f; gravity = Gravity.CENTER; setTextColor(muted)
-            setPadding(dp(8), 0, dp(6), 0)
-            setOnClickListener { keywordInput.text?.clear(); keywordInput.requestFocus() }
-        }, LinearLayout.LayoutParams(dp(34), dp(40)))
-        addView(field, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(10) })
-        searchButton.background = null
-        searchButton.setTextColor(ink)
-        searchButton.setPadding(dp(5), 0, dp(5), 0)
-        addView(searchButton, LinearLayout.LayoutParams(dp(48), dp(44)))
     }
 
     private fun buildSourceStrip(): View = LinearLayout(this).apply {
@@ -233,19 +202,7 @@ class SourceSearchActivity : Activity() {
         setOnClickListener { action() }
     }
 
-    private fun cycleContentType() {
-        val types = arrayOf("小说", "漫画", "综合")
-        val selected = types.indexOf(contentType).coerceAtLeast(0)
-        android.app.AlertDialog.Builder(this)
-            .setTitle("选择内容类型")
-            .setSingleChoiceItems(types, selected) { dialog, which ->
-                contentType = types[which]
-                typeSelector.text = "$contentType  ▾"
-                dialog.dismiss()
-            }
-            .setNegativeButton("取消", null)
-            .show()
-    }
+
 
     private fun loadSources() {
         searchButton.isEnabled = false
