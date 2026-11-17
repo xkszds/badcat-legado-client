@@ -275,7 +275,7 @@ class CssRuleEvaluatorTest {
         kotlin.test.assertFalse(explicitCssValues.any { it.contains("Alpha") })
 
         // Default-mode scalar rules use ElementsSingle index suffixes.
-        val scalar = CssRuleEvaluator.evaluate(document, "div.book.-1@text")
+        val scalar = CssRuleEvaluator.evaluate(document, "div.book.-1@a.title@text")
         assertEquals(
             listOf("Beta Novel"),
             assertIs<EngineResult.Success<List<String>>>(scalar).value,
