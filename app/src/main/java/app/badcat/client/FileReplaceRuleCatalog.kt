@@ -106,6 +106,27 @@ class FileReplaceRuleCatalog(context: Context) : LegadoReplaceRuleCatalog {
             }
         }
 
+    /** Remove one local replacement rule without disturbing the remaining order. */
+    suspend fun remove(ruleId: Long): EngineResult<Boolean> = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            try {
+                val rules = readRules().toMutableList()
+                val index = rules.indexOfFirst { it.scopeRule.id == ruleId }
+                if (index < 0) return@withLock EngineResult.Success(false)
+                rules.removeAt(index)
+                writeRules(rules)
+                EngineResult.Success(true)
+            } catch (error: Exception) {
+                if (error is CancellationException) throw error
+                EngineResult.Failure(
+                    EngineErrorCode.UNKNOWN,
+                    "Unable to remove the local replacement rule",
+                    error,
+                )
+            }
+        }
+    }
+
     suspend fun exportJson(): EngineResult<String> = withContext(Dispatchers.IO) {
         mutex.withLock {
             try {

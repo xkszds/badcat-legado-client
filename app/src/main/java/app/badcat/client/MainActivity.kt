@@ -54,7 +54,7 @@ class MainActivity : Activity() {
         background = rounded(blue, 0, 0, 0, 18, 18)
 
         addView(BadcatHomeLogo.create(this@MainActivity), LinearLayout.LayoutParams(
-            dp(148), dp(48)
+            dp(132), dp(40)
         ).apply { gravity = Gravity.CENTER_HORIZONTAL })
 
         // Original home hierarchy: 小说 / 漫画 / 综合 directly under the Badcat wordmark.
@@ -84,9 +84,9 @@ class MainActivity : Activity() {
             val label = TextView(this@MainActivity).apply {
                 tag = type
                 text = type
-                textSize = 12f
+                textSize = 11f
                 gravity = Gravity.CENTER
-                setPadding(dp(25), dp(5), dp(25), dp(5))
+                setPadding(dp(28), dp(5), dp(28), dp(5))
                 isClickable = true
                 isFocusable = true
                 setOnClickListener {
@@ -96,7 +96,7 @@ class MainActivity : Activity() {
                 }
             }
             typeLabels += label
-            typeChoices.addView(label, LinearLayout.LayoutParams(-2, dp(32)).apply { marginStart = dp(5); marginEnd = dp(5) })
+            typeChoices.addView(label, LinearLayout.LayoutParams(-2, dp(32)).apply { marginStart = dp(8); marginEnd = dp(8) })
         }
         addView(typeChoices, LinearLayout.LayoutParams(-1, dp(42)))
         renderTypeChoices()

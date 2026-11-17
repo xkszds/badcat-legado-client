@@ -294,9 +294,23 @@ class ReplaceRuleActivity : Activity() {
                                     }
                                     textSize = 13f
                                 })
-                                row.addView(Button(this).apply {
-                                    text = if (rule.scopeRule.enabled) "停用此规则" else "启用此规则"
-                                    setOnClickListener { toggleRule(rule.scopeRule.id, !rule.scopeRule.enabled) }
+                                row.addView(LinearLayout(this).apply {
+                                    orientation = LinearLayout.HORIZONTAL
+                                    addView(Button(this@ReplaceRuleActivity).apply {
+                                        text = if (rule.scopeRule.enabled) "停用此规则" else "启用此规则"
+                                        setOnClickListener { toggleRule(rule.scopeRule.id, !rule.scopeRule.enabled) }
+                                    }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                                    addView(Button(this@ReplaceRuleActivity).apply {
+                                        text = "删除"
+                                        setOnClickListener {
+                                            BadcatTheme.alertBuilder(this@ReplaceRuleActivity)
+                                                .setTitle("删除替换规则")
+                                                .setMessage("确定删除“${rule.name.ifBlank { "未命名规则" }}”（#${rule.scopeRule.id}）吗？此操作只删除本机这条规则。")
+                                                .setNegativeButton("取消", null)
+                                                .setPositiveButton("删除") { _, _ -> removeRule(rule.scopeRule.id) }
+                                                .show()
+                                        }
+                                    }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
                                 })
                                 ruleList.addView(row)
                             }
@@ -305,6 +319,21 @@ class ReplaceRuleActivity : Activity() {
                     }
                 }
                 window.decorView.post { BadcatTheme.applyTree(this@ReplaceRuleActivity, window.decorView) }
+            }
+        }
+    }
+
+    private fun removeRule(ruleId: Long) {
+        status.text = "正在删除规则 #$ruleId…"
+        worker.execute {
+            val result = runBlocking { catalog.remove(ruleId) }
+            mainHandler.post {
+                when (result) {
+                    is EngineResult.Success -> status.text =
+                        if (result.value) "已删除规则 #$ruleId" else "规则 #$ruleId 已不存在"
+                    is EngineResult.Failure -> status.text = "删除失败：${result.message}"
+                }
+                refreshRules()
             }
         }
     }
