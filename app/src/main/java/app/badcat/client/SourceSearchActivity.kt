@@ -153,6 +153,8 @@ class SourceSearchActivity : Activity() {
         )
         keywordInput = sharedBar.input
         searchButton = sharedBar.searchAction
+        val configuredBarHeight = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
+            .getInt("home_search_bar_height_dp", 40).coerceIn(34, 46)
         return FrameLayout(this).apply {
             setBackgroundColor(page)
             val glow = View(this@SourceSearchActivity).apply {
@@ -181,12 +183,14 @@ class SourceSearchActivity : Activity() {
                     isClickable = true
                     isFocusable = true
                     setOnClickListener { finish() }
-                }, LinearLayout.LayoutParams(dp(40), dp(40)))
-                addView(sharedBar, LinearLayout.LayoutParams(0, dp(40), 1f))
+                }, LinearLayout.LayoutParams(dp(40), dp(configuredBarHeight), 1f))
+                addView(sharedBar, LinearLayout.LayoutParams(0, dp(configuredBarHeight), 1f))
             }
-            addView(row, FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(52), Gravity.TOP
-            ))
+            val topRow = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(configuredBarHeight + 20), Gravity.TOP
+            )
+            row.setPadding(dp(14), dp(10), dp(14), dp(10))
+            addView(row, topRow)
         }
     }
 
