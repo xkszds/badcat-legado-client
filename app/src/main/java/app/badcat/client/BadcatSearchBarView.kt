@@ -50,7 +50,7 @@ class BadcatSearchBarView(
             text = "$contentType ▾"
             textSize = if (compact) 13f else 14f
             gravity = Gravity.CENTER
-            setTextColor(BLUE)
+            setTextColor(if (searchPageStyle) INK else BLUE)
             typeface = Typeface.DEFAULT_BOLD
             setPadding(dp(if (compact) 9 else 12), 0, dp(if (compact) 9 else 12), 0)
             isClickable = true
