@@ -165,7 +165,7 @@ class BookmarkActivity : Activity() {
             .setNegativeButton("取消", null)
             .setPositiveButton("清空") { _, _ ->
                 val edit = prefs.edit()
-                keys.forEach(edit::remove)
+                keys.forEach { key -> edit.remove(key) }
                 edit.apply()
                 refresh()
             }.show()
