@@ -35,6 +35,7 @@ internal class BadcatLineIconView(
         when (key) {
             "search" -> drawSearch(canvas)
             "back" -> drawBack(canvas)
+            "folder" -> drawFolder(canvas)
             "favorites" -> drawFavorites(canvas)
             "mine" -> drawPerson(canvas)
             "messages" -> drawMessages(canvas)
@@ -62,6 +63,24 @@ internal class BadcatLineIconView(
         path.lineTo(14.8f, 19.5f)
         c.drawPath(path, paint)
         line(c, 7.5f, 12f, 20f, 12f)
+    }
+
+    private fun drawFolder(c: Canvas) {
+        path.reset()
+        path.moveTo(3.2f, 7.2f)
+        path.lineTo(3.2f, 5.2f)
+        path.quadTo(3.2f, 3.8f, 4.8f, 3.8f)
+        path.lineTo(9.4f, 3.8f)
+        path.lineTo(11.3f, 6.1f)
+        path.lineTo(19.2f, 6.1f)
+        path.quadTo(20.8f, 6.1f, 20.8f, 7.7f)
+        path.lineTo(20.8f, 18.5f)
+        path.quadTo(20.8f, 20.2f, 19.1f, 20.2f)
+        path.lineTo(4.9f, 20.2f)
+        path.quadTo(3.2f, 20.2f, 3.2f, 18.5f)
+        path.close()
+        c.drawPath(path, paint)
+        line(c, 3.8f, 9.2f, 20.2f, 9.2f)
     }
 
     private fun drawFavorites(c: Canvas) {
