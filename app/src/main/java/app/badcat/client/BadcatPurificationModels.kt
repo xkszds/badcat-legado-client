@@ -79,6 +79,16 @@ object BadcatPurificationUrlPolicy {
     fun marksForUrl(url: String, marks: List<BadcatAdMarkItem>): List<BadcatAdMarkItem> =
         marks.filter { it.matchesUrl(url) }
 
+    /**
+     * Injection is limited to web pages. Never run the stored page script in
+     * file:, content:, data: or about: documents (including local app content).
+     */
+    fun injectionForPage(snapshot: BadcatPurificationSnapshot, pageUrl: String): String? {
+        val scheme = runCatching { URI(pageUrl).scheme?.lowercase() }.getOrNull()
+        if (scheme != "http" && scheme != "https") return null
+        return injectionForPage(snapshot)
+    }
+
     fun injectionForPage(snapshot: BadcatPurificationSnapshot): String? =
         snapshot.webViewInjectionScript
             ?.takeIf { snapshot.webViewAdFilterEnabled && it.isNotBlank() && it.length <= MAX_SCRIPT_CHARS }
