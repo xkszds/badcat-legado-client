@@ -797,14 +797,14 @@ class SourceChapterActivity : Activity() {
                             .setNegativeButton("取消", null)
                             .show()
                     }
-                    is EngineResult.Failure -> status.text = "读取书源失败：\${result.message}"
+                    is EngineResult.Failure -> status.text = "读取书源失败：${result.message}"
                 }
             }
         }
     }
 
     private fun searchBookInSource(source: app.badcat.engine.BookSource) {
-        status.text = "正在「\${source.name}」中查找《\${bookName}》…"
+        status.text = "正在「${source.name}」中查找《${bookName}》…"
         worker.execute {
             val result = runBlocking { safeEngineCall { engine.searchPage(source.id, bookName, 1) } }
             mainHandler.post {
@@ -816,7 +816,7 @@ class SourceChapterActivity : Activity() {
                             return@post
                         }
                         android.app.AlertDialog.Builder(this@SourceChapterActivity)
-                            .setTitle("选择《\${bookName}》")
+                            .setTitle("选择《${bookName}》")
                             .setItems(candidates.map { it.name + (it.author?.takeIf(String::isNotBlank)?.let { author -> " · " + author } ?: "") }.toTypedArray()) { _, index ->
                                 val candidate = candidates[index]
                                 startActivity(Intent(this@SourceChapterActivity, SourceBookActivity::class.java).apply {
@@ -829,7 +829,7 @@ class SourceChapterActivity : Activity() {
                             .setNegativeButton("取消", null)
                             .show()
                     }
-                    is EngineResult.Failure -> status.text = "换源搜索失败：\${result.message}"
+                    is EngineResult.Failure -> status.text = "换源搜索失败：${result.message}"
                 }
             }
         }
