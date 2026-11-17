@@ -60,7 +60,9 @@ class BadcatPurificationActivity : Activity() {
             isChecked = coordinator.webViewAdFilterEnabled()
             setOnCheckedChangeListener { _, checked -> coordinator.setWebViewAdFilterEnabled(checked) }
         }
-        body.addView(enabled)
+        body.addView(sectionCard("过滤开关", "控制网页阅读场景中的广告过滤注入。") {
+            addView(enabled)
+        })
         body.addView(TextView(this).apply {
             text = "仅对 HTTP/HTTPS 网页执行已保存的注入脚本。关闭或未配置脚本时，不会改动网页原有 JavaScript 设置。"
             textSize = 12f; setTextColor(muted); setPadding(0, dp(6), 0, dp(14))
@@ -76,7 +78,9 @@ class BadcatPurificationActivity : Activity() {
             setText(coordinator.snapshot().webViewInjectionScript.orEmpty())
             hint = "粘贴已确认来源的网页注入脚本"
         }
-        body.addView(scriptInput, LinearLayout.LayoutParams(-1, dp(150)))
+        body.addView(sectionCard("网页注入配置", "仅保存你确认来源的脚本；注入内容会在受支持的网页阅读场景中使用。") {
+            addView(scriptInput, LinearLayout.LayoutParams(-1, dp(150)))
+        })
         body.addView(actionRow("保存脚本") {
             runCatching { coordinator.setWebViewInjectionScript(scriptInput.text.toString().takeIf { it.isNotBlank() }) }
                 .onSuccess { toast("注入脚本已保存") }
@@ -86,9 +90,11 @@ class BadcatPurificationActivity : Activity() {
             text = "广告标记规则"
             textSize = 15f; setTextColor(ink); setPadding(0, dp(20), 0, dp(8))
         })
-        body.addView(actionRow("查看 / 删除本地标记") { showMarks() })
-        body.addView(actionRow("导入标记 JSON") { importMarks() })
-        body.addView(actionRow("导出标记 JSON") { exportMarks() })
+        body.addView(sectionCard("AdMark 本地标记", "管理已保存的站点标记数据。") {
+            addView(actionRow("查看 / 删除本地标记") { showMarks() })
+            addView(actionRow("导入标记 JSON") { importMarks() })
+            addView(actionRow("导出标记 JSON") { exportMarks() })
+        })
         body.addView(TextView(this).apply {
             text = "注意：当前版本保留原版 AdMark 的 host、urlPattern 和 markRules 数据，并按已验证的 URL 匹配规则筛选；DOM 删除规则的执行及网页长按标记入口尚未接通。"
             textSize = 12f; setTextColor(muted); setPadding(0, dp(14), 0, 0)
@@ -144,6 +150,25 @@ class BadcatPurificationActivity : Activity() {
         clipboard.setPrimaryClip(ClipData.newPlainText("Badcat AdMark", json))
         toast("标记 JSON 已复制到剪贴板（${coordinator.snapshot().adMarks.size} 条）")
     }
+
+    private fun sectionCard(title: String, subtitle: String, content: LinearLayout.() -> Unit) =
+        LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(if (dark) Color.rgb(38,42,49) else Color.WHITE)
+                cornerRadius = dp(12).toFloat()
+            }
+            addView(TextView(this@BadcatPurificationActivity).apply {
+                text = title; textSize = 15f; setTextColor(ink)
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+            })
+            addView(TextView(this@BadcatPurificationActivity).apply {
+                text = subtitle; textSize = 12f; setTextColor(muted)
+                setPadding(0, dp(4), 0, dp(8))
+            })
+            content()
+        }
 
     private fun actionRow(label: String, action: () -> Unit) = TextView(this).apply {
         text = "$label    ›"

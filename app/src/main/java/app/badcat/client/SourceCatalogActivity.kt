@@ -54,19 +54,31 @@ class SourceCatalogActivity : Activity() {
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(28, 32, 28, 24)
+            setPadding(dp(18), dp(16), dp(18), dp(24))
+            setBackgroundColor(if (BadcatTheme.isDark(this@SourceCatalogActivity)) android.graphics.Color.rgb(25,28,33) else android.graphics.Color.rgb(247,249,252))
         }
+        root.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            addView(BadcatLineIconView(this@SourceCatalogActivity, "back", android.graphics.Color.rgb(55,137,222)).apply {
+                contentDescription = "返回"; isClickable = true; setOnClickListener { finish() }
+            }, LinearLayout.LayoutParams(dp(40), dp(44)))
+            addView(TextView(this@SourceCatalogActivity).apply {
+                text = "书源管理"; textSize = 21f; typeface = android.graphics.Typeface.DEFAULT_BOLD
+            })
+        })
         root.addView(TextView(this).apply {
-            text = "书源管理"
-            textSize = 24f
+            text = "导入、维护并启用 Legado 书源，登录与分类探索入口位于各书源项目内。"
+            textSize = 12f; setPadding(0, dp(4), 0, dp(12))
         })
         root.addView(actionButton("从网络 URL 导入书源") { promptNetworkImport() })
         root.addView(actionButton("从本地 JSON 文件导入") { chooseImportFile() })
         root.addView(actionButton("导出全部书源 JSON") { chooseExportFile() })
         root.addView(TextView(this).apply {
-            text = "书源列表（开关仅控制本应用是否选用该书源）"
-            textSize = 14f
-            setPadding(0, 20, 0, 8)
+            text = "已添加的书源"
+            textSize = 16f
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setPadding(0, dp(20), 0, dp(8))
         })
         listContainer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(listContainer)
@@ -329,6 +341,8 @@ class SourceCatalogActivity : Activity() {
             }
         }
     }
+
+    private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
 
     private fun chooseImportFile() {
         startActivityForResult(

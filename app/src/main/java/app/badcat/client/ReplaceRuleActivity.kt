@@ -74,10 +74,24 @@ class ReplaceRuleActivity : Activity() {
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(24, 24, 24, 24)
+            setPadding(dp(18), dp(14), dp(18), dp(24))
+            setBackgroundColor(if (BadcatTheme.isDark(this@ReplaceRuleActivity)) android.graphics.Color.rgb(25,28,33) else android.graphics.Color.rgb(247,249,252))
+            addView(LinearLayout(this@ReplaceRuleActivity).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                addView(BadcatLineIconView(this@ReplaceRuleActivity, "back", android.graphics.Color.rgb(55,137,222)).apply {
+                    contentDescription = "返回"; isClickable = true; setOnClickListener { finish() }
+                }, LinearLayout.LayoutParams(dp(40), dp(44)))
+                addView(TextView(this@ReplaceRuleActivity).apply {
+                    text = "正文替换规则"; textSize = 21f; typeface = android.graphics.Typeface.DEFAULT_BOLD
+                })
+            })
             addView(TextView(this@ReplaceRuleActivity).apply {
-                text = "Legado 替换规则（开发验证）"
-                textSize = 20f
+                text = "按顺序替换正文内容，支持正则与字面匹配。可批量导入、导出，并单独启停规则。"
+                textSize = 12f; setPadding(0, dp(4), 0, dp(12))
+            })
+            addView(TextView(this@ReplaceRuleActivity).apply {
+                text = "规则 JSON"; textSize = 15f; typeface = android.graphics.Typeface.DEFAULT_BOLD
             })
             addView(jsonInput, LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -89,6 +103,10 @@ class ReplaceRuleActivity : Activity() {
             addView(copyButton)
             addView(importFileButton)
             addView(exportFileButton)
+            addView(TextView(this@ReplaceRuleActivity).apply {
+                text = "本地规则"; textSize = 16f; typeface = android.graphics.Typeface.DEFAULT_BOLD
+                setPadding(0, dp(18), 0, dp(8))
+            })
             addView(status)
             addView(ruleList)
         }
@@ -303,6 +321,8 @@ class ReplaceRuleActivity : Activity() {
             }
         }
     }
+
+    private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
 
     companion object {
         private const val REQUEST_IMPORT_JSON = 4101
