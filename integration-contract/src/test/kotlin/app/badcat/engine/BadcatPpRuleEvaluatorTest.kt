@@ -94,4 +94,50 @@ class BadcatPpRuleEvaluatorTest {
             assertIs<EngineResult.Success<List<String>>>(xpath).value,
         )
     }
+
+    @Test
+    fun extractsVideoLinksAndResolvesRelativeHrefFromXpathAndRegexRules() {
+        val document = SourceDocument(
+            url = "https://video.example/watch/list",
+            body = """<ul><li><a href="../play/1">Episode 1</a></li>
+                <li><a href="https://cdn.example/play/2">Episode 2</a></li></ul>""",
+        )
+        val xpath = BadcatPpRuleEvaluator.extractVideoLinks(
+            document,
+            BadcatPpRule(ruleTypeValue = 1, pageRule = "//li"),
+        )
+        assertEquals(
+            listOf(
+                BadcatVideoLink("Episode 1", "https://video.example/play/1"),
+                BadcatVideoLink("Episode 2", "https://cdn.example/play/2"),
+            ),
+            assertIs<EngineResult.Success<List<BadcatVideoLink>>>(xpath).value,
+        )
+
+        val regex = BadcatPpRuleEvaluator.extractVideoLinks(
+            document,
+            BadcatPpRule(ruleTypeValue = 0, pageRule = """<a href="([^"]+)">([^<]+)</a>"""),
+        )
+        assertEquals(
+            listOf(
+                BadcatVideoLink("Episode 1", "https://video.example/play/1"),
+                BadcatVideoLink("Episode 2", "https://cdn.example/play/2"),
+            ),
+            assertIs<EngineResult.Success<List<BadcatVideoLink>>>(regex).value,
+        )
+    }
+
+    @Test
+    fun videoLinkExtractionRejectsNonHttpTargetsAndMissingLabels() {
+        val document = SourceDocument(
+            url = "https://video.example/",
+            body = """<a href="javascript:alert(1)">Unsafe</a><a href="/empty"></a>""",
+        )
+        val result = BadcatPpRuleEvaluator.extractVideoLinks(
+            document,
+            BadcatPpRule(ruleTypeValue = 1, pageRule = "//a"),
+        )
+        assertEquals(emptyList(), assertIs<EngineResult.Success<List<BadcatVideoLink>>>(result).value)
+    }
+
 }
