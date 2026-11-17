@@ -138,7 +138,7 @@ class ReaderSettingsActivity : Activity() {
         val values = intArrayOf(0, 1, 5, 10, 30, 60)
         val labels = arrayOf("跟随系统", "1 分钟", "5 分钟", "10 分钟", "30 分钟", "60 分钟")
         val selected = values.indexOf(prefs.getInt(KEY_LOCK_MINUTES, 0)).coerceAtLeast(0)
-        AlertDialog.Builder(this).setTitle("阅读锁屏时间")
+        BadcatTheme.alertBuilder(this).setTitle("阅读锁屏时间")
             .setSingleChoiceItems(labels, selected) { dialog, which ->
                 prefs.edit().putInt(KEY_LOCK_MINUTES, values[which]).apply()
                 lockSummary.text = labels[which]
@@ -149,7 +149,7 @@ class ReaderSettingsActivity : Activity() {
     private fun chooseProgressMode() {
         val labels = arrayOf("百分比", "章节页数")
         val selected = if (prefs.getString(KEY_PROGRESS_MODE, "percent") == "pages") 1 else 0
-        AlertDialog.Builder(this).setTitle("阅读进度显示")
+        BadcatTheme.alertBuilder(this).setTitle("阅读进度显示")
             .setSingleChoiceItems(labels, selected) { dialog, which ->
                 val value = if (which == 1) "pages" else "percent"
                 prefs.edit().putString(KEY_PROGRESS_MODE, value).apply()
