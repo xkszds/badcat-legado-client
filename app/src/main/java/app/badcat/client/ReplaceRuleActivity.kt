@@ -313,4 +313,10 @@ class ReplaceRuleActivity : Activity() {
         worker.shutdownNow()
         super.onDestroy()
     }
+
+    override fun onResume() {
+        super.onResume()
+        BadcatTheme.applyTree(this, window.decorView)
+    }
+
 }
