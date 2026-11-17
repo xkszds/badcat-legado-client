@@ -197,6 +197,18 @@ object LegadoRuleExpressionDispatcher {
         if (raw.isEmpty()) {
             return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Legado rule expression is blank")
         }
+        // In upstream AnalyzeRule, a leading "@@" forces the default
+        // JSoup/CSS mode and is removed before selector evaluation.
+        if (raw.startsWith("@@")) {
+            val body = raw.substring(2).trim()
+            if (body.isEmpty()) {
+                return EngineResult.Failure(
+                    EngineErrorCode.UNSUPPORTED_RULE,
+                    "Legado forced-CSS expression is blank",
+                )
+            }
+            return EngineResult.Success(ResolvedLegadoRuleExpression(SelectorRuleType.CSS, body))
+        }
         val prefixes = listOf(
             "@css:" to SelectorRuleType.CSS,
             "@xpath:" to SelectorRuleType.XPATH,
