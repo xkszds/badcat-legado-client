@@ -33,6 +33,40 @@ class CssTocParserTest {
     }
 
     @Test
+    fun parsesLegacySingleAtIndexedTextNodesChapterListEndToEnd() {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"@.w_txt li.4@textNodes",
+                "chapterName":"a@text",
+                "chapterUrl":"a@href"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/book/42/catalog",
+            body = """
+                <ul class="w_txt">
+                  <li><a href="/chapter/1">Chapter One</a></li>
+                  <li><a href="/chapter/2">Chapter Two</a></li>
+                  <li><a href="/chapter/3">Chapter Three</a></li>
+                  <li><a href="/chapter/4">Chapter Four</a></li>
+                  <li><a href="/chapter/5">Novel title</a></li>
+                </ul>
+            """.trimIndent(),
+        )
+
+        val page = assertIs<EngineResult.Success<ParsedTocPage>>(
+            CssTocParser().parse(source, response, "https://reader.example/book/42"),
+        ).value
+
+        assertEquals(listOf("Novel title"), page.chapters.map { it.title })
+        assertEquals(listOf("https://reader.example/chapter/5"), page.chapters.map { it.url })
+    }
+
+    @Test
     fun parsesChapterItemsAndResolvesRelativeLinksAndNextPage() {
         val source = BookSource(
             id = "fixture",
