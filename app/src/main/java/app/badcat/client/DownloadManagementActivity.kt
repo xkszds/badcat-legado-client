@@ -51,6 +51,7 @@ class DownloadManagementActivity : Activity() {
                     setTextColor(Color.GRAY)
                     setPadding(0, dp(70), 0, dp(70))
                 })
+                BadcatTheme.applyTree(this@DownloadManagementActivity, window.decorView)
                 return
             }
             while (it.moveToNext()) {
@@ -73,6 +74,7 @@ class DownloadManagementActivity : Activity() {
                 }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
             }
         }
+        BadcatTheme.applyTree(this, window.decorView)
     }
 
     private fun Cursor.string(column: String): String =
