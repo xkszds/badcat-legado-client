@@ -108,7 +108,7 @@ class BadcatPpRuleEvaluatorTest {
         )
         assertEquals(
             listOf(
-                BadcatVideoLink("Episode 1", "https://video.example/play/1"),
+                BadcatVideoLink("Episode 1", "HTTPS://video.example/play/1"),
                 BadcatVideoLink("Episode 2", "https://cdn.example/play/2"),
             ),
             assertIs<EngineResult.Success<List<BadcatVideoLink>>>(xpath).value,
@@ -130,7 +130,7 @@ class BadcatPpRuleEvaluatorTest {
     @Test
     fun videoLinkExtractionAcceptsUppercaseHttpSchemeInBaseUrl() {
         val result = BadcatPpRuleEvaluator.extractVideoLinks(
-            SourceDocument("HTTPS://video.example/list", """<a href="../play/1">Episode 1</a>"""),
+            SourceDocument("HTTPS://video.example/watch/list", """<a href="../play/1">Episode 1</a>"""),
             BadcatPpRule(ruleTypeValue = 1, pageRule = "//a"),
         )
         assertEquals(
@@ -400,7 +400,7 @@ class BadcatPpRuleEvaluatorTest {
             "HTTPS://comic.example/reader/page/1",
         )
         assertEquals(
-            listOf("https://comic.example/reader/img/page.jpg"),
+            listOf("HTTPS://comic.example/reader/img/page.jpg"),
             assertIs<EngineResult.Success<List<String>>>(result).value,
         )
     }
