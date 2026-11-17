@@ -9,7 +9,7 @@ import org.junit.Test
 class BadcatPurificationModelsTest {
     private val mark = BadcatAdMarkItem(
         host = "reader.example",
-        urlPattern = "/ads/",
+        urlPattern = "[1,2,3]",
         markRules = listOf("data-ad-container"),
     )
 
@@ -18,8 +18,10 @@ class BadcatPurificationModelsTest {
         assertTrue(mark.isValid())
         assertTrue(mark.appliesToHost("https://reader.example/book/1"))
         assertFalse(mark.appliesToHost("https://sub.reader.example/book/1"))
+        assertTrue(mark.matchesUrl("https://reader.example/1/2/3/ad"))
+        assertFalse(mark.matchesUrl("https://reader.example/1/2/4/ad"))
         assertEquals(listOf(mark), BadcatPurificationUrlPolicy.marksForUrl(
-            "https://reader.example/book/1",
+            "https://reader.example/1/2/3/ad",
             listOf(mark),
         ))
         assertTrue(mark.markRules.contains("data-ad-container"))
@@ -48,7 +50,7 @@ class BadcatPurificationModelsTest {
 
     @Test
     fun invalidMarkRecordsAreNotSelectedForPage() {
-        val invalid = mark.copy(urlPattern = "")
+        val invalid = mark.copy(urlPattern = "not-json")
         assertFalse(invalid.isValid())
         assertTrue(
             BadcatPurificationUrlPolicy.marksForUrl(
