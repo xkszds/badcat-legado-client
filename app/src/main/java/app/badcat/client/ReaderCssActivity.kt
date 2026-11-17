@@ -519,16 +519,21 @@ class ReaderCssActivity : Activity() {
             setOnClickListener {
                 val presets = arrayOf(
                     ".reader-root — 阅读页整体",
+                    ".reader-header — 标题区域",
+                    ".reader-book-title — 小说名称",
+                    ".reader-chapter-title — 章节标题",
                     ".reader-content — 正文容器",
                     ".reader-paragraph — 所有段落",
                     ".reader-paragraph:first-child — 第一段",
                     ".reader-paragraph:nth-child(2) — 第二段",
                     ".reader-paragraph:last-child — 最后一段",
+                    ".reader-footer — 章节末尾",
                 )
                 val values = arrayOf(
-                    ".reader-root", ".reader-content", ".reader-paragraph",
+                    ".reader-root", ".reader-header", ".reader-book-title",
+                    ".reader-chapter-title", ".reader-content", ".reader-paragraph",
                     ".reader-paragraph:first-child", ".reader-paragraph:nth-child(2)",
-                    ".reader-paragraph:last-child",
+                    ".reader-paragraph:last-child", ".reader-footer",
                 )
                 android.app.AlertDialog.Builder(this@ReaderCssActivity)
                     .setTitle("选择要插入的选择器")
@@ -568,7 +573,7 @@ class ReaderCssActivity : Activity() {
             addView(name); addView(note); addView(presetButton); addView(selector); addView(css)
             addView(previewButton)
             addView(TextView(this@ReaderCssActivity).apply {
-                text = "仅支持增强阅读器生成的正文节点。示例：font-size: 18px; line-height: 1.8; color: #555555;"
+                text = "可自定义阅读页整体、小说名称、章节标题、正文段落和章节末尾等节点。示例：font-size: 18px; line-height: 1.8; color: #555555;"
                 textSize = 12f
             })
         }
