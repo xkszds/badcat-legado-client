@@ -94,7 +94,7 @@ class SourceCatalogActivity : Activity() {
         root.addView(sourceSummary)
         sourceFilter = EditText(this).apply {
             hint = "搜索书源名称或地址"
-            singleLine = true
+            setSingleLine(true)
             textSize = 14f
             setPadding(dp(12), dp(8), dp(12), dp(8))
             background = GradientDrawable().apply {
