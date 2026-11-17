@@ -246,8 +246,12 @@ object BadcatPurificationUrlPolicy {
      * file:, content:, data: or about: documents (including local app content).
      */
     fun injectionForPage(snapshot: BadcatPurificationSnapshot, pageUrl: String): String? {
-        val scheme = runCatching { URI(pageUrl).scheme?.lowercase() }.getOrNull()
-        if (scheme != "http" && scheme != "https") return null
+        val uri = runCatching { URI(pageUrl) }.getOrNull() ?: return null
+        val scheme = uri.scheme?.lowercase()
+        if ((scheme != "http" && scheme != "https") ||
+            uri.host.isNullOrBlank() ||
+            uri.rawUserInfo != null
+        ) return null
         return injectionForPage(snapshot)
     }
 
