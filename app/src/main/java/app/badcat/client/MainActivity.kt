@@ -99,6 +99,7 @@ class MainActivity : Activity() {
                 openSearch(query)
             },
             onTypeChanged = { contentType = it },
+            homePageStyle = true,
         )
         bar.setHomeTapToNavigate {
             startActivity(Intent(this@MainActivity, SourceSearchActivity::class.java).apply {
