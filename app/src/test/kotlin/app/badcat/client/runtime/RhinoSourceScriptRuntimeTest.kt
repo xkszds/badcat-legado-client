@@ -184,12 +184,24 @@ class RhinoSourceScriptRuntimeTest {
         val result = runtime.evaluate(
             source,
             "java.getCookie('https://cookie-helper.example/book') + '|' + " +
+                "java.getCookie('https://cookie-helper.example/book', null) + '|' + " +
                 "java.getCookie('https://cookie-helper.example/book', 'sid') + '|' + " +
                 "java.getCookie('https://cookie-helper.example/book', 'token')",
         )
 
-        assertEquals("sid=abc; token=x=y|abc|x=y", (result as EngineResult.Success).value)
+        assertEquals("sid=abc; token=x=y|sid=abc; token=x=y|abc|x=y", (result as EngineResult.Success).value)
+        val otherSource = BookSource(
+            "https://other-cookie-helper.example/",
+            "Other cookie helper source",
+            "https://other-cookie-helper.example/",
+        )
+        val isolated = runtime.evaluate(
+            otherSource,
+            "java.getCookie('https://cookie-helper.example/book', null)",
+        )
+        assertEquals("", (isolated as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
+        runtime.clearSourceState(otherSource.id)
     }
 
     @Test
