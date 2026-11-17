@@ -182,6 +182,34 @@ class CssRuleEvaluatorTest {
     }
 
     @Test
+    fun acceptsLeadingLegadoCssMarkerWithIndexedTextNodes() {
+        val source = SourceDocument(
+            url = "https://reader.example/book/1",
+            body = """
+                <ul class="w_txt">
+                  <li>Chapter 0</li>
+                  <li>Chapter 1</li>
+                  <li>Chapter 2</li>
+                  <li>Chapter 3</li>
+                  <li>Chapter 4</li>
+                </ul>
+            """.trimIndent(),
+        )
+
+        val scalar = CssRuleEvaluator.evaluate(source, "@.w_txt li.4@textNodes")
+        assertEquals(
+            listOf("Chapter 4"),
+            assertIs<EngineResult.Success<List<String>>>(scalar).value,
+        )
+
+        val collection = CssRuleEvaluator.evaluateElements(source, "@.w_txt li.4")
+        val fragments = assertIs<EngineResult.Success<List<String>>>(collection).value
+        assertEquals(1, fragments.size)
+        kotlin.test.assertTrue(fragments.single().contains("Chapter 4"))
+        kotlin.test.assertFalse(fragments.single().contains("Chapter 3"))
+    }
+
+    @Test
     fun combinesCssRulesWithLegadoOperators() {
         val fallback = CssRuleEvaluator.evaluate(
             document,
