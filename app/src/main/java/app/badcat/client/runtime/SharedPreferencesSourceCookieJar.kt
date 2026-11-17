@@ -47,11 +47,14 @@ class SharedPreferencesSourceCookieJar(
             reloadLocked()
             val now = System.currentTimeMillis()
             cookies.forEach { cookie ->
+                if (!cookie.isWithinStorageLimits()) return@forEach
                 val key = cookieKey(cookie)
+                this.cookies.remove(key)
                 if (cookie.expiresAt <= now) this.cookies.remove(key)
                 else this.cookies[key] = cookie
             }
             removeExpiredLocked(now)
+            trimToCookieLimitLocked()
             persistLocked()
         }
     }
@@ -78,6 +81,16 @@ class SharedPreferencesSourceCookieJar(
     }
 
     private fun persistLocked() {
+        trimToCookieLimitLocked()
+        var encoded = encodeCookies()
+        while (encoded.length > MAX_STORAGE_CHARS && cookies.isNotEmpty()) {
+            cookies.remove(cookies.keys.first())
+            encoded = encodeCookies()
+        }
+        preferences.edit().putString(storageKey, encoded.takeIf(String::isNotEmpty) ?: "[]").apply()
+    }
+
+    private fun encodeCookies(): String {
         val array = JSONArray()
         cookies.values.forEach { cookie ->
             array.put(JSONObject().apply {
@@ -91,15 +104,20 @@ class SharedPreferencesSourceCookieJar(
                 put("httpOnly", cookie.httpOnly)
             })
         }
-        preferences.edit().putString(storageKey, array.toString()).apply()
+        return array.toString()
+    }
+
+    private fun trimToCookieLimitLocked() {
+        while (cookies.size > MAX_COOKIE_COUNT) cookies.remove(cookies.keys.first())
     }
 
     private fun decode(raw: String?): List<Cookie> {
-        if (raw.isNullOrBlank()) return emptyList()
+        if (raw.isNullOrBlank() || raw.length > MAX_STORAGE_CHARS) return emptyList()
         return runCatching {
             val array = JSONArray(raw)
             buildList {
-                for (index in 0 until array.length()) {
+                val firstIndex = (array.length() - MAX_COOKIE_COUNT).coerceAtLeast(0)
+                for (index in firstIndex until array.length()) {
                     val item = array.optJSONObject(index) ?: continue
                     val name = item.optString("name")
                     val value = item.optString("value")
@@ -125,8 +143,20 @@ class SharedPreferencesSourceCookieJar(
     private fun cookieKey(cookie: Cookie): String =
         "${cookie.domain}|${cookie.path}|${cookie.name}"
 
+    private fun Cookie.isWithinStorageLimits(): Boolean =
+        name.isNotBlank() && name.length <= MAX_COOKIE_NAME_CHARS &&
+            value.length <= MAX_COOKIE_VALUE_CHARS &&
+            domain.length <= MAX_COOKIE_DOMAIN_CHARS &&
+            path.length <= MAX_COOKIE_PATH_CHARS
+
     companion object {
         private const val PREFERENCES_NAME = "badcat_legado_source_cookies"
+        private const val MAX_COOKIE_COUNT = 300
+        private const val MAX_COOKIE_NAME_CHARS = 256
+        private const val MAX_COOKIE_VALUE_CHARS = 4_096
+        private const val MAX_COOKIE_DOMAIN_CHARS = 253
+        private const val MAX_COOKIE_PATH_CHARS = 2_048
+        private const val MAX_STORAGE_CHARS = 256 * 1024
         private val locks = ConcurrentHashMap<String, Any>()
     }
 }
