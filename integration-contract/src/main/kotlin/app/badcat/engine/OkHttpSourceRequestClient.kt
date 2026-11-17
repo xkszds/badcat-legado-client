@@ -215,12 +215,27 @@ internal class MemorySourceCookieJar : CookieJar {
             if (cookie.expiresAt <= now) this.cookies.remove(key)
             else this.cookies[key] = cookie
         }
+        // Imported sources can emit arbitrary cookie names. Keep the per-source
+        // in-memory jar bounded so repeated responses cannot grow it indefinitely.
+        if (this.cookies.size > MAX_COOKIES) {
+            val excess = this.cookies.size - MAX_COOKIES
+            this.cookies.entries
+                .sortedBy { it.value.expiresAt }
+                .take(excess)
+                .forEach { this.cookies.remove(it.key, it.value) }
+        }
     }
+
+    internal val size: Int get() = cookies.size
 
     override fun loadForRequest(url: HttpUrl): List<Cookie> {
         val now = System.currentTimeMillis()
         this.cookies.entries.removeIf { it.value.expiresAt <= now }
         return this.cookies.values.filter { it.matches(url) }
+    }
+
+    private companion object {
+        const val MAX_COOKIES = 3_000
     }
 }
 
