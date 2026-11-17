@@ -12,11 +12,10 @@ object BookCoverLoader {
     private val worker = Executors.newFixedThreadPool(3)
 
     fun load(target: ImageView, rawUrl: String?) {
+        // Invalidate any in-flight request before validating the replacement URL.
+        target.tag = null
         target.setImageResource(android.R.drawable.ic_menu_gallery)
-        if (rawUrl.isNullOrBlank()) {
-            target.tag = null
-            return
-        }
+        if (rawUrl.isNullOrBlank()) return
         val initialUrl = runCatching { URL(rawUrl) }.getOrNull() ?: return
         if (!CoverUrlPolicy.isSafe(initialUrl)) return
         target.tag = rawUrl
