@@ -117,7 +117,7 @@ class BadcatSearchBarView(
 
     private fun chooseContentType() {
         val selected = TYPES.indexOf(contentType).coerceAtLeast(0)
-        val builder = if (context is Activity) BadcatTheme.alertBuilder(context) else AlertDialog.Builder(context)
+        val builder = (context as? Activity)?.let { BadcatTheme.alertBuilder(it) } ?: AlertDialog.Builder(context)
         builder.setTitle("选择搜索类型")
             .setSingleChoiceItems(TYPES, selected) { dialog, which ->
                 setContentType(TYPES[which])
