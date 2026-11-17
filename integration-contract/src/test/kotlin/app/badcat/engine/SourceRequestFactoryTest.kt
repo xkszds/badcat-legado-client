@@ -259,7 +259,7 @@ class SourceRequestFactoryTest {
     @Test
     fun rejectsHeaderInjectionInsideImportedSourceHeaderJson() {
         val result = SourceRequestFactory.create(
-            source = source("""{"X-Forwarded-Host":"reader.example\\r\\nHost:evil.example"}"""),
+            source = source("""{"X-Forwarded-Host":"reader.example\r\nHost:evil.example"}"""),
             url = "https://reader.example/",
         )
         assertEquals(
