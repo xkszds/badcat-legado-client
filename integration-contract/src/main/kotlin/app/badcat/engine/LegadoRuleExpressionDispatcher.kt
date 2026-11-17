@@ -240,12 +240,21 @@ object LegadoRuleExpressionDispatcher {
                 "Regex and JavaScript rule expressions require their dedicated Legado runtime",
             )
         }
+        // Legado's default JSoup mode uses a single leading '@' to mark a
+        // selector rule (for example @.w_txt li.4@textNodes). Strip that
+        // marker here, before the expression is dispatched to any evaluator;
+        // it is not a Rhino/JavaScript expression.
+        val legacyCss = raw.startsWith("@") && !raw.startsWith("@@")
+        val normalized = if (legacyCss) raw.substring(1).trim() else raw
+        if (normalized.isBlank()) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Legado CSS selector is blank")
+        }
         val inferred = when {
-            raw.startsWith("$") -> SelectorRuleType.JSON_PATH
-            raw.startsWith("/") || raw.startsWith("(") && raw.contains("/") ->
+            normalized.startsWith("$") -> SelectorRuleType.JSON_PATH
+            normalized.startsWith("/") || normalized.startsWith("(") && normalized.contains("/") ->
                 SelectorRuleType.XPATH
             else -> SelectorRuleType.CSS
         }
-        return EngineResult.Success(ResolvedLegadoRuleExpression(inferred, raw))
+        return EngineResult.Success(ResolvedLegadoRuleExpression(inferred, normalized))
     }
 }
