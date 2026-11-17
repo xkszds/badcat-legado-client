@@ -55,7 +55,24 @@ class SharedPreferencesSourceLoginSessionStore(context: Context) : SourceLoginSe
 class RhinoSourceLoginExtensions(
     private val sourceId: String,
     private val store: SourceLoginSessionStore,
+    private val sourceKeyValueStore: SourceScriptKeyValueStore = InMemorySourceScriptKeyValueStore,
+    private val sourceKey: String = sourceId,
 ) {
+    /** Legado source key is the imported book-source URL, represented by this client's source id. */
+    fun getKey(): String = sourceKey
+
+    /** Per-source variable shared by all rules of this source; null clears it. */
+    fun getVariable(): String = sourceKeyValueStore.get(sourceId, SOURCE_VARIABLE_STORAGE_KEY).orEmpty()
+
+    fun setVariable(variable: String?): String {
+        if (variable == null) {
+            sourceKeyValueStore.remove(sourceId, SOURCE_VARIABLE_STORAGE_KEY)
+            return ""
+        }
+        require(variable.length <= MAX_SOURCE_VARIABLE_CHARS) { "Source variable exceeds the size limit" }
+        sourceKeyValueStore.put(sourceId, SOURCE_VARIABLE_STORAGE_KEY, variable)
+        return variable
+    }
     fun getLoginHeader(): String = store.getLoginHeader(sourceId).orEmpty()
     fun getLoginHeaderMap(): HashMap<String, String> = parseStringMap(getLoginHeader(), "login header")
     fun putLoginHeader(header: String): String {
@@ -111,6 +128,8 @@ class RhinoSourceLoginExtensions(
             value.none { it == '\r' || it == '\n' || it.code < 0x20 && it != '\t' || it.code == 0x7f }
 
     private companion object {
+        const val SOURCE_VARIABLE_STORAGE_KEY = "__legado_source_variable__"
+        const val MAX_SOURCE_VARIABLE_CHARS = 16 * 1024
         const val MAX_ENTRIES = 100
         const val MAX_KEY_CHARS = 256
         const val MAX_VALUE_CHARS = 8 * 1024
