@@ -192,7 +192,7 @@ class FavoritesActivity : Activity() {
             isFocusable = true
             setOnLongClickListener {
                 val types = arrayOf("小说", "漫画", "其他")
-                AlertDialog.Builder(this@FavoritesActivity).setItems(types) { _, which ->
+                BadcatTheme.alertBuilder(this@FavoritesActivity).setItems(types) { _, which ->
                     selectedType = types[which]
                     title.text = selectedType
                     selectedFolderId = FavoriteBooks.DEFAULT_FOLDER_ID
@@ -506,7 +506,7 @@ class FavoritesActivity : Activity() {
     private fun deleteSelectedBooks() {
         val books = selectedBooks.values.toList()
         if (books.isEmpty()) return
-        AlertDialog.Builder(this).setTitle("删除收藏").setMessage("确定删除选中的 " + books.size + " 本小说吗？")
+        BadcatTheme.alertBuilder(this).setTitle("删除收藏").setMessage("确定删除选中的 " + books.size + " 本小说吗？")
             .setNegativeButton("取消", null).setPositiveButton("删除") { _, _ ->
                 books.forEach { FavoriteBooks.remove(this, it.sourceId, it.bookUrl) }
                 selectedBooks.clear(); selectionMode = false; refresh()
@@ -532,14 +532,14 @@ class FavoritesActivity : Activity() {
 
     private fun showFolderActions(folder: FavoriteFolder) {
         val actions = if (folder.id == FavoriteBooks.DEFAULT_FOLDER_ID) arrayOf("打开文件夹") else arrayOf("打开文件夹", "重命名", "删除文件夹")
-        AlertDialog.Builder(this).setTitle(folder.name).setItems(actions) { _, which ->
+        BadcatTheme.alertBuilder(this).setTitle(folder.name).setItems(actions) { _, which ->
             when (actions[which]) {
                 "打开文件夹" -> { selectedFolderId = folder.id; refresh() }
                 "重命名" -> promptFolderName("重命名文件夹", folder.name) { name ->
                     if (!FavoriteBooks.renameFolder(this, folder.id, name)) toast("名称无效或已存在")
                     refresh()
                 }
-                "删除文件夹" -> AlertDialog.Builder(this).setTitle("删除文件夹")
+                "删除文件夹" -> BadcatTheme.alertBuilder(this).setTitle("删除文件夹")
                     .setMessage("删除后，文件夹内的书籍会移动到「全部小说」，不会删除书籍。")
                     .setNegativeButton("取消", null)
                     .setPositiveButton("删除") { _, _ ->
@@ -553,13 +553,13 @@ class FavoritesActivity : Activity() {
 
     private fun showBookActions(book: FavoriteBook) {
         val options = arrayOf("移出收藏", "移动到文件夹")
-        AlertDialog.Builder(this).setTitle(book.name).setItems(options) { _, which ->
-            if (which == 0) AlertDialog.Builder(this).setMessage("确定移出《${book.name}》吗？")
+        BadcatTheme.alertBuilder(this).setTitle(book.name).setItems(options) { _, which ->
+            if (which == 0) BadcatTheme.alertBuilder(this).setMessage("确定移出《${book.name}》吗？")
                 .setNegativeButton("取消", null)
                 .setPositiveButton("移出") { _, _ -> FavoriteBooks.remove(this, book.sourceId, book.bookUrl); refresh() }.show()
             else {
                 val folders = FavoriteBooks.folders(this)
-                AlertDialog.Builder(this).setTitle("移动到文件夹").setItems(folders.map { it.name }.toTypedArray()) { _, index ->
+                BadcatTheme.alertBuilder(this).setTitle("移动到文件夹").setItems(folders.map { it.name }.toTypedArray()) { _, index ->
                     FavoriteBooks.moveToFolder(this, book, folders[index].id)
                     selectedFolderId = folders[index].id
                     refresh()
@@ -600,7 +600,7 @@ class FavoritesActivity : Activity() {
 
     private fun promptFolderName(title: String, initial: String = "", onSave: (String) -> Unit) {
         val input = EditText(this).apply { setText(initial); hint = "输入文件夹名称"; setSingleLine(true) }
-        AlertDialog.Builder(this).setTitle(title).setView(input)
+        BadcatTheme.alertBuilder(this).setTitle(title).setView(input)
             .setNegativeButton("取消", null).setPositiveButton("保存") { _, _ -> onSave(input.text.toString()) }.show()
     }
 
