@@ -91,6 +91,8 @@ data class BookCandidate(
     val coverUrl: String? = null,
     val latestChapter: String? = null,
     val intro: String? = null,
+    /** Explicit status supplied by the source's bookStatus rule, when available. */
+    val status: String? = null,
 )
 
 data class BookDetail(
@@ -102,6 +104,8 @@ data class BookDetail(
     val intro: String? = null,
     val latestChapter: String? = null,
     val tocUrl: String? = null,
+    /** Explicit status supplied by the source's bookStatus rule, when available. */
+    val status: String? = null,
 )
 
 data class BookChapter(
