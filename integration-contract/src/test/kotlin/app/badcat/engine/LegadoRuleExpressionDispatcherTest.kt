@@ -50,6 +50,15 @@ class LegadoRuleExpressionDispatcherTest {
     }
 
     @Test
+    fun normalizesLegacySingleAtCssRootMarkerBeforeDispatch() {
+        val resolved = assertIs<EngineResult.Success<ResolvedLegadoRuleExpression>>(
+            LegadoRuleExpressionDispatcher.resolve("@.w_txt li.4@textNodes"),
+        ).value
+        assertEquals(SelectorRuleType.CSS, resolved.type)
+        assertEquals(".w_txt li.4@textNodes", resolved.expression)
+    }
+
+    @Test
     fun resolvesDoubleAtAsLegadoForcedCssMode() {
         val forcedCss = assertIs<EngineResult.Success<ResolvedLegadoRuleExpression>>(
             LegadoRuleExpressionDispatcher.resolve("@@div.book > a.title"),
