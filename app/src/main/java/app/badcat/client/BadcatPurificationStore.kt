@@ -2,8 +2,6 @@ package app.badcat.client
 
 import android.content.Context
 import android.util.AtomicFile
-import org.json.JSONArray
-import org.json.JSONObject
 import java.io.File
 
 /**
@@ -135,47 +133,18 @@ class BadcatAdMarkCatalog(context: Context) {
         }
     }
 
-    private fun encode(items: List<BadcatAdMarkItem>): String {
-        val array = JSONArray()
-        items.forEach { item ->
-            array.put(JSONObject().apply {
-                put("host", item.host)
-                put("urlPattern", item.urlPattern)
-                put("markRules", JSONArray(item.markRules))
-            })
-        }
-        return array.toString()
-    }
+    private fun encode(items: List<BadcatAdMarkItem>): String =
+        BadcatAdMarkJsonCodec.encode(items)
 
-    private fun decode(raw: String): List<BadcatAdMarkItem> {
-        require(raw.length <= MAX_IMPORT_BYTES) { "Badcat AdMark JSON exceeds the size limit" }
-        val array = JSONArray(raw)
-        require(array.length() <= MAX_ITEMS) { "Badcat AdMark catalog exceeds the item limit" }
-        return buildList {
-            for (index in 0 until array.length()) {
-                val obj = array.optJSONObject(index) ?: error("Badcat AdMark item $index is not an object")
-                val rules = obj.optJSONArray("markRules") ?: error("Badcat AdMark item $index has no markRules")
-                val item = BadcatAdMarkItem(
-                    host = obj.optString("host"),
-                    urlPattern = obj.optString("urlPattern"),
-                    markRules = buildList {
-                        for (ruleIndex in 0 until rules.length()) add(rules.optString(ruleIndex))
-                    },
-                )
-                require(item.isValid()) { "Invalid Badcat AdMark item at index $index" }
-                add(item)
-            }
-        }.also { items ->
-            require(items.distinctBy(::key).size == items.size) { "Badcat AdMark JSON contains duplicate records" }
-        }
-    }
+    private fun decode(raw: String): List<BadcatAdMarkItem> =
+        BadcatAdMarkJsonCodec.decode(raw)
 
     private fun key(item: BadcatAdMarkItem): String =
         item.host.lowercase() + "|" + item.urlPattern
 
     private companion object {
         const val FILE_NAME = "badcat-ad-mark-catalog.json"
-        const val MAX_ITEMS = 5_000
-        const val MAX_IMPORT_BYTES = 2 * 1024 * 1024
+        const val MAX_ITEMS = BadcatAdMarkJsonCodec.MAX_ITEMS
+        const val MAX_IMPORT_BYTES = BadcatAdMarkJsonCodec.MAX_JSON_BYTES
     }
 }
