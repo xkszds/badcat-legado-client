@@ -80,6 +80,15 @@ class BadcatPurificationModelsTest {
     }
 
     @Test
+    fun adMarkUrlPatternRequiresExactNonNegativeIntegers() {
+        assertFalse(mark.copy(urlPattern = "[1.5,2,3]").isValid())
+        assertFalse(mark.copy(urlPattern = "[-1,2,3]").isValid())
+        assertFalse(mark.copy(urlPattern = "[2147483648]").isValid())
+        assertTrue(mark.copy(urlPattern = "[1,2,3]").isValid())
+        assertTrue(mark.copy(urlPattern = "[1e2,2,3]").isValid())
+    }
+
+    @Test
     fun adMarkMatcherRejectsNonWebSchemesAndKeepsExactHostSemantics() {
         assertFalse(mark.appliesToHost("file:///reader.example/1/2/3"))
         assertFalse(mark.appliesToHost("content://reader.example/1/2/3"))
