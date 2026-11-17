@@ -13,6 +13,9 @@ import android.widget.Spinner
 import android.widget.Switch
 import android.widget.TextView
 import app.badcat.client.runtime.LegadoSourceLoginUiV2Service
+import app.badcat.client.runtime.RhinoSourceScriptRuntime
+import app.badcat.client.runtime.SharedPreferencesSourceLoginSessionStore
+import app.badcat.client.runtime.SharedPreferencesSourceScriptKeyValueStore
 import app.badcat.engine.BookSource
 import app.badcat.engine.EngineResult
 import app.badcat.engine.LegadoLoginUiV2
@@ -32,7 +35,15 @@ import org.json.JSONObject
  */
 class SourceLoginUiV2Activity : Activity() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    private val service by lazy { LegadoSourceLoginUiV2Service() }
+    private val loginSessions by lazy { SharedPreferencesSourceLoginSessionStore(applicationContext) }
+    private val service by lazy {
+        LegadoSourceLoginUiV2Service(
+            RhinoSourceScriptRuntime(
+                sourceKeyValueStore = SharedPreferencesSourceScriptKeyValueStore(applicationContext),
+                sourceLoginSessionStore = loginSessions,
+            ),
+        )
+    }
     private val preferences by lazy { getSharedPreferences(PREFS, MODE_PRIVATE) }
     private lateinit var sourceId: String
     private lateinit var content: LinearLayout
@@ -187,6 +198,8 @@ class SourceLoginUiV2Activity : Activity() {
                     }
                     value.loginJson?.let {
                         preferences.edit().putString(loginKey(sourceId), it).apply()
+                        // Share Login UI v2 login info with later source.* calls.
+                        loginSessions.putLoginInfo(sourceId, it)
                     }
                     message.text = when {
                         value.errors.isNotEmpty() -> value.errors.entries.joinToString("；") { "${it.key}：${it.value}" }
