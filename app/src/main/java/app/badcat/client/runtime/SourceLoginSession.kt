@@ -1,7 +1,8 @@
 package app.badcat.client.runtime
 
 import android.content.Context
-import org.json.JSONObject
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import app.badcat.engine.EngineResult
 import app.badcat.engine.SourceHttpRequest
 import app.badcat.engine.SourceHttpResponse
@@ -38,77 +39,72 @@ class SharedPreferencesSourceLoginSessionStore(context: Context) : SourceLoginSe
     override fun putLoginHeader(sourceId: String, headerJson: String) {
         preferences.edit().putString(key("header", sourceId), headerJson).apply()
     }
-    override fun removeLoginHeader(sourceId: String) {
-        preferences.edit().remove(key("header", sourceId)).apply()
-    }
+    override fun removeLoginHeader(sourceId: String) { preferences.edit().remove(key("header", sourceId)).apply() }
     override fun getLoginInfo(sourceId: String) = preferences.getString(key("info", sourceId), null)
     override fun putLoginInfo(sourceId: String, infoJson: String) {
         preferences.edit().putString(key("info", sourceId), infoJson).apply()
     }
-    override fun removeLoginInfo(sourceId: String) {
-        preferences.edit().remove(key("info", sourceId)).apply()
-    }
+    override fun removeLoginInfo(sourceId: String) { preferences.edit().remove(key("info", sourceId)).apply() }
     override fun clearSource(sourceId: String) {
         preferences.edit().remove(key("header", sourceId)).remove(key("info", sourceId)).apply()
     }
     private companion object { const val PREFS = "badcat_legado_source_login_session" }
 }
 
-/**
- * Narrow Rhino bridge for the documented source login/session methods.
- * Header values are accepted only as a JSON object of safe HTTP header strings.
- */
+/** Narrow Rhino bridge for the documented source login/session methods. */
 class RhinoSourceLoginExtensions(
     private val sourceId: String,
     private val store: SourceLoginSessionStore,
 ) {
     fun getLoginHeader(): String = store.getLoginHeader(sourceId).orEmpty()
-    fun getLoginHeaderMap(): Map<String, String> = parseStringMap(getLoginHeader(), "login header")
+    fun getLoginHeaderMap(): HashMap<String, String> = parseStringMap(getLoginHeader(), "login header")
     fun putLoginHeader(header: String): String {
         val parsed = parseStringMap(header, "login header")
         require(parsed.isNotEmpty()) { "Login header must be a non-empty JSON object" }
         require(parsed.all { (name, value) -> validHeader(name, value) }) {
             "Login header contains an invalid HTTP header name or value"
         }
-        val normalized = JSONObject()
-        parsed.forEach { (name, value) -> normalized.put(name, value) }
+        val normalized = JsonObject()
+        parsed.forEach { (name, value) -> normalized.addProperty(name, value) }
         store.putLoginHeader(sourceId, normalized.toString())
         return normalized.toString()
     }
     fun removeLoginHeader() { store.removeLoginHeader(sourceId) }
     fun getLoginInfo(): String = store.getLoginInfo(sourceId).orEmpty()
-    fun getLoginInfoMap(): Map<String, String> = parseStringMap(getLoginInfo(), "login info")
+    fun getLoginInfoMap(): HashMap<String, String> = parseStringMap(getLoginInfo(), "login info")
     fun putLoginInfo(info: String): String {
         val parsed = parseStringMap(info, "login info")
-        val normalized = JSONObject()
-        parsed.forEach { (key, value) -> normalized.put(key, value) }
+        val normalized = JsonObject()
+        parsed.forEach { (key, value) -> normalized.addProperty(key, value) }
         store.putLoginInfo(sourceId, normalized.toString())
         return normalized.toString()
     }
     fun removeLoginInfo() { store.removeLoginInfo(sourceId) }
 
-    private fun parseStringMap(raw: String, label: String): Map<String, String> {
-        if (raw.isBlank()) return emptyMap()
-        val json = JSONObject(raw)
-        require(json.length() <= MAX_ENTRIES) { "$label contains too many entries" }
-        return buildMap {
-            val keys = json.keys()
-            while (keys.hasNext()) {
-                val key = keys.next()
-                val value = json.opt(key)
-                require(value is String) { "$label values must be strings" }
-                require(key.length <= MAX_KEY_CHARS && value.length <= MAX_VALUE_CHARS) {
-                    "$label entry exceeds the size limit"
-                }
-                put(key, value)
+    private fun parseStringMap(raw: String, label: String): HashMap<String, String> {
+        if (raw.isBlank()) return hashMapOf()
+        val element = JsonParser.parseString(raw)
+        require(element.isJsonObject) { "$label must be a JSON object" }
+        val json = element.asJsonObject
+        require(json.size() <= MAX_ENTRIES) { "$label contains too many entries" }
+        val result = hashMapOf<String, String>()
+        json.entrySet().forEach { (key, value) ->
+            require(value.isJsonPrimitive && value.asJsonPrimitive.isString) {
+                "$label values must be strings"
             }
+            val text = value.asString
+            require(key.length <= MAX_KEY_CHARS && text.length <= MAX_VALUE_CHARS) {
+                "$label entry exceeds the size limit"
+            }
+            result[key] = text
         }
+        return result
     }
 
     private fun validHeader(name: String, value: String): Boolean =
         name.isNotBlank() && name.length <= 256 &&
             name.all { it.isLetterOrDigit() || it in "!#$%&'*+-.^_`|~" } &&
-            value.none { it == '\r' || it == '\n' || it.code < 0x20 && it != '\t' || it.code == 0x7f }
+            value.none { it == '\\r' || it == '\\n' || it.code < 0x20 && it != '\\t' || it.code == 0x7f }
 
     private companion object {
         const val MAX_ENTRIES = 100
@@ -126,16 +122,8 @@ class SourceLoginSessionRequestClient(
         val raw = sessions.getLoginHeader(request.sourceId)
         if (raw.isNullOrBlank()) return delegate.execute(request)
         val loginHeaders = runCatching {
-            val json = JSONObject(raw)
-            buildMap {
-                val keys = json.keys()
-                while (keys.hasNext()) {
-                    val key = keys.next()
-                    val value = json.opt(key)
-                    if (value is String) put(key, value)
-                }
-            }
-        }.getOrDefault(emptyMap())
+            RhinoSourceLoginExtensions(request.sourceId, sessions).getLoginHeaderMap()
+        }.getOrDefault(hashMapOf())
         if (loginHeaders.isEmpty()) return delegate.execute(request)
         val merged = LinkedHashMap<String, String>()
         request.headers.forEach { (name, value) -> merged[name] = value }
