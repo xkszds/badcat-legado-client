@@ -112,10 +112,14 @@ object LegadoRuleExpressionDispatcher {
         val parsed = LegadoRuleReplacement.parse(expression)
         val evaluated = evaluateCombined(parsed.expression) { branch ->
             val scalarRule = branch.trim()
-            if (scalarRule.startsWith("@regex:", ignoreCase = true)) {
+            if (scalarRule.startsWith("@regex:", ignoreCase = true) || scalarRule.startsWith(":")) {
                 LegadoRegexElementEvaluator.evaluateScalar(
                     document.body,
-                    scalarRule.substringAfter(':'),
+                    if (scalarRule.startsWith("@regex:", ignoreCase = true)) {
+                        scalarRule.substringAfter(':')
+                    } else {
+                        scalarRule.substring(1)
+                    },
                 )
             } else {
                 when (val resolved = resolve(branch)) {
@@ -185,7 +189,8 @@ object LegadoRuleExpressionDispatcher {
 
     fun firstScalarValue(expression: String, values: List<String>): String? {
         if (values.isEmpty()) return null
-        return if (expression.trim().startsWith("@regex:", ignoreCase = true)) {
+        val normalized = expression.trim()
+        return if (normalized.startsWith("@regex:", ignoreCase = true) || normalized.startsWith(":")) {
             values.getOrNull(1) ?: values.firstOrNull()
         } else {
             values.firstOrNull()
