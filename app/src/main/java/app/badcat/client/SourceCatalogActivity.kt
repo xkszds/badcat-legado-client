@@ -4,6 +4,11 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.graphics.drawable.GradientDrawable
+import android.view.Gravity
+import android.widget.EditText
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
@@ -47,6 +52,8 @@ class SourceCatalogActivity : Activity() {
     private lateinit var catalog: FileBookSourceCatalog
     private lateinit var listContainer: LinearLayout
     private lateinit var message: TextView
+    private lateinit var sourceSummary: TextView
+    private lateinit var sourceFilter: EditText
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,9 +85,41 @@ class SourceCatalogActivity : Activity() {
             text = "已添加的书源"
             textSize = 16f
             typeface = android.graphics.Typeface.DEFAULT_BOLD
-            setPadding(0, dp(20), 0, dp(8))
+            setPadding(0, dp(20), 0, dp(4))
         })
-        listContainer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        sourceSummary = TextView(this).apply {
+            textSize = 12f
+            setPadding(0, 0, 0, dp(8))
+        }
+        root.addView(sourceSummary)
+        sourceFilter = EditText(this).apply {
+            hint = "搜索书源名称或地址"
+            singleLine = true
+            textSize = 14f
+            setPadding(dp(12), dp(8), dp(12), dp(8))
+            background = GradientDrawable().apply {
+                setColor(if (BadcatTheme.isDark(this@SourceCatalogActivity)) android.graphics.Color.rgb(38,42,49) else android.graphics.Color.WHITE)
+                cornerRadius = dp(10).toFloat()
+                setStroke(dp(1), if (BadcatTheme.isDark(this@SourceCatalogActivity)) android.graphics.Color.rgb(70,78,90) else android.graphics.Color.rgb(220,226,234))
+            }
+            addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(text: CharSequence?, start: Int, count: Int, after: Int) = Unit
+                override fun onTextChanged(text: CharSequence?, start: Int, before: Int, count: Int) {
+                    val query = text?.toString()?.trim().orEmpty()
+                    for (index in 0 until listContainer.childCount) {
+                        val item = listContainer.getChildAt(index)
+                        val searchable = item.tag as? String ?: ""
+                        item.visibility = if (query.isEmpty() || searchable.contains(query, ignoreCase = true)) ViewGroup.VISIBLE else ViewGroup.GONE
+                    }
+                }
+                override fun afterTextChanged(text: Editable?) = Unit
+            })
+        }
+        root.addView(sourceFilter)
+        listContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, dp(10), 0, 0)
+        }
         root.addView(listContainer)
         message = TextView(this).apply {
             textSize = 14f
@@ -107,6 +146,7 @@ class SourceCatalogActivity : Activity() {
                 is app.badcat.engine.EngineResult.Success -> {
                     listContainer.removeAllViews()
                     val sources = result.value
+                    sourceSummary.text = "共 ${sources.size} 个书源 · 已启用 ${sources.count { it.enabled }} 个"
                     if (sources.isEmpty()) {
                         listContainer.addView(TextView(this@SourceCatalogActivity).apply {
                             text = "本地暂无书源"
@@ -116,11 +156,22 @@ class SourceCatalogActivity : Activity() {
                     sources.forEach { source ->
                         val row = LinearLayout(this@SourceCatalogActivity).apply {
                             orientation = LinearLayout.VERTICAL
-                            setPadding(0, 12, 0, 12)
+                            setPadding(dp(12), dp(10), dp(12), dp(10))
+                            background = GradientDrawable().apply {
+                                setColor(if (BadcatTheme.isDark(this@SourceCatalogActivity)) android.graphics.Color.rgb(38,42,49) else android.graphics.Color.WHITE)
+                                cornerRadius = dp(12).toFloat()
+                            }
+                            tag = "${source.name} ${source.id}"
                         }
                         row.addView(TextView(this@SourceCatalogActivity).apply {
-                            text = source.name + "\n" + source.id
-                            textSize = 14f
+                            text = source.name
+                            textSize = 15f
+                            typeface = android.graphics.Typeface.DEFAULT_BOLD
+                        })
+                        row.addView(TextView(this@SourceCatalogActivity).apply {
+                            text = source.id
+                            textSize = 11f
+                            setPadding(0, dp(3), 0, dp(6))
                         })
                         val enabledSwitch = Switch(this@SourceCatalogActivity).apply {
                             text = if (source.enabled) "已启用" else "已停用"
@@ -203,7 +254,9 @@ class SourceCatalogActivity : Activity() {
                                 ViewGroup.LayoutParams.WRAP_CONTENT,
                             ))
                         }
-                        listContainer.addView(row)
+                        listContainer.addView(row, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(10) })
+                        val query = sourceFilter.text.toString().trim()
+                        row.visibility = if (query.isEmpty() || (row.tag as String).contains(query, ignoreCase = true)) ViewGroup.VISIBLE else ViewGroup.GONE
                     }
                 }
                 is app.badcat.engine.EngineResult.Failure ->
