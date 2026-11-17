@@ -62,4 +62,21 @@ class ReaderCssDocumentTest {
         assertFalse(css.contains("url("))
         assertTrue(css.contains(".reader-root .reader-paragraph{font-size:19px}"))
     }
+
+    @Test
+    fun rejectsScriptLikeValuesAndAtRulesWithoutDroppingSafeDeclarations() {
+        val css = ReaderCssDocument.renderRules(
+            listOf(
+                ".reader-content" to "color: #123456; background-image: url(javascript:alert(1));",
+                ".reader-paragraph" to "font-size: 18px; behavior: expression(alert(1));",
+                "@import" to "color: #ffffff;",
+            ),
+        )
+        assertTrue(css.contains(".reader-root .reader-content{color:#123456}"))
+        assertTrue(css.contains(".reader-root .reader-paragraph{font-size:18px}"))
+        assertFalse(css.contains("javascript", ignoreCase = true))
+        assertFalse(css.contains("expression", ignoreCase = true))
+        assertFalse(css.contains("@import", ignoreCase = true))
+    }
+
 }
