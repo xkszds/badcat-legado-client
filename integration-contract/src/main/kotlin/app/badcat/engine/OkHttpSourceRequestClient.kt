@@ -221,11 +221,11 @@ class OkHttpSourceRequestClient(
 }
 
 /** Retry only transient HTTP failures for idempotent source reads. */
-internal fun shouldRetryHttpResponse(method: String, statusCode: Int): Boolean =
-    method.equals("GET", ignoreCase = true) || method.equals("HEAD", ignoreCase = true)
-        .let { idempotentRead ->
-            idempotentRead && statusCode in setOf(408, 425, 429, 500, 502, 503, 504)
-        }
+internal fun shouldRetryHttpResponse(method: String, statusCode: Int): Boolean {
+    val idempotentRead = method.equals("GET", ignoreCase = true) ||
+        method.equals("HEAD", ignoreCase = true)
+    return idempotentRead && statusCode in setOf(408, 425, 429, 500, 502, 503, 504)
+}
 
 /** In-memory cookie storage, scoped to one source by the owning client. */
 internal class MemorySourceCookieJar : CookieJar {
