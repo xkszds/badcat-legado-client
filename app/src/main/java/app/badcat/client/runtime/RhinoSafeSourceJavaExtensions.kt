@@ -15,6 +15,7 @@ import java.util.Base64
 class RhinoSafeSourceJavaExtensions(
     private val sourceId: String,
     private val store: SourceScriptKeyValueStore,
+    private val cookieReader: (String) -> String = { "" },
 ) {
 
     fun getString(key: String): String {
@@ -28,6 +29,19 @@ class RhinoSafeSourceJavaExtensions(
         store.put(sourceId, key, value)
         return value
     }
+
+    /** Legado-compatible, source-scoped cookie lookup. */
+    fun getCookie(tag: String): String = cookieReader(tag)
+
+    fun getCookie(tag: String, key: String): String =
+        cookieReader(tag).split(';').asSequence()
+            .map(String::trim)
+            .mapNotNull { pair ->
+                val separator = pair.indexOf('=')
+                if (separator <= 0) null else pair.substring(0, separator).trim() to pair.substring(separator + 1).trim()
+            }
+            .firstOrNull { it.first == key }
+            ?.second.orEmpty()
 
     fun log(value: Any?): String = value?.toString().orEmpty()
 
