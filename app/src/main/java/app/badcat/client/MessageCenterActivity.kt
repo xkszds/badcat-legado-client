@@ -32,4 +32,10 @@ class MessageCenterActivity : Activity() {
         setContentView(root)
     }
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
+
+    override fun onResume() {
+        super.onResume()
+        BadcatTheme.applyTree(this, window.decorView)
+    }
+
 }
