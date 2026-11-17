@@ -131,29 +131,64 @@ class RhinoSafeSourceJavaExtensions(
 
     fun urlEncode(value: String): String = URLEncoder.encode(value, Charsets.UTF_8.name())
 
+    /** JavaScript encodeURI: retain URI syntax delimiters, encode all other UTF-8 bytes. */
+    fun encodeURI(value: String): String =
+        encodeJsUri(value, "-_.!~*'();,/?:@&=+$#")
+
+    /** JavaScript encodeURIComponent: retain only the component-safe punctuation. */
+    fun encodeURIComponent(value: String): String =
+        encodeJsUri(value, "-_.!~*'()")
+
+    /** JavaScript decodeURIComponent; unlike form decoding, '+' remains a plus sign. */
+    fun decodeURIComponent(value: String): String =
+        URLDecoder.decode(value.replace("+", "%2B"), Charsets.UTF_8.name())
+
     /**
-     * JavaScript encodeURI compatibility for imported Legado rules.
-     * Unlike encodeURIComponent, encodeURI preserves URI delimiters and an
-     * existing fragment marker while percent-encoding spaces and non-ASCII text.
+     * JavaScript decodeURI leaves percent-encoded reserved delimiters escaped,
+     * so decoding a path/query cannot accidentally change its URI structure.
      */
-    fun encodeURI(value: String): String = URLEncoder.encode(value, Charsets.UTF_8.name())
-        .replace("+", "%20")
-        .replace("%21", "!")
-        .replace("%27", "'")
-        .replace("%28", "(")
-        .replace("%29", ")")
-        .replace("%7E", "~")
-        .replace("%3B", ";")
-        .replace("%2C", ",")
-        .replace("%2F", "/")
-        .replace("%3F", "?")
-        .replace("%3A", ":")
-        .replace("%40", "@")
-        .replace("%26", "&")
-        .replace("%3D", "=")
-        .replace("%2B", "+")
-        .replace("%24", "$")
-        .replace("%23", "#")
+    fun decodeURI(value: String): String {
+        val reserved = ";/?:@&=+$,#"
+        val pattern = Regex("(?:%[0-9A-Fa-f]{2})+")
+        return pattern.replace(value) { match ->
+            val bytes = match.value.chunked(3).map { it.substring(1).toInt(16).toByte() }
+            buildString {
+                val pending = ArrayList<Byte>()
+                fun flush() {
+                    if (pending.isNotEmpty()) {
+                        append(String(pending.toByteArray(), Charsets.UTF_8))
+                        pending.clear()
+                    }
+                }
+                bytes.forEachIndexed { index, byte ->
+                    val ascii = byte.toInt() and 0xff
+                    if (ascii < 128 && ascii.toChar() in reserved) {
+                        flush()
+                        append(match.value.substring(index * 3, index * 3 + 3))
+                    } else {
+                        pending += byte
+                    }
+                }
+                flush()
+            }
+        }
+    }
+
+    private fun encodeJsUri(value: String, additionallySafe: String): String {
+        val safe = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" + additionallySafe
+        return buildString {
+            value.toByteArray(Charsets.UTF_8).forEach { byte ->
+                val unsigned = byte.toInt() and 0xff
+                val char = unsigned.toChar()
+                if (unsigned < 128 && char in safe) append(char)
+                else {
+                    append('%')
+                    append("0123456789ABCDEF"[unsigned ushr 4])
+                    append("0123456789ABCDEF"[unsigned and 0x0f])
+                }
+            }
+        }
+    }
 
     fun urlDecode(value: String): String = URLDecoder.decode(value, Charsets.UTF_8.name())
 
