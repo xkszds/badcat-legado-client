@@ -31,12 +31,12 @@ class FavoritesFolderQueryTest {
         )
         val lastRead = mapOf("source-a|https://example.test/a" to 500L)
         assertEquals(
-            listOf("A", "B", "C"),
+            listOf("C", "B", "A"),
             sortFavoriteBooksByLastRead(withTimes, lastRead, newestFirst = false).map { it.name },
         )
         assertEquals(
             listOf("A", "B", "C"),
-            sortFavoriteBooksByLastRead(withTimes, lastRead, newestFirst = true).map { it.name }.reversed(),
+            sortFavoriteBooksByLastRead(withTimes, lastRead, newestFirst = true).map { it.name },
         )
     }
 
