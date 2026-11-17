@@ -178,4 +178,10 @@ class ReaderSettingsActivity : Activity() {
         const val APPEARANCE_PREFS = "badcat_appearance"
         const val APPEARANCE_KEY = "appearance_mode"
     }
+
+    override fun onResume() {
+        super.onResume()
+        BadcatTheme.applyTree(this, window.decorView)
+    }
+
 }
