@@ -12,6 +12,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Base64
 import android.widget.Button
+import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.ScrollView
