@@ -7,7 +7,12 @@ class SourceTocService(
     private val maxPages: Int = 20,
     private val scriptRuntime: SourceScriptRuntime? = null,
 ) {
-    suspend fun load(source: BookSource, bookUrl: String, tocUrl: String? = null): EngineResult<List<BookChapter>> {
+    suspend fun load(
+        source: BookSource,
+        bookUrl: String,
+        tocUrl: String? = null,
+        onChapters: suspend (List<BookChapter>) -> Unit = {},
+    ): EngineResult<List<BookChapter>> {
         MainJsSourceGuard.failure(source, "table of contents", scriptRuntimeAvailable = scriptRuntime != null)?.let { return it }
         if (maxPages < 1) {
             return EngineResult.Failure(EngineErrorCode.INVALID_SOURCE, "maxPages must be positive")
@@ -51,6 +56,9 @@ class SourceTocService(
                 is EngineResult.Success -> result.value
             }
             chapters.addAll(page.chapters)
+            val partial = chapters.distinctBy { it.url }
+                .mapIndexed { index, chapter -> chapter.copy(index = index) }
+            if (partial.isNotEmpty()) onChapters(partial)
             for (next in page.nextPageUrls) {
                 val nextIdentity = paginationUrlIdentity(next)
                 if (nextIdentity in visited) {
