@@ -100,7 +100,13 @@ internal object BadcatTheme {
             if (view is TextView) {
                 val original = view.currentTextColor
                 if (isNeutral(original) && original != Color.WHITE) {
-                    view.setTextColor(if (luminance(original) < 0.48) colors.text else colors.muted)
+                    view.setTextColor(
+                        when {
+                            luminance(original) < 0.18 -> colors.text
+                            luminance(original) > 0.72 -> colors.text
+                            else -> colors.muted
+                        }
+                    )
                 }
                 if (view.hint != null && Build.VERSION.SDK_INT >= 23) {
                     view.setHintTextColor(colors.muted)
