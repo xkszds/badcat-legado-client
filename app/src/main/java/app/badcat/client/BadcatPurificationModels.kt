@@ -1,7 +1,7 @@
 package app.badcat.client
 
-import java.net.URI
 import com.google.gson.JsonParser
+import java.net.URI
 import java.util.regex.Pattern
 
 /**
@@ -75,7 +75,7 @@ data class BadcatPurificationSnapshot(
 )
 
 object BadcatPurificationUrlPolicy {
-    /** Exact host matching only; URL-pattern and markRules semantics stay opaque. */
+    /** Exact-host plus verified URL-pattern matching; markRules stay opaque. */
     fun marksForUrl(url: String, marks: List<BadcatAdMarkItem>): List<BadcatAdMarkItem> =
         marks.filter { it.matchesUrl(url) }
 
