@@ -104,3 +104,12 @@
 - Badcat PPRule: added a bounded href/title extraction helper for the verified XPath/regex video element subset. It resolves relative HTTP(S) targets, deduplicates by URL and rejects unsafe schemes/blank labels. The caller supplies the specific rule; original video path/episode grouping and JavaScript semantics remain unimplemented.
 - Badcat AdMark: the verified data codec, URL filtering and WebView injection preference path remain active; DOM deletion/long-press marking are still blocked on recovering the exact original callback semantics. No guessed DOM script was added.
 - Validation gate: run the complete contract tests, bounded Rhino host tests and Android Debug APK assembly on the newest commit before calling this batch green. CI success does not replace Android device acceptance.
+
+
+## 2026-11-17 parallel continuation (PPRule safety + UI/reader/Legado tracks)
+
+- PPRule video href extraction now resolves links through URI resolution and accepts only absolute HTTP/HTTPS targets with a host and without embedded user credentials. Protocol-relative links are supported; malformed scheme-relative values and credential-bearing URLs are rejected.
+- Added regression tests for malformed HTTP URI forms, credential-bearing links, protocol-relative links and duplicate resolved episode URLs.
+- The existing novel-cover status badge is wired into both search results and favorites, and the favorite JSON model persists the source status; labels are based on explicit source metadata only (完结 > 连载 > 更新).
+- The active branch continues to carry CSS safety regressions, quoted selector-operator regressions and bounded PPRule video extraction from the previous parallel batch. AdMark DOM deletion remains deliberately unimplemented until exact original semantics are recovered.
+- The latest main-line build is still being checked independently; the next branch CI run must validate this new PPRule hardening before it is treated as green. Device/UI acceptance remains outstanding.
