@@ -12,24 +12,33 @@ import android.widget.TextView
 
 /** Personal hub with the requested bookmark entry and no welfare section. */
 class MyActivity : Activity() {
-    private val ink = Color.rgb(48, 52, 60)
-    private val muted = Color.rgb(145, 151, 160)
+    private var darkMode = false
+    private var ink = Color.rgb(48, 52, 60)
+    private var muted = Color.rgb(145, 151, 160)
     private val blue = Color.rgb(55, 137, 222)
-    private val page = Color.rgb(247, 248, 250)
+    private var page = Color.rgb(247, 248, 250)
+    private var card = Color.WHITE
     private var versionTapCount = 0
     private var sourceEntryRevealed = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         sourceEntryRevealed = getSharedPreferences("badcat_profile", MODE_PRIVATE).getBoolean("show_source_entry", false)
-        window.statusBarColor = Color.WHITE
-        window.navigationBarColor = Color.WHITE
-        window.decorView.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        darkMode = getSharedPreferences("badcat_appearance", MODE_PRIVATE).getString("appearance_mode", "light") == "dark"
+        ink = if (darkMode) Color.rgb(235, 237, 240) else Color.rgb(48, 52, 60)
+        muted = if (darkMode) Color.rgb(165, 172, 182) else Color.rgb(145, 151, 160)
+        page = if (darkMode) Color.rgb(25, 28, 33) else Color.rgb(247, 248, 250)
+        card = if (darkMode) Color.rgb(38, 42, 49) else Color.WHITE
+        window.statusBarColor = card
+        window.navigationBarColor = page
+        @Suppress("DEPRECATION")
+        window.decorView.systemUiVisibility = if (darkMode) 0 else
+            android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(page) }
         val profile = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(22), dp(24), dp(22), dp(22))
-            setBackgroundColor(Color.WHITE)
+            setBackgroundColor(card)
         }
         val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         top.addView(label("我的", 18f, ink), LinearLayout.LayoutParams(0, dp(42), 1f))
@@ -48,7 +57,7 @@ class MyActivity : Activity() {
         val identity = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         identity.addView(TextView(this).apply {
             text = "🐱"; textSize = 42f; gravity = Gravity.CENTER
-            background = rounded(Color.rgb(245, 246, 248), 48)
+            background = rounded(if (darkMode) Color.rgb(50, 55, 64) else Color.rgb(245, 246, 248), 48)
         }, LinearLayout.LayoutParams(dp(76), dp(76)))
         identity.addView(LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -70,7 +79,7 @@ class MyActivity : Activity() {
         val body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(16), dp(14), dp(24)) }
         val tools = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            background = rounded(Color.WHITE, 16)
+            background = rounded(card, 16)
             setPadding(dp(16), dp(15), dp(16), dp(16))
         }
         tools.addView(label("常用功能", 18f, ink, true).apply { setPadding(0, 0, 0, dp(12)) })
@@ -179,6 +188,12 @@ class MyActivity : Activity() {
     private fun formatReadingTime(): String {
         val totalMinutes = getSharedPreferences("badcat_reading_stats", MODE_PRIVATE).getLong("total_reading_ms", 0L) / 60_000L
         return (totalMinutes / 60).toString() + "小时" + (totalMinutes % 60) + "分"
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val currentDark = getSharedPreferences("badcat_appearance", MODE_PRIVATE).getString("appearance_mode", "light") == "dark"
+        if (currentDark != darkMode) recreate()
     }
 
     private fun toast(message: String) = android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show()
