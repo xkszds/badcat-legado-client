@@ -194,6 +194,47 @@ class BadcatPpRuleEvaluatorTest {
             assertIs<EngineResult.Success<List<BadcatVideoLink>>>(result).value,
         )
     }
+    @Test
+    fun extractsComicImagesPreferringDataOriginalAndFallingBackToSrc() {
+        val document = SourceDocument(
+            url = "https://comic.example/reader/page/1",
+            body = """<div class="pages">
+                <img data-original="../images/one.jpg" src="/placeholder.gif">
+                <img src="//cdn.example/two.webp">
+                <img data-original="javascript:alert(1)" src="/images/three.png">
+                <img src="file:///etc/passwd">
+            </div>""",
+        )
+        val result = BadcatPpRuleEvaluator.extractComicImageUrls(
+            document,
+            BadcatPpRule(ruleTypeValue = 1, pageRule = "//div[@class='pages']/img"),
+        )
+        assertEquals(
+            listOf(
+                "https://comic.example/reader/images/one.jpg",
+                "https://cdn.example/two.webp",
+                "https://comic.example/images/three.png",
+            ),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
+    @Test
+    fun comicImageExtractionDeduplicatesNormalizedUrls() {
+        val document = SourceDocument(
+            url = "https://comic.example/reader/",
+            body = """<img src="../page/1.jpg"><img data-original="/page/1.jpg">""",
+        )
+        val result = BadcatPpRuleEvaluator.extractComicImageUrls(
+            document,
+            BadcatPpRule(ruleTypeValue = 1, pageRule = "//img"),
+        )
+        assertEquals(
+            listOf("https://comic.example/page/1.jpg"),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
 
 
 }
