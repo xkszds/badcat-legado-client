@@ -3,7 +3,6 @@ package app.badcat.client
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Color
-import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
@@ -51,15 +50,9 @@ class MainActivity : Activity() {
         setPadding(dp(18), dp(if (compact) 8 else 10), dp(18), dp(if (compact) 10 else 12))
         background = rounded(blue, 0, 0, 0, 18, 18)
 
-        addView(TextView(this@MainActivity).apply {
-            text = "坏坏猫"
-            textSize = if (compact) 17f else 19f
-            gravity = Gravity.CENTER
-            setTextColor(Color.WHITE)
-            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
-            letterSpacing = 0.025f
-            includeFontPadding = false
-        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(if (compact) 25 else 28)))
+        addView(BadcatHomeLogo.create(this@MainActivity), LinearLayout.LayoutParams(
+            dp(if (compact) 154 else 178), dp(if (compact) 48 else 56)
+        ).apply { gravity = Gravity.CENTER_HORIZONTAL })
 
         val bar = BadcatSearchBarView(
             context = this@MainActivity,
