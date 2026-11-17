@@ -53,6 +53,17 @@ class SourceLoginSessionTest {
     }
 
     @Test
+    fun rejectsOversizedAggregateLoginInfoBeforePersisting() {
+        val store = InMemorySourceLoginSessionStore
+        val bridge = RhinoSourceLoginExtensions("source-A", store)
+        val entries = (1..5).joinToString(",") { key ->
+            "\"key$key\":\"${"x".repeat(7_000)}\""
+        }
+        assertTrue(runCatching { bridge.putLoginInfo("{$entries}") }.isFailure)
+        assertEquals(null, store.getLoginInfo("source-A"))
+    }
+
+    @Test
     fun rejectsHeaderLineBreaksAndEmptyHeaderObjects() {
         val bridge = RhinoSourceLoginExtensions("source-A", InMemorySourceLoginSessionStore)
         assertTrue(runCatching {
