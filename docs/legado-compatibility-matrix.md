@@ -17,7 +17,7 @@ and must not be treated as full BookSource/AnalyzeRule compatibility.
 | Book detail | Partial | Name/author/intro/cover/latest chapter/TOC URL; CSS/XPath/JSONPath and bounded regex scalar extraction | JS, replacement chains, variables and source-specific init scripts are not supported |
 | TOC | Partial | CSS or bounded regex chapter collection; CSS/XPath/JSONPath and bounded regex scalar title, chapter URL and next-page link extraction; multi-page pagination and cycle guards | Regex budgets apply; volume grouping, VIP/pay and script formatting are not implemented |
 | Chapter content | Partial | CSS/XPath/JSONPath content extraction; CSS/XPath/JSONPath and bounded regex title/next-page URL; HTML-to-readable-text conversion; pagination and replacement hook | Regex chapter-body transforms, JS/webJs/callBackJs, sourceRegex, replaceRegex, payAction, imageDecode and contentBatch are not implemented |
-| Selector expressions | Partial | Explicit @css:, @xpath:, @jsonpath: / @json:; upstream @@ forced-default CSS mode; unprefixed CSS default; unambiguous XPath and JSONPath inference | Complete upstream expression grammar, selector filters and mixed parser chains are not implemented |
+| Selector expressions | Partial | Explicit @css:, @xpath:, @jsonpath: / @json:; upstream @@ forced-default JSoup mode; default-mode chained @ selectors; bounded legacy children/class/tag/id/text heads and numeric index suffixes; unprefixed CSS default; unambiguous XPath and JSONPath inference | Full ElementsSingle index/range grammar, selector filters, all parser-mode chains and full AnalyzeRule semantics are not implemented |
 | JavaScript | Partial | Pinned Rhino sandbox for bounded string-only script evaluation; URL @js/<js> supports key/page/result strings; replacement helper; execution timeout maps to RULE_TIMEOUT | Full Legado Java/http/cookie/cache/WebView bindings, source mainJs/jsLib and stage-specific AnalyzeRule execution are not integrated |
 | Regex | Partial | Bounded regex replacement; staged collection roots for search/TOC; scalar capture-group extraction for search, detail, TOC and chapter title/next-page fields | Full upstream regex filter suffixes and every AnalyzeRule combination are not implemented |
 | Replace rules | Partial | Scope, include/exclude matching, order, literal/regex replacement, optional JS evaluator hook | Not equivalent to all upstream Legado replace-rule and source-specific replacement behavior |
@@ -136,3 +136,11 @@ modes remain outside this increment.
 - The bounded dispatcher now resolves `@@selector` explicitly as CSS instead of treating it as a CSS selector containing an invalid leading at-sign.
 - Scalar CSS extraction and collection extraction are covered by contract tests. Collection rules retain the upstream element-index suffix handling; explicit `@CSS:` continues to use the direct selector path.
 - This is one additional AnalyzeRule syntax slice only. It does not complete `@get`, `{{}}`, the full `@put` lifecycle, JS modes, or the full selector grammar.
+
+
+### Default-mode JSoup chains and legacy selector heads (2026-11-17)
+
+- The upstream `AnalyzeByJSoup.getResultList` splits default-mode rules on `@`, evaluates each selector step, then extracts the final text/attribute mode. `ElementsSingle` also accepts legacy `children`, `class.name`, `tag.name`, `id.name` and `text.value` selector heads with numeric index suffixes.
+- The bounded CSS adapter now evaluates chained scalar forms such as `div.book@a.title.0@href` and `@@class.book@tag.a.0@href`; each stage uses the bounded index parser and a final extraction suffix.
+- The tokenizer ignores at-signs inside quoted CSS attribute values, brackets and parentheses. Regression tests cover chained selectors, legacy selector heads, indexes and quoted `@cover` attribute values.
+- This increment does not yet implement every upstream `ElementsSingle` feature, arbitrary nested parser mode changes, full `@get` / `{{}}` semantics across all stages, or all-in-one regex and WebJS.
