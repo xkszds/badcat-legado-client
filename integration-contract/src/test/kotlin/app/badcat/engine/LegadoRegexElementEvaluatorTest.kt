@@ -11,7 +11,7 @@ class LegadoRegexElementEvaluatorTest {
         assertEquals(
             true,
             assertIs<EngineResult.Success<Boolean>>(
-                LegadoRegexElementEvaluator.matches("https://example.test/ad?id=42", """ad\\?id=\\d+"""),
+                LegadoRegexElementEvaluator.matches("https://example.test/ad?id=42", """ad\?id=\d+"""),
             ).value,
         )
         assertEquals(
