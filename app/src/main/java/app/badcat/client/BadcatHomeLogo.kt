@@ -3,7 +3,6 @@ package app.badcat.client
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.util.Base64
-import android.view.Gravity
 import android.widget.ImageView
 
 /**
@@ -21,7 +20,6 @@ internal object BadcatHomeLogo {
         scaleType = ImageView.ScaleType.FIT_CENTER
         contentDescription = "坏坏猫"
         adjustViewBounds = true
-        gravity = Gravity.CENTER
         setPadding(0, 0, 0, 0)
     }
 }
