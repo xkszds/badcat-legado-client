@@ -519,14 +519,14 @@ class CssSearchResultsParserTest {
             ): EngineResult<String> {
                 capturedScript = script
                 capturedBindings = bindings
-                return EngineResult.Success("Embedded title")
+                return EngineResult.Success("h2@text")
             }
         }
 
         val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
             CssSearchResultsParser().parseWithScripts(
                 source = source,
-                response = response,
+                response = response.copy(body = """<div class="book"><h2>Embedded title</h2><a href="/embedded">open</a></div>"""),
                 scriptRuntime = scriptRuntime,
                 key = "雪猫",
                 page = 4,
