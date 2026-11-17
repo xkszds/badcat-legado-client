@@ -89,7 +89,7 @@ class ReadingHistoryActivity : Activity() {
                     })
                 }
                 setOnLongClickListener {
-                    android.app.AlertDialog.Builder(this@ReadingHistoryActivity)
+                    BadcatTheme.alertBuilder(this@ReadingHistoryActivity)
                         .setTitle("删除阅读记录")
                         .setMessage("仅删除《$name》的历史记录，不删除书籍或书签。")
                         .setNegativeButton("取消", null)
