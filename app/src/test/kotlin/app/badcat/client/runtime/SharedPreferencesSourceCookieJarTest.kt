@@ -42,7 +42,7 @@ class SharedPreferencesSourceCookieJarTest {
             applicableSourceCookieHeader("http://reader.example/book/12".toHttpUrl(), candidates),
         )
         assertEquals(
-            "root=one",
+            "root=one; secure=three",
             applicableSourceCookieHeader("https://reader.example/other".toHttpUrl(), candidates),
         )
     }
