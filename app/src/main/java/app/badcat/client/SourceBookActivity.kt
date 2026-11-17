@@ -727,9 +727,9 @@ class SourceChapterActivity : Activity() {
     }
 
     private fun loadInitial(fallbackTitle: String) {
-        status.text = "正在同时加载正文和目录…"
+        status.text = "正在加载正文和目录…"
         worker.execute {
-            val (toc, content) = runBlocking {
+            runBlocking {
                 coroutineScope {
                     val tocTask = async(Dispatchers.IO) {
                         safeEngineCall { engine.chapters(sourceId, bookUrl) }
@@ -739,18 +739,38 @@ class SourceChapterActivity : Activity() {
                             engine.chapterContent(sourceId, bookUrl, currentChapterUrl, bookName)
                         }
                     }
-                    tocTask.await() to contentTask.await()
+                    // Do not make the reader wait for a slow table of contents.
+                    // Render the requested chapter as soon as its content is ready.
+                    val content = contentTask.await()
+                    val fallbackChapter = BookChapter(
+                        index = 0,
+                        title = fallbackTitle.ifBlank { bookName },
+                        url = currentChapterUrl,
+                    )
+                    mainHandler.post {
+                        currentIndex = 0
+                        renderChapter(
+                            fallbackChapter,
+                            content,
+                            EngineResult.Success(emptyList()),
+                        )
+                    }
+
+                    // Navigation metadata can arrive later without blocking the text.
+                    val toc = tocTask.await()
+                    val chapterList = (toc as? EngineResult.Success)?.value.orEmpty()
+                    val selected = chapterList.indexOfFirst { it.url == currentChapterUrl }
+                    mainHandler.post {
+                        chapters = chapterList
+                        currentIndex = selected
+                        previousButton.isEnabled = selected > 0
+                        nextButton.isEnabled = selected >= 0 && selected < chapterList.lastIndex
+                        if (toc is EngineResult.Failure) {
+                            status.append("\\n目录导航不可用：${toc.message}")
+                        }
+                        updateReaderProgress()
+                    }
                 }
-            }
-            val chapterList = (toc as? EngineResult.Success)?.value.orEmpty()
-            val selected = chapterList.indexOfFirst { it.url == currentChapterUrl }
-            val chapter = if (selected >= 0) chapterList[selected] else {
-                BookChapter(index = 0, title = fallbackTitle, url = currentChapterUrl)
-            }
-            mainHandler.post {
-                chapters = chapterList
-                currentIndex = selected
-                renderChapter(chapter, content, toc)
             }
         }
     }
