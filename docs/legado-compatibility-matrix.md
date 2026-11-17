@@ -112,3 +112,11 @@ modes remain outside this increment.
 - Cookie deletion is keyed to the source identity and synchronized with other cookie-jar instances, so subsequent requests reload the empty store rather than resurrecting an older in-memory snapshot.
 - Script key/value storage and the source definition are intentionally retained; clearing authentication does not remove a source or unrelated source data.
 - Unit coverage verifies that clearing one source's login header and login info leaves another source's authentication state untouched.
+
+
+## Source-scoped cookie helper
+
+- The pinned Legado JsExtensions contract exposes `java.getCookie(tag)` and `java.getCookie(tag, key)` for reading a cookie string or one cookie value.
+- The host now implements these two read helpers through the current book source's persistent OkHttp cookie jar. URL matching retains OkHttp domain, path, expiry, and secure-cookie rules.
+- Cookie lookup is isolated by source ID; a script cannot read cookies stored by a different book source. Invalid or non-HTTP(S) URL inputs return an empty string.
+- Cookie mutation remains handled by the request/response cookie jar. The wider upstream CookieStore API is not exposed as a permissive global database API.
