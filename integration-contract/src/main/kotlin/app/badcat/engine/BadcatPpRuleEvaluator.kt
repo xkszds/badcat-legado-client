@@ -282,7 +282,7 @@ object BadcatPpRuleEvaluator {
         if (normalizedScheme != "http" && normalizedScheme != "https") return null
         if (host.isNullOrBlank() || userInfo != null) return null
         val serialized = toASCIIString()
-        return normalizedScheme + serialized.substringAfter(':')
+        return "$normalizedScheme:${serialized.substringAfter(':')}"
     }
 
     const val MAX_SCRIPT_RESULT_CHARS = 2 * 1024 * 1024

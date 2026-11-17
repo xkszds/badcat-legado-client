@@ -400,7 +400,7 @@ class BadcatPpRuleEvaluatorTest {
             "HTTPS://comic.example/reader/page/1",
         )
         assertEquals(
-            listOf("HTTPS://comic.example/reader/img/page.jpg"),
+            listOf("https://comic.example/reader/img/page.jpg"),
             assertIs<EngineResult.Success<List<String>>>(result).value,
         )
     }
