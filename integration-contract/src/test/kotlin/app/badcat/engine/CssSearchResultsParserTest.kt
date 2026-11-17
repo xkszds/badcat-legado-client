@@ -463,4 +463,80 @@ class CssSearchResultsParserTest {
         assertEquals("https://reader.example/novel/123", book.bookUrl)
     }
 
+    @Test
+    fun expandsPersistentPutAndGetVariablesInSearchFieldRules() = runBlocking {
+        val source = source(
+            """{"bookList":"div.book","name":"@put:{\"selector\":\"h2@text\"}@get:{selector}","bookUrl":"a@href"}""",
+        )
+        val response = SourceHttpResponse(
+            statusCode = 200,
+            finalUrl = "https://reader.example/search",
+            body = """<div class="book"><h2>Variable title</h2><a href="/variable">open</a></div>""",
+        )
+        val values = mutableMapOf<String, String>()
+        val scriptRuntime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> = EngineResult.Success(script)
+
+            override suspend fun getString(source: BookSource, key: String): EngineResult<String?> =
+                EngineResult.Success(values[key])
+
+            override suspend fun putString(source: BookSource, key: String, value: String): EngineResult<Unit> {
+                values[key] = value
+                return EngineResult.Success(Unit)
+            }
+        }
+
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parseWithScripts(source, response, scriptRuntime),
+        ).value
+
+        assertEquals("h2@text", values["selector"])
+        assertEquals("Variable title", books.single().name)
+        assertEquals("https://reader.example/variable", books.single().bookUrl)
+    }
+
+    @Test
+    fun embeddedSearchFieldScriptsReceiveKeywordAndPageContext() = runBlocking {
+        val source = source(
+            """{"bookList":"div.book","name":"{{chooseName(result,key,page)}}","bookUrl":"a@href"}""",
+        )
+        val response = SourceHttpResponse(
+            statusCode = 200,
+            finalUrl = "https://reader.example/search",
+            body = """<div class="book"><a href="/embedded">open</a></div>""",
+        )
+        var capturedScript = ""
+        var capturedBindings: Map<String, String> = emptyMap()
+        val scriptRuntime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> {
+                capturedScript = script
+                capturedBindings = bindings
+                return EngineResult.Success("Embedded title")
+            }
+        }
+
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parseWithScripts(
+                source = source,
+                response = response,
+                scriptRuntime = scriptRuntime,
+                key = "雪猫",
+                page = 4,
+            ),
+        ).value
+
+        assertEquals("chooseName(result,key,page)", capturedScript)
+        assertEquals("雪猫", capturedBindings["key"])
+        assertEquals("4", capturedBindings["page"])
+        assertEquals("Embedded title", books.single().name)
+    }
+
 }
