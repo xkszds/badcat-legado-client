@@ -108,6 +108,9 @@ object CssRuleEvaluator {
         document: SourceDocument,
         expression: String,
     ): EngineResult<List<String>> {
+        val chain = splitRuleChain(expression)
+        if (chain.size > 2) return evaluateChained(document, chain, expression)
+
         val parsed = parseExpression(expression)
             ?: return EngineResult.Failure(
                 EngineErrorCode.UNSUPPORTED_RULE,
@@ -136,6 +139,104 @@ object CssRuleEvaluator {
                 "CSS selector evaluation failed: ${it.message ?: it::class.java.simpleName}",
                 it,
             )
+        }
+    }
+
+    /**
+     * Default-mode Legado rules may chain selector steps with '@', for example
+     * div.book@a.0@href. Each intermediate step selects descendants and applies
+     * the same bounded ElementsSingle index suffix used by collection rules.
+     * Explicit @CSS: rules intentionally keep their direct-selector behavior.
+     */
+    private fun evaluateChained(
+        document: SourceDocument,
+        parts: List<String>,
+        original: String,
+    ): EngineResult<List<String>> = runCatching {
+        val root = Jsoup.parse(document.body, document.url)
+        var elements: List<Element> = listOf(root)
+        for (step in parts.dropLast(1)) {
+            val indexRule = LegadoElementIndex.parse(step)
+            val selector = indexRule?.selector ?: step
+            require(selector.isNotBlank()) { "Blank selector step in chained CSS rule" }
+            elements = elements.flatMap { parent ->
+                val matched = parent.select(selector).toList()
+                if (indexRule == null) matched else LegadoElementIndex.apply(matched, indexRule)
+            }
+            if (elements.isEmpty()) break
+        }
+        val (mode, attribute) = parseValueMode(parts.last())
+            ?: throw IllegalArgumentException("Unsupported CSS value suffix: ${parts.last()}")
+        val values = when (mode) {
+            ValueMode.ATTRIBUTE -> elements.map { it.attr(attribute.orEmpty()) }
+                .filter(String::isNotBlank)
+                .distinct()
+            else -> elements.map { extract(it, mode, attribute) }.filter(String::isNotEmpty)
+        }
+        EngineResult.Success(values)
+    }.getOrElse {
+        EngineResult.Failure(
+            EngineErrorCode.PARSE,
+            "Legado chained CSS rule failed ($original): ${it.message ?: it::class.java.simpleName}",
+            it,
+        )
+    }
+
+    /** Splits '@' only outside CSS attribute brackets, parentheses and quotes. */
+    private fun splitRuleChain(expression: String): List<String> {
+        val parts = ArrayList<String>()
+        var quote: Char? = null
+        var escaped = false
+        var bracketDepth = 0
+        var parenthesisDepth = 0
+        var start = 0
+        expression.forEachIndexed { index, char ->
+            if (escaped) {
+                escaped = false
+                return@forEachIndexed
+            }
+            if (char == '\\\\') {
+                escaped = true
+                return@forEachIndexed
+            }
+            if (quote != null) {
+                if (char == quote) quote = null
+                return@forEachIndexed
+            }
+            when {
+                char == 39.toChar() || char == '"' -> quote = char
+                char == '[' -> bracketDepth++
+                char == ']' -> if (bracketDepth > 0) bracketDepth--
+                char == '(' -> parenthesisDepth++
+                char == ')' -> if (parenthesisDepth > 0) parenthesisDepth--
+                char == '@' && bracketDepth == 0 && parenthesisDepth == 0 -> {
+                    parts += expression.substring(start, index).trim()
+                    start = index + 1
+                }
+            }
+        }
+        if (start > 0) parts += expression.substring(start).trim()
+        return if (parts.isEmpty()) listOf(expression.trim()) else parts
+    }
+
+    private fun parseValueMode(suffix: String): Pair<ValueMode, String?>? {
+        val value = suffix.trim()
+        return when {
+            value.equals("text", ignoreCase = true) -> ValueMode.TEXT to null
+            value.equals("textNodes", ignoreCase = true) -> ValueMode.TEXT_NODES to null
+            value.equals("ownText", ignoreCase = true) -> ValueMode.OWN_TEXT to null
+            value.equals("html", ignoreCase = true) -> ValueMode.HTML to null
+            value.equals("all", ignoreCase = true) -> ValueMode.ALL to null
+            value.equals("href", ignoreCase = true) -> ValueMode.HREF to null
+            value.equals("src", ignoreCase = true) -> ValueMode.SRC to null
+            value.equals("tag", ignoreCase = true) -> ValueMode.TAG to null
+            value.startsWith("attr(", ignoreCase = true) && value.endsWith(")") -> {
+                val attribute = value.substringAfter('(').dropLast(1).trim()
+                    .takeIf(String::isNotEmpty) ?: return null
+                ValueMode.ATTRIBUTE to attribute
+            }
+            value.matches(Regex("[A-Za-z_:][A-Za-z0-9_.:-]*")) -> ValueMode.ATTRIBUTE to value
+            else -> null
         }
     }
 
