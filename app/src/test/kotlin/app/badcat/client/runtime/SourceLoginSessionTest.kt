@@ -21,13 +21,17 @@ class SourceLoginSessionTest {
     @Test
     fun savedLoginHeadersAreMergedCaseInsensitivelyForOnlyTheirSource() = runBlocking {
         val store = InMemorySourceLoginSessionStore
-        val bridge = RhinoSourceLoginExtensions("source-A", store)
+        val sourceA = "header-merge-source-A"
+        val sourceB = "header-merge-source-B"
+        store.clearSource(sourceA)
+        store.clearSource(sourceB)
+        val bridge = RhinoSourceLoginExtensions(sourceA, store)
         bridge.putLoginHeader("""{"Authorization":"Bearer token-A","X-Session":"session-A"}""")
         val delegate = RecordingClient()
         val client = SourceLoginSessionRequestClient(delegate, store)
 
         client.execute(SourceHttpRequest(
-            sourceId = "source-A",
+            sourceId = sourceA,
             url = "https://example.test/book",
             headers = mapOf("authorization" to "Bearer stale", "Accept" to "application/json"),
         ))
@@ -36,8 +40,10 @@ class SourceLoginSessionTest {
         assertEquals("session-A", request.headers["X-Session"])
         assertEquals("application/json", request.headers["Accept"])
 
-        client.execute(SourceHttpRequest(sourceId = "source-B", url = "https://example.test/book"))
+        client.execute(SourceHttpRequest(sourceId = sourceB, url = "https://example.test/book"))
         assertTrue(requireNotNull(delegate.lastRequest).headers.isEmpty())
+        store.clearSource(sourceA)
+        store.clearSource(sourceB)
     }
 
     @Test
