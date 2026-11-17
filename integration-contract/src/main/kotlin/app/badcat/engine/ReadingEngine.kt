@@ -48,6 +48,17 @@ interface ReadingEngine {
         bookUrl: String,
     ): EngineResult<List<BookChapter>>
 
+    /** Delivers partial chapter catalogs as paginated TOC responses arrive. */
+    suspend fun chaptersIncremental(
+        sourceId: String,
+        bookUrl: String,
+        onChapters: suspend (List<BookChapter>) -> Unit,
+    ): EngineResult<List<BookChapter>> {
+        val result = chapters(sourceId, bookUrl)
+        if (result is EngineResult.Success) onChapters(result.value)
+        return result
+    }
+
     suspend fun chapterContent(
         sourceId: String,
         bookUrl: String,
