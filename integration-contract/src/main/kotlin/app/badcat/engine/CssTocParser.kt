@@ -399,6 +399,7 @@ class CssTocParser {
 
     private fun normalizeJsonRule(body: String, rule: String): String {
         val trimmed = rule.trim()
+        if (trimmed.startsWith("$") || trimmed.startsWith("@json", true)) return trimmed
         val jsonBody = body.trimStart().let { it.startsWith("{") || it.startsWith("[") }
         val barePath = trimmed.matches(Regex("[A-Za-z_$][A-Za-z0-9_$]*(\\.[A-Za-z_$][A-Za-z0-9_$]*)*"))
         return if (jsonBody && barePath) "$.$trimmed" else trimmed
