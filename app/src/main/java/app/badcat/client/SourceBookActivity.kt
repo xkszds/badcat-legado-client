@@ -257,7 +257,13 @@ class SourceBookActivity : Activity() {
                         safeEngineCall { engine.bookDetail(sourceId, bookUrl) }
                     }
                     val tocTask = async(Dispatchers.IO) {
-                        safeEngineCall { engine.chapters(sourceId, bookUrl) }
+                        safeEngineCall {
+                            engine.chaptersIncremental(sourceId, bookUrl) { partial ->
+                                mainHandler.post {
+                                    if (!isFinishing && !isDestroyed) showChapters(partial)
+                                }
+                            }
+                        }
                     }
                     detailTask.await() to tocTask.await()
                 }
@@ -380,6 +386,10 @@ class SourceBookActivity : Activity() {
     private fun showChapters(chapters: List<BookChapter>) {
         allChapters = chapters
         startReadingButton.isEnabled = chapters.isNotEmpty()
+        if (pendingStartReading && chapters.isNotEmpty()) {
+            pendingStartReading = false
+            openChapter(chapters.first())
+        }
         chapterList.removeAllViews()
         status.append("\n\n目录：${chapters.size} 章（点击章节开始阅读）")
         val savedChapterUrl = getSharedPreferences("badcat_reading_progress", MODE_PRIVATE)
