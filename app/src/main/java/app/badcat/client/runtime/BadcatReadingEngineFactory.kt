@@ -38,6 +38,9 @@ class BadcatReadingEngineFactory(
     private val activeScriptRuntime: SourceScriptRuntime = scriptRuntime ?: RhinoSourceScriptRuntime(
         sourceKeyValueStore = SharedPreferencesSourceScriptKeyValueStore(context.applicationContext),
         sourceLoginSessionStore = loginSessionStore,
+        sourceCookieReader = { sourceId, url ->
+            SharedPreferencesSourceCookieJar(context.applicationContext, sourceId).getCookie(url)
+        },
     )
     private val catalog = FileBookSourceCatalog(context.applicationContext)
     private val replaceRuleCatalog = FileReplaceRuleCatalog(context.applicationContext)
