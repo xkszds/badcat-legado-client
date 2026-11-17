@@ -41,6 +41,9 @@ class SourceSearchActivity : Activity() {
         const val EXTRA_INITIAL_QUERY = "initial_query"
         const val EXTRA_CONTENT_TYPE = "content_type"
         const val EXTRA_FOCUS_SEARCH = "focus_search"
+        private const val SEARCH_HISTORY_PREFS = "badcat_search_history"
+        private const val SEARCH_HISTORY_KEY = "queries_v1"
+        private const val MAX_SEARCH_HISTORY = 20
     }
 
     private val worker: ExecutorService = Executors.newSingleThreadExecutor()
@@ -624,9 +627,4 @@ class SourceSearchActivity : Activity() {
         super.onDestroy()
     }
 
-    companion object {
-        private const val SEARCH_HISTORY_PREFS = "badcat_search_history"
-        private const val SEARCH_HISTORY_KEY = "queries_v1"
-        private const val MAX_SEARCH_HISTORY = 20
-    }
 }
