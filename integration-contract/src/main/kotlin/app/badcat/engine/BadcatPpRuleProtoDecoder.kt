@@ -1,6 +1,5 @@
 package app.badcat.engine
 
-import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 
@@ -255,9 +254,10 @@ object BadcatPpRuleProtoDecoder {
             val start = offset
             val (tag, afterTag) = readVarint(bytes, offset)
             offset = afterTag
-            val number = (tag ushr 3).toInt()
+            val numberValue = tag ushr 3
+            require(numberValue in 1..MAX_FIELD_NUMBER.toLong()) { "Invalid protobuf field number" }
+            val number = numberValue.toInt()
             val wireType = (tag and 7L).toInt()
-            require(number > 0) { "Invalid protobuf field number" }
             val value: WireField = when (wireType) {
                 WIRE_VARINT -> {
                     val (v, next) = readVarint(bytes, offset)
@@ -285,11 +285,63 @@ object BadcatPpRuleProtoDecoder {
                     offset += 4
                     WireField(number, wireType, raw = bytes.copyOfRange(start, offset))
                 }
+                WIRE_START_GROUP -> {
+                    offset = skipGroup(bytes, offset, number, 1)
+                    WireField(number, wireType, raw = bytes.copyOfRange(start, offset))
+                }
                 else -> error("Unsupported protobuf wire type $wireType")
             }
             fields += value
         }
         return fields
+    }
+
+    /**
+     * Skips a deprecated protobuf group while retaining its complete raw slice
+     * in the caller. Nested groups must close with their matching field number.
+     */
+    private fun skipGroup(
+        bytes: ByteArray,
+        start: Int,
+        groupNumber: Int,
+        depth: Int,
+    ): Int {
+        require(depth <= MAX_GROUP_DEPTH) { "Protobuf group nesting exceeds the limit" }
+        var offset = start
+        while (offset < bytes.size) {
+            val (tag, afterTag) = readVarint(bytes, offset)
+            val numberValue = tag ushr 3
+            require(numberValue in 1..MAX_FIELD_NUMBER.toLong()) { "Invalid protobuf group field number" }
+            val number = numberValue.toInt()
+            val wireType = (tag and 7L).toInt()
+            offset = afterTag
+            when (wireType) {
+                WIRE_VARINT -> offset = readVarint(bytes, offset).second
+                WIRE_FIXED64 -> {
+                    require(bytes.size - offset >= 8) { "Truncated fixed64 protobuf group field" }
+                    offset += 8
+                }
+                WIRE_LENGTH_DELIMITED -> {
+                    val (length, afterLength) = readVarint(bytes, offset)
+                    offset = afterLength
+                    require(length >= 0 && length <= (bytes.size - offset).toLong()) {
+                        "Invalid length-delimited protobuf group field"
+                    }
+                    offset += length.toInt()
+                }
+                WIRE_START_GROUP -> offset = skipGroup(bytes, offset, number, depth + 1)
+                WIRE_END_GROUP -> {
+                    require(number == groupNumber) { "Mismatched protobuf end-group field" }
+                    return offset
+                }
+                WIRE_FIXED32 -> {
+                    require(bytes.size - offset >= 4) { "Truncated fixed32 protobuf group field" }
+                    offset += 4
+                }
+                else -> error("Unsupported protobuf group wire type $wireType")
+            }
+        }
+        error("Unterminated protobuf group")
     }
 
     private fun readVarint(bytes: ByteArray, start: Int): Pair<Long, Int> {
@@ -310,5 +362,9 @@ object BadcatPpRuleProtoDecoder {
     private const val WIRE_VARINT = 0
     private const val WIRE_FIXED64 = 1
     private const val WIRE_LENGTH_DELIMITED = 2
+    private const val WIRE_START_GROUP = 3
+    private const val WIRE_END_GROUP = 4
     private const val WIRE_FIXED32 = 5
+    private const val MAX_FIELD_NUMBER = 536_870_911
+    private const val MAX_GROUP_DEPTH = 64
 }
