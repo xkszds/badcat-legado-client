@@ -76,12 +76,19 @@ class SourceReadingEngine(
         return searchService.search(source, url, page = page, keyword = keyword)
     }
 
-    override suspend fun bookDetail(sourceId: String, bookUrl: String): EngineResult<BookDetail> {
+    override suspend fun bookDetail(sourceId: String, bookUrl: String): EngineResult<BookDetail> =
+        bookDetailWithFallback(sourceId, bookUrl, null)
+
+    override suspend fun bookDetailWithFallback(
+        sourceId: String,
+        bookUrl: String,
+        fallbackBookName: String?,
+    ): EngineResult<BookDetail> {
         val source = when (val result = findSource(sourceId)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
         }
-        return detailService.load(source, bookUrl)
+        return detailService.load(source, bookUrl, fallbackBookName)
     }
 
     override suspend fun chapters(sourceId: String, bookUrl: String): EngineResult<List<BookChapter>> =
@@ -91,12 +98,20 @@ class SourceReadingEngine(
         sourceId: String,
         bookUrl: String,
         onChapters: suspend (List<BookChapter>) -> Unit,
+    ): EngineResult<List<BookChapter>> =
+        chaptersIncrementalWithFallback(sourceId, bookUrl, null, onChapters)
+
+    override suspend fun chaptersIncrementalWithFallback(
+        sourceId: String,
+        bookUrl: String,
+        fallbackBookName: String?,
+        onChapters: suspend (List<BookChapter>) -> Unit,
     ): EngineResult<List<BookChapter>> {
         val source = when (val result = findSource(sourceId)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
         }
-        val detail = when (val result = detailService.load(source, bookUrl)) {
+        val detail = when (val result = detailService.load(source, bookUrl, fallbackBookName)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
         }
