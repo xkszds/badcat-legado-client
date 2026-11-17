@@ -132,6 +132,11 @@ class BadcatSearchBarView(
         else -> "搜索书籍"
     }
 
+    private fun rounded(color: Int, radius: Int) = GradientDrawable().apply {
+        setColor(color)
+        cornerRadius = radius.toFloat()
+    }
+
     private fun searchBackground(dark: Boolean, radius: Int) = GradientDrawable().apply {
         setColor(if (dark) Color.rgb(31, 37, 46) else Color.rgb(255, 255, 255))
         cornerRadius = radius.toFloat()
