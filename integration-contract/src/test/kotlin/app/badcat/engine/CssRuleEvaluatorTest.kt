@@ -107,6 +107,27 @@ class CssRuleEvaluatorTest {
     }
 
     @Test
+    fun scalarDefaultModeAppliesLegacyTagClassAndIndexSyntax() {
+        val firstAnchor = CssRuleEvaluator.evaluate(
+            document,
+            "@@tag.a.0@href",
+        )
+        assertEquals(
+            listOf("https://reader.example/book/1"),
+            assertIs<EngineResult.Success<List<String>>>(firstAnchor).value,
+        )
+
+        val nestedAnchor = CssRuleEvaluator.evaluate(
+            document,
+            "@@class.book@tag.a.0@href",
+        )
+        assertEquals(
+            listOf("https://reader.example/book/1", "https://reader.example/book/2"),
+            assertIs<EngineResult.Success<List<String>>>(nestedAnchor).value,
+        )
+    }
+
+    @Test
     fun chainedSelectorTokenizerDoesNotSplitAtSignsInsideCssAttributes() {
         val result = CssRuleEvaluator.evaluate(
             document,
