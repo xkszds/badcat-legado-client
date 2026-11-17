@@ -9,6 +9,7 @@ class SourceBookDetailService(
     suspend fun load(
         source: BookSource,
         bookUrl: String,
+        fallbackBookName: String? = null,
     ): EngineResult<BookDetail> {
         MainJsSourceGuard.failure(source, "book detail", scriptRuntimeAvailable = scriptRuntime != null)?.let { return it }
         val response = when (val result = http.execute(source, bookUrl)) {
@@ -21,7 +22,7 @@ class SourceBookDetailService(
                 "Book detail request for source '${source.id}' returned HTTP ${response.statusCode}",
             )
         }
-        return scriptRuntime?.let { parser.parseWithScripts(source, response, bookUrl, it) }
-            ?: parser.parse(source, response, bookUrl)
+        return scriptRuntime?.let { parser.parseWithScripts(source, response, bookUrl, it, fallbackBookName) }
+            ?: parser.parse(source, response, bookUrl, fallbackBookName)
     }
 }
