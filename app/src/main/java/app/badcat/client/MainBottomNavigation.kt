@@ -2,17 +2,17 @@ package app.badcat.client
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Color
-import android.graphics.Typeface
+import android.graphics.drawable.RippleDrawable
 import android.view.Gravity
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 
 /**
- * Shared three-destination navigation used by the rebuilt main surfaces.
- * The original requested removals are intentional: no leaderboard, lottery,
- * cash shortcut, or Cat Star destination is reintroduced here.
+ * Shared three-destination navigation. Each icon is drawn into the same optical
+ * viewport and every destination has a visible ripple + scale feedback.
  */
 internal object MainBottomNavigation {
     private val active = Color.rgb(55, 137, 222)
@@ -32,46 +32,61 @@ internal object MainBottomNavigation {
                 "我的" to "mine",
             ).forEach { (label, key) ->
                 val isSelected = key == selected
-                addView(LinearLayout(context).apply {
+                val item = LinearLayout(context).apply {
                     orientation = LinearLayout.VERTICAL
                     gravity = Gravity.CENTER
                     isClickable = true
                     isFocusable = true
                     contentDescription = label
-                    setOnClickListener {
-                        animate().scaleX(0.94f).scaleY(0.94f).setDuration(70).withEndAction { animate().scaleX(1f).scaleY(1f).setDuration(110).start() }.start()
-                        val intent = when (key) {
-                            "search" -> if (context !is MainActivity) Intent(context, MainActivity::class.java)
-                                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP) else null
-                            "favorites" -> if (context !is FavoritesActivity) Intent(context, FavoritesActivity::class.java) else null
-                            "mine" -> if (context !is MyActivity) Intent(context, MyActivity::class.java) else null
-                            else -> null
-                        }
-                        if (intent != null) {
-                            context.startActivity(intent)
-                            if (context is android.app.Activity) context.overridePendingTransition(0, 0)
-                        }
-                    }
-                    addView(BadcatNavigationIcons.create(
+                    background = RippleDrawable(
+                        ColorStateList.valueOf(if (dark) Color.rgb(75, 91, 110) else Color.rgb(220, 232, 246)),
+                        null,
+                        null,
+                    )
+                    addView(BadcatLineIconView(
                         context,
                         key,
                         if (isSelected) active else inactive,
-                    ).apply {
-                        if (isSelected) {
-                            scaleX = 1.06f
-                            scaleY = 1.06f
-                        }
-                    }, LinearLayout.LayoutParams(context.dpNav(27), context.dpNav(27)))
+                    ), LinearLayout.LayoutParams(context.dpNav(27), context.dpNav(27)))
                     addView(TextView(context).apply {
                         text = label
                         textSize = 12f
                         gravity = Gravity.CENTER
                         setTextColor(if (isSelected) active else inactive)
-                        typeface = if (isSelected) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+                        typeface = if (isSelected) android.graphics.Typeface.DEFAULT_BOLD else android.graphics.Typeface.DEFAULT
                     })
-                }, LinearLayout.LayoutParams(0, context.dpNav(64), 1f))
+                    setOnClickListener {
+                        if (isSelected) {
+                            animate().scaleX(0.90f).scaleY(0.90f).setDuration(75L)
+                                .withEndAction {
+                                    animate().scaleX(1f).scaleY(1f).setDuration(120L).start()
+                                }.start()
+                            return@setOnClickListener
+                        }
+                        animate().scaleX(0.90f).scaleY(0.90f).setDuration(70L)
+                            .withEndAction {
+                                animate().scaleX(1f).scaleY(1f).setDuration(100L)
+                                    .withEndAction { navigate(context, key) }.start()
+                            }.start()
+                    }
+                }
+                addView(item, LinearLayout.LayoutParams(0, context.dpNav(64), 1f))
             }
         }
+
+    private fun navigate(context: Context, key: String) {
+        val intent = when (key) {
+            "search" -> if (context !is MainActivity) Intent(context, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP) else null
+            "favorites" -> if (context !is FavoritesActivity) Intent(context, FavoritesActivity::class.java) else null
+            "mine" -> if (context !is MyActivity) Intent(context, MyActivity::class.java) else null
+            else -> null
+        }
+        if (intent != null) {
+            context.startActivity(intent)
+            if (context is android.app.Activity) context.overridePendingTransition(0, 0)
+        }
+    }
 }
 
 private fun Context.dpNav(value: Int): Int =
