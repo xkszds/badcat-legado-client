@@ -142,5 +142,44 @@ object BadcatPpRuleEvaluator {
             )
         }
     }
+    /**
+     * Extract comic page image URLs using the recovered original preference:
+     * data-original first, then src. Only absolute HTTP(S) targets are returned.
+     */
+    fun extractComicImageUrls(
+        document: SourceDocument,
+        rule: BadcatPpRule,
+    ): EngineResult<List<String>> {
+        val selected = when (val result = selectElements(document, rule)) {
+            is EngineResult.Failure -> return result
+            is EngineResult.Success -> result.value
+        }
+        return try {
+            val urls = selected.mapNotNull { fragment ->
+                val root = Jsoup.parseBodyFragment(fragment, document.url).body()
+                val image = root.selectFirst("img[data-original], img[src]")
+                    ?: root.takeIf { it.tagName().equals("img", ignoreCase = true) }
+                    ?: return@mapNotNull null
+                val raw = image.attr("data-original").trim()
+                    .ifBlank { image.attr("src").trim() }
+                if (raw.isBlank()) return@mapNotNull null
+                runCatching {
+                    val target = java.net.URI(document.url).resolve(raw).normalize()
+                    target.takeIf {
+                        (it.scheme.equals("http", true) || it.scheme.equals("https", true)) &&
+                            !it.host.isNullOrBlank() && it.userInfo == null
+                    }?.toASCIIString()
+                }.getOrNull()
+            }.distinct()
+            EngineResult.Success(urls)
+        } catch (error: Exception) {
+            EngineResult.Failure(
+                EngineErrorCode.PARSE,
+                "Badcat comic image rule could not be evaluated",
+                error,
+            )
+        }
+    }
+
 
 }
