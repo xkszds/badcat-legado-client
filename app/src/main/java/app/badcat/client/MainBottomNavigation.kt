@@ -43,12 +43,14 @@ internal object MainBottomNavigation {
                         null,
                         null,
                     )
-                    val iconView = BadcatLineIconView(
+                    // Use the three bitmap glyphs extracted from the original Badcat
+                    // navigation artwork, not the approximate hand-drawn line substitutes.
+                    val iconView = BadcatNavigationIcons.create(
                         context,
                         key,
                         if (isSelected) active else inactive,
                     )
-                    addView(iconView, LinearLayout.LayoutParams(context.dpNav(27), context.dpNav(27)))
+                    addView(iconView, LinearLayout.LayoutParams(context.dpNav(30), context.dpNav(30)))
                     addView(TextView(context).apply {
                         text = label
                         textSize = 12f
