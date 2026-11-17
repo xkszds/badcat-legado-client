@@ -230,7 +230,7 @@ class RhinoSourceScriptRuntimeTest {
             "java.put('headers', '{\\\"headers\\\":{}}'); java.get('headers') + '|' + java.ajax('https://java-compat.example/api')",
         )
         assertEquals(
-            "{\\\"headers\\\":{}}|ajax:https://java-compat.example/api",
+            "{\"headers\":{}}|ajax:https://java-compat.example/api",
             (result as EngineResult.Success).value,
         )
         val formatted = runtime.evaluate(source, "java.timeFormat('0')")
