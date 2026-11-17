@@ -639,7 +639,7 @@ class SourceSearchActivity : Activity() {
     ) {
         lastDisplayedResults = items
         lastDisplayedFailures = failures
-        hasSearchSnapshot = true
+        if (complete) hasSearchSnapshot = true
         status.text = "第 " + page + " 页 · 找到 " + items.size + " 条结果" +
             if (failures.isNotEmpty()) " · " + failures.size + " 个书源失败" else ""
         items.take(MAX_VISIBLE_SEARCH_RESULTS).forEach { item ->
