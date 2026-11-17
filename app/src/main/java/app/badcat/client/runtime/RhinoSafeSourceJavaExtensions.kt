@@ -49,7 +49,7 @@ class RhinoSafeSourceJavaExtensions(
     }
 
     /** Legado's general key/value aliases use the same source-isolated persistent store. */
-    fun get(key: String): String = getString(key)
+    fun get(key: String): String = getStoredString(key)
 
     fun put(key: String, value: String): String = putString(key, value)
 
