@@ -246,11 +246,21 @@ object BadcatPpRuleProtoDecoder {
         }
     }
 
+    private class FieldBudget {
+        private var consumed = 0
+
+        fun consume() {
+            require(consumed < MAX_FIELDS_PER_MESSAGE) { "Too many protobuf fields, including nested groups" }
+            consumed++
+        }
+    }
+
     private fun readFields(bytes: ByteArray): List<WireField> {
         val fields = ArrayList<WireField>()
+        val budget = FieldBudget()
         var offset = 0
         while (offset < bytes.size) {
-            require(fields.size < MAX_FIELDS_PER_MESSAGE) { "Too many protobuf fields" }
+            budget.consume()
             val start = offset
             val (tag, afterTag) = readVarint(bytes, offset)
             offset = afterTag
@@ -286,7 +296,7 @@ object BadcatPpRuleProtoDecoder {
                     WireField(number, wireType, raw = bytes.copyOfRange(start, offset))
                 }
                 WIRE_START_GROUP -> {
-                    offset = skipGroup(bytes, offset, number, 1)
+                    offset = skipGroup(bytes, offset, number, 1, budget)
                     WireField(number, wireType, raw = bytes.copyOfRange(start, offset))
                 }
                 else -> error("Unsupported protobuf wire type $wireType")
@@ -305,10 +315,12 @@ object BadcatPpRuleProtoDecoder {
         start: Int,
         groupNumber: Int,
         depth: Int,
+        budget: FieldBudget,
     ): Int {
         require(depth <= MAX_GROUP_DEPTH) { "Protobuf group nesting exceeds the limit" }
         var offset = start
         while (offset < bytes.size) {
+            budget.consume()
             val (tag, afterTag) = readVarint(bytes, offset)
             val numberValue = tag ushr 3
             require(numberValue in 1..MAX_FIELD_NUMBER.toLong()) { "Invalid protobuf group field number" }
@@ -329,7 +341,7 @@ object BadcatPpRuleProtoDecoder {
                     }
                     offset += length.toInt()
                 }
-                WIRE_START_GROUP -> offset = skipGroup(bytes, offset, number, depth + 1)
+                WIRE_START_GROUP -> offset = skipGroup(bytes, offset, number, depth + 1, budget)
                 WIRE_END_GROUP -> {
                     require(number == groupNumber) { "Mismatched protobuf end-group field" }
                     return offset
