@@ -276,7 +276,7 @@ class ReaderCssActivity : Activity() {
             card.addView(Button(this).apply {
                 text = "删除方案"
                 setOnClickListener {
-                    android.app.AlertDialog.Builder(this@ReaderCssActivity)
+                    BadcatTheme.alertBuilder(this@ReaderCssActivity)
                         .setMessage("删除方案“${profile.name}”及其全部子选择器？")
                         .setNegativeButton("取消", null)
                         .setPositiveButton("删除") { _, _ ->
@@ -301,7 +301,7 @@ class ReaderCssActivity : Activity() {
             setPadding(20, 4, 20, 4)
             addView(name); addView(note)
         }
-        android.app.AlertDialog.Builder(this).setTitle(if (existing == null) "新建 CSS 方案" else "编辑方案信息")
+        BadcatTheme.alertBuilder(this).setTitle(if (existing == null) "新建 CSS 方案" else "编辑方案信息")
             .setView(box).setNegativeButton("取消", null)
             .setPositiveButton("保存") { _, _ ->
                 val label = name.text.toString().trim()
@@ -337,23 +337,23 @@ class ReaderCssActivity : Activity() {
             "添加默认阅读样式",
             "检查选择器冲突",
         )
-        android.app.AlertDialog.Builder(this).setTitle(profile.name)
+        BadcatTheme.alertBuilder(this).setTitle(profile.name)
             .setItems(actions) { _, which ->
                 when (which) {
                     0 -> editRule(id, null)
                     1 -> editProfile(profile)
                     2 -> if (profile.rules.isEmpty()) message.text = "请先添加子选择器" else
-                        android.app.AlertDialog.Builder(this).setTitle("选择要编辑的子选择器")
+                        BadcatTheme.alertBuilder(this).setTitle("选择要编辑的子选择器")
                             .setItems(labels) { _, index -> editRule(id, index) }.show()
                     3 -> if (profile.rules.isEmpty()) message.text = "没有可删除的子选择器" else
-                        android.app.AlertDialog.Builder(this).setTitle("选择要删除的子选择器")
+                        BadcatTheme.alertBuilder(this).setTitle("选择要删除的子选择器")
                             .setItems(labels) { _, index ->
                                 if (saveProfiles(readProfiles().map { p ->
                                     if (p.id == id) p.copy(rules = p.rules.filterIndexed { i, _ -> i != index }) else p
                                 })) refresh()
                             }.show()
                     4, 5 -> if (profile.rules.size < 2) message.text = "至少需要两个子选择器才能调整顺序" else
-                        android.app.AlertDialog.Builder(this).setTitle("选择要${if (which == 4) "上移" else "下移"}的子选择器")
+                        BadcatTheme.alertBuilder(this).setTitle("选择要${if (which == 4) "上移" else "下移"}的子选择器")
                             .setItems(labels) { _, index ->
                                 val target = if (which == 4) index - 1 else index + 1
                                 if (target !in profile.rules.indices) {
@@ -374,7 +374,7 @@ class ReaderCssActivity : Activity() {
                             }.show()
                     6 -> showProfilePreview(id)
                     7 -> if (profile.rules.isEmpty()) message.text = "请先添加子选择器" else
-                        android.app.AlertDialog.Builder(this).setTitle("选择要复制的子选择器")
+                        BadcatTheme.alertBuilder(this).setTitle("选择要复制的子选择器")
                             .setItems(labels) { _, index ->
                                 val latest = readProfiles().firstOrNull { it.id == id } ?: return@setItems
                                 if (latest.rules.size >= MAX_RULES_PER_PROFILE) {
@@ -453,7 +453,7 @@ class ReaderCssActivity : Activity() {
         }
         val conflicts = ReaderCssDocument.duplicateSelectorGroups(occurrences)
         if (conflicts.isEmpty()) {
-            android.app.AlertDialog.Builder(this)
+            BadcatTheme.alertBuilder(this)
                 .setTitle("选择器冲突检查")
                 .setMessage("当前启用的方案中，没有发现完全相同的选择器重复项。注意：不同但相互匹配的选择器仍可能产生 CSS 层叠影响。")
                 .setPositiveButton("知道了", null)
@@ -464,7 +464,7 @@ class ReaderCssActivity : Activity() {
             "$selector\n" + owners.joinToString("\n") { "• $it" } +
                 "\n提示：这些规则可能同时命中相同节点，后输出的声明可能覆盖先输出的声明。"
         }
-        android.app.AlertDialog.Builder(this)
+        BadcatTheme.alertBuilder(this)
             .setTitle("发现 ${conflicts.size} 组重复选择器")
             .setMessage(report)
             .setPositiveButton("知道了", null)
@@ -488,7 +488,7 @@ class ReaderCssActivity : Activity() {
                 "text/html", "UTF-8", null,
             )
         }
-        android.app.AlertDialog.Builder(this)
+        BadcatTheme.alertBuilder(this)
             .setTitle("方案预览：${profile.name}")
             .setView(preview)
             .setPositiveButton("关闭", null)
@@ -536,7 +536,7 @@ class ReaderCssActivity : Activity() {
                     ".reader-paragraph:first-child", ".reader-paragraph:nth-child(2)",
                     ".reader-paragraph:last-child", ".reader-footer",
                 )
-                android.app.AlertDialog.Builder(this@ReaderCssActivity)
+                BadcatTheme.alertBuilder(this@ReaderCssActivity)
                     .setTitle("选择要插入的选择器")
                     .setItems(presets) { _, selected -> selector.setText(values[selected]) }
                     .show()
@@ -561,7 +561,7 @@ class ReaderCssActivity : Activity() {
                         "text/html", "UTF-8", null,
                     )
                 }
-                android.app.AlertDialog.Builder(this@ReaderCssActivity)
+                BadcatTheme.alertBuilder(this@ReaderCssActivity)
                     .setTitle("阅读页样式预览")
                     .setView(preview)
                     .setPositiveButton("关闭") { _, _ -> preview.destroy() }
@@ -578,7 +578,7 @@ class ReaderCssActivity : Activity() {
                 textSize = 12f
             })
         }
-        android.app.AlertDialog.Builder(this).setTitle(if (old == null) "添加页面子选择器" else "编辑页面子选择器")
+        BadcatTheme.alertBuilder(this).setTitle(if (old == null) "添加页面子选择器" else "编辑页面子选择器")
             .setView(ScrollView(this).apply { addView(box) })
             .setNegativeButton("取消", null)
             .setPositiveButton("保存") { _, _ ->
