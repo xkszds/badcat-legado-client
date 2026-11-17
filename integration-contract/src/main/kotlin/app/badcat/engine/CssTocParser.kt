@@ -169,18 +169,17 @@ class CssTocParser {
         }
 
         var nextRule = rules["nextTocUrl"]?.trim().orEmpty()
-        if (nextRule.contains("{{")) {
-            nextRule = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
-                source = source,
-                template = nextRule,
-                result = response.body,
-                baseUrl = response.finalUrl,
-                ruleName = "nextTocUrl",
-                scriptRuntime = scriptRuntime,
-            )) {
-                is EngineResult.Failure -> return expanded
-                is EngineResult.Success -> expanded.value
-            }
+        nextRule = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
+            source = source,
+            template = nextRule,
+            result = response.body,
+            baseUrl = response.finalUrl,
+            ruleName = "nextTocUrl",
+            scriptRuntime = scriptRuntime,
+            page = page,
+        )) {
+            is EngineResult.Failure -> return expanded
+            is EngineResult.Success -> expanded.value
         }
         val nextUrls = if (nextRule.isBlank()) emptyList() else {
             val raw = if (nextRule.startsWith("@js:", true) || nextRule.startsWith("javascript:", true)) {
@@ -195,6 +194,7 @@ class CssTocParser {
                         "sourceId" to source.id,
                         "sourceName" to source.name,
                         "ruleName" to "nextTocUrl",
+                        "page" to page.toString(),
                     ),
                 )) {
                     is EngineResult.Failure -> return result
