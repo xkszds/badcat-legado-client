@@ -70,7 +70,7 @@ class BadcatReadingEngineFactory(
                     is EngineResult.Failure -> throw IllegalArgumentException(created.message)
                     is EngineResult.Success -> created.value.copy(
                         timeoutMillis = (created.value.timeoutMillis ?: 8_000L).coerceAtMost(15_000L),
-                        retryCount = created.value.retryCount.coerceAtMost(1),
+                        retryCount = created.value.retryCount.coerceAtMost(3),
                     )
                 }
                 when (val result = runBlocking(Dispatchers.IO) { durableRequestClient.execute(request) }) {
