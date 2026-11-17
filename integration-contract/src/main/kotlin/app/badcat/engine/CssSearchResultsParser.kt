@@ -80,6 +80,12 @@ class CssSearchResultsParser {
                 failure,
             )
         }
+        if (candidates.isEmpty() && items.isNotEmpty()) {
+            return unsupported(
+                source,
+                "bookList matched ${items.size} records but no name/bookUrl was extracted; first record: ${items.first().take(180)}",
+            )
+        }
         return EngineResult.Success(candidates.distinctBy { it.bookUrl })
     }
 

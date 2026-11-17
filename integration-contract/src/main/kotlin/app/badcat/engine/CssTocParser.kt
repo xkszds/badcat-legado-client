@@ -174,6 +174,12 @@ class CssTocParser {
             chapters += BookChapter(chapters.size, title, url)
         }
 
+        if (chapters.isEmpty() && items.isNotEmpty()) {
+            return unsupported(
+                source,
+                "chapterList matched ${items.size} records but chapterName/chapterUrl were empty; first record: ${items.first().take(180)}",
+            )
+        }
         var nextRule = rules["nextTocUrl"]?.trim().orEmpty()
         nextRule = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
             source = source,
@@ -318,6 +324,12 @@ class CssTocParser {
             chapters += BookChapter(index = chapters.size, title = title, url = url)
         }
 
+        if (chapters.isEmpty() && items.isNotEmpty()) {
+            return unsupported(
+                source,
+                "chapterList matched ${items.size} records but chapterName/chapterUrl were empty; first record: ${items.first().take(180)}",
+            )
+        }
         val nextUrls = ArrayList<String>()
         val nextRule = rules["nextTocUrl"]?.takeIf(String::isNotBlank)
         if (nextRule != null) {
