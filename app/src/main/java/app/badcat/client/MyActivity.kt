@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.view.View
 import android.os.Bundle
 import android.view.Gravity
 import android.widget.LinearLayout
@@ -42,6 +43,29 @@ class MyActivity : Activity() {
         }
         val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         top.addView(label("我的", 18f, ink), LinearLayout.LayoutParams(0, dp(42), 1f))
+        // Standalone animated day/night switch sits immediately to the left of Settings.
+        top.addView(TextView(this).apply {
+            text = if (darkMode) "☾" else "☀"
+            textSize = 21f
+            gravity = Gravity.CENTER
+            setTextColor(if (darkMode) Color.rgb(255, 211, 105) else Color.rgb(242, 160, 45))
+            background = rounded(if (darkMode) Color.rgb(50, 55, 64) else Color.rgb(255, 247, 226), 22)
+            isClickable = true
+            isFocusable = true
+            contentDescription = if (darkMode) "切换到白天模式" else "切换到黑夜模式"
+            setOnClickListener {
+                if (!isEnabled) return@setOnClickListener
+                isEnabled = false
+                val nextDark = !darkMode
+                animate().rotationBy(180f).scaleX(0.55f).scaleY(0.55f).alpha(0.25f)
+                    .setDuration(150L)
+                    .withEndAction {
+                        getSharedPreferences("badcat_appearance", MODE_PRIVATE).edit()
+                            .putString("appearance_mode", if (nextDark) "dark" else "light").apply()
+                        recreate()
+                    }.start()
+            }
+        }, LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginEnd = dp(4) })
         top.addView(TextView(this).apply {
             text = "⚙"
             textSize = 23f
@@ -50,9 +74,9 @@ class MyActivity : Activity() {
             isClickable = true
             isFocusable = true
             contentDescription = "设置"
-            setPadding(dp(12), 0, dp(2), 0)
+            setPadding(dp(8), 0, dp(2), 0)
             setOnClickListener { startActivity(Intent(this@MyActivity, SettingsActivity::class.java)) }
-        }, LinearLayout.LayoutParams(dp(44), dp(42)))
+        }, LinearLayout.LayoutParams(dp(40), dp(42)))
         profile.addView(top)
         val identity = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         identity.addView(TextView(this).apply {
