@@ -19,8 +19,8 @@ object ReaderProgressMetrics {
         viewportHeight: Int,
     ): ReaderProgressSnapshot {
         val viewport = viewportHeight.coerceAtLeast(1)
-        val scaledContent = (contentHeight.coerceAtLeast(0).toDouble() *
-            scale.toDouble().takeIf { it.isFinite() && it > 0.0 } .let { it ?: 1.0 })
+        val validScale = scale.toDouble().let { if (it.isFinite() && it > 0.0) it else 1.0 }
+        val scaledContent = contentHeight.coerceAtLeast(0).toDouble() * validScale
         val maxScrollLong = (scaledContent - viewport.toDouble())
             .coerceAtLeast(0.0)
             .coerceAtMost(Int.MAX_VALUE.toDouble())
@@ -31,8 +31,8 @@ object ReaderProgressMetrics {
             ((boundedScroll.toLong() * 100L) / maxScrollLong).toInt().coerceIn(0, 100)
         val totalPages = ceil((maxScrollLong.toDouble() + viewport.toDouble()) / viewport.toDouble())
             .toInt().coerceAtLeast(1)
-        val currentPage = (floor(boundedScroll.toDouble() / viewport.toDouble()).toInt() + 1)
-            .coerceIn(1, totalPages)
+        val currentPage = ceil((boundedScroll.toDouble() + viewport.toDouble()) / viewport.toDouble())
+            .toInt().coerceIn(1, totalPages)
         return ReaderProgressSnapshot(maxScroll, percent, currentPage, totalPages)
     }
 }
