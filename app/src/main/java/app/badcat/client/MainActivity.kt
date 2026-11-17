@@ -21,6 +21,7 @@ class MainActivity : Activity() {
     private var appliedSearchBarTopSpacing = 46
     private var darkMode = false
     private lateinit var homeContent: LinearLayout
+    private lateinit var homeSearchBar: BadcatSearchBarView
     private val blue = Color.rgb(55, 137, 222)
     private val ink = Color.rgb(48, 55, 66)
     private val muted = Color.rgb(135, 145, 158)
@@ -190,6 +191,7 @@ class MainActivity : Activity() {
                 putExtra(SourceSearchActivity.EXTRA_FOCUS_SEARCH, true)
             })
         }
+        homeSearchBar = bar
         addView(bar, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, dp(if (compact) 44 else 48)
         ).apply {
@@ -238,14 +240,42 @@ class MainActivity : Activity() {
         refreshRecentReading()
         val selected = searchBarMode()
         val selectedSpacing = searchBarTopSpacing()
-        if (selected != appliedSearchBarMode || selectedSpacing != appliedSearchBarTopSpacing) {
+        if (selected != appliedSearchBarMode) {
             appliedSearchBarMode = selected
             appliedSearchBarTopSpacing = selectedSpacing
             recreate()
+            return
+        }
+        if (selectedSpacing != appliedSearchBarTopSpacing) {
+            appliedSearchBarTopSpacing = selectedSpacing
+            applyHomeSearchBarPosition(selectedSpacing)
         }
         val currentDark = getSharedPreferences("badcat_appearance", MODE_PRIVATE)
             .getString("appearance_mode", "light") == "dark"
         if (currentDark != darkMode) recreate()
+    }
+
+    private fun applyHomeSearchBarPosition(spacingDp: Int) {
+        if (!::homeSearchBar.isInitialized) return
+        val params = homeSearchBar.layoutParams as? LinearLayout.LayoutParams ?: return
+        params.topMargin = dp(spacingDp)
+        homeSearchBar.layoutParams = params
+        homeSearchBar.requestLayout()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val mode = searchBarMode()
+        val spacing = searchBarTopSpacing()
+        if (mode != appliedSearchBarMode) {
+            appliedSearchBarMode = mode
+            appliedSearchBarTopSpacing = spacing
+            recreate()
+        } else if (spacing != appliedSearchBarTopSpacing) {
+            appliedSearchBarTopSpacing = spacing
+            applyHomeSearchBarPosition(spacing)
+        }
     }
 
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
