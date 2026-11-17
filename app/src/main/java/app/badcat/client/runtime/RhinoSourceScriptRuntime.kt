@@ -25,6 +25,7 @@ class RhinoSourceScriptRuntime(
     private val timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS,
     private val sourceKeyValueStore: SourceScriptKeyValueStore = InMemorySourceScriptKeyValueStore,
     private val sourceLoginSessionStore: SourceLoginSessionStore = InMemorySourceLoginSessionStore,
+    private val sourceCookieReader: (sourceId: String, url: String) -> String = { _, _ -> "" },
 ) : SourceScriptRuntime {
     private val javaExtensions = ConcurrentHashMap<String, RhinoSafeSourceJavaExtensions>()
     private val sourceExtensions = ConcurrentHashMap<String, RhinoSourceLoginExtensions>()
@@ -92,7 +93,9 @@ class RhinoSourceScriptRuntime(
                 // source-scoped bridge. This shadows Rhino's package namespace;
                 // untrusted rules still cannot reach java.lang or Android APIs.
                 scope["java"] = javaExtensions.computeIfAbsent(source.id) {
-                    RhinoSafeSourceJavaExtensions(source.id, sourceKeyValueStore)
+                    RhinoSafeSourceJavaExtensions(source.id, sourceKeyValueStore) { url ->
+                        sourceCookieReader(source.id, url)
+                    }
                 }
                 scope["source"] = sourceExtensions.computeIfAbsent(source.id) {
                     RhinoSourceLoginExtensions(source.id, sourceLoginSessionStore)
