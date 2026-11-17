@@ -29,6 +29,14 @@ class WebUrlResolverTest {
     }
 
     @Test
+    fun encodesWhitespaceAndAdditionalHashCharactersInFragments() {
+        assertEquals(
+            "http://www.95shubao.net/#%23%E2%99%A4%0A%23Qyc",
+            WebUrlResolver.resolve("http://www.95shubao.net/", "#%23%E2%99%A4\n#Qyc"),
+        )
+    }
+
+    @Test
     fun rejectsBlankUrlReferences() {
         listOf("", "   ").forEach { value ->
             assertFailsWith<IllegalArgumentException> {
