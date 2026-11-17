@@ -464,6 +464,8 @@ class SourceChapterActivity : Activity() {
     private var readerDocumentVersion: Long = 0L
     private var latestReaderBaseUrl: String = "https://reader.invalid/"
     private var readingSessionStartedAt: Long = 0L
+    private var lastBatterySampleAt: Long = 0L
+    private var cachedBatteryPercent: Int? = null
     private val preferences by lazy {
         getSharedPreferences("badcat_reading_progress", MODE_PRIVATE)
     }
@@ -715,10 +717,20 @@ class SourceChapterActivity : Activity() {
             pieces.add(java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date()))
         }
         if (readerUiPrefs.getBoolean(ReaderSettingsActivity.KEY_SHOW_BATTERY, true)) {
-            val battery = registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
-            val level = battery?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) ?: -1
-            val scale = battery?.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, 100) ?: 100
-            if (level >= 0 && scale > 0) pieces.add("电量 ${(level * 100 / scale).coerceIn(0, 100)}%")
+            val now = android.os.SystemClock.elapsedRealtime()
+            if (lastBatterySampleAt == 0L || now - lastBatterySampleAt >= 60_000L) {
+                val battery = registerReceiver(
+                    null,
+                    android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED),
+                )
+                val level = battery?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) ?: -1
+                val scale = battery?.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, 100) ?: 100
+                cachedBatteryPercent = if (level >= 0 && scale > 0) {
+                    (level * 100 / scale).coerceIn(0, 100)
+                } else null
+                lastBatterySampleAt = now
+            }
+            cachedBatteryPercent?.let { pieces.add("电量 ${it}%") }
         }
         readerInfo.text = pieces.joinToString("   ")
         readerInfo.visibility = if (pieces.isEmpty()) View.GONE else View.VISIBLE

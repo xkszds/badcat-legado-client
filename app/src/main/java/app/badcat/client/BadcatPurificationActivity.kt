@@ -91,12 +91,9 @@ class BadcatPurificationActivity : Activity() {
             textSize = 15f; setTextColor(ink); setPadding(0, dp(20), 0, dp(8))
         })
         body.addView(sectionCard("AdMark 本地标记", "管理已保存的站点标记数据。") {
-            addView(actionRow("手动添加站点标记") { addMark() })
             addView(actionRow("查看 / 删除本地标记") { showMarks() })
-            addView(actionRow("从文件导入标记 JSON") { chooseImportMarksFile() })
-            addView(actionRow("粘贴 JSON 导入") { importMarks() })
-            addView(actionRow("导出标记 JSON 到文件") { chooseExportMarksFile() })
-            addView(actionRow("复制标记 JSON") { exportMarks() })
+            addView(actionRow("导入标记 JSON") { importMarks() })
+            addView(actionRow("导出标记 JSON") { exportMarks() })
         })
         body.addView(TextView(this).apply {
             text = "注意：当前版本保留原版 AdMark 的 host、urlPattern 和 markRules 数据，并按已验证的 URL 匹配规则筛选；DOM 删除规则的执行及网页长按标记入口尚未接通。"
@@ -105,52 +102,6 @@ class BadcatPurificationActivity : Activity() {
         scroll.addView(body)
         root.addView(scroll)
         setContentView(root)
-    }
-
-    private fun addMark() {
-        val fields = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(4), dp(6), dp(4), 0)
-        }
-        val host = EditText(this).apply {
-            hint = "站点主机名，例如 reader.example"
-            setSingleLine(true)
-            textSize = 14f
-        }
-        val pattern = EditText(this).apply {
-            hint = "URL 匹配数字数组，例如 [12,34,56]"
-            setSingleLine(true)
-            textSize = 14f
-        }
-        val rules = EditText(this).apply {
-            hint = "markRules，每行一条；保留原始规则值"
-            minLines = 3
-            gravity = Gravity.TOP
-            textSize = 13f
-        }
-        fields.addView(host)
-        fields.addView(pattern)
-        fields.addView(rules, LinearLayout.LayoutParams(-1, dp(104)))
-        BadcatTheme.alertBuilder(this)
-            .setTitle("添加 AdMark 站点标记")
-            .setMessage("这里只保存 host、urlPattern 和 markRules 原始数据；当前版本尚未执行网页 DOM 删除规则。")
-            .setView(fields)
-            .setNegativeButton("取消", null)
-            .setPositiveButton("保存") { _, _ ->
-                val item = BadcatAdMarkItem(
-                    host = host.text.toString().trim().removePrefix("https://").removePrefix("http://").substringBefore('/'),
-                    urlPattern = pattern.text.toString().trim(),
-                    markRules = rules.text.toString().lineSequence().map(String::trim).filter(String::isNotEmpty).toList(),
-                )
-                if (!item.isValid()) {
-                    toast("标记格式无效：请检查主机名、数字数组和规则内容")
-                } else {
-                    runCatching { coordinator.upsertAdMark(item) }
-                        .onSuccess { toast("已保存站点标记") }
-                        .onFailure { toast("保存失败：${it.message}") }
-                }
-            }
-            .show()
     }
 
     private fun showMarks() {
@@ -175,78 +126,6 @@ class BadcatPurificationActivity : Activity() {
             }
             .setNegativeButton("关闭", null)
             .show()
-    }
-
-    private fun chooseImportMarksFile() {
-        startActivityForResult(
-            android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT).apply {
-                addCategory(android.content.Intent.CATEGORY_OPENABLE)
-                type = "application/json"
-            },
-            REQUEST_IMPORT_MARKS,
-        )
-    }
-
-    private fun chooseExportMarksFile() {
-        startActivityForResult(
-            android.content.Intent(android.content.Intent.ACTION_CREATE_DOCUMENT).apply {
-                addCategory(android.content.Intent.CATEGORY_OPENABLE)
-                type = "application/json"
-                putExtra(android.content.Intent.EXTRA_TITLE, "badcat-ad-marks.json")
-            },
-            REQUEST_EXPORT_MARKS,
-        )
-    }
-
-    @Deprecated("Uses the platform document picker for API compatibility")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode != RESULT_OK) return
-        val uri = data?.data ?: return
-        when (requestCode) {
-            REQUEST_IMPORT_MARKS -> {
-                val json = runCatching {
-                    contentResolver.openInputStream(uri)?.use { input ->
-                        val output = java.io.ByteArrayOutputStream()
-                        val buffer = ByteArray(8192)
-                        while (true) {
-                            val count = input.read(buffer)
-                            if (count < 0) break
-                            require(output.size() + count <= BadcatAdMarkJsonCodec.MAX_JSON_BYTES) {
-                                "标记文件超过 2 MiB 限制"
-                            }
-                            output.write(buffer, 0, count)
-                        }
-                        Charsets.UTF_8.newDecoder()
-                            .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
-                            .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
-                            .decode(java.nio.ByteBuffer.wrap(output.toByteArray()))
-                            .toString()
-                    } ?: error("无法打开所选文件")
-                }
-                if (json.isFailure) {
-                    toast("读取失败：${json.exceptionOrNull()?.message}")
-                } else {
-                    runCatching { coordinator.importAdMarks(json.getOrThrow()) }
-                        .onSuccess { toast("已从文件导入 $it 条标记") }
-                        .onFailure { toast("导入失败：${it.message}") }
-                }
-            }
-            REQUEST_EXPORT_MARKS -> {
-                val json = runCatching { coordinator.exportAdMarks() }
-                if (json.isFailure) {
-                    toast("导出失败：${json.exceptionOrNull()?.message}")
-                    return
-                }
-                runCatching {
-                    contentResolver.openOutputStream(uri, "wt")?.use {
-                        it.write(json.getOrThrow().toByteArray(Charsets.UTF_8))
-                        it.flush()
-                    } ?: error("无法写入所选文件")
-                }.onSuccess { toast("AdMark JSON 已导出到文件") }
-                    .onFailure { toast("导出失败：${it.message}") }
-            }
-        }
     }
 
     private fun importMarks() {
@@ -303,11 +182,6 @@ class BadcatPurificationActivity : Activity() {
 
     private fun toast(value: String) = Toast.makeText(this, value, Toast.LENGTH_SHORT).show()
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
-
-    private companion object {
-        const val REQUEST_IMPORT_MARKS = 731
-        const val REQUEST_EXPORT_MARKS = 732
-    }
 
     override fun onResume() {
         super.onResume()

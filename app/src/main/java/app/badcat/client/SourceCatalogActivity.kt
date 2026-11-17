@@ -161,7 +161,7 @@ class SourceCatalogActivity : Activity() {
                                 setColor(if (BadcatTheme.isDark(this@SourceCatalogActivity)) android.graphics.Color.rgb(38,42,49) else android.graphics.Color.WHITE)
                                 cornerRadius = dp(12).toFloat()
                             }
-                            tag = "${source.name} ${source.id}"
+                            tag = "${source.name} ${source.id} ${source.baseUrl}"
                         }
                         row.addView(TextView(this@SourceCatalogActivity).apply {
                             text = source.name
