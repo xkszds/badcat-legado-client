@@ -8,6 +8,7 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
+import android.view.ContextThemeWrapper
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
@@ -66,6 +67,12 @@ internal object BadcatTheme {
         } else {
             AlertDialog.Builder(activity)
         }
+
+    /** Context wrapper for popup menus and spinner dropdowns that live outside the view tree. */
+    fun themedContext(context: Context): Context = ContextThemeWrapper(
+        context,
+        if (isDark(context)) android.R.style.Theme_Material else android.R.style.Theme_Material_Light,
+    )
 
     fun applyWindow(activity: Activity) {
         val colors = palette(activity)
