@@ -514,6 +514,10 @@ class RhinoSourceScriptRuntimeTest {
         val result = runtime.evaluate(source, script)
 
         assertTrue("Restricted AES script failed: $result", result is EngineResult.Success)
+        assertTrue(
+            result is EngineResult.Success,
+            "Restricted AES JavaImporter evaluation failed: ${(result as? EngineResult.Failure)?.message}",
+        )
         assertEquals("Legado AES fixture", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
