@@ -87,7 +87,7 @@ class BadcatSearchBarView(
         input.setOnClickListener { homeTapAction?.invoke() }
 
         searchAction.apply {
-            text = when { searchPageStyle -> "搜索"; homePageStyle -> "⌕"; else -> "⌕" }
+            text = when { searchPageStyle -> "搜索"; homePageStyle -> ""; else -> "⌕" }
             textSize = when { searchPageStyle -> 15f; homePageStyle -> 25f; else -> 26f }
             gravity = Gravity.CENTER
             setTextColor(when {
@@ -98,6 +98,14 @@ class BadcatSearchBarView(
             background = when {
                 searchPageStyle || homePageStyle -> null
                 else -> rounded(BLUE, dp(22))
+            }
+            if (homePageStyle) {
+                val glyph = BadcatNavigationIcons.create(
+                    context, "search", Color.rgb(115, 130, 148)
+                ).drawable
+                glyph.setBounds(0, 0, dp(24), dp(24))
+                setCompoundDrawables(null, null, glyph, null)
+                gravity = Gravity.CENTER
             }
             typeface = if (searchPageStyle) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
             isClickable = true
