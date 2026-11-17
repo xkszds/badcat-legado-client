@@ -65,6 +65,7 @@ class CssSearchResultsParser {
                     coverUrl = field(source, rules, "coverUrl", itemDocument, legacyRegexMode = legacyRegexMode),
                     latestChapter = field(source, rules, "lastChapter", itemDocument, legacyRegexMode = legacyRegexMode),
                     intro = field(source, rules, "intro", itemDocument, legacyRegexMode = legacyRegexMode),
+                    status = field(source, rules, "bookStatus", itemDocument, legacyRegexMode = legacyRegexMode),
                 )
             }
         } catch (failure: SearchParseFailure) {
@@ -259,7 +260,11 @@ class CssSearchResultsParser {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
             }
-            candidates += BookCandidate(source.id, name, author, bookUrl, cover, latest, intro)
+            val bookStatus = when (val result = fieldValue("bookStatus", item)) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            }
+            candidates += BookCandidate(source.id, name, author, bookUrl, cover, latest, intro, bookStatus)
         }
         return EngineResult.Success(candidates.distinctBy { it.bookUrl })
     }
