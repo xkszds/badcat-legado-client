@@ -19,9 +19,6 @@ class LegadoSourceLoginUiV2Service(
         source: BookSource,
         stateJson: String = "{}",
     ): EngineResult<List<LegadoLoginUiV2.Row>> {
-        if (!source.mainJs.isNullOrBlank()) {
-            return unsupported("Login UI v2 on mainJs sources requires the dedicated JavaScript source host")
-        }
         if (!LegadoLoginUiV2.isV2(source.loginUi)) {
             return unsupported("Book source '${source.id}' does not declare Login UI v2")
         }
@@ -53,9 +50,6 @@ class LegadoSourceLoginUiV2Service(
         stateJson: String,
         formJson: String,
     ): EngineResult<LegadoLoginUiV2.ActionResult> {
-        if (!source.mainJs.isNullOrBlank()) {
-            return unsupported("Login UI v2 on mainJs sources requires the dedicated JavaScript source host")
-        }
         if (!LegadoLoginUiV2.isV2(source.loginUi)) {
             return unsupported("Book source '${source.id}' does not declare Login UI v2")
         }
