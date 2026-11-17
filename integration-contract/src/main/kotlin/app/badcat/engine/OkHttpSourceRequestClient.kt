@@ -111,7 +111,7 @@ class OkHttpSourceRequestClient(
         }
     }
 
-    private fun clientFor(request: SourceHttpRequest): OkHttpClient {
+    internal fun clientFor(request: SourceHttpRequest): OkHttpClient {
         val key = request.sourceId + if (request.useCookieJar) "|cookies" else "|no-cookies"
         val baseClient = clients.computeIfAbsent(key) {
             val jar = if (request.useCookieJar) {
@@ -134,9 +134,14 @@ class OkHttpSourceRequestClient(
         if (request.timeoutMillis == null && request.followRedirects == null) return baseClient
         return baseClient.newBuilder().apply {
             request.timeoutMillis?.let { timeout ->
+                // Legado's per-request timeout must cover connection setup,
+                // request writes, response reads and the complete redirected
+                // call. Applying it only to reads allowed slow connects and
+                // redirect chains to exceed the source's configured limit.
+                connectTimeout(timeout, TimeUnit.MILLISECONDS)
                 readTimeout(timeout, TimeUnit.MILLISECONDS)
-                val derivedCallTimeout = maxOf(60_000L, timeout * 2)
-                callTimeout(derivedCallTimeout, TimeUnit.MILLISECONDS)
+                writeTimeout(timeout, TimeUnit.MILLISECONDS)
+                callTimeout(timeout, TimeUnit.MILLISECONDS)
             }
             request.followRedirects?.let {
                 followRedirects(it)
