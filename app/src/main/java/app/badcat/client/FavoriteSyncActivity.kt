@@ -171,4 +171,10 @@ class FavoriteSyncActivity : Activity() {
         private const val MAX_BOOKS = 20_000
         private const val FORMAT = "badcat-favorites"
     }
+
+    override fun onResume() {
+        super.onResume()
+        BadcatTheme.applyTree(this, window.decorView)
+    }
+
 }
