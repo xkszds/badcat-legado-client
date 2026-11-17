@@ -117,7 +117,9 @@ object SourceRequestFactory {
         if (preparedUri == null ||
             preparedUri.scheme?.lowercase() !in setOf("http", "https") ||
             preparedUri.host.isNullOrBlank() ||
-            preparedUri.rawUserInfo != null
+            preparedUri.rawUserInfo != null ||
+            preparedUri.port == 0 ||
+            preparedUri.port > 65_535
         ) {
             return EngineResult.Failure(
                 EngineErrorCode.INVALID_SOURCE,

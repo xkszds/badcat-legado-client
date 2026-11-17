@@ -280,4 +280,21 @@ class SourceRequestFactoryTest {
     }
 
 
+
+    @Test
+    fun rejectsInvalidExplicitPortsBeforeTransport() {
+        listOf(
+            "https://reader.example:0/search",
+            "https://reader.example:65536/search",
+        ).forEach { url ->
+            assertEquals(
+                EngineErrorCode.INVALID_SOURCE,
+                assertIs<EngineResult.Failure>(SourceRequestFactory.create(source(), url)).code,
+            )
+        }
+        assertIs<EngineResult.Success<SourceHttpRequest>>(
+            SourceRequestFactory.create(source(), "https://reader.example:65535/search"),
+        )
+    }
+
 }
