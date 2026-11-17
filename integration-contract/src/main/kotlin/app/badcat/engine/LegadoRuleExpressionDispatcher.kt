@@ -145,7 +145,10 @@ object LegadoRuleExpressionDispatcher {
         evaluateBranch: (String) -> EngineResult<List<String>>,
     ): EngineResult<List<String>> {
         val split = try {
-            RuleExpressionTokenizer.splitByFirstTopLevelOperator(expression)
+            RuleExpressionTokenizer.splitByFirstTopLevelOperator(
+                expression,
+                allowLeadingColonRegex = true,
+            )
         } catch (error: Exception) {
             return EngineResult.Failure(
                 EngineErrorCode.UNSUPPORTED_RULE,
