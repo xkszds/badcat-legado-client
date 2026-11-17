@@ -182,6 +182,7 @@ class SourceLoginUiV2Activity : Activity() {
                     }
                 }
             }
+            window.decorView.post { BadcatTheme.applyTree(this@SourceLoginUiV2Activity, window.decorView) }
         }
     }
 
