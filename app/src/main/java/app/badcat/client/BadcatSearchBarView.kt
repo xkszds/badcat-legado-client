@@ -1,5 +1,6 @@
 package app.badcat.client
 
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Color
@@ -116,8 +117,8 @@ class BadcatSearchBarView(
 
     private fun chooseContentType() {
         val selected = TYPES.indexOf(contentType).coerceAtLeast(0)
-        AlertDialog.Builder(context)
-            .setTitle("选择搜索类型")
+        val builder = if (context is Activity) BadcatTheme.alertBuilder(context) else AlertDialog.Builder(context)
+        builder.setTitle("选择搜索类型")
             .setSingleChoiceItems(TYPES, selected) { dialog, which ->
                 setContentType(TYPES[which])
                 dialog.dismiss()
