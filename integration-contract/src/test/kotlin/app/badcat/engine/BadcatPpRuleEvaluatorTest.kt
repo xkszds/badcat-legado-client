@@ -213,7 +213,7 @@ class BadcatPpRuleEvaluatorTest {
             listOf(
                 "https://comic.example/reader/images/one.jpg",
                 "https://cdn.example/two.webp",
-                "https://comic.example/reader/page/images/three.png",
+                "https://comic.example/images/three.png",
             ),
             assertIs<EngineResult.Success<List<String>>>(result).value,
         )
