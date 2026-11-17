@@ -3,6 +3,8 @@ package app.badcat.engine
 import org.jsoup.Jsoup
 import org.seimicrawler.xpath.JXDocument
 
+data class BadcatVideoLink(val title: String, val url: String)
+
 /**
  * Executes the recovered PPRule pageRule extraction subset.
  *
@@ -89,4 +91,44 @@ object BadcatPpRuleEvaluator {
             )
         }
     }
+
+    /**
+     * Extracts the href/text pair from nodes selected by a recovered video
+     * path/episode rule. The caller supplies the rule explicitly because the
+     * original runtime's grouping/order semantics are not fully recovered.
+     */
+    fun extractVideoLinks(
+        document: SourceDocument,
+        rule: BadcatPpRule,
+    ): EngineResult<List<BadcatVideoLink>> {
+        val selected = when (val result = selectElements(document, rule)) {
+            is EngineResult.Failure -> return result
+            is EngineResult.Success -> result.value
+        }
+        return try {
+            val links = selected.mapNotNull { fragment ->
+                val root = Jsoup.parseBodyFragment(fragment, document.url).body()
+                val element = root.selectFirst("a[href]") ?: root.children().firstOrNull()
+                val href = element?.takeIf { it.hasAttr("href") }?.attr("href")
+                    ?: root.selectFirst("[href]")?.attr("href")
+                    ?: return@mapNotNull null
+                val resolved = runCatching {
+                    java.net.URI(document.url).resolve(href.trim()).normalize().toString()
+                }.getOrNull()?.takeIf { it.startsWith("http://") || it.startsWith("https://") }
+                    ?: return@mapNotNull null
+                val label = element?.text()?.trim().orEmpty().ifBlank {
+                    root.text().trim()
+                }
+                if (label.isBlank()) null else BadcatVideoLink(label, resolved)
+            }.distinctBy { it.url }
+            EngineResult.Success(links)
+        } catch (error: Exception) {
+            EngineResult.Failure(
+                EngineErrorCode.PARSE,
+                "Badcat video link rule could not be evaluated",
+                error,
+            )
+        }
+    }
+
 }
