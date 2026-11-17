@@ -154,16 +154,18 @@ object BadcatPpRuleEvaluator {
             val urls = selected.flatMap { fragment ->
                 val root = Jsoup.parseBodyFragment(fragment, document.url).body()
                 root.select("img[data-original], img[src]").mapNotNull { image ->
-                    val raw = image.attr("data-original").trim()
-                        .ifBlank { image.attr("src").trim() }
-                    if (raw.isBlank()) return@mapNotNull null
-                    runCatching {
-                        val target = java.net.URI(document.url).resolve(raw).normalize()
-                        target.takeIf {
-                            (it.scheme.equals("http", true) || it.scheme.equals("https", true)) &&
-                                !it.host.isNullOrBlank() && it.userInfo == null
-                        }?.toASCIIString()
-                    }.getOrNull()
+                    sequenceOf(image.attr("data-original").trim(), image.attr("src").trim())
+                        .filter(String::isNotBlank)
+                        .mapNotNull { raw ->
+                            runCatching {
+                                val target = java.net.URI(document.url).resolve(raw).normalize()
+                                target.takeIf {
+                                    (it.scheme.equals("http", true) || it.scheme.equals("https", true)) &&
+                                        !it.host.isNullOrBlank() && it.userInfo == null
+                                }?.toASCIIString()
+                            }.getOrNull()
+                        }
+                        .firstOrNull()
                 }
             }.distinct()
             EngineResult.Success(urls)
