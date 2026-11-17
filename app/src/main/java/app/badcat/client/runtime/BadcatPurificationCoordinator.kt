@@ -57,8 +57,8 @@ class BadcatWebViewPurificationAdapter(
         val wasJavaScriptEnabled = webView.settings.javaScriptEnabled
         if (!wasJavaScriptEnabled) webView.settings.javaScriptEnabled = true
         webView.evaluateJavascript(script) {
-            if (!wasJavaScriptEnabled && !webView.isDestroyed) {
-                webView.settings.javaScriptEnabled = false
+            if (!wasJavaScriptEnabled) {
+                runCatching { webView.settings.javaScriptEnabled = false }
             }
         }
     }
