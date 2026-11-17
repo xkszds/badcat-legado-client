@@ -175,5 +175,25 @@ class BadcatPpRuleEvaluatorTest {
             assertIs<EngineResult.Success<List<BadcatVideoLink>>>(result).value,
         )
     }
+    @Test
+    fun videoLinkExtractionUsesTitleAndAriaLabelWhenVisibleTextIsMissing() {
+        val document = SourceDocument(
+            url = "https://video.example/list",
+            body = """<a href="/episode/1" title="Tooltip episode"></a>
+                <a href="/episode/2" aria-label="Accessible episode"></a>""",
+        )
+        val result = BadcatPpRuleEvaluator.extractVideoLinks(
+            document,
+            BadcatPpRule(ruleTypeValue = 1, pageRule = "//a"),
+        )
+        assertEquals(
+            listOf(
+                BadcatVideoLink("Tooltip episode", "https://video.example/episode/1"),
+                BadcatVideoLink("Accessible episode", "https://video.example/episode/2"),
+            ),
+            assertIs<EngineResult.Success<List<BadcatVideoLink>>>(result).value,
+        )
+    }
+
 
 }
