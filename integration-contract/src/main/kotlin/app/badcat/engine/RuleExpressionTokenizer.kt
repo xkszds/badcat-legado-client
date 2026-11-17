@@ -140,6 +140,10 @@ object RuleExpressionTokenizer {
 
         require(quote == null) { "Unterminated quoted string in rule expression" }
         require(stack.isEmpty()) { "Unclosed group in rule expression" }
+        if (regexBranch) {
+            require(regexParentheses == 0) { "Unclosed regex group in rule expression" }
+            require(regexBrackets == 0) { "Unclosed regex character class in rule expression" }
+        }
 
         parts += expression.substring(start).trim()
         return parts
