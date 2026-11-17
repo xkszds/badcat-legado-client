@@ -72,6 +72,46 @@ class SourceSearchServiceTest {
     }
 
     @Test
+    fun acceptsMainJsSourceWhenBoundedRuntimeIsConfigured() = runBlocking {
+        val client = FixtureClient()
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> = EngineResult.Success("MainJs title")
+        }
+        val scriptedSource = source().copy(
+            mainJs = "function sharedHelper() { return 'ready'; }",
+            ruleSearchJson = """{"bookList":"div.book","name":"@js:sharedHelper()","bookUrl":"a@href"}""",
+        )
+
+        val result = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            SourceSearchService(SourceHttpGateway(client), scriptRuntime = runtime).search(
+                scriptedSource,
+                "https://reader.example/search?q=cat",
+            ),
+        )
+
+        assertEquals(listOf("MainJs title"), result.value.map { it.name })
+        assertEquals(1, client.requestCount)
+    }
+
+    @Test
+    fun rejectsMainJsSourceWhenNoRuntimeIsConfigured() = runBlocking {
+        val client = FixtureClient()
+        val result = assertIs<EngineResult.Failure>(
+            SourceSearchService(SourceHttpGateway(client)).search(
+                source().copy(mainJs = "function sharedHelper() { return 'ready'; }"),
+                "https://reader.example/search?q=cat",
+            ),
+        )
+
+        assertEquals(EngineErrorCode.UNSUPPORTED_RULE, result.code)
+        assertEquals(0, client.requestCount)
+    }
+
+    @Test
     fun parsesEnabledSourceSearchResults() = runBlocking {
         val client = FixtureClient()
         val result = assertIs<EngineResult.Success<List<BookCandidate>>>(
