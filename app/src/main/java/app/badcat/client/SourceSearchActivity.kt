@@ -415,6 +415,9 @@ class SourceSearchActivity : Activity() {
         results.removeAllViews()
         renderedResultKeys.clear()
         failureSummaryView = null
+        hasSearchSnapshot = false
+        lastDisplayedResults = emptyList()
+        lastDisplayedFailures = emptyList()
         activeSearch = worker.submit {
             val collected = Collections.synchronizedList(mutableListOf<BookCandidate>())
             val failures = Collections.synchronizedList(mutableListOf<String>())
