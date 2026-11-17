@@ -67,9 +67,13 @@ data class BadcatAdMarkItem(
         val values = ArrayList<Int>(array.size())
         for (element in array) {
             if (!element.isJsonPrimitive || !element.asJsonPrimitive.isNumber) return null
-            val number = runCatching { element.asInt }.getOrNull() ?: return null
-            if (number < 0) return null
-            values += number
+            val exact = runCatching { element.asBigDecimal }.getOrNull() ?: return null
+            val normalized = exact.stripTrailingZeros()
+            if (normalized.scale() > 0 ||
+                exact < java.math.BigDecimal.ZERO ||
+                exact > java.math.BigDecimal.valueOf(Int.MAX_VALUE)
+            ) return null
+            values += exact.toInt()
         }
         return values
     }
