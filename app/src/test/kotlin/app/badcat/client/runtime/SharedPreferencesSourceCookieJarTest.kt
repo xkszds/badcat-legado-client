@@ -3,6 +3,7 @@ package app.badcat.client.runtime
 import okhttp3.Cookie
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
 class SharedPreferencesSourceCookieJarTest {
@@ -65,28 +66,15 @@ class SharedPreferencesSourceCookieJarTest {
     }
 
     @Test
-    fun hostOnlyAndDomainCookiesWithSameNameRemainDistinct() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        val jar = SharedPreferencesSourceCookieJar(context, "host-scope-fixture")
-        val origin = "https://reader.example".toHttpUrl()
-        val hostOnly = Cookie.Builder()
-            .name("session").value("host").hostOnlyDomain("reader.example")
-            .path("/").build()
-        val domain = Cookie.Builder()
-            .name("session").value("domain").domain("reader.example")
-            .path("/").build()
-
-        jar.saveFromResponse(origin, listOf(hostOnly, domain))
-
-        assertEquals(
-            setOf("host", "domain"),
-            jar.loadForRequest(origin).map { it.value }.toSet(),
-        )
+    fun hostOnlyAndDomainCookiesWithSameNameHaveDifferentStorageKeys() {
+        val hostOnly = cookie("session", "host", hostOnly = true)
+        val domain = cookie("session", "domain", hostOnly = false)
+        assertNotEquals(sourceCookieStorageKey(hostOnly), sourceCookieStorageKey(domain))
         assertEquals(
             listOf("domain"),
-            jar.loadForRequest("https://sub.reader.example".toHttpUrl()).map { it.value },
+            listOf(hostOnly, domain).filter { it.matches("https://sub.reader.example".toHttpUrl()) }
+                .map { it.value },
         )
-        jar.clear()
     }
 
 

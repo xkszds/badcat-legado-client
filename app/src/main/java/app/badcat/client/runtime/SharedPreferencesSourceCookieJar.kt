@@ -10,6 +10,10 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap
 
+
+internal fun sourceCookieStorageKey(cookie: Cookie): String =
+    "${cookie.domain}|${cookie.path}|${cookie.name}|${cookie.hostOnly}"
+
 /** Build a Cookie request header using OkHttp's full domain/path/secure matching. */
 internal fun applicableSourceCookieHeader(url: HttpUrl, candidates: Collection<Cookie>): String =
     candidates.asSequence()
@@ -170,8 +174,7 @@ class SharedPreferencesSourceCookieJar(
         }.getOrDefault(emptyList())
     }
 
-    private fun cookieKey(cookie: Cookie): String =
-        "${cookie.domain}|${cookie.path}|${cookie.name}|${cookie.hostOnly}"
+    private fun cookieKey(cookie: Cookie): String = sourceCookieStorageKey(cookie)
 
     private fun Cookie.isWithinStorageLimits(): Boolean =
         name.isNotBlank() && name.length <= MAX_COOKIE_NAME_CHARS &&
