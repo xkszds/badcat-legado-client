@@ -113,3 +113,13 @@
 - The existing novel-cover status badge is wired into both search results and favorites, and the favorite JSON model persists the source status; labels are based on explicit source metadata only (完结 > 连载 > 更新).
 - The active branch continues to carry CSS safety regressions, quoted selector-operator regressions and bounded PPRule video extraction from the previous parallel batch. AdMark DOM deletion remains deliberately unimplemented until exact original semantics are recovered.
 - The latest main-line build is still being checked independently; the next branch CI run must validate this new PPRule hardening before it is treated as green. Device/UI acceptance remains outstanding.
+
+
+## 2026-11-17 all-workstream parallel batch (continued)
+
+- Latest previously verified baseline `9f12c7c311aca66cb7a2067d90297412944bb03a` passed its contract/Rhino/Debug APK workflow and was fast-forwarded to `main` and `automation/chapter-redirect-cycle-guard-20261116`.
+- New UI regression tests cover novel cover badge precedence (完结 > 连载 > 更新) and ensure unrelated source metadata does not produce invented labels.
+- New reader CSS tests cover malformed nested selectors, commas inside `:not()`/attribute values, and scoping of comma-separated selector groups while retaining valid declarations.
+- These tests join the PPRule video URL hardening/tests already included in `9f12c7c`; no DOM-removal behavior is inferred for opaque AdMark `markRules`.
+- The current working branch contains this additional UI/CSS test batch; wait for its own CI before syncing it to the unified main line or publishing a new APK.
+- Remaining project gates are still substantial: full upstream Legado AnalyzeRule/AnalyzeUrl and JS host compatibility, original UI page-by-page parity, complete Badcat AdMark/PPRule behavior, end-to-end source corpus testing, Android device acceptance, and release/source-license delivery.
