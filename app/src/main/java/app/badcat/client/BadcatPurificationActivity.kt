@@ -93,16 +93,16 @@ class BadcatPurificationActivity : Activity() {
     private fun showMarks() {
         val items = coordinator.snapshot().adMarks
         if (items.isEmpty()) {
-            AlertDialog.Builder(this).setTitle("广告标记")
+            BadcatTheme.alertBuilder(this).setTitle("广告标记")
                 .setMessage("没有已标识的广告")
                 .setPositiveButton("知道了", null).show()
             return
         }
         val labels = items.map { "${it.host}\n${it.urlPattern}（${it.markRules.size} 条规则）" }.toTypedArray()
-        AlertDialog.Builder(this).setTitle("广告标记（点击后删除）")
+        BadcatTheme.alertBuilder(this).setTitle("广告标记（点击后删除）")
             .setItems(labels) { _, index ->
                 val item = items[index]
-                AlertDialog.Builder(this).setTitle("删除此标记？")
+                BadcatTheme.alertBuilder(this).setTitle("删除此标记？")
                     .setMessage(item.host)
                     .setNegativeButton("取消", null)
                     .setPositiveButton("删除") { _, _ ->
@@ -120,7 +120,7 @@ class BadcatPurificationActivity : Activity() {
             gravity = Gravity.TOP
             hint = "粘贴导出的 AdMark JSON 数组"
         }
-        AlertDialog.Builder(this).setTitle("导入广告标记")
+        BadcatTheme.alertBuilder(this).setTitle("导入广告标记")
             .setView(input)
             .setNegativeButton("取消", null)
             .setPositiveButton("导入") { _, _ ->
