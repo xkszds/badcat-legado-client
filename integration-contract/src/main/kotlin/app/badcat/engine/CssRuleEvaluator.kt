@@ -83,15 +83,11 @@ object CssRuleEvaluator {
                     )
                     return@evaluateNested emptyList()
                 }
-                if (parsed.valueMode != ValueMode.TEXT && parsed.valueMode != ValueMode.HTML &&
-                    parsed.valueMode != ValueMode.ALL
-                ) {
-                    if (firstFailure == null) firstFailure = EngineResult.Failure(
-                        EngineErrorCode.UNSUPPORTED_RULE,
-                        "Collection rule must select elements, not scalar values",
-                    )
-                    return@evaluateNested emptyList()
-                }
+                // Collection roots identify the repeated element nodes. A trailing
+                // scalar suffix such as @text, @href or @attr(id) is a field
+                // extraction mode, not a reason to reject the collection rule:
+                // downstream name/url/content fields are evaluated against each
+                // isolated element. Keep the selected node HTML here.
                 // @CSS: is a direct selector mode; @@ only forces JSoup mode
                 // and still retains the upstream ElementsSingle index suffix.
                 val indexedRule = if (explicitCss) null else LegadoElementIndex.parse(part)
