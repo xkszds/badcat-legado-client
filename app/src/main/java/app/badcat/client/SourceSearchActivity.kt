@@ -538,6 +538,7 @@ class SourceSearchActivity : Activity() {
                         putExtra(SourceBookActivity.EXTRA_BOOK_URL, item.bookUrl)
                         putExtra(SourceBookActivity.EXTRA_BOOK_NAME, item.name)
                         putExtra(SourceBookActivity.EXTRA_BOOK_COVER_URL, item.coverUrl)
+                        putExtra(SourceBookActivity.EXTRA_BOOK_STATUS, item.status)
                     })
                 }
                 val info = LinearLayout(this@SourceSearchActivity).apply {
@@ -568,13 +569,8 @@ class SourceSearchActivity : Activity() {
                 addView(LinearLayout(this@SourceSearchActivity).apply {
                     orientation = LinearLayout.HORIZONTAL
                     gravity = Gravity.TOP
-                    addView(android.widget.ImageView(this@SourceSearchActivity).apply {
-                        contentDescription = "小说封面"
-                        scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
-                        background = rounded(Color.rgb(235, 239, 245), 5)
-                        clipToOutline = true
-                        BookCoverLoader.load(this, item.coverUrl)
-                    }, LinearLayout.LayoutParams(dp(62), dp(84)))
+                    addView(BookStatusBadge.cover(this@SourceSearchActivity, item.coverUrl, item.status, 62, 84),
+                        LinearLayout.LayoutParams(dp(62), dp(84)))
                     addView(info, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
                         marginStart = dp(12)
                     })
