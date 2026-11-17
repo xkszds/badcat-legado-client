@@ -183,7 +183,7 @@ class SourceSearchActivity : Activity() {
                     isClickable = true
                     isFocusable = true
                     setOnClickListener { finish() }
-                }, LinearLayout.LayoutParams(dp(40), dp(configuredBarHeight), 1f))
+                }, LinearLayout.LayoutParams(dp(40), dp(configuredBarHeight)))
                 addView(sharedBar, LinearLayout.LayoutParams(0, dp(configuredBarHeight), 1f))
             }
             val topRow = FrameLayout.LayoutParams(
