@@ -106,38 +106,84 @@ object BadcatPpRuleEvaluator {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
         }
-        return try {
-            val links = selected.flatMap { fragment ->
-                val root = Jsoup.parseBodyFragment(fragment, document.url).body()
-                root.select("a[href]").mapNotNull { element ->
-                    val href = element.attr("href").trim()
-                    val resolved = runCatching {
-                        val base = java.net.URI(document.url)
-                        val target = base.resolve(href).normalize()
-                        target.takeIf {
-                            (it.scheme.equals("http", ignoreCase = true) ||
-                                it.scheme.equals("https", ignoreCase = true)) &&
-                                !it.host.isNullOrBlank() &&
-                                it.userInfo == null
-                        }?.toASCIIString()
-                    }.getOrNull() ?: return@mapNotNull null
-                    // Some providers expose episode names only as tooltip/accessibility metadata.
-                    val label = sequenceOf(
-                        element.attr("title"),
-                        element.attr("aria-label"),
-                        element.text(),
-                    ).map { it.trim() }.firstOrNull(String::isNotEmpty).orEmpty()
-                    if (label.isBlank()) null else BadcatVideoLink(label, resolved)
-                }
-            }.distinctBy { it.url }
-            EngineResult.Success(links)
-        } catch (error: Exception) {
-            EngineResult.Failure(
-                EngineErrorCode.PARSE,
-                "Badcat video link rule could not be evaluated",
-                error,
+        return extractVideoLinksFromFragments(document.url, selected)
+    }
+
+    /**
+     * Bounded two-stage adapter for the separately recovered videoPathRule and
+     * videoEpisodeRule fields. The path rule selects containers first; the
+     * episode rule is then evaluated against each selected container. This
+     * preserves container grouping while returning a flattened, URL-deduped
+     * list. It does not claim to reproduce the original player's UI ordering.
+     */
+    fun extractVideoLinks(
+        document: SourceDocument,
+        ruleTypeValue: Int,
+        videoPathRule: String,
+        videoEpisodeRule: String,
+    ): EngineResult<List<BadcatVideoLink>> {
+        if (videoPathRule.isBlank() || videoEpisodeRule.isBlank()) {
+            return EngineResult.Failure(
+                EngineErrorCode.UNSUPPORTED_RULE,
+                "Badcat video path and episode rules must both be present",
             )
         }
+        val pathRule = BadcatPpRule(ruleTypeValue = ruleTypeValue, pageRule = videoPathRule)
+        val episodeRule = BadcatPpRule(ruleTypeValue = ruleTypeValue, pageRule = videoEpisodeRule)
+        val containers = when (val result = selectElements(document, pathRule)) {
+            is EngineResult.Failure -> return result
+            is EngineResult.Success -> result.value
+        }
+        val episodes = mutableListOf<String>()
+        for (container in containers) {
+            when (val result = selectElements(SourceDocument(document.url, container), episodeRule)) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> episodes += result.value
+            }
+        }
+        return extractVideoLinksFromFragments(document.url, episodes)
+    }
+
+    private fun extractVideoLinksFromFragments(
+        baseUrl: String,
+        selected: List<String>,
+    ): EngineResult<List<BadcatVideoLink>> = try {
+        val base = java.net.URI(baseUrl)
+        if ((base.scheme != "http" && base.scheme != "https") ||
+            base.host.isNullOrBlank() || base.userInfo != null
+        ) {
+            return EngineResult.Failure(
+                EngineErrorCode.INVALID_SOURCE,
+                "Badcat video base URL is not a safe HTTP(S) URL",
+            )
+        }
+        val links = selected.flatMap { fragment ->
+            val root = Jsoup.parseBodyFragment(fragment, baseUrl).body()
+            root.select("a[href]").mapNotNull { element ->
+                val href = element.attr("href").trim()
+                val resolved = runCatching {
+                    val target = base.resolve(href).normalize()
+                    target.takeIf {
+                        (it.scheme.equals("http", ignoreCase = true) ||
+                            it.scheme.equals("https", ignoreCase = true)) &&
+                            !it.host.isNullOrBlank() && it.userInfo == null
+                    }?.toASCIIString()
+                }.getOrNull() ?: return@mapNotNull null
+                val label = sequenceOf(
+                    element.attr("title"),
+                    element.attr("aria-label"),
+                    element.text(),
+                ).map { it.trim() }.firstOrNull(String::isNotEmpty).orEmpty()
+                if (label.isBlank()) null else BadcatVideoLink(label, resolved)
+            }
+        }.distinctBy { it.url }
+        EngineResult.Success(links)
+    } catch (error: Exception) {
+        EngineResult.Failure(
+            EngineErrorCode.PARSE,
+            "Badcat video link rule could not be evaluated",
+            error,
+        )
     }
     /**
      * Extract comic page image URLs using the recovered original preference:

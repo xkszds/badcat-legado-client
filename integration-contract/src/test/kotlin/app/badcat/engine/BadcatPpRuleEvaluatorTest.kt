@@ -261,6 +261,50 @@ class BadcatPpRuleEvaluatorTest {
     }
 
     @Test
+    fun appliesVideoPathRuleBeforeEpisodeRuleForNestedContainers() {
+        val document = SourceDocument(
+            url = "https://video.example/show/",
+            body = """<main>
+                <section class="season">
+                    <a class="episode" href="../play/1">S1 Episode 1</a>
+                    <a class="episode" href="../play/2">S1 Episode 2</a>
+                </section>
+                <section class="season">
+                    <a class="episode" href="../play/3">S2 Episode 1</a>
+                </section>
+            </main>""",
+        )
+        val result = BadcatPpRuleEvaluator.extractVideoLinks(
+            document = document,
+            ruleTypeValue = 1,
+            videoPathRule = "//section[@class='season']",
+            videoEpisodeRule = "//a[@class='episode']",
+        )
+        assertEquals(
+            listOf(
+                BadcatVideoLink("S1 Episode 1", "https://video.example/play/1"),
+                BadcatVideoLink("S1 Episode 2", "https://video.example/play/2"),
+                BadcatVideoLink("S2 Episode 1", "https://video.example/play/3"),
+            ),
+            assertIs<EngineResult.Success<List<BadcatVideoLink>>>(result).value,
+        )
+    }
+
+    @Test
+    fun twoStageVideoExtractionRejectsMissingPathOrEpisodeRule() {
+        val result = BadcatPpRuleEvaluator.extractVideoLinks(
+            SourceDocument("https://video.example/", "<a href='/1'>Episode</a>"),
+            ruleTypeValue = 1,
+            videoPathRule = "//main",
+            videoEpisodeRule = "",
+        )
+        assertEquals(
+            EngineErrorCode.UNSUPPORTED_RULE,
+            assertIs<EngineResult.Failure>(result).code,
+        )
+    }
+
+    @Test
     fun extractsEveryNestedComicImageFromOneSelectedContainer() {
         val document = SourceDocument(
             url = "https://comic.example/reader/page/1",

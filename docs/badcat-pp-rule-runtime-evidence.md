@@ -84,6 +84,8 @@ The bundled sample contains 1,583 repeated PPConfigItem records. It uses XPath-v
 
 The bounded evaluator also exposes a chapter-list ordering helper that applies the verified `chapterIsReverse` flag only when the caller explicitly identifies a novel chapter list; it is not applied implicitly to comic pages or video episodes.
 
+The bounded evaluator now also exposes a two-stage video adapter for the separately recovered `videoPathRule` and `videoEpisodeRule` fields: it selects path containers first, applies the episode selector within each container, then resolves/deduplicates HTTP(S) links. This is a selector-based compatibility slice; original player grouping, ordering, pagination, and UI semantics are still not claimed.
+
 The bounded evaluator now also exposes two evidence-backed helpers: video link extraction resolves HTTP(S) hrefs and uses title/aria-label/text label fallbacks; comic image extraction prefers data-original, falls back to src when empty, resolves relative URLs, rejects unsafe schemes/credential URLs, and de-duplicates normalized URLs. Contract tests cover those helpers. These helpers do not yet recreate the original utility's full grouping, ordering, pagination, or UI behavior.
 
 Still not implemented: pageJs, pageJsForSingleHtml execution, nextPageRule pagination behavior, full comic page ordering/loading pipeline, video path/episode joining, and the complete TransEngine novel/comic/video dispatch. dataType remains a raw numeric value until every enum mapping and dispatch edge is confirmed. The new decoder and extraction helpers are a compatibility foundation, not a claim that the complete legacy PPRule runtime is finished.
