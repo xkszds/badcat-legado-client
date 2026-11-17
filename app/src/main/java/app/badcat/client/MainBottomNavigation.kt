@@ -43,11 +43,12 @@ internal object MainBottomNavigation {
                         null,
                         null,
                     )
-                    addView(BadcatLineIconView(
+                    val iconView = BadcatLineIconView(
                         context,
                         key,
                         if (isSelected) active else inactive,
-                    ), LinearLayout.LayoutParams(context.dpNav(27), context.dpNav(27)))
+                    )
+                    addView(iconView, LinearLayout.LayoutParams(context.dpNav(27), context.dpNav(27)))
                     addView(TextView(context).apply {
                         text = label
                         textSize = 12f
@@ -56,17 +57,17 @@ internal object MainBottomNavigation {
                         typeface = if (isSelected) android.graphics.Typeface.DEFAULT_BOLD else android.graphics.Typeface.DEFAULT
                     })
                     setOnClickListener {
-                        if (isSelected) {
-                            animate().scaleX(0.90f).scaleY(0.90f).setDuration(75L)
-                                .withEndAction {
-                                    animate().scaleX(1f).scaleY(1f).setDuration(120L).start()
-                                }.start()
-                            return@setOnClickListener
-                        }
-                        animate().scaleX(0.90f).scaleY(0.90f).setDuration(70L)
-                            .withEndAction {
-                                animate().scaleX(1f).scaleY(1f).setDuration(100L)
-                                    .withEndAction { navigate(context, key) }.start()
+                        // Animate the original glyph in place; do not replace or morph the icon.
+                        iconView.animate().cancel()
+                        iconView.rotation = 0f
+                        iconView.scaleX = 1f
+                        iconView.scaleY = 1f
+                        iconView.animate().rotationBy(12f).scaleX(1.16f).scaleY(1.16f)
+                            .setDuration(115L).withEndAction {
+                                iconView.animate().rotationBy(-12f).scaleX(1f).scaleY(1f)
+                                    .setDuration(155L).withEndAction {
+                                        if (!isSelected) navigate(context, key)
+                                    }.start()
                             }.start()
                     }
                 }
