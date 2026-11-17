@@ -129,7 +129,7 @@ class MyActivity : Activity() {
                     isFocusable = true
                     addView(BadcatLineIconView(this@MyActivity, key, blue),
                         LinearLayout.LayoutParams(dp(28), dp(28)))
-                    addView(label(title, 12f, ink).apply { setPadding(0, dp(5), 0, 0) })
+                    addView(label(title, 12f, ink).apply { gravity = Gravity.CENTER; textAlignment = View.TEXT_ALIGNMENT_CENTER; setPadding(0, dp(5), 0, 0) })
                     setOnClickListener { openTool(key) }
                 }
                 row.addView(cell, LinearLayout.LayoutParams(0, dp(78), 1f))
