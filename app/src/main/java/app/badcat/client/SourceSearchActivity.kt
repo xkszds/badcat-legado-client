@@ -27,6 +27,8 @@ import app.badcat.engine.BookSource
 import app.badcat.engine.EngineErrorCode
 import app.badcat.engine.EngineResult
 import app.badcat.engine.ReadingEngine
+import app.badcat.engine.SourceSearchPlanner
+import app.badcat.engine.SourceSearchOperationKind
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
@@ -88,6 +90,7 @@ class SourceSearchActivity : Activity() {
     private var sourcesLoaded = false
     private var refreshSourcesOnResume = true
     private var contentType = "小说"
+    private var allEnabledSources: List<BookSource> = emptyList()
     private var enabledSources: List<BookSource> = emptyList()
     private var activeSearch: Future<*>? = null
     @Volatile private var searchGeneration = 0
@@ -297,9 +300,8 @@ class SourceSearchActivity : Activity() {
                 when (result) {
                     is EngineResult.Success -> {
                         sourcesLoaded = true
-                        enabledSources = result.value.filter {
-                            it.enabled && !it.searchUrl.isNullOrBlank()
-                        }
+                        allEnabledSources = result.value.filter { it.enabled }
+                        enabledSources = allEnabledSources.filter { !it.searchUrl.isNullOrBlank() }
                         renderSourceTabs()
                         renderSourceSetupHint()
                         BadcatTheme.applyTree(this@SourceSearchActivity, rootView)
@@ -356,18 +358,14 @@ class SourceSearchActivity : Activity() {
         if (resetPage) currentPage = 1
         previousPageButton.isEnabled = false
         nextPageButton.isEnabled = false
-        if (contentType != "小说") {
+        if (contentType == "漫画") {
             historyPanel.visibility = View.GONE
             sourceStripView.visibility = View.GONE
             disclaimerView.visibility = View.GONE
             paginationView.visibility = View.GONE
             status.visibility = View.VISIBLE
             results.removeAllViews()
-            status.text = if (contentType == "漫画") {
-                "漫画类型的专用书源解析尚未接入。当前不会把小说书源结果误显示为漫画。"
-            } else {
-                "综合搜索聚合尚未接入。当前只支持已导入的 Legado 小说书源搜索。"
-            }
+            status.text = "漫画专用 PPRule 搜索入口尚未接入；不会把小说书源结果误显示为漫画。"
             return
         }
         val requestedPage = currentPage
@@ -383,11 +381,18 @@ class SourceSearchActivity : Activity() {
             renderSearchHistory()
             return
         }
-        val selectedSources = if (selectedSourcePosition == 0) enabledSources
-            else listOfNotNull(enabledSources.getOrNull(selectedSourcePosition - 1))
-        if (selectedSources.isEmpty()) {
+        val selectedSources = if (selectedSourcePosition == 0) {
+            if (contentType == "综合") allEnabledSources else enabledSources
+        } else {
+            listOfNotNull(enabledSources.getOrNull(selectedSourcePosition - 1))
+        }
+        val operations = SourceSearchPlanner.plan(
+            selectedSources,
+            includeExplore = contentType == "综合",
+        )
+        if (operations.isEmpty()) {
             status.visibility = View.VISIBLE
-            status.text = "本机还没有已启用的小说书源"
+            status.text = if (contentType == "综合") "本机还没有可参与综合搜索的书源" else "本机还没有已启用的小说书源"
             results.removeAllViews()
             results.addView(TextView(this).apply {
                 text = "导入并启用 Legado 书源后，才能从真实书源检索小说。"
@@ -411,7 +416,8 @@ class SourceSearchActivity : Activity() {
         paginationView.visibility = View.VISIBLE
         status.visibility = View.VISIBLE
         searchButton.isEnabled = false
-        status.text = "正在搜索（第 " + requestedPage + " 页，共 " + selectedSources.size + " 个书源）…"
+        status.text = (if (contentType == "综合") "正在综合搜索（搜索+发现）" else "正在搜索") +
+            "（第 " + requestedPage + " 页，共 " + operations.size + " 个检索入口）…"
         results.removeAllViews()
         renderedResultKeys.clear()
         failureSummaryView = null
@@ -425,12 +431,16 @@ class SourceSearchActivity : Activity() {
             runBlocking {
                 val semaphore = Semaphore(MAX_PARALLEL_SEARCHES)
                 supervisorScope {
-                    selectedSources.map { source ->
+                    operations.map { operation ->
+                        val source = operation.source
                         async(Dispatchers.IO) {
                             semaphore.withPermit {
                                 val result = try {
                                     withTimeout(SOURCE_SEARCH_TIMEOUT_MS) {
-                                        engine.searchPage(source.id, query, requestedPage)
+                                        when (operation.kind) {
+                                            SourceSearchOperationKind.SEARCH -> engine.searchPage(source.id, query, requestedPage)
+                                            SourceSearchOperationKind.EXPLORE -> engine.explore(source.id, query, requestedPage)
+                                        }
                                     }
                                 } catch (timeout: kotlinx.coroutines.TimeoutCancellationException) {
                                     EngineResult.Failure(
@@ -449,10 +459,12 @@ class SourceSearchActivity : Activity() {
                                 }
                                 when (result) {
                                     is EngineResult.Success -> collected.addAll(result.value)
-                                    is EngineResult.Failure -> failures.add(source.name + "：" + result.message)
+                                    is EngineResult.Failure -> failures.add(
+                                        source.name + (if (operation.kind == SourceSearchOperationKind.EXPLORE) "（发现）" else "（搜索）") + "：" + result.message
+                                    )
                                 }
                                 val count = completed.incrementAndGet()
-                                if (count % 3 == 0 || count == selectedSources.size) {
+                                if (count % 3 == 0 || count == operations.size) {
                                     val resultSnapshot = synchronized(collected) {
                                         collected.distinctBy { it.sourceId + "|" + it.bookUrl }
                                     }
@@ -460,15 +472,15 @@ class SourceSearchActivity : Activity() {
                                     postToUi {
                                         if (generation == searchGeneration) {
                                             appendSearchSnapshot(requestedPage, resultSnapshot, failureSnapshot)
-                                            status.text = "正在搜索：已完成 " + count + " / " + selectedSources.size +
-                                                " 个书源 · 已找到 " + resultSnapshot.size + " 本"
+                                            status.text = "正在搜索：已完成 " + count + " / " + operations.size +
+                                                " 个检索入口 · 已找到 " + resultSnapshot.size + " 本"
                                             BadcatTheme.applyTree(this@SourceSearchActivity, rootView)
                                         }
                                     }
                                 } else {
                                     postToUi {
                                         if (generation == searchGeneration) {
-                                            status.text = "正在搜索：已完成 " + count + " / " + selectedSources.size + " 个书源…"
+                                            status.text = "正在搜索：已完成 " + count + " / " + operations.size + " 个检索入口…"
                                         }
                                     }
                                 }
@@ -486,8 +498,8 @@ class SourceSearchActivity : Activity() {
                     previousPageButton.isEnabled = requestedPage > 1
                     nextPageButton.isEnabled = unique.isNotEmpty()
                     appendSearchSnapshot(requestedPage, unique, failureSnapshot, complete = true)
-                    status.text = "第 " + requestedPage + " 页 · 已检索 " + selectedSources.size +
-                        " 个书源 · 找到 " + unique.size + " 本" +
+                    status.text = "第 " + requestedPage + " 页 · 已检索 " + operations.size +
+                        " 个入口 · 找到 " + unique.size + " 本" +
                         if (failureSnapshot.isNotEmpty()) " · " + failureSnapshot.size + " 个书源失败" else ""
                     BadcatTheme.applyTree(this@SourceSearchActivity, rootView)
                 }
@@ -509,10 +521,10 @@ class SourceSearchActivity : Activity() {
                 historyPanel.removeViewAt(index)
             }
         }
-        if (enabledSources.isNotEmpty()) return
+        if (SourceSearchPlanner.plan(allEnabledSources, includeExplore = true).isNotEmpty()) return
         historyPanel.addView(TextView(this).apply {
             tag = "source_setup_hint"
-            text = "尚未导入可搜索的小说书源"
+            text = "尚未导入可参与搜索的书源"
             textSize = 13f
             setTextColor(muted)
             setPadding(dp(2), dp(12), dp(2), dp(6))
