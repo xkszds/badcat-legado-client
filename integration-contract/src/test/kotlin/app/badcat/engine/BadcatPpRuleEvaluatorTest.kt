@@ -303,4 +303,41 @@ class BadcatPpRuleEvaluatorTest {
         )
     }
 
+    @Test
+    fun parsesSingleHtmlScriptResultAsSafeComicImageUrlArrayWithoutExecutingScript() {
+        val result = BadcatPpRuleEvaluator.extractComicImageUrlsFromScriptResult(
+            """["../img/one.jpg","//cdn.example/two.webp","javascript:alert(1)","https://user:pass@evil.example/x","../img/one.jpg",4]""",
+            "https://comic.example/reader/page/1",
+        )
+        assertEquals(
+            listOf(
+                "https://comic.example/reader/img/one.jpg",
+                "https://cdn.example/two.webp",
+            ),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
+    @Test
+    fun rejectsNonArrayOrOversizedSingleHtmlScriptResults() {
+        assertEquals(
+            EngineErrorCode.PARSE,
+            assertIs<EngineResult.Failure>(
+                BadcatPpRuleEvaluator.extractComicImageUrlsFromScriptResult(
+                    """{"image":"https://cdn.example/1.jpg"}""",
+                    "https://comic.example/reader/",
+                ),
+            ).code,
+        )
+        assertEquals(
+            EngineErrorCode.UNSUPPORTED_RULE,
+            assertIs<EngineResult.Failure>(
+                BadcatPpRuleEvaluator.extractComicImageUrlsFromScriptResult(
+                    " ".repeat(BadcatPpRuleEvaluator.MAX_SCRIPT_RESULT_CHARS + 1),
+                    "https://comic.example/reader/",
+                ),
+            ).code,
+        )
+    }
+
 }

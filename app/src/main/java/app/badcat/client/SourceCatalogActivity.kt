@@ -303,6 +303,9 @@ class SourceCatalogActivity : Activity() {
                                 val next = java.net.URL(current, location)
                                 require(next.protocol == "https" || next.protocol == "http") { "重定向协议不受支持" }
                                 require(next.userInfo == null) { "重定向地址不能包含账号密码" }
+                                require(current.protocol != "https" || next.protocol == "https") {
+                                    "拒绝从 HTTPS 降级到不安全的 HTTP 地址"
+                                }
                                 current = next
                                 continue
                             }

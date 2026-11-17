@@ -1,5 +1,6 @@
 package app.badcat.engine
 
+import com.google.gson.JsonParser
 import org.jsoup.Jsoup
 import org.seimicrawler.xpath.JXDocument
 
@@ -177,6 +178,63 @@ object BadcatPpRuleEvaluator {
             )
         }
     }
+
+    /**
+     * Parses the JSON-array result returned by a trusted, separately sandboxed
+     * pageJsForSingleHtml adapter. This method never evaluates PPRule JavaScript.
+     * Relative image URLs are resolved against the page URL and unsafe schemes
+     * or credential-bearing authorities are discarded.
+     */
+    fun extractComicImageUrlsFromScriptResult(
+        resultJson: String,
+        pageUrl: String,
+    ): EngineResult<List<String>> {
+        if (resultJson.length > MAX_SCRIPT_RESULT_CHARS) {
+            return EngineResult.Failure(
+                EngineErrorCode.UNSUPPORTED_RULE,
+                "Badcat comic script result exceeds the configured size limit",
+            )
+        }
+        return try {
+            val root = JsonParser.parseString(resultJson)
+            if (!root.isJsonArray) {
+                return EngineResult.Failure(
+                    EngineErrorCode.PARSE,
+                    "Badcat comic script result must be a JSON array",
+                )
+            }
+            val base = java.net.URI(pageUrl)
+            if ((base.scheme != "http" && base.scheme != "https") ||
+                base.host.isNullOrBlank() || base.userInfo != null
+            ) {
+                return EngineResult.Failure(
+                    EngineErrorCode.INVALID_SOURCE,
+                    "Badcat comic script base URL is not a safe HTTP(S) URL",
+                )
+            }
+            val urls = root.asJsonArray.mapNotNull { item ->
+                if (!item.isJsonPrimitive || !item.asJsonPrimitive.isString) return@mapNotNull null
+                val raw = item.asString.trim()
+                if (raw.isEmpty()) return@mapNotNull null
+                runCatching {
+                    val target = base.resolve(raw).normalize()
+                    target.takeIf {
+                        (it.scheme.equals("http", true) || it.scheme.equals("https", true)) &&
+                            !it.host.isNullOrBlank() && it.userInfo == null
+                    }?.toASCIIString()
+                }.getOrNull()
+            }.distinct()
+            EngineResult.Success(urls)
+        } catch (error: Exception) {
+            EngineResult.Failure(
+                EngineErrorCode.PARSE,
+                "Badcat comic script result could not be parsed",
+                error,
+            )
+        }
+    }
+
+    const val MAX_SCRIPT_RESULT_CHARS = 2 * 1024 * 1024
 
     /**
      * Applies the verified chapterIsReverse flag to an already-extracted
