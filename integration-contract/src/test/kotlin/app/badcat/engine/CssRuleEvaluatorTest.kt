@@ -23,6 +23,27 @@ class CssRuleEvaluatorTest {
     )
 
     @Test
+    fun evaluatesLegacyAtRootMarkerWithIndexedTextNodesSuffix() {
+        val page = SourceDocument(
+            url = "https://reader.example/book/7",
+            body = """
+                <ul class="w_txt">
+                  <li>zero</li><li>one</li><li>two</li><li>three</li>
+                  <li>four <b>nested</b> ignored-direct-node</li>
+                </ul>
+            """.trimIndent(),
+        )
+        val result = LegadoRuleExpressionDispatcher.evaluate(
+            page,
+            "@.w_txt li.4@textNodes",
+        )
+        assertEquals(
+            listOf("four\nignored-direct-node"),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
+    @Test
     fun forcedDefaultCssPrefixUsesJsoupAndKeepsCollectionIndexSuffix() {
         val scalar = CssRuleEvaluator.evaluate(document, "@@a.title@text")
         assertEquals(
