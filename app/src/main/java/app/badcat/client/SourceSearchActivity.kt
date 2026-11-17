@@ -65,6 +65,8 @@ class SourceSearchActivity : Activity() {
     private lateinit var rootView: LinearLayout
     private var appliedDarkMode = false
     private lateinit var sourceTabs: LinearLayout
+    private lateinit var sourceStripView: View
+    private lateinit var disclaimerView: View
     private var currentPage = 1
     private var selectedSourcePosition = 0
     private var contentType = "小说"
@@ -102,8 +104,10 @@ class SourceSearchActivity : Activity() {
                 // History is the first content below the search field. Source
                 // filters and notices stay available, but never push history down.
                 addView(historyPanel)
-                addView(buildSourceStrip())
-                addView(buildDisclaimer())
+                sourceStripView = buildSourceStrip().apply { visibility = View.GONE }
+                disclaimerView = buildDisclaimer().apply { visibility = View.GONE }
+                addView(sourceStripView)
+                addView(disclaimerView)
                 addView(status)
                 addView(results)
             })
