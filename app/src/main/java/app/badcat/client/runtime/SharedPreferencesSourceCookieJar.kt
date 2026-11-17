@@ -67,6 +67,14 @@ class SharedPreferencesSourceCookieJar(
         cookies.values.filter { it.matches(url) }
     }
 
+    /** Clears this source's persisted cookies across all jar instances. */
+    fun clear() {
+        synchronized(lock) {
+            cookies.clear()
+            preferences.edit().remove(storageKey).apply()
+        }
+    }
+
     private fun reloadLocked() {
         cookies.clear()
         decode(preferences.getString(storageKey, null)).forEach { cookie ->
