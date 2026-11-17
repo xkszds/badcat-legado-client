@@ -180,3 +180,22 @@ The app-side BadcatAdMarkItem keeps the grouped protobuf shape for import/export
 and its safe matcher now applies the verified JSON-integer-array pattern against
 the URL after exact host matching. markRules remain opaque and are not executed
 as CSS or JavaScript until their precise DOM contract is recovered.
+
+
+### WebView bridge callback contract (2026-11-17, read-only DEX recheck)
+
+The original APK and companion DEX ZIP were re-opened read-only from the user's Library. SHA-256 values observed in the analysis container:
+
+- Original APK `坏坏猫_1.5.0.5.apk`: `fb35e9e4c876e5cb99e00f7010a40c2f060d20b2aa392500983862ab7e91ff33`
+- Companion `com.hhm.verticalsearch.zip`: `f747fa1c684ef568e3da1d857dbebdcbb7687e2db4c58a4390282948f5681d10`
+
+Additional method-level observations from the business DEX:
+
+- `WebViewInjectHelper.registerWebViewHandler()` registers a JavaScript bridge handler named `adMark`.
+- `WebViewInjectHelper.handleAdMark()` deserializes the incoming payload as `JsAdMarkInfo`, rejects an empty `markRule`, asks the user to confirm “确定标记该广告？”, and then calls the AdMark presenter to persist the mark.
+- On successful save, the callback wraps that one `markRule` string in a one-element JSON array, serializes it, and calls `callWebViewOnDeleteAd()`.
+- `callWebViewOnDeleteAd()` invokes the WebView bridge handler named `onDeleteAd` with that serialized JSON string. The app-side code confirms the callback name and payload shape; it does not reveal the page-side DOM-removal implementation.
+- `initWebViewGetAdUrlPatternList()` first reads the local URL-pattern list. If empty, it calls the WebView bridge handler `getInfoFromJS` with an empty argument, parses the returned JSON string as a list of strings, persists the list, and passes it to the callback.
+- The existing client model now exposes a helper that builds the verified one-item JSON payload for each stored mark rule. This helper does not call JavaScript or remove DOM nodes.
+
+Implementation boundary remains unchanged: the client still lacks the original page-side `onDeleteAd` implementation and the full `getInfoFromJS` page script. Do not substitute guessed CSS selectors, `querySelector` deletion, or a fabricated JavaScript snippet. A faithful deletion adapter requires an authorized page-script fixture or further verified source evidence.
