@@ -288,9 +288,9 @@ class SourceSearchActivity : Activity() {
 
     private fun renderSourceTabs() {
         sourceTabs.removeAllViews()
-        val labels = listOf("全部") + enabledSources.map { it.name }
+        val labels = enabledSources.map { it.name }
         labels.forEachIndexed { index, label ->
-            val selected = index == selectedSourcePosition
+            val selected = selectedSourcePosition == index + 1
             sourceTabs.addView(TextView(this).apply {
                 text = label
                 textSize = 13f
@@ -303,7 +303,7 @@ class SourceSearchActivity : Activity() {
                 isClickable = true
                 isFocusable = true
                 setOnClickListener {
-                    selectedSourcePosition = index
+                    selectedSourcePosition = index + 1
                     currentPage = 1
                     renderSourceTabs()
                     if (::keywordInput.isInitialized && keywordInput.text.toString().isNotBlank()) {
