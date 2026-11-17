@@ -423,6 +423,14 @@ class SourceChapterActivity : Activity() {
     private lateinit var readerInfo: TextView
     private val readerUiPrefs by lazy { getSharedPreferences(ReaderSettingsActivity.PREFS, MODE_PRIVATE) }
     private var lockScreenRunnable: Runnable? = null
+    private val infoRefreshRunnable = object : Runnable {
+        override fun run() {
+            if (::readerInfo.isInitialized && !isFinishing && !isDestroyed) {
+                updateReaderProgress()
+                mainHandler.postDelayed(this, 60_000L)
+            }
+        }
+    }
     private lateinit var sourceId: String
     private lateinit var bookUrl: String
     private lateinit var bookName: String
@@ -942,11 +950,19 @@ class SourceChapterActivity : Activity() {
         body.setBackgroundColor(background)
         if (currentChapterText.isNotEmpty()) renderReaderDocument()
         status.setTextColor(foreground)
+        if (::readerInfo.isInitialized) {
+            readerInfo.setTextColor(foreground)
+            readerInfo.setBackgroundColor(background)
+        }
     }
 
     override fun onResume() {
         super.onResume()
-        if (::body.isInitialized) applyReaderUiSettings()
+        if (::body.isInitialized) {
+            applyReaderUiSettings()
+            mainHandler.removeCallbacks(infoRefreshRunnable)
+            mainHandler.postDelayed(infoRefreshRunnable, 60_000L)
+        }
         if (::body.isInitialized && currentChapterText.isNotEmpty()) {
             pendingScrollY = body.scrollY
             renderReaderDocument()
@@ -967,6 +983,7 @@ class SourceChapterActivity : Activity() {
 
     override fun onDestroy() {
         lockScreenRunnable?.let { mainHandler.removeCallbacks(it) }
+        mainHandler.removeCallbacks(infoRefreshRunnable)
         window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         worker.shutdownNow()
         super.onDestroy()
