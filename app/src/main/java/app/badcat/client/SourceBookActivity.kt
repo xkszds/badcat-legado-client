@@ -468,7 +468,7 @@ class SourceChapterActivity : Activity() {
         }
         textSizeSp = preferences.getFloat("reader_text_size", 18f).coerceIn(14f, 32f)
         lineSpacingMultiplier = preferences.getFloat("reader_line_spacing", 1.15f).coerceIn(1.0f, 2.0f)
-        readerTheme = preferences.getInt("reader_theme", 0).coerceIn(0, 2)
+        readerTheme = preferences.getInt("reader_theme", 1).coerceIn(0, 2)
 
         status = TextView(this).apply { text = "正在加载目录…" }
         body = object : android.webkit.WebView(this) {
@@ -595,6 +595,7 @@ class SourceChapterActivity : Activity() {
                 }, LinearLayout.LayoutParams(0, dpReader(40), 1f))
             }
             action("目录") { showChapterCatalog() }
+            action("换源") { showSourceSwitchDialog() }
             action("亮度") { cycleReaderTheme() }
             action("设置") { showReaderTools() }
         }
@@ -776,6 +777,64 @@ class SourceChapterActivity : Activity() {
             .show()
     }
 
+    private fun showSourceSwitchDialog() {
+        status.text = "正在读取可用书源…"
+        worker.execute {
+            val result = runBlocking { safeEngineCall { engine.sources() } }
+            mainHandler.post {
+                when (result) {
+                    is EngineResult.Success -> {
+                        val sources = result.value.filter { it.enabled && !it.searchUrl.isNullOrBlank() && it.id != sourceId }
+                        if (sources.isEmpty()) {
+                            status.text = "没有其他已启用的可搜索书源"
+                            return@post
+                        }
+                        android.app.AlertDialog.Builder(this@SourceChapterActivity)
+                            .setTitle("选择换源")
+                            .setItems(sources.map { it.name }.toTypedArray()) { _, index ->
+                                searchBookInSource(sources[index])
+                            }
+                            .setNegativeButton("取消", null)
+                            .show()
+                    }
+                    is EngineResult.Failure -> status.text = "读取书源失败：\${result.message}"
+                }
+            }
+        }
+    }
+
+    private fun searchBookInSource(source: app.badcat.engine.BookSource) {
+        status.text = "正在「\${source.name}」中查找《\${bookName}》…"
+        worker.execute {
+            val result = runBlocking { safeEngineCall { engine.searchPage(source.id, bookName, 1) } }
+            mainHandler.post {
+                when (result) {
+                    is EngineResult.Success -> {
+                        val candidates = result.value.distinctBy { it.bookUrl }
+                        if (candidates.isEmpty()) {
+                            status.text = "该书源没有找到匹配的书籍"
+                            return@post
+                        }
+                        android.app.AlertDialog.Builder(this@SourceChapterActivity)
+                            .setTitle("选择《\${bookName}》")
+                            .setItems(candidates.map { it.name + (it.author?.takeIf(String::isNotBlank)?.let { author -> " · " + author } ?: "") }.toTypedArray()) { _, index ->
+                                val candidate = candidates[index]
+                                startActivity(Intent(this@SourceChapterActivity, SourceBookActivity::class.java).apply {
+                                    putExtra(SourceBookActivity.EXTRA_SOURCE_ID, candidate.sourceId)
+                                    putExtra(SourceBookActivity.EXTRA_BOOK_URL, candidate.bookUrl)
+                                    putExtra(SourceBookActivity.EXTRA_BOOK_NAME, candidate.name)
+                                    putExtra(SourceBookActivity.EXTRA_BOOK_COVER_URL, candidate.coverUrl)
+                                })
+                            }
+                            .setNegativeButton("取消", null)
+                            .show()
+                    }
+                    is EngineResult.Failure -> status.text = "换源搜索失败：\${result.message}"
+                }
+            }
+        }
+    }
+
     private fun loadChapterAt(target: Int) {
         if (target !in chapters.indices || target == currentIndex) return
         saveCurrentScrollPosition()
@@ -886,7 +945,7 @@ class SourceChapterActivity : Activity() {
     private fun resetReaderSettings() {
         textSizeSp = 18f
         lineSpacingMultiplier = 1.15f
-        readerTheme = 0
+        readerTheme = 1
         preferences.edit()
             .putFloat("reader_text_size", textSizeSp)
             .putFloat("reader_line_spacing", lineSpacingMultiplier)
