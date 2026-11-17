@@ -34,7 +34,7 @@ class ReaderProgressMetricsTest {
         )
         assertEquals(Int.MAX_VALUE, huge.maxScroll)
         assertEquals(100, huge.percent)
-        assertEquals(100, huge.currentPage)
+        assertEquals(Int.MAX_VALUE, huge.currentPage)
         assertEquals(Int.MAX_VALUE, huge.totalPages)
     }
 
