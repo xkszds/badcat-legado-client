@@ -25,6 +25,27 @@ class JsonPathRuleEvaluatorTest {
     }
 
     @Test
+    fun extractsScalarFieldsFromStandaloneJsonObjects() {
+        val item = SourceDocument(
+            url = "https://example.test/book.json",
+            body = """{"title":"Single item","id":"42"}""",
+            contentType = "application/json",
+        )
+        assertEquals(
+            listOf("Single item"),
+            assertIs<EngineResult.Success<List<String>>>(
+                JsonPathRuleEvaluator.evaluate(item, "$.title"),
+            ).value,
+        )
+        assertEquals(
+            listOf("42"),
+            assertIs<EngineResult.Success<List<String>>>(
+                JsonPathRuleEvaluator.evaluate(item, "$.id"),
+            ).value,
+        )
+    }
+
+    @Test
     fun extractsJsonPathList() {
         val result = JsonPathRuleEvaluator.evaluate(document, "$.books[*].name")
         assertEquals(

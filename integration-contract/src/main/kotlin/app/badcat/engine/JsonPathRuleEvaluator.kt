@@ -17,7 +17,9 @@ object JsonPathRuleEvaluator {
             return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "JSONPath collection rule is blank")
         }
         val directRule = raw.removePrefixIgnoreCase("@jsonpath:").removePrefixIgnoreCase("@json:").trim()
-        if (directRule.startsWith("$")) return evaluateCollectionPath(document, directRule)
+        if (directRule.startsWith("$") && isSingleJsonPath(directRule)) {
+            return evaluateCollectionPath(document, directRule)
+        }
         return try {
             RuleCombinationEvaluator.evaluateNestedResult(raw) { branch ->
                 val rule = branch.trim().let {
@@ -64,7 +66,7 @@ object JsonPathRuleEvaluator {
     }
 
     private fun evaluateCollectionPath(document: SourceDocument, path: String): EngineResult<List<String>> = try {
-        val selected = JsonPath.parse(document.body).read<Any?>(path)
+        val selected = JsonPath.compile(path).read<Any?>(document.body)
         val values = when (selected) {
             null -> emptyList()
             is Iterable<*> -> selected.mapNotNull { it?.let { value -> Gson().toJson(normalizeJsonValue(value)) } }
@@ -77,6 +79,10 @@ object JsonPathRuleEvaluator {
     } catch (error: Exception) {
         EngineResult.Failure(EngineErrorCode.PARSE, "JSONPath collection evaluation failed: " + (error.message ?: error::class.java.simpleName), error)
     }
+
+    private fun isSingleJsonPath(path: String): Boolean = runCatching {
+        RuleExpressionTokenizer.splitByFirstTopLevelOperator(path).operator == null
+    }.getOrDefault(false)
 
     private fun normalizeJsonValue(value: Any?): Any? = when (value) {
         is Map<*, *> -> value.entries.associate { (key, item) -> key.toString() to normalizeJsonValue(item) }
@@ -92,7 +98,9 @@ object JsonPathRuleEvaluator {
         }
 
         val directRule = rule.removePrefixIgnoreCase("@jsonpath:").removePrefixIgnoreCase("@json:").trim()
-        if (directRule.startsWith("$")) return evaluateScalarPath(document, directRule)
+        if (directRule.startsWith("$") && isSingleJsonPath(directRule)) {
+            return evaluateScalarPath(document, directRule)
+        }
         return try {
             val values = RuleCombinationEvaluator.evaluateNested(rule) { part ->
                 val result = try {
@@ -117,7 +125,7 @@ object JsonPathRuleEvaluator {
         }
     }
     private fun evaluateScalarPath(document: SourceDocument, path: String): EngineResult<List<String>> = try {
-        val result = JsonPath.parse(document.body).read<Any?>(path)
+        val result = JsonPath.compile(path).read<Any?>(document.body)
         val values = when (result) {
             null -> emptyList()
             is Iterable<*> -> result.map { it?.toString().orEmpty() }.filter(String::isNotEmpty)
