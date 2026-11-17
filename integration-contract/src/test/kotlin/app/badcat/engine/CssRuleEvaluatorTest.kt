@@ -286,5 +286,19 @@ class CssRuleEvaluatorTest {
         val explicitCssScalarValues = (explicitCssScalar as? EngineResult.Success)?.value.orEmpty()
         kotlin.test.assertFalse(explicitCssScalarValues.contains("Beta Novel"))
     }
+    @Test
+    fun scalarDefaultModeSupportsLegacyHeadsWithoutExplicitValueSuffix() {
+        val classes = CssRuleEvaluator.evaluate(document, "class.book")
+        val tags = CssRuleEvaluator.evaluate(document, "tag.a")
+        assertEquals(
+            listOf("Alpha Novel First intro", "Beta Novel Second intro"),
+            assertIs<EngineResult.Success<List<String>>>(classes).value,
+        )
+        assertEquals(
+            listOf("Alpha Novel", "Beta Novel"),
+            assertIs<EngineResult.Success<List<String>>>(tags).value,
+        )
+    }
+
 
 }
