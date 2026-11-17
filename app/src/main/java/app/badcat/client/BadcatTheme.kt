@@ -79,7 +79,11 @@ internal object BadcatTheme {
             when (val bg = view.background) {
                 is ColorDrawable -> {
                     if (isNeutral(bg.color) && Color.alpha(bg.color) > 0) {
-                        view.setBackgroundColor(if (isNearWhite(bg.color)) colors.surface else colors.page)
+                        view.setBackgroundColor(when {
+                            isDivider(view) -> colors.divider
+                            isNearWhite(bg.color) -> colors.surface
+                            else -> colors.page
+                        })
                     }
                 }
                 is GradientDrawable -> {
@@ -122,7 +126,12 @@ internal object BadcatTheme {
         return maxOf(r, g, b) - minOf(r, g, b) < 22
     }
 
-    private fun isNearWhite(color: Int): Boolean = luminance(color) > 0.92
+    private fun isDivider(view: View): Boolean {
+        val params = view.layoutParams ?: return false
+        return (params.height in 1..2) || (params.width in 1..2)
+    }
+
+    private fun isNearWhite(color: Int): Boolean = luminance(color) > 0.985
 
     private fun luminance(color: Int): Double {
         val r = Color.red(color) / 255.0
