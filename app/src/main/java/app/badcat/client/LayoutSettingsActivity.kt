@@ -20,6 +20,7 @@ class LayoutSettingsActivity : Activity() {
     private val card get() = if (dark) Color.rgb(38, 42, 49) else Color.WHITE
     private lateinit var styleSummary: TextView
     private lateinit var positionSummary: TextView
+    private lateinit var heightSummary: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,9 +58,12 @@ class LayoutSettingsActivity : Activity() {
         }
         styleSummary = TextView(this).apply { textSize = 12f; setTextColor(muted) }
         positionSummary = TextView(this).apply { textSize = 12f; setTextColor(muted) }
+        heightSummary = TextView(this).apply { textSize = 12f; setTextColor(muted) }
         addRow(group, "首页搜索栏样式", styleSummary) { chooseStyle() }
         divider(group)
         addRow(group, "首页搜索栏位置", positionSummary) { choosePosition() }
+        divider(group)
+        addRow(group, "首页搜索栏高度", heightSummary) { chooseHeight() }
 
         root.addView(group, LinearLayout.LayoutParams(-1, -2).apply {
             setMargins(dp(14), dp(16), dp(14), 0)
@@ -101,12 +105,25 @@ class LayoutSettingsActivity : Activity() {
 
     private fun choosePosition() {
         val prefs = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
-        val current = prefs.getInt("home_search_top_spacing_dp", 24)
-        val labels = arrayOf("靠上（8dp）", "居中（24dp）", "靠下（40dp）")
-        val values = intArrayOf(8, 24, 40)
+        val current = prefs.getInt("home_search_top_spacing_dp", 12)
+        val labels = arrayOf("靠上（4dp）", "居中（12dp）", "靠下（24dp）")
+        val values = intArrayOf(4, 12, 24)
         BadcatTheme.alertBuilder(this).setTitle("首页搜索栏位置")
             .setSingleChoiceItems(labels, values.indexOf(current).takeIf { it >= 0 } ?: 1) { dialog, which ->
                 prefs.edit().putInt("home_search_top_spacing_dp", values[which]).apply()
+                dialog.dismiss()
+                refreshSummaries()
+            }.setNegativeButton("取消", null).show()
+    }
+
+    private fun chooseHeight() {
+        val prefs = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
+        val current = prefs.getInt("home_search_bar_height_dp", 40)
+        val values = intArrayOf(34, 38, 42, 46)
+        val labels = arrayOf("更矮（34dp）", "偏矮（38dp）", "标准（42dp）", "稍高（46dp）")
+        BadcatTheme.alertBuilder(this).setTitle("首页搜索栏高度")
+            .setSingleChoiceItems(labels, values.indexOf(current).takeIf { it >= 0 } ?: 1) { dialog, which ->
+                prefs.edit().putInt("home_search_bar_height_dp", values[which]).apply()
                 dialog.dismiss()
                 refreshSummaries()
             }.setNegativeButton("取消", null).show()
@@ -118,8 +135,10 @@ class LayoutSettingsActivity : Activity() {
         positionSummary.text = when (prefs.getInt("home_search_top_spacing_dp", 24)) {
             8 -> "靠上（8dp）"
             40 -> "靠下（40dp）"
-            else -> "居中（24dp）"
+            else -> "居中（12dp）"
         }
+        heightSummary.text = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
+            .getInt("home_search_bar_height_dp", 40).coerceIn(34, 46).let { "高度（${it}dp）" }
     }
 
     private fun divider(parent: LinearLayout) {
