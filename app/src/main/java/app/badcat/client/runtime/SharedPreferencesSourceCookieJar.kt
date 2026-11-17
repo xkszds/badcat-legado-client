@@ -10,6 +10,12 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap
 
+/** Build a Cookie request header using OkHttp's full domain/path/secure matching. */
+internal fun applicableSourceCookieHeader(url: HttpUrl, candidates: Collection<Cookie>): String =
+    candidates.asSequence()
+        .filter { it.matches(url) }
+        .joinToString("; ") { "${it.name}=${it.value}" }
+
 /**
  * App-private durable cookie storage, isolated by Legado source URL.
  *
@@ -79,9 +85,7 @@ class SharedPreferencesSourceCookieJar(
             reloadLocked()
             removeExpiredLocked(System.currentTimeMillis())
             persistLocked()
-            cookies.values.asSequence()
-                .filter { it.matches(httpUrl) }
-                .joinToString("; ") { "${it.name}=${it.value}" }
+            applicableSourceCookieHeader(httpUrl, cookies.values)
         }
     }
 
