@@ -35,17 +35,37 @@ class BadcatPurificationModelsTest {
             adMarks = listOf(mark),
         )
         assertNull(BadcatPurificationUrlPolicy.injectionForPage(disabled))
+        assertNull(BadcatPurificationUrlPolicy.injectionForPage(disabled, "https://reader.example/book"))
 
         val enabled = disabled.copy(webViewAdFilterEnabled = true)
         assertEquals(
             "window.badcatFilter = true;",
             BadcatPurificationUrlPolicy.injectionForPage(enabled),
         )
+        assertEquals(
+            "window.badcatFilter = true;",
+            BadcatPurificationUrlPolicy.injectionForPage(enabled, "https://reader.example/book"),
+        )
         assertNull(
             BadcatPurificationUrlPolicy.injectionForPage(
                 enabled.copy(webViewInjectionScript = " "),
+                "https://reader.example/book",
             ),
         )
+    }
+
+    @Test
+    fun injectionIsRejectedForLocalAndNonWebDocuments() {
+        val enabled = BadcatPurificationSnapshot(
+            webViewAdFilterEnabled = true,
+            webViewInjectionScript = "window.badcatFilter = true;",
+            adMarks = emptyList(),
+        )
+        assertNull(BadcatPurificationUrlPolicy.injectionForPage(enabled, "file:///data/user/0/app/page.html"))
+        assertNull(BadcatPurificationUrlPolicy.injectionForPage(enabled, "content://provider/page"))
+        assertNull(BadcatPurificationUrlPolicy.injectionForPage(enabled, "data:text/html,hello"))
+        assertNull(BadcatPurificationUrlPolicy.injectionForPage(enabled, "about:blank"))
+        assertNull(BadcatPurificationUrlPolicy.injectionForPage(enabled, "javascript:alert(1)"))
     }
 
     @Test
