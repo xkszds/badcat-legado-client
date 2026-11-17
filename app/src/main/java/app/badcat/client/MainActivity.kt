@@ -15,6 +15,7 @@ import android.widget.TextView
 class MainActivity : Activity() {
     private var contentType = "小说"
     private var appliedSearchBarMode = "integrated"
+    private var appliedSearchBarTopSpacing = 22
     private var darkMode = false
     private val blue = Color.rgb(55, 137, 222)
     private val ink = Color.rgb(48, 55, 66)
@@ -26,6 +27,7 @@ class MainActivity : Activity() {
         darkMode = getSharedPreferences("badcat_appearance", MODE_PRIVATE)
             .getString("appearance_mode", "light") == "dark"
         appliedSearchBarMode = searchBarMode()
+        appliedSearchBarTopSpacing = searchBarTopSpacing()
         window.statusBarColor = blue
         window.navigationBarColor = if (darkMode) Color.rgb(25, 28, 33) else Color.WHITE
         @Suppress("DEPRECATION")
@@ -73,8 +75,7 @@ class MainActivity : Activity() {
         addView(bar, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, dp(if (compact) 44 else 48)
         ).apply {
-            topMargin = dp(getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
-                .getInt("home_search_top_spacing_dp", 22).coerceIn(12, 60))
+            topMargin = dp(searchBarTopSpacing())
         })
     }
 
@@ -99,6 +100,10 @@ class MainActivity : Activity() {
         )
     }
 
+    private fun searchBarTopSpacing(): Int =
+        getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
+            .getInt("home_search_top_spacing_dp", 22).coerceIn(12, 60)
+
     private fun searchBarMode(): String =
         getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
             .getString("home_layout_mode", "integrated")
@@ -107,8 +112,10 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         val selected = searchBarMode()
-        if (selected != appliedSearchBarMode) {
+        val selectedSpacing = searchBarTopSpacing()
+        if (selected != appliedSearchBarMode || selectedSpacing != appliedSearchBarTopSpacing) {
             appliedSearchBarMode = selected
+            appliedSearchBarTopSpacing = selectedSpacing
             recreate()
         }
         val currentDark = getSharedPreferences("badcat_appearance", MODE_PRIVATE)
