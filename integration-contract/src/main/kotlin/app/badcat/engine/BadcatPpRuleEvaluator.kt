@@ -114,9 +114,15 @@ object BadcatPpRuleEvaluator {
                     ?: root.selectFirst("[href]")?.attr("href")
                     ?: return@mapNotNull null
                 val resolved = runCatching {
-                    java.net.URI(document.url).resolve(href.trim()).normalize().toString()
-                }.getOrNull()?.takeIf { it.startsWith("http://") || it.startsWith("https://") }
-                    ?: return@mapNotNull null
+                    val base = java.net.URI(document.url)
+                    val target = base.resolve(href.trim()).normalize()
+                    target.takeIf {
+                        (it.scheme.equals("http", ignoreCase = true) ||
+                            it.scheme.equals("https", ignoreCase = true)) &&
+                            !it.host.isNullOrBlank() &&
+                            it.userInfo == null
+                    }?.toASCIIString()
+                }.getOrNull() ?: return@mapNotNull null
                 val label = element?.text()?.trim().orEmpty().ifBlank {
                     root.text().trim()
                 }
