@@ -176,5 +176,16 @@ object BadcatPpRuleEvaluator {
         }
     }
 
+    /**
+     * Applies the verified chapterIsReverse flag to an already-extracted
+     * chapter/list sequence. This is deliberately separate from element
+     * selection so callers cannot accidentally reverse comic pages or video
+     * episodes whose ordering contract has not been recovered.
+     */
+    fun applyChapterListOrder(
+        chapters: List<String>,
+        rule: BadcatPpRule,
+    ): List<String> = if (rule.chapterIsReverse) chapters.asReversed() else chapters
+
 
 }

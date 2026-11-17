@@ -282,4 +282,24 @@ class BadcatPpRuleEvaluatorTest {
         )
     }
 
+
+    @Test
+    fun chapterListOrderUsesOnlyTheVerifiedReverseFlag() {
+        val chapters = listOf("Chapter 1", "Chapter 2", "Chapter 3")
+        assertEquals(
+            chapters,
+            BadcatPpRuleEvaluator.applyChapterListOrder(
+                chapters,
+                BadcatPpRule(chapterIsReverse = false),
+            ),
+        )
+        assertEquals(
+            listOf("Chapter 3", "Chapter 2", "Chapter 1"),
+            BadcatPpRuleEvaluator.applyChapterListOrder(
+                chapters,
+                BadcatPpRule(chapterIsReverse = true),
+            ),
+        )
+    }
+
 }
