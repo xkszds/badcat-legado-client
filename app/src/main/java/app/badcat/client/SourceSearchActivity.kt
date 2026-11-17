@@ -95,6 +95,8 @@ class SourceSearchActivity : Activity() {
     private var lastDisplayedFailures: List<String> = emptyList()
     private var hasSearchSnapshot = false
     private var restoredSearchState = false
+    private val renderedResultKeys = mutableSetOf<String>()
+    private var failureSummaryView: TextView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -411,6 +413,8 @@ class SourceSearchActivity : Activity() {
         searchButton.isEnabled = false
         status.text = "正在搜索（第 " + requestedPage + " 页，共 " + selectedSources.size + " 个书源）…"
         results.removeAllViews()
+        renderedResultKeys.clear()
+        failureSummaryView = null
         activeSearch = worker.submit {
             val collected = Collections.synchronizedList(mutableListOf<BookCandidate>())
             val failures = Collections.synchronizedList(mutableListOf<String>())
@@ -452,7 +456,7 @@ class SourceSearchActivity : Activity() {
                                     val failureSnapshot = synchronized(failures) { failures.toList() }
                                     postToUi {
                                         if (generation == searchGeneration) {
-                                            showResults(requestedPage, resultSnapshot, failureSnapshot)
+                                            appendSearchSnapshot(requestedPage, resultSnapshot, failureSnapshot)
                                             status.text = "正在搜索：已完成 " + count + " / " + selectedSources.size +
                                                 " 个书源 · 已找到 " + resultSnapshot.size + " 本"
                                             BadcatTheme.applyTree(this@SourceSearchActivity, rootView)
@@ -478,7 +482,7 @@ class SourceSearchActivity : Activity() {
                     searchButton.isEnabled = enabledSources.isNotEmpty()
                     previousPageButton.isEnabled = requestedPage > 1
                     nextPageButton.isEnabled = unique.isNotEmpty()
-                    showResults(requestedPage, unique, failureSnapshot)
+                    appendSearchSnapshot(requestedPage, unique, failureSnapshot, complete = true)
                     status.text = "第 " + requestedPage + " 页 · 已检索 " + selectedSources.size +
                         " 个书源 · 找到 " + unique.size + " 本" +
                         if (failureSnapshot.isNotEmpty()) " · " + failureSnapshot.size + " 个书源失败" else ""
@@ -621,86 +625,104 @@ class SourceSearchActivity : Activity() {
     }
 
     private fun showResults(page: Int, items: List<BookCandidate>, failures: List<String>) {
+        results.removeAllViews()
+        renderedResultKeys.clear()
+        failureSummaryView = null
+        appendSearchSnapshot(page, items, failures, complete = true)
+    }
+
+    private fun appendSearchSnapshot(
+        page: Int,
+        items: List<BookCandidate>,
+        failures: List<String>,
+        complete: Boolean = false,
+    ) {
         lastDisplayedResults = items
         lastDisplayedFailures = failures
         hasSearchSnapshot = true
-        status.text = "第 ${page} 页 · 找到 ${items.size} 条结果" +
-            (if (failures.isNotEmpty()) " · ${failures.size} 个书源失败" else "") +
-            (if (items.size > MAX_VISIBLE_SEARCH_RESULTS) " · 当前先显示前 $MAX_VISIBLE_SEARCH_RESULTS 条" else "")
+        status.text = "第 " + page + " 页 · 找到 " + items.size + " 条结果" +
+            if (failures.isNotEmpty()) " · " + failures.size + " 个书源失败" else ""
+        items.take(MAX_VISIBLE_SEARCH_RESULTS).forEach { item ->
+            val key = item.sourceId + "|" + item.bookUrl
+            if (renderedResultKeys.add(key)) {
+                results.addView(createResultCard(item), LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply { bottomMargin = dp(10) })
+            }
+        }
+        failureSummaryView?.let { results.removeView(it) }
+        failureSummaryView = null
         if (failures.isNotEmpty()) {
-            results.addView(TextView(this).apply {
-                text = failures.joinToString("\n") { "• $it" }
+            failureSummaryView = TextView(this).apply {
+                text = failures.joinToString("\n") { "• " + it }
                 textSize = 12f
                 setTextColor(muted)
                 setPadding(0, dp(4), 0, dp(10))
-            })
+            }
+            results.addView(failureSummaryView)
         }
-        if (items.isEmpty()) {
-            if (failures.isEmpty()) results.addView(TextView(this).apply {
-                text = "暂未找到相关书籍"; textSize = 14f; gravity = Gravity.CENTER
-                setTextColor(muted); setPadding(0, dp(42), 0, dp(42))
+        if (complete && items.isEmpty() && failures.isEmpty()) {
+            results.addView(TextView(this).apply {
+                text = "暂未找到相关书籍"
+                textSize = 14f
+                gravity = Gravity.CENTER
+                setTextColor(muted)
+                setPadding(0, dp(42), 0, dp(42))
             })
-            return
-        }
-        items.take(MAX_VISIBLE_SEARCH_RESULTS).forEach { item ->
-            results.addView(LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                background = rounded(card, 12)
-                setPadding(dp(14), dp(13), dp(14), dp(13))
-                isClickable = true
-                isFocusable = true
-                setOnClickListener {
-                    startActivity(Intent(this@SourceSearchActivity, SourceBookActivity::class.java).apply {
-                        putExtra(SourceBookActivity.EXTRA_SOURCE_ID, item.sourceId)
-                        putExtra(SourceBookActivity.EXTRA_BOOK_URL, item.bookUrl)
-                        putExtra(SourceBookActivity.EXTRA_BOOK_NAME, item.name)
-                        putExtra(SourceBookActivity.EXTRA_BOOK_COVER_URL, item.coverUrl)
-                        putExtra(SourceBookActivity.EXTRA_BOOK_STATUS, item.status)
-                        putExtra(SourceBookActivity.EXTRA_BOOK_AUTHOR, item.author)
-                        putExtra(SourceBookActivity.EXTRA_BOOK_LATEST_CHAPTER, item.latestChapter)
-                        putExtra(SourceBookActivity.EXTRA_BOOK_INTRO, item.intro)
-                    })
-                }
-                val info = LinearLayout(this@SourceSearchActivity).apply {
-                    orientation = LinearLayout.VERTICAL
-                    addView(TextView(this@SourceSearchActivity).apply {
-                        text = item.name
-                        textSize = 16f
-                        typeface = Typeface.DEFAULT_BOLD
-                        setTextColor(ink)
-                    })
-                    item.author?.takeIf { it.isNotBlank() }?.let { author ->
-                        addView(resultMeta("作者：$author"))
-                    }
-                    item.latestChapter?.takeIf { it.isNotBlank() }?.let { chapter ->
-                        addView(resultMeta("最新：$chapter"))
-                    }
-                    item.intro?.takeIf { it.isNotBlank() }?.let { intro ->
-                        addView(TextView(this@SourceSearchActivity).apply {
-                            text = intro
-                            textSize = 12f
-                            maxLines = 2
-                            setTextColor(muted)
-                            setPadding(0, dp(6), 0, 0)
-                        })
-                    }
-                    addView(resultMeta("书源：${item.sourceId}"))
-                }
-                addView(LinearLayout(this@SourceSearchActivity).apply {
-                    orientation = LinearLayout.HORIZONTAL
-                    gravity = Gravity.TOP
-                    addView(BookStatusBadge.cover(this@SourceSearchActivity, item.coverUrl, item.status, 62, 84),
-                        LinearLayout.LayoutParams(dp(62), dp(84)))
-                    addView(info, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
-                        marginStart = dp(12)
-                    })
-                })
-            }, LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply { bottomMargin = dp(10) })
         }
     }
+
+    private fun createResultCard(item: BookCandidate): View =
+        LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = rounded(card, 12)
+            setPadding(dp(14), dp(13), dp(14), dp(13))
+            isClickable = true
+            isFocusable = true
+            setOnClickListener {
+                startActivity(Intent(this@SourceSearchActivity, SourceBookActivity::class.java).apply {
+                    putExtra(SourceBookActivity.EXTRA_SOURCE_ID, item.sourceId)
+                    putExtra(SourceBookActivity.EXTRA_BOOK_URL, item.bookUrl)
+                    putExtra(SourceBookActivity.EXTRA_BOOK_NAME, item.name)
+                    putExtra(SourceBookActivity.EXTRA_BOOK_COVER_URL, item.coverUrl)
+                    putExtra(SourceBookActivity.EXTRA_BOOK_STATUS, item.status)
+                    putExtra(SourceBookActivity.EXTRA_BOOK_AUTHOR, item.author)
+                    putExtra(SourceBookActivity.EXTRA_BOOK_LATEST_CHAPTER, item.latestChapter)
+                    putExtra(SourceBookActivity.EXTRA_BOOK_INTRO, item.intro)
+                })
+            }
+            val info = LinearLayout(this@SourceSearchActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(TextView(this@SourceSearchActivity).apply {
+                    text = item.name
+                    textSize = 16f
+                    typeface = Typeface.DEFAULT_BOLD
+                    setTextColor(ink)
+                })
+                item.author?.takeIf { it.isNotBlank() }?.let { addView(resultMeta("作者：" + it)) }
+                item.latestChapter?.takeIf { it.isNotBlank() }?.let { addView(resultMeta("最新：" + it)) }
+                item.intro?.takeIf { it.isNotBlank() }?.let { intro ->
+                    addView(TextView(this@SourceSearchActivity).apply {
+                        text = intro
+                        textSize = 12f
+                        maxLines = 2
+                        setTextColor(muted)
+                        setPadding(0, dp(6), 0, 0)
+                    })
+                }
+                addView(resultMeta("书源：" + item.sourceId))
+            }
+            addView(LinearLayout(this@SourceSearchActivity).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.TOP
+                addView(BookStatusBadge.cover(this@SourceSearchActivity, item.coverUrl, item.status, 62, 84),
+                    LinearLayout.LayoutParams(dp(62), dp(84)))
+                addView(info, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginStart = dp(12)
+                })
+            })
+        }
 
     private fun showServerError(message: String, retry: () -> Unit) {
         status.text = ""
