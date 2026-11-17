@@ -26,6 +26,7 @@ class BadcatSearchBarView(
     private val onSearch: (String, String) -> Unit,
     private val onTypeChanged: (String) -> Unit = { },
     private val searchPageStyle: Boolean = false,
+    private val homePageStyle: Boolean = false,
 ) : LinearLayout(context) {
     val input = EditText(context)
     val searchAction = TextView(context)
@@ -58,11 +59,12 @@ class BadcatSearchBarView(
             contentDescription = "选择搜索类型，当前$contentType"
             setOnClickListener { chooseContentType() }
         }
-        addView(typeLabel, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT))
-
-        addView(TextView(context).apply {
-            setBackgroundColor(if (dark) Color.rgb(76, 82, 92) else Color.rgb(230, 234, 239))
-        }, LayoutParams(dp(1), dp(22)))
+        if (!homePageStyle) {
+            addView(typeLabel, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT))
+            addView(TextView(context).apply {
+                setBackgroundColor(if (dark) Color.rgb(76, 82, 92) else Color.rgb(230, 234, 239))
+            }, LayoutParams(dp(1), dp(22)))
+        }
 
         input.apply {
             hint = hintFor(contentType)
@@ -85,11 +87,18 @@ class BadcatSearchBarView(
         input.setOnClickListener { homeTapAction?.invoke() }
 
         searchAction.apply {
-            text = if (searchPageStyle) "搜索" else "⌕"
-            textSize = if (searchPageStyle) 15f else 26f
+            text = when { searchPageStyle -> "搜索"; homePageStyle -> "◷"; else -> "⌕" }
+            textSize = when { searchPageStyle -> 15f; homePageStyle -> 25f; else -> 26f }
             gravity = Gravity.CENTER
-            setTextColor(if (searchPageStyle) Color.rgb(225, 111, 48) else Color.WHITE)
-            background = if (searchPageStyle) null else rounded(BLUE, dp(22))
+            setTextColor(when {
+                searchPageStyle -> Color.rgb(225, 111, 48)
+                homePageStyle -> Color.rgb(165, 165, 165)
+                else -> Color.WHITE
+            })
+            background = when {
+                searchPageStyle || homePageStyle -> null
+                else -> rounded(BLUE, dp(22))
+            }
             typeface = if (searchPageStyle) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
             isClickable = true
             isFocusable = true
@@ -97,8 +106,8 @@ class BadcatSearchBarView(
             setOnClickListener { submit() }
         }
         addView(searchAction, LayoutParams(
-            if (searchPageStyle) dp(54) else dp(if (compact) 34 else 36),
-            if (searchPageStyle) LayoutParams.MATCH_PARENT else dp(if (compact) 34 else 36),
+            when { searchPageStyle -> dp(54); homePageStyle -> dp(42); else -> dp(if (compact) 34 else 36) },
+            if (searchPageStyle || homePageStyle) LayoutParams.MATCH_PARENT else dp(if (compact) 34 else 36),
         ))
     }
 
@@ -139,7 +148,7 @@ class BadcatSearchBarView(
     private fun hintFor(type: String) = when (type) {
         "漫画" -> "搜索漫画"
         "综合" -> "综合搜索"
-        else -> "搜索书籍"
+        else -> if (homePageStyle) "请输入书名、作者或关键字" else "搜索书籍"
     }
 
     private fun rounded(color: Int, radius: Int) = GradientDrawable().apply {
