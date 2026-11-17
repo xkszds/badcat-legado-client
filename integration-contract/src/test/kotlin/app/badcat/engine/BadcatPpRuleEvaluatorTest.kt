@@ -220,6 +220,25 @@ class BadcatPpRuleEvaluatorTest {
     }
 
     @Test
+    fun comicImageExtractionRejectsUnsafeBaseUrlsEvenWhenImageIsAbsolute() {
+        listOf(
+            "file:///reader/page/1",
+            "https://user:pass@comic.example/reader/",
+            "javascript:alert(1)",
+        ).forEach { baseUrl ->
+            val result = BadcatPpRuleEvaluator.extractComicImageUrls(
+                SourceDocument(baseUrl, """<img src="https://cdn.example/page.jpg">"""),
+                BadcatPpRule(ruleTypeValue = 1, pageRule = "//img"),
+            )
+            assertEquals(
+                EngineErrorCode.INVALID_SOURCE,
+                assertIs<EngineResult.Failure>(result).code,
+                baseUrl,
+            )
+        }
+    }
+
+    @Test
     fun comicImageExtractionDeduplicatesNormalizedUrls() {
         val document = SourceDocument(
             url = "https://comic.example/reader/",

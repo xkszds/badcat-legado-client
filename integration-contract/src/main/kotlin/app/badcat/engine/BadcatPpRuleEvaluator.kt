@@ -198,6 +198,16 @@ object BadcatPpRuleEvaluator {
             is EngineResult.Success -> result.value
         }
         return try {
+            val base = java.net.URI(document.url)
+            if (!base.scheme.equals("http", ignoreCase = true) &&
+                !base.scheme.equals("https", ignoreCase = true) ||
+                base.host.isNullOrBlank() || base.userInfo != null
+            ) {
+                return EngineResult.Failure(
+                    EngineErrorCode.INVALID_SOURCE,
+                    "Badcat comic image base URL is not a safe HTTP(S) URL",
+                )
+            }
             val urls = selected.flatMap { fragment ->
                 val root = Jsoup.parseBodyFragment(fragment, document.url).body()
                 root.select("img[data-original], img[src]").mapNotNull { image ->
