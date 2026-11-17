@@ -9,7 +9,10 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.CompoundButton
+import android.widget.EditText
+import android.widget.Spinner
 import android.widget.TextView
 
 /** Shared appearance palette and a conservative tint pass for programmatic secondary screens. */
@@ -75,6 +78,7 @@ internal object BadcatTheme {
             return
         }
         val colors = palette(context)
+        root.setBackgroundColor(colors.page)
         fun visit(view: View) {
             when (val bg = view.background) {
                 is ColorDrawable -> {
@@ -101,6 +105,18 @@ internal object BadcatTheme {
                 if (view.hint != null && Build.VERSION.SDK_INT >= 23) {
                     view.setHintTextColor(colors.muted)
                 }
+            }
+            if (view is Button) {
+                view.backgroundTintList = ColorStateList.valueOf(colors.raised)
+                view.setTextColor(colors.accent)
+            }
+            if (view is EditText) {
+                view.setTextColor(colors.text)
+                view.setHintTextColor(colors.muted)
+                view.backgroundTintList = ColorStateList.valueOf(colors.fieldStroke)
+            }
+            if (view is Spinner) {
+                view.backgroundTintList = ColorStateList.valueOf(colors.fieldStroke)
             }
             if (view is CompoundButton) {
                 view.buttonTintList = ColorStateList.valueOf(colors.accent)
