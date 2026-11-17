@@ -117,8 +117,12 @@ internal object BadcatTheme {
                 }
             }
             if (view is Button) {
-                // Preserve explicitly colored call-to-action buttons. Only
-                // neutral/default button labels are adapted for dark surfaces.
+                // Give default neutral buttons a dark surface, but preserve
+                // explicitly colored call-to-action backgrounds and white labels.
+                val originalTint = view.backgroundTintList?.defaultColor
+                if (originalTint == null || isNeutral(originalTint)) {
+                    view.backgroundTintList = ColorStateList.valueOf(colors.raised)
+                }
                 val buttonText = view.currentTextColor
                 if (isNeutral(buttonText) && buttonText != Color.WHITE) {
                     view.setTextColor(colors.accent)
