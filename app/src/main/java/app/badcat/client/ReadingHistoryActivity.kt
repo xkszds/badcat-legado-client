@@ -103,6 +103,7 @@ class ReadingHistoryActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply { bottomMargin = dp(9) })
         }
+        BadcatTheme.applyTree(this, window.decorView)
     }
 
     private fun removeRecord(sourceId: String, bookUrl: String) {
