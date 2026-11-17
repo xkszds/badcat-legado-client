@@ -34,6 +34,7 @@ internal class BadcatLineIconView(
         canvas.scale(side / 24f, side / 24f)
         when (key) {
             "search" -> drawSearch(canvas)
+            "back" -> drawBack(canvas)
             "favorites" -> drawFavorites(canvas)
             "mine" -> drawPerson(canvas)
             "messages" -> drawMessages(canvas)
@@ -52,6 +53,15 @@ internal class BadcatLineIconView(
     private fun drawSearch(c: Canvas) {
         c.drawCircle(10.5f, 10.5f, 6.2f, paint)
         line(c, 15.2f, 15.2f, 20.2f, 20.2f)
+    }
+
+    private fun drawBack(c: Canvas) {
+        path.reset()
+        path.moveTo(14.8f, 4.5f)
+        path.lineTo(7.2f, 12f)
+        path.lineTo(14.8f, 19.5f)
+        c.drawPath(path, paint)
+        line(c, 7.5f, 12f, 20f, 12f)
     }
 
     private fun drawFavorites(c: Canvas) {
