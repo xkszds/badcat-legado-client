@@ -15,6 +15,7 @@ class LegadoSourceLoginUiV2ServiceTest {
         private val outputs: ArrayDeque<String>,
     ) : SourceScriptRuntime {
         var capturedScript: String? = null
+        var capturedSource: BookSource? = null
         var capturedBindings: Map<String, String> = emptyMap()
 
         override suspend fun evaluate(
@@ -22,6 +23,7 @@ class LegadoSourceLoginUiV2ServiceTest {
             script: String,
             bindings: Map<String, String>,
         ): EngineResult<String> {
+            capturedSource = source
             capturedScript = script
             capturedBindings = bindings
             return EngineResult.Success(outputs.removeFirst())
@@ -76,6 +78,27 @@ class LegadoSourceLoginUiV2ServiceTest {
         )
         val failure = LegadoSourceLoginUiV2Service(invalidRuntime).checkLogin(source()) as EngineResult.Failure
         assertEquals(EngineErrorCode.PARSE, failure.code)
+    }
+
+    @Test
+    fun rendersLoginUiV2ForSourcesWithMainJsInitialization() = runBlocking {
+        val runtime = RecordingRuntime(ArrayDeque(listOf("""{"rows":[{"name":"账号","type":"text","key":"username"}]}""")))
+        val service = LegadoSourceLoginUiV2Service(runtime)
+        val mainJsSource = source().copy(mainJs = "function sharedLoginHelper(){ return true; }")
+        val result = service.render(mainJsSource)
+        assertTrue(result is EngineResult.Success)
+        assertEquals(mainJsSource.mainJs, runtime.capturedSource?.mainJs)
+        assertTrue(requireNotNull(runtime.capturedScript).contains("loginUi(JSON.parse(String(__loginState)))"))
+    }
+
+    @Test
+    fun dispatchesLoginActionsForSourcesWithMainJsInitialization() = runBlocking {
+        val runtime = RecordingRuntime(ArrayDeque(listOf("""{"state":{"step":2},"close":true}""")))
+        val service = LegadoSourceLoginUiV2Service(runtime)
+        val mainJsSource = source().copy(mainJs = "function sharedLoginHelper(){ return true; }")
+        val result = service.dispatchAction(mainJsSource, "submit", "{}", "{}")
+        assertTrue(result is EngineResult.Success)
+        assertEquals(mainJsSource.mainJs, runtime.capturedSource?.mainJs)
     }
 
     @Test
