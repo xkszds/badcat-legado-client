@@ -1018,6 +1018,11 @@ class SourceChapterActivity : Activity() {
         readerRoot.setBackgroundColor(background)
         readerScroll.setBackgroundColor(background)
         body.setBackgroundColor(background)
+        window.statusBarColor = background
+        window.navigationBarColor = background
+        @Suppress("DEPRECATION")
+        window.decorView.systemUiVisibility = if (readerTheme == 2) 0 else
+            View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
         if (currentChapterText.isNotEmpty()) renderReaderDocument()
         status.setTextColor(foreground)
         if (::readerInfo.isInitialized) {
