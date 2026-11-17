@@ -90,9 +90,9 @@ class SourceBookActivity : Activity() {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.CENTER_VERTICAL
             setPadding(0, 0, 0, dpBook(16))
-            addView(TextView(this@SourceBookActivity).apply {
-                text = "‹"; textSize = 32f; setTextColor(Color.DKGRAY)
-                gravity = android.view.Gravity.CENTER
+            addView(BadcatLineIconView(this@SourceBookActivity, "back", Color.DKGRAY).apply {
+                contentDescription = "返回"
+                isClickable = true
                 setOnClickListener { finish() }
             }, LinearLayout.LayoutParams(dpBook(42), dpBook(48)))
             addView(TextView(this@SourceBookActivity).apply {
@@ -533,11 +533,9 @@ class SourceChapterActivity : Activity() {
             maxLines = 1
             ellipsize = android.text.TextUtils.TruncateAt.END
         }
-        val back = TextView(this).apply {
-            text = "‹"
-            textSize = 32f
-            gravity = android.view.Gravity.CENTER
-            setTextColor(Color.rgb(55, 55, 55))
+        val back = BadcatLineIconView(this, "back", Color.rgb(55, 55, 55)).apply {
+            contentDescription = "返回"
+            isClickable = true
             setOnClickListener { finish() }
         }
         val more = TextView(this).apply {
