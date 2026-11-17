@@ -15,6 +15,7 @@ import app.badcat.engine.LegadoLoginUiV2
 import app.badcat.client.runtime.LegadoSourceLoginUiV2Service
 import app.badcat.client.runtime.RhinoSourceScriptRuntime
 import app.badcat.client.runtime.SharedPreferencesSourceLoginSessionStore
+import app.badcat.client.runtime.SharedPreferencesSourceCookieJar
 import app.badcat.client.runtime.SharedPreferencesSourceScriptKeyValueStore
 import kotlinx.coroutines.CancellationException
 import java.io.ByteArrayOutputStream
@@ -137,6 +138,24 @@ class SourceCatalogActivity : Activity() {
                                 ViewGroup.LayoutParams.WRAP_CONTENT,
                             ))
                         }
+                        row.addView(Button(this@SourceCatalogActivity).apply {
+                            text = "清除该书源登录信息"
+                            setOnClickListener {
+                                android.app.AlertDialog.Builder(this@SourceCatalogActivity)
+                                    .setTitle("清除登录信息")
+                                    .setMessage("将删除该书源保存的登录请求头、登录信息和 HTTP Cookie，不会删除书源本身。确定继续？")
+                                    .setNegativeButton("取消", null)
+                                    .setPositiveButton("清除") { _, _ ->
+                                        SharedPreferencesSourceLoginSessionStore(applicationContext).clearSource(source.id)
+                                        SharedPreferencesSourceCookieJar(applicationContext, source.id).clear()
+                                        message.text = source.name + "：本机登录信息和 Cookie 已清除"
+                                    }
+                                    .show()
+                            }
+                        }, LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ))
                         if (!source.loginCheckJs.isNullOrBlank()) {
                             row.addView(Button(this@SourceCatalogActivity).apply {
                                 text = "检查登录状态"
