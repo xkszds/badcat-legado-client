@@ -11,6 +11,7 @@ import android.widget.ScrollView
 import android.widget.Switch
 import android.widget.TextView
 import app.badcat.engine.LegadoBookSourceCodec
+import app.badcat.engine.LegadoLoginUiV2
 import kotlinx.coroutines.CancellationException
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.CoroutineScope
@@ -110,6 +111,19 @@ class SourceCatalogActivity : Activity() {
                             }
                         }
                         row.addView(enabledSwitch)
+                        if (LegadoLoginUiV2.isV2(source.loginUi)) {
+                            row.addView(Button(this@SourceCatalogActivity).apply {
+                                text = "登录配置（Login UI v2）"
+                                setOnClickListener {
+                                    startActivity(Intent(this@SourceCatalogActivity, SourceLoginUiV2Activity::class.java).apply {
+                                        putExtra(SourceLoginUiV2Activity.EXTRA_SOURCE_ID, source.id)
+                                    })
+                                }
+                            }, LinearLayout.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ))
+                        }
                         listContainer.addView(row)
                     }
                 }
