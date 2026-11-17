@@ -98,6 +98,28 @@ class BadcatPpRuleProtoDecoderTest {
         )
     }
 
+    @Test
+    fun preservesNestedUnknownGroupsAndRejectsMismatchedEndGroups() {
+        val nestedUnknown = groupField(
+            100,
+            varintField(1, 7) + groupField(101, varintField(2, 9)),
+        )
+        val decoded = assertIs<EngineResult.Success<BadcatPpResponse>>(
+            BadcatPpRuleProtoDecoder.decodeResponse(nestedUnknown),
+        ).value
+        assertEquals(1, decoded.unknownFields.size)
+        assertTrue(decoded.unknownFields.single().contentEquals(nestedUnknown))
+
+        val mismatched = varint((100L shl 3) or 3L) +
+            varint((101L shl 3) or 4L)
+        assertEquals(
+            EngineErrorCode.PARSE,
+            assertIs<EngineResult.Failure>(
+                BadcatPpRuleProtoDecoder.decodeResponse(mismatched),
+            ).code,
+        )
+    }
+
     private fun message(bytes: ByteArray): ByteArray = bytes
 
     private fun stringField(number: Int, value: String): ByteArray =
@@ -108,6 +130,11 @@ class BadcatPpRuleProtoDecoderTest {
 
     private fun varintField(number: Int, value: Int): ByteArray =
         varint((number shl 3).toLong()) + varint(value.toLong())
+
+    private fun groupField(number: Int, value: ByteArray): ByteArray =
+        varint(((number shl 3) or 3).toLong()) +
+            value +
+            varint(((number shl 3) or 4).toLong())
 
     private fun varint(value: Long): ByteArray {
         var remaining = value
