@@ -83,17 +83,13 @@ internal object BadcatTheme {
             when (val bg = view.background) {
                 is ColorDrawable -> {
                     if (isNeutral(bg.color) && Color.alpha(bg.color) > 0) {
-                        view.setBackgroundColor(when {
-                            isDivider(view) -> colors.divider
-                            isNearWhite(bg.color) -> colors.surface
-                            else -> colors.page
-                        })
+                        view.setBackgroundColor(mappedSurface(view, bg.color, colors))
                     }
                 }
                 is GradientDrawable -> {
                     val fill = bg.color?.defaultColor
                     if (fill != null && isNeutral(fill) && Color.alpha(fill) > 0) {
-                        bg.setColor(if (isNearWhite(fill)) colors.surface else colors.page)
+                        bg.setColor(mappedSurface(view, fill, colors))
                     }
                 }
             }
@@ -146,6 +142,14 @@ internal object BadcatTheme {
         val g = Color.green(color)
         val b = Color.blue(color)
         return maxOf(r, g, b) - minOf(r, g, b) < 22
+    }
+
+    private fun mappedSurface(view: View, color: Int, colors: Palette): Int = when {
+        isDivider(view) -> colors.divider
+        isNearWhite(color) -> colors.surface
+        luminance(color) < 0.02 -> colors.page
+        luminance(color) < 0.15 -> colors.surface
+        else -> colors.page
     }
 
     private fun isDivider(view: View): Boolean {
