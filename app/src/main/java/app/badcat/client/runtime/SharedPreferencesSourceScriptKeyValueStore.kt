@@ -17,6 +17,10 @@ class SharedPreferencesSourceScriptKeyValueStore(context: Context) : SourceScrip
         preferences.edit().putString(storageKey(sourceId, key), value).apply()
     }
 
+    override fun remove(sourceId: String, key: String) {
+        preferences.edit().remove(storageKey(sourceId, key)).apply()
+    }
+
     override fun clearSource(sourceId: String) {
         val prefix = sourcePrefix(sourceId)
         preferences.edit().apply {
