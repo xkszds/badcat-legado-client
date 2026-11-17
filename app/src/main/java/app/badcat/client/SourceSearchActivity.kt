@@ -297,7 +297,7 @@ class SourceSearchActivity : Activity() {
                 gravity = Gravity.CENTER
                 setTextColor(if (selected) Color.WHITE else muted)
                 background = rounded(
-                    if (selected) blue else Color.rgb(246, 247, 249), 18
+                    if (selected) blue else if (darkMode) Color.rgb(49, 55, 65) else Color.rgb(246, 247, 249), 18
                 )
                 setPadding(dp(15), dp(8), dp(15), dp(8))
                 isClickable = true
@@ -309,11 +309,7 @@ class SourceSearchActivity : Activity() {
                     if (::keywordInput.isInitialized && keywordInput.text.toString().isNotBlank()) {
                         search()
                     } else {
-                        status.text = if (index == 0) {
-                            "已选择全部书源"
-                        } else {
-                            "已选择书源：$label"
-                        }
+                        status.text = "已选择书源：$label"
                     }
                 }
             }, LinearLayout.LayoutParams(
