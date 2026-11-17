@@ -223,7 +223,8 @@ class FavoritesActivity : Activity() {
         refresh()
     }
 
-    override fun onResume() { super.onResume(); if (::rootContent.isInitialized) refresh() }
+    override fun onResume() { super.onResume()
+        BadcatTheme.applyTree(this, window.decorView); if (::rootContent.isInitialized) refresh() }
 
     private fun refresh() {
         rootContent.removeAllViews()
