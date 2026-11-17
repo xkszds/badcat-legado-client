@@ -91,6 +91,7 @@ class BadcatPurificationActivity : Activity() {
             textSize = 15f; setTextColor(ink); setPadding(0, dp(20), 0, dp(8))
         })
         body.addView(sectionCard("AdMark 本地标记", "管理已保存的站点标记数据。") {
+            addView(actionRow("手动添加站点标记") { addMark() })
             addView(actionRow("查看 / 删除本地标记") { showMarks() })
             addView(actionRow("导入标记 JSON") { importMarks() })
             addView(actionRow("导出标记 JSON") { exportMarks() })
@@ -102,6 +103,52 @@ class BadcatPurificationActivity : Activity() {
         scroll.addView(body)
         root.addView(scroll)
         setContentView(root)
+    }
+
+    private fun addMark() {
+        val fields = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(4), dp(6), dp(4), 0)
+        }
+        val host = EditText(this).apply {
+            hint = "站点主机名，例如 reader.example"
+            setSingleLine(true)
+            textSize = 14f
+        }
+        val pattern = EditText(this).apply {
+            hint = "URL 匹配数字数组，例如 [12,34,56]"
+            setSingleLine(true)
+            textSize = 14f
+        }
+        val rules = EditText(this).apply {
+            hint = "markRules，每行一条；保留原始规则值"
+            minLines = 3
+            gravity = Gravity.TOP
+            textSize = 13f
+        }
+        fields.addView(host)
+        fields.addView(pattern)
+        fields.addView(rules, LinearLayout.LayoutParams(-1, dp(104)))
+        BadcatTheme.alertBuilder(this)
+            .setTitle("添加 AdMark 站点标记")
+            .setMessage("这里只保存 host、urlPattern 和 markRules 原始数据；当前版本尚未执行网页 DOM 删除规则。")
+            .setView(fields)
+            .setNegativeButton("取消", null)
+            .setPositiveButton("保存") { _, _ ->
+                val item = BadcatAdMarkItem(
+                    host = host.text.toString().trim().removePrefix("https://").removePrefix("http://").substringBefore('/'),
+                    urlPattern = pattern.text.toString().trim(),
+                    markRules = rules.text.toString().lineSequence().map(String::trim).filter(String::isNotEmpty).toList(),
+                )
+                if (!item.isValid()) {
+                    toast("标记格式无效：请检查主机名、数字数组和规则内容")
+                } else {
+                    runCatching { coordinator.upsertAdMark(item) }
+                        .onSuccess { toast("已保存站点标记") }
+                        .onFailure { toast("保存失败：${it.message}") }
+                }
+            }
+            .show()
     }
 
     private fun showMarks() {
