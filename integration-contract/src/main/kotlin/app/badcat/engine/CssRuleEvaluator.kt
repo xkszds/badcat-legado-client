@@ -95,7 +95,10 @@ object CssRuleEvaluator {
                 // and still retains the upstream ElementsSingle index suffix.
                 val indexedRule = if (explicitCss) null else LegadoElementIndex.parse(part)
                 val selector = indexedRule?.selector ?: parsed.selector
-                val matched = Jsoup.parse(document.body, document.url).select(selector).map { it.outerHtml() }
+                val root = Jsoup.parse(document.body, document.url)
+                val selected = if (explicitCss) root.select(selector).toList()
+                    else selectLegadoStep(root, selector)
+                val matched = selected.map { it.outerHtml() }
                 if (indexedRule == null) matched else LegadoElementIndex.apply(matched, indexedRule)
             }
             if (firstFailure != null && values.isEmpty()) firstFailure!! else EngineResult.Success(values)
@@ -160,7 +163,7 @@ object CssRuleEvaluator {
             val selector = indexRule?.selector ?: step
             require(selector.isNotBlank()) { "Blank selector step in chained CSS rule" }
             elements = elements.flatMap { parent ->
-                val matched = parent.select(selector).toList()
+                val matched = selectLegadoStep(parent, selector)
                 if (indexRule == null) matched else LegadoElementIndex.apply(matched, indexRule)
             }
             if (elements.isEmpty()) break
@@ -180,6 +183,24 @@ object CssRuleEvaluator {
             "Legado chained CSS rule failed ($original): ${it.message ?: it::class.java.simpleName}",
             it,
         )
+    }
+
+    /**
+     * Legado's default JSoup mode accepts legacy selector heads in addition to
+     * CSS: children, class.name, tag.name, id.name and text.value.
+     */
+    private fun selectLegadoStep(parent: Element, selector: String): List<Element> {
+        val value = selector.trim()
+        val type = value.substringBefore('.')
+        val argument = value.substringAfter('.', "")
+        return when (type) {
+            "children" -> parent.children().toList()
+            "class" -> if (argument.isNotBlank()) parent.getElementsByClass(argument).toList() else emptyList()
+            "tag" -> if (argument.isNotBlank()) parent.getElementsByTag(argument).toList() else emptyList()
+            "id" -> if (argument.isNotBlank()) parent.getElementsByAttributeValue("id", argument).toList() else emptyList()
+            "text" -> if (argument.isNotBlank()) parent.getElementsContainingOwnText(argument).toList() else emptyList()
+            else -> parent.select(value).toList()
+        }
     }
 
     /** Splits '@' only outside CSS attribute brackets, parentheses and quotes. */
