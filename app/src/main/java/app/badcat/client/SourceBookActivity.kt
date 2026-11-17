@@ -327,13 +327,6 @@ class SourceBookActivity : Activity() {
         }
     }
 
-    private companion object {
-        val COVER_REDIRECT_CODES = setOf(300, 301, 302, 303, 307, 308)
-        const val MAX_COVER_REDIRECTS = 5
-        const val MAX_COVER_BYTES = 2 * 1024 * 1024
-        const val MAX_COVER_DIMENSION = 8_000
-    }
-
     private fun showChapters(chapters: List<BookChapter>) {
         allChapters = chapters
         chapterList.removeAllViews()
@@ -450,6 +443,11 @@ class SourceBookActivity : Activity() {
     }
 
     companion object {
+        private val COVER_REDIRECT_CODES = setOf(300, 301, 302, 303, 307, 308)
+        private const val MAX_COVER_REDIRECTS = 5
+        private const val MAX_COVER_BYTES = 2 * 1024 * 1024
+        private const val MAX_COVER_DIMENSION = 8_000
+
         const val EXTRA_SOURCE_ID = "source_id"
         const val EXTRA_BOOK_URL = "book_url"
         const val EXTRA_BOOK_NAME = "book_name"
