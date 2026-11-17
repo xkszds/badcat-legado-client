@@ -248,4 +248,80 @@ class SelectorLegadoRuleRuntimeTest {
             assertIs<EngineResult.Failure>(result).code,
         )
     }
+    @Test
+    fun expandsPersistentGetAndPutVariablesBeforeSelectorDispatch(): Unit = runBlocking {
+        val source = BookSource("https://reader.example/", "Fixture", "https://reader.example/")
+        val values = mutableMapOf<String, String>()
+        val scriptRuntime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> = EngineResult.Success(script)
+
+            override suspend fun getString(source: BookSource, key: String): EngineResult<String?> =
+                EngineResult.Success(values[key])
+
+            override suspend fun putString(source: BookSource, key: String, value: String): EngineResult<Unit> {
+                values[key] = value
+                return EngineResult.Success(Unit)
+            }
+        }
+        val runtime = SelectorLegadoRuleRuntime(scriptRuntime = scriptRuntime)
+        val result = runtime.evaluate(
+            SourceRuleStage.SEARCH,
+            """{"bookList":"@put:{\"selector\":\".book\"}@get:{selector}"}""",
+            source,
+            SourceDocument(
+                url = "https://reader.example/search",
+                body = """<div class="book">Stored selector</div>""",
+                key = "猫",
+                page = 3,
+            ),
+        )
+        assertEquals(".book", values["selector"])
+        assertEquals(
+            listOf(mapOf("bookList" to "Stored selector")),
+            assertIs<EngineResult.Success<List<Map<String, String>>>>(result).value,
+        )
+    }
+
+    @Test
+    fun evaluatesEmbeddedRuleScriptsWithCurrentResultKeyAndPage(): Unit = runBlocking {
+        val source = BookSource("https://reader.example/", "Fixture", "https://reader.example/")
+        var capturedScript = ""
+        var capturedBindings: Map<String, String> = emptyMap()
+        val scriptRuntime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> {
+                capturedScript = script
+                capturedBindings = bindings
+                return EngineResult.Success(".book")
+            }
+        }
+        val runtime = SelectorLegadoRuleRuntime(scriptRuntime = scriptRuntime)
+        val result = runtime.evaluate(
+            SourceRuleStage.SEARCH,
+            """{"bookList":"{{chooseSelector(result, key, page)}}" }""",
+            source,
+            SourceDocument(
+                url = "https://reader.example/search",
+                body = """<div class="book">Embedded selector</div>""",
+                key = "雪猫",
+                page = 4,
+            ),
+        )
+        assertEquals("chooseSelector(result, key, page)", capturedScript)
+        assertEquals("雪猫", capturedBindings["key"])
+        assertEquals("4", capturedBindings["page"])
+        assertEquals("https://reader.example/search", capturedBindings["baseUrl"])
+        assertEquals(
+            listOf(mapOf("bookList" to "Embedded selector")),
+            assertIs<EngineResult.Success<List<Map<String, String>>>>(result).value,
+        )
+    }
+
 }

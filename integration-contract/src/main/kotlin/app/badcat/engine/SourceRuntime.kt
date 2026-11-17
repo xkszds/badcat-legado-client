@@ -61,6 +61,10 @@ data class SourceDocument(
     val url: String,
     val body: String,
     val contentType: String? = null,
+    /** Current search/explore keyword for embedded AnalyzeRule expressions. */
+    val key: String = "",
+    /** Current pagination page, one-based. */
+    val page: Int = 1,
 )
 
 /** JavaScript execution is separate from document selectors and HTTP transport. */

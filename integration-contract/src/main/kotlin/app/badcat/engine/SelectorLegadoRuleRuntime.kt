@@ -45,7 +45,20 @@ class SelectorLegadoRuleRuntime(
                 !expression.trim().startsWith("@", ignoreCase = true) &&
                 expression.trim().startsWith("javascript:", ignoreCase = true)
             ) continue
-            val trimmedExpression = expression.trim()
+            val expandedExpression = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
+                source = source,
+                template = expression,
+                result = document.body,
+                baseUrl = document.url,
+                ruleName = field,
+                scriptRuntime = scriptRuntime,
+                key = document.key,
+                page = document.page,
+            )) {
+                is EngineResult.Failure -> return expanded
+                is EngineResult.Success -> expanded.value
+            }
+            val trimmedExpression = expandedExpression.trim()
             val values = when {
                 trimmedExpression.startsWith("@js:", ignoreCase = true) ||
                     trimmedExpression.startsWith("javascript:", ignoreCase = true) -> {
@@ -70,6 +83,8 @@ class SelectorLegadoRuleRuntime(
                             "sourceId" to source.id,
                             "sourceName" to source.name,
                             "ruleName" to field,
+                            "key" to document.key,
+                            "page" to document.page.toString(),
                         ),
                     )) {
                         is EngineResult.Failure -> return result
@@ -77,7 +92,7 @@ class SelectorLegadoRuleRuntime(
                     }
                 }
                 configuredType != null -> {
-                    when (val result = RuleCombinationEvaluator.evaluateNestedResult(expression) { branch ->
+                    when (val result = RuleCombinationEvaluator.evaluateNestedResult(expandedExpression) { branch ->
                         SelectorRuleEvaluator.evaluate(document, configuredType, branch)
                     }) {
                         is EngineResult.Failure -> return result
@@ -92,7 +107,7 @@ class SelectorLegadoRuleRuntime(
                     }
                 }
                 else -> {
-                    when (val result = LegadoRuleExpressionDispatcher.evaluate(document, expression)) {
+                    when (val result = LegadoRuleExpressionDispatcher.evaluate(document, expandedExpression)) {
                         is EngineResult.Failure -> return result
                         is EngineResult.Success -> result.value
                     }
