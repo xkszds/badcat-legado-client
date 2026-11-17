@@ -81,7 +81,7 @@ class CssSearchResultsParser {
             )
         }
         if (candidates.isEmpty() && items.isNotEmpty()) {
-            val sampleDocument = SourceDocument(response.finalUrl, items.first(), response.contentType, key, page)
+            val sampleDocument = SourceDocument(response.finalUrl, items.first(), response.contentType)
             val nameProbe = rules["name"]?.let { evaluateScalarRule(sampleDocument, normalizeJsonRule(items.first(), it)) }
             val urlProbe = rules["bookUrl"]?.let { evaluateScalarRule(sampleDocument, normalizeJsonRule(items.first(), it)) }
             return unsupported(
