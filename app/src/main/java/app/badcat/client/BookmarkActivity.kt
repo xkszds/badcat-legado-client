@@ -74,6 +74,7 @@ class BookmarkActivity : Activity() {
                 textSize = 14f; gravity = Gravity.CENTER; setTextColor(muted)
                 setPadding(dp(18), dp(54), dp(18), dp(54))
             })
+            BadcatTheme.applyTree(this, window.decorView)
             return
         }
         content.addView(TextView(this).apply {
