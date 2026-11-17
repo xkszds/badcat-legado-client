@@ -61,6 +61,11 @@ class SourceSearchActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.statusBarColor = card
+        window.navigationBarColor = page
+        @Suppress("DEPRECATION")
+        window.decorView.systemUiVisibility = if (darkMode) 0 else
+            View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
         engine = BadcatReadingEngineFactory(applicationContext).create()
         contentType = intent.getStringExtra(EXTRA_CONTENT_TYPE)
             ?.takeIf { it in listOf("小说", "漫画", "综合") } ?: "小说"
@@ -151,7 +156,7 @@ class SourceSearchActivity : Activity() {
 
     private fun buildSourceStrip(): View = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
-        setBackgroundColor(Color.WHITE)
+        setBackgroundColor(card)
         val scroll = HorizontalScrollView(this@SourceSearchActivity).apply {
             isHorizontalScrollBarEnabled = false
             sourceTabs = LinearLayout(this@SourceSearchActivity).apply {
@@ -175,7 +180,7 @@ class SourceSearchActivity : Activity() {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER
         setPadding(dp(16), dp(8), dp(16), dp(8))
-        setBackgroundColor(Color.WHITE)
+        setBackgroundColor(card)
         previousPageButton = pageButton("上一页") {
             if (currentPage > 1) {
                 currentPage--
