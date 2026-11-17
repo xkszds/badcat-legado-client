@@ -36,8 +36,7 @@ class DownloadManagementActivity : Activity() {
         refresh()
     }
 
-    override fun onResume() { super.onResume()
-        BadcatTheme.applyTree(this, window.decorView); if (::list.isInitialized) refresh() }
+    override fun onResume() { super.onResume(); if (::list.isInitialized) refresh(); BadcatTheme.applyTree(this, window.decorView) }
 
     private fun refresh() {
         list.removeAllViews()
