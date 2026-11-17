@@ -156,7 +156,7 @@ class SourceBookActivity : Activity() {
             addView(favoriteButton, LinearLayout.LayoutParams(0, dpBook(48), 1f))
             startReadingButton = Button(this@SourceBookActivity).apply {
                 text = "开始阅读"
-                isEnabled = false
+                // Keep taps available while the TOC loads; the request is queued.
                 setOnClickListener { beginReadingOrQueue() }
             }
             addView(startReadingButton, LinearLayout.LayoutParams(0, dpBook(48), 1f).apply {
