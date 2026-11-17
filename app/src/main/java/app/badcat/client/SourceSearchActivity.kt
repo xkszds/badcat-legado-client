@@ -36,6 +36,7 @@ class SourceSearchActivity : Activity() {
     companion object {
         const val EXTRA_INITIAL_QUERY = "initial_query"
         const val EXTRA_CONTENT_TYPE = "content_type"
+        const val EXTRA_FOCUS_SEARCH = "focus_search"
     }
 
     private val worker: ExecutorService = Executors.newSingleThreadExecutor()
@@ -100,6 +101,13 @@ class SourceSearchActivity : Activity() {
         root.addView(buildPagination())
         setContentView(root)
         loadSources()
+        if (intent.getBooleanExtra(EXTRA_FOCUS_SEARCH, false)) {
+            keywordInput.requestFocus()
+            keywordInput.post {
+                val inputManager = getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                inputManager.showSoftInput(keywordInput, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+            }
+        }
     }
 
     private fun buildToolbar(): View = LinearLayout(this).apply {
@@ -114,13 +122,6 @@ class SourceSearchActivity : Activity() {
             setTextColor(ink)
             setOnClickListener { finish() }
         }, LinearLayout.LayoutParams(dp(42), dp(44)))
-        addView(TextView(this@SourceSearchActivity).apply {
-            text = "搜索"
-            textSize = 16f
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(ink)
-            setPadding(dp(8), 0, 0, 0)
-        })
     }
 
     private fun buildSearchControls(): View {
