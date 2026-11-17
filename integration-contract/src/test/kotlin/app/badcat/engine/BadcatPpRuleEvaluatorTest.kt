@@ -236,4 +236,50 @@ class BadcatPpRuleEvaluatorTest {
 
 
 
+    @Test
+    fun extractsEveryNestedVideoLinkFromOneSelectedContainer() {
+        val document = SourceDocument(
+            url = "https://video.example/watch/list",
+            body = """<section id="episodes">
+                <a href="/play/1">Episode 1</a>
+                <div><a href="../play/2" aria-label="Episode 2"></a></div>
+                <a href="javascript:alert(1)">Unsafe</a>
+            </section>""",
+        )
+        val result = BadcatPpRuleEvaluator.extractVideoLinks(
+            document,
+            BadcatPpRule(ruleTypeValue = 1, pageRule = "//section[@id='episodes']"),
+        )
+        assertEquals(
+            listOf(
+                BadcatVideoLink("Episode 1", "https://video.example/play/1"),
+                BadcatVideoLink("Episode 2", "https://video.example/play/2"),
+            ),
+            assertIs<EngineResult.Success<List<BadcatVideoLink>>>(result).value,
+        )
+    }
+
+    @Test
+    fun extractsEveryNestedComicImageFromOneSelectedContainer() {
+        val document = SourceDocument(
+            url = "https://comic.example/reader/page/1",
+            body = """<section id="pages">
+                <img data-original="/images/one.jpg" src="/placeholder.gif">
+                <div><img src="../images/two.jpg"></div>
+                <img src="data:image/png;base64,AAAA">
+            </section>""",
+        )
+        val result = BadcatPpRuleEvaluator.extractComicImageUrls(
+            document,
+            BadcatPpRule(ruleTypeValue = 1, pageRule = "//section[@id='pages']"),
+        )
+        assertEquals(
+            listOf(
+                "https://comic.example/images/one.jpg",
+                "https://comic.example/reader/images/two.jpg",
+            ),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
 }
