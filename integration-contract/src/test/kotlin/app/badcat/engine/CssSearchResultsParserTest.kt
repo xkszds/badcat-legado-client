@@ -41,6 +41,27 @@ class CssSearchResultsParserTest {
     }
 
     @Test
+    fun readsExplicitBookStatusForCoverBadges() {
+        val source = source(
+            """{"bookList":"div.book","name":"h2@text","bookUrl":"a@href","bookStatus":".state@text"}""",
+        )
+        val response = SourceHttpResponse(
+            statusCode = 200,
+            finalUrl = "https://reader.example/search",
+            body = """
+                <div class="book"><h2>Ongoing</h2><a href="/ongoing">open</a><span class="state">连载中</span></div>
+                <div class="book"><h2>Finished</h2><a href="/finished">open</a><span class="state">已完结</span></div>
+            """.trimIndent(),
+        )
+
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parse(source, response),
+        ).value
+
+        assertEquals(listOf("连载中", "已完结"), books.map { it.status })
+    }
+
+    @Test
     fun skipsCardsWithoutRequiredNameOrBookUrlAndDeduplicatesUrls() {
         val source = source("""{"bookList":"div.book","name":"h2@text","bookUrl":"a@href"}""")
         val response = SourceHttpResponse(
