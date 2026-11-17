@@ -193,6 +193,40 @@ class SourceCatalogActivity : Activity() {
                             }
                         }
                         row.addView(enabledSwitch)
+                        row.addView(Button(this@SourceCatalogActivity).apply {
+                            text = "删除此书源"
+                            setOnClickListener {
+                                BadcatTheme.alertBuilder(this@SourceCatalogActivity)
+                                    .setTitle("删除书源")
+                                    .setMessage("确定删除“${source.name}”吗？此操作只删除本机书源配置，同时清除该书源保存的登录信息和 Cookie，不会删除已收藏的小说或阅读进度。")
+                                    .setNegativeButton("取消", null)
+                                    .setPositiveButton("删除") { _, _ ->
+                                        isEnabled = false
+                                        scope.launch {
+                                            when (val removed = catalog.remove(source.id)) {
+                                                is app.badcat.engine.EngineResult.Success -> {
+                                                    if (removed.value) {
+                                                        SharedPreferencesSourceLoginSessionStore(applicationContext).clearSource(source.id)
+                                                        SharedPreferencesSourceCookieJar(applicationContext, source.id).clear()
+                                                        message.text = "已删除书源：${source.name}"
+                                                    } else {
+                                                        message.text = "书源已不存在：${source.name}"
+                                                    }
+                                                    refreshCatalog()
+                                                }
+                                                is app.badcat.engine.EngineResult.Failure -> {
+                                                    message.text = "删除失败：${removed.message}"
+                                                    refreshCatalog()
+                                                }
+                                            }
+                                        }
+                                    }
+                                    .show()
+                            }
+                        }, LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ))
                         if (source.enabled && source.enabledExplore && !source.exploreUrl.isNullOrBlank()) {
                             row.addView(actionButton("书源发现 / 分类探索") {
                                 promptExplore(source.id, source.name)
