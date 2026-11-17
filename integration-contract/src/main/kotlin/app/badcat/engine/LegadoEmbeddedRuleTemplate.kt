@@ -66,13 +66,13 @@ object LegadoEmbeddedRuleTemplate {
             )
         }
         var expandedTemplate = template
-        val putMatches = PUT_PATTERN.findAll(expandedTemplate).toList()
+        val putMatches = findPutTokens(expandedTemplate)
         if (putMatches.size > MAX_VARIABLE_OPERATIONS) {
             return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Too many @put operations in one rule")
         }
         for (match in putMatches) {
             val values = runCatching {
-                val json = com.google.gson.JsonParser.parseString(match.groupValues[1])
+                val json = com.google.gson.JsonParser.parseString(match.json)
                 require(json.isJsonObject)
                 buildMap {
                     json.asJsonObject.entrySet().forEach { (name, value) ->
@@ -101,7 +101,9 @@ object LegadoEmbeddedRuleTemplate {
                 }
             }
         }
-        expandedTemplate = PUT_PATTERN.replace(expandedTemplate, "")
+        for (match in putMatches.asReversed()) {
+            expandedTemplate = expandedTemplate.removeRange(match.range)
+        }
         val getMatches = GET_PATTERN.findAll(expandedTemplate).toList()
         if (getMatches.size > MAX_VARIABLE_OPERATIONS) {
             return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Too many @get operations in one rule")
@@ -144,10 +146,65 @@ object LegadoEmbeddedRuleTemplate {
     fun containsVariableRule(value: String): Boolean =
         value.contains("@get:{", true) || value.contains("@put:{", true)
 
+    private data class PutToken(val range: IntRange, val json: String)
+
+    /**
+     * Read @put JSON objects with balanced braces. A delimiter regex can
+     * truncate valid JSON strings that themselves contain a closing brace.
+     * Incomplete directives remain literal, matching the prior behavior.
+     */
+    private fun findPutTokens(template: String): List<PutToken> {
+        val tokens = mutableListOf<PutToken>()
+        var searchFrom = 0
+        while (searchFrom < template.length) {
+            val marker = template.indexOf("@put:", searchFrom, ignoreCase = true)
+            if (marker < 0) break
+            val objectStart = marker + "@put:".length
+            if (objectStart >= template.length || template[objectStart] != '{') {
+                searchFrom = objectStart
+                continue
+            }
+            var depth = 0
+            var quote = false
+            var escaped = false
+            var end = -1
+            var index = objectStart
+            while (index < template.length) {
+                val char = template[index]
+                if (quote) {
+                    when {
+                        escaped -> escaped = false
+                        char == '\\' -> escaped = true
+                        char == '"' -> quote = false
+                    }
+                } else {
+                    when (char) {
+                        '"' -> quote = true
+                        '{' -> depth++
+                        '}' -> {
+                            depth--
+                            if (depth == 0) {
+                                end = index
+                                break
+                            }
+                        }
+                    }
+                }
+                index++
+            }
+            if (end >= objectStart) {
+                tokens += PutToken(marker..end, template.substring(objectStart, end + 1))
+                searchFrom = end + 1
+            } else {
+                searchFrom = objectStart + 1
+            }
+        }
+        return tokens
+    }
+
     private const val MAX_TEMPLATE_CHARS = 16 * 1024
     private const val MAX_VARIABLE_OPERATIONS = 32
     private const val MAX_VARIABLE_KEY_CHARS = 256
     private const val MAX_VARIABLE_VALUE_CHARS = 16 * 1024
-    private val PUT_PATTERN = Regex("@put:(\\{[^}]+?\\})", RegexOption.IGNORE_CASE)
     private val GET_PATTERN = Regex("@get:\\{([^}]+?)\\}", RegexOption.IGNORE_CASE)
 }
