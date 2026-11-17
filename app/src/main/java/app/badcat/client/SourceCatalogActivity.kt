@@ -147,8 +147,8 @@ class SourceCatalogActivity : Activity() {
                                         val result = withContext(Dispatchers.IO) {
                                             loginCheckService.checkLogin(source)
                                         }
-                                        isEnabled = true
-                                        text = "检查登录状态"
+                                        this@apply.isEnabled = true
+                                        this@apply.text = "检查登录状态"
                                         message.text = when (result) {
                                             is app.badcat.engine.EngineResult.Success ->
                                                 if (result.value) source.name + "：已登录" else source.name + "：未登录"
