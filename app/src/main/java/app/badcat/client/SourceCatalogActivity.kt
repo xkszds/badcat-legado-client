@@ -196,6 +196,7 @@ class SourceCatalogActivity : Activity() {
                 is app.badcat.engine.EngineResult.Failure ->
                     message.text = "读取书源失败：${result.message}"
             }
+            window.decorView.post { BadcatTheme.applyTree(this@SourceCatalogActivity, window.decorView) }
         }
     }
 
