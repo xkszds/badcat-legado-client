@@ -98,7 +98,7 @@ class RhinoSourceScriptRuntime(
                     }
                 }
                 scope["source"] = sourceExtensions.computeIfAbsent(source.id) {
-                    RhinoSourceLoginExtensions(source.id, sourceLoginSessionStore)
+                    RhinoSourceLoginExtensions(source.id, sourceLoginSessionStore, sourceKeyValueStore, source.id)
                 }
                 val result = try {
                     withTimeout(timeoutMillis) {
