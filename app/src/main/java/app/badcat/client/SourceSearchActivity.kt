@@ -87,8 +87,8 @@ class SourceSearchActivity : Activity() {
             setBackgroundColor(page)
         }
         rootView.addView(buildSearchControls())
-        root.addView(buildSourceStrip())
-        root.addView(buildDisclaimer())
+        rootView.addView(buildSourceStrip())
+        rootView.addView(buildDisclaimer())
 
         val scroll = ScrollView(this).apply {
             isFillViewport = true
