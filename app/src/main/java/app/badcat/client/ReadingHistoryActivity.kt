@@ -42,6 +42,7 @@ class ReadingHistoryActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        BadcatTheme.applyTree(this, window.decorView)
         if (::list.isInitialized) refresh()
     }
 
