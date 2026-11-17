@@ -84,7 +84,14 @@ class SourceReadingEngine(
         return detailService.load(source, bookUrl)
     }
 
-    override suspend fun chapters(sourceId: String, bookUrl: String): EngineResult<List<BookChapter>> {
+    override suspend fun chapters(sourceId: String, bookUrl: String): EngineResult<List<BookChapter>> =
+        chaptersIncremental(sourceId, bookUrl) { }
+
+    override suspend fun chaptersIncremental(
+        sourceId: String,
+        bookUrl: String,
+        onChapters: suspend (List<BookChapter>) -> Unit,
+    ): EngineResult<List<BookChapter>> {
         val source = when (val result = findSource(sourceId)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
@@ -93,7 +100,7 @@ class SourceReadingEngine(
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
         }
-        return tocService.load(source, bookUrl, detail.tocUrl)
+        return tocService.load(source, bookUrl, detail.tocUrl, onChapters)
     }
 
     override suspend fun chapterContent(
