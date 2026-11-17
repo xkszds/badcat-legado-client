@@ -38,6 +38,9 @@ class SourceCatalogActivity : Activity() {
             RhinoSourceScriptRuntime(
                 sourceKeyValueStore = SharedPreferencesSourceScriptKeyValueStore(applicationContext),
                 sourceLoginSessionStore = sessions,
+                sourceCookieReader = { sourceId, url ->
+                    SharedPreferencesSourceCookieJar(applicationContext, sourceId).getCookie(url)
+                },
             ),
         )
     }
