@@ -47,6 +47,7 @@ class SourceBookActivity : Activity() {
     private lateinit var coverView: ImageView
     private var introExpanded = false
     private var currentCoverUrl: String? = null
+    private var currentBookStatus: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +55,7 @@ class SourceBookActivity : Activity() {
         bookUrl = intent.getStringExtra(EXTRA_BOOK_URL).orEmpty()
         bookName = intent.getStringExtra(EXTRA_BOOK_NAME).orEmpty()
         currentCoverUrl = intent.getStringExtra(EXTRA_BOOK_COVER_URL)
+        currentBookStatus = intent.getStringExtra(EXTRA_BOOK_STATUS)
         val engineFactory = BadcatReadingEngineFactory(applicationContext)
         engine = engineFactory.create()
         webViewPurificationAdapter = engineFactory.webViewPurificationAdapter()
@@ -75,7 +77,7 @@ class SourceBookActivity : Activity() {
         val favoriteButton = Button(this).apply {
             text = if (FavoriteBooks.contains(this@SourceBookActivity, sourceId, bookUrl)) "已收藏" else "加入收藏"
             setOnClickListener {
-                val added = FavoriteBooks.add(this@SourceBookActivity, sourceId, bookUrl, bookName, currentCoverUrl)
+                val added = FavoriteBooks.add(this@SourceBookActivity, sourceId, bookUrl, bookName, currentCoverUrl, currentBookStatus)
                 text = if (added) "已收藏" else "已收藏"
                 android.widget.Toast.makeText(
                     this@SourceBookActivity,
@@ -225,6 +227,10 @@ class SourceBookActivity : Activity() {
                     is EngineResult.Failure -> status.text = "详情加载失败（${detail.code}）：${detail.message}"
                     is EngineResult.Success -> {
                         val book = detail.value
+                        book.status?.takeIf { it.isNotBlank() }?.let { sourceStatus ->
+                            currentBookStatus = sourceStatus
+                            FavoriteBooks.updateStatus(this@SourceBookActivity, sourceId, bookUrl, sourceStatus)
+                        }
                         book.coverUrl?.takeIf { it.isNotBlank() }?.let { coverUrl ->
                             currentCoverUrl = coverUrl
                             FavoriteBooks.updateCover(this@SourceBookActivity, sourceId, bookUrl, coverUrl)
@@ -412,6 +418,7 @@ class SourceBookActivity : Activity() {
         const val EXTRA_BOOK_URL = "book_url"
         const val EXTRA_BOOK_NAME = "book_name"
         const val EXTRA_BOOK_COVER_URL = "book_cover_url"
+        const val EXTRA_BOOK_STATUS = "book_status"
     }
 }
 
