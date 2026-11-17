@@ -13,49 +13,84 @@ object BookCoverLoader {
 
     fun load(target: ImageView, rawUrl: String?) {
         target.setImageResource(android.R.drawable.ic_menu_gallery)
-        if (rawUrl.isNullOrBlank()) return
-        val url = runCatching { URL(rawUrl) }.getOrNull() ?: return
-        if (url.protocol != "http" && url.protocol != "https") return
+        if (rawUrl.isNullOrBlank()) {
+            target.tag = null
+            return
+        }
+        val initialUrl = runCatching { URL(rawUrl) }.getOrNull() ?: return
+        if (!CoverUrlPolicy.isSafe(initialUrl)) return
         target.tag = rawUrl
         val reference = WeakReference(target)
         worker.execute {
-            var connection: HttpURLConnection? = null
-            try {
-                connection = (url.openConnection() as HttpURLConnection).apply {
-                    connectTimeout = 8_000
-                    readTimeout = 8_000
-                    instanceFollowRedirects = true
-                    setRequestProperty("Accept", "image/*")
-                }
-                connection.connect()
-                if (connection.responseCode !in 200..299 || connection.contentLength > 2 * 1024 * 1024) return@execute
-                val bytes = connection.inputStream.use { input ->
-                    val output = java.io.ByteArrayOutputStream()
-                    val buffer = ByteArray(8 * 1024)
-                    var total = 0
-                    while (true) {
-                        val count = input.read(buffer)
-                        if (count < 0) break
-                        total += count
-                        if (total > 2 * 1024 * 1024) return@execute
-                        output.write(buffer, 0, count)
+            var currentUrl = initialUrl
+            var redirects = 0
+            while (true) {
+                val connection = try {
+                    (currentUrl.openConnection() as HttpURLConnection).apply {
+                        connectTimeout = 8_000
+                        readTimeout = 8_000
+                        instanceFollowRedirects = false
+                        setRequestProperty("Accept", "image/*")
                     }
-                    output.toByteArray()
+                } catch (_: Exception) {
+                    return@execute
                 }
-                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
-                if (bounds.outWidth <= 0 || bounds.outHeight <= 0 || bounds.outWidth > 8_000 || bounds.outHeight > 8_000) return@execute
-                val sample = maxOf(1, Integer.highestOneBit(maxOf(bounds.outWidth / 720, bounds.outHeight / 960)))
-                val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample }) ?: return@execute
-                android.os.Handler(android.os.Looper.getMainLooper()).post {
-                    val imageView = reference.get()
-                    if (imageView != null && imageView.tag == rawUrl) imageView.setImageBitmap(bitmap)
+                try {
+                    val status = connection.responseCode
+                    if (status in REDIRECT_CODES) {
+                        val location = connection.getHeaderField("Location") ?: return@execute
+                        val next = CoverUrlPolicy.resolveRedirect(currentUrl, location) ?: return@execute
+                        if (redirects >= MAX_REDIRECTS) return@execute
+                        redirects++
+                        currentUrl = next
+                        continue
+                    }
+                    if (status !in 200..299 || connection.contentLength > MAX_BYTES) return@execute
+                    val bytes = connection.inputStream.use { input ->
+                        val output = java.io.ByteArrayOutputStream()
+                        val buffer = ByteArray(8 * 1024)
+                        var total = 0
+                        while (true) {
+                            val count = input.read(buffer)
+                            if (count < 0) break
+                            total += count
+                            if (total > MAX_BYTES) return@execute
+                            output.write(buffer, 0, count)
+                        }
+                        output.toByteArray()
+                    }
+                    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+                    if (bounds.outWidth <= 0 || bounds.outHeight <= 0 ||
+                        bounds.outWidth > MAX_DIMENSION || bounds.outHeight > MAX_DIMENSION
+                    ) return@execute
+                    val sample = maxOf(
+                        1,
+                        Integer.highestOneBit(maxOf(bounds.outWidth / 720, bounds.outHeight / 960)),
+                    )
+                    val bitmap = BitmapFactory.decodeByteArray(
+                        bytes,
+                        0,
+                        bytes.size,
+                        BitmapFactory.Options().apply { inSampleSize = sample },
+                    ) ?: return@execute
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        val imageView = reference.get()
+                        if (imageView != null && imageView.tag == rawUrl) imageView.setImageBitmap(bitmap)
+                        else bitmap.recycle()
+                    }
+                    return@execute
+                } catch (_: Exception) {
+                    return@execute
+                } finally {
+                    connection.disconnect()
                 }
-            } catch (_: Exception) {
-                // Leave the placeholder visible.
-            } finally {
-                connection?.disconnect()
             }
         }
     }
+
+    private const val MAX_BYTES = 2 * 1024 * 1024
+    private const val MAX_DIMENSION = 8_000
+    private const val MAX_REDIRECTS = 5
+    private val REDIRECT_CODES = setOf(300, 301, 302, 303, 307, 308)
 }
