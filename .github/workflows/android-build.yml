@@ -99,6 +99,17 @@ jobs:
       - name: Run bounded Rhino replacement host tests
         run: gradle --no-daemon :app:testDebugUnitTest
 
+      - name: Upload unit test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: badcat-unit-test-reports
+          path: |
+            app/build/reports/tests/testDebugUnitTest/**
+            app/build/test-results/testDebugUnitTest/**
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Assemble debug APK
         run: gradle --no-daemon :app:assembleDebug
 
