@@ -79,6 +79,7 @@ object RuleExpressionTokenizer {
                     quote == null && char == '[' -> { regexBrackets++; index++ }
                     quote == null && char == ']' -> { regexBrackets = (regexBrackets - 1).coerceAtLeast(0); index++ }
                     quote == null && regexParentheses == 0 && regexBrackets == 0 &&
+                        !(delimiter == "&&" && expression.substring(start).trimStart().startsWith("@regex:", ignoreCase = true)) &&
                         expression.startsWith(delimiter, index) -> {
                         parts += expression.substring(start, index).trim()
                         index += delimiter.length
