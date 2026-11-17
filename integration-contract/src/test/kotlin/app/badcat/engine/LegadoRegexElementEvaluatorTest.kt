@@ -206,6 +206,47 @@ class LegadoRegexElementEvaluatorTest {
     }
 
     @Test
+    fun regexReplaceFirstPreservesPrefixAndSuffixAndNoMatchReturnsOriginal() {
+        assertEquals(
+            "before X after Y",
+            assertIs<EngineResult.Success<String>>(
+                LegadoRegexElementEvaluator.replace(
+                    "before one after two",
+                    "one|two",
+                    "X",
+                    replaceFirst = true,
+                ),
+            ).value,
+        )
+        assertEquals(
+            "unchanged",
+            assertIs<EngineResult.Success<String>>(
+                LegadoRegexElementEvaluator.replace(
+                    "unchanged",
+                    "missing",
+                    "replacement",
+                    replaceFirst = true,
+                ),
+            ).value,
+        )
+    }
+
+    @Test
+    fun invalidRegexReplaceFirstFallsBackToLiteralReplacement() {
+        assertEquals(
+            "before X after [",
+            assertIs<EngineResult.Success<String>>(
+                LegadoRegexElementEvaluator.replace(
+                    "before [ after [",
+                    "[",
+                    "X",
+                    replaceFirst = true,
+                ),
+            ).value,
+        )
+    }
+
+    @Test
     fun regexStageSplitterIgnoresNestedCharacterClassIntersections() {
         val result = LegadoRegexElementEvaluator.evaluateScalar(
             "abcxyz",

@@ -209,7 +209,19 @@ object LegadoRegexElementEvaluator {
         val compiled = try {
             Pattern.compile(expression)
         } catch (_: Exception) {
-            return EngineResult.Success(if (replaceFirst) replacement else input.replace(expression, replacement))
+            val literal = if (replaceFirst) {
+                input.replaceFirst(expression, java.util.regex.Matcher.quoteReplacement(replacement))
+            } else {
+                input.replace(expression, replacement)
+            }
+            return if (literal.length <= MAX_OUTPUT_CHARACTERS) {
+                EngineResult.Success(literal)
+            } else {
+                EngineResult.Failure(
+                    EngineErrorCode.UNSUPPORTED_RULE,
+                    "Regex replacement output exceeds the configured limit",
+                )
+            }
         }
         val started = System.nanoTime()
         val deadline = timeoutMilliseconds * 1_000_000L
@@ -217,7 +229,7 @@ object LegadoRegexElementEvaluator {
             val matcher = compiled.matcher(DeadlineCharSequence(input, started, deadline))
             val output = StringBuffer()
             if (replaceFirst) {
-                if (!matcher.find()) return EngineResult.Success("")
+                if (!matcher.find()) return EngineResult.Success(input)
                 matcher.appendReplacement(output, replacement)
             } else {
                 while (matcher.find()) {
@@ -230,6 +242,8 @@ object LegadoRegexElementEvaluator {
                     }
                 }
             }
+            // appendTail is required in both modes; without it replaceFirst
+            // silently truncates everything after the first match.
             matcher.appendTail(output)
             if (output.length > MAX_OUTPUT_CHARACTERS) {
                 EngineResult.Failure(
