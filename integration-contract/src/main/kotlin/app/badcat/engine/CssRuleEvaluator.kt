@@ -112,7 +112,7 @@ object CssRuleEvaluator {
         expression: String,
     ): EngineResult<List<String>> {
         val chain = splitRuleChain(expression)
-        if (chain.size > 2) return evaluateChained(document, chain, expression)
+        if (chain.size >= 2) return evaluateChained(document, chain, expression)
 
         val parsed = parseExpression(expression)
             ?: return EngineResult.Failure(
