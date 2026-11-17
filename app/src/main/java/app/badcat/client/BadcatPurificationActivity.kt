@@ -8,7 +8,6 @@ import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
-import android.view.View
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -100,7 +99,7 @@ class BadcatPurificationActivity : Activity() {
             return
         }
         val labels = items.map { "${it.host}\n${it.urlPattern}（${it.markRules.size} 条规则）" }.toTypedArray()
-        AlertDialog.Builder(this).setTitle("广告标记（长按删除）")
+        AlertDialog.Builder(this).setTitle("广告标记（点击后删除）")
             .setItems(labels) { _, index ->
                 val item = items[index]
                 AlertDialog.Builder(this).setTitle("删除此标记？")
