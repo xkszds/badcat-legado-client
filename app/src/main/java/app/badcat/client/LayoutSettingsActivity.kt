@@ -18,7 +18,7 @@ class LayoutSettingsActivity : Activity() {
     private val muted get() = if (dark) Color.rgb(165, 172, 182) else Color.rgb(135, 145, 158)
     private val page get() = if (dark) Color.rgb(25, 28, 33) else Color.rgb(247, 249, 252)
     private val card get() = if (dark) Color.rgb(38, 42, 49) else Color.WHITE
-    private lateinit var styleSummary: TextView
+    private lateinit var categorySummary: TextView
     private lateinit var positionSummary: TextView
     private lateinit var heightSummary: TextView
 
@@ -56,10 +56,10 @@ class LayoutSettingsActivity : Activity() {
             background = rounded(card, 14)
             setPadding(dp(16), dp(4), dp(16), dp(4))
         }
-        styleSummary = TextView(this).apply { textSize = 12f; setTextColor(muted) }
+        categorySummary = TextView(this).apply { textSize = 12f; setTextColor(muted) }
         positionSummary = TextView(this).apply { textSize = 12f; setTextColor(muted) }
         heightSummary = TextView(this).apply { textSize = 12f; setTextColor(muted) }
-        addRow(group, "首页搜索栏样式", styleSummary) { chooseStyle() }
+        addRow(group, "首页分类入口", categorySummary) { chooseCategories() }
         divider(group)
         addRow(group, "首页搜索栏位置", positionSummary) { choosePosition() }
         divider(group)
@@ -91,16 +91,20 @@ class LayoutSettingsActivity : Activity() {
         })
     }
 
-    private fun chooseStyle() {
+    private fun chooseCategories() {
         val prefs = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
-        val current = prefs.getString("home_layout_mode", "integrated") ?: "integrated"
-        val labels = arrayOf("紧凑型（更矮）", "整合型")
-        BadcatTheme.alertBuilder(this).setTitle("首页搜索栏样式")
-            .setSingleChoiceItems(labels, if (current == "small") 0 else 1) { dialog, which ->
-                prefs.edit().putString("home_layout_mode", if (which == 0) "small" else "integrated").apply()
-                dialog.dismiss()
+        val current = prefs.getStringSet("home_visible_categories", setOf("小说", "漫画", "综合"))
+            ?.toSet() ?: setOf("小说", "漫画", "综合")
+        val labels = arrayOf("小说", "漫画", "综合")
+        val checked = BooleanArray(labels.size) { labels[it] in current }
+        BadcatTheme.alertBuilder(this).setTitle("首页分类入口")
+            .setMultiChoiceItems(labels, checked) { _, which, isChecked -> checked[which] = isChecked }
+            .setNegativeButton("取消", null)
+            .setPositiveButton("保存") { _, _ ->
+                prefs.edit().putStringSet("home_visible_categories",
+                    labels.filterIndexed { index, _ -> checked[index] }.toSet()).apply()
                 refreshSummaries()
-            }.setNegativeButton("取消", null).show()
+            }.show()
     }
 
     private fun choosePosition() {
@@ -131,10 +135,13 @@ class LayoutSettingsActivity : Activity() {
 
     private fun refreshSummaries() {
         val prefs = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
-        styleSummary.text = if (prefs.getString("home_layout_mode", "integrated") == "small") "紧凑型" else "整合型"
+        val categories = prefs.getStringSet("home_visible_categories", setOf("小说", "漫画", "综合"))
+            ?.toSet() ?: setOf("小说", "漫画", "综合")
+        categorySummary.text = listOf("小说", "漫画", "综合").filter { it in categories }
+            .ifEmpty { listOf("未选择分类") }.joinToString(" · ") + "（显示在首页顶部）"
         positionSummary.text = when (prefs.getInt("home_search_top_spacing_dp", 12)) {
-            8 -> "靠上（8dp）"
-            40 -> "靠下（40dp）"
+            4 -> "靠上（4dp）"
+            24 -> "靠下（24dp）"
             else -> "居中（12dp）"
         }
         heightSummary.text = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
