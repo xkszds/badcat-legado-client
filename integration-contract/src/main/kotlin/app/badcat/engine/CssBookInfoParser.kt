@@ -12,6 +12,7 @@ class CssBookInfoParser {
         response: SourceHttpResponse,
         requestedBookUrl: String,
         scriptRuntime: SourceScriptRuntime,
+        fallbackBookName: String? = null,
     ): EngineResult<BookDetail> {
         if (requestedBookUrl.isBlank()) {
             return EngineResult.Failure(EngineErrorCode.INVALID_SOURCE, "Requested book URL must not be blank")
@@ -133,7 +134,7 @@ class CssBookInfoParser {
                 is EngineResult.Success -> values[name] = result.value
             }
         }
-        val name = values["name"] ?: return EngineResult.Failure(
+        val name = values["name"] ?: fallbackBookName?.trim()?.takeIf(String::isNotEmpty) ?: return EngineResult.Failure(
             EngineErrorCode.NOT_FOUND,
             "Book-info rule did not produce a book name for source '${source.id}'",
         )
@@ -204,6 +205,7 @@ class CssBookInfoParser {
         source: BookSource,
         response: SourceHttpResponse,
         requestedBookUrl: String,
+        fallbackBookName: String? = null,
     ): EngineResult<BookDetail> {
         if (requestedBookUrl.isBlank()) {
             return EngineResult.Failure(
@@ -257,7 +259,7 @@ class CssBookInfoParser {
         val name = when (val value = field("name")) {
             is EngineResult.Failure -> return value
             is EngineResult.Success -> value.value
-        } ?: return EngineResult.Failure(
+        } ?: fallbackBookName?.trim()?.takeIf(String::isNotEmpty) ?: return EngineResult.Failure(
             EngineErrorCode.NOT_FOUND,
             "Book-info rule did not produce a book name for source '${source.id}'",
         )
