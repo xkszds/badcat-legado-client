@@ -64,10 +64,6 @@ class SettingsActivity : Activity() {
             startActivity(Intent(this, ReaderSettingsActivity::class.java))
         }
         addDivider(group)
-        addSetting(group, "阅读界面自定义", "管理 CSS 方案、页面子选择器和阅读样式") {
-            startActivity(Intent(this, ReaderCssActivity::class.java))
-        }
-        addDivider(group)
         addSetting(group, "正文替换规则", "管理阅读内容替换规则") {
             startActivity(Intent(this, ReplaceRuleActivity::class.java))
         }
