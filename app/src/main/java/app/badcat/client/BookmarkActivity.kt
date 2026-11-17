@@ -32,12 +32,42 @@ class BookmarkActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.rgb(247, 249, 252)) }
-        root.addView(TextView(this).apply {
-            text = "书签管理"; textSize = 22f; setTextColor(ink)
-            setPadding(dp(20), dp(20), dp(20), dp(16))
-            setBackgroundColor(Color.WHITE)
+        val dark = BadcatTheme.isDark(this)
+        val page = if (dark) Color.rgb(25, 28, 33) else Color.rgb(247, 249, 252)
+        val card = if (dark) Color.rgb(38, 42, 49) else Color.WHITE
+        val foreground = if (dark) Color.rgb(235, 237, 240) else ink
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(page)
+        }
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(12), dp(8), dp(16), dp(8))
+            setBackgroundColor(card)
+        }
+        header.addView(BadcatLineIconView(this, "back", foreground).apply {
+            contentDescription = "返回"
+            isClickable = true
+            setOnClickListener { finish() }
+        }, LinearLayout.LayoutParams(dp(42), dp(42)))
+        header.addView(TextView(this).apply {
+            text = "书签管理"
+            textSize = 19f
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setTextColor(foreground)
+        }, LinearLayout.LayoutParams(0, dp(48), 1f))
+        header.addView(TextView(this).apply {
+            text = "清空"
+            textSize = 14f
+            gravity = Gravity.CENTER
+            setTextColor(if (dark) Color.rgb(239, 126, 126) else Color.rgb(190, 75, 75))
+            setPadding(dp(10), dp(8), dp(4), dp(8))
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { confirmClearAll() }
         })
+        root.addView(header)
         val scroll = ScrollView(this)
         content = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(14), dp(14), dp(20)) }
         scroll.addView(content)
@@ -122,6 +152,23 @@ class BookmarkActivity : Activity() {
             }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(9) })
         }
         BadcatTheme.applyTree(this, window.decorView)
+    }
+
+    private fun confirmClearAll() {
+        val keys = prefs.all.keys.filter { it.startsWith("chapter_bookmark_") }
+        if (keys.isEmpty()) {
+            BadcatTheme.alertBuilder(this).setMessage("当前没有可清空的书签").setPositiveButton("知道了", null).show()
+            return
+        }
+        BadcatTheme.alertBuilder(this).setTitle("清空全部书签")
+            .setMessage("将删除 ${readBookmarks().size} 条书签，不会删除小说或阅读进度。此操作不可撤销。")
+            .setNegativeButton("取消", null)
+            .setPositiveButton("清空") { _, _ ->
+                val edit = prefs.edit()
+                keys.forEach(edit::remove)
+                edit.apply()
+                refresh()
+            }.show()
     }
 
     private fun action(label: String, onClick: () -> Unit) = TextView(this).apply {
