@@ -149,9 +149,7 @@ object BadcatPpRuleEvaluator {
         selected: List<String>,
     ): EngineResult<List<BadcatVideoLink>> = try {
         val base = java.net.URI(baseUrl)
-        if ((!base.scheme.equals("http", ignoreCase = true) && !base.scheme.equals("https", ignoreCase = true)) ||
-            base.host.isNullOrBlank() || base.userInfo != null
-        ) {
+        if (base.toSafeHttpUrl() == null) {
             return EngineResult.Failure(
                 EngineErrorCode.INVALID_SOURCE,
                 "Badcat video base URL is not a safe HTTP(S) URL",
@@ -164,10 +162,8 @@ object BadcatPpRuleEvaluator {
                 val resolved = runCatching {
                     val target = base.resolve(href).normalize()
                     target.takeIf {
-                        (it.scheme.equals("http", ignoreCase = true) ||
-                            it.scheme.equals("https", ignoreCase = true)) &&
-                            !it.host.isNullOrBlank() && it.userInfo == null
-                    }?.toASCIIString()
+                        it.toSafeHttpUrl() != null
+                    }?.toSafeHttpUrl()
                 }.getOrNull() ?: return@mapNotNull null
                 val label = sequenceOf(
                     element.attr("title"),
@@ -199,10 +195,7 @@ object BadcatPpRuleEvaluator {
         }
         return try {
             val base = java.net.URI(document.url)
-            if (!base.scheme.equals("http", ignoreCase = true) &&
-                !base.scheme.equals("https", ignoreCase = true) ||
-                base.host.isNullOrBlank() || base.userInfo != null
-            ) {
+            if (base.toSafeHttpUrl() == null) {
                 return EngineResult.Failure(
                     EngineErrorCode.INVALID_SOURCE,
                     "Badcat comic image base URL is not a safe HTTP(S) URL",
@@ -216,10 +209,7 @@ object BadcatPpRuleEvaluator {
                         .mapNotNull { raw ->
                             runCatching {
                                 val target = java.net.URI(document.url).resolve(raw).normalize()
-                                target.takeIf {
-                                    (it.scheme.equals("http", true) || it.scheme.equals("https", true)) &&
-                                        !it.host.isNullOrBlank() && it.userInfo == null
-                                }?.toASCIIString()
+                                target.toSafeHttpUrl()
                             }.getOrNull()
                         }
                         .firstOrNull()
@@ -260,9 +250,7 @@ object BadcatPpRuleEvaluator {
                 )
             }
             val base = java.net.URI(pageUrl)
-            if ((!base.scheme.equals("http", ignoreCase = true) && !base.scheme.equals("https", ignoreCase = true)) ||
-                base.host.isNullOrBlank() || base.userInfo != null
-            ) {
+            if (base.toSafeHttpUrl() == null) {
                 return EngineResult.Failure(
                     EngineErrorCode.INVALID_SOURCE,
                     "Badcat comic script base URL is not a safe HTTP(S) URL",
@@ -274,10 +262,7 @@ object BadcatPpRuleEvaluator {
                 if (raw.isEmpty()) return@mapNotNull null
                 runCatching {
                     val target = base.resolve(raw).normalize()
-                    target.takeIf {
-                        (it.scheme.equals("http", true) || it.scheme.equals("https", true)) &&
-                            !it.host.isNullOrBlank() && it.userInfo == null
-                    }?.toASCIIString()
+                    target.toSafeHttpUrl()
                 }.getOrNull()
             }.distinct()
             EngineResult.Success(urls)
@@ -288,6 +273,16 @@ object BadcatPpRuleEvaluator {
                 error,
             )
         }
+    }
+
+
+    /** Canonicalizes the case-insensitive URI scheme while rejecting unsafe authorities. */
+    private fun java.net.URI.toSafeHttpUrl(): String? {
+        val normalizedScheme = scheme?.lowercase() ?: return null
+        if (normalizedScheme != "http" && normalizedScheme != "https") return null
+        if (host.isNullOrBlank() || userInfo != null) return null
+        val serialized = toASCIIString()
+        return normalizedScheme + serialized.substringAfter(':')
     }
 
     const val MAX_SCRIPT_RESULT_CHARS = 2 * 1024 * 1024
