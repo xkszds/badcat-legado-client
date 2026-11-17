@@ -100,9 +100,15 @@ class MainActivity : Activity() {
         )
     }
 
-    private fun searchBarTopSpacing(): Int =
-        getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
-            .getInt("home_search_top_spacing_dp", 22).coerceIn(12, 60)
+    private fun searchBarTopSpacing(): Int {
+        val prefs = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
+        val saved = prefs.getInt("home_search_top_spacing_dp", 46)
+        // Earlier builds defaulted to 22dp, which left the search field too close
+        // to the logo. Migrate that old default to a visibly lower position.
+        val migrated = if (saved < 34) 46 else saved
+        if (migrated != saved) prefs.edit().putInt("home_search_top_spacing_dp", migrated).apply()
+        return migrated.coerceIn(24, 72)
+    }
 
     private fun searchBarMode(): String =
         getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
