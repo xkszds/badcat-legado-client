@@ -107,6 +107,34 @@ class LegadoEmbeddedUrlTemplateTest {
     }
 
     @Test
+    fun validatesAllPutObjectsBeforePersistingAnyValues() = kotlinx.coroutines.runBlocking {
+        val values = mutableMapOf<String, String>()
+        val evaluator = object : LegadoEmbeddedScriptEvaluator {
+            override suspend fun evaluate(script: String, key: String, page: Int): EngineResult<Any?> =
+                EngineResult.Success("unused")
+
+            override suspend fun getString(key: String): EngineResult<String?> =
+                EngineResult.Success(values[key])
+
+            override suspend fun putString(key: String, value: String): EngineResult<Unit> {
+                values[key] = value
+                return EngineResult.Success(Unit)
+            }
+        }
+
+        val result = LegadoEmbeddedRuleTemplate.resolve(
+            template = """@put:{"first":"would-write"}@put:{invalid}https://example.test/""",
+            key = "",
+            page = 1,
+            result = "",
+            evaluator = evaluator,
+        )
+
+        assertEquals(EngineErrorCode.UNSUPPORTED_RULE, assertIs<EngineResult.Failure>(result).code)
+        assertEquals(emptyMap(), values)
+    }
+
+    @Test
     fun parsesPutJsonWhenStringValuesContainBraces() = kotlinx.coroutines.runBlocking {
         val values = mutableMapOf<String, String>()
         val evaluator = object : LegadoEmbeddedScriptEvaluator {
