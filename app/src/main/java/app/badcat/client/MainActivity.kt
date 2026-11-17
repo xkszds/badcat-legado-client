@@ -15,7 +15,7 @@ import android.widget.TextView
 class MainActivity : Activity() {
     private var contentType = "小说"
     private var appliedSearchBarMode = "integrated"
-    private var appliedSearchBarTopSpacing = 46
+    private var appliedSearchBarTopSpacing = 24
     private var darkMode = false
     private lateinit var homeSearchBar: BadcatSearchBarView
     private val blue = Color.rgb(55, 137, 222)
@@ -105,12 +105,11 @@ class MainActivity : Activity() {
 
     private fun searchBarTopSpacing(): Int {
         val prefs = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
-        val saved = prefs.getInt("home_search_top_spacing_dp", 46)
-        // Earlier builds defaulted to 22dp, which left the search field too close
-        // to the logo. Migrate that old default to a visibly lower position.
-        val migrated = if (saved !in listOf(34, 46, 58)) 46 else saved
+        val saved = prefs.getInt("home_search_top_spacing_dp", 24)
+        // Keep the three layout choices visually distinct and bounded.
+        val migrated = if (saved !in listOf(8, 24, 40)) 24 else saved
         if (migrated != saved) prefs.edit().putInt("home_search_top_spacing_dp", migrated).apply()
-        return migrated.coerceIn(24, 72)
+        return migrated
     }
 
     private fun searchBarMode(): String =
