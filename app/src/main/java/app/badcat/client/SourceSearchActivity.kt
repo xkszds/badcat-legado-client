@@ -171,7 +171,7 @@ class SourceSearchActivity : Activity() {
             val row = LinearLayout(this@SourceSearchActivity).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(8), 0, dp(12), 0)
+                setPadding(dp(14), dp(6), dp(14), dp(6))
                 addView(TextView(this@SourceSearchActivity).apply {
                     text = "‹"
                     textSize = 31f
@@ -181,11 +181,11 @@ class SourceSearchActivity : Activity() {
                     isClickable = true
                     isFocusable = true
                     setOnClickListener { finish() }
-                }, LinearLayout.LayoutParams(dp(42), dp(48)))
-                addView(sharedBar, LinearLayout.LayoutParams(0, dp(48), 1f))
+                }, LinearLayout.LayoutParams(dp(40), dp(40)))
+                addView(sharedBar, LinearLayout.LayoutParams(0, dp(40), 1f))
             }
             addView(row, FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(48), Gravity.TOP
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(52), Gravity.TOP
             ))
         }
     }
@@ -271,13 +271,10 @@ class SourceSearchActivity : Activity() {
                         }
                         renderSourceTabs()
                         BadcatTheme.applyTree(this@SourceSearchActivity, rootView)
-                        status.text = if (enabledSources.isEmpty()) {
-                            "暂无可搜索书源，请先到「我的 - 书源管理」导入 Legado 书源"
-                        } else {
-                            ""
-                        }
-                        status.visibility = if (enabledSources.isEmpty()) View.VISIBLE else View.GONE
-                        searchButton.isEnabled = enabledSources.isNotEmpty()
+                        // Do not inject source-management notices into the search-history view.
+                        status.text = ""
+                        status.visibility = View.GONE
+                        searchButton.isEnabled = true
                         if (keywordInput.text.toString().isNotBlank() && enabledSources.isNotEmpty()) {
                             search()
                         }
@@ -343,7 +340,7 @@ class SourceSearchActivity : Activity() {
             else listOfNotNull(enabledSources.getOrNull(selectedSourcePosition - 1))
         if (selectedSources.isEmpty()) {
             status.visibility = View.VISIBLE
-            status.text = "没有可搜索的书源"
+            status.text = "请先添加并启用书源后再搜索"
             return
         }
         val query = keywordInput.text.toString().trim()
