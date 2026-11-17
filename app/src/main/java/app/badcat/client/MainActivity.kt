@@ -40,99 +40,21 @@ class MainActivity : Activity() {
         orientation = LinearLayout.VERTICAL
         setBackgroundColor(page)
         addView(buildHeader())
-        addView(buildHomeEmptyState(), LinearLayout.LayoutParams(
+        // Clean home canvas: no fabricated server-error, ranking, draw or cash-promotion content.
+        addView(View(this@MainActivity), LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
         ))
         addView(MainBottomNavigation.create(this@MainActivity, "search"))
     }
 
-    private fun buildHomeEmptyState(): View = LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        setBackgroundColor(page)
-        addView(buildHomeShortcuts(), LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, dp(94)
-        ))
-        val errorPanel = LinearLayout(this@MainActivity).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
-            setPadding(dp(24), dp(20), dp(24), dp(24))
-            addView(TextView(this@MainActivity).apply {
-                text = "🐈"
-                textSize = 72f
-                gravity = Gravity.CENTER
-                setTextColor(Color.rgb(185, 207, 242))
-            }, LinearLayout.LayoutParams(-1, dp(132)))
-            addView(TextView(this@MainActivity).apply {
-                text = "服务器异常"
-                textSize = 20f
-                gravity = Gravity.CENTER
-                setTextColor(ink)
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
-            })
-            addView(TextView(this@MainActivity).apply {
-                text = "当前服务出了点问题，请稍候再试"
-                textSize = 14f
-                gravity = Gravity.CENTER
-                setTextColor(muted)
-                setPadding(0, dp(8), 0, dp(22))
-            })
-            addView(TextView(this@MainActivity).apply {
-                text = "刷新重试"
-                textSize = 16f
-                gravity = Gravity.CENTER
-                setTextColor(Color.WHITE)
-                background = rounded(blue, 28)
-                setPadding(dp(54), dp(13), dp(54), dp(13))
-                isClickable = true
-                isFocusable = true
-                setOnClickListener {
-                    startActivity(Intent(this@MainActivity, SourceSearchActivity::class.java).apply {
-                        putExtra(SourceSearchActivity.EXTRA_CONTENT_TYPE, contentType)
-                    })
-                }
-            })
-        }
-        addView(errorPanel, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
-        ))
-    }
-
-    private fun buildHomeShortcuts(): View = LinearLayout(this).apply {
-        orientation = LinearLayout.HORIZONTAL
-        gravity = Gravity.CENTER
-        setBackgroundColor(if (darkMode) Color.rgb(31, 35, 42) else Color.WHITE)
-        listOf("赚取现金").forEach { label ->
-            addView(LinearLayout(this@MainActivity).apply {
-                orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER
-                addView(TextView(this@MainActivity).apply {
-                    text = "🐾"
-                    textSize = 24f
-                    gravity = Gravity.CENTER
-                    setTextColor(if (darkMode) Color.rgb(180, 188, 201) else Color.rgb(210, 213, 219))
-                    background = rounded(if (darkMode) Color.rgb(43, 48, 57) else Color.rgb(247, 248, 250), 40)
-                    setPadding(dp(12), dp(7), dp(12), dp(7))
-                }, LinearLayout.LayoutParams(dp(48), dp(48)))
-                addView(TextView(this@MainActivity).apply {
-                    text = label
-                    textSize = 13f
-                    gravity = Gravity.CENTER
-                    setTextColor(muted)
-                    setPadding(0, dp(5), 0, 0)
-                })
-            }, LinearLayout.LayoutParams(0, -1, 1f))
-        }
-    }
-
     private fun buildHeader(): View = LinearLayout(this).apply {
-        val compact = searchBarMode() == "small"
         orientation = LinearLayout.VERTICAL
         gravity = Gravity.CENTER_HORIZONTAL
-        setPadding(dp(18), dp(if (compact) 8 else 10), dp(18), dp(if (compact) 10 else 12))
+        setPadding(dp(18), dp(10), dp(18), dp(12))
         background = rounded(blue, 0, 0, 0, 18, 18)
 
         addView(BadcatHomeLogo.create(this@MainActivity), LinearLayout.LayoutParams(
-            dp(if (compact) 154 else 178), dp(if (compact) 48 else 56)
+            dp(178), dp(56)
         ).apply { gravity = Gravity.CENTER_HORIZONTAL })
 
         // Original home hierarchy: 小说 / 漫画 / 综合 directly under the Badcat wordmark.
@@ -223,10 +145,7 @@ class MainActivity : Activity() {
         return migrated
     }
 
-    private fun searchBarMode(): String =
-        getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
-            .getString("home_layout_mode", "integrated")
-            ?.takeIf { it == "small" || it == "integrated" } ?: "integrated"
+    private fun searchBarMode(): String = "integrated"
 
     override fun onResume() {
         super.onResume()
