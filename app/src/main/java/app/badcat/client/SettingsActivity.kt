@@ -91,6 +91,7 @@ class SettingsActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        BadcatTheme.applyTree(this, window.decorView)
         val current = isDarkMode()
         if (current != dark) recreate()
     }
