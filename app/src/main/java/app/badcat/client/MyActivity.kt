@@ -220,6 +220,7 @@ class MyActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        BadcatTheme.applyTree(this, window.decorView)
         val currentDark = getSharedPreferences("badcat_appearance", MODE_PRIVATE).getString("appearance_mode", "light") == "dark"
         if (currentDark != darkMode) recreate()
     }
