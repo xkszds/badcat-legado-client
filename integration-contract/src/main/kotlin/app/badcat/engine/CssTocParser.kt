@@ -158,6 +158,24 @@ class CssTocParser {
             }
         }
 
+        if (items.isEmpty()) {
+            return unsupported(
+                source,
+                "chapterList matched zero records; rule='${resolvedListRule}'; " +
+                    "response=${response.statusCode} ${response.finalUrl}; " +
+                    "contentType=${response.contentType}; body=${response.body.take(240)}",
+            )
+        }
+
+        if (items.isEmpty()) {
+            return unsupported(
+                source,
+                "chapterList matched zero records; rule='${normalizedListRule}'; " +
+                    "response=${response.statusCode} ${response.finalUrl}; " +
+                    "contentType=${response.contentType}; body=${response.body.take(240)}",
+            )
+        }
+
         val chapters = ArrayList<BookChapter>()
         for (item in items) {
             val title = when (val result = extract(item, "chapterName")) {
