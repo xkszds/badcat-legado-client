@@ -151,6 +151,40 @@ object LegadoRegexElementEvaluator {
     }
 
     /**
+     * Evaluate one regex predicate without the multi-stage AnalyzeRule syntax.
+     * Used by legacy URL matchers that call Pattern.matcher(url).find().
+     */
+    fun matches(
+        input: String,
+        expression: String,
+        timeoutMilliseconds: Long = DEFAULT_TIMEOUT_MILLISECONDS,
+    ): EngineResult<Boolean> {
+        if (input.length > MAX_INPUT_CHARACTERS) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Regex input exceeds the configured limit")
+        }
+        if (expression.isEmpty() || expression.length > MAX_PATTERN_CHARACTERS) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Regex predicate is blank or exceeds the configured limit")
+        }
+        if (timeoutMilliseconds !in 1..5_000) {
+            return EngineResult.Failure(EngineErrorCode.INVALID_SOURCE, "Regex timeout must be between 1 and 5000ms")
+        }
+        val pattern = try {
+            Pattern.compile(expression)
+        } catch (error: Exception) {
+            return EngineResult.Failure(EngineErrorCode.PARSE, "Regex predicate could not be compiled", error)
+        }
+        val started = System.nanoTime()
+        val deadline = timeoutMilliseconds * 1_000_000L
+        return try {
+            EngineResult.Success(pattern.matcher(DeadlineCharSequence(input, started, deadline)).find())
+        } catch (timeout: RegexDeadlineExceeded) {
+            EngineResult.Failure(EngineErrorCode.RULE_TIMEOUT, "Regex predicate exceeded its time budget", timeout)
+        } catch (error: Exception) {
+            EngineResult.Failure(EngineErrorCode.PARSE, "Regex predicate could not be evaluated", error)
+        }
+    }
+
+    /**
      * Bounded implementation of AnalyzeRule's `##regex##replacement` suffix.
      * The deadline-aware CharSequence prevents a pathological replacement
      * expression from monopolizing the source parser thread.
