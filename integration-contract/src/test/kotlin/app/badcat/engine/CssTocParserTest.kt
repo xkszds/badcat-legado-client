@@ -3,6 +3,7 @@ package app.badcat.engine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 
 class CssTocParserTest {
@@ -126,6 +127,29 @@ class CssTocParserTest {
             page.chapters.map { it.url },
         )
         assertEquals(listOf("https://reader.example/catalog?page=2"), page.nextPageUrls)
+    }
+
+    @Test
+    fun explainsWhenTocSelectorMatchesNoRecords() {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{"chapterList":"ul.chapters li","chapterName":"a@text","chapterUrl":"a@href"}""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/catalog",
+            body = "<html><body>Access denied</body></html>",
+            contentType = "text/html",
+        )
+
+        val failure = assertIs<EngineResult.Failure>(
+            CssTocParser().parse(source, response, "https://reader.example/book"),
+        )
+        assertTrue(failure.message.contains("chapterList matched zero records"))
+        assertTrue(failure.message.contains("Access denied"))
+        assertTrue(failure.message.contains("text/html"))
     }
 
     @Test
