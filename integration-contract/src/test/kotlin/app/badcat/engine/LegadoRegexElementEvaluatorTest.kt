@@ -7,6 +7,38 @@ import kotlin.test.assertTrue
 
 class LegadoRegexElementEvaluatorTest {
     @Test
+    fun evaluatesSingleRegexPredicatesAndReportsMalformedPatterns() {
+        assertEquals(
+            true,
+            assertIs<EngineResult.Success<Boolean>>(
+                LegadoRegexElementEvaluator.matches("https://example.test/ad?id=42", "ad\\\\?id=\\\\d+"),
+            ).value,
+        )
+        assertEquals(
+            false,
+            assertIs<EngineResult.Success<Boolean>>(
+                LegadoRegexElementEvaluator.matches("https://example.test/book", "ad"),
+            ).value,
+        )
+        assertEquals(
+            EngineErrorCode.PARSE,
+            assertIs<EngineResult.Failure>(
+                LegadoRegexElementEvaluator.matches("url", "["),
+            ).code,
+        )
+    }
+
+    @Test
+    fun enforcesDeadlineForSingleRegexPredicates() {
+        val result = LegadoRegexElementEvaluator.matches(
+            "a".repeat(100_000) + "!",
+            "^(a+)+$",
+            timeoutMilliseconds = 10,
+        )
+        assertEquals(EngineErrorCode.RULE_TIMEOUT, assertIs<EngineResult.Failure>(result).code)
+    }
+
+    @Test
     fun extractsFullMatchesInOrder() {
         val result = LegadoRegexElementEvaluator.evaluate(
             "<li>One</li><li>Two</li>",
