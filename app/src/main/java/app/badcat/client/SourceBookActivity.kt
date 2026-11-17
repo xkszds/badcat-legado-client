@@ -412,6 +412,7 @@ class SourceChapterActivity : Activity() {
     private val worker = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
     private lateinit var engine: ReadingEngine
+    private lateinit var webViewPurificationAdapter: app.badcat.client.runtime.BadcatWebViewPurificationAdapter
     private lateinit var status: TextView
     private lateinit var body: android.webkit.WebView
     private lateinit var previousButton: android.widget.Button
@@ -454,7 +455,9 @@ class SourceChapterActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        engine = BadcatReadingEngineFactory(applicationContext).create()
+        val engineFactory = BadcatReadingEngineFactory(applicationContext)
+        engine = engineFactory.create()
+        webViewPurificationAdapter = engineFactory.webViewPurificationAdapter()
         sourceId = intent.getStringExtra(EXTRA_SOURCE_ID).orEmpty()
         bookUrl = intent.getStringExtra(EXTRA_BOOK_URL).orEmpty()
         bookName = intent.getStringExtra(EXTRA_BOOK_NAME).orEmpty()
