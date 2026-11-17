@@ -53,6 +53,25 @@ class SourceLoginSessionTest {
     }
 
     @Test
+    fun clearingSourceRemovesOnlyItsAuthenticationState() {
+        val store = InMemorySourceLoginSessionStore
+        RhinoSourceLoginExtensions("source-A", store).apply {
+            putLoginInfo("""{"token":"a"}""")
+            putLoginHeader("""{"Authorization":"Bearer a"}""")
+        }
+        RhinoSourceLoginExtensions("source-B", store).apply {
+            putLoginInfo("""{"token":"b"}""")
+            putLoginHeader("""{"Authorization":"Bearer b"}""")
+        }
+
+        store.clearSource("source-A")
+
+        assertEquals(null, store.getLoginInfo("source-A"))
+        assertEquals(null, store.getLoginHeader("source-A"))
+        assertEquals("""{"token":"b"}""", store.getLoginInfo("source-B"))
+        assertEquals("""{"Authorization":"Bearer b"}""", store.getLoginHeader("source-B"))
+    }
+    @Test
     fun rejectsOversizedAggregateLoginInfoBeforePersisting() {
         val store = InMemorySourceLoginSessionStore
         val bridge = RhinoSourceLoginExtensions("source-A", store)
