@@ -168,6 +168,51 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun exposesLegadoSourceKeyAndPersistentVariableHelpers() = runBlocking {
+        val store = InMemorySourceScriptKeyValueStore
+        val source = BookSource(
+            id = "https://source-variable.example/source.json",
+            name = "Source variable fixture",
+            baseUrl = "https://source-variable.example/",
+        )
+        val firstRuntime = RhinoSourceScriptRuntime(sourceKeyValueStore = store)
+        val secondRuntime = RhinoSourceScriptRuntime(sourceKeyValueStore = store)
+
+        val written = firstRuntime.evaluate(
+            source,
+            "source.setVariable('token-A'); source.getKey() + '|' + source.getVariable()",
+        )
+        val read = secondRuntime.evaluate(source, "source.getVariable()")
+        val cleared = secondRuntime.evaluate(source, "source.setVariable(null); source.getVariable()")
+
+        assertEquals(
+            "https://source-variable.example/source.json|token-A",
+            (written as EngineResult.Success).value,
+        )
+        assertEquals("token-A", (read as EngineResult.Success).value)
+        assertEquals("", (cleared as EngineResult.Success).value)
+        firstRuntime.clearSourceState(source.id)
+        secondRuntime.clearSourceState(source.id)
+    }
+
+    @Test
+    fun sourceVariableIsIsolatedBetweenSourcesAndRejectsOversizedValues() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val first = BookSource("https://source-var-a.example/", "A", "https://source-var-a.example/")
+        val second = BookSource("https://source-var-b.example/", "B", "https://source-var-b.example/")
+
+        val write = runtime.evaluate(first, "source.setVariable('private-A')")
+        val isolated = runtime.evaluate(second, "source.getVariable()")
+        val oversized = runtime.evaluate(first, "source.setVariable('" + "x".repeat(16 * 1024 + 1) + "')")
+
+        assertEquals("private-A", (write as EngineResult.Success).value)
+        assertEquals("", (isolated as EngineResult.Success).value)
+        assertTrue(oversized is EngineResult.Failure)
+        runtime.clearSourceState(first.id)
+        runtime.clearSourceState(second.id)
+    }
+
+    @Test
     fun exposesSourceScopedLegadoCookieLookupHelpers() = runBlocking {
         val sourceId = "https://cookie-helper.example/"
         val runtime = RhinoSourceScriptRuntime(
