@@ -11,7 +11,7 @@ import app.badcat.engine.SourceScriptRuntime
  * The provider receives the actual BookSource passed to execute(), preventing a
  * shared service graph from evaluating every source with the first source's context.
  * URL @js and {{...}} expressions receive bounded string key/page/result bindings.
- * bodyJs, WebView, Java host objects and login/session services remain unsupported.
+ * Full bodyJs, WebView and upstream Java host APIs remain unsupported; the Rhino host exposes only an explicit bounded helper allow-list.
  */
 class BadcatSourceHttpGatewayFactory(
     private val client: SourceRequestClient = OkHttpSourceRequestClient(),
