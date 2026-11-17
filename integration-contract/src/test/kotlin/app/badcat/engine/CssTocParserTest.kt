@@ -129,6 +129,29 @@ class CssTocParserTest {
     }
 
     @Test
+    fun explainsWhenTocSelectorMatchesNoRecords() {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{"chapterList":"ul.chapters li","chapterName":"a@text","chapterUrl":"a@href"}""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/catalog",
+            body = "<html><body>Access denied</body></html>",
+            contentType = "text/html",
+        )
+
+        val failure = assertIs<EngineResult.Failure>(
+            CssTocParser().parse(source, response, "https://reader.example/book"),
+        )
+        assertTrue(failure.message.contains("chapterList matched zero records"))
+        assertTrue(failure.message.contains("Access denied"))
+        assertTrue(failure.message.contains("text/html"))
+    }
+
+    @Test
     fun rejectsScriptBasedTocRules() {
         val source = BookSource(
             id = "fixture",
