@@ -421,4 +421,56 @@ class CssTocParserTest {
         assertEquals(listOf("https://reader.example/chapter/legacy"), page.chapters.map { it.url })
     }
 
+    @Test
+    fun executesJavaScriptTocCollectionRootAndPassesPageContext() = runBlocking {
+        val source = BookSource(
+            id = "https://reader.example/",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"@js:renderToc(result, page)",
+                "chapterName":"a@text",
+                "chapterUrl":"a@href"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/catalog?page=2",
+            body = "<p>source body</p>",
+        )
+        var capturedScript = ""
+        var capturedBindings: Map<String, String> = emptyMap()
+        val scriptRuntime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> {
+                capturedScript = script
+                capturedBindings = bindings
+                return EngineResult.Success(
+                    """<li><a href="/chapter/3">Chapter Three</a></li><li><a href="/chapter/4">Chapter Four</a></li>""",
+                )
+            }
+        }
+
+        val page = assertIs<EngineResult.Success<ParsedTocPage>>(
+            CssTocParser().parseWithScripts(
+                source,
+                response,
+                "https://reader.example/book",
+                scriptRuntime,
+                page = 2,
+            ),
+        ).value
+
+        assertEquals("renderToc(result, page)", capturedScript)
+        assertEquals("2", capturedBindings["page"])
+        assertEquals(listOf("Chapter Three", "Chapter Four"), page.chapters.map { it.title })
+        assertEquals(
+            listOf("https://reader.example/chapter/3", "https://reader.example/chapter/4"),
+            page.chapters.map { it.url },
+        )
+    }
+
 }

@@ -39,7 +39,15 @@ class SourceExploreService(
                 "Explore request for source '${source.id}' returned HTTP ${response.statusCode}",
             )
         }
-        return scriptRuntime?.let { parser.parseWithScripts(source, response, it, SourceRuleStage.EXPLORE) }
-            ?: parser.parse(source, response, SourceRuleStage.EXPLORE)
+        return scriptRuntime?.let {
+            parser.parseWithScripts(
+                source,
+                response,
+                it,
+                SourceRuleStage.EXPLORE,
+                key = keyword,
+                page = page ?: 1,
+            )
+        } ?: parser.parse(source, response, SourceRuleStage.EXPLORE)
     }
 }

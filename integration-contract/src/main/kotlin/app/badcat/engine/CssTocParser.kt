@@ -40,14 +40,50 @@ class CssTocParser {
                 is EngineResult.Failure -> return expanded
                 is EngineResult.Success -> expanded.value
             }
-        if (resolvedListRule.contains("@js:", true) || resolvedListRule.contains("{{")) {
-            return unsupported(source, "JavaScript collection-root rules")
-        }
         val legacyRegexMode = resolvedListRule.startsWith(":")
         val root = SourceDocument(response.finalUrl, response.body, response.contentType, page = page)
-        val items = when (val result = LegadoRuleExpressionDispatcher.evaluateElements(root, resolvedListRule)) {
-            is EngineResult.Failure -> return result
-            is EngineResult.Success -> result.value
+        val items = if (resolvedListRule.startsWith("@js:", true) ||
+            resolvedListRule.startsWith("javascript:", true)
+        ) {
+            val script = resolvedListRule.substringAfter(':').trim()
+            if (script.isBlank()) return unsupported(source, "empty JavaScript chapterList")
+            val rendered = when (val result = scriptRuntime.evaluate(
+                source = source,
+                script = script,
+                bindings = mapOf(
+                    "result" to response.body,
+                    "baseUrl" to response.finalUrl,
+                    "sourceUrl" to source.id,
+                    "sourceId" to source.id,
+                    "sourceName" to source.name,
+                    "ruleName" to "chapterList",
+                    "page" to page.toString(),
+                ),
+            )) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            }
+            val trimmed = rendered.trim()
+            if (trimmed.startsWith("[")) {
+                runCatching {
+                    com.google.gson.JsonParser.parseString(trimmed).asJsonArray.map { element ->
+                        require(element.isJsonObject || element.isJsonArray)
+                        element.toString()
+                    }
+                }.getOrElse {
+                    return unsupported(source, "JavaScript chapterList must return a valid JSON array or HTML fragments")
+                }
+            } else {
+                org.jsoup.Jsoup.parseBodyFragment(rendered).body().children().map { it.outerHtml() }
+            }
+        } else {
+            if (resolvedListRule.contains("{{")) {
+                return unsupported(source, "unresolved chapterList interpolation")
+            }
+            when (val result = LegadoRuleExpressionDispatcher.evaluateElements(root, resolvedListRule)) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            }
         }
 
         suspend fun extract(itemHtml: String, key: String): EngineResult<String?> {
