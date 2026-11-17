@@ -186,9 +186,11 @@ class SourceHttpGatewayTest {
     @Test
     fun executesUrlOptionJsBeforeRequestAndBodyJsAfterResponse() = kotlinx.coroutines.runBlocking {
         val seen = mutableListOf<String>()
-        val client = SourceRequestClient { request ->
-            seen += request.url
-            EngineResult.Success(SourceHttpResponse(200, request.url, body = "  response  "))
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                seen += request.url
+                return EngineResult.Success(SourceHttpResponse(200, request.url, body = "  response  "))
+            }
         }
         val evaluator = object : LegadoEmbeddedScriptEvaluator {
             override suspend fun evaluate(script: String, key: String, page: Int): EngineResult<Any?> =
