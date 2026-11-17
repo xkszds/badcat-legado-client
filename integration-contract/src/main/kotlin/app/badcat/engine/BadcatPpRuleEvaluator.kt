@@ -293,10 +293,10 @@ object BadcatPpRuleEvaluator {
      * selection so callers cannot accidentally reverse comic pages or video
      * episodes whose ordering contract has not been recovered.
      */
-    fun applyChapterListOrder(
-        chapters: List<String>,
+    fun <T> applyChapterListOrder(
+        chapters: List<T>,
         rule: BadcatPpRule,
-    ): List<String> = if (rule.chapterIsReverse) chapters.asReversed() else chapters
+    ): List<T> = if (rule.chapterIsReverse) chapters.asReversed() else chapters
 
 
 }
