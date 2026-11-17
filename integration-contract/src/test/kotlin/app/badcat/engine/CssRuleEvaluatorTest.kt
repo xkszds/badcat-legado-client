@@ -275,6 +275,27 @@ class CssRuleEvaluatorTest {
     }
 
     @Test
+    fun collectionRootsRetainElementsWhenTheyHaveScalarExtractionSuffixes() {
+        val textSuffix = CssRuleEvaluator.evaluateElements(document, "div.book@text")
+        val hrefSuffix = CssRuleEvaluator.evaluateElements(document, "a.title@href")
+        val attributeSuffix = CssRuleEvaluator.evaluateElements(document, "img@attr(data-id)")
+
+        val textNodes = assertIs<EngineResult.Success<List<String>>>(textSuffix).value
+        val hrefNodes = assertIs<EngineResult.Success<List<String>>>(hrefSuffix).value
+        val attributeNodes = assertIs<EngineResult.Success<List<String>>>(attributeSuffix).value
+
+        assertEquals(2, textNodes.size)
+        kotlin.test.assertTrue(textNodes[0].contains("Alpha"))
+        kotlin.test.assertTrue(textNodes[1].contains("Beta"))
+        assertEquals(2, hrefNodes.size)
+        kotlin.test.assertTrue(hrefNodes[0].contains("/book/1"))
+        kotlin.test.assertTrue(hrefNodes[1].contains("/book/2"))
+        assertEquals(2, attributeNodes.size)
+        kotlin.test.assertTrue(attributeNodes[0].contains("data-id"))
+        kotlin.test.assertTrue(attributeNodes[1].contains("data-id"))
+    }
+
+    @Test
     fun collectionExtractionKeepsTopLevelCombinationBranchesSeparate() {
         val items = CssRuleEvaluator.evaluateElements(document, "div.book && div.book")
         val fragments = assertIs<EngineResult.Success<List<String>>>(items).value
