@@ -3,6 +3,8 @@ package app.badcat.client.runtime
 import android.content.Context
 import app.badcat.client.FileBookSourceCatalog
 import app.badcat.client.FileReplaceRuleCatalog
+import app.badcat.client.BadcatAdMarkCatalog
+import app.badcat.client.BadcatPurificationSettingsStore
 import app.badcat.engine.BookTextReplacement
 import app.badcat.engine.CatalogLegadoBookTextReplacement
 import app.badcat.engine.BookSourceSearchUrlResolver
@@ -35,6 +37,8 @@ class BadcatReadingEngineFactory(
 ) {
     private val catalog = FileBookSourceCatalog(context.applicationContext)
     private val replaceRuleCatalog = FileReplaceRuleCatalog(context.applicationContext)
+    private val badcatPurificationSettings = BadcatPurificationSettingsStore(context.applicationContext)
+    private val badcatAdMarkCatalog = BadcatAdMarkCatalog(context.applicationContext)
 
     fun create(): ReadingEngine {
         val durableRequestClient = requestClient ?: OkHttpSourceRequestClient(
@@ -73,4 +77,14 @@ class BadcatReadingEngineFactory(
 
     /** Exposes durable Legado replacement-rule import/export storage. */
     fun replaceRuleCatalog(): FileReplaceRuleCatalog = replaceRuleCatalog
+
+    /** Shared Badcat WebView purification side; its rule storage stays separate from Legado. */
+    fun purificationCoordinator(): BadcatPurificationCoordinator =
+        BadcatPurificationCoordinator(
+            settings = badcatPurificationSettings,
+            adMarks = badcatAdMarkCatalog,
+        )
+
+    fun webViewPurificationAdapter(): BadcatWebViewPurificationAdapter =
+        BadcatWebViewPurificationAdapter(purificationCoordinator())
 }
