@@ -382,7 +382,14 @@ class FavoritesActivity : Activity() {
                 putExtra(SourceBookActivity.EXTRA_BOOK_STATUS, book.status)
             })
         }
-        setOnLongClickListener { selectionMode = true; selectedBooks.clear(); toggleBookSelection(book); true }
+        setOnLongClickListener {
+            if (!selectionMode) {
+                selectionMode = true
+                selectedBooks.clear()
+            }
+            toggleBookSelection(book)
+            true
+        }
         addView(BookStatusBadge.cover(this@FavoritesActivity, book.coverUrl, book.status, 72, 94),
             LinearLayout.LayoutParams(dp(72), dp(94)))
         addView(TextView(this@FavoritesActivity).apply { text = book.name; textSize = 12f; maxLines = 2; gravity = Gravity.CENTER; setTextColor(ink) })
@@ -555,7 +562,14 @@ class FavoritesActivity : Activity() {
             putExtra(SourceBookActivity.EXTRA_BOOK_NAME, book.name); putExtra(SourceBookActivity.EXTRA_BOOK_COVER_URL, book.coverUrl)
             putExtra(SourceBookActivity.EXTRA_BOOK_STATUS, book.status)
         }) }
-        setOnLongClickListener { selectionMode = true; selectedBooks.clear(); toggleBookSelection(book); true }
+        setOnLongClickListener {
+            if (!selectionMode) {
+                selectionMode = true
+                selectedBooks.clear()
+            }
+            toggleBookSelection(book)
+            true
+        }
         addView(BookStatusBadge.cover(this@FavoritesActivity, book.coverUrl, book.status, 48, 64),
             LinearLayout.LayoutParams(dp(48), dp(64)))
         addView(TextView(this@FavoritesActivity).apply { text = book.name; textSize = 14f; setTextColor(ink); setPadding(dp(12), 0, 0, 0) },
