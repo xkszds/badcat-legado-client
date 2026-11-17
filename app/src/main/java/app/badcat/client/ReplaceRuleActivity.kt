@@ -286,6 +286,7 @@ class ReplaceRuleActivity : Activity() {
                         if (rules.isNotEmpty()) status.text = "本地共 ${rules.size} 条规则"
                     }
                 }
+                window.decorView.post { BadcatTheme.applyTree(this@ReplaceRuleActivity, window.decorView) }
             }
         }
     }
