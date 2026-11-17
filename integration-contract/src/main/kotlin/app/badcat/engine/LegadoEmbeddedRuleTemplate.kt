@@ -70,35 +70,34 @@ object LegadoEmbeddedRuleTemplate {
         if (putMatches.size > MAX_VARIABLE_OPERATIONS) {
             return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Too many @put operations in one rule")
         }
+        val pendingValues = mutableListOf<Pair<String, String>>()
         for (match in putMatches) {
             val values = runCatching {
                 val json = com.google.gson.JsonParser.parseString(match.json)
                 require(json.isJsonObject)
-                buildMap {
+                buildList {
                     json.asJsonObject.entrySet().forEach { (name, value) ->
                         require(name.isNotBlank() && name.length <= MAX_VARIABLE_KEY_CHARS)
                         require(value.isJsonPrimitive && value.asJsonPrimitive.isString)
-                        put(name, value.asString)
+                        require(value.asString.length <= MAX_VARIABLE_VALUE_CHARS)
+                        add(name to value.asString)
                     }
                 }
             }.getOrElse {
                 return EngineResult.Failure(
                     EngineErrorCode.UNSUPPORTED_RULE,
-                    "Legado @put must contain a JSON object with string values",
+                    "Legado @put must contain a bounded JSON object with string values",
                     it,
                 )
             }
-            for ((name, value) in values) {
-                if (value.length > MAX_VARIABLE_VALUE_CHARS) {
-                    return EngineResult.Failure(
-                        EngineErrorCode.UNSUPPORTED_RULE,
-                        "Legado @put value exceeds the configured size limit",
-                    )
-                }
-                when (val stored = evaluator.putString(name, value)) {
-                    is EngineResult.Failure -> return stored
-                    is EngineResult.Success -> Unit
-                }
+            pendingValues += values
+        }
+        // Validate every directive before the first persistent write. A malformed
+        // later @put must not leave earlier keys partially updated.
+        for ((name, value) in pendingValues) {
+            when (val stored = evaluator.putString(name, value)) {
+                is EngineResult.Failure -> return stored
+                is EngineResult.Success -> Unit
             }
         }
         for (match in putMatches.asReversed()) {
