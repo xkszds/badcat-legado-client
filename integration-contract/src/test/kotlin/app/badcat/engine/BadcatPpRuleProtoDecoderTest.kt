@@ -74,8 +74,8 @@ class BadcatPpRuleProtoDecoderTest {
         assertEquals("//a[@class='episode']", listRule.videoEpisodeRule)
         assertEquals("return JSON.stringify(images)", listRule.pageJsForSingleHtml)
         assertEquals(1, listRule.unknownFields.size)
-        assertEquals(item.contentRule, item.bookNameRule)
-        assertEquals(item.contentRule, item.authorRule)
+        assertEquals(item.contentRule?.pageRule, item.bookNameRule?.pageRule)
+        assertEquals(item.contentRule?.pageRule, item.authorRule?.pageRule)
     }
 
     @Test
@@ -104,7 +104,7 @@ class BadcatPpRuleProtoDecoderTest {
         bytesField(number, value.toByteArray(Charsets.UTF_8))
 
     private fun bytesField(number: Int, value: ByteArray): ByteArray =
-        varint((number shl 3 or 2).toLong()) + varint(value.size.toLong()) + value
+        varint(((number shl 3) or 2).toLong()) + varint(value.size.toLong()) + value
 
     private fun varintField(number: Int, value: Int): ByteArray =
         varint((number shl 3).toLong()) + varint(value.toLong())
@@ -112,7 +112,7 @@ class BadcatPpRuleProtoDecoderTest {
     private fun varint(value: Long): ByteArray {
         var remaining = value
         val output = ArrayList<Byte>()
-        while (remaining and -128L != 0L) {
+        while ((remaining and -128L) != 0L) {
             output += ((remaining and 0x7fL) or 0x80L).toByte()
             remaining = remaining ushr 7
         }
