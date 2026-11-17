@@ -429,14 +429,14 @@ class SourceSearchActivity : Activity() {
                                     withTimeout(SOURCE_SEARCH_TIMEOUT_MS) {
                                         engine.searchPage(source.id, query, requestedPage)
                                     }
-                                } catch (cancelled: CancellationException) {
-                                    throw cancelled
                                 } catch (timeout: kotlinx.coroutines.TimeoutCancellationException) {
                                     EngineResult.Failure(
                                         EngineErrorCode.NETWORK,
                                         "请求超时（" + (SOURCE_SEARCH_TIMEOUT_MS / 1000) + " 秒）",
                                         timeout,
                                     )
+                                } catch (cancelled: CancellationException) {
+                                    throw cancelled
                                 } catch (error: Exception) {
                                     EngineResult.Failure(
                                         EngineErrorCode.UNKNOWN,
