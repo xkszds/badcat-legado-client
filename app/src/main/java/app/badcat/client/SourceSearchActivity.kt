@@ -462,48 +462,59 @@ class SourceSearchActivity : Activity() {
             })
             return
         }
-        entries.chunked(2).forEach { pair ->
-            val row = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-            }
-            pair.forEach { query ->
-                val chip = TextView(this@SourceSearchActivity).apply {
-                    text = query
-                    textSize = 14f
-                    setTextColor(ink)
-                    gravity = Gravity.CENTER
-                    maxLines = 1
-                    ellipsize = android.text.TextUtils.TruncateAt.END
-                    background = rounded(
-                        if (darkMode) Color.rgb(47, 52, 60) else Color.rgb(246, 246, 247),
-                        24,
-                    )
-                    setPadding(dp(14), dp(9), dp(14), dp(9))
-                    isClickable = true
-                    isFocusable = true
-                    contentDescription = "再次搜索$query"
-                    setOnClickListener {
-                        keywordInput.setText(query)
-                        keywordInput.setSelection(keywordInput.text.length)
-                        search()
-                    }
-                    setOnLongClickListener {
-                        val next = readSearchHistory().filterNot { it == query }
-                        getSharedPreferences(SEARCH_HISTORY_PREFS, MODE_PRIVATE).edit()
-                            .putString(SEARCH_HISTORY_KEY, org.json.JSONArray(next).toString()).apply()
-                        renderSearchHistory()
-                        true
-                    }
-                }
-                row.addView(chip, LinearLayout.LayoutParams(0, dp(42), 1f).apply {
-                    marginEnd = dp(8)
-                    bottomMargin = dp(8)
-                })
-            }
-            if (pair.size == 1) row.addView(View(this), LinearLayout.LayoutParams(0, dp(42), 1f))
-            historyPanel.addView(row)
+        val availableWidth = (resources.displayMetrics.widthPixels / resources.displayMetrics.density).toInt() - 28
+        var row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
         }
+        var rowWidth = 0
+        entries.forEach { query ->
+            val chip = TextView(this@SourceSearchActivity).apply {
+                text = query
+                textSize = 14f
+                setTextColor(ink)
+                gravity = Gravity.CENTER
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                background = rounded(
+                    if (darkMode) Color.rgb(47, 52, 60) else Color.rgb(246, 246, 247),
+                    24,
+                )
+                setPadding(dp(14), dp(9), dp(14), dp(9))
+                isClickable = true
+                isFocusable = true
+                contentDescription = "再次搜索$query"
+                setOnClickListener {
+                    keywordInput.setText(query)
+                    keywordInput.setSelection(keywordInput.text.length)
+                    search()
+                }
+                setOnLongClickListener {
+                    val next = readSearchHistory().filterNot { it == query }
+                    getSharedPreferences(SEARCH_HISTORY_PREFS, MODE_PRIVATE).edit()
+                        .putString(SEARCH_HISTORY_KEY, org.json.JSONArray(next).toString()).apply()
+                    renderSearchHistory()
+                    true
+                }
+            }
+            val chipWidth = (chip.paint.measureText(query).toInt() + dp(28))
+                .coerceIn(dp(76), availableWidth)
+            val needed = chipWidth + dp(8)
+            if (row.childCount > 0 && rowWidth + needed > availableWidth) {
+                historyPanel.addView(row)
+                row = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                }
+                rowWidth = 0
+            }
+            row.addView(chip, LinearLayout.LayoutParams(chipWidth, dp(42)).apply {
+                marginEnd = dp(8)
+                bottomMargin = dp(8)
+            })
+            rowWidth += needed
+        }
+        if (row.childCount > 0) historyPanel.addView(row)
     }
 
     private fun showResults(page: Int, items: List<BookCandidate>, failures: List<String>) {
