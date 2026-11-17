@@ -29,9 +29,13 @@ object ReaderProgressMetrics {
         val percent = if (maxScrollLong == 0L) 0 else
             ((boundedScroll.toLong() * 100L) / maxScrollLong).toInt().coerceIn(0, 100)
         val totalPages = ceil((maxScrollLong.toDouble() + viewport.toDouble()) / viewport.toDouble())
-            .toInt().coerceAtLeast(1)
-        val currentPage = ceil((boundedScroll.toDouble() + viewport.toDouble()) / viewport.toDouble())
-            .toInt().coerceIn(1, totalPages)
+            .coerceAtMost(Int.MAX_VALUE.toDouble())
+            .toInt()
+            .coerceAtLeast(1)
+        val currentPage = (boundedScroll.toLong() / viewport.toLong() + 1L)
+            .coerceAtMost(Int.MAX_VALUE.toLong())
+            .toInt()
+            .coerceIn(1, totalPages)
         return ReaderProgressSnapshot(maxScroll, percent, currentPage, totalPages)
     }
 }
