@@ -78,6 +78,7 @@ class SourceSearchActivity : Activity() {
             textSize = 13f
             setTextColor(muted)
             setPadding(0, 0, 0, dp(10))
+            visibility = View.GONE
         }
         results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
 
@@ -319,6 +320,7 @@ class SourceSearchActivity : Activity() {
         previousPageButton.isEnabled = false
         nextPageButton.isEnabled = false
         if (contentType != "小说") {
+            status.visibility = View.VISIBLE
             results.removeAllViews()
             status.text = if (contentType == "漫画") {
                 "漫画类型的专用书源解析尚未接入。当前不会把小说书源结果误显示为漫画。"
@@ -331,11 +333,13 @@ class SourceSearchActivity : Activity() {
         val selectedSources = if (selectedSourcePosition == 0) enabledSources
             else listOfNotNull(enabledSources.getOrNull(selectedSourcePosition - 1))
         if (selectedSources.isEmpty()) {
+            status.visibility = View.VISIBLE
             status.text = "没有可搜索的书源"
             return
         }
         val query = keywordInput.text.toString().trim()
         if (query.isEmpty()) {
+            status.visibility = View.VISIBLE
             historyPanel.visibility = View.VISIBLE
             renderSearchHistory()
             status.text = "请输入搜索关键词"
@@ -343,6 +347,7 @@ class SourceSearchActivity : Activity() {
         }
         rememberSearch(query)
         historyPanel.visibility = View.GONE
+        status.visibility = View.VISIBLE
         searchButton.isEnabled = false
         status.text = "正在搜索（第 ${requestedPage} 页）…"
         results.removeAllViews()
