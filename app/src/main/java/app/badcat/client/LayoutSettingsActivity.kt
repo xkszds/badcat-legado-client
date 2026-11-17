@@ -101,9 +101,9 @@ class LayoutSettingsActivity : Activity() {
 
     private fun choosePosition() {
         val prefs = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
-        val current = prefs.getInt("home_search_top_spacing_dp", 46)
-        val labels = arrayOf("标准下移（34dp）", "进一步下移（46dp）", "明显下移（58dp）")
-        val values = intArrayOf(34, 46, 58)
+        val current = prefs.getInt("home_search_top_spacing_dp", 24)
+        val labels = arrayOf("靠上（8dp）", "居中（24dp）", "靠下（40dp）")
+        val values = intArrayOf(8, 24, 40)
         BadcatTheme.alertBuilder(this).setTitle("首页搜索栏位置")
             .setSingleChoiceItems(labels, values.indexOf(current).takeIf { it >= 0 } ?: 1) { dialog, which ->
                 prefs.edit().putInt("home_search_top_spacing_dp", values[which]).apply()
@@ -115,10 +115,10 @@ class LayoutSettingsActivity : Activity() {
     private fun refreshSummaries() {
         val prefs = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
         styleSummary.text = if (prefs.getString("home_layout_mode", "integrated") == "small") "紧凑型" else "整合型"
-        positionSummary.text = when (prefs.getInt("home_search_top_spacing_dp", 46)) {
-            34 -> "标准下移（34dp）"
-            58 -> "明显下移（58dp）"
-            else -> "进一步下移（46dp）"
+        positionSummary.text = when (prefs.getInt("home_search_top_spacing_dp", 24)) {
+            8 -> "靠上（8dp）"
+            40 -> "靠下（40dp）"
+            else -> "居中（24dp）"
         }
     }
 
