@@ -6,6 +6,9 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.os.Build
+import android.graphics.RenderEffect
+import android.graphics.Shader
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
@@ -13,6 +16,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -54,6 +58,9 @@ class SourceSearchActivity : Activity() {
     private lateinit var nextPageButton: TextView
     private lateinit var status: TextView
     private lateinit var results: LinearLayout
+    private lateinit var historyPanel: LinearLayout
+    private lateinit var rootView: LinearLayout
+    private var appliedDarkMode = false
     private lateinit var sourceTabs: LinearLayout
     private var currentPage = 1
     private var selectedSourcePosition = 0
@@ -62,11 +69,8 @@ class SourceSearchActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = card
-        window.navigationBarColor = page
-        @Suppress("DEPRECATION")
-        window.decorView.systemUiVisibility = if (darkMode) 0 else
-            View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        appliedDarkMode = darkMode
+        BadcatTheme.applyWindow(this)
         engine = BadcatReadingEngineFactory(applicationContext).create()
         contentType = intent.getStringExtra(EXTRA_CONTENT_TYPE)
             ?.takeIf { it in listOf("小说", "漫画", "综合") } ?: "小说"
@@ -77,12 +81,11 @@ class SourceSearchActivity : Activity() {
         }
         results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
 
-        val root = LinearLayout(this).apply {
+        rootView = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(page)
         }
-        root.addView(buildToolbar())
-        root.addView(buildSearchControls())
+        rootView.addView(buildSearchControls())
         root.addView(buildSourceStrip())
         root.addView(buildDisclaimer())
 
@@ -90,16 +93,22 @@ class SourceSearchActivity : Activity() {
             isFillViewport = true
             addView(LinearLayout(this@SourceSearchActivity).apply {
                 orientation = LinearLayout.VERTICAL
-                setPadding(dp(16), dp(12), dp(16), dp(24))
+                setPadding(dp(14), dp(14), dp(14), dp(24))
+                historyPanel = LinearLayout(this@SourceSearchActivity).apply {
+                    orientation = LinearLayout.VERTICAL
+                }
+                addView(historyPanel)
                 addView(status)
                 addView(results)
             })
         }
-        root.addView(scroll, LinearLayout.LayoutParams(
+        rootView.addView(scroll, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
         ))
-        root.addView(buildPagination())
-        setContentView(root)
+        rootView.addView(buildPagination())
+        setContentView(rootView)
+        renderSearchHistory()
+        BadcatTheme.applyTree(this, rootView)
         loadSources()
         if (intent.getBooleanExtra(EXTRA_FOCUS_SEARCH, false)) {
             keywordInput.requestFocus()
@@ -110,20 +119,7 @@ class SourceSearchActivity : Activity() {
         }
     }
 
-    private fun buildToolbar(): View = LinearLayout(this).apply {
-        orientation = LinearLayout.HORIZONTAL
-        gravity = Gravity.CENTER_VERTICAL
-        setPadding(dp(14), dp(6), dp(16), dp(6))
-        setBackgroundColor(card)
-        addView(TextView(this@SourceSearchActivity).apply {
-            text = "‹"
-            textSize = 32f
-            gravity = Gravity.CENTER
-            setTextColor(ink)
-            setOnClickListener { finish() }
-        }, LinearLayout.LayoutParams(dp(42), dp(44)))
-    }
-
+    /** Search is the first element below the status bar; no empty title toolbar above it. */
     private fun buildSearchControls(): View {
         val appearance = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
             .getString("home_layout_mode", "integrated") ?: "integrated"
@@ -145,12 +141,42 @@ class SourceSearchActivity : Activity() {
         )
         keywordInput = sharedBar.input
         searchButton = sharedBar.searchAction
-        return LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(14), dp(7), dp(14), dp(7))
-            setBackgroundColor(card)
-            addView(sharedBar, LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(if (appearance == "small") 44 else 48)
+        return FrameLayout(this).apply {
+            setBackgroundColor(page)
+            val glow = View(this@SourceSearchActivity).apply {
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(if (darkMode) Color.rgb(43, 91, 143) else Color.rgb(185, 218, 255))
+                }
+                alpha = if (darkMode) 0.22f else 0.42f
+                if (Build.VERSION.SDK_INT >= 31) {
+                    setRenderEffect(RenderEffect.createBlurEffect(
+                        dp(22).toFloat(), dp(22).toFloat(), Shader.TileMode.CLAMP
+                    ))
+                }
+            }
+            addView(glow, FrameLayout.LayoutParams(dp(190), dp(48), Gravity.TOP or Gravity.CENTER_HORIZONTAL))
+            val row = LinearLayout(this@SourceSearchActivity).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(8), dp(5), dp(12), dp(5))
+                addView(TextView(this@SourceSearchActivity).apply {
+                    text = "‹"
+                    textSize = 31f
+                    gravity = Gravity.CENTER
+                    setTextColor(ink)
+                    contentDescription = "返回"
+                    isClickable = true
+                    isFocusable = true
+                    setOnClickListener { finish() }
+                }, LinearLayout.LayoutParams(dp(38), dp(46)))
+                addView(sharedBar, LinearLayout.LayoutParams(
+                    0, dp(if (appearance == "small") 44 else 48), 1f
+                ))
+            }
+            addView(row, FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.TOP
             ))
         }
     }
@@ -235,6 +261,7 @@ class SourceSearchActivity : Activity() {
                             it.enabled && !it.searchUrl.isNullOrBlank()
                         }
                         renderSourceTabs()
+                        BadcatTheme.applyTree(this@SourceSearchActivity, rootView)
                         status.text = if (enabledSources.isEmpty()) {
                             "暂无可搜索书源，请先到「我的 - 书源管理」导入 Legado 书源"
                         } else {
@@ -309,9 +336,13 @@ class SourceSearchActivity : Activity() {
         }
         val query = keywordInput.text.toString().trim()
         if (query.isEmpty()) {
+            historyPanel.visibility = View.VISIBLE
+            renderSearchHistory()
             status.text = "请输入搜索关键词"
             return
         }
+        rememberSearch(query)
+        historyPanel.visibility = View.GONE
         searchButton.isEnabled = false
         status.text = "正在搜索（第 ${requestedPage} 页）…"
         results.removeAllViews()
@@ -341,8 +372,118 @@ class SourceSearchActivity : Activity() {
                 previousPageButton.isEnabled = requestedPage > 1
                 nextPageButton.isEnabled = unique.isNotEmpty()
                 showResults(requestedPage, unique, failures)
+                BadcatTheme.applyTree(this@SourceSearchActivity, rootView)
             }
         }
+    }
+
+    private fun readSearchHistory(): List<String> = runCatching {
+        val raw = getSharedPreferences(SEARCH_HISTORY_PREFS, MODE_PRIVATE)
+            .getString(SEARCH_HISTORY_KEY, "[]").orEmpty()
+        val array = org.json.JSONArray(raw)
+        (0 until array.length()).mapNotNull { array.optString(it).trim().takeIf(String::isNotBlank) }
+            .distinct().take(MAX_SEARCH_HISTORY)
+    }.getOrDefault(emptyList())
+
+    private fun rememberSearch(query: String) {
+        val next = (listOf(query.trim()) + readSearchHistory())
+            .filter(String::isNotBlank).distinct().take(MAX_SEARCH_HISTORY)
+        getSharedPreferences(SEARCH_HISTORY_PREFS, MODE_PRIVATE).edit()
+            .putString(SEARCH_HISTORY_KEY, org.json.JSONArray(next).toString()).apply()
+        renderSearchHistory()
+    }
+
+    private fun renderSearchHistory() {
+        if (!::historyPanel.isInitialized) return
+        historyPanel.removeAllViews()
+        historyPanel.visibility = View.VISIBLE
+        val entries = readSearchHistory()
+        val heading = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(TextView(this@SourceSearchActivity).apply {
+                text = "最近搜索"
+                textSize = 15f
+                typeface = Typeface.DEFAULT_BOLD
+                setTextColor(ink)
+            }, LinearLayout.LayoutParams(0, dp(38), 1f))
+            if (entries.isNotEmpty()) {
+                addView(TextView(this@SourceSearchActivity).apply {
+                    text = "清空"
+                    textSize = 12f
+                    setTextColor(muted)
+                    setPadding(dp(10), dp(6), dp(4), dp(6))
+                    isClickable = true
+                    setOnClickListener {
+                        getSharedPreferences(SEARCH_HISTORY_PREFS, MODE_PRIVATE).edit()
+                            .remove(SEARCH_HISTORY_KEY).apply()
+                        renderSearchHistory()
+                    }
+                })
+            }
+        }
+        historyPanel.addView(heading)
+        if (entries.isEmpty()) {
+            historyPanel.addView(TextView(this).apply {
+                text = "搜索过的小说会保存在这里，点击历史词条可快速再次搜索。"
+                textSize = 12f
+                setTextColor(muted)
+                setPadding(dp(2), dp(5), dp(2), dp(15))
+            })
+            return
+        }
+        val cardView = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = rounded(card, 16)
+            setPadding(dp(12), dp(4), dp(12), dp(4))
+            elevation = dp(1).toFloat()
+        }
+        entries.take(10).forEachIndexed { index, query ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(2), dp(8), dp(2), dp(8))
+                addView(TextView(this@SourceSearchActivity).apply {
+                    text = "◷"
+                    textSize = 17f
+                    setTextColor(muted)
+                    gravity = Gravity.CENTER
+                }, LinearLayout.LayoutParams(dp(28), dp(34)))
+                addView(TextView(this@SourceSearchActivity).apply {
+                    text = query
+                    textSize = 14f
+                    setTextColor(ink)
+                    maxLines = 1
+                    ellipsize = android.text.TextUtils.TruncateAt.END
+                    gravity = Gravity.CENTER_VERTICAL
+                    setOnClickListener {
+                        keywordInput.setText(query)
+                        keywordInput.setSelection(keywordInput.text.length)
+                        search()
+                    }
+                }, LinearLayout.LayoutParams(0, dp(34), 1f))
+                addView(TextView(this@SourceSearchActivity).apply {
+                    text = "×"
+                    textSize = 20f
+                    setTextColor(muted)
+                    gravity = Gravity.CENTER
+                    contentDescription = "删除搜索历史"
+                    setOnClickListener {
+                        val next = readSearchHistory().filterNot { it == query }
+                        getSharedPreferences(SEARCH_HISTORY_PREFS, MODE_PRIVATE).edit()
+                            .putString(SEARCH_HISTORY_KEY, org.json.JSONArray(next).toString()).apply()
+                        renderSearchHistory()
+                    }
+                }, LinearLayout.LayoutParams(dp(32), dp(34)))
+            }
+            cardView.addView(row)
+            if (index != entries.take(10).lastIndex) {
+                cardView.addView(View(this).apply {
+                    setBackgroundColor(if (darkMode) Color.rgb(57, 66, 79) else Color.rgb(232, 238, 246))
+                }, LinearLayout.LayoutParams(-1, dp(1)))
+            }
+        }
+        historyPanel.addView(cardView)
     }
 
     private fun showResults(page: Int, items: List<BookCandidate>, failures: List<String>) {
@@ -463,8 +604,24 @@ class SourceSearchActivity : Activity() {
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
 
+    override fun onResume() {
+        super.onResume()
+        val currentDark = BadcatTheme.isDark(this)
+        if (currentDark != appliedDarkMode) {
+            recreate()
+            return
+        }
+        if (::rootView.isInitialized) BadcatTheme.applyTree(this, rootView)
+    }
+
     override fun onDestroy() {
         worker.shutdownNow()
         super.onDestroy()
+    }
+
+    companion object {
+        private const val SEARCH_HISTORY_PREFS = "badcat_search_history"
+        private const val SEARCH_HISTORY_KEY = "queries_v1"
+        private const val MAX_SEARCH_HISTORY = 20
     }
 }
