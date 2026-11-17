@@ -36,8 +36,12 @@ class BadcatSearchBarView(
         orientation = HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
         val compact = appearance == "small"
+        val configuredHeight = context.getSharedPreferences("badcat_home_layout", Context.MODE_PRIVATE)
+            .getInt("home_search_bar_height_dp", if (compact) 36 else 40)
+        val barHeight = configuredHeight.coerceIn(34, 46)
         setPadding(dp(if (compact) 4 else 5), 0, dp(if (compact) 4 else 5), 0)
         background = searchBackground(dark, dp(if (compact) 22 else 25))
+        layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, dp(barHeight))
         elevation = dp(2).toFloat()
         clipToOutline = true
 
@@ -90,7 +94,7 @@ class BadcatSearchBarView(
             contentDescription = "搜索"
             setOnClickListener { submit() }
         }
-        addView(searchAction, LayoutParams(dp(if (compact) 38 else 42), dp(if (compact) 38 else 42)))
+        addView(searchAction, LayoutParams(dp(if (compact) 34 else 36), dp(if (compact) 34 else 36)))
     }
 
     /** Makes the home search field navigate to the dedicated search screen. */
