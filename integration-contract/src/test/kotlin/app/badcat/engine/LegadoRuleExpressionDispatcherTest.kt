@@ -81,6 +81,23 @@ class LegadoRuleExpressionDispatcherTest {
         )
     }
 
+
+    @Test
+    fun combinesLeadingColonRegexWithOtherScalarBranches() {
+        val document = SourceDocument(
+            url = "https://reader.example/detail",
+            body = "<h1>Book: Alpha</h1><p>Summary</p>",
+        )
+        val result = LegadoRuleExpressionDispatcher.evaluate(
+            document,
+            ":Book: (\\w+) && p@text",
+        )
+        assertEquals(
+            listOf("Book: Alpha", "Alpha", "Summary"),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
     @Test
     fun evaluatesLeadingColonRegexForScalarRulesAndSelectsCaptureGroup() {
         val document = SourceDocument(
