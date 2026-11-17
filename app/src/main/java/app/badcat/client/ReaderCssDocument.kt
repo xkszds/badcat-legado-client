@@ -19,6 +19,12 @@ internal object ReaderCssDocument {
         "display", "visibility", "vertical-align", "list-style", "list-style-type",
         "border", "border-top", "border-right", "border-bottom", "border-left",
         "border-color", "border-width", "border-style", "border-radius", "box-shadow",
+        "box-sizing", "overflow", "overflow-x", "overflow-y", "text-overflow",
+        "flex", "flex-grow", "flex-shrink", "flex-basis", "flex-direction", "flex-wrap",
+        "justify-content", "align-items", "align-content", "align-self",
+        "gap", "row-gap", "column-gap", "border-collapse", "border-spacing",
+        "outline", "outline-color", "outline-style", "outline-width", "text-shadow",
+        "hyphens", "direction", "writing-mode",
         "white-space", "word-break", "overflow-wrap", "opacity",
     )
 
