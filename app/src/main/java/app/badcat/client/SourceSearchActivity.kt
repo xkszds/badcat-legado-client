@@ -341,15 +341,11 @@ class SourceSearchActivity : Activity() {
             return
         }
         val requestedPage = currentPage
-        val selectedSources = if (selectedSourcePosition == 0) enabledSources
-            else listOfNotNull(enabledSources.getOrNull(selectedSourcePosition - 1))
-        if (selectedSources.isEmpty()) {
-            status.visibility = View.VISIBLE
-            status.text = "请先添加并启用书源后再搜索"
-            return
-        }
         val query = keywordInput.text.toString().trim()
+        // Empty input means the user is browsing search history, not attempting
+        // a source lookup. Keep source availability warnings out of this state.
         if (query.isEmpty()) {
+            status.text = ""
             status.visibility = View.GONE
             historyPanel.visibility = View.VISIBLE
             sourceStripView.visibility = View.GONE
@@ -357,6 +353,13 @@ class SourceSearchActivity : Activity() {
             paginationView.visibility = View.GONE
             results.removeAllViews()
             renderSearchHistory()
+            return
+        }
+        val selectedSources = if (selectedSourcePosition == 0) enabledSources
+            else listOfNotNull(enabledSources.getOrNull(selectedSourcePosition - 1))
+        if (selectedSources.isEmpty()) {
+            status.visibility = View.VISIBLE
+            status.text = "请先添加并启用书源后再搜索"
             return
         }
         rememberSearch(query)
