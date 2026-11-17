@@ -51,7 +51,7 @@ class FavoriteSyncActivity : Activity() {
         root.addView(Button(this).apply {
             text = "从备份恢复收藏夹"
             setOnClickListener {
-                AlertDialog.Builder(this@FavoriteSyncActivity)
+                BadcatTheme.alertBuilder(this@FavoriteSyncActivity)
                     .setTitle("确认恢复")
                     .setMessage("恢复会替换本机当前收藏夹和文件夹。建议先导出当前备份。是否继续选择备份文件？")
                     .setNegativeButton("取消", null)
