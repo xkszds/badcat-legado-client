@@ -50,6 +50,22 @@ class LegadoRuleExpressionDispatcherTest {
     }
 
     @Test
+    fun resolvesDoubleAtAsLegadoForcedCssMode() {
+        val forcedCss = assertIs<EngineResult.Success<ResolvedLegadoRuleExpression>>(
+            LegadoRuleExpressionDispatcher.resolve("@@div.book > a.title"),
+        ).value
+        assertEquals(SelectorRuleType.CSS, forcedCss.type)
+        assertEquals("div.book > a.title", forcedCss.expression)
+
+        assertEquals(
+            EngineErrorCode.UNSUPPORTED_RULE,
+            assertIs<EngineResult.Failure>(
+                LegadoRuleExpressionDispatcher.resolve("@@"),
+            ).code,
+        )
+    }
+
+    @Test
     fun javascriptAndRegexAreNotMisclassifiedAsSelectors() {
         assertEquals(
             EngineErrorCode.UNSUPPORTED_RULE,
