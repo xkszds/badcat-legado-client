@@ -64,6 +64,7 @@ class MainActivity : Activity() {
         val bar = BadcatSearchBarView(
             context = this@MainActivity,
             appearance = searchBarMode(),
+            dark = darkMode,
             onSearch = { query, type ->
                 contentType = type
                 openSearch(query)
