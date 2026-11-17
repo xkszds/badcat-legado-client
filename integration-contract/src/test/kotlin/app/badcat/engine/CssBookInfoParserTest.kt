@@ -161,6 +161,30 @@ class CssBookInfoParserTest {
         assertEquals("42", stored["bid"])
     }
 
+
+    @Test
+    fun usesSearchResultTitleWhenLegacySourceOmitsBookInfoNameRule() {
+        val source = BookSource(
+            id = "https://www.quanben.io",
+            name = "全本小说",
+            baseUrl = "https://www.quanben.io",
+            ruleBookInfoJson = """{"kind":"[property=\\"og:novel:category\\"]@content","tocUrl":"text.章节列表@href"}""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://www.quanben.io/n/guimizhizhu/",
+            body = """<html><head><meta property="og:novel:category" content="玄幻"></head>
+                <body><h1>诡秘之主</h1><a href="/n/guimizhizhu/list.html">章节列表</a></body></html>""",
+        )
+
+        val detail = assertIs<EngineResult.Success<BookDetail>>(
+            CssBookInfoParser().parse(source, response, response.finalUrl, "诡秘之主"),
+        ).value
+
+        assertEquals("诡秘之主", detail.name)
+        assertEquals("https://www.quanben.io/n/guimizhizhu/list.html", detail.tocUrl)
+    }
+
     @Test
     fun rejectsBlankRequestedBookUrl() {
         val source = BookSource(
