@@ -210,7 +210,7 @@ object LegadoRegexElementEvaluator {
             Pattern.compile(expression)
         } catch (_: Exception) {
             val literal = if (replaceFirst) {
-                input.replaceFirst(expression, java.util.regex.Matcher.quoteReplacement(replacement))
+                input.replaceFirst(expression, replacement)
             } else {
                 input.replace(expression, replacement)
             }
@@ -257,7 +257,10 @@ object LegadoRegexElementEvaluator {
             EngineResult.Failure(EngineErrorCode.RULE_TIMEOUT, "Legado regex replacement exceeded its time budget", timeout)
         } catch (_: Exception) {
             // Upstream falls back to literal replacement if regex replacement syntax fails.
-            EngineResult.Success(if (replaceFirst) replacement else input.replace(expression, replacement))
+            EngineResult.Success(
+                if (replaceFirst) input.replaceFirst(expression, replacement)
+                else input.replace(expression, replacement),
+            )
         }
     }
 

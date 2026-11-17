@@ -247,6 +247,21 @@ class LegadoRegexElementEvaluatorTest {
     }
 
     @Test
+    fun invalidReplacementGroupFallsBackToFirstLiteralOccurrence() {
+        assertEquals(
+            "before $2 after a",
+            assertIs<EngineResult.Success<String>>(
+                LegadoRegexElementEvaluator.replace(
+                    "before a after a",
+                    "a",
+                    "$2",
+                    replaceFirst = true,
+                ),
+            ).value,
+        )
+    }
+
+    @Test
     fun regexStageSplitterIgnoresNestedCharacterClassIntersections() {
         val result = LegadoRegexElementEvaluator.evaluateScalar(
             "abcxyz",
