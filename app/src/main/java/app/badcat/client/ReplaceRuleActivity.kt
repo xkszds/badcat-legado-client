@@ -6,10 +6,13 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.text.InputType
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.Button
@@ -30,6 +33,8 @@ class ReplaceRuleActivity : Activity() {
     private lateinit var jsonInput: EditText
     private lateinit var status: TextView
     private lateinit var ruleList: LinearLayout
+    private lateinit var ruleFilter: EditText
+    private lateinit var ruleSummary: TextView
     private lateinit var importButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,6 +52,23 @@ class ReplaceRuleActivity : Activity() {
         }
         status = TextView(this).apply { text = "正在读取本地替换规则…" }
         ruleList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        ruleSummary = TextView(this).apply { textSize = 12f; setPadding(0, dp(4), 0, dp(8)) }
+        ruleFilter = EditText(this).apply {
+            hint = "按规则名称、编号、匹配内容搜索"
+            setSingleLine(true)
+            textSize = 14f
+            setPadding(dp(12), dp(8), dp(12), dp(8))
+            background = GradientDrawable().apply {
+                setColor(if (BadcatTheme.isDark(this@ReplaceRuleActivity)) android.graphics.Color.rgb(38,42,49) else android.graphics.Color.WHITE)
+                cornerRadius = dp(10).toFloat()
+                setStroke(dp(1), if (BadcatTheme.isDark(this@ReplaceRuleActivity)) android.graphics.Color.rgb(70,78,90) else android.graphics.Color.rgb(220,226,234))
+            }
+            addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { applyRuleFilter() }
+                override fun afterTextChanged(s: Editable?) = Unit
+            })
+        }
         importButton = Button(this).apply {
             text = "导入并合并规则"
             setOnClickListener { importRules() }
@@ -108,6 +130,8 @@ class ReplaceRuleActivity : Activity() {
                 setPadding(0, dp(18), 0, dp(8))
             })
             addView(status)
+            addView(ruleSummary)
+            addView(ruleFilter, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(10) })
             addView(ruleList)
         }
         setContentView(ScrollView(this).apply { addView(root) })
@@ -273,26 +297,37 @@ class ReplaceRuleActivity : Activity() {
                     is EngineResult.Failure -> status.text = "读取规则失败：${result.message}"
                     is EngineResult.Success -> {
                         val rules = result.value
+                        ruleSummary.text = "共 ${rules.size} 条 · 启用 ${rules.count { it.scopeRule.enabled }} · 停用 ${rules.count { !it.scopeRule.enabled }}"
                         if (rules.isEmpty()) {
-                            ruleList.addView(TextView(this).apply { text = "暂无规则" })
+                            ruleList.addView(TextView(this).apply { text = "暂无规则"; tag = "" })
                         } else {
                             rules.forEach { rule ->
+                                val searchable = listOf(
+                                    rule.scopeRule.id.toString(), rule.name, rule.pattern, rule.replacement,
+                                    if (rule.isRegex) "正则 regex" else "字面 literal",
+                                ).joinToString(" ")
                                 val row = LinearLayout(this).apply {
                                     orientation = LinearLayout.VERTICAL
-                                    setPadding(0, 12, 0, 12)
+                                    setPadding(dp(12), dp(10), dp(12), dp(10))
+                                    tag = searchable
+                                    background = GradientDrawable().apply {
+                                        setColor(if (BadcatTheme.isDark(this@ReplaceRuleActivity)) android.graphics.Color.rgb(38,42,49) else android.graphics.Color.WHITE)
+                                        cornerRadius = dp(12).toFloat()
+                                    }
                                 }
                                 row.addView(TextView(this).apply {
                                     text = buildString {
                                         append(if (rule.scopeRule.enabled) "启用" else "停用")
                                         append(" · #").append(rule.scopeRule.id)
                                         append(" · ").append(rule.name.ifBlank { "未命名规则" })
-                                        append("\n").append(if (rule.isRegex) "正则" else "字面")
+                                        append("\\n").append(if (rule.isRegex) "正则" else "字面")
                                         append(" · 顺序 ").append(rule.scopeRule.order)
                                         append(" · 超时 ").append(rule.validTimeoutMillisecond()).append("ms")
-                                        append("\n").append(rule.pattern)
+                                        append("\\n").append(rule.pattern)
                                         append(" → ").append(rule.replacement)
                                     }
                                     textSize = 13f
+                                    setTextColor(if (BadcatTheme.isDark(this@ReplaceRuleActivity)) android.graphics.Color.rgb(235,237,240) else android.graphics.Color.rgb(48,55,66))
                                 })
                                 row.addView(LinearLayout(this).apply {
                                     orientation = LinearLayout.HORIZONTAL
@@ -312,14 +347,25 @@ class ReplaceRuleActivity : Activity() {
                                         }
                                     }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
                                 })
-                                ruleList.addView(row)
+                                ruleList.addView(row, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(8) })
                             }
                         }
                         if (rules.isNotEmpty()) status.text = "本地共 ${rules.size} 条规则"
+                        applyRuleFilter()
                     }
                 }
                 window.decorView.post { BadcatTheme.applyTree(this@ReplaceRuleActivity, window.decorView) }
             }
+        }
+    }
+
+    private fun applyRuleFilter() {
+        if (!::ruleList.isInitialized || !::ruleFilter.isInitialized) return
+        val query = ruleFilter.text.toString().trim()
+        for (index in 0 until ruleList.childCount) {
+            val row = ruleList.getChildAt(index)
+            val searchable = row.tag as? String ?: ""
+            row.visibility = if (query.isEmpty() || searchable.contains(query, ignoreCase = true)) ViewGroup.VISIBLE else ViewGroup.GONE
         }
     }
 
