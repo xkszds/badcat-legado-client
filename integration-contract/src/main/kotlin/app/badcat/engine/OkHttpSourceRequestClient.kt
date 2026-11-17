@@ -206,32 +206,33 @@ class OkHttpSourceRequestClient(
 
 /** In-memory cookie storage, scoped to one source by the owning client. */
 internal class MemorySourceCookieJar : CookieJar {
-    private val cookies = ConcurrentHashMap<String, Cookie>()
+    private val lock = Any()
+    private val cookies = LinkedHashMap<String, Cookie>()
 
-    override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
+    override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) = synchronized(lock) {
         val now = System.currentTimeMillis()
         cookies.forEach { cookie ->
             val key = "${cookie.domain}|${cookie.path}|${cookie.name}"
             if (cookie.expiresAt <= now) this.cookies.remove(key)
             else this.cookies[key] = cookie
         }
-        // Imported sources can emit arbitrary cookie names. Keep the per-source
-        // in-memory jar bounded so repeated responses cannot grow it indefinitely.
+        // Serialize insertion and eviction: concurrent responses must not race
+        // past the per-source memory limit.
         if (this.cookies.size > MAX_COOKIES) {
             val excess = this.cookies.size - MAX_COOKIES
             this.cookies.entries
                 .sortedBy { it.value.expiresAt }
                 .take(excess)
-                .forEach { this.cookies.remove(it.key, it.value) }
+                .forEach { this.cookies.remove(it.key) }
         }
     }
 
-    internal val size: Int get() = cookies.size
+    internal val size: Int get() = synchronized(lock) { cookies.size }
 
-    override fun loadForRequest(url: HttpUrl): List<Cookie> {
+    override fun loadForRequest(url: HttpUrl): List<Cookie> = synchronized(lock) {
         val now = System.currentTimeMillis()
-        this.cookies.entries.removeIf { it.value.expiresAt <= now }
-        return this.cookies.values.filter { it.matches(url) }
+        cookies.entries.removeIf { it.value.expiresAt <= now }
+        cookies.values.filter { it.matches(url) }
     }
 
     private companion object {

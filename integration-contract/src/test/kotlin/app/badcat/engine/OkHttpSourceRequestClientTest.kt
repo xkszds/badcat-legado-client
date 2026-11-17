@@ -80,6 +80,29 @@ class OkHttpSourceRequestClientTest {
     }
 
     @Test
+    fun cookieJarLimitRemainsEnforcedAcrossConcurrentResponses() {
+        val jar = MemorySourceCookieJar()
+        val url = "https://reader.example/".toHttpUrl()
+        val workers = (0 until 8).map { worker ->
+            Thread {
+                val cookies = (0 until 500).map { index ->
+                    Cookie.Builder()
+                        .name("cookie_${worker}_$index")
+                        .value("value")
+                        .domain("reader.example")
+                        .build()
+                }
+                jar.saveFromResponse(url, cookies)
+            }.apply { start() }
+        }
+
+        workers.forEach { it.join() }
+
+        assertTrue(jar.size <= 3_000)
+        assertTrue(jar.loadForRequest(url).size <= 3_000)
+    }
+
+    @Test
     fun redirectValidatorAllowsSafeRelativeAndCrossHostHttpsRedirects() {
         val from = "https://reader.example/book/1".toHttpUrl()
         assertTrue(isSafeRedirectTarget(from, "../login"))
