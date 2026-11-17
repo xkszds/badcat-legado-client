@@ -87,6 +87,8 @@ class SourceSearchActivity : Activity() {
     @Volatile private var screenDestroyed = false
     private var currentPage = 1
     private var selectedSourcePosition = 0
+    private var sourcesLoaded = false
+    private var refreshSourcesOnResume = true
     private var contentType = "小说"
     private var enabledSources: List<BookSource> = emptyList()
 
@@ -287,6 +289,7 @@ class SourceSearchActivity : Activity() {
             postToUi {
                 when (result) {
                     is EngineResult.Success -> {
+                        sourcesLoaded = true
                         enabledSources = result.value.filter {
                             it.enabled && !it.searchUrl.isNullOrBlank()
                         }
@@ -388,7 +391,8 @@ class SourceSearchActivity : Activity() {
             results.addView(android.widget.Button(this).apply {
                 text = "导入 / 管理书源"
                 setOnClickListener {
-                    startActivity(Intent(this@SourceSearchActivity, SourceCatalogActivity::class.java))
+                    refreshSourcesOnResume = true
+                startActivity(Intent(this@SourceSearchActivity, SourceCatalogActivity::class.java))
                 }
             })
             return
@@ -715,7 +719,10 @@ class SourceSearchActivity : Activity() {
             return
         }
         if (::rootView.isInitialized) BadcatTheme.applyTree(this, rootView)
-        if (::rootView.isInitialized && !screenDestroyed) loadSources()
+        if (::rootView.isInitialized && !screenDestroyed && (!sourcesLoaded || refreshSourcesOnResume)) {
+            refreshSourcesOnResume = false
+            loadSources()
+        }
     }
 
     override fun onDestroy() {
