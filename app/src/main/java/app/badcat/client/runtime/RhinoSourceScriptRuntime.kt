@@ -233,7 +233,7 @@ class RhinoSourceScriptRuntime(
         const val MAX_TOTAL_SCRIPT_CHARS = 256 * 1024
         const val MAX_VARIABLE_KEY_CHARS = 256
         const val MAX_VARIABLE_VALUE_CHARS = 16 * 1024
-        const val LEGADO_CRYPTO_COMPAT_JS = """
+        private val LEGADO_CRYPTO_COMPAT_JS = """
             Packages = {
               java: {
                 lang: {},
