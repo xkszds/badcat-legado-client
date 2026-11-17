@@ -242,6 +242,7 @@ class FavoritesActivity : Activity() {
                 gravity = Gravity.CENTER
                 setPadding(dp(12), dp(100), dp(12), dp(100))
             })
+            BadcatTheme.applyTree(this, window.decorView)
             return
         }
         folderMode = getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).getBoolean("folder_mode", false)
@@ -276,6 +277,7 @@ class FavoritesActivity : Activity() {
                 setPadding(dp(12), dp(38), dp(12), dp(38))
             })
             renderSelectionBar()
+            BadcatTheme.applyTree(this, window.decorView)
             return
         }
         if (listMode) visible.forEach { book -> rootContent.addView(bookListRow(book), LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(8) }) }
@@ -286,6 +288,7 @@ class FavoritesActivity : Activity() {
             rootContent.addView(row)
         }
         renderSelectionBar()
+        BadcatTheme.applyTree(this, window.decorView)
     }
 
     private fun latestBookReadTimes(): Map<String, Long> {
