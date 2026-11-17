@@ -132,10 +132,12 @@ object CssRuleEvaluator {
                 doc.select(parsed.selector).toList()
             }
             val values = when (parsed.valueMode) {
-                ValueMode.ALL -> listOf(elements.outerHtml()).filter(String::isNotEmpty)
+                ValueMode.ALL -> listOf(elements.joinToString(separator = "") { it.outerHtml() })
+                    .filter(String::isNotEmpty)
                 ValueMode.HTML -> {
-                    elements.select("script, style").remove()
-                    listOf(elements.outerHtml()).filter(String::isNotEmpty)
+                    elements.forEach { it.select("script, style").remove() }
+                    listOf(elements.joinToString(separator = "") { it.outerHtml() })
+                        .filter(String::isNotEmpty)
                 }
                 ValueMode.ATTRIBUTE -> elements.map { it.attr(parsed.attribute.orEmpty()) }
                     .filter(String::isNotBlank)
