@@ -17,8 +17,9 @@ internal fun paginationUrlIdentity(url: String): String {
     val port = when {
         scheme == "http" && uri.port == 80 -> ""
         scheme == "https" && uri.port == 443 -> ""
-        uri.port >= 0 -> ":\u0024{uri.port}"
+        uri.port >= 0 -> ":" + uri.port
         else -> ""
     }
-    return "$scheme://\u0024{host.lowercase()}\u0024port\u0024{uri.rawPath.orEmpty()}\u0024{uri.rawQuery?.let { "?\u0024it" }.orEmpty()}"
+    return scheme + "://" + host.lowercase() + port +
+        uri.rawPath.orEmpty() + (uri.rawQuery?.let { "?" + it } ?: "")
 }
