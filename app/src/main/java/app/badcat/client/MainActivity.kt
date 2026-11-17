@@ -72,7 +72,10 @@ class MainActivity : Activity() {
         }
         addView(bar, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, dp(if (compact) 44 else 48)
-        ).apply { topMargin = dp(6) })
+        ).apply {
+            topMargin = dp(getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
+                .getInt("home_search_top_spacing_dp", 22).coerceIn(12, 60))
+        })
     }
 
     private fun openSearch(query: String) {
