@@ -33,8 +33,9 @@ class RhinoSafeSourceJavaExtensions(
     /** Legado-compatible, source-scoped cookie lookup. */
     fun getCookie(tag: String): String = cookieReader(tag)
 
-    fun getCookie(tag: String, key: String): String =
-        cookieReader(tag).split(';').asSequence()
+    fun getCookie(tag: String, key: String?): String {
+        if (key == null) return cookieReader(tag)
+        return cookieReader(tag).split(';').asSequence()
             .map(String::trim)
             .mapNotNull { pair ->
                 val separator = pair.indexOf('=')
@@ -42,6 +43,7 @@ class RhinoSafeSourceJavaExtensions(
             }
             .firstOrNull { it.first == key }
             ?.second.orEmpty()
+    }
 
     fun log(value: Any?): String = value?.toString().orEmpty()
 
