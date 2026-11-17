@@ -94,4 +94,36 @@ class SourceExploreServiceTest {
         )
         assertEquals(EngineErrorCode.NETWORK, result.code)
     }
+    @Test
+    fun passesExploreKeywordAndPageIntoEmbeddedFieldRules() = runBlocking {
+        val client = FixtureClient()
+        var capturedScript = ""
+        var capturedBindings: Map<String, String> = emptyMap()
+        val scriptRuntime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> {
+                capturedScript = script
+                capturedBindings = bindings
+                return EngineResult.Success("h3@text")
+            }
+        }
+        val exploreSource = source().copy(
+            ruleExploreJson = """{"bookList":"div.book","name":"{{chooseName(result,key,page)}}","bookUrl":"a@href"}""",
+        )
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            SourceExploreService(
+                http = gateway(client),
+                scriptRuntime = scriptRuntime,
+            ).explore(exploreSource, page = 5, keyword = "雪猫"),
+        ).value
+
+        assertEquals("chooseName(result,key,page)", capturedScript)
+        assertEquals("雪猫", capturedBindings["key"])
+        assertEquals("5", capturedBindings["page"])
+        assertEquals(listOf("Explore Novel"), books.map { it.name })
+    }
+
 }
