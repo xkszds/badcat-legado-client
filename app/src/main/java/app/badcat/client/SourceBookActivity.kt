@@ -419,6 +419,9 @@ class SourceChapterActivity : Activity() {
     private lateinit var readerRoot: LinearLayout
     private lateinit var chapterProgress: android.widget.SeekBar
     private lateinit var chapterTitleView: TextView
+    private lateinit var readerInfo: TextView
+    private val readerUiPrefs by lazy { getSharedPreferences(ReaderSettingsActivity.PREFS, MODE_PRIVATE) }
+    private var lockScreenRunnable: Runnable? = null
     private lateinit var sourceId: String
     private lateinit var bookUrl: String
     private lateinit var bookName: String
@@ -546,6 +549,13 @@ class SourceChapterActivity : Activity() {
                 }
             })
         }
+        readerInfo = TextView(this).apply {
+            textSize = 11f
+            setTextColor(Color.GRAY)
+            gravity = android.view.Gravity.CENTER
+            setPadding(dpReader(10), dpReader(5), dpReader(10), dpReader(5))
+            setBackgroundColor(Color.rgb(250, 250, 250))
+        }
         val bottomBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.CENTER_VERTICAL
@@ -585,11 +595,13 @@ class SourceChapterActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f,
             ))
             addView(readerActions)
+            addView(readerInfo, LinearLayout.LayoutParams(-1, -2))
             addView(bottomBar)
         }
         readerScroll = body
         applyReaderTheme()
         setContentView(readerRoot)
+        applyReaderUiSettings()
         if (sourceId.isBlank() || bookUrl.isBlank() || currentChapterUrl.isBlank()) {
             status.text = "缺少书源、书籍地址或章节地址"
             return
@@ -655,8 +667,82 @@ class SourceChapterActivity : Activity() {
     private fun updateReaderProgress() {
         if (!::chapterProgress.isInitialized || !::body.isInitialized) return
         val maxScroll = (body.contentHeight * body.scale - body.height).toInt().coerceAtLeast(0)
-        chapterProgress.progress = if (maxScroll == 0) 0 else
-            (body.scrollY * 100 / maxScroll).coerceIn(0, 100)
+        val percent = if (maxScroll == 0) 0 else (body.scrollY * 100 / maxScroll).coerceIn(0, 100)
+        chapterProgress.progress = percent
+        if (!::readerInfo.isInitialized) return
+
+        val pieces = mutableListOf<String>()
+        if (readerUiPrefs.getBoolean(ReaderSettingsActivity.KEY_SHOW_PROGRESS, true)) {
+            if (readerUiPrefs.getString(ReaderSettingsActivity.KEY_PROGRESS_MODE, "percent") == "pages") {
+                val pageHeight = body.height.coerceAtLeast(1)
+                val totalPages = ((maxScroll + pageHeight) / pageHeight.toFloat()).toInt().coerceAtLeast(1)
+                val currentPage = (body.scrollY / pageHeight + 1).coerceIn(1, totalPages)
+                val chapterCount = chapters.size.coerceAtLeast(1)
+                pieces.add("第${currentPage}/${totalPages}页 · 第${(currentIndex + 1).coerceAtLeast(1)}/${chapterCount}章")
+            } else {
+                pieces.add("${percent}%")
+            }
+        }
+        if (readerUiPrefs.getBoolean(ReaderSettingsActivity.KEY_SHOW_TIME, true)) {
+            pieces.add(java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date()))
+        }
+        if (readerUiPrefs.getBoolean(ReaderSettingsActivity.KEY_SHOW_BATTERY, true)) {
+            val battery = registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
+            val level = battery?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) ?: -1
+            val scale = battery?.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, 100) ?: 100
+            if (level >= 0 && scale > 0) pieces.add("电量 ${(level * 100 / scale).coerceIn(0, 100)}%")
+        }
+        readerInfo.text = pieces.joinToString("   ")
+        readerInfo.visibility = if (pieces.isEmpty()) View.GONE else View.VISIBLE
+    }
+
+    private fun applyReaderUiSettings() {
+        val showProgress = readerUiPrefs.getBoolean(ReaderSettingsActivity.KEY_SHOW_PROGRESS, true)
+        chapterProgress.visibility = if (showProgress) View.VISIBLE else View.GONE
+        val keepStatusBar = readerUiPrefs.getBoolean(ReaderSettingsActivity.KEY_STATUS_BAR, true)
+        if (keepStatusBar) window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        else window.setFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN, android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        updateReaderProgress()
+        scheduleReadingLock()
+    }
+
+    private fun scheduleReadingLock() {
+        lockScreenRunnable?.let { mainHandler.removeCallbacks(it) }
+        lockScreenRunnable = null
+        val minutes = readerUiPrefs.getInt(ReaderSettingsActivity.KEY_LOCK_MINUTES, 0).coerceIn(0, 60)
+        if (minutes <= 0) {
+            window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            return
+        }
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        val task = Runnable {
+            window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            lockScreenRunnable = null
+        }
+        lockScreenRunnable = task
+        mainHandler.postDelayed(task, minutes * 60_000L)
+    }
+
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        if (::body.isInitialized) scheduleReadingLock()
+    }
+
+    override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent?): Boolean {
+        if (readerUiPrefs.getBoolean(ReaderSettingsActivity.KEY_VOLUME_PAGE, true) &&
+            (keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP)
+        ) {
+            val direction = if (keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN) 1 else -1
+            if (::body.isInitialized) {
+                body.post {
+                    val distance = (body.height * 0.88f).toInt().coerceAtLeast(1)
+                    body.scrollBy(0, distance * direction)
+                }
+            }
+            scheduleReadingLock()
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     private fun moveChapter(delta: Int) {
@@ -765,7 +851,7 @@ class SourceChapterActivity : Activity() {
     }
 
     private fun showReaderTools() {
-        val actions = arrayOf("字号减小", "字号增大", "行距减小", "行距增大", "切换背景", "CSS 自定义", "章节目录", "保存书签", "跳转本章书签", "恢复默认阅读设置")
+        val actions = arrayOf("字号减小", "字号增大", "行距减小", "行距增大", "切换背景", "阅读设置", "CSS 自定义", "章节目录", "保存书签", "跳转本章书签", "恢复默认阅读设置")
         android.app.AlertDialog.Builder(this)
             .setTitle("阅读设置 · " + textSizeSp.toInt() + "sp · 行距 " + lineSpacingMultiplier)
             .setItems(actions) { _, index ->
@@ -775,11 +861,12 @@ class SourceChapterActivity : Activity() {
                     2 -> changeLineSpacing(-0.1f)
                     3 -> changeLineSpacing(0.1f)
                     4 -> cycleReaderTheme()
-                    5 -> startActivity(Intent(this, ReaderCssActivity::class.java))
-                    6 -> showChapterCatalog()
-                    7 -> saveChapterBookmark()
-                    8 -> jumpToChapterBookmark()
-                    9 -> resetReaderSettings()
+                    5 -> startActivity(Intent(this, ReaderSettingsActivity::class.java))
+                    6 -> startActivity(Intent(this, ReaderCssActivity::class.java))
+                    7 -> showChapterCatalog()
+                    8 -> saveChapterBookmark()
+                    9 -> jumpToChapterBookmark()
+                    10 -> resetReaderSettings()
                 }
             }.show()
     }
@@ -858,6 +945,7 @@ class SourceChapterActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        if (::body.isInitialized) applyReaderUiSettings()
         if (::body.isInitialized && currentChapterText.isNotEmpty()) {
             pendingScrollY = body.scrollY
             renderReaderDocument()
@@ -877,6 +965,8 @@ class SourceChapterActivity : Activity() {
     }
 
     override fun onDestroy() {
+        lockScreenRunnable?.let { mainHandler.removeCallbacks(it) }
+        window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         worker.shutdownNow()
         super.onDestroy()
     }
