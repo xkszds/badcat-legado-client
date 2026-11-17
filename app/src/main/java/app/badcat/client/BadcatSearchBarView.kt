@@ -36,8 +36,9 @@ class BadcatSearchBarView(
         gravity = Gravity.CENTER_VERTICAL
         val compact = appearance == "small"
         setPadding(dp(if (compact) 4 else 5), 0, dp(if (compact) 4 else 5), 0)
-        background = rounded(if (dark) Color.rgb(43, 48, 56) else Color.WHITE, dp(if (compact) 22 else 25))
-        elevation = dp(1).toFloat()
+        background = searchBackground(dark, dp(if (compact) 22 else 25))
+        elevation = dp(2).toFloat()
+        clipToOutline = true
 
         typeLabel.apply {
             text = "$contentType ▾"
@@ -131,9 +132,13 @@ class BadcatSearchBarView(
         else -> "搜索书籍"
     }
 
-    private fun rounded(color: Int, radius: Int) = GradientDrawable().apply {
-        setColor(color)
+    private fun searchBackground(dark: Boolean, radius: Int) = GradientDrawable().apply {
+        setColor(if (dark) Color.rgb(31, 37, 46) else Color.rgb(255, 255, 255))
         cornerRadius = radius.toFloat()
+        setStroke(
+            dp(1),
+            if (dark) Color.rgb(91, 111, 135) else Color.rgb(193, 210, 230),
+        )
     }
 
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
