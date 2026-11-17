@@ -366,8 +366,11 @@ class FavoritesActivity : Activity() {
     }
 
     private fun bookCard(book: FavoriteBook): View = LinearLayout(this).apply {
+        val isSelected = selectedBooks.containsKey(bookKey(book))
         orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-        background = rounded(card, 10); setPadding(dp(5), dp(8), dp(5), dp(7))
+        background = rounded(if (isSelected) selectedFolder else card, 10,
+            if (isSelected) blue else Color.TRANSPARENT)
+        setPadding(dp(5), dp(8), dp(5), dp(7))
         isClickable = true; isFocusable = true
         setOnClickListener {
             if (selectionMode) { toggleBookSelection(book); return@setOnClickListener }
@@ -542,8 +545,11 @@ class FavoritesActivity : Activity() {
     }
 
     private fun bookListRow(book: FavoriteBook): View = LinearLayout(this).apply {
+        val isSelected = selectedBooks.containsKey(bookKey(book))
         orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-        background = rounded(card, 10); setPadding(dp(10), dp(8), dp(10), dp(8))
+        background = rounded(if (isSelected) selectedFolder else card, 10,
+            if (isSelected) blue else Color.TRANSPARENT)
+        setPadding(dp(10), dp(8), dp(10), dp(8))
         setOnClickListener { if (selectionMode) toggleBookSelection(book) else startActivity(Intent(this@FavoritesActivity, SourceBookActivity::class.java).apply {
             putExtra(SourceBookActivity.EXTRA_SOURCE_ID, book.sourceId); putExtra(SourceBookActivity.EXTRA_BOOK_URL, book.bookUrl)
             putExtra(SourceBookActivity.EXTRA_BOOK_NAME, book.name); putExtra(SourceBookActivity.EXTRA_BOOK_COVER_URL, book.coverUrl)
