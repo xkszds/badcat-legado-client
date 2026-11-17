@@ -971,6 +971,7 @@ class SourceChapterActivity : Activity() {
     }
 
     override fun onPause() {
+        mainHandler.removeCallbacks(infoRefreshRunnable)
         saveCurrentScrollPosition()
         if (readingSessionStartedAt > 0L) {
             val elapsed = (android.os.SystemClock.elapsedRealtime() - readingSessionStartedAt).coerceAtLeast(0L)
