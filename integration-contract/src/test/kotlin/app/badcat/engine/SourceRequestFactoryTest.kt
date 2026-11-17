@@ -256,5 +256,28 @@ class SourceRequestFactoryTest {
         assertEquals(2, request.retryCount)
         assertEquals("UTF-8", request.responseCharset)
     }
+    @Test
+    fun rejectsHeaderInjectionInsideImportedSourceHeaderJson() {
+        val result = SourceRequestFactory.create(
+            source = source("""{"X-Forwarded-Host":"reader.example\\r\\nHost:evil.example"}"""),
+            url = "https://reader.example/",
+        )
+        assertEquals(
+            EngineErrorCode.INVALID_SOURCE,
+            assertIs<EngineResult.Failure>(result).code,
+        )
+    }
+
+    @Test
+    fun acceptsUppercaseHttpSchemeButRejectsMalformedAuthority() {
+        val accepted = SourceRequestFactory.create(source(), "HTTPS://reader.example/search")
+        val malformed = SourceRequestFactory.create(source(), "https:///missing-host/search")
+        assertIs<EngineResult.Success<SourceHttpRequest>>(accepted)
+        assertEquals(
+            EngineErrorCode.INVALID_SOURCE,
+            assertIs<EngineResult.Failure>(malformed).code,
+        )
+    }
+
 
 }
