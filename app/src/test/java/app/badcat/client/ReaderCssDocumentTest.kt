@@ -23,6 +23,20 @@ class ReaderCssDocumentTest {
     }
 
     @Test
+    fun supportsCommonLayoutAndPercentageDeclarationsForChildSelectors() {
+        val css = ReaderCssDocument.renderRules(
+            listOf(
+                ".reader-root .reader-paragraph:nth-child(2)" to
+                    "max-width: 92%; text-decoration: underline; word-spacing: 2px;",
+                ".reader-content" to "display: block; visibility: visible;",
+            ),
+        )
+
+        assertTrue(css.contains(".reader-root .reader-paragraph:nth-child(2){max-width:92%;text-decoration:underline;word-spacing:2px}"))
+        assertTrue(css.contains(".reader-root .reader-content{display:block;visibility:visible}"))
+    }
+
+    @Test
     fun rejectsUnsafeDeclarationsAndKeepsValidRules() {
         val css = ReaderCssDocument.renderRules(
             listOf(
