@@ -22,7 +22,9 @@ internal object MainBottomNavigation {
         LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
-            setBackgroundColor(Color.WHITE)
+            val dark = context.getSharedPreferences("badcat_appearance", Context.MODE_PRIVATE)
+                .getString("appearance_mode", "light") == "dark"
+            setBackgroundColor(if (dark) Color.rgb(38, 42, 49) else Color.WHITE)
             elevation = context.dpNav(8).toFloat()
             listOf(
                 Triple("搜索", "⌕", "search"),
