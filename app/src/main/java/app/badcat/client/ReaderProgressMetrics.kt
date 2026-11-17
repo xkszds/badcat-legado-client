@@ -1,7 +1,6 @@
 package app.badcat.client
 
 import kotlin.math.ceil
-import kotlin.math.floor
 
 /** Overflow-safe reader progress math shared by the UI and its regression tests. */
 data class ReaderProgressSnapshot(

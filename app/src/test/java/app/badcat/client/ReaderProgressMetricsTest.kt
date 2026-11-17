@@ -15,7 +15,7 @@ class ReaderProgressMetricsTest {
             ReaderProgressMetrics.calculate(700, 2_000, 1f, 600),
         )
         assertEquals(
-            ReaderProgressSnapshot(1_400, 100, 3, 4),
+            ReaderProgressSnapshot(1_400, 100, 4, 4),
             ReaderProgressMetrics.calculate(9_000, 2_000, 1f, 600),
         )
     }

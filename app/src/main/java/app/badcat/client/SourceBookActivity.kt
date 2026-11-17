@@ -698,7 +698,6 @@ class SourceChapterActivity : Activity() {
             scale = body.scale,
             viewportHeight = body.height,
         )
-        val maxScroll = progress.maxScroll
         val percent = progress.percent
         chapterProgress.progress = percent
         if (!::readerInfo.isInitialized) return
