@@ -560,13 +560,11 @@ class FavoritesActivity : Activity() {
 
     private fun showMoreMenu(anchor: View) {
         PopupMenu(this, anchor).apply {
-            menu.add("批量管理")
             menu.add(if (listMode) "宫格模式" else "列表模式")
             menu.add("更新时间排序")
             menu.add(if (folderMode) "关闭小说文件夹" else "开启小说文件夹")
             setOnMenuItemClickListener { item ->
                 when (item.title.toString()) {
-                    "批量管理" -> { selectionMode = true; selectedBooks.clear(); refresh() }
                     "列表模式", "宫格模式" -> {
                         listMode = item.title.toString() == "列表模式"
                         getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE).edit().putBoolean("list_mode", listMode).apply()
