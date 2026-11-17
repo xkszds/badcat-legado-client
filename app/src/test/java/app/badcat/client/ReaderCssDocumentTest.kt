@@ -79,4 +79,21 @@ class ReaderCssDocumentTest {
         assertFalse(css.contains("@import", ignoreCase = true))
     }
 
+
+    @Test
+    fun rejectsMalformedAndUnscopableSelectorsWithoutAffectingValidRules() {
+        val css = ReaderCssDocument.renderRules(
+            listOf(
+                "div:not(.ad, [data-x='y'])" to "color: #123456;",
+                "div:not(.broken" to "color: #ffffff;",
+                "body, html" to "font-size: 20px;",
+                ".reader-paragraph" to "line-height: 1.8;",
+            ),
+        )
+        assertTrue(css.contains(".reader-root div:not(.ad, [data-x='y']){color:#123456}"))
+        assertTrue(css.contains(".reader-root body, .reader-root html{font-size:20px}"))
+        assertTrue(css.contains(".reader-root .reader-paragraph{line-height:1.8}"))
+        assertFalse(css.contains(".broken"))
+    }
+
 }
