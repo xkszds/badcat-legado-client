@@ -42,7 +42,7 @@ class MyActivity : Activity() {
             setBackgroundColor(card)
         }
         val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        top.addView(label("我的", 18f, ink), LinearLayout.LayoutParams(0, dp(42), 1f))
+        top.addView(View(this), LinearLayout.LayoutParams(0, dp(42), 1f))
         // Standalone animated day/night switch sits immediately to the left of Settings.
         top.addView(TextView(this).apply {
             text = if (darkMode) "☾" else "☀"
@@ -94,7 +94,7 @@ class MyActivity : Activity() {
                 setOnClickListener { editNickname(this) }
                 contentDescription = "点击修改昵称"
             })
-            addView(label("阅读时长：" + formatReadingTime() + "    获得的收藏数：" + FavoriteBooks.all(this@MyActivity).size, 12f, muted).apply { setPadding(0, dp(9), 0, 0) })
+            addView(label("阅读时长：" + formatReadingTime(), 12f, muted).apply { setPadding(0, dp(9), 0, 0) })
         }, LinearLayout.LayoutParams(0, -2, 1f))
         profile.addView(identity)
         root.addView(profile)
@@ -115,8 +115,7 @@ class MyActivity : Activity() {
             "下载管理" to "downloads",
             "意见反馈" to "feedback",
             "同步收藏夹" to "sync",
-            "分享坏坏猫" to "share",
-            "正文替换规则" to "replace"
+            "分享坏坏猫" to "share"
         )
         val visibleEntries = if (sourceEntryRevealed) entries + ("书源管理" to "sources") else entries
         visibleEntries.chunked(4).forEach { group ->
@@ -128,15 +127,8 @@ class MyActivity : Activity() {
                     setPadding(dp(3), dp(10), dp(3), dp(10))
                     isClickable = true
                     isFocusable = true
-                    if (key == "history" || key == "downloads") {
-                        addView(BadcatMineIcons.create(this@MyActivity, key, blue),
-                            LinearLayout.LayoutParams(dp(28), dp(28)))
-                    } else {
-                        addView(label(when (key) {
-                            "bookmarks" -> "◇"; "sources" -> "▤"; "messages" -> "…"
-                            "feedback" -> "▤"; "sync" -> "☁"; "replace" -> "≋"; else -> "↗"
-                        }, 25f, blue))
-                    }
+                    addView(BadcatLineIconView(this@MyActivity, key, blue),
+                        LinearLayout.LayoutParams(dp(28), dp(28)))
                     addView(label(title, 12f, ink).apply { setPadding(0, dp(5), 0, 0) })
                     setOnClickListener { openTool(key) }
                 }
@@ -204,7 +196,6 @@ class MyActivity : Activity() {
                 putExtra(Intent.EXTRA_SUBJECT, "坏坏猫客户端意见反馈")
                 putExtra(Intent.EXTRA_TEXT, "坏坏猫客户端版本：0.1.0-integration\\n\\n问题描述：\\n\\n复现步骤：\\n\\n设备型号与 Android 版本：")
             }, "发送意见反馈"))
-            "replace" -> startActivity(Intent(this, ReplaceRuleActivity::class.java))
             "share" -> startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
                 putExtra(Intent.EXTRA_TEXT, "坏坏猫阅读客户端")
