@@ -713,18 +713,29 @@ class SourceChapterActivity : Activity() {
     }
 
     private fun loadInitial(fallbackTitle: String) {
+        status.text = "正在同时加载正文和目录…"
         worker.execute {
-            val toc = runBlocking { safeEngineCall { engine.chapters(sourceId, bookUrl) } }
+            val (toc, content) = runBlocking {
+                coroutineScope {
+                    val tocTask = async(Dispatchers.IO) {
+                        safeEngineCall { engine.chapters(sourceId, bookUrl) }
+                    }
+                    val contentTask = async(Dispatchers.IO) {
+                        safeEngineCall {
+                            engine.chapterContent(sourceId, bookUrl, currentChapterUrl, bookName)
+                        }
+                    }
+                    tocTask.await() to contentTask.await()
+                }
+            }
             val chapterList = (toc as? EngineResult.Success)?.value.orEmpty()
             val selected = chapterList.indexOfFirst { it.url == currentChapterUrl }
-            val initialIndex = selected
             val chapter = if (selected >= 0) chapterList[selected] else {
                 BookChapter(index = 0, title = fallbackTitle, url = currentChapterUrl)
             }
-            val content = runBlocking { safeEngineCall { engine.chapterContent(sourceId, bookUrl, chapter.url, bookName) } }
             mainHandler.post {
                 chapters = chapterList
-                currentIndex = initialIndex
+                currentIndex = selected
                 renderChapter(chapter, content, toc)
             }
         }
@@ -964,6 +975,9 @@ class SourceChapterActivity : Activity() {
                 status.text = "阅读中 · ${currentIndex + 1}/${chapters.size.coerceAtLeast(1)} 章"
                 chapterTitleView.text = currentChapterTitle
                 currentChapterText = result.value.text
+                if (currentChapterText.isBlank()) {
+                    status.text = "正文解析结果为空，请检查该书源的正文规则"
+                }
                 if (readingSessionStartedAt == 0L) readingSessionStartedAt = android.os.SystemClock.elapsedRealtime()
                 renderReaderDocument()
                 currentChapterUrl = chapter.url
