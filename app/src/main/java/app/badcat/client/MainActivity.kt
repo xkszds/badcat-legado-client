@@ -223,7 +223,7 @@ class MainActivity : Activity() {
         val saved = prefs.getInt("home_search_top_spacing_dp", 46)
         // Earlier builds defaulted to 22dp, which left the search field too close
         // to the logo. Migrate that old default to a visibly lower position.
-        val migrated = if (saved < 34) 46 else saved
+        val migrated = if (saved !in listOf(34, 46, 58)) 46 else saved
         if (migrated != saved) prefs.edit().putInt("home_search_top_spacing_dp", migrated).apply()
         return migrated.coerceIn(24, 72)
     }
