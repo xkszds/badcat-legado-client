@@ -203,6 +203,7 @@ class SourceBookActivity : Activity() {
             addView(chapterList)
         }
         setContentView(ScrollView(this).apply { addView(root) })
+        BadcatTheme.applyTree(this, window.decorView)
         currentCoverUrl?.let { loadCover(it) }
         if (sourceId.isBlank() || bookUrl.isBlank()) {
             status.text = "缺少书源或书籍地址"
@@ -245,6 +246,7 @@ class SourceBookActivity : Activity() {
                         }
                     }
                 }
+                BadcatTheme.applyTree(this@SourceBookActivity, window.decorView)
             }
         }
     }
@@ -354,6 +356,7 @@ class SourceBookActivity : Activity() {
         chapterRows = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         chapterList.addView(chapterRows)
         renderChapterRows()
+        BadcatTheme.applyTree(this, window.decorView)
     }
 
     private fun openChapter(chapter: BookChapter) {
@@ -397,6 +400,11 @@ class SourceBookActivity : Activity() {
     override fun onDestroy() {
         worker.shutdownNow()
         super.onDestroy()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        BadcatTheme.applyTree(this, window.decorView)
     }
 
     companion object {
