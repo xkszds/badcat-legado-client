@@ -65,7 +65,11 @@ object JsonPathRuleEvaluator {
         }
     }
 
-    private fun evaluateCollectionPath(document: SourceDocument, path: String): EngineResult<List<String>> = try {
+    private fun evaluateCollectionPath(document: SourceDocument, path: String): EngineResult<List<String>> {
+        if (!hasBalancedJsonPathDelimiters(path)) {
+            return EngineResult.Failure(EngineErrorCode.PARSE, "Malformed JSONPath expression")
+        }
+        return try {
         val selected = JsonPath.parse(document.body).read<Any?>(path)
         val values = when (selected) {
             null -> emptyList()
@@ -78,6 +82,7 @@ object JsonPathRuleEvaluator {
         EngineResult.Success(emptyList())
     } catch (error: Exception) {
         EngineResult.Failure(EngineErrorCode.PARSE, "JSONPath collection evaluation failed: " + (error.message ?: error::class.java.simpleName), error)
+    }
     }
 
     private fun isSingleJsonPath(path: String): Boolean = runCatching {
@@ -124,7 +129,11 @@ object JsonPathRuleEvaluator {
             )
         }
     }
-    private fun evaluateScalarPath(document: SourceDocument, path: String): EngineResult<List<String>> = try {
+    private fun evaluateScalarPath(document: SourceDocument, path: String): EngineResult<List<String>> {
+        if (!hasBalancedJsonPathDelimiters(path)) {
+            return EngineResult.Failure(EngineErrorCode.PARSE, "Malformed JSONPath expression")
+        }
+        return try {
         val result = JsonPath.compile(path).read<Any?>(document.body)
         val values = when (result) {
             null -> emptyList()
@@ -137,6 +146,32 @@ object JsonPathRuleEvaluator {
         EngineResult.Success(emptyList())
     } catch (error: Exception) {
         EngineResult.Failure(EngineErrorCode.PARSE, "JSONPath evaluation failed: " + (error.message ?: error::class.java.simpleName), error)
+    }
+    }
+
+    private fun hasBalancedJsonPathDelimiters(path: String): Boolean {
+        var depth = 0
+        var quote: Char? = null
+        var escaped = false
+        for (char in path) {
+            if (quote != null) {
+                when {
+                    escaped -> escaped = false
+                    char == '\\' -> escaped = true
+                    char == quote -> quote = null
+                }
+            } else {
+                when (char) {
+                    '\'', '"' -> quote = char
+                    '[' -> depth++
+                    ']' -> {
+                        depth--
+                        if (depth < 0) return false
+                    }
+                }
+            }
+        }
+        return depth == 0 && quote == null && !path.trim().endsWith(".")
     }
 
 }
