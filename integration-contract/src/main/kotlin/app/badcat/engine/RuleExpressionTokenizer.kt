@@ -69,15 +69,20 @@ object RuleExpressionTokenizer {
                 // bounded without rejecting escaped quotes in regex character classes.
                 when {
                     char == '\\' -> index = (index + 2).coerceAtMost(expression.length)
+                    // Regex groups/classes remain structural even inside an HTML
+                    // attribute value. Quotes inside those groups are regex
+                    // literals (for example [^"]) rather than HTML delimiters.
+                    char == '(' -> { regexParentheses++; index++ }
+                    char == ')' -> { regexParentheses = (regexParentheses - 1).coerceAtLeast(0); index++ }
+                    char == '[' -> { regexBrackets++; index++ }
+                    char == ']' -> { regexBrackets = (regexBrackets - 1).coerceAtLeast(0); index++ }
                     char == '"' || char == '\'' -> {
-                        if (quote == null) quote = char
-                        else if (quote == char) quote = null
+                        if (regexParentheses == 0 && regexBrackets == 0) {
+                            if (quote == null) quote = char
+                            else if (quote == char) quote = null
+                        }
                         index++
                     }
-                    quote == null && char == '(' -> { regexParentheses++; index++ }
-                    quote == null && char == ')' -> { regexParentheses = (regexParentheses - 1).coerceAtLeast(0); index++ }
-                    quote == null && char == '[' -> { regexBrackets++; index++ }
-                    quote == null && char == ']' -> { regexBrackets = (regexBrackets - 1).coerceAtLeast(0); index++ }
                     quote == null && regexParentheses == 0 && regexBrackets == 0 &&
                         !(delimiter == "&&" && expression.substring(start).trimStart().startsWith("@regex:", ignoreCase = true)) &&
                         expression.startsWith(delimiter, index) -> {
