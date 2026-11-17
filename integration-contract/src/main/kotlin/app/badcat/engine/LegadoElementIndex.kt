@@ -1,8 +1,8 @@
 package app.badcat.engine
 
 /**
- * Bounded implementation of Legado ElementsSingle list indexing for CSS
- * collection rules. Scalar CSS value rules are deliberately not rewritten.
+ * Bounded implementation of Legado ElementsSingle list indexing for default-mode
+ * CSS/JSoup collection and chained scalar rules. Explicit @CSS: remains direct CSS.
  */
 internal object LegadoElementIndex {
 
