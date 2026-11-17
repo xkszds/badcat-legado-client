@@ -29,7 +29,19 @@ import app.badcat.engine.EngineResult
 import app.badcat.engine.ReadingEngine
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.TimeoutCancellationException
+import java.util.Collections
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * User-facing search screen around the existing Legado ReadingEngine.
@@ -44,6 +56,10 @@ class SourceSearchActivity : Activity() {
         private const val SEARCH_HISTORY_PREFS = "badcat_search_history"
         private const val SEARCH_HISTORY_KEY = "queries_v1"
         private const val MAX_SEARCH_HISTORY = 20
+        private const val MAX_SOURCES_PER_SEARCH = 24
+        private const val MAX_PARALLEL_SEARCHES = 6
+        private const val SOURCE_SEARCH_TIMEOUT_MS = 15_000L
+        private const val TOTAL_SEARCH_TIMEOUT_MS = 45_000L
     }
 
     private val worker: ExecutorService = Executors.newSingleThreadExecutor()
@@ -387,31 +403,61 @@ class SourceSearchActivity : Activity() {
         status.text = "正在搜索（第 ${requestedPage} 页）…"
         results.removeAllViews()
         worker.execute {
-            val collected = mutableListOf<BookCandidate>()
-            val failures = mutableListOf<String>()
-            selectedSources.forEach { source ->
-                val result = runBlocking {
-                    try {
-                        engine.searchPage(source.id, query, requestedPage)
-                    } catch (error: Exception) {
-                        EngineResult.Failure(
-                            EngineErrorCode.UNKNOWN,
-                            error.message ?: "搜索时发生异常",
-                            error,
-                        )
-                    }
-                }
-                when (result) {
-                    is EngineResult.Success -> collected.addAll(result.value)
-                    is EngineResult.Failure -> failures.add("${source.name}：${result.message}")
-                }
+            val collected = Collections.synchronizedList(mutableListOf<BookCandidate>())
+            val failures = Collections.synchronizedList(mutableListOf<String>())
+            val sourcesToSearch = selectedSources.take(MAX_SOURCES_PER_SEARCH)
+            if (selectedSources.size > sourcesToSearch.size) {
+                failures += "本次最多并发检索前 $MAX_SOURCES_PER_SEARCH 个书源；其余 ${selectedSources.size - sourcesToSearch.size} 个未执行"
             }
-            val unique = collected.distinctBy { "${it.sourceId}|${it.bookUrl}" }
+            val completed = AtomicInteger(0)
+            val timedOut = runBlocking {
+                val semaphore = Semaphore(MAX_PARALLEL_SEARCHES)
+                withTimeoutOrNull(TOTAL_SEARCH_TIMEOUT_MS) {
+                    supervisorScope {
+                        sourcesToSearch.map { source ->
+                            async(Dispatchers.IO) {
+                                semaphore.withPermit {
+                                    val result = try {
+                                        withTimeout(SOURCE_SEARCH_TIMEOUT_MS) {
+                                            engine.searchPage(source.id, query, requestedPage)
+                                        }
+                                    } catch (timeout: TimeoutCancellationException) {
+                                        EngineResult.Failure(
+                                            EngineErrorCode.NETWORK,
+                                            "请求超时（${SOURCE_SEARCH_TIMEOUT_MS / 1000} 秒）",
+                                            timeout,
+                                        )
+                                    } catch (cancelled: CancellationException) {
+                                        throw cancelled
+                                    } catch (error: Exception) {
+                                        EngineResult.Failure(
+                                            EngineErrorCode.UNKNOWN,
+                                            error.message ?: "搜索时发生异常",
+                                            error,
+                                        )
+                                    }
+                                    when (result) {
+                                        is EngineResult.Success -> collected.addAll(result.value)
+                                        is EngineResult.Failure -> failures.add("${source.name}：${result.message}")
+                                    }
+                                    val count = completed.incrementAndGet()
+                                    postToUi {
+                                        status.text = "正在搜索：已完成 $count / ${sourcesToSearch.size} 个书源…"
+                                    }
+                                }
+                            }
+                        }.awaitAll()
+                    }
+                } == null
+            }
+            if (timedOut) failures += "搜索总耗时超过 ${TOTAL_SEARCH_TIMEOUT_MS / 1000} 秒，已停止等待并显示已取得的结果"
+            val unique = synchronized(collected) { collected.distinctBy { "${it.sourceId}|${it.bookUrl}" } }
+            val failureSnapshot = synchronized(failures) { failures.toList() }
             postToUi {
                 searchButton.isEnabled = enabledSources.isNotEmpty()
                 previousPageButton.isEnabled = requestedPage > 1
                 nextPageButton.isEnabled = unique.isNotEmpty()
-                showResults(requestedPage, unique, failures)
+                showResults(requestedPage, unique, failureSnapshot)
                 BadcatTheme.applyTree(this@SourceSearchActivity, rootView)
             }
         }
@@ -560,8 +606,7 @@ class SourceSearchActivity : Activity() {
             })
         }
         if (items.isEmpty()) {
-            if (failures.isNotEmpty()) showServerError("当前服务出了点问题，请稍候再试") { search() }
-            else results.addView(TextView(this).apply {
+            if (failures.isEmpty()) results.addView(TextView(this).apply {
                 text = "暂未找到相关书籍"; textSize = 14f; gravity = Gravity.CENTER
                 setTextColor(muted); setPadding(0, dp(42), 0, dp(42))
             })
