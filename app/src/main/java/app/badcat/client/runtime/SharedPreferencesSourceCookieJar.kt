@@ -171,7 +171,7 @@ class SharedPreferencesSourceCookieJar(
     }
 
     private fun cookieKey(cookie: Cookie): String =
-        "${cookie.domain}|${cookie.path}|${cookie.name}"
+        "${cookie.domain}|${cookie.path}|${cookie.name}|${cookie.hostOnly}"
 
     private fun Cookie.isWithinStorageLimits(): Boolean =
         name.isNotBlank() && name.length <= MAX_COOKIE_NAME_CHARS &&

@@ -63,4 +63,31 @@ class SharedPreferencesSourceCookieJarTest {
             applicableSourceCookieHeader("https://reader.example/book".toHttpUrl(), candidates),
         )
     }
+
+    @Test
+    fun hostOnlyAndDomainCookiesWithSameNameRemainDistinct() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val jar = SharedPreferencesSourceCookieJar(context, "host-scope-fixture")
+        val origin = "https://reader.example".toHttpUrl()
+        val hostOnly = Cookie.Builder()
+            .name("session").value("host").hostOnlyDomain("reader.example")
+            .path("/").build()
+        val domain = Cookie.Builder()
+            .name("session").value("domain").domain("reader.example")
+            .path("/").build()
+
+        jar.saveFromResponse(origin, listOf(hostOnly, domain))
+
+        assertEquals(
+            setOf("host", "domain"),
+            jar.loadForRequest(origin).map { it.value }.toSet(),
+        )
+        assertEquals(
+            listOf("domain"),
+            jar.loadForRequest("https://sub.reader.example".toHttpUrl()).map { it.value },
+        )
+        jar.clear()
+    }
+
+
 }
