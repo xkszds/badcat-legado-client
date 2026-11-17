@@ -105,7 +105,7 @@ class LayoutSettingsActivity : Activity() {
         val labels = arrayOf("标准下移（34dp）", "进一步下移（46dp）", "明显下移（58dp）")
         val values = intArrayOf(34, 46, 58)
         AlertDialog.Builder(this).setTitle("首页搜索栏位置")
-            .setSingleChoiceItems(labels, values.indexOf(current).coerceAtLeast(0)) { dialog, which ->
+            .setSingleChoiceItems(labels, values.indexOf(current).takeIf { it >= 0 } ?: 1) { dialog, which ->
                 prefs.edit().putInt("home_search_top_spacing_dp", values[which]).apply()
                 dialog.dismiss()
                 refreshSummaries()
