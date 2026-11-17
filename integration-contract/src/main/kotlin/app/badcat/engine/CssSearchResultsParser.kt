@@ -167,10 +167,9 @@ class CssSearchResultsParser {
                 return unsupported(source, "bookList must return element HTML")
             }
             val jsonRootRule = normalizeJsonRule(response.body, rootExpression)
-            when (val result = LegadoRuleExpressionDispatcher.evaluateElements(
-                SourceDocument(response.finalUrl, response.body, response.contentType, key, page),
-                jsonRootRule,
-            )) {
+            val rootDocument = SourceDocument(response.finalUrl, response.body, response.contentType, key, page)
+            val rootResult = evaluateCollectionRule(rootDocument, jsonRootRule)
+            when (val result = rootResult) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
             }
@@ -306,7 +305,7 @@ class CssSearchResultsParser {
                 is EngineResult.Success -> replaced.value.firstOrNull()?.trim()?.takeIf(String::isNotEmpty)
             }
         } else {
-            when (val result = LegadoRuleExpressionDispatcher.evaluate(itemDocument, extractionRule)) {
+            when (val result = evaluateScalarRule(itemDocument, extractionRule)) {
                 is EngineResult.Failure -> throw SearchParseFailure(result)
                 is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(extractionRule, result.value)
                     ?.trim()?.takeIf(String::isNotEmpty)
@@ -329,6 +328,30 @@ class CssSearchResultsParser {
      * @html to every top-level branch so && / || / %% never mix serialized
      * elements with text values before each card is parsed independently.
      */
+    private fun evaluateCollectionRule(document: SourceDocument, rule: String): EngineResult<List<String>> {
+        val trimmed = rule.trim()
+        val jsonPath = when {
+            trimmed.startsWith("@jsonpath:", true) -> trimmed.substringAfter(':').trim()
+            trimmed.startsWith("@json:", true) -> trimmed.substringAfter(':').trim()
+            trimmed.startsWith("$") -> trimmed
+            else -> null
+        }
+        return jsonPath?.let { JsonPathRuleEvaluator.evaluateElements(document, it) }
+            ?: LegadoRuleExpressionDispatcher.evaluateElements(document, trimmed)
+    }
+
+    private fun evaluateScalarRule(document: SourceDocument, rule: String): EngineResult<List<String>> {
+        val trimmed = rule.trim()
+        val jsonPath = when {
+            trimmed.startsWith("@jsonpath:", true) -> trimmed.substringAfter(':').trim()
+            trimmed.startsWith("@json:", true) -> trimmed.substringAfter(':').trim()
+            trimmed.startsWith("$") -> trimmed
+            else -> null
+        }
+        return jsonPath?.let { JsonPathRuleEvaluator.evaluate(document, it) }
+            ?: LegadoRuleExpressionDispatcher.evaluate(document, trimmed)
+    }
+
     private fun normalizeJsonRule(body: String, rule: String): String {
         val trimmed = rule.trim()
         val jsonBody = body.trimStart().let { it.startsWith("{") || it.startsWith("[") }

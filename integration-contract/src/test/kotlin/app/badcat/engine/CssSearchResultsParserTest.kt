@@ -39,7 +39,7 @@ class CssSearchResultsParserTest {
         assertEquals(1, books.size)
         assertEquals("JSON Novel", books.single().name)
         assertEquals("Writer", books.single().author)
-        assertEquals("https://reader.example/42", books.single().bookUrl)
+        assertEquals("https://reader.example/api/42", books.single().bookUrl)
         assertEquals("https://cdn.example/42.jpg", books.single().coverUrl)
     }
 

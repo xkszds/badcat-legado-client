@@ -83,7 +83,7 @@ class CssTocParser {
             if (resolvedListRule.contains("{{")) {
                 return unsupported(source, "unresolved chapterList interpolation")
             }
-            when (val result = LegadoRuleExpressionDispatcher.evaluateElements(root, resolvedListRule)) {
+            when (val result = evaluateCollectionRule(root, resolvedListRule)) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
             }
@@ -146,7 +146,7 @@ class CssTocParser {
                     )
                 }
             }
-            return when (val result = LegadoRuleExpressionDispatcher.evaluate(
+            return when (val result = evaluateScalarRule(
                 SourceDocument(response.finalUrl, itemHtml, response.contentType, page = page),
                 normalized,
             )) {
@@ -260,10 +260,7 @@ class CssTocParser {
         val normalizedListRule = normalizeJsonRule(response.body, listRule)
         val legacyRegexMode = listRule.trim().startsWith(":")
         val root = SourceDocument(response.finalUrl, response.body, response.contentType)
-        val items = when (val result = LegadoRuleExpressionDispatcher.evaluateElements(
-            root,
-            normalizedListRule,
-        )) {
+        val items = when (val result = evaluateCollectionRule(root, normalizedListRule)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
         }
@@ -285,7 +282,7 @@ class CssTocParser {
                     )
                 }
             }
-            return when (val result = LegadoRuleExpressionDispatcher.evaluate(
+            return when (val result = evaluateScalarRule(
                 SourceDocument(response.finalUrl, itemHtml, response.contentType),
                 normalizedExpression,
             )) {
@@ -358,6 +355,30 @@ class CssTocParser {
             }
         }
         return EngineResult.Success(ParsedTocPage(chapters, nextUrls))
+    }
+
+    private fun evaluateCollectionRule(document: SourceDocument, rule: String): EngineResult<List<String>> {
+        val trimmed = rule.trim()
+        val jsonPath = when {
+            trimmed.startsWith("@jsonpath:", true) -> trimmed.substringAfter(':').trim()
+            trimmed.startsWith("@json:", true) -> trimmed.substringAfter(':').trim()
+            trimmed.startsWith("$") -> trimmed
+            else -> null
+        }
+        return jsonPath?.let { JsonPathRuleEvaluator.evaluateElements(document, it) }
+            ?: LegadoRuleExpressionDispatcher.evaluateElements(document, trimmed)
+    }
+
+    private fun evaluateScalarRule(document: SourceDocument, rule: String): EngineResult<List<String>> {
+        val trimmed = rule.trim()
+        val jsonPath = when {
+            trimmed.startsWith("@jsonpath:", true) -> trimmed.substringAfter(':').trim()
+            trimmed.startsWith("@json:", true) -> trimmed.substringAfter(':').trim()
+            trimmed.startsWith("$") -> trimmed
+            else -> null
+        }
+        return jsonPath?.let { JsonPathRuleEvaluator.evaluate(document, it) }
+            ?: LegadoRuleExpressionDispatcher.evaluate(document, trimmed)
     }
 
     private fun normalizeJsonRule(body: String, rule: String): String {
