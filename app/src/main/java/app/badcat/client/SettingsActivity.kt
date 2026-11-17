@@ -64,6 +64,10 @@ class SettingsActivity : Activity() {
             startActivity(Intent(this, ReplaceRuleActivity::class.java))
         }
         addDivider(group)
+        addSetting(group, "广告过滤", "网页注入开关与本地 AdMark 标记管理") {
+            startActivity(Intent(this, BadcatPurificationActivity::class.java))
+        }
+        addDivider(group)
         addSetting(group, "书源管理", "导入、启用和管理 Legado 书源") {
             startActivity(Intent(this, SourceCatalogActivity::class.java))
         }
