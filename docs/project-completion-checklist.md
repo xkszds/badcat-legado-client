@@ -1,6 +1,6 @@
 # 项目完成情况与剩余工作清单
 
-更新时间：2026-11-16（第二大类持续集成中，UTC+8）
+更新时间：2026-11-17（第一大类与第二大类并行推进，UTC+8）
 
 ## 项目定位
 
@@ -22,17 +22,17 @@
 - [x] Legado 替换规则本地目录、JSON 编解码、启用/范围筛选、字面量与受限正则替换。
 - [x] 有边界的 Rhino 替换规则执行器；仅支持受限上下文，不等同完整 Legado JS 环境。
 - [x] 开发阅读页的章节阅读、进度/书签基础能力与 CSS 自定义方案管理。
-- [x] 阅读记录页：章节成功加载后按书源+书籍去重保存最近章节，首页快捷入口可打开记录，点击记录继续阅读，长按可仅删除历史记录（不删除书签/收藏）。
+- [x] 阅读记录页：首页最近阅读面板显示最多三条，点击记录继续阅读，全部入口打开完整记录页；记录页长按可仅删除历史记录（不删除书签/收藏）。
 - [x] 阅读 CSS 多方案、子选择器命名/备注、启停、复制、排序、预览、冲突提示、导入导出和资源上限。
 - [x] CSS 选择器、净化器、规则顺序与输出大小的单元测试。
 - [x] 先前基线提交 `e226dd6b559c` 的 CI 曾全部通过：契约测试、受限 Rhino 宿主测试、Android Debug APK 组装和产物上传均成功。Actions：[run #43845483951](https://github.com/xkszds/badcat-legado-client/actions/runs/43845483951)。该产物不是当前分支构建。
-- [ ] 当前分支提交 `05e3a0238e07` 的最新 Actions [run #43897534456](https://github.com/xkszds/badcat-legado-client/actions/runs/43897534456) 失败；必须先取得失败日志、修复并重新通过完整 CI，才能生成当前分支 APK。
+- [ ] 当前分支最新 UI/阅读记录改动仍需完整 CI 验证；最近一次可确认通过的构建是 d67dc03779ad 对应 Actions run #44061473137（该版本不包含后续首页布局改动）。
 
 ## 尚未完成（主要交付阻塞项）
 
 ### P0：必须完成才能称为目标客户端
 
-- [ ] **原版 UI 还原**：逐页重建主界面、四个底部导航、搜索首页/结果、书籍详情、目录、书架/文件夹、阅读页和设置页；以原 APK 资源和参考截图逐屏比对。当前 MainActivity 仍有临时快捷入口；“猫咪空间”和“我的”是未接入的提示/临时入口，不能视为原版页面。
+- [ ] **原版 UI 还原**：逐页重建搜索首页/结果、书籍详情、目录、书架/文件夹、阅读页和设置页；以原 APK 资源和参考截图逐屏比对。首页已从空白占位改为真实最近阅读面板，搜索栏位置设置位于「设置 → 布局」，但整页结构和截图仍未达到原版验收。
 - [ ] **完整 Legado 规则运行时**：补齐上游模型和规则实体、AnalyzeRule/AnalyzeUrl、CSS/XPath/JSONPath 等解析、JS 绑定、请求头/Cookie/缓存/代理等宿主环境，以及初始化/持久化依赖。当前 CSS 解析器和 Rhino 都只是有界子集。
 - [ ] **端到端适配**：将完整引擎接入原版搜索、详情、目录、阅读和书架 UI，验证来源切换、错误呈现、章节导航和离线/缓存策略。
 - [ ] **原版净化功能迁移**：通过方法级证据确认 ADBlockUtils、AdBlockPresenter、AdMark 服务、PPRule 的真实数据结构、调用时机与行为；分别实现 WebView/页面广告过滤、AdMark、目录/分页/视频规则。现有 Legado 正文替换不能代替这些功能。
@@ -70,3 +70,12 @@
 - New code in this batch includes recursive mixed CSS/XPath/JSONPath scalar rules, JSONPath collection extraction for search/TOC, per-item JSONPath search fields, and explicit `@js:` marker disambiguation.
 - Latest current-head CI run failed. Workflow log retrieval was unavailable in the latest attempt; do not infer that current-head tests or APK assembly passed.
 - The full second category remains incomplete: full upstream AnalyzeRule/AnalyzeUrl semantics and JS host bindings, login/session helpers, source corpus compatibility, original UI integration, purification migration, device acceptance and release signing are still open gates.
+
+
+## 2026-11-17 current batch update
+
+- Search position settings are nested under Settings → Layout. The home search top spacing defaults to 46dp and offers 34/46/58dp presets; old unsupported values are migrated to 46dp. MainActivity refreshes its header when returning from layout settings.
+- The home search entry navigates to the dedicated book-search page and requests focus/keyboard display. The results page reuses one search bar and has no duplicate “搜索” title.
+- The formerly blank home content region now shows up to three real recent-reading records and links to the full history page; no removed leaderboard/lottery/cash/Cat Star shortcuts are restored.
+- Latest verified CI success: commit d67dc03779ad5c978a6f6bd87f931d6fe2f5f13d, run [#44061473137](https://github.com/xkszds/badcat-legado-client/actions/runs/44061473137). This run predates the home spacing and recent-reading changes; current HEAD must pass a fresh full run before its APK is offered.
+- Remaining work is unchanged at the major gates: original screenshot/device parity, full upstream AnalyzeRule/AnalyzeUrl and host APIs, long-press AdMark and DOM deletion, complete source corpus compatibility, real-device regression and release signing.
