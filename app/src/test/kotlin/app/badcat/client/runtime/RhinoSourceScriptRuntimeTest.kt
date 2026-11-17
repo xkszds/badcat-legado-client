@@ -506,15 +506,13 @@ class RhinoSourceScriptRuntimeTest {
 
         val shimCheck = runtime.evaluate(
             source,
-            "typeof Packages + '|' + typeof JavaImporter + '|' + typeof String.prototype.getBytes",
+            "typeof Packages + '|' + typeof JavaImporter + '|' + typeof String.prototype.getBytes + '|' + typeof Packages.javax + '|' + typeof Packages.javax.crypto.spec",
         )
-        println("AES shim probe result: $shimCheck")
         assertTrue("Restricted JavaImporter shim unavailable: $shimCheck", shimCheck is EngineResult.Success)
-        assertEquals("object|function|function", (shimCheck as EngineResult.Success).value)
+        assertEquals("object|function|function|object|object", (shimCheck as EngineResult.Success).value)
 
         val result = runtime.evaluate(source, script)
 
-        println("AES script result: $result")
         assertTrue("Restricted AES script failed: $result", result is EngineResult.Success)
         assertEquals("Legado AES fixture", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)

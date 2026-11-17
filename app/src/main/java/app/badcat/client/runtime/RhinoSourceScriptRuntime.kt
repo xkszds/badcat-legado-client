@@ -249,8 +249,9 @@ class RhinoSourceScriptRuntime(
                   Arrays: {
                     copyOfRange: function(value, from, to) { return java.copyByteRange(value, from, to); }
                   }
-                },
-                javax: {
+                }
+              },
+              javax: {
                   crypto: {
                     spec: {
                       SecretKeySpec: function(bytes, algorithm) {
@@ -290,7 +291,6 @@ class RhinoSourceScriptRuntime(
                     }
                   }
                 }
-              }
             };
             JavaImporter = function() {
               this.importPackage = function() {
