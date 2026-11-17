@@ -70,6 +70,10 @@ internal object BadcatTheme {
      * covers, illustrations and custom colored controls are deliberately kept.
      */
     fun applyTree(context: Context, root: View) {
+        if (!isDark(context)) {
+            (context as? Activity)?.let(::applyWindow)
+            return
+        }
         val colors = palette(context)
         fun visit(view: View) {
             when (val bg = view.background) {
