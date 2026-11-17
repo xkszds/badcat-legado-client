@@ -37,6 +37,20 @@ class ReaderCssDocumentTest {
     }
 
     @Test
+    fun supportsFlexLayoutAndOverflowDeclarationsForReaderChildren() {
+        val css = ReaderCssDocument.renderRules(
+            listOf(
+                ".reader-content" to
+                    "display: flex; flex-direction: column; gap: 8px; overflow-y: auto; box-sizing: border-box;",
+                ".reader-paragraph" to "text-overflow: ellipsis; hyphens: auto; text-shadow: 1px 1px 2px #000000;",
+            ),
+        )
+
+        assertTrue(css.contains(".reader-root .reader-content{display:flex;flex-direction:column;gap:8px;overflow-y:auto;box-sizing:border-box}"))
+        assertTrue(css.contains(".reader-root .reader-paragraph{text-overflow:ellipsis;hyphens:auto;text-shadow:1px 1px 2px #000000}"))
+    }
+
+    @Test
     fun rejectsUnsafeDeclarationsAndKeepsValidRules() {
         val css = ReaderCssDocument.renderRules(
             listOf(
