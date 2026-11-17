@@ -132,4 +132,10 @@ class LayoutSettingsActivity : Activity() {
         setColor(color); cornerRadius = dp(radius).toFloat()
     }
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
+
+    override fun onResume() {
+        super.onResume()
+        BadcatTheme.applyTree(this, window.decorView)
+    }
+
 }
