@@ -151,16 +151,32 @@ inside that shared lifecycle:
   the toggle is on and a non-empty bounded script is present.
 - Badcat AdMark records have a separate app-private catalog with local
   upsert/remove/import/export. host, urlPattern and markRules are preserved
-  as distinct fields. The current safe lookup uses exact host matching only.
+  as distinct fields. The current safe lookup uses exact host matching plus the verified numeric URL-pattern matcher.
 
 This is integration plumbing, not a completed port of the original purifier.
-The original injected script has not been recovered; urlPattern/markRules
-matching and DOM removal semantics are still opaque; no original issue/report
-service is called; the current reader only has a verified injection hook and
-local AdMark storage. The AdMark payload is not yet used to remove DOM nodes.
+The original injected script has not been recovered; markRules-to-DOM selector
+application and deletion callback semantics remain incomplete; no original
+issue/report service is called; the current reader only has a verified injection hook and
+local AdMark storage. The local coordinator can select AdMark records by exact host and the verified
+urlPattern algorithm, but markRules are not yet applied to remove DOM nodes.
 The app must not claim full original Badcat ad filtering until the original
 matcher and callback contract are recovered and validated against authorized
 fixtures.
 
 Regression coverage added for toggle-gated injection selection, exact-host
 AdMark lookup, invalid record rejection and preservation of opaque rule data.
+
+
+### Additional AdMark matcher verification
+
+Inspection of the original DbAdMark and AdMarkPresenter methods established:
+
+- DbAdMark stores host, id, isServer, markRule, updateTime, urlPattern and version.
+- A DbAdMark created from JsAdMarkInfo derives host from the supplied URL using URI.getHost(), and preserves markRule and urlPattern.
+- Each server AdMarkRuleItem's markRules strings are expanded into individual DbAdMark records sharing that item's host and urlPattern.
+- The original URL matcher parses urlPattern as a JSON array of integers, joins the values with "/" and uses Pattern.matcher(url).find().
+
+The app-side BadcatAdMarkItem keeps the grouped protobuf shape for import/export,
+and its safe matcher now applies the verified JSON-integer-array pattern against
+the URL after exact host matching. markRules remain opaque and are not executed
+as CSS or JavaScript until their precise DOM contract is recovered.
