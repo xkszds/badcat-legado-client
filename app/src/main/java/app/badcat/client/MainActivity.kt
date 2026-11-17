@@ -19,8 +19,8 @@ class MainActivity : Activity() {
     private var darkMode = false
     private lateinit var homeSearchBar: BadcatSearchBarView
     private val blue = Color.rgb(55, 137, 222)
-    private val ink = Color.rgb(48, 55, 66)
-    private val muted = Color.rgb(135, 145, 158)
+    private val ink get() = if (darkMode) Color.rgb(235, 237, 240) else Color.rgb(48, 55, 66)
+    private val muted get() = if (darkMode) Color.rgb(165, 172, 182) else Color.rgb(135, 145, 158)
     private val page get() = if (darkMode) Color.rgb(25, 28, 33) else Color.WHITE
 
     override fun onCreate(savedInstanceState: Bundle?) {
