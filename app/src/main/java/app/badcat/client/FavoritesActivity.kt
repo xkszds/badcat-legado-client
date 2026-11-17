@@ -240,30 +240,26 @@ class FavoritesActivity : Activity() {
             gravity = Gravity.CENTER
             val more = TextView(this@FavoritesActivity).apply {
                 text = "⋮"
-                textSize = 19f
+                textSize = 16f
                 letterSpacing = 0f
                 gravity = Gravity.CENTER
+                includeFontPadding = false
                 setTextColor(ink)
-                minWidth = dp(28)
-                minHeight = dp(32)
+                minWidth = dp(24)
+                minHeight = dp(28)
                 isClickable = true
                 isFocusable = true
                 contentDescription = "更多收藏夹选项"
-                setOnLongClickListener {
-                    text = if (text == "•••") "•\n•\n•" else "•••"
-                    requestLayout()
-                    true
-                }
                 setOnClickListener {
-                    animate().scaleX(0.88f).scaleY(0.88f).setDuration(65L)
+                    animate().scaleX(0.92f).scaleY(0.92f).setDuration(65L)
                         .withEndAction {
-                            animate().scaleX(1f).scaleY(1f).setDuration(95L).start()
+                            animate().scaleX(1f).scaleY(1f).setDuration(85L).start()
                             showMoreMenu(this)
                         }.start()
                 }
             }
-            addView(more, LinearLayout.LayoutParams(dp(28), dp(32)))
-        }, LinearLayout.LayoutParams(dp(28), dp(32)))
+            addView(more, LinearLayout.LayoutParams(dp(24), dp(28)))
+        }, LinearLayout.LayoutParams(dp(24), dp(28)))
         root.addView(header)
         val scroll = ScrollView(this)
         rootContent = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(14), dp(14), dp(20)) }
