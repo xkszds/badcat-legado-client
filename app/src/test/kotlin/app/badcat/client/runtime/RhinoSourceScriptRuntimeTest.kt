@@ -117,6 +117,28 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun exposesJavaScriptUriComponentEncodingAndDecodingSemantics() = runBlocking {
+        val source = BookSource(
+            id = "https://uri-components.example/",
+            name = "URI component helpers",
+            baseUrl = "https://uri-components.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val result = runtime.evaluate(
+            source,
+            "java.encodeURIComponent('a/b?x=雪') + '|' + " +
+                "java.decodeURIComponent('a+b%2Fc') + '|' + " +
+                "java.decodeURI('https%3A%2F%2Fexample.com%2F%E9%9B%AA')",
+        )
+
+        assertEquals(
+            "a%2Fb%3Fx%3D%E9%9B%AA|a+b/c|https%3A%2F%2Fexample.com%2F雪",
+            (result as EngineResult.Success).value,
+        )
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun safeJavaStorageSurvivesRuntimeRecreationWhenStoreIsDurable() = runBlocking {
         val store = InMemorySourceScriptKeyValueStore
         val source = BookSource(
