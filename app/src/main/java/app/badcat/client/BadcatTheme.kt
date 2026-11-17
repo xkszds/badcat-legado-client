@@ -1,6 +1,7 @@
 package app.badcat.client
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
@@ -58,6 +59,13 @@ internal object BadcatTheme {
             fieldStroke = Color.rgb(198, 211, 227),
         )
     }
+
+    fun alertBuilder(activity: Activity): AlertDialog.Builder =
+        if (isDark(activity)) {
+            AlertDialog.Builder(activity, android.R.style.Theme_Material_Dialog_Alert)
+        } else {
+            AlertDialog.Builder(activity)
+        }
 
     fun applyWindow(activity: Activity) {
         val colors = palette(activity)
