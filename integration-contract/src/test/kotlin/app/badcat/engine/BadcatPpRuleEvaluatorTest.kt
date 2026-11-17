@@ -140,4 +140,40 @@ class BadcatPpRuleEvaluatorTest {
         assertEquals(emptyList(), assertIs<EngineResult.Success<List<BadcatVideoLink>>>(result).value)
     }
 
+
+    @Test
+    fun videoLinkExtractionRejectsMalformedHttpUrisAndCredentials() {
+        val document = SourceDocument(
+            url = "https://video.example/watch/",
+            body = """<a href="https:relative-target">Relative scheme</a>
+                <a href="https://user:pass@evil.example/watch">Credential URL</a>
+                <a href="//cdn.example/episode">Protocol-relative</a>""",
+        )
+        val result = BadcatPpRuleEvaluator.extractVideoLinks(
+            document,
+            BadcatPpRule(ruleTypeValue = 1, pageRule = "//a"),
+        )
+        assertEquals(
+            listOf(BadcatVideoLink("Protocol-relative", "https://cdn.example/episode")),
+            assertIs<EngineResult.Success<List<BadcatVideoLink>>>(result).value,
+        )
+    }
+
+    @Test
+    fun videoLinkExtractionDeduplicatesResolvedUrls() {
+        val document = SourceDocument(
+            url = "https://video.example/list",
+            body = """<a href="/episode/1">Episode one</a>
+                <a href="https://video.example/episode/1">Duplicate label</a>""",
+        )
+        val result = BadcatPpRuleEvaluator.extractVideoLinks(
+            document,
+            BadcatPpRule(ruleTypeValue = 1, pageRule = "//a"),
+        )
+        assertEquals(
+            listOf(BadcatVideoLink("Episode one", "https://video.example/episode/1")),
+            assertIs<EngineResult.Success<List<BadcatVideoLink>>>(result).value,
+        )
+    }
+
 }
