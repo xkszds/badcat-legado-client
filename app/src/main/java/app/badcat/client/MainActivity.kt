@@ -64,6 +64,12 @@ class MainActivity : Activity() {
             },
             onTypeChanged = { contentType = it },
         )
+        bar.setHomeTapToNavigate {
+            startActivity(Intent(this@MainActivity, SourceSearchActivity::class.java).apply {
+                putExtra(SourceSearchActivity.EXTRA_CONTENT_TYPE, contentType)
+                putExtra(SourceSearchActivity.EXTRA_FOCUS_SEARCH, true)
+            })
+        }
         addView(bar, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, dp(if (compact) 44 else 48)
         ).apply { topMargin = dp(6) })
