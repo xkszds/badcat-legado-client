@@ -60,7 +60,8 @@ class SourceCatalogActivity : Activity() {
             text = "书源管理"
             textSize = 24f
         })
-        root.addView(actionButton("导入 Legado 书源 JSON") { chooseImportFile() })
+        root.addView(actionButton("从网络 URL 导入书源") { promptNetworkImport() })
+        root.addView(actionButton("从本地 JSON 文件导入") { chooseImportFile() })
         root.addView(actionButton("导出全部书源 JSON") { chooseExportFile() })
         root.addView(TextView(this).apply {
             text = "书源列表（开关仅控制本应用是否选用该书源）"
@@ -246,6 +247,87 @@ class SourceCatalogActivity : Activity() {
                 }
             }
             .show()
+    }
+
+    private fun promptNetworkImport() {
+        val address = android.widget.EditText(this).apply {
+            hint = "https://example.com/book-sources.json"
+            setSingleLine(true)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_URI
+        }
+        BadcatTheme.alertBuilder(this).setTitle("网络导入书源")
+            .setMessage("输入公开可访问的 Legado 书源 JSON 地址。支持 HTTP/HTTPS，单次最多读取 5 MiB。")
+            .setView(address)
+            .setNegativeButton("取消", null)
+            .setPositiveButton("开始导入") { _, _ -> importFromNetwork(address.text.toString().trim()) }
+            .show()
+    }
+
+    private fun importFromNetwork(rawUrl: String) {
+        val parsed = runCatching { Uri.parse(rawUrl) }.getOrNull()
+        if (parsed == null || parsed.scheme !in setOf("https", "http") ||
+            parsed.host.isNullOrBlank() || parsed.userInfo != null || rawUrl.length > 4096) {
+            message.text = "网址无效：请输入完整的 HTTP/HTTPS JSON 地址"
+            return
+        }
+        message.text = "正在从网络获取书源…"
+        scope.launch {
+            val json = try {
+                withContext(Dispatchers.IO) {
+                    var current = java.net.URL(rawUrl)
+                    for (redirect in 0..5) {
+                        val connection = (current.openConnection() as java.net.HttpURLConnection).apply {
+                            connectTimeout = 12000
+                            readTimeout = 18000
+                            instanceFollowRedirects = false
+                            setRequestProperty("Accept", "application/json, text/plain, */*")
+                            setRequestProperty("User-Agent", "BadcatLegadoClient/1.0")
+                        }
+                        try {
+                            val code = connection.responseCode
+                            if (code in 300..399) {
+                                require(redirect < 5) { "网络重定向次数过多" }
+                                val location = connection.getHeaderField("Location") ?: error("重定向缺少目标地址")
+                                val next = java.net.URL(current, location)
+                                require(next.protocol == "https" || next.protocol == "http") { "重定向协议不受支持" }
+                                require(next.userInfo == null) { "重定向地址不能包含账号密码" }
+                                current = next
+                                continue
+                            }
+                            require(code in 200..299) { "服务器返回 HTTP $code" }
+                            return@withContext connection.inputStream.use { input ->
+                                val output = ByteArrayOutputStream()
+                                val buffer = ByteArray(8192)
+                                while (true) {
+                                    val count = input.read(buffer)
+                                    if (count < 0) break
+                                    require(output.size() + count <= LegadoBookSourceCodec.MAX_IMPORT_BYTES) {
+                                        "书源数据超过 5 MiB 导入限制"
+                                    }
+                                    output.write(buffer, 0, count)
+                                }
+                                LegadoBookSourceCodec.decodeUtf8ToString(output.toByteArray())
+                            }
+                        } finally {
+                            connection.disconnect()
+                        }
+                    }
+                    error("无法取得书源数据")
+                }
+            } catch (error: Exception) {
+                if (error is CancellationException) throw error
+                message.text = "网络获取失败：${error.message ?: "连接错误"}"
+                return@launch
+            }
+            when (val result = catalog.importJson(json)) {
+                is app.badcat.engine.EngineResult.Success -> {
+                    message.text = "网络导入完成：处理 ${result.value} 个书源"
+                    refreshCatalog()
+                }
+                is app.badcat.engine.EngineResult.Failure ->
+                    message.text = "网络导入失败：${result.message}"
+            }
+        }
     }
 
     private fun chooseImportFile() {
