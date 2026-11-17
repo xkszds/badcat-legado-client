@@ -430,13 +430,12 @@ class SourceSearchActivity : Activity() {
                 setTextColor(ink)
             }, LinearLayout.LayoutParams(0, dp(48), 1f))
             if (entries.isNotEmpty()) {
-                addView(TextView(this@SourceSearchActivity).apply {
-                    text = "▢"
-                    textSize = 21f
-                    setTextColor(muted)
-                    gravity = Gravity.CENTER
+                addView(android.widget.ImageView(this@SourceSearchActivity).apply {
+                    setImageResource(android.R.drawable.ic_menu_delete)
+                    setColorFilter(muted)
+                    scaleType = android.widget.ImageView.ScaleType.CENTER_INSIDE
                     contentDescription = "清空搜索历史"
-                    setPadding(dp(10), dp(4), dp(4), dp(4))
+                    setPadding(dp(10), dp(10), dp(6), dp(10))
                     isClickable = true
                     isFocusable = true
                     setOnClickListener {
