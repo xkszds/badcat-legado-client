@@ -88,7 +88,12 @@ object FavoriteBooks {
         return true
     }
 
-    fun updateStatus(context: Context, sourceId: String, bookUrl: String, status: String?) {\n        if (status.isNullOrBlank()) return\n        save(context, all(context).map { if (it.sourceId == sourceId && it.bookUrl == bookUrl) it.copy(status = status) else it })\n    }\n\n    fun updateCover(context: Context, sourceId: String, bookUrl: String, coverUrl: String?) {
+    fun updateStatus(context: Context, sourceId: String, bookUrl: String, status: String?) {
+        if (status.isNullOrBlank()) return
+        save(context, all(context).map { if (it.sourceId == sourceId && it.bookUrl == bookUrl) it.copy(status = status) else it })
+    }
+
+    fun updateCover(context: Context, sourceId: String, bookUrl: String, coverUrl: String?) {
         if (coverUrl.isNullOrBlank()) return
         save(context, all(context).map { if (it.sourceId == sourceId && it.bookUrl == bookUrl) it.copy(coverUrl = coverUrl) else it })
     }
