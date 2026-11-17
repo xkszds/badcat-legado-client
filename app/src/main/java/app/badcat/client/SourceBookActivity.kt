@@ -259,45 +259,81 @@ class SourceBookActivity : Activity() {
 
     private fun loadCover(rawUrl: String) {
         worker.execute {
-            var connection: HttpURLConnection? = null
-            try {
-                val url = URL(rawUrl)
-                require(url.protocol == "http" || url.protocol == "https")
-                connection = (url.openConnection() as HttpURLConnection).apply {
-                    connectTimeout = 8_000
-                    readTimeout = 8_000
-                    instanceFollowRedirects = true
-                    setRequestProperty("Accept", "image/*")
-                }
-                connection.connect()
-                if (connection.responseCode !in 200..299) return@execute
-                if (connection.contentLength > 2 * 1024 * 1024) return@execute
-                val bytes = connection.inputStream.use { input ->
-                    val output = java.io.ByteArrayOutputStream()
-                    val buffer = ByteArray(8 * 1024)
-                    var total = 0
-                    while (true) {
-                        val count = input.read(buffer)
-                        if (count < 0) break
-                        total += count
-                        if (total > 2 * 1024 * 1024) return@execute
-                        output.write(buffer, 0, count)
+            var currentUrl = runCatching { java.net.URL(rawUrl) }.getOrNull() ?: return@execute
+            if (!CoverUrlPolicy.isSafe(currentUrl)) return@execute
+            var redirects = 0
+            while (true) {
+                val connection = try {
+                    (currentUrl.openConnection() as HttpURLConnection).apply {
+                        connectTimeout = 8_000
+                        readTimeout = 8_000
+                        instanceFollowRedirects = false
+                        setRequestProperty("Accept", "image/*")
                     }
-                    output.toByteArray()
+                } catch (_: Exception) {
+                    return@execute
                 }
-                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
-                if (bounds.outWidth <= 0 || bounds.outHeight <= 0 || bounds.outWidth > 8_000 || bounds.outHeight > 8_000) return@execute
-                val sample = maxOf(1, Integer.highestOneBit(maxOf(bounds.outWidth / 720, bounds.outHeight / 960)))
-                val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample }) ?: return@execute
-                mainHandler.post { if (!isFinishing && !isDestroyed) coverView.setImageBitmap(bitmap) }
-            } catch (_: Exception) {
-                // Keep the local placeholder when a source cover is unavailable.
-            } finally {
-                connection?.disconnect()
+                try {
+                    val responseCode = connection.responseCode
+                    if (responseCode in COVER_REDIRECT_CODES) {
+                        val location = connection.getHeaderField("Location") ?: return@execute
+                        val next = CoverUrlPolicy.resolveRedirect(currentUrl, location) ?: return@execute
+                        if (redirects >= MAX_COVER_REDIRECTS) return@execute
+                        redirects++
+                        currentUrl = next
+                        continue
+                    }
+                    if (responseCode !in 200..299) return@execute
+                    if (connection.contentLength > MAX_COVER_BYTES) return@execute
+                    val bytes = connection.inputStream.use { input ->
+                        val output = java.io.ByteArrayOutputStream()
+                        val buffer = ByteArray(8 * 1024)
+                        var total = 0
+                        while (true) {
+                            val count = input.read(buffer)
+                            if (count < 0) break
+                            total += count
+                            if (total > MAX_COVER_BYTES) return@execute
+                            output.write(buffer, 0, count)
+                        }
+                        output.toByteArray()
+                    }
+                    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+                    if (bounds.outWidth <= 0 || bounds.outHeight <= 0 ||
+                        bounds.outWidth > MAX_COVER_DIMENSION || bounds.outHeight > MAX_COVER_DIMENSION
+                    ) return@execute
+                    val sample = maxOf(
+                        1,
+                        Integer.highestOneBit(maxOf(bounds.outWidth / 720, bounds.outHeight / 960)),
+                    )
+                    val bitmap = BitmapFactory.decodeByteArray(
+                        bytes,
+                        0,
+                        bytes.size,
+                        BitmapFactory.Options().apply { inSampleSize = sample },
+                    ) ?: return@execute
+                    mainHandler.post {
+                        if (!isFinishing && !isDestroyed) coverView.setImageBitmap(bitmap)
+                        else bitmap.recycle()
+                    }
+                    return@execute
+                } catch (_: Exception) {
+                    return@execute
+                } finally {
+                    connection.disconnect()
+                }
             }
         }
     }
+
+    private companion object {
+        val COVER_REDIRECT_CODES = setOf(300, 301, 302, 303, 307, 308)
+        const val MAX_COVER_REDIRECTS = 5
+        const val MAX_COVER_BYTES = 2 * 1024 * 1024
+        const val MAX_COVER_DIMENSION = 8_000
+    }
+
     private fun showChapters(chapters: List<BookChapter>) {
         allChapters = chapters
         chapterList.removeAllViews()
