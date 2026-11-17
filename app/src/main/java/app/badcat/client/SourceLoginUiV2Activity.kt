@@ -15,6 +15,7 @@ import android.widget.TextView
 import app.badcat.client.runtime.LegadoSourceLoginUiV2Service
 import app.badcat.client.runtime.RhinoSourceScriptRuntime
 import app.badcat.client.runtime.SharedPreferencesSourceLoginSessionStore
+import app.badcat.client.runtime.SharedPreferencesSourceCookieJar
 import app.badcat.client.runtime.SharedPreferencesSourceScriptKeyValueStore
 import app.badcat.engine.BookSource
 import app.badcat.engine.EngineResult
@@ -41,6 +42,9 @@ class SourceLoginUiV2Activity : Activity() {
             RhinoSourceScriptRuntime(
                 sourceKeyValueStore = SharedPreferencesSourceScriptKeyValueStore(applicationContext),
                 sourceLoginSessionStore = loginSessions,
+                sourceCookieReader = { sourceId, url ->
+                    SharedPreferencesSourceCookieJar(applicationContext, sourceId).getCookie(url)
+                },
             ),
         )
     }
