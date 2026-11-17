@@ -168,7 +168,7 @@ class CssBookInfoParserTest {
             id = "https://www.quanben.io",
             name = "全本小说",
             baseUrl = "https://www.quanben.io",
-            ruleBookInfoJson = """{"kind":"[property=\\"og:novel:category\\"]@content","tocUrl":"text.章节列表@href"}""",
+            ruleBookInfoJson = """{"kind":"[property='og:novel:category']@content","tocUrl":"text.章节列表@href"}""",
         )
         val response = SourceHttpResponse(
             200,
