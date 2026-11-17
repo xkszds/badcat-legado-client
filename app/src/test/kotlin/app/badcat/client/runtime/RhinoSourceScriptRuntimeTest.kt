@@ -142,6 +142,33 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun sourceLoginHeaderAndInfoApisPersistAcrossRhinoRuntimeInstances() = runBlocking {
+        val sessions = InMemorySourceLoginSessionStore
+        val source = BookSource(
+            id = "https://login-session.example/",
+            name = "Login session source",
+            baseUrl = "https://login-session.example/",
+        )
+        val loginRuntime = RhinoSourceScriptRuntime(sourceLoginSessionStore = sessions)
+        val requestRuntime = RhinoSourceScriptRuntime(sourceLoginSessionStore = sessions)
+
+        val write = loginRuntime.evaluate(
+            source,
+            "source.putLoginInfo('{" + "\\"username\\":\\"reader\\"}'" + "); " +
+                "source.putLoginHeader('{" + "\\"Authorization\\":\\"Bearer token\\"}'" + ")",
+        )
+        val read = requestRuntime.evaluate(
+            source,
+            "source.getLoginInfoMap().get('username') + '|' + source.getLoginHeaderMap().get('Authorization')",
+        )
+
+        assertTrue(write is EngineResult.Success)
+        assertEquals("reader|Bearer token", (read as EngineResult.Success).value)
+        loginRuntime.clearSourceState(source.id)
+        requestRuntime.clearSourceState(source.id)
+    }
+
+    @Test
     fun rejectsOversizedSourceJsLibBeforeEvaluation() = runBlocking {
         val source = BookSource(
             id = "https://oversized.example/",
