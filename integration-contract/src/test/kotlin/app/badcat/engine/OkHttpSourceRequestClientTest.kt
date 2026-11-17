@@ -120,6 +120,19 @@ class OkHttpSourceRequestClientTest {
     }
 
     @Test
+    fun retriesOnlyTransientResponsesForIdempotentReadMethods() {
+        listOf(408, 425, 429, 500, 502, 503, 504).forEach { status ->
+            assertTrue(shouldRetryHttpResponse("GET", status), "GET $status should be retryable")
+            assertTrue(shouldRetryHttpResponse("HEAD", status), "HEAD $status should be retryable")
+        }
+        listOf(400, 401, 403, 404, 501).forEach { status ->
+            assertTrue(!shouldRetryHttpResponse("GET", status), "GET $status must not be retried")
+        }
+        assertTrue(!shouldRetryHttpResponse("POST", 503))
+        assertTrue(!shouldRetryHttpResponse("PUT", 502))
+    }
+
+    @Test
     fun redirectValidatorAllowsSafeRelativeAndCrossHostHttpsRedirects() {
         val from = "https://reader.example/book/1".toHttpUrl()
         assertTrue(isSafeRedirectTarget(from, "../login"))
