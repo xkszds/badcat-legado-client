@@ -150,6 +150,7 @@ class SourceSearchActivity : Activity() {
                 contentType = selected
                 if (::keywordInput.isInitialized && keywordInput.text.toString().isNotBlank()) search()
             },
+            searchPageStyle = true,
         )
         keywordInput = sharedBar.input
         searchButton = sharedBar.searchAction
@@ -418,93 +419,91 @@ class SourceSearchActivity : Activity() {
         if (!::historyPanel.isInitialized) return
         historyPanel.removeAllViews()
         historyPanel.visibility = View.VISIBLE
-        val entries = readSearchHistory()
+        val entries = readSearchHistory().take(12)
         val heading = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             addView(TextView(this@SourceSearchActivity).apply {
-                text = "最近搜索"
-                textSize = 15f
+                text = "搜索历史"
+                textSize = 16f
                 typeface = Typeface.DEFAULT_BOLD
                 setTextColor(ink)
-            }, LinearLayout.LayoutParams(0, dp(38), 1f))
+            }, LinearLayout.LayoutParams(0, dp(48), 1f))
             if (entries.isNotEmpty()) {
                 addView(TextView(this@SourceSearchActivity).apply {
-                    text = "清空"
-                    textSize = 12f
+                    text = "▢"
+                    textSize = 21f
                     setTextColor(muted)
-                    setPadding(dp(10), dp(6), dp(4), dp(6))
+                    gravity = Gravity.CENTER
+                    contentDescription = "清空搜索历史"
+                    setPadding(dp(10), dp(4), dp(4), dp(4))
                     isClickable = true
+                    isFocusable = true
                     setOnClickListener {
-                        getSharedPreferences(SEARCH_HISTORY_PREFS, MODE_PRIVATE).edit()
-                            .remove(SEARCH_HISTORY_KEY).apply()
-                        renderSearchHistory()
+                        BadcatTheme.alertBuilder(this@SourceSearchActivity)
+                            .setMessage("确定清空全部搜索历史吗？")
+                            .setNegativeButton("取消", null)
+                            .setPositiveButton("清空") { _, _ ->
+                                getSharedPreferences(SEARCH_HISTORY_PREFS, MODE_PRIVATE).edit()
+                                    .remove(SEARCH_HISTORY_KEY).apply()
+                                renderSearchHistory()
+                            }.show()
                     }
-                })
+                }, LinearLayout.LayoutParams(dp(40), dp(40)))
             }
         }
         historyPanel.addView(heading)
         if (entries.isEmpty()) {
             historyPanel.addView(TextView(this).apply {
-                text = "搜索过的小说会保存在这里，点击历史词条可快速再次搜索。"
-                textSize = 12f
+                text = "搜索过的书名会显示在这里"
+                textSize = 13f
                 setTextColor(muted)
-                setPadding(dp(2), dp(5), dp(2), dp(15))
+                setPadding(dp(2), dp(4), dp(2), dp(16))
             })
             return
         }
-        val cardView = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            background = rounded(card, 16)
-            setPadding(dp(12), dp(4), dp(12), dp(4))
-            elevation = dp(1).toFloat()
-        }
-        entries.take(10).forEachIndexed { index, query ->
+        entries.chunked(2).forEach { pair ->
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(2), dp(8), dp(2), dp(8))
-                addView(TextView(this@SourceSearchActivity).apply {
-                    text = "◷"
-                    textSize = 17f
-                    setTextColor(muted)
-                    gravity = Gravity.CENTER
-                }, LinearLayout.LayoutParams(dp(28), dp(34)))
-                addView(TextView(this@SourceSearchActivity).apply {
+            }
+            pair.forEach { query ->
+                val chip = TextView(this@SourceSearchActivity).apply {
                     text = query
                     textSize = 14f
                     setTextColor(ink)
+                    gravity = Gravity.CENTER
                     maxLines = 1
                     ellipsize = android.text.TextUtils.TruncateAt.END
-                    gravity = Gravity.CENTER_VERTICAL
+                    background = rounded(
+                        if (darkMode) Color.rgb(47, 52, 60) else Color.rgb(246, 246, 247),
+                        24,
+                    )
+                    setPadding(dp(14), dp(9), dp(14), dp(9))
+                    isClickable = true
+                    isFocusable = true
+                    contentDescription = "再次搜索$query"
                     setOnClickListener {
                         keywordInput.setText(query)
                         keywordInput.setSelection(keywordInput.text.length)
                         search()
                     }
-                }, LinearLayout.LayoutParams(0, dp(34), 1f))
-                addView(TextView(this@SourceSearchActivity).apply {
-                    text = "×"
-                    textSize = 20f
-                    setTextColor(muted)
-                    gravity = Gravity.CENTER
-                    contentDescription = "删除搜索历史"
-                    setOnClickListener {
+                    setOnLongClickListener {
                         val next = readSearchHistory().filterNot { it == query }
                         getSharedPreferences(SEARCH_HISTORY_PREFS, MODE_PRIVATE).edit()
                             .putString(SEARCH_HISTORY_KEY, org.json.JSONArray(next).toString()).apply()
                         renderSearchHistory()
+                        true
                     }
-                }, LinearLayout.LayoutParams(dp(32), dp(34)))
+                }
+                row.addView(chip, LinearLayout.LayoutParams(0, dp(42), 1f).apply {
+                    marginEnd = dp(8)
+                    bottomMargin = dp(8)
+                })
             }
-            cardView.addView(row)
-            if (index != entries.take(10).lastIndex) {
-                cardView.addView(View(this).apply {
-                    setBackgroundColor(if (darkMode) Color.rgb(57, 66, 79) else Color.rgb(232, 238, 246))
-                }, LinearLayout.LayoutParams(-1, dp(1)))
-            }
+            if (pair.size == 1) row.addView(View(this), LinearLayout.LayoutParams(0, dp(42), 1f))
+            historyPanel.addView(row)
         }
-        historyPanel.addView(cardView)
     }
 
     private fun showResults(page: Int, items: List<BookCandidate>, failures: List<String>) {
