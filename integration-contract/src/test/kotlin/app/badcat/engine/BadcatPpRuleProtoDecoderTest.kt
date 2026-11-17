@@ -1,5 +1,6 @@
 package app.badcat.engine
 
+import java.io.ByteArrayOutputStream
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -116,6 +117,23 @@ class BadcatPpRuleProtoDecoderTest {
             EngineErrorCode.PARSE,
             assertIs<EngineResult.Failure>(
                 BadcatPpRuleProtoDecoder.decodeResponse(mismatched),
+            ).code,
+        )
+    }
+
+    @Test
+    fun appliesOneFieldBudgetAcrossTopLevelAndNestedUnknownGroups() {
+        val oversizedGroupBody = ByteArrayOutputStream().apply {
+            repeat(BadcatPpRuleProtoDecoder.MAX_FIELDS_PER_MESSAGE) {
+                write(varintField(1, it))
+            }
+        }.toByteArray()
+        val oversized = groupField(100, oversizedGroupBody)
+
+        assertEquals(
+            EngineErrorCode.PARSE,
+            assertIs<EngineResult.Failure>(
+                BadcatPpRuleProtoDecoder.decodeResponse(oversized),
             ).code,
         )
     }
