@@ -101,7 +101,7 @@ class MainActivity : Activity() {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER
         setBackgroundColor(if (darkMode) Color.rgb(31, 35, 42) else Color.WHITE)
-        listOf("排行榜", "今日抽奖", "赚取现金").forEach { label ->
+        listOf("赚取现金").forEach { label ->
             addView(LinearLayout(this@MainActivity).apply {
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER
