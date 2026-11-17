@@ -22,18 +22,43 @@ class ReadingHistoryActivity : Activity() {
             setPadding(dp(18), dp(20), dp(18), dp(16))
             setBackgroundColor(Color.rgb(247, 249, 252))
         }
-        root.addView(TextView(this).apply {
-            text = "阅读记录"
-            textSize = 23f
-            setTextColor(Color.rgb(45, 52, 62))
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(dp(12), dp(6), dp(16), dp(6))
+            setBackgroundColor(Color.WHITE)
+        }
+        header.addView(BadcatLineIconView(this, "back", Color.rgb(48, 55, 66)).apply {
+            contentDescription = "返回"
+            isClickable = true
+            setOnClickListener { finish() }
+        }, LinearLayout.LayoutParams(dp(42), dp(42)))
+        header.addView(LinearLayout(this@ReadingHistoryActivity).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(TextView(this@ReadingHistoryActivity).apply {
+                text = "阅读记录"
+                textSize = 18f
+                setTextColor(Color.rgb(45, 52, 62))
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+            })
+            addView(TextView(this@ReadingHistoryActivity).apply {
+                text = "点击作品可从上次阅读章节继续"
+                textSize = 11f
+                setTextColor(Color.GRAY)
+                setPadding(0, dp(3), 0, 0)
+            })
+        }, LinearLayout.LayoutParams(0, -2, 1f))
+        header.addView(TextView(this).apply {
+            text = "清空"
+            textSize = 14f
+            gravity = android.view.Gravity.CENTER
+            setTextColor(Color.rgb(190, 75, 75))
+            setPadding(dp(10), dp(8), dp(4), dp(8))
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { confirmClearHistory() }
         })
-        root.addView(TextView(this).apply {
-            text = "点击作品可从上次阅读章节继续"
-            textSize = 12f
-            setTextColor(Color.GRAY)
-            setPadding(0, dp(6), 0, dp(14))
-        })
+        root.addView(header)
         list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(list)
         setContentView(ScrollView(this).apply { addView(root) })
@@ -104,6 +129,22 @@ class ReadingHistoryActivity : Activity() {
             ).apply { bottomMargin = dp(9) })
         }
         BadcatTheme.applyTree(this, window.decorView)
+    }
+
+    private fun confirmClearHistory() {
+        val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+        val records = runCatching { JSONArray(prefs.getString(KEY, "[]").orEmpty()) }.getOrDefault(JSONArray())
+        if (records.length() == 0) {
+            BadcatTheme.alertBuilder(this).setMessage("当前没有阅读记录").setPositiveButton("知道了", null).show()
+            return
+        }
+        BadcatTheme.alertBuilder(this).setTitle("清空阅读记录")
+            .setMessage("将删除全部 ${records.length()} 条阅读记录，不会删除收藏、书签或阅读进度。")
+            .setNegativeButton("取消", null)
+            .setPositiveButton("清空") { _, _ ->
+                prefs.edit().putString(KEY, "[]").apply()
+                refresh()
+            }.show()
     }
 
     private fun removeRecord(sourceId: String, bookUrl: String) {
