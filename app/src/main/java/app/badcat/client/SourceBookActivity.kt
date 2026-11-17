@@ -323,11 +323,11 @@ class SourceBookActivity : Activity() {
                 text = "本书书签（" + bookmarked.size + "）"
                 setOnClickListener {
                     val labels = bookmarked.map { chapter -> (chapter.index + 1).toString() + ". " + chapter.title }.toTypedArray()
-                    android.app.AlertDialog.Builder(this@SourceBookActivity)
+                    BadcatTheme.alertBuilder(this@SourceBookActivity)
                         .setTitle("选择书签章节")
                         .setItems(labels) { _, which ->
                             val chapter = bookmarked[which]
-                            android.app.AlertDialog.Builder(this@SourceBookActivity)
+                            BadcatTheme.alertBuilder(this@SourceBookActivity)
                                 .setTitle(chapter.title)
                                 .setItems(arrayOf("打开书签", "删除书签")) { _, action ->
                                     val key = chapterBookmarkKey(sourceId, bookUrl, chapter.url)
@@ -778,7 +778,7 @@ class SourceChapterActivity : Activity() {
         val labels = chapters.mapIndexed { index, chapter ->
             (index + 1).toString() + ". " + chapter.title
         }.toTypedArray()
-        android.app.AlertDialog.Builder(this)
+        BadcatTheme.alertBuilder(this)
             .setTitle("章节目录（${chapters.size} 章）")
             .setItems(labels) { _, index -> loadChapterAt(index) }
             .setNegativeButton("关闭", null)
@@ -797,7 +797,7 @@ class SourceChapterActivity : Activity() {
                             status.text = "没有其他已启用的可搜索书源"
                             return@post
                         }
-                        android.app.AlertDialog.Builder(this@SourceChapterActivity)
+                        BadcatTheme.alertBuilder(this@SourceChapterActivity)
                             .setTitle("选择换源")
                             .setItems(sources.map { it.name }.toTypedArray()) { _, index ->
                                 searchBookInSource(sources[index])
@@ -823,7 +823,7 @@ class SourceChapterActivity : Activity() {
                             status.text = "该书源没有找到匹配的书籍"
                             return@post
                         }
-                        android.app.AlertDialog.Builder(this@SourceChapterActivity)
+                        BadcatTheme.alertBuilder(this@SourceChapterActivity)
                             .setTitle("选择《${bookName}》")
                             .setItems(candidates.map { it.name + (it.author?.takeIf(String::isNotBlank)?.let { author -> " · " + author } ?: "") }.toTypedArray()) { _, index ->
                                 val candidate = candidates[index]
@@ -931,7 +931,7 @@ class SourceChapterActivity : Activity() {
 
     private fun showReaderTools() {
         val actions = arrayOf("字号减小", "字号增大", "行距减小", "行距增大", "切换背景", "阅读设置", "CSS 自定义", "章节目录", "保存书签", "跳转本章书签", "恢复默认阅读设置")
-        android.app.AlertDialog.Builder(this)
+        BadcatTheme.alertBuilder(this)
             .setTitle("阅读设置 · " + textSizeSp.toInt() + "sp · 行距 " + lineSpacingMultiplier)
             .setItems(actions) { _, index ->
                 when (index) {
