@@ -88,7 +88,7 @@ object FavoriteBooks {
         return true
     }
 
-    fun updateCover(context: Context, sourceId: String, bookUrl: String, coverUrl: String?) {
+    fun updateStatus(context: Context, sourceId: String, bookUrl: String, status: String?) {\n        if (status.isNullOrBlank()) return\n        save(context, all(context).map { if (it.sourceId == sourceId && it.bookUrl == bookUrl) it.copy(status = status) else it })\n    }\n\n    fun updateCover(context: Context, sourceId: String, bookUrl: String, coverUrl: String?) {
         if (coverUrl.isNullOrBlank()) return
         save(context, all(context).map { if (it.sourceId == sourceId && it.bookUrl == bookUrl) it.copy(coverUrl = coverUrl) else it })
     }
@@ -375,13 +375,8 @@ class FavoritesActivity : Activity() {
             })
         }
         setOnLongClickListener { selectionMode = true; selectedBooks.clear(); toggleBookSelection(book); true }
-        addView(android.widget.ImageView(this@FavoritesActivity).apply {
-            contentDescription = "小说封面"
-            scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
-            background = rounded(Color.rgb(235, 239, 245), 5)
-            clipToOutline = true
-            BookCoverLoader.load(this, book.coverUrl)
-        }, LinearLayout.LayoutParams(dp(72), dp(94)))
+        addView(BookStatusBadge.cover(this@FavoritesActivity, book.coverUrl, book.status, 72, 94),
+            LinearLayout.LayoutParams(dp(72), dp(94)))
         addView(TextView(this@FavoritesActivity).apply { text = book.name; textSize = 12f; maxLines = 2; gravity = Gravity.CENTER; setTextColor(ink) })
         addView(TextView(this@FavoritesActivity).apply { text = book.sourceId; textSize = 9f; maxLines = 1; setTextColor(muted); setPadding(0, dp(4), 0, 0) })
     }
@@ -550,10 +545,8 @@ class FavoritesActivity : Activity() {
             putExtra(SourceBookActivity.EXTRA_BOOK_STATUS, book.status)
         }) }
         setOnLongClickListener { selectionMode = true; selectedBooks.clear(); toggleBookSelection(book); true }
-        addView(android.widget.ImageView(this@FavoritesActivity).apply {
-            contentDescription = "小说封面"; scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
-            background = rounded(Color.rgb(235, 239, 245), 5); clipToOutline = true; BookCoverLoader.load(this, book.coverUrl)
-        }, LinearLayout.LayoutParams(dp(48), dp(64)))
+        addView(BookStatusBadge.cover(this@FavoritesActivity, book.coverUrl, book.status, 48, 64),
+            LinearLayout.LayoutParams(dp(48), dp(64)))
         addView(TextView(this@FavoritesActivity).apply { text = book.name; textSize = 14f; setTextColor(ink); setPadding(dp(12), 0, 0, 0) },
             LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         if (selectedBooks.containsKey(bookKey(book))) addView(TextView(this@FavoritesActivity).apply { text = "✓"; textSize = 20f; setTextColor(blue) })
