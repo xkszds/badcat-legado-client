@@ -512,7 +512,7 @@ class FavoritesActivity : Activity() {
 
     private fun bookListRow(book: FavoriteBook): View = LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-        background = rounded(Color.WHITE, 10); setPadding(dp(10), dp(8), dp(10), dp(8))
+        background = rounded(card, 10); setPadding(dp(10), dp(8), dp(10), dp(8))
         setOnClickListener { if (selectionMode) toggleBookSelection(book) else startActivity(Intent(this@FavoritesActivity, SourceBookActivity::class.java).apply {
             putExtra(SourceBookActivity.EXTRA_SOURCE_ID, book.sourceId); putExtra(SourceBookActivity.EXTRA_BOOK_URL, book.bookUrl)
             putExtra(SourceBookActivity.EXTRA_BOOK_NAME, book.name); putExtra(SourceBookActivity.EXTRA_BOOK_COVER_URL, book.coverUrl)
