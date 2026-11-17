@@ -121,6 +121,7 @@ class BookmarkActivity : Activity() {
                 addView(actions)
             }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(9) })
         }
+        BadcatTheme.applyTree(this, window.decorView)
     }
 
     private fun action(label: String, onClick: () -> Unit) = TextView(this).apply {
