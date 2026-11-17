@@ -172,13 +172,20 @@ class LegadoUrlResolverTest {
     }
 
     @Test
-    fun rejectsJavascriptAndWebViewRequestOptions() {
-        val rules = listOf(
-            """search, {"js":"return key"}""",
-            """search, {"bodyJs":"return key"}""",
-            """search, {"webView":true}""",
+    fun preservesSupportedScriptOptionsAndRejectsWebViewOptions() {
+        val supported = LegadoUrlResolver.resolve(
+            "https://example.com/",
+            """search, {"js":"return key","bodyJs":"return result"}""",
         )
-        rules.forEach { rule ->
+        val resolved = assertIs<EngineResult.Success<LegadoResolvedUrl>>(supported).value
+        assertEquals("return key", resolved.js)
+        assertEquals("return result", resolved.bodyJs)
+
+        val unsupported = listOf(
+            """search, {"webView":true}""",
+            """search, {"webJs":"return result"}""",
+        )
+        unsupported.forEach { rule ->
             val failure = assertIs<EngineResult.Failure>(
                 LegadoUrlResolver.resolve("https://example.com/", rule),
             )
