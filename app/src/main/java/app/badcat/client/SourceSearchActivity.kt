@@ -175,11 +175,7 @@ class SourceSearchActivity : Activity() {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
                 setPadding(dp(14), dp(6), dp(14), dp(6))
-                addView(TextView(this@SourceSearchActivity).apply {
-                    text = "‹"
-                    textSize = 31f
-                    gravity = Gravity.CENTER
-                    setTextColor(ink)
+                addView(BadcatLineIconView(this@SourceSearchActivity, "back", ink).apply {
                     contentDescription = "返回"
                     isClickable = true
                     isFocusable = true
