@@ -48,42 +48,80 @@ class MainActivity : Activity() {
 
     private fun buildHomeEmptyState(): View = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
+        setBackgroundColor(page)
+        addView(buildHomeShortcuts(), LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(94)
+        ))
+        val errorPanel = LinearLayout(this@MainActivity).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(dp(24), dp(20), dp(24), dp(24))
+            addView(TextView(this@MainActivity).apply {
+                text = "🐈"
+                textSize = 72f
+                gravity = Gravity.CENTER
+                setTextColor(Color.rgb(185, 207, 242))
+            }, LinearLayout.LayoutParams(-1, dp(132)))
+            addView(TextView(this@MainActivity).apply {
+                text = "服务器异常"
+                textSize = 20f
+                gravity = Gravity.CENTER
+                setTextColor(ink)
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+            })
+            addView(TextView(this@MainActivity).apply {
+                text = "当前服务出了点问题，请稍候再试"
+                textSize = 14f
+                gravity = Gravity.CENTER
+                setTextColor(muted)
+                setPadding(0, dp(8), 0, dp(22))
+            })
+            addView(TextView(this@MainActivity).apply {
+                text = "刷新重试"
+                textSize = 16f
+                gravity = Gravity.CENTER
+                setTextColor(Color.WHITE)
+                background = rounded(blue, 28)
+                setPadding(dp(54), dp(13), dp(54), dp(13))
+                isClickable = true
+                isFocusable = true
+                setOnClickListener {
+                    startActivity(Intent(this@MainActivity, SourceSearchActivity::class.java).apply {
+                        putExtra(SourceSearchActivity.EXTRA_CONTENT_TYPE, contentType)
+                    })
+                }
+            })
+        }
+        addView(errorPanel, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
+        ))
+    }
+
+    private fun buildHomeShortcuts(): View = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER
-        setPadding(dp(28), dp(24), dp(28), dp(24))
-        setBackgroundColor(Color.WHITE)
-        addView(TextView(this@MainActivity).apply {
-            text = "⌕"
-            textSize = 54f
-            gravity = Gravity.CENTER
-            setTextColor(Color.rgb(190, 207, 226))
-        }, LinearLayout.LayoutParams(-1, dp(86)))
-        addView(TextView(this@MainActivity).apply {
-            text = "开始发现喜欢的小说"
-            textSize = 18f
-            gravity = Gravity.CENTER
-            setTextColor(ink)
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-        })
-        addView(TextView(this@MainActivity).apply {
-            text = "添加并启用书源后，就可以搜索、收藏和阅读"
-            textSize = 13f
-            gravity = Gravity.CENTER
-            setTextColor(muted)
-            setPadding(0, dp(8), 0, dp(20))
-        })
-        addView(TextView(this@MainActivity).apply {
-            text = "书源管理"
-            textSize = 15f
-            gravity = Gravity.CENTER
-            setTextColor(Color.WHITE)
-            background = rounded(blue, 26)
-            setPadding(dp(34), dp(12), dp(34), dp(12))
-            isClickable = true
-            isFocusable = true
-            setOnClickListener {
-                startActivity(Intent(this@MainActivity, SourceCatalogActivity::class.java))
-            }
-        })
+        setBackgroundColor(if (darkMode) Color.rgb(31, 35, 42) else Color.WHITE)
+        listOf("排行榜", "今日抽奖", "赚取现金").forEach { label ->
+            addView(LinearLayout(this@MainActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                addView(TextView(this@MainActivity).apply {
+                    text = "🐾"
+                    textSize = 24f
+                    gravity = Gravity.CENTER
+                    setTextColor(if (darkMode) Color.rgb(180, 188, 201) else Color.rgb(210, 213, 219))
+                    background = rounded(if (darkMode) Color.rgb(43, 48, 57) else Color.rgb(247, 248, 250), 40)
+                    setPadding(dp(12), dp(7), dp(12), dp(7))
+                }, LinearLayout.LayoutParams(dp(48), dp(48)))
+                addView(TextView(this@MainActivity).apply {
+                    text = label
+                    textSize = 13f
+                    gravity = Gravity.CENTER
+                    setTextColor(muted)
+                    setPadding(0, dp(5), 0, 0)
+                })
+            }, LinearLayout.LayoutParams(0, -1, 1f))
+        }
     }
 
     private fun buildHeader(): View = LinearLayout(this).apply {
