@@ -29,6 +29,7 @@ class BadcatSearchBarView(
     val searchAction = TextView(context)
     private val typeLabel = TextView(context)
     private var contentType = initialType.takeIf { it in TYPES } ?: "小说"
+    private var homeTapAction: (() -> Unit)? = null
 
     init {
         orientation = HORIZONTAL
@@ -74,6 +75,7 @@ class BadcatSearchBarView(
             }
         }
         addView(input, LayoutParams(0, LayoutParams.MATCH_PARENT, 1f))
+        input.setOnClickListener { homeTapAction?.invoke() }
 
         searchAction.apply {
             text = "⌕"
@@ -87,6 +89,17 @@ class BadcatSearchBarView(
             setOnClickListener { submit() }
         }
         addView(searchAction, LayoutParams(dp(if (compact) 38 else 42), dp(if (compact) 38 else 42)))
+    }
+
+    /** Makes the home search field navigate to the dedicated search screen. */
+    fun setHomeTapToNavigate(action: () -> Unit) {
+        homeTapAction = action
+        input.isFocusable = false
+        input.isFocusableInTouchMode = false
+        input.isCursorVisible = false
+        input.setOnClickListener { action() }
+        searchAction.setOnClickListener { action() }
+        setOnClickListener { action() }
     }
 
     fun submit() = onSearch(input.text?.toString()?.trim().orEmpty(), contentType)
