@@ -93,3 +93,14 @@
 - AdMark URL matching is restricted to HTTP(S), with exact host matching and the confirmed integer-array-to-regex `find()` semantics. `markRules` remains opaque until the page-side deletion contract is recovered.
 - PPRule remains a separate pending track: DEX consumers now confirm the novel/comic/video dispatch paths, regex/XPath extraction, comic image URL fallback, and video path/episode selectors. The wire-compatible decoder and complete execution semantics remain unimplemented; see `docs/badcat-pp-rule-runtime-evidence.md`.
 - These parallel changes are committed on `fix/favorites-search-ui`; they still require a fresh CI run against the current branch HEAD and, later, device-level validation.
+
+
+## 2026-11-17 all-category parallel batch
+
+- The shared main and fix/favorites-search-ui line is anchored at the unified CI-tested baseline; the active development branch now advances all workstreams together rather than waiting for one category to finish.
+- Home/favorites/search UI: removed the two requested home shortcuts (排行榜、今日抽奖), retained the earn-cash shortcut, and kept the explicit-source-status cover badge in search results and favorites. Badge priority is 完结 → 连载 → 更新; missing/unrecognized source metadata produces no badge.
+- Reader CSS: added regression coverage that rejects script-like declaration values and at-rules while retaining safe declarations.
+- Legado rule runtime: added regression coverage for selector attribute values containing && and ||; this is a guard against incorrectly splitting quoted CSS attribute content, not a claim of full AnalyzeRule support.
+- Badcat PPRule: added a bounded href/title extraction helper for the verified XPath/regex video element subset. It resolves relative HTTP(S) targets, deduplicates by URL and rejects unsafe schemes/blank labels. The caller supplies the specific rule; original video path/episode grouping and JavaScript semantics remain unimplemented.
+- Badcat AdMark: the verified data codec, URL filtering and WebView injection preference path remain active; DOM deletion/long-press marking are still blocked on recovering the exact original callback semantics. No guessed DOM script was added.
+- Validation gate: run the complete contract tests, bounded Rhino host tests and Android Debug APK assembly on the newest commit before calling this batch green. CI success does not replace Android device acceptance.
