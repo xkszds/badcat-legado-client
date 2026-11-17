@@ -91,13 +91,17 @@ object SourceRequestFactory {
                 "Source header must be a JSON object with string values",
             )
 
+        // HTTP field names are case-insensitive. Normalize collisions from the
+        // imported source JSON as well as per-request overrides so OkHttp never
+        // receives two differently-cased values for the same logical header.
         val merged = LinkedHashMap<String, String>()
-        sourceHeaders.forEach { (name, value) -> merged[name] = value }
-        headers.forEach { (name, value) ->
+        fun putHeader(name: String, value: String) {
             val existing = merged.keys.firstOrNull { it.equals(name, ignoreCase = true) }
             if (existing != null) merged.remove(existing)
             merged[name] = value
         }
+        sourceHeaders.forEach { (name, value) -> putHeader(name, value) }
+        headers.forEach { (name, value) -> putHeader(name, value) }
         if (merged.any { (name, value) -> !isValidHeader(name, value) }) {
             return EngineResult.Failure(
                 EngineErrorCode.INVALID_SOURCE,

@@ -33,6 +33,20 @@ class SourceRequestFactoryTest {
     }
 
     @Test
+    fun sourceHeaderNamesAreMergedCaseInsensitivelyBeforeRequestOverrides() {
+        val result = SourceRequestFactory.create(
+            source(header = """{"Accept":"text/html","accept":"application/json","User-Agent":"Source"}"""),
+            "https://reader.example/search",
+            headers = mapOf("USER-AGENT" to "Request"),
+        )
+
+        val request = assertIs<EngineResult.Success<SourceHttpRequest>>(result).value
+        assertEquals(2, request.headers.size)
+        assertEquals("application/json", request.headers["accept"])
+        assertEquals("Request", request.headers["USER-AGENT"])
+    }
+
+    @Test
     fun cookieJarCanBeDisabledAndMethodIsNormalized() {
         val result = SourceRequestFactory.create(
             source = source(cookieJar = false),
