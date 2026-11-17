@@ -162,4 +162,25 @@ class BadcatPurificationModelsTest {
         assertNull(BadcatPurificationUrlPolicy.injectionForPage(enabled, "not a url"))
         assertNull(BadcatPurificationUrlPolicy.injectionForPage(enabled, "file:///tmp/page.html"))
     }
+    @Test
+    fun injectionRejectsMalformedAuthoritiesAndCredentialBearingUrls() {
+        val enabled = BadcatPurificationSnapshot(
+            webViewAdFilterEnabled = true,
+            webViewInjectionScript = "window.badcatFilter = true;",
+            adMarks = emptyList(),
+        )
+        listOf(
+            "https:///missing-host/page",
+            "https://user:password@reader.example/page",
+            "http://",
+            "https://reader.example:invalid/page",
+        ).forEach { url ->
+            assertNull(BadcatPurificationUrlPolicy.injectionForPage(enabled, url))
+        }
+        assertEquals(
+            "window.badcatFilter = true;",
+            BadcatPurificationUrlPolicy.injectionForPage(enabled, "https://reader.example/page"),
+        )
+    }
+
 }
