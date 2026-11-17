@@ -1,6 +1,7 @@
 package app.badcat.engine
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import okhttp3.Cookie
 import okhttp3.CookieJar
@@ -81,7 +82,17 @@ class OkHttpSourceRequestClient(
             while (true) {
                 try {
                     val response = awaitResponse(client.newCall(builder.build()))
-                    return response.use { EngineResult.Success(readResponse(it, request.responseCharset)) }
+                    val parsed = response.use { readResponse(it, request.responseCharset) }
+                    if (attempt < request.retryCount &&
+                        shouldRetryHttpResponse(method, parsed.statusCode)
+                    ) {
+                        attempt++
+                        // Retry only idempotent reads on transient server/rate-limit
+                        // responses. Never replay arbitrary POST/PUT source actions.
+                        delay((250L shl (attempt - 1).coerceAtMost(3)).coerceAtMost(2_000L))
+                        continue
+                    }
+                    return EngineResult.Success(parsed)
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (io: IOException) {
@@ -208,6 +219,13 @@ class OkHttpSourceRequestClient(
         private val BODY_FORBIDDEN_METHODS = setOf("GET", "HEAD")
     }
 }
+
+/** Retry only transient HTTP failures for idempotent source reads. */
+internal fun shouldRetryHttpResponse(method: String, statusCode: Int): Boolean =
+    method.equals("GET", ignoreCase = true) || method.equals("HEAD", ignoreCase = true)
+        .let { idempotentRead ->
+            idempotentRead && statusCode in setOf(408, 425, 429, 500, 502, 503, 504)
+        }
 
 /** In-memory cookie storage, scoped to one source by the owning client. */
 internal class MemorySourceCookieJar : CookieJar {
