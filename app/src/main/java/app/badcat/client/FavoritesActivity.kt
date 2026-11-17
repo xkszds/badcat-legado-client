@@ -225,6 +225,7 @@ class FavoritesActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        darkMode = BadcatTheme.isDark(this)
         if (::rootContent.isInitialized) refresh()
         BadcatTheme.applyTree(this, window.decorView)
     }
@@ -573,7 +574,7 @@ class FavoritesActivity : Activity() {
     }
 
     private fun showMoreMenu(anchor: View) {
-        PopupMenu(this, anchor).apply {
+        PopupMenu(BadcatTheme.themedContext(this), anchor).apply {
             menu.add(if (listMode) "宫格模式" else "列表模式")
             menu.add("更新时间排序")
             menu.add(if (folderMode) "关闭小说文件夹" else "开启小说文件夹")
