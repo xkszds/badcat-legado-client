@@ -128,11 +128,15 @@ class MyActivity : Activity() {
                     setPadding(dp(3), dp(10), dp(3), dp(10))
                     isClickable = true
                     isFocusable = true
-                    addView(label(when (key) {
-                        "history" -> "◷"; "bookmarks" -> "◇"; "sources" -> "▤"
-                        "downloads" -> "↓"; "messages" -> "…"; "feedback" -> "▤"
-                        "sync" -> "☁"; "replace" -> "≋"; else -> "↗"
-                    }, 25f, blue))
+                    if (key == "history" || key == "downloads") {
+                        addView(BadcatMineIcons.create(this@MyActivity, key, blue),
+                            LinearLayout.LayoutParams(dp(28), dp(28)))
+                    } else {
+                        addView(label(when (key) {
+                            "bookmarks" -> "◇"; "sources" -> "▤"; "messages" -> "…"
+                            "feedback" -> "▤"; "sync" -> "☁"; "replace" -> "≋"; else -> "↗"
+                        }, 25f, blue))
+                    }
                     addView(label(title, 12f, ink).apply { setPadding(0, dp(5), 0, 0) })
                     setOnClickListener { openTool(key) }
                 }
