@@ -46,8 +46,7 @@ class BookmarkActivity : Activity() {
         refresh()
     }
 
-    override fun onResume() { super.onResume()
-        BadcatTheme.applyTree(this, window.decorView); if (::content.isInitialized) refresh() }
+    override fun onResume() { super.onResume(); if (::content.isInitialized) refresh(); BadcatTheme.applyTree(this, window.decorView) }
 
     private fun readBookmarks(): List<ReaderBookmark> = prefs.all.mapNotNull { (key, value) ->
         if (!key.startsWith("chapter_bookmark_") || value !is Int) return@mapNotNull null
