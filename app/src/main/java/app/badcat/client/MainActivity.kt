@@ -72,7 +72,10 @@ class MainActivity : Activity() {
                 label.alpha = if (chosen) 1f else 0.78f
             }
         }
-        listOf("小说", "漫画", "综合").forEach { type ->
+        val visibleCategories = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
+            .getStringSet("home_visible_categories", setOf("小说", "漫画", "综合"))
+            ?.toSet() ?: setOf("小说", "漫画", "综合")
+        listOf("小说", "漫画", "综合").filter { it in visibleCategories }.forEach { type ->
             val label = TextView(this@MainActivity).apply {
                 tag = type
                 text = type
