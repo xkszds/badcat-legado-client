@@ -41,8 +41,8 @@ class LayoutSettingsActivity : Activity() {
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(16), dp(8), dp(18), dp(8))
             setBackgroundColor(card)
-            addView(TextView(this@LayoutSettingsActivity).apply {
-                text = "‹"; textSize = 32f; gravity = Gravity.CENTER; setTextColor(ink)
+            addView(BadcatLineIconView(this@LayoutSettingsActivity, "back", ink).apply {
+                contentDescription = "返回"
                 setOnClickListener { finish() }
             }, LinearLayout.LayoutParams(dp(42), dp(46)))
             addView(TextView(this@LayoutSettingsActivity).apply {
