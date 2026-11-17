@@ -23,6 +23,21 @@ class CssRuleEvaluatorTest {
     )
 
     @Test
+    fun forcedDefaultCssPrefixUsesJsoupAndKeepsCollectionIndexSuffix() {
+        val scalar = CssRuleEvaluator.evaluate(document, "@@a.title@text")
+        assertEquals(
+            listOf("Alpha Novel", "Beta Novel"),
+            assertIs<EngineResult.Success<List<String>>>(scalar).value,
+        )
+
+        val indexed = CssRuleEvaluator.evaluateElements(document, "@@div.book.-1")
+        val fragments = assertIs<EngineResult.Success<List<String>>>(indexed).value
+        assertEquals(1, fragments.size)
+        kotlin.test.assertTrue(fragments.single().contains("Beta Novel"))
+        kotlin.test.assertFalse(fragments.single().contains("Alpha"))
+    }
+
+    @Test
     fun extractsTextFromAllCssMatches() {
         val result = CssRuleEvaluator.evaluate(document, "a.title@text")
         val prefixed = CssRuleEvaluator.evaluate(document, "@CSS: a.title@text")
