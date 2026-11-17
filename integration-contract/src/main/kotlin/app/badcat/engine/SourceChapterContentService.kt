@@ -20,7 +20,7 @@ class SourceChapterContentService(
         chapter: BookChapter,
         bookName: String = "",
     ): EngineResult<ChapterContent> {
-        MainJsSourceGuard.failure(source, "chapter content")?.let { return it }
+        MainJsSourceGuard.failure(source, "chapter content", scriptRuntimeAvailable = scriptRuntime != null)?.let { return it }
         if (bookUrl.isBlank() || chapter.url.isBlank() || maxPages < 1) {
             return EngineResult.Failure(
                 EngineErrorCode.INVALID_SOURCE,
