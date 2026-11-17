@@ -766,7 +766,7 @@ class SourceChapterActivity : Activity() {
                         previousButton.isEnabled = selected > 0
                         nextButton.isEnabled = selected >= 0 && selected < chapterList.lastIndex
                         if (toc is EngineResult.Failure) {
-                            status.append("\\n目录导航不可用：${toc.message}")
+                            status.append("\n目录导航不可用：${toc.message}")
                         }
                         updateReaderProgress()
                     }
