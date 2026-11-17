@@ -428,3 +428,68 @@ class BadcatPpRuleEvaluatorTest {
     }
 
 }
+
+    @Test
+    fun chapterReverseFlagOnlyReversesChapterListWhenEnabled() {
+        val chapters = listOf("first", "middle", "last")
+        assertEquals(
+            chapters,
+            BadcatPpRuleEvaluator.applyChapterListOrder(
+                chapters,
+                BadcatPpRule(chapterIsReverse = false),
+            ),
+        )
+        assertEquals(
+            listOf("last", "middle", "first"),
+            BadcatPpRuleEvaluator.applyChapterListOrder(
+                chapters,
+                BadcatPpRule(chapterIsReverse = true),
+            ),
+        )
+    }
+
+    @Test
+    fun videoPathAndEpisodeRulesPreserveContainerThenEpisodeOrder() {
+        val document = SourceDocument(
+            url = "https://video.example/series/index",
+            body = """<section class="season"><a href="/s1/e1">S1 E1</a><a href="/s1/e2">S1 E2</a></section>
+                <section class="season"><a href="/s2/e1">S2 E1</a></section>""",
+        )
+        val result = BadcatPpRuleEvaluator.extractVideoLinks(
+            document,
+            ruleTypeValue = 1,
+            videoPathRule = "//section[@class='season']",
+            videoEpisodeRule = ".//a",
+        )
+        assertEquals(
+            listOf(
+                BadcatVideoLink("S1 E1", "https://video.example/s1/e1"),
+                BadcatVideoLink("S1 E2", "https://video.example/s1/e2"),
+                BadcatVideoLink("S2 E1", "https://video.example/s2/e1"),
+            ),
+            assertIs<EngineResult.Success<List<BadcatVideoLink>>>(result).value,
+        )
+    }
+
+    @Test
+    fun comicScriptResultRejectsNonArrayAndOversizedPayloads() {
+        assertEquals(
+            EngineErrorCode.PARSE,
+            assertIs<EngineResult.Failure>(
+                BadcatPpRuleEvaluator.extractComicImageUrlsFromScriptResult(
+                    """{"image":"/one.jpg"}""",
+                    "https://comic.example/reader/",
+                ),
+            ).code,
+        )
+        assertEquals(
+            EngineErrorCode.UNSUPPORTED_RULE,
+            assertIs<EngineResult.Failure>(
+                BadcatPpRuleEvaluator.extractComicImageUrlsFromScriptResult(
+                    " ".repeat(BadcatPpRuleEvaluator.MAX_SCRIPT_RESULT_CHARS + 1),
+                    "https://comic.example/reader/",
+                ),
+            ).code,
+        )
+    }
+
