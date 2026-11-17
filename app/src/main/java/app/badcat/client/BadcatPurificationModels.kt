@@ -71,7 +71,7 @@ data class BadcatAdMarkItem(
             val normalized = exact.stripTrailingZeros()
             if (normalized.scale() > 0 ||
                 exact < java.math.BigDecimal.ZERO ||
-                exact > java.math.BigDecimal.valueOf(Int.MAX_VALUE)
+                exact > java.math.BigDecimal.valueOf(Int.MAX_VALUE.toLong())
             ) return null
             values += exact.toInt()
         }
