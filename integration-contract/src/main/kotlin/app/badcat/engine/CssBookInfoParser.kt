@@ -84,7 +84,7 @@ class CssBookInfoParser {
         }
 
         val values = linkedMapOf<String, String?>()
-        for (name in listOf("name", "author", "intro", "coverUrl", "lastChapter", "tocUrl")) {
+        for (name in listOf("name", "author", "intro", "coverUrl", "lastChapter", "tocUrl", "bookStatus")) {
             when (val result = field(name)) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> values[name] = result.value
@@ -125,6 +125,7 @@ class CssBookInfoParser {
                 intro = values["intro"],
                 latestChapter = values["lastChapter"],
                 tocUrl = toc,
+                status = values["bookStatus"],
             ),
         )
     }
@@ -220,6 +221,10 @@ class CssBookInfoParser {
             is EngineResult.Failure -> return value
             is EngineResult.Success -> value.value
         }
+        val bookStatus = when (val value = field("bookStatus")) {
+            is EngineResult.Failure -> return value
+            is EngineResult.Success -> value.value
+        }
 
         val resolvedCover = when (val value = resolveUrl(cover)) {
             is EngineResult.Failure -> return value
@@ -240,6 +245,7 @@ class CssBookInfoParser {
                 intro = intro,
                 latestChapter = latest,
                 tocUrl = resolvedToc,
+                status = bookStatus,
             ),
         )
     }
