@@ -43,6 +43,13 @@ interface ReadingEngine {
         bookUrl: String,
     ): EngineResult<BookDetail>
 
+    /** Keeps the search-result title when a legacy source omits bookInfo.name. */
+    suspend fun bookDetailWithFallback(
+        sourceId: String,
+        bookUrl: String,
+        fallbackBookName: String?,
+    ): EngineResult<BookDetail> = bookDetail(sourceId, bookUrl)
+
     suspend fun chapters(
         sourceId: String,
         bookUrl: String,
@@ -58,6 +65,14 @@ interface ReadingEngine {
         if (result is EngineResult.Success) onChapters(result.value)
         return result
     }
+
+    /** Loads the TOC while retaining the search-result title for detail rules without name. */
+    suspend fun chaptersIncrementalWithFallback(
+        sourceId: String,
+        bookUrl: String,
+        fallbackBookName: String?,
+        onChapters: suspend (List<BookChapter>) -> Unit,
+    ): EngineResult<List<BookChapter>> = chaptersIncremental(sourceId, bookUrl, onChapters)
 
     suspend fun chapterContent(
         sourceId: String,
