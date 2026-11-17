@@ -3,8 +3,9 @@ package app.badcat.client
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import app.badcat.engine.EngineResult
+import app.badcat.engine.LegadoRegexElementEvaluator
 import java.net.URI
-import java.util.regex.Pattern
 
 /**
  * Faithful local representation of the original Badcat AdMark payload.
@@ -43,7 +44,10 @@ data class BadcatAdMarkItem(
         if (!isValid() || !appliesToHost(url)) return false
         val segments = urlPatternSegments() ?: return false
         val expression = segments.joinToString("/")
-        return runCatching { Pattern.compile(expression).matcher(url).find() }.getOrDefault(false)
+        return when (val result = LegadoRegexElementEvaluator.matches(url, expression)) {
+            is EngineResult.Success -> result.value
+            is EngineResult.Failure -> false
+        }
     }
 
     /**
