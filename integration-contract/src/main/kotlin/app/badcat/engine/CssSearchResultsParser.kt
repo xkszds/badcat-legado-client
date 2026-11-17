@@ -81,9 +81,13 @@ class CssSearchResultsParser {
             )
         }
         if (candidates.isEmpty() && items.isNotEmpty()) {
+            val sampleDocument = SourceDocument(response.finalUrl, items.first(), response.contentType, key, page)
+            val nameProbe = rules["name"]?.let { evaluateScalarRule(sampleDocument, normalizeJsonRule(items.first(), it)) }
+            val urlProbe = rules["bookUrl"]?.let { evaluateScalarRule(sampleDocument, normalizeJsonRule(items.first(), it)) }
             return unsupported(
                 source,
-                "bookList matched ${items.size} records but no name/bookUrl was extracted; first record: ${items.first().take(180)}",
+                "bookList matched ${items.size} records but no name/bookUrl was extracted; " +
+                    "nameProbe=$nameProbe; urlProbe=$urlProbe; first record: ${items.first().take(180)}",
             )
         }
         return EngineResult.Success(candidates.distinctBy { it.bookUrl })

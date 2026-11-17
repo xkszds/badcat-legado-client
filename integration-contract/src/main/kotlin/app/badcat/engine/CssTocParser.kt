@@ -175,9 +175,13 @@ class CssTocParser {
         }
 
         if (chapters.isEmpty() && items.isNotEmpty()) {
+            val sampleDocument = SourceDocument(response.finalUrl, items.first(), response.contentType)
+            val nameProbe = rules["chapterName"]?.let { JsonPathRuleEvaluator.evaluate(sampleDocument, it) }
+            val urlProbe = rules["chapterUrl"]?.let { JsonPathRuleEvaluator.evaluate(sampleDocument, it) }
             return unsupported(
                 source,
-                "chapterList matched ${items.size} records but chapterName/chapterUrl were empty; first record: ${items.first().take(180)}",
+                "chapterList matched ${items.size} records but chapterName/chapterUrl were empty; " +
+                    "nameProbe=$nameProbe; urlProbe=$urlProbe; first record: ${items.first().take(180)}",
             )
         }
         var nextRule = rules["nextTocUrl"]?.trim().orEmpty()
