@@ -654,13 +654,14 @@ class SourceSearchActivity : Activity() {
         failureSummaryView?.let { results.removeView(it) }
         failureSummaryView = null
         if (failures.isNotEmpty()) {
-            failureSummaryView = TextView(this).apply {
+            val summary = TextView(this).apply {
                 text = failures.joinToString("\n") { "• " + it }
                 textSize = 12f
                 setTextColor(muted)
                 setPadding(0, dp(4), 0, dp(10))
             }
-            results.addView(failureSummaryView)
+            failureSummaryView = summary
+            results.addView(summary)
         }
         if (complete && items.isEmpty() && failures.isEmpty()) {
             results.addView(TextView(this).apply {
