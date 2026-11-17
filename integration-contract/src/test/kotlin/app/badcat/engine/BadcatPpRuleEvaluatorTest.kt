@@ -427,7 +427,6 @@ class BadcatPpRuleEvaluatorTest {
         )
     }
 
-}
 
     @Test
     fun chapterReverseFlagOnlyReversesChapterListWhenEnabled() {
@@ -493,3 +492,4 @@ class BadcatPpRuleEvaluatorTest {
         )
     }
 
+}
