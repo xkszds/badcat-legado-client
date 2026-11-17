@@ -104,6 +104,28 @@ class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
             }
         }
 
+    /** Remove one source while preserving all unrelated source records. */
+    suspend fun remove(sourceId: String): EngineResult<Boolean> = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            try {
+                val sources = readSources()
+                val remaining = sources.filterNot { it.sourceId == sourceId }
+                if (remaining.size == sources.size) {
+                    return@withLock EngineResult.Success(false)
+                }
+                writeSources(remaining)
+                EngineResult.Success(true)
+            } catch (error: Exception) {
+                if (error is CancellationException) throw error
+                EngineResult.Failure(
+                    EngineErrorCode.UNKNOWN,
+                    "Unable to remove the book source",
+                    error,
+                )
+            }
+        }
+    }
+
     /** Export the catalog as a Legado-compatible JSON array. */
     suspend fun exportJson(): EngineResult<String> = withContext(Dispatchers.IO) {
         mutex.withLock {
