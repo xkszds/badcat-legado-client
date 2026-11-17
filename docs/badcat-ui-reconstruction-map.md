@@ -206,3 +206,12 @@ The personal center currently shows only implemented routes: reading history, bo
 - Removed the theme/settings glyphs that previously displayed “not connected” placeholder toasts. Removed the unavailable reading-duration placeholder; the profile now shows the real local favorite count.
 - Selecting a search source now resets pagination and immediately reruns the current keyword for that source; selecting “全部” reruns all eligible sources. When no keyword is present, the selected channel is stated without issuing a search.
 - These changes improve behavioral honesty and consistency; they do not substitute for screenshot comparison or device validation.
+
+
+## 2026-11-17 follow-up: home search position and useful home content
+
+- Moved the home search field down by changing the default top spacing to 46dp. The layout page now offers 34dp, 46dp and 58dp positions; legacy values from earlier builds are normalized to the new 46dp default so the old 22dp setting cannot keep the field near the logo.
+- Search-field position and style remain under **设置 → 布局**. Returning to the home screen detects changed preferences and rebuilds the header so the new position is applied.
+- Replaced the previous empty weighted spacer in the home body with a compact **最近阅读** panel backed by the existing local reading-history records. It shows up to three most recently updated books, opens the saved chapter on tap, and links to the full reading-history screen.
+- The panel uses real local records only. The removed ranking, lottery, cash-entry and Cat Star shortcuts are not reintroduced.
+- These are source-level changes; screenshot comparison, touch testing and physical-device verification remain outstanding. The home page is still not claimed to be a complete pixel-level copy of the original.
