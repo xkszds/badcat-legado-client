@@ -9,8 +9,9 @@ import com.google.gson.JsonParser
 
 /**
  * Executes declarative Login UI v2 render/action hooks in the bounded,
- * per-source Rhino context. It does not emulate java.ajax, WebView, CookieStore
- * or login-header host APIs, so this is not a complete authentication host.
+ * per-source Rhino context. the runtime exposes the source login info/header persistence helpers. It still does not
+ * emulate java.ajax, WebView or the full upstream CookieStore surface, so this is not
+ * a complete authentication host.
  */
 class LegadoSourceLoginUiV2Service(
     private val scriptRuntime: SourceScriptRuntime = RhinoSourceScriptRuntime(),
