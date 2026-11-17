@@ -21,7 +21,7 @@ class MainActivity : Activity() {
     private val blue = Color.rgb(55, 137, 222)
     private val ink = Color.rgb(48, 55, 66)
     private val muted = Color.rgb(135, 145, 158)
-    private val page get() = if (darkMode) Color.rgb(25, 28, 33) else Color.rgb(247, 249, 252)
+    private val page get() = if (darkMode) Color.rgb(25, 28, 33) else Color.WHITE
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,11 +40,50 @@ class MainActivity : Activity() {
         orientation = LinearLayout.VERTICAL
         setBackgroundColor(page)
         addView(buildHeader())
-        // Keep the home surface clean: no unrequested recent-reading panel.
-        addView(View(this@MainActivity), LinearLayout.LayoutParams(
+        addView(buildHomeEmptyState(), LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
         ))
         addView(MainBottomNavigation.create(this@MainActivity, "search"))
+    }
+
+    private fun buildHomeEmptyState(): View = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        gravity = Gravity.CENTER
+        setPadding(dp(28), dp(24), dp(28), dp(24))
+        setBackgroundColor(Color.WHITE)
+        addView(TextView(this@MainActivity).apply {
+            text = "⌕"
+            textSize = 54f
+            gravity = Gravity.CENTER
+            setTextColor(Color.rgb(190, 207, 226))
+        }, LinearLayout.LayoutParams(-1, dp(86)))
+        addView(TextView(this@MainActivity).apply {
+            text = "开始发现喜欢的小说"
+            textSize = 18f
+            gravity = Gravity.CENTER
+            setTextColor(ink)
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+        })
+        addView(TextView(this@MainActivity).apply {
+            text = "添加并启用书源后，就可以搜索、收藏和阅读"
+            textSize = 13f
+            gravity = Gravity.CENTER
+            setTextColor(muted)
+            setPadding(0, dp(8), 0, dp(20))
+        })
+        addView(TextView(this@MainActivity).apply {
+            text = "书源管理"
+            textSize = 15f
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            background = rounded(blue, 26)
+            setPadding(dp(34), dp(12), dp(34), dp(12))
+            isClickable = true
+            isFocusable = true
+            setOnClickListener {
+                startActivity(Intent(this@MainActivity, SourceCatalogActivity::class.java))
+            }
+        })
     }
 
     private fun buildHeader(): View = LinearLayout(this).apply {
