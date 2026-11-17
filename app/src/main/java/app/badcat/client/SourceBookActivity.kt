@@ -694,19 +694,22 @@ class SourceChapterActivity : Activity() {
 
     private fun updateReaderProgress() {
         if (!::chapterProgress.isInitialized || !::body.isInitialized) return
-        val maxScroll = (body.contentHeight * body.scale - body.height).toInt().coerceAtLeast(0)
-        val percent = if (maxScroll == 0) 0 else (body.scrollY * 100 / maxScroll).coerceIn(0, 100)
+        val progress = ReaderProgressMetrics.calculate(
+            scrollY = body.scrollY,
+            contentHeight = body.contentHeight,
+            scale = body.scale,
+            viewportHeight = body.height,
+        )
+        val maxScroll = progress.maxScroll
+        val percent = progress.percent
         chapterProgress.progress = percent
         if (!::readerInfo.isInitialized) return
 
         val pieces = mutableListOf<String>()
         if (readerUiPrefs.getBoolean(ReaderSettingsActivity.KEY_SHOW_PROGRESS, true)) {
             if (readerUiPrefs.getString(ReaderSettingsActivity.KEY_PROGRESS_MODE, "percent") == "pages") {
-                val pageHeight = body.height.coerceAtLeast(1)
-                val totalPages = ((maxScroll + pageHeight) / pageHeight.toFloat()).toInt().coerceAtLeast(1)
-                val currentPage = (body.scrollY / pageHeight + 1).coerceIn(1, totalPages)
                 val chapterCount = chapters.size.coerceAtLeast(1)
-                pieces.add("第${currentPage}/${totalPages}页 · 第${(currentIndex + 1).coerceAtLeast(1)}/${chapterCount}章")
+                pieces.add("第${progress.currentPage}/${progress.totalPages}页 · 第${(currentIndex + 1).coerceAtLeast(1)}/${chapterCount}章")
             } else {
                 pieces.add("${percent}%")
             }
