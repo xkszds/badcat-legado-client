@@ -103,6 +103,23 @@ class OkHttpSourceRequestClientTest {
     }
 
     @Test
+    fun perRequestTimeoutAppliesToConnectReadWriteAndWholeCall() {
+        val timeoutMillis = 4_000L
+        val client = OkHttpSourceRequestClient().clientFor(
+            SourceHttpRequest(
+                sourceId = "timeout-fixture",
+                url = "https://reader.example/",
+                timeoutMillis = timeoutMillis,
+            ),
+        )
+
+        assertEquals(timeoutMillis.toInt(), client.connectTimeoutMillis)
+        assertEquals(timeoutMillis.toInt(), client.readTimeoutMillis)
+        assertEquals(timeoutMillis.toInt(), client.writeTimeoutMillis)
+        assertEquals(timeoutMillis.toInt(), client.callTimeoutMillis)
+    }
+
+    @Test
     fun redirectValidatorAllowsSafeRelativeAndCrossHostHttpsRedirects() {
         val from = "https://reader.example/book/1".toHttpUrl()
         assertTrue(isSafeRedirectTarget(from, "../login"))
