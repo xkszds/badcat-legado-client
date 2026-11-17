@@ -380,4 +380,23 @@ class RhinoSourceScriptRuntimeTest {
         assertTrue(result is EngineResult.Failure)
     }
 
+
+    @Test
+    fun exposesLegadoChineseConversionHelpersToSourceScripts() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val source = BookSource(
+            id = "https://chinese-conversion.example/",
+            name = "Chinese conversion source",
+            baseUrl = "https://chinese-conversion.example/",
+        )
+
+        val result = runtime.evaluate(
+            source,
+            "java.t2s('繁體中文') + '|' + java.s2t('繁体中文')",
+        )
+
+        assertEquals("繁体中文|繁體中文", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
 }
