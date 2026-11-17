@@ -62,4 +62,20 @@ class FavoritesFolderQueryTest {
         assertEquals(emptyList<FavoriteBook>(), favoriteBooksInFolder(books, "missing"))
         assertEquals(0, favoriteBookCountInFolder(books, "missing"))
     }
+
+    @Test
+    fun novelCoverBadgeUsesOnlyExplicitStatusMetadata() {
+        assertEquals("更新", BookStatusBadge.label("最近更新：第 12 章"))
+        assertEquals("连载", BookStatusBadge.label("连载中"))
+        assertEquals("完结", BookStatusBadge.label("已完结"))
+        assertEquals(null, BookStatusBadge.label(null))
+        assertEquals(null, BookStatusBadge.label("暂无"))
+    }
+
+    @Test
+    fun completedStatusTakesPriorityWhenMetadataContainsMultipleMarkers() {
+        assertEquals("完结", BookStatusBadge.label("连载，已完结"))
+        assertEquals("完结", BookStatusBadge.label("更新后完结"))
+    }
+
 }
