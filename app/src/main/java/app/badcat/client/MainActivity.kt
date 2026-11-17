@@ -54,14 +54,14 @@ class MainActivity : Activity() {
         background = rounded(blue, 0, 0, 0, 18, 18)
 
         addView(BadcatHomeLogo.create(this@MainActivity), LinearLayout.LayoutParams(
-            dp(178), dp(56)
+            dp(148), dp(48)
         ).apply { gravity = Gravity.CENTER_HORIZONTAL })
 
         // Original home hierarchy: 小说 / 漫画 / 综合 directly under the Badcat wordmark.
         val typeChoices = LinearLayout(this@MainActivity).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
-            setPadding(0, dp(2), 0, dp(2))
+            setPadding(0, dp(9), 0, dp(9))
         }
         val typeLabels = mutableListOf<TextView>()
         var syncSearchType: ((String) -> Unit)? = null
@@ -84,9 +84,9 @@ class MainActivity : Activity() {
             val label = TextView(this@MainActivity).apply {
                 tag = type
                 text = type
-                textSize = 14f
+                textSize = 12f
                 gravity = Gravity.CENTER
-                setPadding(dp(18), dp(5), dp(18), dp(5))
+                setPadding(dp(25), dp(5), dp(25), dp(5))
                 isClickable = true
                 isFocusable = true
                 setOnClickListener {
@@ -96,9 +96,9 @@ class MainActivity : Activity() {
                 }
             }
             typeLabels += label
-            typeChoices.addView(label, LinearLayout.LayoutParams(-2, dp(32)))
+            typeChoices.addView(label, LinearLayout.LayoutParams(-2, dp(32)).apply { marginStart = dp(5); marginEnd = dp(5) })
         }
-        addView(typeChoices, LinearLayout.LayoutParams(-1, dp(34)))
+        addView(typeChoices, LinearLayout.LayoutParams(-1, dp(42)))
         renderTypeChoices()
 
         val bar = BadcatSearchBarView(

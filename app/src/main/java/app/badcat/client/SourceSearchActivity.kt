@@ -175,12 +175,16 @@ class SourceSearchActivity : Activity() {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
                 setPadding(dp(14), dp(6), dp(14), dp(6))
-                addView(BadcatLineIconView(this@SourceSearchActivity, "back", ink).apply {
-                    contentDescription = "返回"
+                addView(TextView(this@SourceSearchActivity).apply {
+                    text = "<"
+                    textSize = 23f
+                    gravity = Gravity.CENTER
+                    setTextColor(ink)
                     isClickable = true
                     isFocusable = true
+                    contentDescription = "返回"
                     setOnClickListener { finish() }
-                }, LinearLayout.LayoutParams(dp(40), dp(configuredBarHeight)))
+                }, LinearLayout.LayoutParams(dp(32), dp(configuredBarHeight)))
                 addView(sharedBar, LinearLayout.LayoutParams(0, dp(configuredBarHeight), 1f))
             }
             val topRow = FrameLayout.LayoutParams(
