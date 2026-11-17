@@ -17,6 +17,7 @@ import app.badcat.client.runtime.RhinoSourceScriptRuntime
 import app.badcat.client.runtime.SharedPreferencesSourceLoginSessionStore
 import app.badcat.client.runtime.SharedPreferencesSourceCookieJar
 import app.badcat.client.runtime.SharedPreferencesSourceScriptKeyValueStore
+import app.badcat.client.runtime.BadcatReadingEngineFactory
 import kotlinx.coroutines.CancellationException
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.CoroutineScope
@@ -125,6 +126,11 @@ class SourceCatalogActivity : Activity() {
                             }
                         }
                         row.addView(enabledSwitch)
+                        if (source.enabled && source.enabledExplore && !source.exploreUrl.isNullOrBlank()) {
+                            row.addView(actionButton("书源发现 / 分类探索") {
+                                promptExplore(source.id, source.name)
+                            })
+                        }
                         if (LegadoLoginUiV2.isV2(source.loginUi)) {
                             row.addView(Button(this@SourceCatalogActivity).apply {
                                 text = "登录配置（Login UI v2）"
@@ -188,6 +194,54 @@ class SourceCatalogActivity : Activity() {
                     message.text = "读取书源失败：${result.message}"
             }
         }
+    }
+
+    private fun promptExplore(sourceId: String, sourceName: String) {
+        val keyword = android.widget.EditText(this).apply {
+            hint = "可输入分类关键词，也可留空"
+            setSingleLine(true)
+            setPadding(28, 18, 28, 18)
+        }
+        android.app.AlertDialog.Builder(this)
+            .setTitle("探索：$sourceName")
+            .setMessage("使用该书源的 exploreUrl 和 ruleExplore 发现书籍。")
+            .setView(keyword)
+            .setNegativeButton("取消", null)
+            .setPositiveButton("开始探索") { _, _ ->
+                val query = keyword.text?.toString()?.trim().orEmpty()
+                message.text = "正在探索：$sourceName"
+                scope.launch {
+                    val result = withContext(Dispatchers.IO) {
+                        BadcatReadingEngineFactory(applicationContext).create()
+                            .explore(sourceId, keyword = query, page = 1)
+                    }
+                    when (result) {
+                        is app.badcat.engine.EngineResult.Success -> {
+                            val books = result.value
+                            if (books.isEmpty()) {
+                                message.text = "$sourceName：没有发现书籍"
+                            } else {
+                                message.text = "$sourceName：发现 ${books.size} 本书"
+                                android.app.AlertDialog.Builder(this@SourceCatalogActivity)
+                                    .setTitle("探索结果（${books.size}）")
+                                    .setItems(books.map { it.name }.toTypedArray()) { _, index ->
+                                        val book = books[index]
+                                        startActivity(Intent(this@SourceCatalogActivity, SourceBookActivity::class.java).apply {
+                                            putExtra(SourceBookActivity.EXTRA_SOURCE_ID, book.sourceId)
+                                            putExtra(SourceBookActivity.EXTRA_BOOK_URL, book.bookUrl)
+                                            putExtra(SourceBookActivity.EXTRA_BOOK_NAME, book.name)
+                                        })
+                                    }
+                                    .setNegativeButton("关闭", null)
+                                    .show()
+                            }
+                        }
+                        is app.badcat.engine.EngineResult.Failure ->
+                            message.text = "$sourceName：探索失败（${result.code}）${result.message}"
+                    }
+                }
+            }
+            .show()
     }
 
     private fun chooseImportFile() {
