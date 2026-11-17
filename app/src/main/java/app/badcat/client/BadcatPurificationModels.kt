@@ -129,7 +129,7 @@ object BadcatAdMarkJsonCodec {
             hostItems.forEach { item ->
                 val rule = JsonObject().apply {
                     add("urlPattern", JsonParser.parseString(item.urlPattern))
-                    add("markRules", JsonArray().apply { item.markRules.forEach(::add) })
+                    add("markRules", JsonArray().apply { item.markRules.forEach { add(it) } })
                 }
                 ruleItems.add(rule)
             }
