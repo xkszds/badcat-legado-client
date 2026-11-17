@@ -174,6 +174,13 @@ object CssRuleEvaluator {
             ValueMode.ATTRIBUTE -> elements.map { it.attr(attribute.orEmpty()) }
                 .filter(String::isNotBlank)
                 .distinct()
+            ValueMode.HTML -> {
+                elements.forEach { it.select("script, style").remove() }
+                listOf(elements.joinToString(separator = "") { it.outerHtml() })
+                    .filter(String::isNotEmpty)
+            }
+            ValueMode.ALL -> listOf(elements.joinToString(separator = "") { it.outerHtml() })
+                .filter(String::isNotEmpty)
             else -> elements.map { extract(it, mode, attribute) }.filter(String::isNotEmpty)
         }
         EngineResult.Success(values)
