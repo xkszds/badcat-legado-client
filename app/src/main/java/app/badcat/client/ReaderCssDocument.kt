@@ -17,8 +17,16 @@ internal object ReaderCssDocument {
         "white-space", "word-break", "overflow-wrap", "opacity",
     )
 
-    fun build(context: Context, text: String, textSizeSp: Float, lineSpacing: Float,
-              background: Int, foreground: Int): String {
+    fun build(
+        context: Context,
+        text: String,
+        textSizeSp: Float,
+        lineSpacing: Float,
+        background: Int,
+        foreground: Int,
+        bookTitle: String = "",
+        chapterTitle: String = "",
+    ): String {
         val css = activeCss(context)
         val paragraphs = text.replace("\r\n", "\n").replace('\r', '\n')
             .lineSequence()
@@ -27,6 +35,12 @@ internal object ReaderCssDocument {
             .joinToString("") { "<p class=\"reader-paragraph\">${escape(it)}</p>" }
         val bg = String.format("#%06X", 0xFFFFFF and background)
         val fg = String.format("#%06X", 0xFFFFFF and foreground)
+        val bookTitleMarkup = bookTitle.takeIf(String::isNotBlank)?.let {
+            """<div class="reader-book-title">${escape(it)}</div>"""
+        }.orEmpty()
+        val chapterTitleMarkup = chapterTitle.takeIf(String::isNotBlank)?.let {
+            """<h1 class="reader-chapter-title">${escape(it)}</h1>"""
+        }.orEmpty()
         return """
             <!doctype html><html><head><meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -34,9 +48,18 @@ internal object ReaderCssDocument {
             html,body{margin:0;padding:0;background:$bg;color:$fg}
             body{font-size:${textSizeSp * context.resources.displayMetrics.scaledDensity}px;line-height:$lineSpacing;font-family:sans-serif}
             .reader-root{padding:16px 20px 28px;overflow-wrap:anywhere}
+            .reader-header{margin:0 0 1.5em}
+            .reader-book-title{font-size:.78em;color:inherit;opacity:.72;margin-bottom:.5em}
+            .reader-chapter-title{font-size:1.25em;line-height:1.4;font-weight:600;margin:0 0 1em;text-indent:0}
+            .reader-content{min-width:0}
             .reader-paragraph{margin:0 0 1.15em 0;text-indent:2em;white-space:normal}
+            .reader-footer{margin-top:2em;padding:1em 0;text-align:center;font-size:.8em;opacity:.6}
             $css
-            </style></head><body><main class="reader-root"><article class="reader-content">$paragraphs</article></main></body></html>
+            </style></head><body><main class="reader-root">
+            <header class="reader-header">$bookTitleMarkup$chapterTitleMarkup</header>
+            <article class="reader-content">$paragraphs</article>
+            <footer class="reader-footer">本章结束</footer>
+            </main></body></html>
         """.trimIndent()
     }
 
@@ -62,13 +85,19 @@ internal object ReaderCssDocument {
             html,body{margin:0;padding:0;background:$bg;color:$fg}
             body{font-size:${previewFontSize}px;line-height:1.7;font-family:sans-serif}
             .reader-root{padding:16px 20px}
+            .reader-header{margin:0 0 1.5em}
+            .reader-book-title{font-size:.78em;opacity:.72;margin-bottom:.5em}
+            .reader-chapter-title{font-size:1.25em;line-height:1.4;margin:0 0 1em}
             .reader-paragraph{margin:0 0 1em;text-indent:2em}
+            .reader-footer{margin-top:2em;padding:1em 0;text-align:center;font-size:.8em;opacity:.6}
             $css
-            </style></head><body><main class="reader-root"><article class="reader-content">
+            </style></head><body><main class="reader-root">
+            <header class="reader-header"><div class="reader-book-title">示例小说名称</div><h1 class="reader-chapter-title">第一章 示例章节标题</h1></header>
+            <article class="reader-content">
             <p class="reader-paragraph">这是阅读页面样式预览。你可以观察字体、颜色、行距和段落效果。</p>
             <p class="reader-paragraph">第二段示例文字，用于测试 nth-child 选择器和局部样式。</p>
             <p class="reader-paragraph">第三段示例文字，方便比较不同段落的显示差异。</p>
-            </article></main></body></html>
+            </article><footer class="reader-footer">本章结束</footer></main></body></html>
         """.trimIndent()
     }
 
