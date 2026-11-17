@@ -87,7 +87,7 @@ class BadcatSearchBarView(
         input.setOnClickListener { homeTapAction?.invoke() }
 
         searchAction.apply {
-            text = when { searchPageStyle -> "搜索"; homePageStyle -> "◷"; else -> "⌕" }
+            text = when { searchPageStyle -> "搜索"; homePageStyle -> "⌕"; else -> "⌕" }
             textSize = when { searchPageStyle -> 15f; homePageStyle -> 25f; else -> 26f }
             gravity = Gravity.CENTER
             setTextColor(when {
@@ -165,8 +165,8 @@ class BadcatSearchBarView(
         setColor(if (dark) Color.rgb(31, 37, 46) else Color.rgb(255, 255, 255))
         cornerRadius = radius.toFloat()
         setStroke(
-            dp(1),
-            if (dark) Color.rgb(91, 111, 135) else Color.rgb(193, 210, 230),
+            dp(2),
+            if (dark) Color.rgb(130, 164, 205) else Color.rgb(38, 91, 145),
         )
     }
 
