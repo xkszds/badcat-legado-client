@@ -19,6 +19,9 @@ class LegadoSourceLoginUiV2Service(
         source: BookSource,
         stateJson: String = "{}",
     ): EngineResult<List<LegadoLoginUiV2.Row>> {
+        if (!source.mainJs.isNullOrBlank()) {
+            return unsupported("Login UI v2 on mainJs sources requires the dedicated JavaScript source host")
+        }
         if (!LegadoLoginUiV2.isV2(source.loginUi)) {
             return unsupported("Book source '${source.id}' does not declare Login UI v2")
         }
@@ -50,6 +53,9 @@ class LegadoSourceLoginUiV2Service(
         stateJson: String,
         formJson: String,
     ): EngineResult<LegadoLoginUiV2.ActionResult> {
+        if (!source.mainJs.isNullOrBlank()) {
+            return unsupported("Login UI v2 on mainJs sources requires the dedicated JavaScript source host")
+        }
         if (!LegadoLoginUiV2.isV2(source.loginUi)) {
             return unsupported("Book source '${source.id}' does not declare Login UI v2")
         }
@@ -103,9 +109,6 @@ class LegadoSourceLoginUiV2Service(
     }
 
     private fun loginScript(source: BookSource): String? {
-        // RhinoSourceScriptRuntime initializes mainJs once in the source scope.
-        // Re-appending the whole file would redeclare top-level const/let values.
-        if (!source.mainJs.isNullOrBlank()) return ""
         val raw = source.loginUrl?.takeIf { it.isNotBlank() } ?: return null
         val text = raw.trim()
         val inline = INLINE_JS.matchEntire(text)?.groupValues?.get(1)
