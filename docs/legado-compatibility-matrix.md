@@ -135,7 +135,7 @@ modes remain outside this increment.
 - Checked the current upstream `AnalyzeRule.SourceRule` implementation: a rule beginning with `@@` switches to the default JSoup mode and removes the two-character prefix before evaluation.
 - The bounded dispatcher now resolves `@@selector` explicitly as CSS instead of treating it as a CSS selector containing an invalid leading at-sign.
 - Scalar CSS extraction and collection extraction are covered by contract tests. Collection rules retain the upstream element-index suffix handling; explicit `@CSS:` continues to use the direct selector path.
-- This is one additional AnalyzeRule syntax slice only. It does not complete `@get`, `{{}}`, the full `@put` lifecycle, JS modes, or the full selector grammar.
+- This is one additional AnalyzeRule syntax slice only. It does not complete every `ElementsSingle` feature, arbitrary nested parser-mode changes, or all-in-one regex and WebJS.
 
 
 ### Default-mode JSoup chains and legacy selector heads (2026-11-17)
@@ -144,3 +144,12 @@ modes remain outside this increment.
 - The bounded CSS adapter now evaluates chained scalar forms such as `div.book@a.title.0@href` and `@@class.book@tag.a.0@href`; each stage uses the bounded index parser and a final extraction suffix.
 - The tokenizer ignores at-signs inside quoted CSS attribute values, brackets and parentheses. Regression tests cover chained selectors, legacy selector heads, indexes and quoted `@cover` attribute values.
 - This increment does not yet implement every upstream `ElementsSingle` feature, arbitrary nested parser mode changes, full `@get` / `{{}}` semantics across all stages, or all-in-one regex and WebJS.
+
+
+### Embedded URL variables and persistent source values (2026-11-17)
+
+- Embedded URL templates now resolve `@put:{...}` JSON objects before `@get:{key}` tokens and `{{...}}` script expressions.
+- `@put` parsing tracks JSON string quoting, escapes and balanced braces, so a valid string value containing literal `{` or `}` is not truncated by a delimiter regex. Incomplete directives remain literal.
+- `@put` accepts a bounded JSON object whose values are strings; key/value lengths, operation count and total template size are limited. `@get` reads only the current source's persisted string store.
+- The script context receives primitive strings for `result`, `baseUrl`, `sourceUrl` / `sourceId`, `sourceName`, `ruleName`, `key` and `page`. This does not expose the full upstream Java, HTTP, WebView, cache or Android objects.
+- Contract tests cover both URL-template and source-runtime paths, including JSON string values containing braces. Full upstream variable semantics across every AnalyzeRule stage remain unclaimed.
