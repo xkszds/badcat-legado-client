@@ -57,6 +57,31 @@ class RuleExpressionTokenizerTest {
     }
 
     @Test
+    fun protectsSeparatorsInsideRegexCharacterClassesAndAttributeValues() {
+        val expression = """@regex:<a data-label="left&&right" href="([^"]+)">"""
+        assertEquals(
+            listOf(expression, "div.result"),
+            RuleExpressionTokenizer.splitTopLevel("$expression||div.result", "||"),
+        )
+        val characterClass = """@regex:[a&&b]+"""
+        assertEquals(
+            listOf(characterClass, "p@text"),
+            RuleExpressionTokenizer.splitTopLevel("$characterClass&&p@text", "&&"),
+            "Separators inside a regex character class must remain literal",
+        )
+    }
+
+    @Test
+    fun rejectsUnclosedRegexGroupsAndCharacterClasses() {
+        assertFailsWith<IllegalArgumentException> {
+            RuleExpressionTokenizer.splitTopLevel("@regex:(unfinished", "||")
+        }
+        assertFailsWith<IllegalArgumentException> {
+            RuleExpressionTokenizer.splitTopLevel("@regex:[unfinished", "||")
+        }
+    }
+
+    @Test
     fun rejectsMalformedGroupsAndUnknownDelimiter() {
         assertFailsWith<IllegalArgumentException> {
             RuleExpressionTokenizer.splitTopLevel("a[foo && b", "&&")
