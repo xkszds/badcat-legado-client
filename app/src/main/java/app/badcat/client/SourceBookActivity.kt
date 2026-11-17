@@ -254,11 +254,11 @@ class SourceBookActivity : Activity() {
             val (detail, toc) = runBlocking {
                 coroutineScope {
                     val detailTask = async(Dispatchers.IO) {
-                        safeEngineCall { engine.bookDetail(sourceId, bookUrl) }
+                        safeEngineCall { engine.bookDetailWithFallback(sourceId, bookUrl, bookName) }
                     }
                     val tocTask = async(Dispatchers.IO) {
                         safeEngineCall {
-                            engine.chaptersIncremental(sourceId, bookUrl) { partial ->
+                            engine.chaptersIncrementalWithFallback(sourceId, bookUrl, bookName) { partial ->
                                 mainHandler.post {
                                     if (!isFinishing && !isDestroyed) showChapters(partial)
                                 }
