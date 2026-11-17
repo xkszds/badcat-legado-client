@@ -106,32 +106,28 @@ object BadcatPpRuleEvaluator {
             is EngineResult.Success -> result.value
         }
         return try {
-            val links = selected.mapNotNull { fragment ->
+            val links = selected.flatMap { fragment ->
                 val root = Jsoup.parseBodyFragment(fragment, document.url).body()
-                val element: org.jsoup.nodes.Element? =
-                    root.selectFirst("a[href]") ?: root.children().firstOrNull()
-                val href: String = element?.takeIf { it.hasAttr("href") }?.attr("href")
-                    ?: root.selectFirst("[href]")?.attr("href")
-                    ?: return@mapNotNull null
-                val resolved = runCatching {
-                    val base = java.net.URI(document.url)
-                    val target = base.resolve(href.trim()).normalize()
-                    target.takeIf {
-                        (it.scheme.equals("http", ignoreCase = true) ||
-                            it.scheme.equals("https", ignoreCase = true)) &&
-                            !it.host.isNullOrBlank() &&
-                            it.userInfo == null
-                    }?.toASCIIString()
-                }.getOrNull() ?: return@mapNotNull null
-                // Some providers expose episode names only as tooltip/accessibility metadata.
-                val label = sequenceOf(
-                    element?.attr("title"),
-                    element?.attr("aria-label"),
-                    element?.text(),
-                    root.text(),
-                ).mapNotNull { it?.trim()?.takeIf(String::isNotEmpty) }
-                    .firstOrNull().orEmpty()
-                if (label.isBlank()) null else BadcatVideoLink(label, resolved)
+                root.select("a[href]").mapNotNull { element ->
+                    val href = element.attr("href").trim()
+                    val resolved = runCatching {
+                        val base = java.net.URI(document.url)
+                        val target = base.resolve(href).normalize()
+                        target.takeIf {
+                            (it.scheme.equals("http", ignoreCase = true) ||
+                                it.scheme.equals("https", ignoreCase = true)) &&
+                                !it.host.isNullOrBlank() &&
+                                it.userInfo == null
+                        }?.toASCIIString()
+                    }.getOrNull() ?: return@mapNotNull null
+                    // Some providers expose episode names only as tooltip/accessibility metadata.
+                    val label = sequenceOf(
+                        element.attr("title"),
+                        element.attr("aria-label"),
+                        element.text(),
+                    ).map { it.trim() }.firstOrNull(String::isNotEmpty).orEmpty()
+                    if (label.isBlank()) null else BadcatVideoLink(label, resolved)
+                }
             }.distinctBy { it.url }
             EngineResult.Success(links)
         } catch (error: Exception) {
@@ -155,21 +151,20 @@ object BadcatPpRuleEvaluator {
             is EngineResult.Success -> result.value
         }
         return try {
-            val urls = selected.mapNotNull { fragment ->
+            val urls = selected.flatMap { fragment ->
                 val root = Jsoup.parseBodyFragment(fragment, document.url).body()
-                val image = root.selectFirst("img[data-original], img[src]")
-                    ?: root.takeIf { it.tagName().equals("img", ignoreCase = true) }
-                    ?: return@mapNotNull null
-                val raw = image.attr("data-original").trim()
-                    .ifBlank { image.attr("src").trim() }
-                if (raw.isBlank()) return@mapNotNull null
-                runCatching {
-                    val target = java.net.URI(document.url).resolve(raw).normalize()
-                    target.takeIf {
-                        (it.scheme.equals("http", true) || it.scheme.equals("https", true)) &&
-                            !it.host.isNullOrBlank() && it.userInfo == null
-                    }?.toASCIIString()
-                }.getOrNull()
+                root.select("img[data-original], img[src]").mapNotNull { image ->
+                    val raw = image.attr("data-original").trim()
+                        .ifBlank { image.attr("src").trim() }
+                    if (raw.isBlank()) return@mapNotNull null
+                    runCatching {
+                        val target = java.net.URI(document.url).resolve(raw).normalize()
+                        target.takeIf {
+                            (it.scheme.equals("http", true) || it.scheme.equals("https", true)) &&
+                                !it.host.isNullOrBlank() && it.userInfo == null
+                        }?.toASCIIString()
+                    }.getOrNull()
+                }
             }.distinct()
             EngineResult.Success(urls)
         } catch (error: Exception) {
