@@ -18,9 +18,11 @@ object CssRuleEvaluator {
         expression: String,
     ): EngineResult<List<String>> {
         val rawRule = expression.trim()
-        val rule = if (rawRule.startsWith("@CSS:", ignoreCase = true)) {
-            rawRule.substring(5).trim()
-        } else rawRule
+        val rule = when {
+            rawRule.startsWith("@CSS:", ignoreCase = true) -> rawRule.substring(5).trim()
+            rawRule.startsWith("@@") -> rawRule.substring(2).trim()
+            else -> rawRule
+        }
         if (rule.isEmpty()) {
             return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "CSS rule is blank")
         }
@@ -63,7 +65,12 @@ object CssRuleEvaluator {
     ): EngineResult<List<String>> {
         val rawRule = expression.trim()
         val explicitCss = rawRule.startsWith("@CSS:", ignoreCase = true)
-        val rule = if (explicitCss) rawRule.substring(5).trim() else rawRule
+        val forcedDefaultCss = rawRule.startsWith("@@")
+        val rule = when {
+            explicitCss -> rawRule.substring(5).trim()
+            forcedDefaultCss -> rawRule.substring(2).trim()
+            else -> rawRule
+        }
         if (rule.isEmpty()) return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "CSS rule is blank")
         return runCatching {
             var firstFailure: EngineResult.Failure? = null
@@ -84,6 +91,8 @@ object CssRuleEvaluator {
                     )
                     return@evaluateNested emptyList()
                 }
+                // @CSS: is a direct selector mode; @@ only forces JSoup mode
+                // and still retains the upstream ElementsSingle index suffix.
                 val indexedRule = if (explicitCss) null else LegadoElementIndex.parse(part)
                 val selector = indexedRule?.selector ?: parsed.selector
                 val matched = Jsoup.parse(document.body, document.url).select(selector).map { it.outerHtml() }
