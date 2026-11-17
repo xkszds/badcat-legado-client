@@ -8,7 +8,7 @@ class SourceTocService(
     private val scriptRuntime: SourceScriptRuntime? = null,
 ) {
     suspend fun load(source: BookSource, bookUrl: String, tocUrl: String? = null): EngineResult<List<BookChapter>> {
-        MainJsSourceGuard.failure(source, "table of contents")?.let { return it }
+        MainJsSourceGuard.failure(source, "table of contents", scriptRuntimeAvailable = scriptRuntime != null)?.let { return it }
         if (maxPages < 1) {
             return EngineResult.Failure(EngineErrorCode.INVALID_SOURCE, "maxPages must be positive")
         }
