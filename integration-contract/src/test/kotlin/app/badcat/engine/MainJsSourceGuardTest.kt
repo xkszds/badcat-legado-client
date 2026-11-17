@@ -11,8 +11,7 @@ class MainJsSourceGuardTest {
             id = "main-js-source",
             name = "mainJs source",
             baseUrl = "https://example.invalid/",
-            mainJs = "function helper() { return 'ok'; }",
-        )
+        ).copy(mainJs = "function helper() { return 'ok'; }")
 
         val blocked = MainJsSourceGuard.failure(source, "search")
         assertEquals(EngineErrorCode.UNSUPPORTED_RULE, blocked?.code)
