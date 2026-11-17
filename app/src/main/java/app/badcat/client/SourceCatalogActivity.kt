@@ -150,7 +150,7 @@ class SourceCatalogActivity : Activity() {
                         row.addView(Button(this@SourceCatalogActivity).apply {
                             text = "清除该书源登录信息"
                             setOnClickListener {
-                                android.app.AlertDialog.Builder(this@SourceCatalogActivity)
+                                BadcatTheme.alertBuilder(this@SourceCatalogActivity)
                                     .setTitle("清除登录信息")
                                     .setMessage("将删除该书源保存的登录请求头、登录信息和 HTTP Cookie，不会删除书源本身。确定继续？")
                                     .setNegativeButton("取消", null)
@@ -206,7 +206,7 @@ class SourceCatalogActivity : Activity() {
             setSingleLine(true)
             setPadding(28, 18, 28, 18)
         }
-        android.app.AlertDialog.Builder(this)
+        BadcatTheme.alertBuilder(this)
             .setTitle("探索：$sourceName")
             .setMessage("使用该书源的 exploreUrl 和 ruleExplore 发现书籍。")
             .setView(keyword)
@@ -226,7 +226,7 @@ class SourceCatalogActivity : Activity() {
                                 message.text = "$sourceName：没有发现书籍"
                             } else {
                                 message.text = "$sourceName：发现 ${books.size} 本书"
-                                android.app.AlertDialog.Builder(this@SourceCatalogActivity)
+                                BadcatTheme.alertBuilder(this@SourceCatalogActivity)
                                     .setTitle("探索结果（${books.size}）")
                                     .setItems(books.map { it.name }.toTypedArray()) { _, index ->
                                         val book = books[index]
