@@ -29,6 +29,7 @@ import app.badcat.engine.EngineResult
 import app.badcat.engine.ReadingEngine
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -38,8 +39,6 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.withTimeoutOrNull
-import kotlinx.coroutines.TimeoutCancellationException
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -57,10 +56,8 @@ class SourceSearchActivity : Activity() {
         private const val SEARCH_HISTORY_KEY = "queries_v1"
         private const val MAX_SEARCH_HISTORY = 20
         private const val MAX_VISIBLE_SEARCH_RESULTS = 60
-        private const val MAX_SOURCES_PER_SEARCH = 24
         private const val MAX_PARALLEL_SEARCHES = 6
         private const val SOURCE_SEARCH_TIMEOUT_MS = 15_000L
-        private const val TOTAL_SEARCH_TIMEOUT_MS = 45_000L
     }
 
     private val worker: ExecutorService = Executors.newSingleThreadExecutor()
@@ -92,6 +89,8 @@ class SourceSearchActivity : Activity() {
     private var refreshSourcesOnResume = true
     private var contentType = "小说"
     private var enabledSources: List<BookSource> = emptyList()
+    private var activeSearch: Future<*>? = null
+    @Volatile private var searchGeneration = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -344,6 +343,9 @@ class SourceSearchActivity : Activity() {
     }
 
     private fun search(resetPage: Boolean = true) {
+        activeSearch?.cancel(true)
+        activeSearch = null
+        val generation = ++searchGeneration
         if (resetPage) currentPage = 1
         previousPageButton.isEnabled = false
         nextPageButton.isEnabled = false
@@ -363,8 +365,6 @@ class SourceSearchActivity : Activity() {
         }
         val requestedPage = currentPage
         val query = keywordInput.text.toString().trim()
-        // Empty input means the user is browsing search history, not attempting
-        // a source lookup. Keep source availability warnings out of this state.
         if (query.isEmpty()) {
             status.text = ""
             status.visibility = View.GONE
@@ -379,7 +379,6 @@ class SourceSearchActivity : Activity() {
         val selectedSources = if (selectedSourcePosition == 0) enabledSources
             else listOfNotNull(enabledSources.getOrNull(selectedSourcePosition - 1))
         if (selectedSources.isEmpty()) {
-            status.visibility = View.VISIBLE
             status.visibility = View.VISIBLE
             status.text = "本机还没有已启用的小说书源"
             results.removeAllViews()
@@ -405,65 +404,81 @@ class SourceSearchActivity : Activity() {
         paginationView.visibility = View.VISIBLE
         status.visibility = View.VISIBLE
         searchButton.isEnabled = false
-        status.text = "正在搜索（第 ${requestedPage} 页）…"
+        status.text = "正在搜索（第 " + requestedPage + " 页，共 " + selectedSources.size + " 个书源）…"
         results.removeAllViews()
-        worker.execute {
+        activeSearch = worker.submit {
             val collected = Collections.synchronizedList(mutableListOf<BookCandidate>())
             val failures = Collections.synchronizedList(mutableListOf<String>())
-            val sourcesToSearch = selectedSources.take(MAX_SOURCES_PER_SEARCH)
-            if (selectedSources.size > sourcesToSearch.size) {
-                failures += "本次最多并发检索前 $MAX_SOURCES_PER_SEARCH 个书源；其余 ${selectedSources.size - sourcesToSearch.size} 个未执行"
-            }
             val completed = AtomicInteger(0)
-            val timedOut = runBlocking {
+            runBlocking {
                 val semaphore = Semaphore(MAX_PARALLEL_SEARCHES)
-                withTimeoutOrNull(TOTAL_SEARCH_TIMEOUT_MS) {
-                    supervisorScope {
-                        sourcesToSearch.map { source ->
-                            async(Dispatchers.IO) {
-                                semaphore.withPermit {
-                                    val result = try {
-                                        withTimeout(SOURCE_SEARCH_TIMEOUT_MS) {
-                                            engine.searchPage(source.id, query, requestedPage)
-                                        }
-                                    } catch (timeout: TimeoutCancellationException) {
-                                        EngineResult.Failure(
-                                            EngineErrorCode.NETWORK,
-                                            "请求超时（${SOURCE_SEARCH_TIMEOUT_MS / 1000} 秒）",
-                                            timeout,
-                                        )
-                                    } catch (cancelled: CancellationException) {
-                                        throw cancelled
-                                    } catch (error: Exception) {
-                                        EngineResult.Failure(
-                                            EngineErrorCode.UNKNOWN,
-                                            error.message ?: "搜索时发生异常",
-                                            error,
-                                        )
+                supervisorScope {
+                    selectedSources.map { source ->
+                        async(Dispatchers.IO) {
+                            semaphore.withPermit {
+                                val result = try {
+                                    withTimeout(SOURCE_SEARCH_TIMEOUT_MS) {
+                                        engine.searchPage(source.id, query, requestedPage)
                                     }
-                                    when (result) {
-                                        is EngineResult.Success -> collected.addAll(result.value)
-                                        is EngineResult.Failure -> failures.add("${source.name}：${result.message}")
+                                } catch (cancelled: CancellationException) {
+                                    throw cancelled
+                                } catch (timeout: kotlinx.coroutines.TimeoutCancellationException) {
+                                    EngineResult.Failure(
+                                        EngineErrorCode.NETWORK,
+                                        "请求超时（" + (SOURCE_SEARCH_TIMEOUT_MS / 1000) + " 秒）",
+                                        timeout,
+                                    )
+                                } catch (error: Exception) {
+                                    EngineResult.Failure(
+                                        EngineErrorCode.UNKNOWN,
+                                        error.message ?: "搜索时发生异常",
+                                        error,
+                                    )
+                                }
+                                when (result) {
+                                    is EngineResult.Success -> collected.addAll(result.value)
+                                    is EngineResult.Failure -> failures.add(source.name + "：" + result.message)
+                                }
+                                val count = completed.incrementAndGet()
+                                if (count % 3 == 0 || count == selectedSources.size) {
+                                    val resultSnapshot = synchronized(collected) {
+                                        collected.distinctBy { it.sourceId + "|" + it.bookUrl }
                                     }
-                                    val count = completed.incrementAndGet()
+                                    val failureSnapshot = synchronized(failures) { failures.toList() }
                                     postToUi {
-                                        status.text = "正在搜索：已完成 $count / ${sourcesToSearch.size} 个书源…"
+                                        if (generation == searchGeneration) {
+                                            showResults(requestedPage, resultSnapshot, failureSnapshot)
+                                            status.text = "正在搜索：已完成 " + count + " / " + selectedSources.size +
+                                                " 个书源 · 已找到 " + resultSnapshot.size + " 本"
+                                            BadcatTheme.applyTree(this@SourceSearchActivity, rootView)
+                                        }
+                                    }
+                                } else {
+                                    postToUi {
+                                        if (generation == searchGeneration) {
+                                            status.text = "正在搜索：已完成 " + count + " / " + selectedSources.size + " 个书源…"
+                                        }
                                     }
                                 }
                             }
-                        }.awaitAll()
-                    }
-                } == null
+                        }
+                    }.awaitAll()
+                }
             }
-            if (timedOut) failures += "搜索总耗时超过 ${TOTAL_SEARCH_TIMEOUT_MS / 1000} 秒，已停止等待并显示已取得的结果"
-            val unique = synchronized(collected) { collected.distinctBy { "${it.sourceId}|${it.bookUrl}" } }
+            val unique = synchronized(collected) { collected.distinctBy { it.sourceId + "|" + it.bookUrl } }
             val failureSnapshot = synchronized(failures) { failures.toList() }
             postToUi {
-                searchButton.isEnabled = enabledSources.isNotEmpty()
-                previousPageButton.isEnabled = requestedPage > 1
-                nextPageButton.isEnabled = unique.isNotEmpty()
-                showResults(requestedPage, unique, failureSnapshot)
-                BadcatTheme.applyTree(this@SourceSearchActivity, rootView)
+                if (generation == searchGeneration) {
+                    activeSearch = null
+                    searchButton.isEnabled = enabledSources.isNotEmpty()
+                    previousPageButton.isEnabled = requestedPage > 1
+                    nextPageButton.isEnabled = unique.isNotEmpty()
+                    showResults(requestedPage, unique, failureSnapshot)
+                    status.text = "第 " + requestedPage + " 页 · 已检索 " + selectedSources.size +
+                        " 个书源 · 找到 " + unique.size + " 本" +
+                        if (failureSnapshot.isNotEmpty()) " · " + failureSnapshot.size + " 个书源失败" else ""
+                    BadcatTheme.applyTree(this@SourceSearchActivity, rootView)
+                }
             }
         }
     }
@@ -733,6 +748,8 @@ class SourceSearchActivity : Activity() {
 
     override fun onDestroy() {
         screenDestroyed = true
+        searchGeneration++
+        activeSearch?.cancel(true)
         mainHandler.removeCallbacksAndMessages(null)
         worker.shutdownNow()
         super.onDestroy()
