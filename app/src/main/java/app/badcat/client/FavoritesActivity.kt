@@ -124,7 +124,22 @@ object FavoriteBooks {
     }
 
     fun moveToFolder(context: Context, book: FavoriteBook, folderId: String) {
-        save(context, all(context).map { if (it.sourceId == book.sourceId && it.bookUrl == book.bookUrl) it.copy(folderId = folderId) else it })
+        moveBooksToFolder(context, listOf(book), folderId)
+    }
+
+    /**
+     * Moves a selection in one preference write. Validating the destination
+     * prevents stale folder IDs from leaving books attached to invisible folders.
+     */
+    fun moveBooksToFolder(context: Context, books: Collection<FavoriteBook>, folderId: String): Boolean {
+        if (books.isEmpty() || folders(context).none { it.id == folderId }) return false
+        val selectedKeys = books.map { it.sourceId to it.bookUrl }.toSet()
+        val current = all(context)
+        if (current.none { (it.sourceId to it.bookUrl) in selectedKeys }) return false
+        save(context, current.map {
+            if ((it.sourceId to it.bookUrl) in selectedKeys) it.copy(folderId = folderId) else it
+        })
+        return true
     }
 
     fun replaceAll(context: Context, books: List<FavoriteBook>, folders: List<FavoriteFolder>) {
@@ -531,7 +546,11 @@ class FavoritesActivity : Activity() {
     private fun moveSelectedBooksToFolder(folderId: String) {
         val moving = selectedBooks.values.toList()
         if (moving.isEmpty()) return
-        moving.forEach { FavoriteBooks.moveToFolder(this, it, folderId) }
+        if (!FavoriteBooks.moveBooksToFolder(this, moving, folderId)) {
+            toast("移动失败，目标文件夹可能已不存在")
+            refresh()
+            return
+        }
         selectedFolderId = folderId
         folderMode = true
         getSharedPreferences("badcat_favorites_ui", MODE_PRIVATE)
