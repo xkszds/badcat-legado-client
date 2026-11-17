@@ -133,8 +133,8 @@ object BadcatPpRuleProtoDecoder {
                     if (items.size >= MAX_ITEMS) error("Too many Badcat PPConfigItem records")
                     items += parseConfigItem(field.bytesValue!!)
                 }
-                field.number == 5 && field.wireType == WIRE_VARINT ->
-                    scriptCode = field.varintValue!!.toString()
+                field.number == 5 && field.wireType == WIRE_LENGTH_DELIMITED ->
+                    scriptCode = field.stringValue()
                 field.number == 6 && field.wireType == WIRE_LENGTH_DELIMITED ->
                     scriptSignature = field.stringValue()
                 field.number == 7 && field.wireType == WIRE_VARINT ->
