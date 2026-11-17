@@ -621,4 +621,10 @@ class ReaderCssActivity : Activity() {
         private const val MAX_RULES_PER_PROFILE = 120
         private const val MAX_PROFILE_JSON_CHARS = 8 * 1024 * 1024
     }
+
+    override fun onResume() {
+        super.onResume()
+        BadcatTheme.applyTree(this, window.decorView)
+    }
+
 }
