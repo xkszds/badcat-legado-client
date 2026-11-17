@@ -9,6 +9,7 @@
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity android:name=".MyActivity" android:exported="false" />
         <activity android:name=".SettingsActivity" android:exported="false" />
+        <activity android:name=".LayoutSettingsActivity" android:exported="false" />
         <activity android:name=".BadcatPurificationActivity" android:exported="false" />
         <activity android:name=".ReaderSettingsActivity" android:exported="false" />
         <activity android:name=".FavoriteSyncActivity" android:exported="false" />
