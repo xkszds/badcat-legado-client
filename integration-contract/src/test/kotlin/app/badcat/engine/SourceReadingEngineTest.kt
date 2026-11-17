@@ -541,4 +541,55 @@ class SourceReadingEngineTest {
         assertEquals(EngineErrorCode.INVALID_SOURCE, failure.code)
     }
 
+
+    @Test
+    fun routesExploreThroughConfiguredExploreService() = runBlocking {
+        val source = BookSource(
+            id = "explore-source",
+            name = "Explore source",
+            baseUrl = "https://reader.example/",
+            enabledExplore = true,
+            exploreUrl = "/discover?page={{page}}&key={{key}}",
+            ruleExploreJson = """{"bookList":"div.book","name":"h3@text","bookUrl":"a@href"}""",
+        )
+        val requests = mutableListOf<String>()
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                requests += request.url
+                return EngineResult.Success(SourceHttpResponse(
+                    200,
+                    request.url,
+                    body = """<div class="book"><h3>Found</h3><a href="/book/9">Read</a></div>""",
+                ))
+            }
+        }
+        val gateway = SourceHttpGateway(
+            client,
+            embeddedScriptEvaluator = LegadoEmbeddedScriptEvaluator { script, key, page ->
+                when (script.trim()) {
+                    "page" -> EngineResult.Success(page.toString())
+                    "key" -> EngineResult.Success(key)
+                    else -> EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Unexpected template")
+                }
+            },
+        )
+        val engine = SourceReadingEngine(
+            catalog = BookSourceCatalog { EngineResult.Success(listOf(source)) },
+            searchUrlResolver = BookSourceSearchUrlResolver(),
+            searchService = SourceSearchService(gateway),
+            detailService = SourceBookDetailService(gateway),
+            tocService = SourceTocService(gateway),
+            contentService = SourceChapterContentService(gateway),
+            exploreService = SourceExploreService(gateway),
+        )
+
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            engine.explore("explore-source", keyword = "猫", page = 2),
+        ).value
+
+        assertEquals(listOf("https://reader.example/discover?page=2&key=%E7%8C%AB"), requests)
+        assertEquals(listOf("Found"), books.map { it.name })
+        assertEquals("https://reader.example/book/9", books.single().bookUrl)
+    }
+
 }
