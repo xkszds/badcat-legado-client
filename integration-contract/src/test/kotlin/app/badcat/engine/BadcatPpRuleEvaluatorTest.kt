@@ -492,4 +492,20 @@ class BadcatPpRuleEvaluatorTest {
         )
     }
 
+    @Test
+    fun chapterReverseFlagPreservesTypedChapterRecords() {
+        data class ChapterRecord(val url: String, val title: String)
+        val chapters = listOf(
+            ChapterRecord("/1", "Chapter 1"),
+            ChapterRecord("/2", "Chapter 2"),
+        )
+        assertEquals(
+            listOf(chapters[1], chapters[0]),
+            BadcatPpRuleEvaluator.applyChapterListOrder(
+                chapters,
+                BadcatPpRule(chapterIsReverse = true),
+            ),
+        )
+    }
+
 }
