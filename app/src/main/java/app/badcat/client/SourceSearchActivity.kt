@@ -327,6 +327,9 @@ class SourceSearchActivity : Activity() {
         previousPageButton.isEnabled = false
         nextPageButton.isEnabled = false
         if (contentType != "小说") {
+            historyPanel.visibility = View.GONE
+            sourceStripView.visibility = View.GONE
+            disclaimerView.visibility = View.GONE
             status.visibility = View.VISIBLE
             results.removeAllViews()
             status.text = if (contentType == "漫画") {
@@ -346,14 +349,18 @@ class SourceSearchActivity : Activity() {
         }
         val query = keywordInput.text.toString().trim()
         if (query.isEmpty()) {
-            status.visibility = View.VISIBLE
+            status.visibility = View.GONE
             historyPanel.visibility = View.VISIBLE
+            sourceStripView.visibility = View.GONE
+            disclaimerView.visibility = View.GONE
+            results.removeAllViews()
             renderSearchHistory()
-            status.text = "请输入搜索关键词"
             return
         }
         rememberSearch(query)
         historyPanel.visibility = View.GONE
+        sourceStripView.visibility = View.VISIBLE
+        disclaimerView.visibility = View.VISIBLE
         status.visibility = View.VISIBLE
         searchButton.isEnabled = false
         status.text = "正在搜索（第 ${requestedPage} 页）…"
