@@ -290,6 +290,7 @@ class ReaderCssActivity : Activity() {
                 layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1)
             })
         }
+        window.decorView.post { BadcatTheme.applyTree(this, window.decorView) }
     }
 
     private fun editProfile(existing: Profile?) {
