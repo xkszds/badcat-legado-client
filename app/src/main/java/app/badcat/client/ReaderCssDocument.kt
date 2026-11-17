@@ -11,9 +11,14 @@ internal object ReaderCssDocument {
     private const val MAX_PROFILE_JSON_CHARS = 8 * 1024 * 1024
     private val allowedProperties = setOf(
         "color", "background-color", "font-size", "font-weight", "font-style",
-        "font-family", "line-height", "letter-spacing", "text-align", "text-indent",
-        "margin", "margin-top", "margin-bottom", "padding", "padding-top",
-        "padding-bottom", "border", "border-bottom", "border-radius",
+        "font-family", "font-variant", "line-height", "letter-spacing", "word-spacing",
+        "text-align", "text-indent", "text-decoration", "text-transform",
+        "margin", "margin-top", "margin-right", "margin-bottom", "margin-left",
+        "padding", "padding-top", "padding-right", "padding-bottom", "padding-left",
+        "width", "min-width", "max-width", "height", "min-height", "max-height",
+        "display", "visibility", "vertical-align", "list-style", "list-style-type",
+        "border", "border-top", "border-right", "border-bottom", "border-left",
+        "border-color", "border-width", "border-style", "border-radius", "box-shadow",
         "white-space", "word-break", "overflow-wrap", "opacity",
     )
 
@@ -240,7 +245,7 @@ internal object ReaderCssDocument {
             val property = declaration.substring(0, colon).trim().lowercase()
             val value = declaration.substring(colon + 1).trim()
             if (property !in allowedProperties || value.isEmpty() || value.length > 160) return@mapNotNull null
-            if (!value.matches(Regex("""[A-Za-z0-9_#.*,\s>+~:()\[\]='\-]+"""))) return@mapNotNull null
+            if (!value.matches(Regex("""[A-Za-z0-9_#%.*,\s>+~:()\[\]='\-]+"""))) return@mapNotNull null
             if (value.contains("url", true) || value.contains("expression", true) ||
                 value.contains("javascript", true) || value.contains("important", true)) return@mapNotNull null
             "$property:$value"
