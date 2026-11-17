@@ -31,6 +31,8 @@ kotlin {
 dependencies {
     implementation(project(":integration-contract"))
     implementation(project(":legado-rhino"))
+    // The login-form host validates JSON state and action envelopes with the same parser baseline.
+    implementation("com.google.code.gson:gson:2.14.0")
     // The app hosts coroutine-based source catalog operations and background engine calls.
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
     // The Android host supplies a persistent CookieJar to the shared source HTTP client.
