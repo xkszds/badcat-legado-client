@@ -58,6 +58,38 @@ class MainActivity : Activity() {
             dp(if (compact) 154 else 178), dp(if (compact) 48 else 56)
         ).apply { gravity = Gravity.CENTER_HORIZONTAL })
 
+        // Original home hierarchy: 小说 / 漫画 / 综合 directly under the Badcat wordmark.
+        val typeChoices = LinearLayout(this@MainActivity).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(0, dp(2), 0, dp(2))
+        }
+        val typeLabels = mutableListOf<TextView>()
+        fun renderTypeChoices() {
+            typeLabels.forEach { label ->
+                val chosen = label.tag == contentType
+                label.setTextColor(if (chosen) Color.WHITE else Color.rgb(215, 230, 247))
+                label.typeface = if (chosen) android.graphics.Typeface.DEFAULT_BOLD else android.graphics.Typeface.DEFAULT
+                label.alpha = if (chosen) 1f else 0.78f
+            }
+        }
+        listOf("小说", "漫画", "综合").forEach { type ->
+            val label = TextView(this@MainActivity).apply {
+                tag = type
+                text = type
+                textSize = 14f
+                gravity = Gravity.CENTER
+                setPadding(dp(18), dp(5), dp(18), dp(5))
+                isClickable = true
+                isFocusable = true
+                setOnClickListener { contentType = type; renderTypeChoices() }
+            }
+            typeLabels += label
+            typeChoices.addView(label, LinearLayout.LayoutParams(-2, dp(32)))
+        }
+        addView(typeChoices, LinearLayout.LayoutParams(-1, dp(34)))
+        renderTypeChoices()
+
         val bar = BadcatSearchBarView(
             context = this@MainActivity,
             appearance = searchBarMode(),
@@ -76,7 +108,7 @@ class MainActivity : Activity() {
         }
         homeSearchBar = bar
         addView(bar, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, dp(if (compact) 44 else 48)
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(if (compact) 38 else 40)
         ).apply {
             topMargin = dp(searchBarTopSpacing())
         })
@@ -105,9 +137,8 @@ class MainActivity : Activity() {
 
     private fun searchBarTopSpacing(): Int {
         val prefs = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
-        val saved = prefs.getInt("home_search_top_spacing_dp", 24)
-        // Keep the three layout choices visually distinct and bounded.
-        val migrated = if (saved !in listOf(8, 24, 40)) 24 else saved
+        val saved = prefs.getInt("home_search_top_spacing_dp", 12)
+        val migrated = if (saved !in listOf(4, 12, 24)) 12 else saved
         if (migrated != saved) prefs.edit().putInt("home_search_top_spacing_dp", migrated).apply()
         return migrated
     }
