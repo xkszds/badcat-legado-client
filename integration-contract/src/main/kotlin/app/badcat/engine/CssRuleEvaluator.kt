@@ -22,7 +22,7 @@ object CssRuleEvaluator {
         val rule = when {
             explicitCss -> rawRule.substring(5).trim()
             rawRule.startsWith("@@") -> rawRule.substring(2).trim()
-            else -> rawRule
+            else -> normalizeLegacyRootMarker(rawRule)
         }
         if (rule.isEmpty()) {
             return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "CSS rule is blank")
@@ -70,7 +70,7 @@ object CssRuleEvaluator {
         val rule = when {
             explicitCss -> rawRule.substring(5).trim()
             forcedDefaultCss -> rawRule.substring(2).trim()
-            else -> rawRule
+            else -> normalizeLegacyRootMarker(rawRule)
         }
         if (rule.isEmpty()) return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "CSS rule is blank")
         return runCatching {
@@ -105,6 +105,21 @@ object CssRuleEvaluator {
             if (firstFailure != null && values.isEmpty()) firstFailure!! else EngineResult.Success(values)
         }.getOrElse {
             EngineResult.Failure(EngineErrorCode.PARSE, "CSS collection selection failed: ${it.message}", it)
+        }
+    }
+
+    /**
+     * Legado's default JSoup selector grammar permits a leading '@' before
+     * the selector itself (for example @.w_txt li.4@textNodes). It is a
+     * selector-mode marker, not a JavaScript prefix. Keep explicit parser
+     * directives and the forced-CSS @@ form untouched.
+     */
+    private fun normalizeLegacyRootMarker(rule: String): String {
+        val reserved = listOf("@@", "@css:", "@xpath:", "@json:", "@jsonpath:", "@regex:", "@js:")
+        return if (rule.startsWith("@") && reserved.none { rule.startsWith(it, ignoreCase = true) }) {
+            rule.substring(1).trim()
+        } else {
+            rule
         }
     }
 
