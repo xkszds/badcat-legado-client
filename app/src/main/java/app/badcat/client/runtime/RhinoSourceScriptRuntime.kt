@@ -24,8 +24,10 @@ import kotlin.coroutines.cancellation.CancellationException
 class RhinoSourceScriptRuntime(
     private val timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS,
     private val sourceKeyValueStore: SourceScriptKeyValueStore = InMemorySourceScriptKeyValueStore,
+    private val sourceLoginSessionStore: SourceLoginSessionStore = InMemorySourceLoginSessionStore,
 ) : SourceScriptRuntime {
     private val javaExtensions = ConcurrentHashMap<String, RhinoSafeSourceJavaExtensions>()
+    private val sourceExtensions = ConcurrentHashMap<String, RhinoSourceLoginExtensions>()
 
     init {
         require(timeoutMillis in 1L..MAX_TIMEOUT_MILLIS)
@@ -91,6 +93,9 @@ class RhinoSourceScriptRuntime(
                 // untrusted rules still cannot reach java.lang or Android APIs.
                 scope["java"] = javaExtensions.computeIfAbsent(source.id) {
                     RhinoSafeSourceJavaExtensions(source.id, sourceKeyValueStore)
+                }
+                scope["source"] = sourceExtensions.computeIfAbsent(source.id) {
+                    RhinoSourceLoginExtensions(source.id, sourceLoginSessionStore)
                 }
                 val result = try {
                     withTimeout(timeoutMillis) {
@@ -181,7 +186,9 @@ class RhinoSourceScriptRuntime(
             sourceMainJsHashes.remove(sourceId)
             ScriptBindings.removeSharedGlobalStates(GLOBAL_KEY_PREFIX + sourceId)
             javaExtensions.remove(sourceId)
+            sourceExtensions.remove(sourceId)
             sourceKeyValueStore.clearSource(sourceId)
+            sourceLoginSessionStore.clearSource(sourceId)
         }
     }
 
