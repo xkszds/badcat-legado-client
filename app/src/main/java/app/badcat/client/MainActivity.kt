@@ -107,8 +107,10 @@ class MainActivity : Activity() {
             })
         }
         homeSearchBar = bar
+        val configuredBarHeight = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
+            .getInt("home_search_bar_height_dp", 40).coerceIn(34, 46)
         addView(bar, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, dp(if (compact) 38 else 40)
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(configuredBarHeight)
         ).apply {
             topMargin = dp(searchBarTopSpacing())
         })
