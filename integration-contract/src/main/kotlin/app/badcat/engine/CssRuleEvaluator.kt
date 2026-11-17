@@ -90,7 +90,10 @@ object CssRuleEvaluator {
                 // isolated element. Keep the selected node HTML here.
                 // @CSS: is a direct selector mode; @@ only forces JSoup mode
                 // and still retains the upstream ElementsSingle index suffix.
-                val indexedRule = if (explicitCss) null else LegadoElementIndex.parse(part)
+                // Split the scalar extraction suffix first. Legacy list
+                // indexes belong to the selector head (".w_txt li.4"),
+                // not to the full expression ending in "@textNodes".
+                val indexedRule = if (explicitCss) null else LegadoElementIndex.parse(parsed.selector)
                 val selector = indexedRule?.selector ?: parsed.selector
                 val root = Jsoup.parse(document.body, document.url)
                 val selected = if (explicitCss) root.select(selector).toList()
