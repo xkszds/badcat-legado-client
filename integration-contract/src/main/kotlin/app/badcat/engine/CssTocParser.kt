@@ -40,6 +40,9 @@ class CssTocParser {
                 is EngineResult.Failure -> return expanded
                 is EngineResult.Success -> expanded.value
             }
+        if (!resolvedListRule.startsWith("@js:", true) && !resolvedListRule.startsWith("javascript:", true)) {
+            resolvedListRule = normalizeJsonRule(response.body, resolvedListRule)
+        }
         val legacyRegexMode = resolvedListRule.startsWith(":")
         val root = SourceDocument(response.finalUrl, response.body, response.contentType, page = page)
         val items = if (resolvedListRule.startsWith("@js:", true) ||
@@ -102,6 +105,9 @@ class CssTocParser {
                     is EngineResult.Failure -> return expanded
                     is EngineResult.Success -> expanded.value
                 }
+            if (!trimmed.startsWith("@js:", true) && !trimmed.startsWith("javascript:", true)) {
+                trimmed = normalizeJsonRule(itemHtml, trimmed)
+            }
             if (trimmed.startsWith("@js:", true) || trimmed.startsWith("javascript:", true)) {
                 val script = trimmed.substringAfter(':').trim()
                 if (script.isBlank()) return unsupported(source, "empty JavaScript rule for '$key'")
@@ -181,6 +187,9 @@ class CssTocParser {
             is EngineResult.Failure -> return expanded
             is EngineResult.Success -> expanded.value
         }
+        if (nextRule.isNotBlank() && !nextRule.startsWith("@js:", true) && !nextRule.startsWith("javascript:", true)) {
+            nextRule = normalizeJsonRule(response.body, nextRule)
+        }
         val nextUrls = if (nextRule.isBlank()) emptyList() else {
             val raw = if (nextRule.startsWith("@js:", true) || nextRule.startsWith("javascript:", true)) {
                 val script = nextRule.substringAfter(':').trim()
@@ -248,11 +257,12 @@ class CssTocParser {
             return unsupported(source, "JavaScript or interpolation")
         }
 
+        val normalizedListRule = normalizeJsonRule(response.body, listRule)
         val legacyRegexMode = listRule.trim().startsWith(":")
         val root = SourceDocument(response.finalUrl, response.body, response.contentType)
         val items = when (val result = LegadoRuleExpressionDispatcher.evaluateElements(
             root,
-            listRule,
+            normalizedListRule,
         )) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
@@ -260,8 +270,9 @@ class CssTocParser {
 
         fun extract(itemHtml: String, expression: String?): EngineResult<String?> {
             if (expression.isNullOrBlank()) return EngineResult.Success(null)
+            val normalizedExpression = normalizeJsonRule(itemHtml, expression)
             if (legacyRegexMode) {
-                val parsed = LegadoRuleReplacement.parse(expression)
+                val parsed = LegadoRuleReplacement.parse(normalizedExpression)
                 val raw = when (val result = LegadoRegexElementEvaluator.evaluateScalar(itemHtml, parsed.expression)) {
                     is EngineResult.Failure -> return result
                     is EngineResult.Success -> (result.value.getOrNull(1) ?: result.value.firstOrNull())
@@ -276,11 +287,11 @@ class CssTocParser {
             }
             return when (val result = LegadoRuleExpressionDispatcher.evaluate(
                 SourceDocument(response.finalUrl, itemHtml, response.contentType),
-                expression,
+                normalizedExpression,
             )) {
                 is EngineResult.Failure -> result
                 is EngineResult.Success -> EngineResult.Success(
-                    LegadoRuleExpressionDispatcher.firstScalarValue(expression, result.value)
+                    LegadoRuleExpressionDispatcher.firstScalarValue(normalizedExpression, result.value)
                         ?.trim()?.takeIf(String::isNotEmpty),
                 )
             }
@@ -326,7 +337,7 @@ class CssTocParser {
             } else {
                 when (val result = LegadoRuleExpressionDispatcher.evaluate(
                     root,
-                    normalizeLinkExpression(nextRule),
+                    normalizeLinkExpression(normalizeJsonRule(response.body, nextRule)),
                 )) {
                     is EngineResult.Failure -> {
                         if (result.code == EngineErrorCode.PARSE) {
@@ -347,6 +358,13 @@ class CssTocParser {
             }
         }
         return EngineResult.Success(ParsedTocPage(chapters, nextUrls))
+    }
+
+    private fun normalizeJsonRule(body: String, rule: String): String {
+        val trimmed = rule.trim()
+        val jsonBody = body.trimStart().let { it.startsWith("{") || it.startsWith("[") }
+        val barePath = trimmed.matches(Regex("[A-Za-z_$][A-Za-z0-9_$]*(\\.[A-Za-z_$][A-Za-z0-9_$]*)*"))
+        return if (jsonBody && barePath) "$.$trimmed" else trimmed
     }
 
     private fun normalizeLinkExpression(expression: String): String =

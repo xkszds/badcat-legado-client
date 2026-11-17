@@ -38,10 +38,11 @@ class CssSearchResultsParser {
         // Preserve the original response bytes/text for regex roots; Jsoup.outerHtml()
         // normalizes attribute quotes and can change the meaning of an imported regex.
         val document = SourceDocument(response.finalUrl, response.body, response.contentType)
-        val legacyRegexMode = listRule.trim().startsWith(":")
+        val normalizedListRule = normalizeJsonRule(response.body, listRule)
+        val legacyRegexMode = normalizedListRule.trim().startsWith(":")
         val items = when (val result = LegadoRuleExpressionDispatcher.evaluateElements(
             document,
-            listRule,
+            normalizedListRule,
         )) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
@@ -165,9 +166,10 @@ class CssSearchResultsParser {
             if (hasNonHtmlOutputSuffix(rootExpression)) {
                 return unsupported(source, "bookList must return element HTML")
             }
+            val jsonRootRule = normalizeJsonRule(response.body, rootExpression)
             when (val result = LegadoRuleExpressionDispatcher.evaluateElements(
                 SourceDocument(response.finalUrl, response.body, response.contentType, key, page),
-                rootExpression,
+                jsonRootRule,
             )) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
@@ -224,7 +226,7 @@ class CssSearchResultsParser {
                     rules,
                     fieldName,
                     SourceDocument(response.finalUrl, itemHtml, response.contentType, key, page),
-                    expressionOverride = trimmed,
+                    expressionOverride = normalizeJsonRule(itemHtml, trimmed),
                     legacyRegexMode = legacyRegexMode,
                 ))
             } catch (failure: SearchParseFailure) {
@@ -327,6 +329,13 @@ class CssSearchResultsParser {
      * @html to every top-level branch so && / || / %% never mix serialized
      * elements with text values before each card is parsed independently.
      */
+    private fun normalizeJsonRule(body: String, rule: String): String {
+        val trimmed = rule.trim()
+        val jsonBody = body.trimStart().let { it.startsWith("{") || it.startsWith("[") }
+        val barePath = trimmed.matches(Regex("[A-Za-z_$][A-Za-z0-9_$]*(\\.[A-Za-z_$][A-Za-z0-9_$]*)*"))
+        return if (jsonBody && barePath) "$.$trimmed" else trimmed
+    }
+
     private fun normalizeHtmlOutput(rule: String): String {
         val split = RuleExpressionTokenizer.splitByFirstTopLevelOperator(rule)
         if (split.operator == null) {

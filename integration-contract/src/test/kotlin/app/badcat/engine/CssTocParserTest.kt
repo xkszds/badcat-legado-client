@@ -7,6 +7,31 @@ import kotlinx.coroutines.runBlocking
 
 class CssTocParserTest {
     @Test
+    fun parsesJsonChapterListWithBareFieldPaths() {
+        val source = BookSource(
+            id = "fixture",
+            name = "JSON fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"data.chapter_lists",
+                "chapterName":"title",
+                "chapterUrl":"id"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/api/toc",
+            contentType = "application/json",
+            body = """{"data":{"chapter_lists":[{"id":"42","title":"Chapter 42"}]}}""",
+        )
+        val page = assertIs<EngineResult.Success<ParsedTocPage>>(
+            CssTocParser().parse(source, response, "https://reader.example/book/7"),
+        ).value
+        assertEquals(listOf("Chapter 42"), page.chapters.map { it.title })
+        assertEquals(listOf("https://reader.example/api/42"), page.chapters.map { it.url })
+    }
+
+    @Test
     fun parsesChapterItemsAndResolvesRelativeLinksAndNextPage() {
         val source = BookSource(
             id = "fixture",

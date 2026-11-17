@@ -16,6 +16,34 @@ class CssSearchResultsParserTest {
     )
 
     @Test
+    fun parsesJsonBookListAndBareJsonFieldPaths() = runBlocking {
+        val source = source(
+            """{"bookList":"data.books","name":"title","bookUrl":"id","author":"original_author","coverUrl":"image_link"}""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/api/search",
+            contentType = "application/json",
+            body = """{"data":{"books":[{"id":"42","title":"JSON Novel","original_author":"Writer","image_link":"https://cdn.example/42.jpg"}]}}""",
+        )
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> = EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "No script expected")
+        }
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parseWithScripts(source, response, runtime),
+        ).value
+        assertEquals(1, books.size)
+        assertEquals("JSON Novel", books.single().name)
+        assertEquals("Writer", books.single().author)
+        assertEquals("https://reader.example/42", books.single().bookUrl)
+        assertEquals("https://cdn.example/42.jpg", books.single().coverUrl)
+    }
+
+    @Test
     fun parsesEachBookCardIndependentlyAndResolvesRelativeLinks() {
         val source = source(
             """{"bookList":"div.book","name":"h2@text","bookUrl":"a@href","author":".author@text","coverUrl":"img@src","lastChapter":".latest@text"}""",
