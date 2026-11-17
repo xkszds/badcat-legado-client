@@ -158,21 +158,28 @@ class FavoritesActivity : Activity() {
     private lateinit var bottomActions: LinearLayout
     private fun bookKey(book: FavoriteBook) = book.sourceId + "|" + book.bookUrl
     private val blue = Color.rgb(55, 137, 222)
-    private val ink = Color.rgb(48, 55, 66)
-    private val muted = Color.rgb(135, 145, 158)
-    private val page = Color.rgb(247, 249, 252)
+    private var darkMode = false
+    private val ink get() = if (darkMode) Color.rgb(235, 237, 240) else Color.rgb(48, 55, 66)
+    private val muted get() = if (darkMode) Color.rgb(165, 172, 182) else Color.rgb(135, 145, 158)
+    private val page get() = if (darkMode) Color.rgb(25, 28, 33) else Color.rgb(247, 249, 252)
+    private val card get() = if (darkMode) Color.rgb(38, 42, 49) else Color.WHITE
+    private val selectedFolder get() = if (darkMode) Color.rgb(39, 59, 78) else Color.rgb(231, 242, 253)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = Color.WHITE
-        window.navigationBarColor = Color.WHITE
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        darkMode = getSharedPreferences("badcat_appearance", MODE_PRIVATE)
+            .getString("appearance_mode", "light") == "dark"
+        window.statusBarColor = card
+        window.navigationBarColor = card
+        @Suppress("DEPRECATION")
+        window.decorView.systemUiVisibility = if (darkMode) 0 else
+            View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(page) }
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(18), dp(16), dp(14), dp(12))
-            setBackgroundColor(Color.WHITE)
+            setBackgroundColor(card)
         }
         lateinit var title: TextView
         title = TextView(this).apply {
@@ -304,7 +311,7 @@ class FavoritesActivity : Activity() {
 
     private fun folderCard(folder: FavoriteFolder, count: Int): View = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-        background = rounded(if (folder.id == selectedFolderId) Color.rgb(231, 242, 253) else Color.WHITE, 12,
+        background = rounded(if (folder.id == selectedFolderId) selectedFolder else card, 12,
             if (folder.id == selectedFolderId) blue else Color.TRANSPARENT)
         isClickable = true; isFocusable = true
         setOnClickListener { selectedFolderId = folder.id; refresh() }
@@ -325,7 +332,7 @@ class FavoritesActivity : Activity() {
 
     private fun bookCard(book: FavoriteBook): View = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-        background = rounded(Color.WHITE, 10); setPadding(dp(5), dp(8), dp(5), dp(7))
+        background = rounded(card, 10); setPadding(dp(5), dp(8), dp(5), dp(7))
         isClickable = true; isFocusable = true
         setOnClickListener {
             if (selectionMode) { toggleBookSelection(book); return@setOnClickListener }
@@ -378,7 +385,7 @@ class FavoritesActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(10), dp(20), dp(16))
             background = GradientDrawable().apply {
-                setColor(Color.WHITE)
+                setColor(card)
                 cornerRadii = floatArrayOf(
                     dp(20).toFloat(), dp(20).toFloat(),
                     dp(20).toFloat(), dp(20).toFloat(),
@@ -460,7 +467,7 @@ class FavoritesActivity : Activity() {
             textSize = 15f
             setTextColor(ink)
             gravity = Gravity.CENTER
-            background = rounded(Color.rgb(245, 247, 250), 10)
+            background = rounded(if (darkMode) Color.rgb(50, 55, 64) else Color.rgb(245, 247, 250), 10)
             isClickable = true
             isFocusable = true
             setOnClickListener { dialog.dismiss() }
