@@ -22,7 +22,7 @@
 - [x] Legado 替换规则本地目录、JSON 编解码、启用/范围筛选、字面量与受限正则替换。
 - [x] 有边界的 Rhino 替换规则执行器；仅支持受限上下文，不等同完整 Legado JS 环境。
 - [x] 开发阅读页的章节阅读、进度/书签基础能力与 CSS 自定义方案管理。
-- [x] 阅读记录页：首页最近阅读面板显示最多三条，点击记录继续阅读，全部入口打开完整记录页；记录页长按可仅删除历史记录（不删除书签/收藏）。
+- [x] 独立阅读历史页与历史记录持久化；历史记录页长按仅删除阅读历史（不删除书签/收藏）。首页不再显示未经用户要求添加的最近阅读面板。
 - [x] 阅读 CSS 多方案、子选择器命名/备注、启停、复制、排序、预览、冲突提示、导入导出和资源上限。
 - [x] CSS 选择器、净化器、规则顺序与输出大小的单元测试。
 - [x] 先前基线提交 `e226dd6b559c` 的 CI 曾全部通过：契约测试、受限 Rhino 宿主测试、Android Debug APK 组装和产物上传均成功。Actions：[run #43845483951](https://github.com/xkszds/badcat-legado-client/actions/runs/43845483951)。该产物不是当前分支构建。
@@ -32,7 +32,7 @@
 
 ### P0：必须完成才能称为目标客户端
 
-- [ ] **原版 UI 还原**：逐页重建搜索首页/结果、书籍详情、目录、书架/文件夹、阅读页和设置页；以原 APK 资源和参考截图逐屏比对。首页已从空白占位改为真实最近阅读面板，搜索栏位置设置位于「设置 → 布局」，但整页结构和截图仍未达到原版验收。
+- [ ] **原版 UI 还原**：逐页重建搜索首页/结果、书籍详情、目录、书架/文件夹、阅读页和设置页；以原 APK 资源和参考截图逐屏比对。首页搜索栏位置设置位于「设置 → 布局」，当前不显示最近阅读面板；整页结构和截图仍未达到原版验收。
 - [ ] **完整 Legado 规则运行时**：补齐上游模型和规则实体、AnalyzeRule/AnalyzeUrl、CSS/XPath/JSONPath 等解析、JS 绑定、请求头/Cookie/缓存/代理等宿主环境，以及初始化/持久化依赖。当前 CSS 解析器和 Rhino 都只是有界子集。
 - [ ] **端到端适配**：将完整引擎接入原版搜索、详情、目录、阅读和书架 UI，验证来源切换、错误呈现、章节导航和离线/缓存策略。
 - [ ] **原版净化功能迁移**：通过方法级证据确认 ADBlockUtils、AdBlockPresenter、AdMark 服务、PPRule 的真实数据结构、调用时机与行为；分别实现 WebView/页面广告过滤、AdMark、目录/分页/视频规则。现有 Legado 正文替换不能代替这些功能。
@@ -74,8 +74,13 @@
 
 ## 2026-11-17 current batch update
 
-- Search position settings are nested under Settings → Layout. The home search top spacing defaults to 46dp and offers 34/46/58dp presets; old unsupported values are migrated to 46dp. MainActivity refreshes its header when returning from layout settings.
-- The home search entry navigates to the dedicated book-search page and requests focus/keyboard display. The results page reuses one search bar and has no duplicate “搜索” title.
-- The formerly blank home content region now shows up to three real recent-reading records and links to the full history page; no removed leaderboard/lottery/cash/Cat Star shortcuts are restored.
-- Latest verified CI success: commit d67dc03779ad5c978a6f6bd87f931d6fe2f5f13d, run [#44061473137](https://github.com/xkszds/badcat-legado-client/actions/runs/44061473137). This run predates the home spacing and recent-reading changes; current HEAD must pass a fresh full run before its APK is offered.
-- Remaining work is unchanged at the major gates: original screenshot/device parity, full upstream AnalyzeRule/AnalyzeUrl and host APIs, long-press AdMark and DOM deletion, complete source corpus compatibility, real-device regression and release signing.
+- Working branch: `fix/favorites-search-ui`.
+- Home layout settings now use three positions (8/24/40dp); MainActivity re-reads the saved position on return and applies the margin to the live search-bar view. Device verification is still required.
+- The dedicated search page aligns the back control and search bar to the same 48dp row. Initial state shows search history only; source chips (without a separate “全部” chip) and pagination are hidden until an actual search is submitted.
+- The home screen no longer adds a recent-reading panel that the user did not request.
+- Bottom navigation uses a shared 24dp custom line-icon family and tap ripple/scale feedback. Personal-page feature icons use the same custom family; duplicate正文替换 entry, favorite count and avatar-top “我的” label are removed.
+- Favorites overflow is a larger horizontal three-dot action.
+- Legado runtime increment in progress: upstream `@@` forced-default CSS mode is now dispatched explicitly and covered by scalar and collection tests. This is not full AnalyzeRule compatibility.
+- Badcat purification increment in progress: AdMark matching now rejects non-HTTP(S) schemes while preserving the verified exact-host + integer-array URL regex behavior; regression tests cover scheme and host boundaries. Original `markRules` DOM deletion semantics remain unimplemented because their exact contract is not recovered.
+- The remaining parallel tracks are: complete more upstream AnalyzeRule/AnalyzeUrl semantics; recover and implement AdMark DOM deletion only from verified method-level evidence; continue PPRule/page-video runtime; and finish original UI/device parity, source corpus and release gates.
+- The latest fully verified UI-only build was commit `1cdf5604380038b275e49f8b85a6a35f6391a20e`, Actions run [#44076883907](https://github.com/xkszds/badcat-legado-client/actions/runs/44076883907). Later parallel commits are not yet covered by that run; wait for a fresh build of the current HEAD before distributing another APK.
