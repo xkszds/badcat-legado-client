@@ -185,4 +185,16 @@ class LegadoUrlResolverTest {
             assertEquals(EngineErrorCode.UNSUPPORTED_RULE, failure.code)
         }
     }
+    @Test
+    fun parsesUrlAndBodyJavaScriptOptionsForTheGatewayRuntime() {
+        val result = LegadoUrlResolver.resolve(
+            baseUrl = "https://example.test/",
+            ruleUrl = """/search,{"method":"POST","body":"q=cat","js":"return result + '/v2'","bodyJs":"return result.trim()"}""",
+        )
+        val resolved = assertIs<EngineResult.Success<LegadoResolvedUrl>>(result).value
+        assertEquals("POST", resolved.method)
+        assertEquals("return result + '/v2'", resolved.js)
+        assertEquals("return result.trim()", resolved.bodyJs)
+    }
+
 }

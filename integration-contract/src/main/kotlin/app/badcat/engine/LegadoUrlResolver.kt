@@ -88,10 +88,11 @@ object LegadoUrlResolver {
                 )
             }
             val webView = options?.get("webView")?.let(::booleanValue) ?: false
-
-            if (options?.has("js") == true || options?.has("bodyJs") == true || webView) {
+            val js = options?.string("js")
+            val bodyJs = options?.string("bodyJs")
+            if (options?.has("webJs") == true || webView) {
                 throw UnsupportedOperationException(
-                    "URL options js, bodyJs and webView require the Legado Rhino/WebView runtime",
+                    "URL options webJs and webView require the Legado WebView runtime",
                 )
             }
             if (charset != null) {
@@ -113,6 +114,8 @@ object LegadoUrlResolver {
                     followRedirects = redirects,
                     retryCount = retry,
                     charset = charset,
+                    js = js,
+                    bodyJs = bodyJs,
                 ),
             )
         }.getOrElse { error ->
@@ -224,4 +227,6 @@ data class LegadoResolvedUrl(
     val followRedirects: Boolean? = null,
     val retryCount: Int = 0,
     val charset: String? = null,
+    val js: String? = null,
+    val bodyJs: String? = null,
 )

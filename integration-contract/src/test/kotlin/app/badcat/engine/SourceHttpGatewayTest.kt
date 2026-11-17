@@ -183,4 +183,38 @@ class SourceHttpGatewayTest {
         assertEquals("https://reader.example/chapter/1/next", requireNotNull(client.captured).url)
     }
 
+    @Test
+    fun executesUrlOptionJsBeforeRequestAndBodyJsAfterResponse() = runBlocking {
+        val seen = mutableListOf<String>()
+        val client = SourceRequestClient { request ->
+            seen += request.url
+            EngineResult.Success(SourceHttpResponse(200, request.url, body = "  response  "))
+        }
+        val evaluator = object : LegadoEmbeddedScriptEvaluator {
+            override suspend fun evaluate(script: String, key: String, page: Int): EngineResult<Any?> =
+                EngineResult.Success(script)
+
+            override suspend fun evaluateWithResult(
+                script: String,
+                key: String,
+                page: Int,
+                result: String,
+            ): EngineResult<Any?> = EngineResult.Success(
+                when (script) {
+                    "url" -> "$result/v2"
+                    "body" -> result.trim()
+                    else -> result
+                }
+            )
+        }
+        val gateway = SourceHttpGateway(client, evaluator)
+        val result = gateway.execute(
+            source = source(),
+            ruleUrl = """/search,{"js":"url","bodyJs":"body"}""",
+        )
+        val response = assertIs<EngineResult.Success<SourceHttpResponse>>(result).value
+        assertEquals("https://example.test/search/v2", seen.single())
+        assertEquals("response", response.body)
+    }
+
 }
