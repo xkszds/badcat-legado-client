@@ -66,11 +66,16 @@ class SourceLoginUiV2Activity : Activity() {
 
     private fun loadSource() {
         scope.launch {
-            val found = withContext(Dispatchers.IO) {
-                when (val result = FileBookSourceCatalog(applicationContext).all()) {
-                    is EngineResult.Success -> result.value.firstOrNull { it.id == sourceId }
-                    is EngineResult.Failure -> throw IllegalStateException(result.message)
+            val found = try {
+                withContext(Dispatchers.IO) {
+                    when (val result = FileBookSourceCatalog(applicationContext).all()) {
+                        is EngineResult.Success -> result.value.firstOrNull { it.id == sourceId }
+                        is EngineResult.Failure -> throw IllegalStateException(result.message)
+                    }
                 }
+            } catch (error: Exception) {
+                message.text = "读取书源失败：" + (error.message ?: "未知错误")
+                return@launch
             }
             if (found == null) {
                 message.text = "找不到该书源，请返回书源管理刷新列表"
@@ -168,6 +173,7 @@ class SourceLoginUiV2Activity : Activity() {
     private fun dispatch(action: String) {
         scope.launch {
             val form = collectForm()
+            persistForm(form)
             message.text = "正在执行：$action"
             when (val result = withContext(Dispatchers.IO) {
                 service.dispatchAction(source, action, stateJson, form.toString())
@@ -219,6 +225,14 @@ class SourceLoginUiV2Activity : Activity() {
     private fun readFormValue(key: String, fallback: String?): String =
         preferences.getString(formKey(sourceId, key), null) ?: fallback.orEmpty()
 
+    private fun persistForm(form: JSONObject) {
+        val editor = preferences.edit()
+        form.keys().forEach { key ->
+            editor.putString(formKey(sourceId, key), form.optString(key))
+        }
+        editor.apply()
+    }
+
     private fun matchWidth() = LinearLayout.LayoutParams(
         ViewGroup.LayoutParams.MATCH_PARENT,
         ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -227,12 +241,7 @@ class SourceLoginUiV2Activity : Activity() {
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     override fun onPause() {
-        if (::source.isInitialized) {
-            val form = collectForm()
-            form.keys().forEach { key ->
-                preferences.edit().putString(formKey(sourceId, key), form.optString(key)).apply()
-            }
-        }
+        if (::source.isInitialized) persistForm(collectForm())
         super.onPause()
     }
 
