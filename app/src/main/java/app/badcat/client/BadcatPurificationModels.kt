@@ -26,7 +26,10 @@ data class BadcatAdMarkItem(
             markRules.all { it.isNotBlank() && it.length <= MAX_RULE_CHARS }
 
     fun appliesToHost(url: String): Boolean {
-        val requestHost = runCatching { URI(url).host }.getOrNull()?.lowercase() ?: return false
+        val uri = runCatching { URI(url) }.getOrNull() ?: return false
+        val scheme = uri.scheme?.lowercase()
+        if (scheme != "http" && scheme != "https") return false
+        val requestHost = uri.host?.lowercase() ?: return false
         return requestHost == host.lowercase()
     }
 
