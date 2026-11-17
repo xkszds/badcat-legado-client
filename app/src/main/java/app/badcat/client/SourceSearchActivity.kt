@@ -309,7 +309,11 @@ class SourceSearchActivity : Activity() {
                         status.text = ""
                         status.visibility = View.GONE
                         searchButton.isEnabled = true
-                        if (!restoredSearchState && keywordInput.text.toString().isNotBlank() && enabledSources.isNotEmpty()) {
+                        val availableOperations = SourceSearchPlanner.plan(
+                            allEnabledSources,
+                            includeExplore = contentType == "综合",
+                        )
+                        if (!restoredSearchState && keywordInput.text.toString().isNotBlank() && availableOperations.isNotEmpty()) {
                             search()
                         }
                     }
@@ -494,7 +498,11 @@ class SourceSearchActivity : Activity() {
             postToUi {
                 if (generation == searchGeneration) {
                     activeSearch = null
-                    searchButton.isEnabled = enabledSources.isNotEmpty()
+                    searchButton.isEnabled = if (contentType == "综合") {
+                        SourceSearchPlanner.plan(allEnabledSources, includeExplore = true).isNotEmpty()
+                    } else {
+                        enabledSources.isNotEmpty()
+                    }
                     previousPageButton.isEnabled = requestedPage > 1
                     nextPageButton.isEnabled = unique.isNotEmpty()
                     appendSearchSnapshot(requestedPage, unique, failureSnapshot, complete = true)
