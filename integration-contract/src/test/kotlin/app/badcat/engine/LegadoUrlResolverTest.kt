@@ -162,6 +162,16 @@ class LegadoUrlResolverTest {
     }
 
     @Test
+    fun doesNotTreatAnOrdinaryAtJsSubstringAsAnEmbeddedScriptMarker() {
+        val result = LegadoUrlResolver.resolve(
+            "https://example.com/",
+            "/catalog/@json-js-guide",
+        )
+        val resolved = assertIs<EngineResult.Success<LegadoResolvedUrl>>(result).value
+        assertEquals("https://example.com/catalog/@json-js-guide", resolved.url)
+    }
+
+    @Test
     fun rejectsAtJsSyntaxInsteadOfTreatingItAsAStaticUrl() {
         val result = LegadoUrlResolver.resolve(
             "https://example.com/",
