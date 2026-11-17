@@ -107,6 +107,37 @@ class LegadoEmbeddedUrlTemplateTest {
     }
 
     @Test
+    fun parsesPutJsonWhenStringValuesContainBraces() = kotlinx.coroutines.runBlocking {
+        val values = mutableMapOf<String, String>()
+        val evaluator = object : LegadoEmbeddedScriptEvaluator {
+            override suspend fun evaluate(script: String, key: String, page: Int): EngineResult<Any?> =
+                EngineResult.Success("expanded")
+
+            override suspend fun getString(key: String): EngineResult<String?> =
+                EngineResult.Success(values[key])
+
+            override suspend fun putString(key: String, value: String): EngineResult<Unit> {
+                values[key] = value
+                return EngineResult.Success(Unit)
+            }
+        }
+
+        val result = LegadoEmbeddedRuleTemplate.resolve(
+            template = """@put:{"token":"value } with { braces"}https://example.test/?token=@get:{token}""",
+            key = "",
+            page = 1,
+            result = "",
+            evaluator = evaluator,
+        )
+
+        assertEquals(
+            "https://example.test/?token=value } with { braces",
+            assertIs<EngineResult.Success<String>>(result).value,
+        )
+        assertEquals("value } with { braces", values["token"])
+    }
+
+    @Test
     fun expandsPersistentGetAndPutTokensInUrlRules() = kotlinx.coroutines.runBlocking {
         val values = mutableMapOf<String, String>()
         val evaluator = object : LegadoEmbeddedScriptEvaluator {
