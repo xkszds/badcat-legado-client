@@ -12,7 +12,7 @@ object WebUrlResolver {
         val optionsSeparator = Regex(",\\s*(?=\\{)").findAll(trimmedValue).lastOrNull()
         val referenceText = optionsSeparator?.let { trimmedValue.substring(0, it.range.first).trim() } ?: trimmedValue
         val optionsSuffix = optionsSeparator?.let { trimmedValue.substring(it.range.first) }.orEmpty()
-        val reference = URI(referenceText)
+        val reference = URI(encodeInvalidFragmentCharacters(referenceText))
         val resolved = resolveReference(base, reference).normalize()
         require(isWebUri(resolved) && resolved.userInfo == null) {
             "Resolved URL must be credential-free HTTP(S)"
@@ -50,6 +50,34 @@ object WebUrlResolver {
             return URI(prefix)
         }
         return base.resolve(reference)
+    }
+
+    /** Encode invalid characters inside fragments while preserving valid percent escapes. */
+    private fun encodeInvalidFragmentCharacters(value: String): String {
+        val marker = value.indexOf('#')
+        if (marker < 0) return value
+        val out = StringBuilder(value.substring(0, marker + 1))
+        val fragment = value.substring(marker + 1)
+        var index = 0
+        while (index < fragment.length) {
+            val ch = fragment[index]
+            if (ch == '%' && index + 2 < fragment.length &&
+                fragment[index + 1].digitToIntOrNull(16) != null &&
+                fragment[index + 2].digitToIntOrNull(16) != null
+            ) {
+                out.append(fragment, index, index + 3)
+                index += 3
+            } else if (ch == '#' || ch.isWhitespace() || ch.isISOControl()) {
+                ch.toString().toByteArray(Charsets.UTF_8).forEach { byte ->
+                    out.append("%%%02X".format(byte.toInt() and 0xff))
+                }
+                index++
+            } else {
+                out.append(ch)
+                index++
+            }
+        }
+        return out.toString()
     }
 
     private fun isWebUri(uri: URI): Boolean =
