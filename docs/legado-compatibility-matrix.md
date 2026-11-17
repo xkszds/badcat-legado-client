@@ -96,3 +96,11 @@ modes remain outside this increment.
 
 - Script detection now requires the explicit `@js:` marker. It no longer mistakes `@jsonpath:` / `@json:` rules for JavaScript merely because the marker shares the `@js` prefix.
 - The same guard is applied to search/explore, TOC, book-info and chapter-content parser paths.
+
+
+## Login status check action (2026-11-17)
+
+- The source catalog now exposes a dedicated **检查登录状态** action for every imported source that declares `loginCheckJs`, including sources that do not use Login UI v2.
+- The action executes the source's `loginCheckJs` through the bounded per-source Rhino runtime and reports the boolean result or a typed error.
+- Login UI v2 form/action handling remains a separate capability; this button does not claim to perform a login or infer authentication from arbitrary `loginUrl` content.
+- The source-level service tests already cover true/false boolean parsing and rejection of non-boolean return values. Device validation against authenticated real sources remains required.
