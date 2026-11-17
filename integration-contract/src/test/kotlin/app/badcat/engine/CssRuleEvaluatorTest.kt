@@ -274,10 +274,17 @@ class CssRuleEvaluatorTest {
         val explicitCssValues = (explicitCss as? EngineResult.Success)?.value.orEmpty()
         kotlin.test.assertFalse(explicitCssValues.any { it.contains("Alpha") })
 
-        // Scalar CSS evaluation is intentionally not given ElementsSingle suffix parsing.
+        // Default-mode scalar rules use ElementsSingle index suffixes.
         val scalar = CssRuleEvaluator.evaluate(document, "div.book.-1@text")
-        val scalarValues = (scalar as? EngineResult.Success)?.value.orEmpty()
-        kotlin.test.assertFalse(scalarValues.contains("Beta Novel"))
+        assertEquals(
+            listOf("Beta Novel"),
+            assertIs<EngineResult.Success<List<String>>>(scalar).value,
+        )
+
+        // Explicit @CSS: remains a direct CSS selector and bypasses legacy indexes.
+        val explicitCssScalar = CssRuleEvaluator.evaluate(document, "@CSS: div.book.-1@text")
+        val explicitCssScalarValues = (explicitCssScalar as? EngineResult.Success)?.value.orEmpty()
+        kotlin.test.assertFalse(explicitCssScalarValues.contains("Beta Novel"))
     }
 
 }
