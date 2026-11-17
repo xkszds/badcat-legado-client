@@ -28,6 +28,15 @@ class BadcatPurificationModelsTest {
     }
 
     @Test
+    fun adMarkCreatesOneItemJsonPayloadPerVerifiedWebViewDeleteRule() {
+        val grouped = mark.copy(markRules = listOf(".ad-card", "#sponsor"))
+        assertEquals(
+            listOf("""[".ad-card"]""", """["#sponsor"]"""),
+            grouped.webViewDeleteCallbackPayloads(),
+        )
+    }
+
+    @Test
     fun adMarkMatcherRejectsNonWebSchemesAndKeepsExactHostSemantics() {
         assertFalse(mark.appliesToHost("file:///reader.example/1/2/3"))
         assertFalse(mark.appliesToHost("content://reader.example/1/2/3"))
