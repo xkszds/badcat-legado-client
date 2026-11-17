@@ -67,6 +67,7 @@ class SourceSearchActivity : Activity() {
     private lateinit var sourceTabs: LinearLayout
     private lateinit var sourceStripView: View
     private lateinit var disclaimerView: View
+    private lateinit var paginationView: View
     private var currentPage = 1
     private var selectedSourcePosition = 0
     private var contentType = "小说"
@@ -115,7 +116,8 @@ class SourceSearchActivity : Activity() {
         rootView.addView(scroll, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
         ))
-        rootView.addView(buildPagination())
+        paginationView = buildPagination().apply { visibility = View.GONE }
+        rootView.addView(paginationView)
         setContentView(rootView)
         renderSearchHistory()
         BadcatTheme.applyTree(this, rootView)
@@ -326,6 +328,7 @@ class SourceSearchActivity : Activity() {
             historyPanel.visibility = View.GONE
             sourceStripView.visibility = View.GONE
             disclaimerView.visibility = View.GONE
+            paginationView.visibility = View.GONE
             status.visibility = View.VISIBLE
             results.removeAllViews()
             status.text = if (contentType == "漫画") {
@@ -349,6 +352,7 @@ class SourceSearchActivity : Activity() {
             historyPanel.visibility = View.VISIBLE
             sourceStripView.visibility = View.GONE
             disclaimerView.visibility = View.GONE
+            paginationView.visibility = View.GONE
             results.removeAllViews()
             renderSearchHistory()
             return
@@ -357,6 +361,7 @@ class SourceSearchActivity : Activity() {
         historyPanel.visibility = View.GONE
         sourceStripView.visibility = View.VISIBLE
         disclaimerView.visibility = View.VISIBLE
+        paginationView.visibility = View.VISIBLE
         status.visibility = View.VISIBLE
         searchButton.isEnabled = false
         status.text = "正在搜索（第 ${requestedPage} 页）…"
