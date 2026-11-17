@@ -23,6 +23,9 @@ import app.badcat.engine.ChapterCatalogQuery
 import app.badcat.engine.EngineResult
 import app.badcat.engine.ReadingEngine
 import java.util.concurrent.Executors
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -30,6 +33,7 @@ import kotlinx.coroutines.runBlocking
  */
 class SourceBookActivity : Activity() {
     private val worker = Executors.newSingleThreadExecutor()
+    private val coverWorker = Executors.newFixedThreadPool(2)
     private val mainHandler = Handler(Looper.getMainLooper())
     private lateinit var engine: ReadingEngine
     private lateinit var webViewPurificationAdapter: app.badcat.client.runtime.BadcatWebViewPurificationAdapter
@@ -48,6 +52,9 @@ class SourceBookActivity : Activity() {
     private var introExpanded = false
     private var currentCoverUrl: String? = null
     private var currentBookStatus: String? = null
+    private var candidateAuthor: String? = null
+    private var candidateLatestChapter: String? = null
+    private var candidateIntro: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,12 +63,15 @@ class SourceBookActivity : Activity() {
         bookName = intent.getStringExtra(EXTRA_BOOK_NAME).orEmpty()
         currentCoverUrl = intent.getStringExtra(EXTRA_BOOK_COVER_URL)
         currentBookStatus = intent.getStringExtra(EXTRA_BOOK_STATUS)
+        candidateAuthor = intent.getStringExtra(EXTRA_BOOK_AUTHOR)
+        candidateLatestChapter = intent.getStringExtra(EXTRA_BOOK_LATEST_CHAPTER)
+        candidateIntro = intent.getStringExtra(EXTRA_BOOK_INTRO)
         val engineFactory = BadcatReadingEngineFactory(applicationContext)
         engine = engineFactory.create()
         webViewPurificationAdapter = engineFactory.webViewPurificationAdapter()
 
         status = TextView(this).apply {
-            text = "正在加载书籍详情…"
+            text = candidateIntro?.takeIf { it.isNotBlank() } ?: "正在加载书籍详情…"
             textSize = 14f
             setTextColor(Color.rgb(90, 94, 102))
             setPadding(0, dpBook(12), 0, dpBook(12))
@@ -117,7 +127,11 @@ class SourceBookActivity : Activity() {
             setTypeface(typeface, android.graphics.Typeface.BOLD)
         }
         detailMetadata = TextView(this).apply {
-            text = "书源详情 · 目录加载中"
+            text = buildString {
+                append(candidateAuthor?.takeIf { it.isNotBlank() }?.let { "作者：$it" } ?: "作者：未知")
+                candidateLatestChapter?.takeIf { it.isNotBlank() }?.let { append("\n最新：").append(it) }
+                append("\n正在加载目录…")
+            }
             textSize = 13f
             setTextColor(Color.GRAY)
             setPadding(0, dpBook(8), 0, 0)
@@ -151,7 +165,14 @@ class SourceBookActivity : Activity() {
                             putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, saved)
                         })
                     } else {
-                        allChapters.firstOrNull()?.let { openChapter(it) }
+                        allChapters.firstOrNull()?.let { openChapter(it) } ?: run {
+                            status.text = "目录仍在加载，完成后即可开始阅读"
+                            android.widget.Toast.makeText(
+                                this@SourceBookActivity,
+                                "目录仍在加载，请稍后再试",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                 }
             }, LinearLayout.LayoutParams(0, dpBook(48), 1f).apply { leftMargin = dpBook(8) })
@@ -218,13 +239,24 @@ class SourceBookActivity : Activity() {
 
     private fun loadBook() {
         worker.execute {
-            val detail = runBlocking { safeEngineCall { engine.bookDetail(sourceId, bookUrl) } }
-            val toc = if (detail is EngineResult.Success) {
-                runBlocking { safeEngineCall { engine.chapters(sourceId, bookUrl) } }
-            } else null
+            val (detail, toc) = runBlocking {
+                coroutineScope {
+                    val detailTask = async(Dispatchers.IO) {
+                        safeEngineCall { engine.bookDetail(sourceId, bookUrl) }
+                    }
+                    val tocTask = async(Dispatchers.IO) {
+                        safeEngineCall { engine.chapters(sourceId, bookUrl) }
+                    }
+                    detailTask.await() to tocTask.await()
+                }
+            }
             mainHandler.post {
                 when (detail) {
-                    is EngineResult.Failure -> status.text = "详情加载失败（${detail.code}）：${detail.message}"
+                    is EngineResult.Failure -> {
+                        val fallbackIntro = candidateIntro?.takeIf { it.isNotBlank() }
+                        status.text = (fallbackIntro ?: "暂无简介") +
+                            "\n\n详情加载失败（${detail.code}）：${detail.message}"
+                    }
                     is EngineResult.Success -> {
                         val book = detail.value
                         book.status?.takeIf { it.isNotBlank() }?.let { sourceStatus ->
@@ -241,15 +273,20 @@ class SourceBookActivity : Activity() {
                             append(book.author?.takeIf { it.isNotBlank() }?.let { "作者：$it" } ?: "作者：未知")
                             book.latestChapter?.takeIf { it.isNotBlank() }?.let { append("\n最新：").append(it) }
                         }
-                        status.text = book.intro?.takeIf { it.isNotBlank() } ?: "暂无简介"
-                        status.contentDescription = if (book.intro.isNullOrBlank()) "暂无简介" else "点击展开或收起简介"
+                        status.text = book.intro?.takeIf { it.isNotBlank() }
+                            ?: candidateIntro?.takeIf { it.isNotBlank() }
+                            ?: "暂无简介"
+                        status.contentDescription = if (status.text == "暂无简介") "暂无简介" else "点击展开或收起简介"
                         status.maxLines = 4
                         introExpanded = false
-                        when (toc) {
-                            is EngineResult.Success -> showChapters(toc.value)
-                            is EngineResult.Failure -> status.append("\n\n目录加载失败（${toc.code}）：${toc.message}")
-                            null -> Unit
-                        }
+                    }
+                }
+                when (toc) {
+                    is EngineResult.Success -> showChapters(toc.value)
+                    is EngineResult.Failure -> {
+                        if (status.text.isNotBlank()) status.append("\n\n")
+                        status.append("目录加载失败（${toc.code}）：${toc.message}")
+                        detailMetadata.append("\n目录加载失败")
                     }
                 }
                 BadcatTheme.applyTree(this@SourceBookActivity, window.decorView)
@@ -258,7 +295,7 @@ class SourceBookActivity : Activity() {
     }
 
     private fun loadCover(rawUrl: String) {
-        worker.execute {
+        coverWorker.execute {
             var currentUrl = runCatching { java.net.URL(rawUrl) }.getOrNull() ?: return@execute
             if (!CoverUrlPolicy.isSafe(currentUrl)) return@execute
             var redirects = 0
@@ -434,6 +471,7 @@ class SourceBookActivity : Activity() {
 
     override fun onDestroy() {
         worker.shutdownNow()
+        coverWorker.shutdownNow()
         super.onDestroy()
     }
 
@@ -453,6 +491,9 @@ class SourceBookActivity : Activity() {
         const val EXTRA_BOOK_NAME = "book_name"
         const val EXTRA_BOOK_COVER_URL = "book_cover_url"
         const val EXTRA_BOOK_STATUS = "book_status"
+        const val EXTRA_BOOK_AUTHOR = "book_author"
+        const val EXTRA_BOOK_LATEST_CHAPTER = "book_latest_chapter"
+        const val EXTRA_BOOK_INTRO = "book_intro"
     }
 }
 
