@@ -108,7 +108,7 @@ class BadcatPpRuleEvaluatorTest {
         )
         assertEquals(
             listOf(
-                BadcatVideoLink("Episode 1", "HTTPS://video.example/play/1"),
+                BadcatVideoLink("Episode 1", "https://video.example/play/1"),
                 BadcatVideoLink("Episode 2", "https://cdn.example/play/2"),
             ),
             assertIs<EngineResult.Success<List<BadcatVideoLink>>>(xpath).value,
