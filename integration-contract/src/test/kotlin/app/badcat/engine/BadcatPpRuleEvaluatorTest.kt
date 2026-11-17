@@ -128,6 +128,18 @@ class BadcatPpRuleEvaluatorTest {
     }
 
     @Test
+    fun videoLinkExtractionAcceptsUppercaseHttpSchemeInBaseUrl() {
+        val result = BadcatPpRuleEvaluator.extractVideoLinks(
+            SourceDocument("HTTPS://video.example/list", """<a href="../play/1">Episode 1</a>"""),
+            BadcatPpRule(ruleTypeValue = 1, pageRule = "//a"),
+        )
+        assertEquals(
+            listOf(BadcatVideoLink("Episode 1", "https://video.example/play/1")),
+            assertIs<EngineResult.Success<List<BadcatVideoLink>>>(result).value,
+        )
+    }
+
+    @Test
     fun videoLinkExtractionRejectsNonHttpTargetsAndMissingLabels() {
         val document = SourceDocument(
             url = "https://video.example/",
@@ -377,6 +389,18 @@ class BadcatPpRuleEvaluatorTest {
                 "https://comic.example/reader/img/one.jpg",
                 "https://cdn.example/two.webp",
             ),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
+    @Test
+    fun comicScriptResultAcceptsUppercaseHttpsBaseScheme() {
+        val result = BadcatPpRuleEvaluator.extractComicImageUrlsFromScriptResult(
+            """["../img/page.jpg"]""",
+            "HTTPS://comic.example/reader/page/1",
+        )
+        assertEquals(
+            listOf("https://comic.example/reader/img/page.jpg"),
             assertIs<EngineResult.Success<List<String>>>(result).value,
         )
     }

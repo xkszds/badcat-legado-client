@@ -149,7 +149,7 @@ object BadcatPpRuleEvaluator {
         selected: List<String>,
     ): EngineResult<List<BadcatVideoLink>> = try {
         val base = java.net.URI(baseUrl)
-        if ((base.scheme != "http" && base.scheme != "https") ||
+        if ((!base.scheme.equals("http", ignoreCase = true) && !base.scheme.equals("https", ignoreCase = true)) ||
             base.host.isNullOrBlank() || base.userInfo != null
         ) {
             return EngineResult.Failure(
@@ -260,7 +260,7 @@ object BadcatPpRuleEvaluator {
                 )
             }
             val base = java.net.URI(pageUrl)
-            if ((base.scheme != "http" && base.scheme != "https") ||
+            if ((!base.scheme.equals("http", ignoreCase = true) && !base.scheme.equals("https", ignoreCase = true)) ||
                 base.host.isNullOrBlank() || base.userInfo != null
             ) {
                 return EngineResult.Failure(
