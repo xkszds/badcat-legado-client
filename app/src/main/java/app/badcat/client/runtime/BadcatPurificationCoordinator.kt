@@ -54,7 +54,8 @@ class BadcatWebViewPurificationAdapter(
     fun onPageFinished(webView: WebView, pageUrl: String) {
         val snapshot = coordinator.snapshot()
         if (pageUrl.isBlank()) return
-        val script = BadcatPurificationUrlPolicy.injectionForPage(snapshot) ?: return
-        webView.evaluateJavascript(script, null)
+        val script = BadcatPurificationUrlPolicy.injectionForPage(snapshot)
+        webView.settings.javaScriptEnabled = script != null
+        if (script != null) webView.evaluateJavascript(script, null)
     }
 }
