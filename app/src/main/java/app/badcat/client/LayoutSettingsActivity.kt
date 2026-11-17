@@ -132,7 +132,7 @@ class LayoutSettingsActivity : Activity() {
     private fun refreshSummaries() {
         val prefs = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
         styleSummary.text = if (prefs.getString("home_layout_mode", "integrated") == "small") "紧凑型" else "整合型"
-        positionSummary.text = when (prefs.getInt("home_search_top_spacing_dp", 24)) {
+        positionSummary.text = when (prefs.getInt("home_search_top_spacing_dp", 12)) {
             8 -> "靠上（8dp）"
             40 -> "靠下（40dp）"
             else -> "居中（12dp）"
