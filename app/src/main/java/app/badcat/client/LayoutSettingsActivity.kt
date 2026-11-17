@@ -91,7 +91,7 @@ class LayoutSettingsActivity : Activity() {
         val prefs = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
         val current = prefs.getString("home_layout_mode", "integrated") ?: "integrated"
         val labels = arrayOf("紧凑型（更矮）", "整合型")
-        AlertDialog.Builder(this).setTitle("首页搜索栏样式")
+        BadcatTheme.alertBuilder(this).setTitle("首页搜索栏样式")
             .setSingleChoiceItems(labels, if (current == "small") 0 else 1) { dialog, which ->
                 prefs.edit().putString("home_layout_mode", if (which == 0) "small" else "integrated").apply()
                 dialog.dismiss()
@@ -104,7 +104,7 @@ class LayoutSettingsActivity : Activity() {
         val current = prefs.getInt("home_search_top_spacing_dp", 46)
         val labels = arrayOf("标准下移（34dp）", "进一步下移（46dp）", "明显下移（58dp）")
         val values = intArrayOf(34, 46, 58)
-        AlertDialog.Builder(this).setTitle("首页搜索栏位置")
+        BadcatTheme.alertBuilder(this).setTitle("首页搜索栏位置")
             .setSingleChoiceItems(labels, values.indexOf(current).takeIf { it >= 0 } ?: 1) { dialog, which ->
                 prefs.edit().putInt("home_search_top_spacing_dp", values[which]).apply()
                 dialog.dismiss()
