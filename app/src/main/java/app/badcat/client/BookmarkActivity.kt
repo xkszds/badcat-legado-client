@@ -106,7 +106,7 @@ class BookmarkActivity : Activity() {
                         })
                     })
                     addView(action("删除") {
-                        AlertDialog.Builder(this@BookmarkActivity).setMessage("删除这条书签？")
+                        BadcatTheme.alertBuilder(this@BookmarkActivity).setMessage("删除这条书签？")
                             .setNegativeButton("取消", null)
                             .setPositiveButton("删除") { _, _ ->
                                 val raw = item.key.removePrefix("chapter_bookmark_")
