@@ -55,6 +55,8 @@ object RuleExpressionTokenizer {
                 (allowLeadingColonRegex && trimmed.startsWith(":"))
         }
         var regexBranch = isRegexBranch(expression)
+        var regexParentheses = 0
+        var regexBrackets = 0
 
         while (index < expression.length) {
             val char = expression[index]
@@ -63,36 +65,26 @@ object RuleExpressionTokenizer {
             // character classes such as [^"]. Track quotes only to protect
             // separators, while still tracking regex groups inside attributes.
             if (regexBranch) {
+                // Regex syntax is not CSS/XPath syntax. Keep separator detection
+                // bounded without rejecting escaped quotes in regex character classes.
                 when {
                     char == '\\' -> index = (index + 2).coerceAtMost(expression.length)
                     char == '"' || char == '\'' -> {
-                        if (stack.lastOrNull() == '[') {
-                            index++
-                        } else if (quote == null) {
-                            quote = char
-                            index++
-                        } else if (char == quote) {
-                            quote = null
-                            index++
-                        } else {
-                            index++
-                        }
-                    }
-                    char == '(' || char == '[' -> {
-                        stack.addLast(char)
+                        if (quote == null) quote = char
+                        else if (quote == char) quote = null
                         index++
                     }
-                    char == ')' || char == ']' -> {
-                        val expected = if (char == ')') '(' else '['
-                        require(stack.isNotEmpty() && stack.removeLast() == expected) {
-                            "Unbalanced rule expression near index $index"
-                        }
-                        index++
-                    }
-                    quote == null && stack.isEmpty() && expression.startsWith(delimiter, index) -> {
+                    quote == null && char == '(' -> { regexParentheses++; index++ }
+                    quote == null && char == ')' -> { regexParentheses = (regexParentheses - 1).coerceAtLeast(0); index++ }
+                    quote == null && char == '[' -> { regexBrackets++; index++ }
+                    quote == null && char == ']' -> { regexBrackets = (regexBrackets - 1).coerceAtLeast(0); index++ }
+                    quote == null && regexParentheses == 0 && regexBrackets == 0 &&
+                        expression.startsWith(delimiter, index) -> {
                         parts += expression.substring(start, index).trim()
                         index += delimiter.length
                         start = index
+                        regexParentheses = 0
+                        regexBrackets = 0
                         regexBranch = isRegexBranch(expression.substring(start))
                     }
                     else -> index++
