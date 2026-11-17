@@ -28,6 +28,49 @@ class BadcatPurificationModelsTest {
     }
 
     @Test
+    fun adMarkCodecImportsOriginalNestedIssuedResponseAndExportsRoundTrip() {
+        val original = """{
+            "version": 7,
+            "markItems": [
+                {
+                    "host": "https://reader.example/book/1",
+                    "ruleItems": [
+                        {"urlPattern": [1, 2, 3], "markRules": [".ad-card", "#sponsor"]},
+                        {"urlPattern": [4, 5], "markRules": ["[data-ad-slot]"]}
+                    ]
+                }
+            ],
+            "adBlockJsInject": "window.untrustedServerScript = true;"
+        }""".trimIndent()
+
+        val imported = BadcatAdMarkJsonCodec.decode(original)
+        assertEquals(
+            listOf(
+                BadcatAdMarkItem("reader.example", "[1,2,3]", listOf(".ad-card", "#sponsor")),
+                BadcatAdMarkItem("reader.example", "[4,5]", listOf("[data-ad-slot]")),
+            ),
+            imported,
+        )
+
+        val exported = BadcatAdMarkJsonCodec.encode(imported)
+        assertEquals(imported, BadcatAdMarkJsonCodec.decode(exported))
+        val root = com.google.gson.JsonParser.parseString(exported).asJsonObject
+        assertTrue(root.has("markItems"))
+        assertFalse(root.has("adBlockJsInject"))
+    }
+
+    @Test
+    fun adMarkCodecKeepsCompatibilityWithEarlierFlatExports() {
+        val legacy = """[
+            {"host":"reader.example","urlPattern":"[1,2,3]","markRules":[".ad-card"]}
+        ]""".trimIndent()
+        assertEquals(
+            listOf(BadcatAdMarkItem("reader.example", "[1,2,3]", listOf(".ad-card"))),
+            BadcatAdMarkJsonCodec.decode(legacy),
+        )
+    }
+
+    @Test
     fun adMarkCreatesOneItemJsonPayloadPerVerifiedWebViewDeleteRule() {
         val grouped = mark.copy(markRules = listOf(".ad-card", "#sponsor"))
         assertEquals(
