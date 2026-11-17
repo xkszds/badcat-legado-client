@@ -34,4 +34,10 @@ class CatSpaceActivity : Activity() {
             })
         })
     }
+
+    override fun onResume() {
+        super.onResume()
+        BadcatTheme.applyTree(this, window.decorView)
+    }
+
 }
