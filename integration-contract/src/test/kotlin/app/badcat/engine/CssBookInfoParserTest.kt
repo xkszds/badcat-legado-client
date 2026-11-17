@@ -8,6 +8,29 @@ import kotlinx.coroutines.runBlocking
 class CssBookInfoParserTest {
 
     @Test
+    fun parsesDetailNameUsingLegacyAtRootIndexedTextNodesRule() {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleBookInfoJson = """{"name":"@.w_txt li.4@textNodes"}""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/book/7",
+            body = """
+                <ul class="w_txt">
+                  <li>zero</li><li>one</li><li>two</li><li>three</li><li>Novel title</li>
+                </ul>
+            """.trimIndent(),
+        )
+        val detail = assertIs<EngineResult.Success<BookDetail>>(
+            CssBookInfoParser().parse(source, response, response.finalUrl),
+        ).value
+        assertEquals("Novel title", detail.name)
+    }
+
+    @Test
     fun parsesBookInfoFieldsAndResolvesCoverAndTocUrls() {
         val source = BookSource(
             id = "fixture",
