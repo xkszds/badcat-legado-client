@@ -27,6 +27,7 @@ class BadcatSearchBarView(
     private val onTypeChanged: (String) -> Unit = { },
     private val searchPageStyle: Boolean = false,
     private val homePageStyle: Boolean = false,
+    private val showHomeTypeSelector: Boolean = false,
 ) : LinearLayout(context) {
     val input = EditText(context)
     val searchAction = TextView(context)
@@ -49,17 +50,18 @@ class BadcatSearchBarView(
 
         typeLabel.apply {
             text = "$contentType ▾"
-            textSize = if (compact) 13f else 14f
+            textSize = if (searchPageStyle) 12f else if (compact) 13f else 14f
             gravity = Gravity.CENTER
             setTextColor(if (searchPageStyle) INK else BLUE)
             typeface = Typeface.DEFAULT_BOLD
-            setPadding(dp(if (compact) 9 else 12), 0, dp(if (compact) 9 else 12), 0)
+            val typePadding = if (searchPageStyle) 6 else if (compact) 9 else 12
+            setPadding(dp(typePadding), 0, dp(typePadding), 0)
             isClickable = true
             isFocusable = true
             contentDescription = "选择搜索类型，当前$contentType"
             setOnClickListener { chooseContentType() }
         }
-        if (!homePageStyle) {
+        if (!homePageStyle || showHomeTypeSelector) {
             addView(typeLabel, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT))
             addView(TextView(context).apply {
                 setBackgroundColor(if (dark) Color.rgb(76, 82, 92) else Color.rgb(230, 234, 239))

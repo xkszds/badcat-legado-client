@@ -93,11 +93,31 @@ class LayoutSettingsActivity : Activity() {
 
     private fun chooseCategories() {
         val prefs = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
+        val modes = arrayOf(
+            "收缩在搜索栏内（小说 ▾）",
+            "显示在搜索栏上方（小说 / 漫画 / 综合）",
+        )
+        val currentMode = prefs.getString("home_category_display_mode", "top")
+        val selected = if (currentMode == "selector") 0 else 1
+        BadcatTheme.alertBuilder(this).setTitle("首页入口分类")
+            .setSingleChoiceItems(modes, selected) { dialog, which ->
+                val mode = if (which == 0) "selector" else "top"
+                prefs.edit().putString("home_category_display_mode", mode).apply()
+                dialog.dismiss()
+                if (mode == "top") chooseVisibleCategories()
+                refreshSummaries()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun chooseVisibleCategories() {
+        val prefs = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
         val current = prefs.getStringSet("home_visible_categories", setOf("小说", "漫画", "综合"))
             ?.toSet() ?: setOf("小说", "漫画", "综合")
         val labels = arrayOf("小说", "漫画", "综合")
         val checked = BooleanArray(labels.size) { labels[it] in current }
-        BadcatTheme.alertBuilder(this).setTitle("首页分类入口")
+        BadcatTheme.alertBuilder(this).setTitle("上方显示哪些分类")
             .setMultiChoiceItems(labels, checked) { _, which, isChecked -> checked[which] = isChecked }
             .setNegativeButton("取消", null)
             .setPositiveButton("保存") { _, _ ->
@@ -137,8 +157,13 @@ class LayoutSettingsActivity : Activity() {
         val prefs = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
         val categories = prefs.getStringSet("home_visible_categories", setOf("小说", "漫画", "综合"))
             ?.toSet() ?: setOf("小说", "漫画", "综合")
-        categorySummary.text = listOf("小说", "漫画", "综合").filter { it in categories }
-            .ifEmpty { listOf("未选择分类") }.joinToString(" · ") + "（显示在首页顶部）"
+        val mode = prefs.getString("home_category_display_mode", "top")
+        categorySummary.text = if (mode == "selector") {
+            "收缩在搜索栏内：小说 ▾（点击可切换小说 / 漫画 / 综合）"
+        } else {
+            "显示在搜索栏上方：" + listOf("小说", "漫画", "综合").filter { it in categories }
+                .ifEmpty { listOf("至少默认显示小说") }.joinToString(" · ")
+        }
         positionSummary.text = when (prefs.getInt("home_search_top_spacing_dp", 12)) {
             4 -> "靠上（4dp）"
             24 -> "靠下（24dp）"

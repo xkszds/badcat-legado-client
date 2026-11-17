@@ -177,14 +177,14 @@ class SourceSearchActivity : Activity() {
                 setPadding(dp(14), dp(6), dp(14), dp(6))
                 addView(TextView(this@SourceSearchActivity).apply {
                     text = "<"
-                    textSize = 23f
+                    textSize = 26f
                     gravity = Gravity.CENTER
                     setTextColor(ink)
                     isClickable = true
                     isFocusable = true
                     contentDescription = "返回"
                     setOnClickListener { finish() }
-                }, LinearLayout.LayoutParams(dp(32), dp(configuredBarHeight)))
+                }, LinearLayout.LayoutParams(dp(40), dp(configuredBarHeight)).apply { marginEnd = dp(5) })
                 addView(sharedBar, LinearLayout.LayoutParams(0, dp(configuredBarHeight), 1f))
             }
             val topRow = FrameLayout.LayoutParams(

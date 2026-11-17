@@ -15,6 +15,7 @@ import android.widget.TextView
 class MainActivity : Activity() {
     private var contentType = "小说"
     private var appliedSearchBarMode = "integrated"
+    private var appliedCategoryMode = "top"
     private var appliedSearchBarTopSpacing = 24
     private var darkMode = false
     private lateinit var homeSearchBar: BadcatSearchBarView
@@ -28,6 +29,7 @@ class MainActivity : Activity() {
         darkMode = getSharedPreferences("badcat_appearance", MODE_PRIVATE)
             .getString("appearance_mode", "light") == "dark"
         appliedSearchBarMode = searchBarMode()
+        appliedCategoryMode = categoryDisplayMode()
         appliedSearchBarTopSpacing = searchBarTopSpacing()
         window.statusBarColor = blue
         window.navigationBarColor = if (darkMode) Color.rgb(25, 28, 33) else Color.WHITE
@@ -58,10 +60,11 @@ class MainActivity : Activity() {
         ).apply { gravity = Gravity.CENTER_HORIZONTAL })
 
         // Original home hierarchy: 小说 / 漫画 / 综合 directly under the Badcat wordmark.
+        val categoryMode = categoryDisplayMode()
         val typeChoices = LinearLayout(this@MainActivity).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
-            setPadding(0, dp(9), 0, dp(9))
+            setPadding(0, dp(7), 0, dp(7))
         }
         val typeLabels = mutableListOf<TextView>()
         var syncSearchType: ((String) -> Unit)? = null
@@ -84,9 +87,9 @@ class MainActivity : Activity() {
             val label = TextView(this@MainActivity).apply {
                 tag = type
                 text = type
-                textSize = 11f
+                textSize = 15f
                 gravity = Gravity.CENTER
-                setPadding(dp(28), dp(5), dp(28), dp(5))
+                setPadding(dp(20), dp(6), dp(20), dp(6))
                 isClickable = true
                 isFocusable = true
                 setOnClickListener {
@@ -96,10 +99,12 @@ class MainActivity : Activity() {
                 }
             }
             typeLabels += label
-            typeChoices.addView(label, LinearLayout.LayoutParams(-2, dp(32)).apply { marginStart = dp(8); marginEnd = dp(8) })
+            typeChoices.addView(label, LinearLayout.LayoutParams(-2, dp(38)).apply { marginStart = dp(7); marginEnd = dp(7) })
         }
-        addView(typeChoices, LinearLayout.LayoutParams(-1, dp(42)))
-        renderTypeChoices()
+        if (categoryMode == "top") {
+            addView(typeChoices, LinearLayout.LayoutParams(-1, dp(48)))
+            renderTypeChoices()
+        }
 
         val bar = BadcatSearchBarView(
             context = this@MainActivity,
@@ -111,6 +116,7 @@ class MainActivity : Activity() {
             },
             onTypeChanged = { contentType = it },
             homePageStyle = true,
+            showHomeTypeSelector = categoryMode == "selector",
         )
         bar.setHomeTapToNavigate {
             startActivity(Intent(this@MainActivity, SourceSearchActivity::class.java).apply {
@@ -160,10 +166,21 @@ class MainActivity : Activity() {
 
     private fun searchBarMode(): String = "integrated"
 
+    private fun categoryDisplayMode(): String =
+        getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
+            .getString("home_category_display_mode", "top")
+            ?.takeIf { it == "selector" || it == "top" } ?: "top"
+
     override fun onResume() {
         super.onResume()
         val selected = searchBarMode()
         val selectedSpacing = searchBarTopSpacing()
+        val selectedCategoryMode = categoryDisplayMode()
+        if (selectedCategoryMode != appliedCategoryMode) {
+            appliedCategoryMode = selectedCategoryMode
+            recreate()
+            return
+        }
         if (selected != appliedSearchBarMode) {
             appliedSearchBarMode = selected
             appliedSearchBarTopSpacing = selectedSpacing
@@ -192,6 +209,12 @@ class MainActivity : Activity() {
         setIntent(intent)
         val mode = searchBarMode()
         val spacing = searchBarTopSpacing()
+        val categoryMode = categoryDisplayMode()
+        if (categoryMode != appliedCategoryMode) {
+            appliedCategoryMode = categoryMode
+            recreate()
+            return
+        }
         if (mode != appliedSearchBarMode) {
             appliedSearchBarMode = mode
             appliedSearchBarTopSpacing = spacing
