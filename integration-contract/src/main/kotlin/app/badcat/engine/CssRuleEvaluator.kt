@@ -126,7 +126,11 @@ object CssRuleEvaluator {
 
         return runCatching {
             val doc = Jsoup.parse(document.body, document.url)
-            val elements = doc.select(parsed.selector)
+            val elements = if (allowChainedSelectors) {
+                selectLegadoStep(doc, parsed.selector)
+            } else {
+                doc.select(parsed.selector).toList()
+            }
             val values = when (parsed.valueMode) {
                 ValueMode.ALL -> listOf(elements.outerHtml()).filter(String::isNotEmpty)
                 ValueMode.HTML -> {
