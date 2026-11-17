@@ -109,4 +109,22 @@ class LegadoRuleExpressionDispatcherTest {
         assertEquals(listOf("Book: Alpha", "Alpha"), values)
         assertEquals("Alpha", LegadoRuleExpressionDispatcher.firstScalarValue(":Book: (\\w+)", values))
     }
+
+    @Test
+    fun keepsQuotedAndNestedOperatorsInsideCombinedSelectorExpressions() {
+        val document = SourceDocument(
+            url = "https://reader.example/",
+            body = """<div data-label="left&&right"><a href="/a||b">A</a></div>
+                <div data-label="other"><a href="/c">C</a></div>""",
+        )
+        val result = LegadoRuleExpressionDispatcher.evaluateElements(
+            document,
+            """div[data-label="left&&right"] a[href="/a||b"]""",
+        )
+        assertEquals(
+            listOf("""<a href="/a||b">A</a>"""),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
 }
