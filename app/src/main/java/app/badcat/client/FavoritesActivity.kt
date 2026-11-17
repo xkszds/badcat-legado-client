@@ -99,7 +99,18 @@ object FavoriteBooks {
     }
 
     fun remove(context: Context, sourceId: String, bookUrl: String) {
-        save(context, all(context).filterNot { it.sourceId == sourceId && it.bookUrl == bookUrl })
+        removeBooks(context, listOf(sourceId to bookUrl))
+    }
+
+    /** Removes a selection with a single read/filter/write cycle. */
+    fun removeBooks(context: Context, keys: Collection<Pair<String, String>>): Int {
+        if (keys.isEmpty()) return 0
+        val selected = keys.toSet()
+        val current = all(context)
+        val remaining = current.filterNot { (it.sourceId to it.bookUrl) in selected }
+        val removed = current.size - remaining.size
+        if (removed > 0) save(context, remaining)
+        return removed
     }
 
     fun createFolder(context: Context, name: String): Boolean {
@@ -565,7 +576,7 @@ class FavoritesActivity : Activity() {
         if (books.isEmpty()) return
         BadcatTheme.alertBuilder(this).setTitle("删除收藏").setMessage("确定删除选中的 " + books.size + " 本小说吗？")
             .setNegativeButton("取消", null).setPositiveButton("删除") { _, _ ->
-                books.forEach { FavoriteBooks.remove(this, it.sourceId, it.bookUrl) }
+                FavoriteBooks.removeBooks(this, books.map { it.sourceId to it.bookUrl })
                 selectedBooks.clear(); selectionMode = false; refresh()
             }.show()
     }
