@@ -77,7 +77,7 @@ class SourceChapterContentService(
                     "Chapter content pagination contains a redirect URL cycle for source '${source.id}'",
                 )
             }
-            val parsed = when (val result = scriptRuntime?.let { parser.parseWithScripts(source, response, chapter, it) }
+            val parsed = when (val result = scriptRuntime?.let { parser.parseWithScripts(source, response, chapter, it, page = pageCount + 1) }
                 ?: parser.parse(source, response, chapter)) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value

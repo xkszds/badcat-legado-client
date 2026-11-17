@@ -19,6 +19,7 @@ class CssTocParser {
         response: SourceHttpResponse,
         bookUrl: String,
         scriptRuntime: SourceScriptRuntime,
+        page: Int = 1,
     ): EngineResult<ParsedTocPage> {
         val rules = when (val result = SourceRuleResolver.resolveObject(source, SourceRuleStage.TOC)) {
             is EngineResult.Failure -> return result
@@ -27,24 +28,23 @@ class CssTocParser {
         val listRule = rules["chapterList"]?.takeIf(String::isNotBlank)
             ?: return unsupported(source, "missing chapterList rule")
         var resolvedListRule = listRule.trim()
-        if (resolvedListRule.contains("{{")) {
-            resolvedListRule = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
+        resolvedListRule = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
                 source = source,
                 template = resolvedListRule,
                 result = response.body,
                 baseUrl = response.finalUrl,
                 ruleName = "chapterList",
                 scriptRuntime = scriptRuntime,
+                page = page,
             )) {
                 is EngineResult.Failure -> return expanded
                 is EngineResult.Success -> expanded.value
             }
-        }
         if (resolvedListRule.contains("@js:", true) || resolvedListRule.contains("{{")) {
             return unsupported(source, "JavaScript collection-root rules")
         }
         val legacyRegexMode = resolvedListRule.startsWith(":")
-        val root = SourceDocument(response.finalUrl, response.body, response.contentType)
+        val root = SourceDocument(response.finalUrl, response.body, response.contentType, page = page)
         val items = when (val result = LegadoRuleExpressionDispatcher.evaluateElements(root, resolvedListRule)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
@@ -54,19 +54,18 @@ class CssTocParser {
             val expression = rules[key]?.takeIf(String::isNotBlank)
                 ?: return EngineResult.Success(null)
             var trimmed = expression.trim()
-            if (trimmed.contains("{{")) {
-                trimmed = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
+            trimmed = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
                     source = source,
                     template = trimmed,
                     result = itemHtml,
                     baseUrl = response.finalUrl,
                     ruleName = key,
                     scriptRuntime = scriptRuntime,
+                    page = page,
                 )) {
                     is EngineResult.Failure -> return expanded
                     is EngineResult.Success -> expanded.value
                 }
-            }
             if (trimmed.startsWith("@js:", true) || trimmed.startsWith("javascript:", true)) {
                 val script = trimmed.substringAfter(':').trim()
                 if (script.isBlank()) return unsupported(source, "empty JavaScript rule for '$key'")
@@ -80,6 +79,7 @@ class CssTocParser {
                         "sourceId" to source.id,
                         "sourceName" to source.name,
                         "ruleName" to key,
+                        "page" to page.toString(),
                     ),
                 )) {
                     is EngineResult.Failure -> result
@@ -105,7 +105,7 @@ class CssTocParser {
                 }
             }
             return when (val result = LegadoRuleExpressionDispatcher.evaluate(
-                SourceDocument(response.finalUrl, itemHtml, response.contentType),
+                SourceDocument(response.finalUrl, itemHtml, response.contentType, page = page),
                 normalized,
             )) {
                 is EngineResult.Failure -> result

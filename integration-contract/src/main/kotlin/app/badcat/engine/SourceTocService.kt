@@ -45,7 +45,7 @@ class SourceTocService(
                     "TOC pagination contains a redirect URL cycle",
                 )
             }
-            val page = when (val result = scriptRuntime?.let { parser.parseWithScripts(source, response, bookUrl, it) }
+            val page = when (val result = scriptRuntime?.let { parser.parseWithScripts(source, response, bookUrl, it, page = pageCount + 1) }
                 ?: parser.parse(source, response, bookUrl)) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value

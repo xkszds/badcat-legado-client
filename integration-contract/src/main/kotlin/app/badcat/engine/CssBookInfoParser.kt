@@ -33,8 +33,7 @@ class CssBookInfoParser {
         suspend fun field(name: String): EngineResult<String?> {
             val expression = rules[name]?.takeIf(String::isNotBlank) ?: return EngineResult.Success(null)
             var trimmed = expression.trim()
-            if (trimmed.contains("{{")) {
-                trimmed = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
+            trimmed = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
                     source = source,
                     template = trimmed,
                     result = response.body,
@@ -45,7 +44,6 @@ class CssBookInfoParser {
                     is EngineResult.Failure -> return expanded
                     is EngineResult.Success -> expanded.value
                 }
-            }
             if (trimmed.startsWith("@js:", true) || trimmed.startsWith("javascript:", true)) {
                 val script = trimmed.substringAfter(':').trim()
                 if (script.isBlank()) return EngineResult.Failure(

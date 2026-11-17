@@ -15,6 +15,7 @@ class CssChapterContentParser {
         response: SourceHttpResponse,
         chapter: BookChapter,
         scriptRuntime: SourceScriptRuntime,
+        page: Int = 1,
     ): EngineResult<ChapterContent> {
         val rules = when (val result = SourceRuleResolver.resolveObject(source, SourceRuleStage.CONTENT)) {
             is EngineResult.Failure -> return result
@@ -22,23 +23,22 @@ class CssChapterContentParser {
         }
         val contentRule = rules["content"]?.takeIf(String::isNotBlank)
             ?: return unsupported(source, "missing content rule")
-        val document = SourceDocument(response.finalUrl, response.body, response.contentType)
+        val document = SourceDocument(response.finalUrl, response.body, response.contentType, page = page)
 
         suspend fun evaluateField(key: String, expression: String): EngineResult<String?> {
             var trimmed = expression.trim()
-            if (trimmed.contains("{{")) {
-                trimmed = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
+            trimmed = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
                     source = source,
                     template = trimmed,
                     result = response.body,
                     baseUrl = response.finalUrl,
                     ruleName = key,
                     scriptRuntime = scriptRuntime,
+                    page = page,
                 )) {
                     is EngineResult.Failure -> return expanded
                     is EngineResult.Success -> expanded.value
                 }
-            }
             if (trimmed.startsWith("@js:", true) || trimmed.startsWith("javascript:", true)) {
                 val script = trimmed.substringAfter(':').trim()
                 if (script.isBlank()) return unsupported(source, "empty JavaScript rule for '$key'")
@@ -52,6 +52,7 @@ class CssChapterContentParser {
                         "sourceId" to source.id,
                         "sourceName" to source.name,
                         "ruleName" to key,
+                        "page" to page.toString(),
                     ),
                 )) {
                     is EngineResult.Failure -> result
@@ -72,19 +73,18 @@ class CssChapterContentParser {
         }
 
         var resolvedContentRule = contentRule.trim()
-        if (resolvedContentRule.contains("{{")) {
-            resolvedContentRule = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
+        resolvedContentRule = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
                 source = source,
                 template = resolvedContentRule,
                 result = response.body,
                 baseUrl = response.finalUrl,
                 ruleName = "content",
                 scriptRuntime = scriptRuntime,
+                page = page,
             )) {
                 is EngineResult.Failure -> return expanded
                 is EngineResult.Success -> expanded.value
             }
-        }
         val contentValue = when {
             resolvedContentRule.startsWith("@js:", true) ||
                 resolvedContentRule.startsWith("javascript:", true) -> when (val result = evaluateField("content", resolvedContentRule)) {

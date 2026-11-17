@@ -104,8 +104,7 @@ class CssSearchResultsParser {
         val listRule = rules["bookList"]?.takeIf(String::isNotBlank)
             ?: return unsupported(source, "missing bookList rule")
         var rootExpression = listRule.trim()
-        if (rootExpression.contains("{{")) {
-            rootExpression = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
+        rootExpression = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
                 source = source,
                 template = rootExpression,
                 result = response.body,
@@ -118,7 +117,6 @@ class CssSearchResultsParser {
                 is EngineResult.Failure -> return expanded
                 is EngineResult.Success -> expanded.value
             }
-        }
         val legacyRegexMode = rootExpression.startsWith(":")
         val items = if (rootExpression.startsWith("@js:", true) ||
             rootExpression.startsWith("javascript:", true)
@@ -167,7 +165,7 @@ class CssSearchResultsParser {
                 return unsupported(source, "bookList must return element HTML")
             }
             when (val result = LegadoRuleExpressionDispatcher.evaluateElements(
-                SourceDocument(response.finalUrl, response.body, response.contentType),
+                SourceDocument(response.finalUrl, response.body, response.contentType, key, page),
                 rootExpression,
             )) {
                 is EngineResult.Failure -> return result
@@ -175,27 +173,24 @@ class CssSearchResultsParser {
             }
         }
 
-        suspend fun fieldValue(key: String, itemHtml: String): EngineResult<String?> {
-            val expression = rules[key]?.takeIf(String::isNotBlank) ?: return EngineResult.Success(null)
-            var trimmed = expression.trim()
-            if (trimmed.contains("{{")) {
-                trimmed = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
-                    source = source,
-                    template = trimmed,
-                    result = itemHtml,
-                    baseUrl = response.finalUrl,
-                    ruleName = key,
-                    scriptRuntime = scriptRuntime,
-                    key = key,
-                    page = page,
-                )) {
-                    is EngineResult.Failure -> return expanded
-                    is EngineResult.Success -> expanded.value
-                }
+        suspend fun fieldValue(fieldName: String, itemHtml: String): EngineResult<String?> {
+            val expression = rules[fieldName]?.takeIf(String::isNotBlank) ?: return EngineResult.Success(null)
+            val trimmed = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
+                source = source,
+                template = expression,
+                result = itemHtml,
+                baseUrl = response.finalUrl,
+                ruleName = fieldName,
+                scriptRuntime = scriptRuntime,
+                key = key,
+                page = page,
+            )) {
+                is EngineResult.Failure -> return expanded
+                is EngineResult.Success -> expanded.value
             }
             if (trimmed.startsWith("@js:", true) || trimmed.startsWith("javascript:", true)) {
                 val script = trimmed.substringAfter(':').trim()
-                if (script.isBlank()) return unsupported(source, "empty JavaScript rule for '$key'")
+                if (script.isBlank()) return unsupported(source, "empty JavaScript rule for '$fieldName'")
                 val evaluated = when (val result = scriptRuntime.evaluate(
                     source = source,
                     script = script,
@@ -205,7 +200,7 @@ class CssSearchResultsParser {
                         "sourceUrl" to source.id,
                         "sourceId" to source.id,
                         "sourceName" to source.name,
-                        "ruleName" to key,
+                        "ruleName" to fieldName,
                         "key" to key,
                         "page" to page.toString(),
                     ),
@@ -214,10 +209,10 @@ class CssSearchResultsParser {
                     is EngineResult.Success -> result.value.trim().takeIf(String::isNotEmpty)
                 }
                 if (evaluated == null) return EngineResult.Success(null)
-                if (key == "bookUrl" || key == "coverUrl") {
+                if (fieldName == "bookUrl" || fieldName == "coverUrl") {
                     return runCatching { WebUrlResolver.resolve(response.finalUrl, evaluated) }.fold(
                         onSuccess = { EngineResult.Success(it) },
-                        onFailure = { unsupported(source, "$key script result must be a credential-free HTTP(S) URL") },
+                        onFailure = { unsupported(source, "$fieldName script result must be a credential-free HTTP(S) URL") },
                     )
                 }
                 return EngineResult.Success(evaluated)
@@ -226,8 +221,8 @@ class CssSearchResultsParser {
                 EngineResult.Success(field(
                     source,
                     rules,
-                    key,
-                    SourceDocument(response.finalUrl, itemHtml, response.contentType),
+                    fieldName,
+                    SourceDocument(response.finalUrl, itemHtml, response.contentType, key, page),
                     expressionOverride = trimmed,
                     legacyRegexMode = legacyRegexMode,
                 ))
