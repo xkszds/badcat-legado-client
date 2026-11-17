@@ -141,4 +141,16 @@ class BadcatPurificationModelsTest {
             ).isEmpty(),
         )
     }
+
+    @Test
+    fun injectionRejectsOversizedScriptsAndMalformedPageUrls() {
+        val enabled = BadcatPurificationSnapshot(
+            webViewAdFilterEnabled = true,
+            webViewInjectionScript = "x".repeat(BadcatPurificationUrlPolicy.MAX_SCRIPT_CHARS + 1),
+            adMarks = emptyList(),
+        )
+        assertNull(BadcatPurificationUrlPolicy.injectionForPage(enabled))
+        assertNull(BadcatPurificationUrlPolicy.injectionForPage(enabled, "not a url"))
+        assertNull(BadcatPurificationUrlPolicy.injectionForPage(enabled, "file:///tmp/page.html"))
+    }
 }
