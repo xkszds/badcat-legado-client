@@ -86,6 +86,39 @@ class CssRuleEvaluatorTest {
     }
 
     @Test
+    fun evaluatesUpstreamDefaultModeChainedSelectorsAndIndexes() {
+        val chainedText = CssRuleEvaluator.evaluate(
+            document,
+            "div.book@a.title@text",
+        )
+        assertEquals(
+            listOf("Alpha Novel", "Beta Novel"),
+            assertIs<EngineResult.Success<List<String>>>(chainedText).value,
+        )
+
+        val chainedIndexedHref = CssRuleEvaluator.evaluate(
+            document,
+            "div.book@a.title.0@href",
+        )
+        assertEquals(
+            listOf("https://reader.example/book/1", "https://reader.example/book/2"),
+            assertIs<EngineResult.Success<List<String>>>(chainedIndexedHref).value,
+        )
+    }
+
+    @Test
+    fun chainedSelectorTokenizerDoesNotSplitAtSignsInsideCssAttributes() {
+        val result = CssRuleEvaluator.evaluate(
+            document,
+            """div.book@img[data-label="@cover"]@data-id""",
+        )
+        assertEquals(
+            listOf("one"),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
+    @Test
     fun ignoresAtSignsInsideQuotedCssAttributeValues() {
         val result = CssRuleEvaluator.evaluate(
             document,
