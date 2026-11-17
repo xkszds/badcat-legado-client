@@ -271,8 +271,9 @@ class SourceSearchActivity : Activity() {
                         status.text = if (enabledSources.isEmpty()) {
                             "暂无可搜索书源，请先到「我的 - 书源管理」导入 Legado 书源"
                         } else {
-                            "已载入 ${enabledSources.size} 个可搜索书源"
+                            ""
                         }
+                        status.visibility = if (enabledSources.isEmpty()) View.VISIBLE else View.GONE
                         searchButton.isEnabled = enabledSources.isNotEmpty()
                         if (keywordInput.text.toString().isNotBlank() && enabledSources.isNotEmpty()) {
                             search()
