@@ -208,7 +208,7 @@ class LegadoRegexElementEvaluatorTest {
     @Test
     fun regexReplaceFirstPreservesPrefixAndSuffixAndNoMatchReturnsOriginal() {
         assertEquals(
-            "before X after Y",
+            "before X after two",
             assertIs<EngineResult.Success<String>>(
                 LegadoRegexElementEvaluator.replace(
                     "before one after two",
