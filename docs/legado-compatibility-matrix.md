@@ -104,3 +104,11 @@ modes remain outside this increment.
 - The action executes the source's `loginCheckJs` through the bounded per-source Rhino runtime and reports the boolean result or a typed error.
 - Login UI v2 form/action handling remains a separate capability; this button does not claim to perform a login or infer authentication from arbitrary `loginUrl` content.
 - The source-level service tests already cover true/false boolean parsing and rejection of non-boolean return values. Device validation against authenticated real sources remains required.
+
+
+## Source authentication reset (2026-11-17)
+
+- Source management provides an explicit confirmation action to clear one source's persisted login header, login info, and HTTP cookies.
+- Cookie deletion is keyed to the source identity and synchronized with other cookie-jar instances, so subsequent requests reload the empty store rather than resurrecting an older in-memory snapshot.
+- Script key/value storage and the source definition are intentionally retained; clearing authentication does not remove a source or unrelated source data.
+- Unit coverage verifies that clearing one source's login header and login info leaves another source's authentication state untouched.
