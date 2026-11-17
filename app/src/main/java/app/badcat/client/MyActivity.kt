@@ -174,7 +174,7 @@ class MyActivity : Activity() {
             setSingleLine(true)
             setSelection(text.length)
         }
-        android.app.AlertDialog.Builder(this)
+        BadcatTheme.alertBuilder(this)
             .setTitle("修改昵称")
             .setView(input)
             .setNegativeButton("取消", null)
