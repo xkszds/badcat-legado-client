@@ -84,3 +84,12 @@
 - Badcat purification increment in progress: AdMark matching now rejects non-HTTP(S) schemes while preserving the verified exact-host + integer-array URL regex behavior; regression tests cover scheme and host boundaries. Original `markRules` DOM deletion semantics remain unimplemented because their exact contract is not recovered.
 - The remaining parallel tracks are: complete more upstream AnalyzeRule/AnalyzeUrl semantics; recover and implement AdMark DOM deletion only from verified method-level evidence; continue PPRule/page-video runtime; and finish original UI/device parity, source corpus and release gates.
 - The latest fully verified UI-only build was commit `1cdf5604380038b275e49f8b85a6a35f6391a20e`, Actions run [#44076883907](https://github.com/xkszds/badcat-legado-client/actions/runs/44076883907). Later parallel commits are not yet covered by that run; wait for a fresh build of the current HEAD before distributing another APK.
+
+
+## 2026-11-17 parallel category work
+
+- Legado: `@@` forced-default JSoup mode is dispatched; default-mode `@` chained selector stages, legacy `children/class/tag/id/text` heads and bounded numeric index suffixes are supported by the selector adapter. Contract tests cover chained and scalar forms. Remaining upstream AnalyzeRule gaps remain substantial.
+- Badcat AdMark: the original APK/DEX ZIP were re-materialized read-only and their hashes verified. DEX method inspection confirms the `adMark` bridge handler, the confirmation flow, the one-item JSON payload sent to `onDeleteAd`, and the `getInfoFromJS` callback used to obtain the page URL-pattern list. The client now models the verified one-item deletion-callback payload and tests it, but does not yet call the page callback or remove DOM nodes.
+- AdMark URL matching is restricted to HTTP(S), with exact host matching and the confirmed integer-array-to-regex `find()` semantics. `markRules` remains opaque until the page-side deletion contract is recovered.
+- PPRule remains a separate pending track: schema field names/types are confirmed, but runtime semantics for page rules, pagination, chapter reversal and video rules are not yet verified or implemented.
+- These parallel changes are committed on `fix/favorites-search-ui`; they still require a fresh CI run against the current branch HEAD and, later, device-level validation.
