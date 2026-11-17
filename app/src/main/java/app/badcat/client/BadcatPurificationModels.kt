@@ -1,5 +1,7 @@
 package app.badcat.client
 
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import java.net.URI
 import java.util.regex.Pattern
@@ -75,6 +77,145 @@ data class BadcatAdMarkItem(
         const val MAX_RULE_CHARS = 2_048
         const val MAX_URL_SEGMENTS = 32
     }
+}
+
+/**
+ * Codec for both the app's former flat AdMark JSON export and the original
+ * Badcat issued-response shape: { markItems: [{ host, ruleItems: [...] }] }.
+ *
+ * Only the verified AdMark host/urlPattern/markRules subset is imported.
+ * Server-provided adBlockJsInject is deliberately not auto-installed.
+ */
+object BadcatAdMarkJsonCodec {
+    const val MAX_ITEMS = 5_000
+    const val MAX_JSON_BYTES = 2 * 1024 * 1024
+
+    fun decode(json: String): List<BadcatAdMarkItem> {
+        require(json.toByteArray(Charsets.UTF_8).size <= MAX_JSON_BYTES) {
+            "Badcat AdMark import exceeds the size limit"
+        }
+        val root = JsonParser.parseString(json)
+        val decoded = when {
+            root.isJsonArray -> decodeFlat(root.asJsonArray)
+            root.isJsonObject -> {
+                val obj = root.asJsonObject
+                val groups = obj.getAsJsonArray("markItems")
+                    ?: if (obj.has("host")) JsonArray().apply { add(obj) }
+                    else error("Badcat AdMark JSON has no markItems array")
+                decodeGroups(groups)
+            }
+            else -> error("Badcat AdMark JSON must be an array or object")
+        }
+        require(decoded.size <= MAX_ITEMS) { "Badcat AdMark catalog exceeds the item limit" }
+        require(decoded.all(BadcatAdMarkItem::isValid)) { "Badcat AdMark JSON contains invalid records" }
+        require(decoded.distinctBy(::key).size == decoded.size) {
+            "Badcat AdMark JSON contains duplicate records"
+        }
+        return decoded
+    }
+
+    /** Export the original nested markItems/ruleItems structure. */
+    fun encode(items: List<BadcatAdMarkItem>): String {
+        require(items.size <= MAX_ITEMS) { "Badcat AdMark catalog exceeds the item limit" }
+        require(items.all(BadcatAdMarkItem::isValid)) { "Badcat AdMark catalog contains invalid records" }
+        require(items.distinctBy(::key).size == items.size) {
+            "Badcat AdMark catalog contains duplicate records"
+        }
+        val root = JsonObject()
+        val groups = JsonArray()
+        items.groupBy { it.host.lowercase() }.values.forEach { hostItems ->
+            val group = JsonObject().apply { addProperty("host", hostItems.first().host) }
+            val ruleItems = JsonArray()
+            hostItems.forEach { item ->
+                val rule = JsonObject().apply {
+                    add("urlPattern", JsonParser.parseString(item.urlPattern))
+                    add("markRules", JsonArray().apply { item.markRules.forEach(::add) })
+                }
+                ruleItems.add(rule)
+            }
+            group.add("ruleItems", ruleItems)
+            groups.add(group)
+        }
+        root.add("markItems", groups)
+        return root.toString()
+    }
+
+    private fun decodeFlat(array: JsonArray): List<BadcatAdMarkItem> = buildList {
+        require(array.size() <= MAX_ITEMS) { "Badcat AdMark catalog exceeds the item limit" }
+        array.forEachIndexed { index, value ->
+            val item = value.takeIf { it.isJsonObject }?.asJsonObject
+                ?: error("Badcat AdMark item $index is not an object")
+            add(
+                BadcatAdMarkItem(
+                    host = normalizeHost(item.string("host")),
+                    urlPattern = item.pattern("urlPattern"),
+                    markRules = item.stringArray("markRules"),
+                ),
+            )
+        }
+    }
+
+    private fun decodeGroups(groups: JsonArray): List<BadcatAdMarkItem> = buildList {
+        require(groups.size() <= MAX_ITEMS) { "Badcat AdMark catalog exceeds the item limit" }
+        groups.forEachIndexed { groupIndex, value ->
+            val group = value.takeIf { it.isJsonObject }?.asJsonObject
+                ?: error("Badcat AdMark group $groupIndex is not an object")
+            val host = normalizeHost(group.string("host"))
+            val ruleItems = group.getAsJsonArray("ruleItems")
+                ?: error("Badcat AdMark group $groupIndex has no ruleItems")
+            ruleItems.forEachIndexed { ruleIndex, ruleValue ->
+                val rule = ruleValue.takeIf { it.isJsonObject }?.asJsonObject
+                    ?: error("Badcat AdMark rule $groupIndex/$ruleIndex is not an object")
+                add(
+                    BadcatAdMarkItem(
+                        host = host,
+                        urlPattern = rule.pattern("urlPattern"),
+                        markRules = rule.stringArray("markRules"),
+                    ),
+                )
+            }
+        }
+    }
+
+    private fun JsonObject.string(name: String): String {
+        val value = get(name) ?: error("Badcat AdMark item has no $name")
+        require(value.isJsonPrimitive && value.asJsonPrimitive.isString) {
+            "Badcat AdMark $name must be a string"
+        }
+        return value.asString
+    }
+
+    private fun JsonObject.stringArray(name: String): List<String> {
+        val array = getAsJsonArray(name) ?: error("Badcat AdMark item has no $name array")
+        return array.mapIndexed { index, value ->
+            require(value.isJsonPrimitive && value.asJsonPrimitive.isString) {
+                "Badcat AdMark $name[$index] must be a string"
+            }
+            value.asString
+        }
+    }
+
+    private fun JsonObject.pattern(name: String): String {
+        val value = get(name) ?: error("Badcat AdMark item has no $name")
+        return when {
+            value.isJsonArray -> value.asJsonArray.toString()
+            value.isJsonPrimitive && value.asJsonPrimitive.isString -> value.asString
+            else -> error("Badcat AdMark $name must be an integer array or JSON-array string")
+        }
+    }
+
+    private fun normalizeHost(value: String): String {
+        val trimmed = value.trim()
+        if (trimmed.startsWith("http://", ignoreCase = true) ||
+            trimmed.startsWith("https://", ignoreCase = true)
+        ) {
+            return runCatching { URI(trimmed).host }.getOrNull()?.takeIf(String::isNotBlank) ?: trimmed
+        }
+        return trimmed
+    }
+
+    private fun key(item: BadcatAdMarkItem): String =
+        item.host.lowercase() + "|" + item.urlPattern
 }
 
 /**
