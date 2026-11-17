@@ -275,4 +275,10 @@ class SourceLoginUiV2Activity : Activity() {
         const val EXTRA_SOURCE_ID = "source_login_source_id"
         private const val PREFS = "badcat_legado_login_ui_v2"
     }
+
+    override fun onResume() {
+        super.onResume()
+        BadcatTheme.applyTree(this, window.decorView)
+    }
+
 }
