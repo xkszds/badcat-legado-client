@@ -44,18 +44,22 @@ class BadcatPurificationCoordinator(
 /**
  * WebView adapter for the verified Badcat injection preference path.
  *
- * It executes only the locally persisted injection script while the original
- * ad-filter toggle is enabled. AdMark payload interpretation is intentionally
- * not guessed; callers can inspect the raw records through the coordinator.
+ * A missing/disabled script leaves the page's existing JavaScript setting
+ * untouched. If injection requires JavaScript, its previous setting is
+ * restored after evaluateJavascript completes.
  */
 class BadcatWebViewPurificationAdapter(
     private val coordinator: BadcatPurificationCoordinator,
 ) {
     fun onPageFinished(webView: WebView, pageUrl: String) {
-        val snapshot = coordinator.snapshot()
-        if (pageUrl.isBlank()) return
-        val script = BadcatPurificationUrlPolicy.injectionForPage(snapshot)
-        webView.settings.javaScriptEnabled = script != null
-        if (script != null) webView.evaluateJavascript(script, null)
+        val script = BadcatPurificationUrlPolicy.injectionForPage(coordinator.snapshot(), pageUrl)
+            ?: return
+        val wasJavaScriptEnabled = webView.settings.javaScriptEnabled
+        if (!wasJavaScriptEnabled) webView.settings.javaScriptEnabled = true
+        webView.evaluateJavascript(script) {
+            if (!wasJavaScriptEnabled && !webView.isDestroyed) {
+                webView.settings.javaScriptEnabled = false
+            }
+        }
     }
 }
