@@ -56,10 +56,6 @@ class SettingsActivity : Activity() {
             showSearchBarOptions()
         }
         addDivider(group)
-        addSetting(group, "白天 / 黑夜模式", if (dark) "当前：黑夜模式" else "当前：白天模式") {
-            showAppearanceOptions()
-        }
-        addDivider(group)
         addSetting(group, "阅读设置", "音量键翻页、锁屏时间、进度、时间、电量和状态栏") {
             startActivity(Intent(this, ReaderSettingsActivity::class.java))
         }
@@ -87,18 +83,6 @@ class SettingsActivity : Activity() {
         AlertDialog.Builder(this).setTitle("搜索栏类型")
             .setSingleChoiceItems(options, if (current == "small") 0 else 1) { dialog, which ->
                 prefs.edit().putString("home_layout_mode", if (which == 0) "small" else "integrated").apply()
-                dialog.dismiss()
-                recreate()
-            }.setNegativeButton("取消", null).show()
-    }
-
-    private fun showAppearanceOptions() {
-        val prefs = getSharedPreferences("badcat_appearance", MODE_PRIVATE)
-        val options = arrayOf("白天模式", "黑夜模式")
-        val current = if (prefs.getString("appearance_mode", "light") == "dark") 1 else 0
-        AlertDialog.Builder(this).setTitle("外观模式")
-            .setSingleChoiceItems(options, current) { dialog, which ->
-                prefs.edit().putString("appearance_mode", if (which == 1) "dark" else "light").apply()
                 dialog.dismiss()
                 recreate()
             }.setNegativeButton("取消", null).show()
