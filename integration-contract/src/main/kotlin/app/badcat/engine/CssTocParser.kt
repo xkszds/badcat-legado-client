@@ -167,15 +167,6 @@ class CssTocParser {
             )
         }
 
-        if (items.isEmpty()) {
-            return unsupported(
-                source,
-                "chapterList matched zero records; rule='${normalizedListRule}'; " +
-                    "response=${response.statusCode} ${response.finalUrl}; " +
-                    "contentType=${response.contentType}; body=${response.body.take(240)}",
-            )
-        }
-
         val chapters = ArrayList<BookChapter>()
         for (item in items) {
             val title = when (val result = extract(item, "chapterName")) {
@@ -291,6 +282,14 @@ class CssTocParser {
         val items = when (val result = evaluateCollectionRule(root, normalizedListRule)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
+        }
+        if (items.isEmpty()) {
+            return unsupported(
+                source,
+                "chapterList matched zero records; rule='${normalizedListRule}'; " +
+                    "response=${response.statusCode} ${response.finalUrl}; " +
+                    "contentType=${response.contentType}; body=${response.body.take(240)}",
+            )
         }
 
         fun extract(itemHtml: String, expression: String?): EngineResult<String?> {
