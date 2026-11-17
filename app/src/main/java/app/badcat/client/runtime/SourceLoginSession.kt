@@ -108,7 +108,7 @@ class RhinoSourceLoginExtensions(
     private fun validHeader(name: String, value: String): Boolean =
         name.isNotBlank() && name.length <= 256 &&
             name.all { it.isLetterOrDigit() || it in "!#$%&'*+-.^_`|~" } &&
-            value.none { it == '\\r' || it == '\\n' || it.code < 0x20 && it != '\\t' || it.code == 0x7f }
+            value.none { it == '\r' || it == '\n' || it.code < 0x20 && it != '\t' || it.code == 0x7f }
 
     private companion object {
         const val MAX_ENTRIES = 100
