@@ -31,34 +31,38 @@ import app.badcat.engine.SourceScriptRuntime
 class BadcatReadingEngineFactory(
     private val context: Context,
     private val requestClient: SourceRequestClient? = null,
-    private val scriptRuntime: SourceScriptRuntime = RhinoSourceScriptRuntime(
-        sourceKeyValueStore = SharedPreferencesSourceScriptKeyValueStore(context.applicationContext),
-    ),
+    private val scriptRuntime: SourceScriptRuntime? = null,
     private val bookTextReplacement: BookTextReplacement = BookTextReplacement { text -> text },
+    private val loginSessionStore: SourceLoginSessionStore = SharedPreferencesSourceLoginSessionStore(context.applicationContext),
 ) {
+    private val activeScriptRuntime: SourceScriptRuntime = scriptRuntime ?: RhinoSourceScriptRuntime(
+        sourceKeyValueStore = SharedPreferencesSourceScriptKeyValueStore(context.applicationContext),
+        sourceLoginSessionStore = loginSessionStore,
+    )
     private val catalog = FileBookSourceCatalog(context.applicationContext)
     private val replaceRuleCatalog = FileReplaceRuleCatalog(context.applicationContext)
     private val badcatPurificationSettings = BadcatPurificationSettingsStore(context.applicationContext)
     private val badcatAdMarkCatalog = BadcatAdMarkCatalog(context.applicationContext)
 
     fun create(): ReadingEngine {
-        val durableRequestClient = requestClient ?: OkHttpSourceRequestClient(
+        val transport = requestClient ?: OkHttpSourceRequestClient(
             cookieJarProvider = { sourceId ->
                 SharedPreferencesSourceCookieJar(context.applicationContext, sourceId)
             },
         )
+        val durableRequestClient = SourceLoginSessionRequestClient(transport, loginSessionStore)
         val gateway = BadcatSourceHttpGatewayFactory(
             client = durableRequestClient,
-            scriptRuntime = scriptRuntime,
+            scriptRuntime = activeScriptRuntime,
         ).create()
 
         return SourceReadingEngine(
             catalog = catalog,
             searchUrlResolver = BookSourceSearchUrlResolver(),
-            searchService = SourceSearchService(gateway, scriptRuntime = scriptRuntime),
-            exploreService = SourceExploreService(gateway, scriptRuntime = scriptRuntime),
-            detailService = SourceBookDetailService(gateway, scriptRuntime = scriptRuntime),
-            tocService = SourceTocService(gateway, scriptRuntime = scriptRuntime),
+            searchService = SourceSearchService(gateway, scriptRuntime = activeScriptRuntime),
+            exploreService = SourceExploreService(gateway, scriptRuntime = activeScriptRuntime),
+            detailService = SourceBookDetailService(gateway, scriptRuntime = activeScriptRuntime),
+            tocService = SourceTocService(gateway, scriptRuntime = activeScriptRuntime),
             contentService = SourceChapterContentService(
                 http = gateway,
                 textReplacement = bookTextReplacement,
@@ -68,7 +72,7 @@ class BadcatReadingEngineFactory(
                     jsEvaluator = RhinoLegadoJsReplacementEvaluator(),
                 ),
                 cache = FileChapterContentCache(context.applicationContext),
-                scriptRuntime = scriptRuntime,
+                scriptRuntime = activeScriptRuntime,
             ),
         )
     }
