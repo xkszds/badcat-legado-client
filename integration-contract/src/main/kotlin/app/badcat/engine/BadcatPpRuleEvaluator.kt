@@ -108,8 +108,9 @@ object BadcatPpRuleEvaluator {
         return try {
             val links = selected.mapNotNull { fragment ->
                 val root = Jsoup.parseBodyFragment(fragment, document.url).body()
-                val element = root.selectFirst("a[href]") ?: root.children().firstOrNull()
-                val href = element?.takeIf { it.hasAttr("href") }?.attr("href")
+                val element: org.jsoup.nodes.Element? =
+                    root.selectFirst("a[href]") ?: root.children().firstOrNull()
+                val href: String = element?.takeIf { it.hasAttr("href") }?.attr("href")
                     ?: root.selectFirst("[href]")?.attr("href")
                     ?: return@mapNotNull null
                 val resolved = runCatching {
