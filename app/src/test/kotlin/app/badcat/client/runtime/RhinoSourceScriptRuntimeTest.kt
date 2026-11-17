@@ -154,8 +154,7 @@ class RhinoSourceScriptRuntimeTest {
 
         val write = loginRuntime.evaluate(
             source,
-            "source.putLoginInfo('{" + "\\"username\\":\\"reader\\"}'" + "); " +
-                "source.putLoginHeader('{" + "\\"Authorization\\":\\"Bearer token\\"}'" + ")",
+            """source.putLoginInfo('{"username":"reader"}'); source.putLoginHeader('{"Authorization":"Bearer token"}')""",
         )
         val read = requestRuntime.evaluate(
             source,
