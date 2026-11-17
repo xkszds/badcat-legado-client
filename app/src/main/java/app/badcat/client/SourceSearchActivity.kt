@@ -90,18 +90,20 @@ class SourceSearchActivity : Activity() {
             setBackgroundColor(page)
         }
         rootView.addView(buildSearchControls())
-        rootView.addView(buildSourceStrip())
-        rootView.addView(buildDisclaimer())
 
         val scroll = ScrollView(this).apply {
             isFillViewport = true
             addView(LinearLayout(this@SourceSearchActivity).apply {
                 orientation = LinearLayout.VERTICAL
-                setPadding(dp(14), dp(14), dp(14), dp(24))
+                setPadding(dp(14), dp(12), dp(14), dp(24))
                 historyPanel = LinearLayout(this@SourceSearchActivity).apply {
                     orientation = LinearLayout.VERTICAL
                 }
+                // History is the first content below the search field. Source
+                // filters and notices stay available, but never push history down.
                 addView(historyPanel)
+                addView(buildSourceStrip())
+                addView(buildDisclaimer())
                 addView(status)
                 addView(results)
             })
