@@ -346,4 +346,10 @@ class SourceCatalogActivity : Activity() {
         private const val REQUEST_IMPORT = 4101
         private const val REQUEST_EXPORT = 4102
     }
+
+    override fun onResume() {
+        super.onResume()
+        BadcatTheme.applyTree(this, window.decorView)
+    }
+
 }
