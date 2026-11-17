@@ -127,4 +127,31 @@ class LegadoRuleExpressionDispatcherTest {
         )
     }
 
+
+    @Test
+    fun usesFirstNonEmptyFallbackBranchAndInterleavesParallelCollections() {
+        val document = SourceDocument(
+            url = "https://reader.example/",
+            body = """<ul><li>A1</li><li>A2</li></ul>
+                <ol><li>B1</li><li>B2</li><li>B3</li></ol>""",
+        )
+        val fallback = LegadoRuleExpressionDispatcher.evaluateElements(
+            document,
+            """@CSS: .missing || @CSS: ul > li""",
+        )
+        assertEquals(
+            listOf("<li>A1</li>", "<li>A2</li>"),
+            assertIs<EngineResult.Success<List<String>>>(fallback).value,
+        )
+
+        val interleaved = LegadoRuleExpressionDispatcher.evaluateElements(
+            document,
+            """@CSS: ul > li %% @CSS: ol > li""",
+        )
+        assertEquals(
+            listOf("<li>A1</li>", "<li>B1</li>", "<li>A2</li>", "<li>B2</li>", "<li>B3</li>"),
+            assertIs<EngineResult.Success<List<String>>>(interleaved).value,
+        )
+    }
+
 }
