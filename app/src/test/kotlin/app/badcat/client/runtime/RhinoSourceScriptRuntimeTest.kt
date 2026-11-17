@@ -302,4 +302,19 @@ class RhinoSourceScriptRuntimeTest {
         assertEquals(null, (clearedValue as EngineResult.Success<String?>).value)
     }
 
+
+    @Test
+    fun rejectsOversizedMainJsBeforeEvaluation() = runBlocking {
+        val source = BookSource(
+            id = "https://oversized-main-js.example/",
+            name = "Oversized mainJs source",
+            baseUrl = "https://oversized-main-js.example/",
+            mainJs = " ".repeat(128 * 1024 + 1),
+        )
+
+        val result = RhinoSourceScriptRuntime().evaluate(source, "'must not run'")
+
+        assertTrue(result is EngineResult.Failure)
+    }
+
 }
