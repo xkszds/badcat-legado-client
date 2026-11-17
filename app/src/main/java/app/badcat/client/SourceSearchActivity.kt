@@ -91,6 +91,10 @@ class SourceSearchActivity : Activity() {
     private var enabledSources: List<BookSource> = emptyList()
     private var activeSearch: Future<*>? = null
     @Volatile private var searchGeneration = 0
+    private var lastDisplayedResults: List<BookCandidate> = emptyList()
+    private var lastDisplayedFailures: List<String> = emptyList()
+    private var hasSearchSnapshot = false
+    private var restoredSearchState = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -139,6 +143,7 @@ class SourceSearchActivity : Activity() {
         rootView.addView(paginationView)
         setContentView(rootView)
         renderSearchHistory()
+        restoreSearchState(savedInstanceState)
         BadcatTheme.applyTree(this, rootView)
         if (intent.getBooleanExtra(EXTRA_FOCUS_SEARCH, false)) {
             keywordInput.requestFocus()
@@ -300,7 +305,7 @@ class SourceSearchActivity : Activity() {
                         status.text = ""
                         status.visibility = View.GONE
                         searchButton.isEnabled = true
-                        if (keywordInput.text.toString().isNotBlank() && enabledSources.isNotEmpty()) {
+                        if (!restoredSearchState && keywordInput.text.toString().isNotBlank() && enabledSources.isNotEmpty()) {
                             search()
                         }
                     }
@@ -616,6 +621,9 @@ class SourceSearchActivity : Activity() {
     }
 
     private fun showResults(page: Int, items: List<BookCandidate>, failures: List<String>) {
+        lastDisplayedResults = items
+        lastDisplayedFailures = failures
+        hasSearchSnapshot = true
         status.text = "第 ${page} 页 · 找到 ${items.size} 条结果" +
             (if (failures.isNotEmpty()) " · ${failures.size} 个书源失败" else "") +
             (if (items.size > MAX_VISIBLE_SEARCH_RESULTS) " · 当前先显示前 $MAX_VISIBLE_SEARCH_RESULTS 条" else "")
@@ -731,6 +739,71 @@ class SourceSearchActivity : Activity() {
 
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
+
+    private fun restoreSearchState(state: Bundle?) {
+        if (state == null || !state.getBoolean("saved_search_has_snapshot", false)) return
+        val query = state.getString("saved_search_query").orEmpty()
+        if (query.isBlank()) return
+        keywordInput.setText(query)
+        currentPage = state.getInt("saved_search_page", 1).coerceAtLeast(1)
+        selectedSourcePosition = state.getInt("saved_source_position", 0).coerceAtLeast(0)
+        lastDisplayedResults = runCatching {
+            val array = org.json.JSONArray(state.getString("saved_search_results", "[]"))
+            (0 until array.length()).mapNotNull { index ->
+                val item = array.optJSONObject(index) ?: return@mapNotNull null
+                val source = item.optString("sourceId")
+                val url = item.optString("bookUrl")
+                if (source.isBlank() || url.isBlank()) null else BookCandidate(
+                    sourceId = source,
+                    name = item.optString("name"),
+                    author = item.optString("author").takeIf { it.isNotBlank() },
+                    bookUrl = url,
+                    coverUrl = item.optString("coverUrl").takeIf { it.isNotBlank() },
+                    latestChapter = item.optString("latestChapter").takeIf { it.isNotBlank() },
+                    intro = item.optString("intro").takeIf { it.isNotBlank() },
+                    status = item.optString("status").takeIf { it.isNotBlank() },
+                )
+            }
+        }.getOrDefault(emptyList())
+        lastDisplayedFailures = runCatching {
+            val array = org.json.JSONArray(state.getString("saved_search_failures", "[]"))
+            (0 until array.length()).map { array.optString(it) }
+        }.getOrDefault(emptyList())
+        hasSearchSnapshot = true
+        restoredSearchState = true
+        historyPanel.visibility = View.GONE
+        sourceStripView.visibility = View.VISIBLE
+        disclaimerView.visibility = View.VISIBLE
+        paginationView.visibility = View.VISIBLE
+        status.visibility = View.VISIBLE
+        showResults(currentPage, lastDisplayedResults, lastDisplayedFailures)
+        status.text = "已恢复上次搜索 · " + lastDisplayedResults.size + " 本"
+        previousPageButton.isEnabled = currentPage > 1
+        nextPageButton.isEnabled = lastDisplayedResults.isNotEmpty()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        if (!::keywordInput.isInitialized) return
+        outState.putString("saved_search_query", keywordInput.text.toString())
+        outState.putInt("saved_search_page", currentPage)
+        outState.putInt("saved_source_position", selectedSourcePosition)
+        outState.putBoolean("saved_search_has_snapshot", hasSearchSnapshot)
+        val items = org.json.JSONArray()
+        lastDisplayedResults.take(MAX_VISIBLE_SEARCH_RESULTS).forEach { item ->
+            items.put(org.json.JSONObject()
+                .put("sourceId", item.sourceId)
+                .put("name", item.name)
+                .put("author", item.author.orEmpty())
+                .put("bookUrl", item.bookUrl)
+                .put("coverUrl", item.coverUrl.orEmpty())
+                .put("latestChapter", item.latestChapter.orEmpty())
+                .put("intro", item.intro.orEmpty())
+                .put("status", item.status.orEmpty()))
+        }
+        outState.putString("saved_search_results", items.toString())
+        outState.putString("saved_search_failures", org.json.JSONArray(lastDisplayedFailures).toString())
+    }
 
     override fun onResume() {
         super.onResume()
