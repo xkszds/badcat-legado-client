@@ -155,6 +155,7 @@ internal object BadcatTheme {
     private fun mappedSurface(view: View, color: Int, colors: Palette): Int = when {
         isDivider(view) -> colors.divider
         isNearWhite(color) -> colors.surface
+        luminance(color) > 0.90 -> colors.raised
         luminance(color) < 0.02 -> colors.page
         luminance(color) < 0.15 -> colors.surface
         else -> colors.page
