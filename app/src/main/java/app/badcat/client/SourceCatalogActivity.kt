@@ -12,6 +12,10 @@ import android.widget.Switch
 import android.widget.TextView
 import app.badcat.engine.LegadoBookSourceCodec
 import app.badcat.engine.LegadoLoginUiV2
+import app.badcat.client.runtime.LegadoSourceLoginUiV2Service
+import app.badcat.client.runtime.RhinoSourceScriptRuntime
+import app.badcat.client.runtime.SharedPreferencesSourceLoginSessionStore
+import app.badcat.client.runtime.SharedPreferencesSourceScriptKeyValueStore
 import kotlinx.coroutines.CancellationException
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.CoroutineScope
@@ -26,6 +30,15 @@ import kotlinx.coroutines.withContext
  */
 class SourceCatalogActivity : Activity() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val loginCheckService by lazy {
+        val sessions = SharedPreferencesSourceLoginSessionStore(applicationContext)
+        LegadoSourceLoginUiV2Service(
+            RhinoSourceScriptRuntime(
+                sourceKeyValueStore = SharedPreferencesSourceScriptKeyValueStore(applicationContext),
+                sourceLoginSessionStore = sessions,
+            ),
+        )
+    }
     private lateinit var catalog: FileBookSourceCatalog
     private lateinit var listContainer: LinearLayout
     private lateinit var message: TextView
@@ -118,6 +131,31 @@ class SourceCatalogActivity : Activity() {
                                     startActivity(Intent(this@SourceCatalogActivity, SourceLoginUiV2Activity::class.java).apply {
                                         putExtra(SourceLoginUiV2Activity.EXTRA_SOURCE_ID, source.id)
                                     })
+                                }
+                            }, LinearLayout.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ))
+                        }
+                        if (!source.loginCheckJs.isNullOrBlank()) {
+                            row.addView(Button(this@SourceCatalogActivity).apply {
+                                text = "检查登录状态"
+                                setOnClickListener {
+                                    isEnabled = false
+                                    text = "正在检查…"
+                                    scope.launch {
+                                        val result = withContext(Dispatchers.IO) {
+                                            loginCheckService.checkLogin(source)
+                                        }
+                                        isEnabled = true
+                                        text = "检查登录状态"
+                                        message.text = when (result) {
+                                            is app.badcat.engine.EngineResult.Success ->
+                                                if (result.value) source.name + "：已登录" else source.name + "：未登录"
+                                            is app.badcat.engine.EngineResult.Failure ->
+                                                source.name + "：登录检查失败（" + result.code + "）" + result.message
+                                        }
+                                    }
                                 }
                             }, LinearLayout.LayoutParams(
                                 ViewGroup.LayoutParams.MATCH_PARENT,
