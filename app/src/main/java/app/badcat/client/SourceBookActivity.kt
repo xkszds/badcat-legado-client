@@ -826,7 +826,14 @@ class SourceChapterActivity : Activity() {
             else -> Color.WHITE to Color.rgb(35, 35, 35)
         }
         val html = ReaderCssDocument.build(
-            this, currentChapterText, textSizeSp, lineSpacingMultiplier, background, foreground,
+            context = this,
+            text = currentChapterText,
+            textSizeSp = textSizeSp,
+            lineSpacing = lineSpacingMultiplier,
+            background = background,
+            foreground = foreground,
+            bookTitle = bookName,
+            chapterTitle = currentChapterTitle,
         )
         latestReaderBaseUrl = "https://reader.invalid/${++readerDocumentVersion}/"
         body.loadDataWithBaseURL(latestReaderBaseUrl, html, "text/html", "UTF-8", null)
