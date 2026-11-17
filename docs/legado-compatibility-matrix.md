@@ -10,8 +10,8 @@ and must not be treated as full BookSource/AnalyzeRule compatibility.
 |---|---|---|---|
 | BookSource JSON | Partial | Single object or array import; strict UTF-8; 5 MiB, 2,000-source, 64-level nesting and 512-field-per-source limits; known metadata/rule type checks; duplicate URL rejection; unknown-field-preserving export and enabled edits | Validate remaining upstream fields against a real-world source corpus; source runtime is still partial |
 | Source management | Partial | Imported sources can be stored, enabled/disabled, selected, searched, explored and exported | Verify bulk import/export and persistence on device; improve source diagnostics |
-| Search URL | Partial | Absolute/relative HTTP(S), page tokens, URL options for method/headers/body/timeout/retry/redirects/charset; bounded query encoding; pure @js and <js> URL expressions with string-only key/page/result bindings | Full Legado java/http/cookie/cache/WebView objects, webView, dnsIp, resolveIp, type, URL-option js/bodyJs and login/session state are not supported |
-| HTTP transport | Partial | Async OkHttp, redirects with HTTPS downgrade prevention, per-source cookie jar, durable app-private cookie persistence, headers, common methods, response size cap, charset, retry | Legado DNS overrides, WebView requests, advanced request body and cookie semantics need coverage; cookie/login flows still require real-source validation |
+| Search URL | Partial | Absolute/relative HTTP(S), page tokens, URL options for method/headers/body/timeout/retry/redirects/charset; bounded query encoding; pure @js and <js> URL expressions with string-only key/page/result bindings | Full Legado java/http/cache/WebView objects, webView, dnsIp, resolveIp, type and complete URL-option js/bodyJs behavior are not supported |
+| HTTP transport | Partial | Async OkHttp, redirects with HTTPS downgrade prevention, per-source cookie jar, durable app-private cookie persistence, headers, common methods, response size cap, charset, retry; Rhino java.getCookie(url) and java.getCookie(url, key) read cookies scoped to the current source and matching URL | Cookie set/replace/remove APIs, WebView cookie synchronization, Legado DNS overrides, WebView requests and advanced request-body semantics are not implemented; authenticated real-source validation remains required |
 | Explore | Partial | Dedicated `exploreUrl` transport, separate `enabledExplore` gate and `ruleExplore.bookList` parsing through the same bounded search-card parser; exposed as `ReadingEngine.explore` | Explore filters, category discovery UI, script-driven exploration and real-source fixtures remain outstanding |
 | Search result fields | Partial | CSS or bounded regex collection for bookList; CSS/XPath/JSONPath and bounded regex scalar extraction; relative book/cover URL resolution | Regex and collection limits apply; JS, filters, interpolation and direct-detail detection are not supported |
 | Book detail | Partial | Name/author/intro/cover/latest chapter/TOC URL; CSS/XPath/JSONPath and bounded regex scalar extraction | JS, replacement chains, variables and source-specific init scripts are not supported |
@@ -120,3 +120,11 @@ modes remain outside this increment.
 - The host now implements these two read helpers through the current book source's persistent OkHttp cookie jar. URL matching retains OkHttp domain, path, expiry, and secure-cookie rules.
 - Cookie lookup is isolated by source ID; a script cannot read cookies stored by a different book source. Invalid or non-HTTP(S) URL inputs return an empty string.
 - Cookie mutation remains handled by the request/response cookie jar. The wider upstream CookieStore API is not exposed as a permissive global database API.
+
+
+### Source-scoped JavaScript cookie lookup (2026-11-17)
+
+- The pinned upstream JsExtensions.getCookie(tag) and getCookie(tag, key) signatures were checked. The bounded Rhino host now exposes both forms as java.getCookie(url) and java.getCookie(url, key).
+- Cookie lookup reads the current source's persisted OkHttp cookie jar, applies OkHttp URL domain/path/secure matching, and never reads another source's jar.
+- The key overload preserves values containing additional '=' characters and returns an empty string when the key is absent.
+- This is read-only cookie lookup. Upstream CookieStore.setCookie, replaceCookie, and removeCookie plus WebView cookie behavior are not claimed as implemented.
