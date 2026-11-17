@@ -67,6 +67,23 @@ class SharedPreferencesSourceCookieJar(
         cookies.values.filter { it.matches(url) }
     }
 
+    /**
+     * Returns only cookies applicable to [url], using OkHttp's domain/path/secure
+     * matching. This mirrors Legado's java.getCookie(url) helper without exposing
+     * cookies belonging to another book source.
+     */
+    fun getCookie(url: String): String {
+        val httpUrl = url.toHttpUrlOrNull() ?: return ""
+        return synchronized(lock) {
+            reloadLocked()
+            removeExpiredLocked(System.currentTimeMillis())
+            persistLocked()
+            cookies.values.asSequence()
+                .filter { it.matches(httpUrl) }
+                .joinToString("; ") { "${it.name}=${it.value}" }
+        }
+    }
+
     /** Clears this source's persisted cookies across all jar instances. */
     fun clear() {
         synchronized(lock) {
