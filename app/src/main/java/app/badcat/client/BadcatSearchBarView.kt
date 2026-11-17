@@ -25,6 +25,7 @@ class BadcatSearchBarView(
     dark: Boolean = false,
     private val onSearch: (String, String) -> Unit,
     private val onTypeChanged: (String) -> Unit = { },
+    private val searchPageStyle: Boolean = false,
 ) : LinearLayout(context) {
     val input = EditText(context)
     val searchAction = TextView(context)
@@ -40,7 +41,7 @@ class BadcatSearchBarView(
             .getInt("home_search_bar_height_dp", if (compact) 36 else 40)
         val barHeight = configuredHeight.coerceIn(34, 46)
         setPadding(dp(if (compact) 4 else 5), 0, dp(if (compact) 4 else 5), 0)
-        background = searchBackground(dark, dp(if (compact) 22 else 25))
+        background = if (searchPageStyle) searchPageBackground(dark) else searchBackground(dark, dp(if (compact) 22 else 25))
         layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, dp(barHeight))
         elevation = dp(2).toFloat()
         clipToOutline = true
@@ -84,17 +85,21 @@ class BadcatSearchBarView(
         input.setOnClickListener { homeTapAction?.invoke() }
 
         searchAction.apply {
-            text = "⌕"
-            textSize = 26f
+            text = if (searchPageStyle) "搜索" else "⌕"
+            textSize = if (searchPageStyle) 15f else 26f
             gravity = Gravity.CENTER
-            setTextColor(Color.WHITE)
-            background = rounded(BLUE, dp(22))
+            setTextColor(if (searchPageStyle) Color.rgb(225, 111, 48) else Color.WHITE)
+            background = if (searchPageStyle) null else rounded(BLUE, dp(22))
+            typeface = if (searchPageStyle) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
             isClickable = true
             isFocusable = true
             contentDescription = "搜索"
             setOnClickListener { submit() }
         }
-        addView(searchAction, LayoutParams(dp(if (compact) 34 else 36), dp(if (compact) 34 else 36)))
+        addView(searchAction, LayoutParams(
+            if (searchPageStyle) dp(54) else dp(if (compact) 34 else 36),
+            if (searchPageStyle) LayoutParams.MATCH_PARENT else dp(if (compact) 34 else 36),
+        ))
     }
 
     /** Makes the home search field navigate to the dedicated search screen. */
@@ -140,6 +145,11 @@ class BadcatSearchBarView(
     private fun rounded(color: Int, radius: Int) = GradientDrawable().apply {
         setColor(color)
         cornerRadius = radius.toFloat()
+    }
+
+    private fun searchPageBackground(dark: Boolean) = GradientDrawable().apply {
+        setColor(if (dark) Color.rgb(43, 47, 54) else Color.rgb(245, 245, 246))
+        cornerRadius = dp(13).toFloat()
     }
 
     private fun searchBackground(dark: Boolean, radius: Int) = GradientDrawable().apply {
