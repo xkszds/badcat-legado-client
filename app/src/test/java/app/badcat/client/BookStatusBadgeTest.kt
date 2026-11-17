@@ -14,4 +14,19 @@ class BookStatusBadgeTest {
         assertNull(BookStatusBadge.label(null))
         assertNull(BookStatusBadge.label("第100章"))
     }
+
+    @Test
+    fun completedStatusWinsWhenSourceMetadataContainsSeveralMarkers() {
+        assertEquals("完结", BookStatusBadge.label("连载中，已完结"))
+        assertEquals("完结", BookStatusBadge.label("更新，完结"))
+        assertEquals("连载", BookStatusBadge.label("连载中，最近更新"))
+    }
+
+    @Test
+    fun statusRecognitionDoesNotInventLabelsForUnrelatedMetadata() {
+        assertNull(BookStatusBadge.label("第100章"))
+        assertNull(BookStatusBadge.label("暂无"))
+        assertNull(BookStatusBadge.label("已下架"))
+    }
+
 }
