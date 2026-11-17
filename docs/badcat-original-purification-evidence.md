@@ -87,3 +87,48 @@ Do not merge PPRule or AdMarkRuleItem into Legado ReplaceRule JSON. Do not silen
 ## Safety and accuracy
 
 This document records string-table evidence only. It does not claim the original purification algorithm has been recovered, nor that the current Legado text replacement engine reproduces Badcat's ad filtering.
+
+
+## Method-level DEX verification (2026-11-17)
+
+The companion DEX archive was materialized read-only and the standard DEX method tables/code items were inspected for the relevant classes. This adds method-level evidence beyond the earlier string-table inventory; it is still not a complete source decompilation.
+
+### Confirmed WebView ad-block flow
+
+- `SettingAdBlockActivity.initView()` reads the persisted Boolean preference `key_is_ad_block` and applies it to the ad-block toggle.
+- The setting screen is titled “广告过滤”. Its empty-state text says “没有已标识的广告 / 可在网页中长按进行标记”, confirming that the list is a user-managed set of marked ads, not a generic text-replacement list.
+- `CustomWebChromeClient.onPageFinish()` calls `handleAdBlock()`.
+- `CustomWebChromeClient.handleAdBlock()` calls `WebViewInjectHelper.initWebViewGetAdUrlPatternList()`; the callback path ultimately passes the retrieved URL-pattern list into the helper that removes ad elements from the WebView.
+- `CustomWebChromeClient.onReceivedTitle()` conditionally calls `handleInjectAdBlock()`. That method reads `key_ad_block_js_inject` and, when non-empty, passes the stored JavaScript to `loadJS()`, which uses WebView JavaScript evaluation / URL loading.
+- `WebViewInjectHelper.initWebViewGetAdUrlPatternList()` first checks the local ad-pattern repository. If it has no patterns, it calls the WebView JavaScript bridge handler `getInfoFromJS` and persists the returned pattern list.
+- `WebViewInjectHelper.handleAdMark()` deserializes a `JsAdMarkInfo`, asks the user to confirm “确定标记该广告？”, then stores the mark and invokes the WebView callback that removes the selected ad.
+
+### Confirmed AdMark data flow
+
+- The issued response carries a JavaScript injection string (`adBlockJsInject`), a version, and `markItems`.
+- Each `AdMarkItem` has a `host` and a list of `AdMarkRuleItem` records.
+- Each `AdMarkRuleItem` has a `urlPattern` and repeated `markRules` string values. The host code converts these into local `DbAdMark` records; matching uses the URL pattern and the mark-rule data to identify a URL position/pattern.
+- A separate report response path exists. This confirms that original marked-ad handling has local persistence plus service synchronization; it must not be silently replaced by Legado text rules.
+
+### Confirmed PPRule schema boundary
+
+The generated protobuf message `sens.Pp.PPRule` has typed fields for:
+
+- `ruleType` (integer)
+- `pageRule`
+- `nextPageRule`
+- `pageJs`
+- `pageJsForSingleHtml`
+- `chapterIsReverse` (Boolean)
+- `videoPathRule`
+- `videoEpisodeRule`
+
+This is a page / pagination / chapter / video rule container. It is a distinct rule domain from AdMark and from Legado chapter-text replacement. Its field names alone do not establish the exact runtime semantics of every rule type.
+
+### Implementation consequences
+
+1. Keep three independent adapters: WebView injected ad filtering, AdMark URL/DOM marking, and PPRule page/catalog/video processing.
+2. Keep the original on/off preference separate from Legado replacement-rule enablement.
+3. Implement local, user-owned ad-mark CRUD and a safe WebView adapter before attempting any optional service synchronization.
+4. Do not hard-code or recreate the original private service endpoints/protocols from symbols alone. Any network integration requires a documented, authorized service contract.
+5. The current project still does not contain the original WebView injection script, the complete AdMark matching/removal implementation, or the PPRule runtime. The findings above are reverse-engineering evidence, not a claim that original purification has been ported.
