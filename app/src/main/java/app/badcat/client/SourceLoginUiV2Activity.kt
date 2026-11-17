@@ -190,7 +190,7 @@ class SourceLoginUiV2Activity : Activity() {
                     }
                     message.text = when {
                         value.errors.isNotEmpty() -> value.errors.entries.joinToString("；") { "${it.key}：${it.value}" }
-                        value.loginJson != null -> "书源已返回登录结果，并已保存在本机；尚未自动注入请求头或 Cookie。"
+                        value.loginJson != null -> "书源已返回登录结果并保存在本机。登录脚本可调用 source.putLoginHeader(JSON 字符串) 保存请求头，后续书源请求会自动携带；Cookie 由 HTTP 响应自动保存。"
                         value.unknownKeys.isNotEmpty() -> "操作已完成；忽略未识别字段：${value.unknownKeys.joinToString()}"
                         else -> "操作已完成"
                     }
