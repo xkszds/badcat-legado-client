@@ -68,6 +68,8 @@ data class BookSource(
     val header: String? = null,
     val jsLib: String? = null,
     val loginUrl: String? = null,
+    val loginUi: String? = null,
+    val loginCheckJs: String? = null,
     val exploreUrl: String? = null,
     val searchUrl: String? = null,
     val mainJs: String? = null,

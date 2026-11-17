@@ -49,6 +49,8 @@ class LegadoBookSourceCodecTest {
               "header": "{\"User-Agent\":\"fixture\"}",
               "jsLib": "https://reader.example/lib.js",
               "loginUrl": "https://reader.example/login",
+              "loginUi": "{\"version\":2}",
+              "loginCheckJs": "typeof login === 'function'",
               "exploreUrl": "https://reader.example/explore",
               "searchUrl": "https://reader.example/search?q={{key}}",
               "ruleExplore": {"bookList": "div.explore"},
@@ -76,6 +78,8 @@ class LegadoBookSourceCodecTest {
         assertEquals("https://reader.example/search?q={{key}}", engineSource.searchUrl)
         assertEquals("https://reader.example/explore", engineSource.exploreUrl)
         assertEquals("https://reader.example/login", engineSource.loginUrl)
+        assertEquals("{\"version\":2}", engineSource.loginUi)
+        assertEquals("typeof login === 'function'", engineSource.loginCheckJs)
         assertEquals("https://reader.example/lib.js", engineSource.jsLib)
         assertEquals("function search() { return []; }", engineSource.mainJs)
         assertTrue(engineSource.ruleSearchJson!!.contains("div.book"))
