@@ -8,12 +8,16 @@ object WebUrlResolver {
         require(value.isNotBlank()) { "URL reference must not be blank" }
         val base = URI(baseUrl)
         require(isWebUri(base) && base.userInfo == null) { "Base URL must be credential-free HTTP(S)" }
-        val reference = URI(value.trim())
+        val trimmedValue = value.trim()
+        val optionsSeparator = Regex(",\\s*(?=\\{)").findAll(trimmedValue).lastOrNull()
+        val referenceText = optionsSeparator?.let { trimmedValue.substring(0, it.range.first).trim() } ?: trimmedValue
+        val optionsSuffix = optionsSeparator?.let { trimmedValue.substring(it.range.first) }.orEmpty()
+        val reference = URI(referenceText)
         val resolved = resolveReference(base, reference).normalize()
         require(isWebUri(resolved) && resolved.userInfo == null) {
             "Resolved URL must be credential-free HTTP(S)"
         }
-        return resolved.toASCIIString()
+        return resolved.toASCIIString() + optionsSuffix
     }
 
     /**

@@ -18,6 +18,17 @@ class WebUrlResolverTest {
     }
 
     @Test
+    fun resolvesUrlWhilePreservingLegadoJsonOptionsSuffix() {
+        assertEquals(
+            """https://reader.example/api/book/detail?id=42,{"headers":{"sign":"abc"}}""",
+            WebUrlResolver.resolve(
+                "https://reader.example/search",
+                """/api/book/detail?id=42,{"headers":{"sign":"abc"}}""",
+            ),
+        )
+    }
+
+    @Test
     fun rejectsBlankUrlReferences() {
         listOf("", "   ").forEach { value ->
             assertFailsWith<IllegalArgumentException> {
