@@ -95,6 +95,7 @@ class BadcatPurificationModelsTest {
         assertFalse(mark.appliesToHost("javascript:https://reader.example/1/2/3"))
         assertTrue(mark.appliesToHost("HTTPS://READER.EXAMPLE:8443/1/2/3"))
         assertFalse(mark.appliesToHost("https://reader.example.attacker.test/1/2/3"))
+        assertFalse(mark.appliesToHost("https://user:password@reader.example/1/2/3"))
         assertFalse(mark.appliesToHost("https://attacker.test/reader.example/1/2/3"))
     }
 

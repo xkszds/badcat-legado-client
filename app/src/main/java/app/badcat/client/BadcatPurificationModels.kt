@@ -31,7 +31,7 @@ data class BadcatAdMarkItem(
     fun appliesToHost(url: String): Boolean {
         val uri = runCatching { URI(url) }.getOrNull() ?: return false
         val scheme = uri.scheme?.lowercase()
-        if (scheme != "http" && scheme != "https") return false
+        if ((scheme != "http" && scheme != "https") || uri.userInfo != null) return false
         val requestHost = uri.host?.lowercase() ?: return false
         return requestHost == host.lowercase()
     }
