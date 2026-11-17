@@ -83,11 +83,13 @@ class RhinoSourceLoginExtensions(
 
     private fun parseStringMap(raw: String, label: String): HashMap<String, String> {
         if (raw.isBlank()) return hashMapOf()
+        require(raw.length <= MAX_JSON_CHARS) { "$label exceeds the total size limit" }
         val element = JsonParser.parseString(raw)
         require(element.isJsonObject) { "$label must be a JSON object" }
         val json = element.asJsonObject
         require(json.size() <= MAX_ENTRIES) { "$label contains too many entries" }
         val result = hashMapOf<String, String>()
+        var totalChars = 0
         json.entrySet().forEach { (key, value) ->
             require(value.isJsonPrimitive && value.asJsonPrimitive.isString) {
                 "$label values must be strings"
@@ -96,6 +98,8 @@ class RhinoSourceLoginExtensions(
             require(key.length <= MAX_KEY_CHARS && text.length <= MAX_VALUE_CHARS) {
                 "$label entry exceeds the size limit"
             }
+            totalChars += key.length + text.length
+            require(totalChars <= MAX_TOTAL_ENTRY_CHARS) { "$label exceeds the total entry size limit" }
             result[key] = text
         }
         return result
@@ -110,6 +114,8 @@ class RhinoSourceLoginExtensions(
         const val MAX_ENTRIES = 100
         const val MAX_KEY_CHARS = 256
         const val MAX_VALUE_CHARS = 8 * 1024
+        const val MAX_JSON_CHARS = 64 * 1024
+        const val MAX_TOTAL_ENTRY_CHARS = 32 * 1024
     }
 }
 
