@@ -50,10 +50,8 @@ class SettingsActivity : Activity() {
             background = rounded(card, 14)
             setPadding(dp(16), dp(4), dp(16), dp(4))
         }
-        val mode = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
-            .getString("home_layout_mode", "integrated") ?: "integrated"
-        addSetting(group, "搜索栏类型", if (mode == "small") "紧凑型" else "整合型") {
-            showSearchBarOptions()
+        addSetting(group, "布局", "首页搜索栏样式、位置与页面布局") {
+            startActivity(Intent(this, LayoutSettingsActivity::class.java))
         }
         addDivider(group)
         addSetting(group, "阅读设置", "音量键翻页、锁屏时间、进度、时间、电量和状态栏") {
@@ -78,18 +76,6 @@ class SettingsActivity : Activity() {
         })
         root.addView(content)
         setContentView(root)
-    }
-
-    private fun showSearchBarOptions() {
-        val prefs = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
-        val options = arrayOf("紧凑型（更矮）", "整合型")
-        val current = prefs.getString("home_layout_mode", "integrated") ?: "integrated"
-        AlertDialog.Builder(this).setTitle("搜索栏类型")
-            .setSingleChoiceItems(options, if (current == "small") 0 else 1) { dialog, which ->
-                prefs.edit().putString("home_layout_mode", if (which == 0) "small" else "integrated").apply()
-                dialog.dismiss()
-                recreate()
-            }.setNegativeButton("取消", null).show()
     }
 
     private fun isDarkMode() = getSharedPreferences("badcat_appearance", MODE_PRIVATE)
