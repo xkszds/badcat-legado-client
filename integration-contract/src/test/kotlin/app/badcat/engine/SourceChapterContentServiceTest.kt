@@ -150,6 +150,40 @@ class SourceChapterContentServiceTest {
     }
 
     @Test
+    fun detectsChapterCyclesWhenOnlyTheUrlFragmentChanges() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleContentJson = """{"content":"div#content","nextContentUrl":"a.next"}""",
+        )
+        val requests = mutableListOf<String>()
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                requests += request.url
+                return EngineResult.Success(
+                    SourceHttpResponse(
+                        200,
+                        "https://reader.example/canonical-chapter#first",
+                        body = """<div id="content"><p>First page.</p></div><a class="next" href="/canonical-chapter#second">Next</a>""",
+                    ),
+                )
+            }
+        }
+
+        val result = assertIs<EngineResult.Failure>(
+            SourceChapterContentService(SourceHttpGateway(client)).load(
+                source,
+                "https://reader.example/book/1",
+                BookChapter(0, "Chapter", "https://reader.example/chapter/1"),
+            ),
+        )
+
+        assertEquals(EngineErrorCode.PARSE, result.code)
+        assertEquals(listOf("https://reader.example/chapter/1"), requests)
+    }
+
+    @Test
     fun reportsChapterPaginationCycleInsteadOfReturningPartialText() = runBlocking {
         val source = BookSource(
             id = "fixture",
@@ -179,6 +213,134 @@ class SourceChapterContentServiceTest {
     }
 
     @Test
+    fun detectsChapterCycleWhenNextLinkTargetsRedirectDestination() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleContentJson = """{"content":"div#content","nextContentUrl":"a.next"}""",
+        )
+        val requested = mutableListOf<String>()
+        val canonicalUrl = "https://reader.example/canonical-chapter"
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                requested += request.url
+                return EngineResult.Success(
+                    SourceHttpResponse(
+                        200,
+                        canonicalUrl,
+                        body = """<div id="content"><p>First page.</p></div><a class="next" href="/canonical-chapter">Next</a>""",
+                    ),
+                )
+            }
+        }
+
+        val result = assertIs<EngineResult.Failure>(
+            SourceChapterContentService(SourceHttpGateway(client)).load(
+                source,
+                "https://reader.example/book/1",
+                BookChapter(0, "Chapter", "https://reader.example/chapter/1"),
+            ),
+        )
+
+        assertEquals(EngineErrorCode.PARSE, result.code)
+        assertEquals(listOf("https://reader.example/chapter/1"), requested)
+    }
+
+    @Test
+    fun redirectAliasesDoNotConsumeTheChapterPageSafetyLimit() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleContentJson = """{"content":"div#content","nextContentUrl":"a.next"}""",
+        )
+        val requests = mutableListOf<String>()
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                requests += request.url
+                val secondPage = request.url.endsWith("/canonical/chapter-2")
+                val finalUrl = if (secondPage) {
+                    "https://reader.example/canonical/chapter-2"
+                } else {
+                    "https://reader.example/canonical/chapter-1"
+                }
+                val body = if (secondPage) {
+                    """<div id="content"><p>Second page.</p></div>"""
+                } else {
+                    """<div id="content"><p>First page.</p></div><a class="next" href="chapter-2">Next</a>"""
+                }
+                return EngineResult.Success(SourceHttpResponse(200, finalUrl, body = body))
+            }
+        }
+
+        val result = assertIs<EngineResult.Success<ChapterContent>>(
+            SourceChapterContentService(SourceHttpGateway(client), maxPages = 2).load(
+                source,
+                "https://reader.example/book/1",
+                BookChapter(0, "Chapter", "https://reader.example/chapter/1"),
+            ),
+        )
+
+        assertEquals(
+            listOf(
+                "https://reader.example/chapter/1",
+                "https://reader.example/canonical/chapter-2",
+            ),
+            requests,
+            "Unexpected request sequence: $requests",
+        )
+        assertEquals(
+            "First page.\n\nSecond page.",
+            result.value.text,
+            "Unexpected combined text: ${result.value.text.replace("\n", "<LF>")}",
+        )
+    }
+
+
+    @Test
+    fun returnsFreshCachedChapterWithoutNetworkRequest() = runBlocking {
+        val source = BookSource(id = "fixture", name = "Fixture", baseUrl = "https://reader.example/")
+        val chapter = BookChapter(0, "Cached", "https://reader.example/chapter/1")
+        val client = FixtureClient()
+        val cachedContent = ChapterContent("Cached title", "Saved chapter text")
+        val cache = object : ChapterContentCache {
+            override suspend fun get(sourceId: String, bookUrl: String, chapterUrl: String) =
+                CachedChapterContent(cachedContent, System.currentTimeMillis())
+            override suspend fun put(sourceId: String, bookUrl: String, chapterUrl: String, value: CachedChapterContent) = Unit
+        }
+        val result = assertIs<EngineResult.Success<ChapterContent>>(
+            SourceChapterContentService(http = SourceHttpGateway(client), cache = cache).load(
+                source, "https://reader.example/book/1", chapter,
+            ),
+        )
+        assertEquals(cachedContent, result.value)
+        assertEquals(emptyList(), client.requests)
+    }
+
+    @Test
+    fun fallsBackToExpiredCachedChapterWhenNetworkFails() = runBlocking {
+        val source = BookSource(id = "fixture", name = "Fixture", baseUrl = "https://reader.example/")
+        val chapter = BookChapter(0, "Cached", "https://reader.example/chapter/1")
+        val cachedContent = ChapterContent("Offline title", "Offline chapter text")
+        val cache = object : ChapterContentCache {
+            override suspend fun get(sourceId: String, bookUrl: String, chapterUrl: String) =
+                CachedChapterContent(cachedContent, System.currentTimeMillis() - 60_000)
+            override suspend fun put(sourceId: String, bookUrl: String, chapterUrl: String, value: CachedChapterContent) = Unit
+        }
+        val failingClient = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest) =
+                EngineResult.Failure(EngineErrorCode.NETWORK, "offline")
+        }
+        val result = assertIs<EngineResult.Success<ChapterContent>>(
+            SourceChapterContentService(http = SourceHttpGateway(failingClient), cache = cache).load(
+                source, "https://reader.example/book/1", chapter,
+            ),
+        )
+        assertEquals(cachedContent, result.value)
+    }
+
+    @Test
     fun reportsChapterPaginationSafetyLimitInsteadOfReturningPartialText() = runBlocking {
         val source = BookSource(
             id = "fixture",
@@ -201,6 +363,7 @@ class SourceChapterContentServiceTest {
         assertEquals(EngineErrorCode.PARSE, result.code)
         assertEquals(listOf("https://reader.example/chapter/1"), client.requests)
     }
+
 
     @Test
     fun detectsNextContentUrlThatPointsToRedirectDestinationBeforeSecondRequest() = runBlocking {
