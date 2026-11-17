@@ -169,7 +169,7 @@ class SourceSearchActivity : Activity() {
             val row = LinearLayout(this@SourceSearchActivity).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(8), dp(5), dp(12), dp(5))
+                setPadding(dp(8), 0, dp(12), 0)
                 addView(TextView(this@SourceSearchActivity).apply {
                     text = "‹"
                     textSize = 31f
@@ -179,14 +179,11 @@ class SourceSearchActivity : Activity() {
                     isClickable = true
                     isFocusable = true
                     setOnClickListener { finish() }
-                }, LinearLayout.LayoutParams(dp(38), dp(46)))
-                addView(sharedBar, LinearLayout.LayoutParams(
-                    0, dp(if (appearance == "small") 44 else 48), 1f
-                ))
+                }, LinearLayout.LayoutParams(dp(42), dp(48)))
+                addView(sharedBar, LinearLayout.LayoutParams(0, dp(48), 1f))
             }
             addView(row, FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.TOP
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(48), Gravity.TOP
             ))
         }
     }
