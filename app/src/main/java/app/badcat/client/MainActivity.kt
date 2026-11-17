@@ -18,7 +18,7 @@ import org.json.JSONObject
 class MainActivity : Activity() {
     private var contentType = "小说"
     private var appliedSearchBarMode = "integrated"
-    private var appliedSearchBarTopSpacing = 22
+    private var appliedSearchBarTopSpacing = 46
     private var darkMode = false
     private lateinit var homeContent: LinearLayout
     private val blue = Color.rgb(55, 137, 222)
