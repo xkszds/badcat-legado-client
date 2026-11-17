@@ -9,6 +9,10 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.Base64
+import javax.crypto.Cipher
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
 
 class RhinoSourceScriptRuntimeTest {
     @Test
@@ -471,6 +475,40 @@ class RhinoSourceScriptRuntimeTest {
         assertTrue(result is EngineResult.Failure)
     }
 
+
+    @Test
+    fun supportsRestrictedJavaImporterAesCbcDecryption() = runBlocking {
+        val source = BookSource(
+            id = "https://aes-compat.example/",
+            name = "AES compatibility",
+            baseUrl = "https://aes-compat.example/",
+        )
+        val key = "0123456789abcdef".toByteArray(Charsets.UTF_8)
+        val iv = ByteArray(16) { it.toByte() }
+        val plaintext = "Legado AES fixture".toByteArray(Charsets.UTF_8)
+        val encryptor = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        encryptor.init(Cipher.ENCRYPT_MODE, SecretKeySpec(key, "AES"), IvParameterSpec(iv))
+        val payload = iv + encryptor.doFinal(plaintext)
+        val encoded = Base64.getEncoder().encodeToString(payload)
+        val runtime = RhinoSourceScriptRuntime()
+        val script = """
+            var javaImport = new JavaImporter();
+            javaImport.importPackage(Packages.java.lang, Packages.javax.crypto.spec, Packages.javax.crypto, Packages.java.util);
+            with (javaImport) {
+                var ivEncData = Base64.getDecoder().decode('$encoded');
+                var secret = new SecretKeySpec(String('0123456789abcdef').getBytes(), 'AES');
+                var vector = new IvParameterSpec(Arrays.copyOfRange(ivEncData, 0, 16));
+                var cipher = Cipher.getInstance('AES/CBC/PKCS5Padding');
+                cipher.init(2, secret, vector);
+                String(cipher.doFinal(Arrays.copyOfRange(ivEncData, 16, ivEncData.length)));
+            }
+        """.trimIndent()
+
+        val result = runtime.evaluate(source, script)
+
+        assertEquals("Legado AES fixture", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
 
     @Test
     fun exposesLegadoChineseConversionHelpersToSourceScripts() = runBlocking {

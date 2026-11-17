@@ -7,6 +7,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.Base64
+import javax.crypto.Cipher
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
 import com.github.liuyueyi.quick.transfer.ChineseUtils as QuickChineseUtils
 import com.github.liuyueyi.quick.transfer.constants.TransType
 
@@ -89,6 +92,43 @@ class RhinoSafeSourceJavaExtensions(
     fun base64Decode(value: String): String =
         String(Base64.getDecoder().decode(value), Charsets.UTF_8)
 
+    /** Narrow byte helpers used only by the reviewed JavaImporter AES compatibility shim. */
+    fun utf8Encode(value: String): ByteArray {
+        require(value.length <= MAX_AES_INPUT_BYTES) { "AES input text exceeds the size limit" }
+        return value.toByteArray(Charsets.UTF_8)
+    }
+
+    fun utf8Decode(value: ByteArray): String {
+        require(value.size <= MAX_AES_INPUT_BYTES) { "AES output exceeds the size limit" }
+        return String(value, Charsets.UTF_8)
+    }
+
+    fun base64DecodeBytes(value: String): ByteArray {
+        require(value.length <= MAX_AES_INPUT_BYTES * 2) { "Base64 input exceeds the size limit" }
+        return Base64.getDecoder().decode(value).also {
+            require(it.size <= MAX_AES_INPUT_BYTES) { "Decoded Base64 input exceeds the size limit" }
+        }
+    }
+
+    fun copyByteRange(value: ByteArray, from: Int, to: Int): ByteArray {
+        require(from >= 0 && to >= from && to <= value.size) { "Invalid byte range" }
+        require(to - from <= MAX_AES_INPUT_BYTES) { "Byte range exceeds the size limit" }
+        return value.copyOfRange(from, to)
+    }
+
+    /** AES-CBC only; arbitrary algorithms, providers and Java class access remain unavailable. */
+    fun aesCrypt(data: ByteArray, key: ByteArray, iv: ByteArray, mode: Int): ByteArray {
+        require(data.size <= MAX_AES_INPUT_BYTES) { "AES input exceeds the size limit" }
+        require(key.size == 16 || key.size == 24 || key.size == 32) { "AES key must be 128, 192 or 256 bits" }
+        require(iv.size == 16) { "AES-CBC IV must be 16 bytes" }
+        require(mode == Cipher.ENCRYPT_MODE || mode == Cipher.DECRYPT_MODE) { "Unsupported AES operation" }
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        cipher.init(mode, SecretKeySpec(key, "AES"), IvParameterSpec(iv))
+        return cipher.doFinal(data).also {
+            require(it.size <= MAX_AES_INPUT_BYTES) { "AES output exceeds the size limit" }
+        }
+    }
+
     fun urlEncode(value: String): String = URLEncoder.encode(value, Charsets.UTF_8.name())
     fun urlDecode(value: String): String = URLDecoder.decode(value, Charsets.UTF_8.name())
 
@@ -111,6 +151,7 @@ class RhinoSafeSourceJavaExtensions(
     companion object {
         private const val MAX_KEY_CHARS = 256
         private const val MAX_VALUE_CHARS = 16 * 1024
+        private const val MAX_AES_INPUT_BYTES = 2 * 1024 * 1024
     }
 }
 

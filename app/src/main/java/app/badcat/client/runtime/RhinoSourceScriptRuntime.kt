@@ -127,6 +127,9 @@ class RhinoSourceScriptRuntime(
                 }
                 val result = try {
                     withTimeout(timeoutMillis) {
+                        // A tightly scoped compatibility shim exposes only the crypto classes
+                        // required by legacy source rules; it does not restore general Packages access.
+                        RhinoScriptEngine.evalSuspend(LEGADO_CRYPTO_COMPAT_JS, scope)
                         // jsLib declarations are installed once per source/library version.
                         // Re-evaluating top-level let/const declarations on every request
                         // would cause duplicate lexical declaration errors.
@@ -230,6 +233,78 @@ class RhinoSourceScriptRuntime(
         const val MAX_TOTAL_SCRIPT_CHARS = 256 * 1024
         const val MAX_VARIABLE_KEY_CHARS = 256
         const val MAX_VARIABLE_VALUE_CHARS = 16 * 1024
+        const val LEGADO_CRYPTO_COMPAT_JS = """
+            Packages = {
+              java: {
+                lang: {},
+                util: {
+                  Base64: {
+                    getDecoder: function() {
+                      return { decode: function(value) { return java.base64DecodeBytes(String(value)); } };
+                    },
+                    getEncoder: function() {
+                      return { encodeToString: function(value) { return java.base64Encode(java.utf8Decode(value)); } };
+                    }
+                  },
+                  Arrays: {
+                    copyOfRange: function(value, from, to) { return java.copyByteRange(value, from, to); }
+                  }
+                },
+                javax: {
+                  crypto: {
+                    spec: {
+                      SecretKeySpec: function(bytes, algorithm) {
+                        if (String(algorithm) !== 'AES') throw new Error('Only AES SecretKeySpec is supported');
+                        this.bytes = bytes;
+                        this.algorithm = 'AES';
+                      },
+                      IvParameterSpec: function(bytes) {
+                        this.bytes = bytes;
+                      }
+                    },
+                    Cipher: {
+                      ENCRYPT_MODE: 1,
+                      DECRYPT_MODE: 2,
+                      getInstance: function(transformation) {
+                        if (String(transformation) !== 'AES/CBC/PKCS5Padding') {
+                          throw new Error('Only AES/CBC/PKCS5Padding is supported');
+                        }
+                        return {
+                          mode: 0,
+                          key: null,
+                          iv: null,
+                          init: function(mode, key, iv) {
+                            if (mode !== 1 && mode !== 2) throw new Error('Unsupported AES operation');
+                            if (!key || key.algorithm !== 'AES' || !iv) throw new Error('Invalid AES key or IV');
+                            this.mode = mode;
+                            this.key = key;
+                            this.iv = iv;
+                          },
+                          doFinal: function(data) {
+                            if (!this.key || !this.iv) throw new Error('AES cipher is not initialized');
+                            var output = java.aesCrypt(data, this.key.bytes, this.iv.bytes, this.mode);
+                            return { toString: function() { return java.utf8Decode(output); } };
+                          }
+                        };
+                      }
+                    }
+                  }
+                }
+              }
+            };
+            JavaImporter = function() {
+              this.importPackage = function() {
+                for (var i = 0; i < arguments.length; i++) {
+                  var pkg = arguments[i];
+                  if (pkg) {
+                    for (var name in pkg) this[name] = pkg[name];
+                  }
+                }
+              };
+            };
+            String.prototype.getBytes = function() { return java.utf8Encode(String(this)); };
+        """.trimIndent()
+
         const val GLOBAL_KEY_PREFIX = "badcat-source:"
         val BINDING_NAME = Regex("[A-Za-z_$][A-Za-z0-9_$]{0,63}")
         val sourceScopes = ConcurrentHashMap<String, ScriptBindings>()
