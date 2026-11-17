@@ -27,10 +27,10 @@ internal object MainBottomNavigation {
             setBackgroundColor(if (dark) Color.rgb(38, 42, 49) else Color.WHITE)
             elevation = context.dpNav(8).toFloat()
             listOf(
-                Triple("搜索", "⌕", "search"),
-                Triple("收藏夹", "✿", "favorites"),
-                Triple("我的", "♙", "mine"),
-            ).forEach { (label, glyph, key) ->
+                "搜索" to "search",
+                "收藏夹" to "favorites",
+                "我的" to "mine",
+            ).forEach { (label, key) ->
                 val isSelected = key == selected
                 addView(LinearLayout(context).apply {
                     orientation = LinearLayout.VERTICAL
@@ -51,17 +51,16 @@ internal object MainBottomNavigation {
                             if (context is android.app.Activity) context.overridePendingTransition(0, 0)
                         }
                     }
-                    addView(TextView(context).apply {
-                        text = glyph
-                        textSize = 25f
-                        gravity = Gravity.CENTER
-                        includeFontPadding = false
-                        setTextColor(if (isSelected) active else inactive)
+                    addView(BadcatNavigationIcons.create(
+                        context,
+                        key,
+                        if (isSelected) active else inactive,
+                    ).apply {
                         if (isSelected) {
                             scaleX = 1.06f
                             scaleY = 1.06f
                         }
-                    })
+                    }, LinearLayout.LayoutParams(context.dpNav(27), context.dpNav(27)))
                     addView(TextView(context).apply {
                         text = label
                         textSize = 12f
