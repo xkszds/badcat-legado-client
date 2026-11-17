@@ -44,6 +44,16 @@ data class BadcatAdMarkItem(
         return runCatching { Pattern.compile(expression).matcher(url).find() }.getOrDefault(false)
     }
 
+    /**
+     * The original WebView bridge wraps one selected markRule in a one-item
+     * JSON array before calling "onDeleteAd". This builds that verified payload
+     * shape only; it does not execute the page's DOM-removal callback.
+     */
+    fun webViewDeleteCallbackPayloads(): List<String> =
+        markRules.map { rule ->
+            com.google.gson.JsonArray().apply { add(rule) }.toString()
+        }
+
     private fun urlPatternSegments(): List<Int>? {
         val array = runCatching { JsonParser.parseString(urlPattern).takeIf { it.isJsonArray }?.asJsonArray }
             .getOrNull() ?: return null
