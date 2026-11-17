@@ -66,7 +66,7 @@ class RuleExpressionTokenizerTest {
         val characterClass = """@regex:[a&&b]+"""
         assertEquals(
             listOf(characterClass, "p@text"),
-            RuleExpressionTokenizer.splitTopLevel("$characterClass&&p@text", "&&"),
+            RuleExpressionTokenizer.splitTopLevel("$characterClass||p@text", "||"),
             "Separators inside a regex character class must remain literal",
         )
     }
