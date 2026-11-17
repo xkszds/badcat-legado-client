@@ -41,7 +41,8 @@ internal object MainBottomNavigation {
                     setOnClickListener {
                         animate().scaleX(0.94f).scaleY(0.94f).setDuration(70).withEndAction { animate().scaleX(1f).scaleY(1f).setDuration(110).start() }.start()
                         val intent = when (key) {
-                            "search" -> if (context !is MainActivity) Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP) else null
+                            "search" -> if (context !is MainActivity) Intent(context, MainActivity::class.java)
+                                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP) else null
                             "favorites" -> if (context !is FavoritesActivity) Intent(context, FavoritesActivity::class.java) else null
                             "mine" -> if (context !is MyActivity) Intent(context, MyActivity::class.java) else null
                             else -> null
