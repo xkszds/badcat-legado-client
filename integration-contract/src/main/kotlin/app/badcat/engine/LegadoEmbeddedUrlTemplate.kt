@@ -29,6 +29,11 @@ fun interface LegadoEmbeddedScriptEvaluator {
 }
 
 object LegadoEmbeddedUrlTemplate {
+    private const val MAX_TEMPLATE_CHARS = 256 * 1024
+    private const val MAX_SCRIPT_CHARS = 64 * 1024
+    private const val MAX_EXPRESSIONS = 512
+    private const val MAX_OUTPUT_CHARS = 512 * 1024
+
 
     /**
      * Mirrors the pinned RuleAnalyzer.innerRule("{{", "}}") behavior: each
@@ -44,20 +49,35 @@ object LegadoEmbeddedUrlTemplate {
         evaluator: LegadoEmbeddedScriptEvaluator,
         page: Int = 1,
     ): EngineResult<String> {
+        if (template.length > MAX_TEMPLATE_CHARS) {
+            return EngineResult.Failure(
+                EngineErrorCode.INVALID_SOURCE,
+                "Embedded URL template exceeds the safe size limit",
+            )
+        }
         if (!template.contains("{{")) return EngineResult.Success(template)
 
         val output = StringBuilder()
         var searchFrom = 0
         var startX = 0
+        var expressionCount = 0
         while (true) {
             val start = template.indexOf("{{", searchFrom)
             if (start < 0) break
             val expressionStart = start + 2
             val end = template.indexOf("}}", expressionStart)
             if (end < 0) break
+            expressionCount++
+            val expression = template.substring(expressionStart, end)
+            if (expressionCount > MAX_EXPRESSIONS || expression.length > MAX_SCRIPT_CHARS) {
+                return EngineResult.Failure(
+                    EngineErrorCode.INVALID_SOURCE,
+                    "Embedded URL template exceeds the safe expression limits",
+                )
+            }
 
             val evaluated = when (
-                val result = evaluator.evaluate(template.substring(expressionStart, end), key, page)
+                val result = evaluator.evaluate(expression, key, page)
             ) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
@@ -73,6 +93,13 @@ object LegadoEmbeddedUrlTemplate {
                 else -> evaluated.toString()
             }
 
+            val literalLength = start - startX
+            if (output.length + literalLength + replacement.length > MAX_OUTPUT_CHARS) {
+                return EngineResult.Failure(
+                    EngineErrorCode.INVALID_SOURCE,
+                    "Expanded URL template exceeds the safe output limit",
+                )
+            }
             output.append(template, startX, start)
             output.append(replacement)
             startX = end + 2
@@ -82,8 +109,15 @@ object LegadoEmbeddedUrlTemplate {
         return if (startX == 0) {
             EngineResult.Success(template)
         } else {
-            output.append(template, startX, template.length)
-            EngineResult.Success(output.toString())
+            if (output.length + template.length - startX > MAX_OUTPUT_CHARS) {
+                EngineResult.Failure(
+                    EngineErrorCode.INVALID_SOURCE,
+                    "Expanded URL template exceeds the safe output limit",
+                )
+            } else {
+                output.append(template, startX, template.length)
+                EngineResult.Success(output.toString())
+            }
         }
     }
 }

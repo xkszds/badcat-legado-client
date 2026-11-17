@@ -193,4 +193,51 @@ class LegadoEmbeddedUrlTemplateTest {
         assertEquals("ready", values["session"])
     }
 
+
+    @Test
+    fun rejectsOversizedTemplatesAndExcessiveExpressionCountsBeforeUnboundedExpansion() =
+        kotlinx.coroutines.runBlocking {
+            var calls = 0
+            val evaluator = LegadoEmbeddedScriptEvaluator { _, _, _ ->
+                calls++
+                EngineResult.Success("x")
+            }
+            val oversized = LegadoEmbeddedUrlTemplate.resolve(
+                "x".repeat(256 * 1024 + 1), "k", evaluator,
+            )
+            assertEquals(
+                EngineErrorCode.INVALID_SOURCE,
+                assertIs<EngineResult.Failure>(oversized).code,
+            )
+            val tooMany = LegadoEmbeddedUrlTemplate.resolve(
+                "{{x}}".repeat(513), "k", evaluator,
+            )
+            assertEquals(
+                EngineErrorCode.INVALID_SOURCE,
+                assertIs<EngineResult.Failure>(tooMany).code,
+            )
+            assertEquals(512, calls)
+        }
+
+    @Test
+    fun rejectsOversizedExpressionAndExpandedOutput() = kotlinx.coroutines.runBlocking {
+        val longExpression = LegadoEmbeddedUrlTemplate.resolve(
+            "{{" + "x".repeat(64 * 1024 + 1) + "}}", "k",
+            LegadoEmbeddedScriptEvaluator { _, _, _ -> error("must not evaluate") },
+        )
+        assertEquals(
+            EngineErrorCode.INVALID_SOURCE,
+            assertIs<EngineResult.Failure>(longExpression).code,
+        )
+        val expanded = LegadoEmbeddedUrlTemplate.resolve(
+            "{{x}}", "k",
+            LegadoEmbeddedScriptEvaluator { _, _, _ -> EngineResult.Success("x".repeat(512 * 1024 + 1)) },
+        )
+        assertEquals(
+            EngineErrorCode.INVALID_SOURCE,
+            assertIs<EngineResult.Failure>(expanded).code,
+        )
+    }
+
+
 }
