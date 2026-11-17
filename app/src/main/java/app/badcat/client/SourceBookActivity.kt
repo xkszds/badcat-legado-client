@@ -49,6 +49,8 @@ class SourceBookActivity : Activity() {
     private lateinit var detailTitle: TextView
     private lateinit var detailMetadata: TextView
     private lateinit var coverView: ImageView
+    private lateinit var startReadingButton: Button
+    private var pendingStartReading = false
     private var introExpanded = false
     private var currentCoverUrl: String? = null
     private var currentBookStatus: String? = null
@@ -152,30 +154,14 @@ class SourceBookActivity : Activity() {
             gravity = android.view.Gravity.CENTER
             setPadding(0, dpBook(14), 0, dpBook(14))
             addView(favoriteButton, LinearLayout.LayoutParams(0, dpBook(48), 1f))
-            addView(Button(this@SourceBookActivity).apply {
+            startReadingButton = Button(this@SourceBookActivity).apply {
                 text = "开始阅读"
-                setOnClickListener {
-                    val saved = getSharedPreferences("badcat_reading_progress", MODE_PRIVATE)
-                        .getString(readingProgressKey(sourceId, bookUrl), null)
-                    if (!saved.isNullOrBlank()) {
-                        startActivity(Intent(this@SourceBookActivity, SourceChapterActivity::class.java).apply {
-                            putExtra(SourceChapterActivity.EXTRA_SOURCE_ID, sourceId)
-                            putExtra(SourceChapterActivity.EXTRA_BOOK_URL, bookUrl)
-                            putExtra(SourceChapterActivity.EXTRA_BOOK_NAME, bookName)
-                            putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, saved)
-                        })
-                    } else {
-                        allChapters.firstOrNull()?.let { openChapter(it) } ?: run {
-                            status.text = "目录仍在加载，完成后即可开始阅读"
-                            android.widget.Toast.makeText(
-                                this@SourceBookActivity,
-                                "目录仍在加载，请稍后再试",
-                                android.widget.Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
-                }
-            }, LinearLayout.LayoutParams(0, dpBook(48), 1f).apply { leftMargin = dpBook(8) })
+                isEnabled = false
+                setOnClickListener { beginReadingOrQueue() }
+            }
+            addView(startReadingButton, LinearLayout.LayoutParams(0, dpBook(48), 1f).apply {
+                leftMargin = dpBook(8)
+            })
         }
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -235,6 +221,32 @@ class SourceBookActivity : Activity() {
         }
     }
 
+    private fun beginReadingOrQueue() {
+        if (allChapters.isEmpty()) {
+            pendingStartReading = true
+            status.text = "目录还在加载，加载完成后会自动打开第一章"
+            android.widget.Toast.makeText(
+                this,
+                "正在等待目录加载，完成后自动开始阅读",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+        pendingStartReading = false
+        val saved = getSharedPreferences("badcat_reading_progress", MODE_PRIVATE)
+            .getString(readingProgressKey(sourceId, bookUrl), null)
+        if (!saved.isNullOrBlank()) {
+            startActivity(Intent(this, SourceChapterActivity::class.java).apply {
+                putExtra(SourceChapterActivity.EXTRA_SOURCE_ID, sourceId)
+                putExtra(SourceChapterActivity.EXTRA_BOOK_URL, bookUrl)
+                putExtra(SourceChapterActivity.EXTRA_BOOK_NAME, bookName)
+                putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, saved)
+            })
+        } else {
+            openChapter(allChapters.first())
+        }
+    }
+
     private fun dpBook(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun loadBook() {
@@ -284,6 +296,7 @@ class SourceBookActivity : Activity() {
                 when (toc) {
                     is EngineResult.Success -> showChapters(toc.value)
                     is EngineResult.Failure -> {
+                        startReadingButton.isEnabled = true
                         if (status.text.isNotBlank()) status.append("\n\n")
                         status.append("目录加载失败（${toc.code}）：${toc.message}")
                         detailMetadata.append("\n目录加载失败")
@@ -366,6 +379,7 @@ class SourceBookActivity : Activity() {
 
     private fun showChapters(chapters: List<BookChapter>) {
         allChapters = chapters
+        startReadingButton.isEnabled = chapters.isNotEmpty()
         chapterList.removeAllViews()
         status.append("\n\n目录：${chapters.size} 章（点击章节开始阅读）")
         val savedChapterUrl = getSharedPreferences("badcat_reading_progress", MODE_PRIVATE)
