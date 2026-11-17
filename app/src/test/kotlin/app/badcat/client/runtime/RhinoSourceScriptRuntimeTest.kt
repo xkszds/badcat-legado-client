@@ -107,10 +107,12 @@ class RhinoSourceScriptRuntimeTest {
         )
         val digest = runtime.evaluate(source, "java.md5Encode('abc')")
         val encoded = runtime.evaluate(source, "java.urlEncode('a b')")
+        val uriEncoded = runtime.evaluate(source, "java.encodeURI('http://m.yimixs.org/##yolo(雪 猫)')")
 
         assertEquals("source-value", (stored as EngineResult.Success).value)
         assertEquals("900150983cd24fb0d6963f7d28e17f72", (digest as EngineResult.Success).value)
         assertEquals("a+b", (encoded as EngineResult.Success).value)
+        assertEquals("http://m.yimixs.org/##yolo(%E9%9B%AA%20%E7%8C%AB)", (uriEncoded as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
 
