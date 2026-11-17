@@ -132,3 +132,35 @@ This is a page / pagination / chapter / video rule container. It is a distinct r
 3. Implement local, user-owned ad-mark CRUD and a safe WebView adapter before attempting any optional service synchronization.
 4. Do not hard-code or recreate the original private service endpoints/protocols from symbols alone. Any network integration requires a documented, authorized service contract.
 5. The current project still does not contain the original WebView injection script, the complete AdMark matching/removal implementation, or the PPRule runtime. The findings above are reverse-engineering evidence, not a claim that original purification has been ported.
+
+
+## Shared Legado + Badcat integration progress
+
+The Android host now exposes a shared purification coordinator from the same
+factory that builds the Legado reading engine. The two domains remain separate
+inside that shared lifecycle:
+
+- Legado source requests continue through the shared bounded HTTP gateway,
+  per-source Rhino runtime, and source-isolated persistent CookieJar.
+- Legado chapter title/body replacement continues through
+  CatalogLegadoBookTextReplacement and the Legado replacement-rule catalog.
+- Badcat WebView ad filtering has its own persisted original-style toggle
+  (key_is_ad_block) and bounded injection-script setting
+  (key_ad_block_js_inject). The reader WebView lifecycle calls the adapter
+  after the current document finishes loading; JavaScript stays disabled unless
+  the toggle is on and a non-empty bounded script is present.
+- Badcat AdMark records have a separate app-private catalog with local
+  upsert/remove/import/export. host, urlPattern and markRules are preserved
+  as distinct fields. The current safe lookup uses exact host matching only.
+
+This is integration plumbing, not a completed port of the original purifier.
+The original injected script has not been recovered; urlPattern/markRules
+matching and DOM removal semantics are still opaque; no original issue/report
+service is called; the current reader only has a verified injection hook and
+local AdMark storage. The AdMark payload is not yet used to remove DOM nodes.
+The app must not claim full original Badcat ad filtering until the original
+matcher and callback contract are recovered and validated against authorized
+fixtures.
+
+Regression coverage added for toggle-gated injection selection, exact-host
+AdMark lookup, invalid record rejection and preservation of opaque rule data.
