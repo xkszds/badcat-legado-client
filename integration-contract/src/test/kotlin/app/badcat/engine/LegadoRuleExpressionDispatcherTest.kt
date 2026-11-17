@@ -59,6 +59,26 @@ class LegadoRuleExpressionDispatcherTest {
     }
 
     @Test
+    fun evaluatesLegacySingleAtIndexedTextNodesRuleAsCollectionRoot() {
+        val document = SourceDocument(
+            url = "https://reader.example/book/7",
+            body = """
+                <ul class="w_txt">
+                  <li>zero</li><li>one</li><li>two</li><li>three</li>
+                  <li>Novel title</li>
+                </ul>
+            """.trimIndent(),
+        )
+        val result = LegadoRuleExpressionDispatcher.evaluateElements(
+            document,
+            "@.w_txt li.4@textNodes",
+        )
+        val values = assertIs<EngineResult.Success<List<String>>>(result).value
+        assertEquals(1, values.size)
+        kotlin.test.assertTrue(values.single().contains("Novel title"))
+    }
+
+    @Test
     fun resolvesDoubleAtAsLegadoForcedCssMode() {
         val forcedCss = assertIs<EngineResult.Success<ResolvedLegadoRuleExpression>>(
             LegadoRuleExpressionDispatcher.resolve("@@div.book > a.title"),
