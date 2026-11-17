@@ -393,8 +393,7 @@ class SourceSearchActivity : Activity() {
                 text = "导入 / 管理书源"
                 setOnClickListener {
                     refreshSourcesOnResume = true
-                refreshSourcesOnResume = true
-                startActivity(Intent(this@SourceSearchActivity, SourceCatalogActivity::class.java))
+                    startActivity(Intent(this@SourceSearchActivity, SourceCatalogActivity::class.java))
                 }
             })
             return
