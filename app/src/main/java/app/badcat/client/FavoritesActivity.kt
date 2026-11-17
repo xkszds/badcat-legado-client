@@ -243,7 +243,7 @@ class FavoritesActivity : Activity() {
         rootContent = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(14), dp(14), dp(20)) }
         scroll.addView(rootContent)
         root.addView(scroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
-        bottomActions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; setBackgroundColor(Color.WHITE); visibility = View.GONE }
+        bottomActions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; setBackgroundColor(card); visibility = View.GONE }
         root.addView(bottomActions)
         root.addView(MainBottomNavigation.create(this, "favorites"))
         setContentView(root)
