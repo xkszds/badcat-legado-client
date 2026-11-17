@@ -36,12 +36,20 @@ class BadcatPurificationActivity : Activity() {
             setBackgroundColor(page)
             setPadding(dp(16), dp(12), dp(16), dp(20))
         }
-        root.addView(TextView(this).apply {
-            text = "‹    广告过滤"
-            textSize = 20f
-            setTextColor(ink)
-            setPadding(0, dp(8), 0, dp(18))
-            setOnClickListener { finish() }
+        root.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(4), 0, dp(16))
+            addView(BadcatLineIconView(this@BadcatPurificationActivity, "back", ink).apply {
+                contentDescription = "返回"
+                isClickable = true
+                setOnClickListener { finish() }
+            }, LinearLayout.LayoutParams(dp(40), dp(44)))
+            addView(TextView(this@BadcatPurificationActivity).apply {
+                text = "广告过滤"
+                textSize = 20f
+                setTextColor(ink)
+            })
         })
         val scroll = ScrollView(this)
         val body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
