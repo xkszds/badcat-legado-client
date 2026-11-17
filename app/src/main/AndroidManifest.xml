@@ -20,6 +20,7 @@
         <activity android:name=".ReadingHistoryActivity" android:exported="false" />
         <activity android:name=".DownloadManagementActivity" android:exported="false" />
         <activity android:name=".SourceCatalogActivity" android:exported="false" />
+        <activity android:name=".SourceLoginUiV2Activity" android:exported="false" />
         <activity android:name=".SourceSearchActivity" android:exported="false" />
         <activity android:name=".SourceBookActivity" android:exported="false" />
         <activity android:name=".SourceChapterActivity" android:exported="false" />
