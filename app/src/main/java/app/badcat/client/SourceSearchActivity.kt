@@ -68,6 +68,7 @@ class SourceSearchActivity : Activity() {
     private lateinit var sourceStripView: View
     private lateinit var disclaimerView: View
     private lateinit var paginationView: View
+    @Volatile private var screenDestroyed = false
     private var currentPage = 1
     private var selectedSourcePosition = 0
     private var contentType = "小说"
@@ -121,7 +122,6 @@ class SourceSearchActivity : Activity() {
         setContentView(rootView)
         renderSearchHistory()
         BadcatTheme.applyTree(this, rootView)
-        loadSources()
         if (intent.getBooleanExtra(EXTRA_FOCUS_SEARCH, false)) {
             keywordInput.requestFocus()
             keywordInput.post {
@@ -268,13 +268,14 @@ class SourceSearchActivity : Activity() {
                     )
                 }
             }
-            mainHandler.post {
+            postToUi {
                 when (result) {
                     is EngineResult.Success -> {
                         enabledSources = result.value.filter {
                             it.enabled && !it.searchUrl.isNullOrBlank()
                         }
                         renderSourceTabs()
+                        renderSourceSetupHint()
                         BadcatTheme.applyTree(this@SourceSearchActivity, rootView)
                         // Do not inject source-management notices into the search-history view.
                         status.text = ""
@@ -359,7 +360,21 @@ class SourceSearchActivity : Activity() {
             else listOfNotNull(enabledSources.getOrNull(selectedSourcePosition - 1))
         if (selectedSources.isEmpty()) {
             status.visibility = View.VISIBLE
-            status.text = "请先添加并启用书源后再搜索"
+            status.visibility = View.VISIBLE
+            status.text = "本机还没有已启用的小说书源"
+            results.removeAllViews()
+            results.addView(TextView(this).apply {
+                text = "导入并启用 Legado 书源后，才能从真实书源检索小说。"
+                textSize = 13f
+                setTextColor(muted)
+                setPadding(0, dp(12), 0, dp(12))
+            })
+            results.addView(android.widget.Button(this).apply {
+                text = "导入 / 管理书源"
+                setOnClickListener {
+                    startActivity(Intent(this@SourceSearchActivity, SourceCatalogActivity::class.java))
+                }
+            })
             return
         }
         rememberSearch(query)
@@ -392,7 +407,7 @@ class SourceSearchActivity : Activity() {
                 }
             }
             val unique = collected.distinctBy { "${it.sourceId}|${it.bookUrl}" }
-            mainHandler.post {
+            postToUi {
                 searchButton.isEnabled = enabledSources.isNotEmpty()
                 previousPageButton.isEnabled = requestedPage > 1
                 nextPageButton.isEnabled = unique.isNotEmpty()
@@ -400,6 +415,29 @@ class SourceSearchActivity : Activity() {
                 BadcatTheme.applyTree(this@SourceSearchActivity, rootView)
             }
         }
+    }
+
+    private fun postToUi(action: () -> Unit) {
+        if (screenDestroyed) return
+        mainHandler.post {
+            if (!screenDestroyed && !isFinishing && !isDestroyed) action()
+        }
+    }
+
+    private fun renderSourceSetupHint() {
+        if (!::historyPanel.isInitialized || enabledSources.isNotEmpty()) return
+        historyPanel.addView(TextView(this).apply {
+            text = "尚未导入可搜索的小说书源"
+            textSize = 13f
+            setTextColor(muted)
+            setPadding(dp(2), dp(12), dp(2), dp(6))
+        })
+        historyPanel.addView(android.widget.Button(this).apply {
+            text = "导入 / 管理书源"
+            setOnClickListener {
+                startActivity(Intent(this@SourceSearchActivity, SourceCatalogActivity::class.java))
+            }
+        })
     }
 
     private fun readSearchHistory(): List<String> = runCatching {
@@ -624,9 +662,12 @@ class SourceSearchActivity : Activity() {
             return
         }
         if (::rootView.isInitialized) BadcatTheme.applyTree(this, rootView)
+        if (::rootView.isInitialized && !screenDestroyed) loadSources()
     }
 
     override fun onDestroy() {
+        screenDestroyed = true
+        mainHandler.removeCallbacksAndMessages(null)
         worker.shutdownNow()
         super.onDestroy()
     }
