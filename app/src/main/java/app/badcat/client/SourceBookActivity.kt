@@ -31,6 +31,7 @@ class SourceBookActivity : Activity() {
     private val worker = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
     private lateinit var engine: ReadingEngine
+    private lateinit var webViewPurificationAdapter: app.badcat.client.runtime.BadcatWebViewPurificationAdapter
     private lateinit var sourceId: String
     private lateinit var bookUrl: String
     private lateinit var bookName: String
@@ -52,7 +53,9 @@ class SourceBookActivity : Activity() {
         bookUrl = intent.getStringExtra(EXTRA_BOOK_URL).orEmpty()
         bookName = intent.getStringExtra(EXTRA_BOOK_NAME).orEmpty()
         currentCoverUrl = intent.getStringExtra(EXTRA_BOOK_COVER_URL)
-        engine = BadcatReadingEngineFactory(applicationContext).create()
+        val engineFactory = BadcatReadingEngineFactory(applicationContext)
+        engine = engineFactory.create()
+        webViewPurificationAdapter = engineFactory.webViewPurificationAdapter()
 
         status = TextView(this).apply {
             text = "正在加载书籍详情…"
@@ -473,6 +476,7 @@ class SourceChapterActivity : Activity() {
                     // Ignore callbacks from an older HTML load; only the newest document
                     // may consume the pending bookmark/scroll restoration position.
                     if (url != latestReaderBaseUrl) return
+                    webViewPurificationAdapter.onPageFinished(view, url.orEmpty())
                     val target = pendingBookmarkY ?: pendingScrollY
                     pendingBookmarkY = null
                     pendingScrollY = null
