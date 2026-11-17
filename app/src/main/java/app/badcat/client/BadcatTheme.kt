@@ -117,8 +117,12 @@ internal object BadcatTheme {
                 }
             }
             if (view is Button) {
-                view.backgroundTintList = ColorStateList.valueOf(colors.raised)
-                view.setTextColor(colors.accent)
+                // Preserve explicitly colored call-to-action buttons. Only
+                // neutral/default button labels are adapted for dark surfaces.
+                val buttonText = view.currentTextColor
+                if (isNeutral(buttonText) && buttonText != Color.WHITE) {
+                    view.setTextColor(colors.accent)
+                }
             }
             if (view is EditText) {
                 view.setTextColor(colors.text)
@@ -149,7 +153,7 @@ internal object BadcatTheme {
         val r = Color.red(color)
         val g = Color.green(color)
         val b = Color.blue(color)
-        return maxOf(r, g, b) - minOf(r, g, b) < 22
+        return maxOf(r, g, b) - minOf(r, g, b) < 32
     }
 
     private fun mappedSurface(view: View, color: Int, colors: Palette): Int = when {
