@@ -168,6 +168,31 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun exposesSourceScopedLegadoCookieLookupHelpers() = runBlocking {
+        val sourceId = "https://cookie-helper.example/"
+        val runtime = RhinoSourceScriptRuntime(
+            sourceCookieReader = { requestedSource, url ->
+                if (requestedSource == sourceId && url.startsWith("https://cookie-helper.example/")) {
+                    "sid=abc; token=x=y"
+                } else {
+                    ""
+                }
+            },
+        )
+        val source = BookSource(sourceId, "Cookie helper source", "https://cookie-helper.example/")
+
+        val result = runtime.evaluate(
+            source,
+            "java.getCookie('https://cookie-helper.example/book') + '|' + " +
+                "java.getCookie('https://cookie-helper.example/book', 'sid') + '|' + " +
+                "java.getCookie('https://cookie-helper.example/book', 'token')",
+        )
+
+        assertEquals("sid=abc; token=x=y|abc|x=y", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun rejectsOversizedSourceJsLibBeforeEvaluation() = runBlocking {
         val source = BookSource(
             id = "https://oversized.example/",
