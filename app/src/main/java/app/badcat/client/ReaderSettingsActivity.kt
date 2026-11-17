@@ -162,7 +162,12 @@ class ReaderSettingsActivity : Activity() {
         1 -> "1 分钟"; 5 -> "5 分钟"; 10 -> "10 分钟"; 30 -> "30 分钟"; 60 -> "60 分钟"; else -> "跟随系统"
     }
     private fun progressLabel() = if (prefs.getString(KEY_PROGRESS_MODE, "percent") == "pages") "章节页数" else "百分比"
-    private fun divider(parent: LinearLayout) { parent.addView(View(this).apply { setBackgroundColor(Color.rgb(235, 237, 240)) }, LinearLayout.LayoutParams(-1, dp(1))) }
+    private fun divider(parent: LinearLayout) {
+        val dark = getSharedPreferences(APPEARANCE_PREFS, MODE_PRIVATE)
+            .getString(APPEARANCE_KEY, "light") == "dark"
+        val color = if (dark) Color.rgb(58, 63, 72) else Color.rgb(235, 237, 240)
+        parent.addView(View(this).apply { setBackgroundColor(color) }, LinearLayout.LayoutParams(-1, dp(1)))
+    }
     private fun rounded(color: Int, radius: Int) = GradientDrawable().apply { setColor(color); cornerRadius = dp(radius).toFloat() }
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
 
