@@ -142,9 +142,10 @@ class SourceLoginUiV2Activity : Activity() {
                             }
                             LegadoLoginUiV2.RowType.SELECT -> {
                                 val key = row.key ?: return@forEach
-                                val spinner = Spinner(this@SourceLoginUiV2Activity)
+                                val themedContext = BadcatTheme.themedContext(this@SourceLoginUiV2Activity)
+                                val spinner = Spinner(themedContext)
                                 spinner.adapter = ArrayAdapter(
-                                    this@SourceLoginUiV2Activity,
+                                    themedContext,
                                     android.R.layout.simple_spinner_dropdown_item,
                                     row.options,
                                 )
