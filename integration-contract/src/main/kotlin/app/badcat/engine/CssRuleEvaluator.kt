@@ -7,9 +7,9 @@ import org.jsoup.nodes.Element
  * A bounded Legado CSS selector evaluator.
  *
  * Supports @CSS: rules and CSS selectors followed by @text, @textNodes, @ownText, @html, @all,
- * direct attribute suffixes, @href, @src, @tag or @attr(name), plus top-level &&, || and %% operators. It does not
- * implement the full RuleAnalyzer grammar, chained selectors, XPath, JSONPath,
- * regex suffixes or JavaScript.
+ * direct attribute suffixes, @href, @src, @tag or @attr(name), default-mode chained selector steps,
+ * and top-level &&, || and %% operators. It does not implement the full RuleAnalyzer grammar,
+ * all ElementsSingle filters, XPath, JSONPath, regex suffixes or JavaScript.
  */
 object CssRuleEvaluator {
 
@@ -18,8 +18,9 @@ object CssRuleEvaluator {
         expression: String,
     ): EngineResult<List<String>> {
         val rawRule = expression.trim()
+        val explicitCss = rawRule.startsWith("@CSS:", ignoreCase = true)
         val rule = when {
-            rawRule.startsWith("@CSS:", ignoreCase = true) -> rawRule.substring(5).trim()
+            explicitCss -> rawRule.substring(5).trim()
             rawRule.startsWith("@@") -> rawRule.substring(2).trim()
             else -> rawRule
         }
@@ -30,7 +31,7 @@ object CssRuleEvaluator {
             val outerSplit = RuleExpressionTokenizer.splitByFirstTopLevelOperator(rule)
             var firstFailure: EngineResult.Failure? = null
             val combined = RuleCombinationEvaluator.evaluateNested(rule) { part ->
-                when (val result = evaluateSingle(document, part)) {
+                when (val result = evaluateSingle(document, part, allowChainedSelectors = !explicitCss)) {
                     is EngineResult.Success -> result.value
                     is EngineResult.Failure -> {
                         if (firstFailure == null) firstFailure = result
@@ -110,9 +111,12 @@ object CssRuleEvaluator {
     private fun evaluateSingle(
         document: SourceDocument,
         expression: String,
+        allowChainedSelectors: Boolean,
     ): EngineResult<List<String>> {
         val chain = splitRuleChain(expression)
-        if (chain.size >= 2) return evaluateChained(document, chain, expression)
+        if (allowChainedSelectors && chain.size >= 2) {
+            return evaluateChained(document, chain, expression)
+        }
 
         val parsed = parseExpression(expression)
             ?: return EngineResult.Failure(
