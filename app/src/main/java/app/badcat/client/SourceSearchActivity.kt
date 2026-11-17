@@ -41,9 +41,11 @@ class SourceSearchActivity : Activity() {
     private val worker: ExecutorService = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
     private val blue = Color.rgb(55, 137, 222)
-    private val ink = Color.rgb(48, 55, 66)
-    private val muted = Color.rgb(135, 145, 158)
-    private val page = Color.rgb(247, 249, 252)
+    private val darkMode by lazy { getSharedPreferences("badcat_appearance", MODE_PRIVATE).getString("appearance_mode", "light") == "dark" }
+    private val ink get() = if (darkMode) Color.rgb(235, 237, 240) else Color.rgb(48, 55, 66)
+    private val muted get() = if (darkMode) Color.rgb(165, 172, 182) else Color.rgb(135, 145, 158)
+    private val page get() = if (darkMode) Color.rgb(25, 28, 33) else Color.rgb(247, 249, 252)
+    private val card get() = if (darkMode) Color.rgb(38, 42, 49) else Color.WHITE
     private lateinit var engine: ReadingEngine
     private lateinit var keywordInput: EditText
     private lateinit var searchButton: TextView
@@ -99,7 +101,7 @@ class SourceSearchActivity : Activity() {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
         setPadding(dp(14), dp(6), dp(16), dp(6))
-        setBackgroundColor(Color.WHITE)
+        setBackgroundColor(card)
         addView(TextView(this@SourceSearchActivity).apply {
             text = "‹"
             textSize = 32f
@@ -124,6 +126,7 @@ class SourceSearchActivity : Activity() {
             initialQuery = intent.getStringExtra(EXTRA_INITIAL_QUERY).orEmpty(),
             initialType = contentType,
             appearance = appearance,
+            dark = darkMode,
             onSearch = { query, type ->
                 contentType = type
                 keywordInput.setText(query)
@@ -139,7 +142,7 @@ class SourceSearchActivity : Activity() {
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(14), dp(7), dp(14), dp(7))
-            setBackgroundColor(Color.WHITE)
+            setBackgroundColor(card)
             addView(sharedBar, LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(if (appearance == "small") 44 else 48)
             ))
@@ -165,7 +168,7 @@ class SourceSearchActivity : Activity() {
         textSize = 11f
         setTextColor(muted)
         setPadding(dp(16), dp(10), dp(16), dp(10))
-        setBackgroundColor(Color.rgb(250, 250, 250))
+        setBackgroundColor(if (darkMode) Color.rgb(32, 36, 43) else Color.rgb(250, 250, 250))
     }
 
     private fun buildPagination(): View = LinearLayout(this).apply {
@@ -196,7 +199,7 @@ class SourceSearchActivity : Activity() {
         textSize = 13f
         gravity = Gravity.CENTER
         setTextColor(blue)
-        background = rounded(Color.rgb(241, 247, 253), 18)
+        background = rounded(if (darkMode) Color.rgb(44, 57, 72) else Color.rgb(241, 247, 253), 18)
         isClickable = true
         isFocusable = true
         setOnClickListener { action() }
@@ -358,7 +361,7 @@ class SourceSearchActivity : Activity() {
         items.forEach { item ->
             results.addView(LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
-                background = rounded(Color.WHITE, 12)
+                background = rounded(card, 12)
                 setPadding(dp(14), dp(13), dp(14), dp(13))
                 isClickable = true
                 isFocusable = true
