@@ -130,6 +130,31 @@ class RhinoSafeSourceJavaExtensions(
     }
 
     fun urlEncode(value: String): String = URLEncoder.encode(value, Charsets.UTF_8.name())
+
+    /**
+     * JavaScript encodeURI compatibility for imported Legado rules.
+     * Unlike encodeURIComponent, encodeURI preserves URI delimiters and an
+     * existing fragment marker while percent-encoding spaces and non-ASCII text.
+     */
+    fun encodeURI(value: String): String = URLEncoder.encode(value, Charsets.UTF_8.name())
+        .replace("+", "%20")
+        .replace("%21", "!")
+        .replace("%27", "'")
+        .replace("%28", "(")
+        .replace("%29", ")")
+        .replace("%7E", "~")
+        .replace("%3B", ";")
+        .replace("%2C", ",")
+        .replace("%2F", "/")
+        .replace("%3F", "?")
+        .replace("%3A", ":")
+        .replace("%40", "@")
+        .replace("%26", "&")
+        .replace("%3D", "=")
+        .replace("%2B", "+")
+        .replace("%24", "$")
+        .replace("%23", "#")
+
     fun urlDecode(value: String): String = URLDecoder.decode(value, Charsets.UTF_8.name())
 
     /** Legado-compatible traditional-to-simplified conversion with upstream exclusions. */
