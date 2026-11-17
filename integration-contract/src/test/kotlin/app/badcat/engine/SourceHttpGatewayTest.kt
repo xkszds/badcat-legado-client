@@ -184,7 +184,7 @@ class SourceHttpGatewayTest {
     }
 
     @Test
-    fun executesUrlOptionJsBeforeRequestAndBodyJsAfterResponse() = runBlocking {
+    fun executesUrlOptionJsBeforeRequestAndBodyJsAfterResponse() = kotlinx.coroutines.runBlocking {
         val seen = mutableListOf<String>()
         val client = SourceRequestClient { request ->
             seen += request.url
@@ -213,7 +213,7 @@ class SourceHttpGatewayTest {
             ruleUrl = """/search,{"js":"url","bodyJs":"body"}""",
         )
         val response = assertIs<EngineResult.Success<SourceHttpResponse>>(result).value
-        assertEquals("https://example.test/search/v2", seen.single())
+        assertEquals("https://reader.example/search/v2", seen.single())
         assertEquals("response", response.body)
     }
 
