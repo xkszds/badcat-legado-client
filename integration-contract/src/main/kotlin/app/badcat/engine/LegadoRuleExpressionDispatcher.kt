@@ -60,9 +60,12 @@ object LegadoRuleExpressionDispatcher {
             val selectorResult = when (val resolved = resolve(leaf)) {
                 is EngineResult.Failure -> resolved
                 is EngineResult.Success -> when (resolved.value.type) {
-                    SelectorRuleType.CSS -> CssRuleEvaluator.evaluateElements(document, leaf)
-                    SelectorRuleType.XPATH -> XPathRuleEvaluator.evaluateElements(document, leaf)
-                    SelectorRuleType.JSON_PATH -> JsonPathRuleEvaluator.evaluateElements(document, leaf)
+                    // Always pass the normalized expression. In particular, a
+                    // single leading '@' is Legado's CSS mode marker, not part
+                    // of the selector text.
+                    SelectorRuleType.CSS -> CssRuleEvaluator.evaluateElements(document, resolved.value.expression)
+                    SelectorRuleType.XPATH -> XPathRuleEvaluator.evaluateElements(document, resolved.value.expression)
+                    SelectorRuleType.JSON_PATH -> JsonPathRuleEvaluator.evaluateElements(document, resolved.value.expression)
                 }
             }
             // In a mixed rule whose root explicitly opts into regex, later branches
