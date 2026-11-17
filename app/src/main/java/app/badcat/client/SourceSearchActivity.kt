@@ -56,6 +56,7 @@ class SourceSearchActivity : Activity() {
         private const val SEARCH_HISTORY_PREFS = "badcat_search_history"
         private const val SEARCH_HISTORY_KEY = "queries_v1"
         private const val MAX_SEARCH_HISTORY = 20
+        private const val MAX_VISIBLE_SEARCH_RESULTS = 60
         private const val MAX_SOURCES_PER_SEARCH = 24
         private const val MAX_PARALLEL_SEARCHES = 6
         private const val SOURCE_SEARCH_TIMEOUT_MS = 15_000L
@@ -392,6 +393,7 @@ class SourceSearchActivity : Activity() {
                 text = "导入 / 管理书源"
                 setOnClickListener {
                     refreshSourcesOnResume = true
+                refreshSourcesOnResume = true
                 startActivity(Intent(this@SourceSearchActivity, SourceCatalogActivity::class.java))
                 }
             })
@@ -493,6 +495,7 @@ class SourceSearchActivity : Activity() {
             tag = "source_setup_hint"
             text = "导入 / 管理书源"
             setOnClickListener {
+                refreshSourcesOnResume = true
                 startActivity(Intent(this@SourceSearchActivity, SourceCatalogActivity::class.java))
             }
         })
@@ -600,7 +603,8 @@ class SourceSearchActivity : Activity() {
 
     private fun showResults(page: Int, items: List<BookCandidate>, failures: List<String>) {
         status.text = "第 ${page} 页 · 找到 ${items.size} 条结果" +
-            if (failures.isNotEmpty()) " · ${failures.size} 个书源失败" else ""
+            (if (failures.isNotEmpty()) " · ${failures.size} 个书源失败" else "") +
+            (if (items.size > MAX_VISIBLE_SEARCH_RESULTS) " · 当前先显示前 $MAX_VISIBLE_SEARCH_RESULTS 条" else "")
         if (failures.isNotEmpty()) {
             results.addView(TextView(this).apply {
                 text = failures.joinToString("\n") { "• $it" }
@@ -616,7 +620,7 @@ class SourceSearchActivity : Activity() {
             })
             return
         }
-        items.forEach { item ->
+        items.take(MAX_VISIBLE_SEARCH_RESULTS).forEach { item ->
             results.addView(LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 background = rounded(card, 12)
@@ -630,6 +634,9 @@ class SourceSearchActivity : Activity() {
                         putExtra(SourceBookActivity.EXTRA_BOOK_NAME, item.name)
                         putExtra(SourceBookActivity.EXTRA_BOOK_COVER_URL, item.coverUrl)
                         putExtra(SourceBookActivity.EXTRA_BOOK_STATUS, item.status)
+                        putExtra(SourceBookActivity.EXTRA_BOOK_AUTHOR, item.author)
+                        putExtra(SourceBookActivity.EXTRA_BOOK_LATEST_CHAPTER, item.latestChapter)
+                        putExtra(SourceBookActivity.EXTRA_BOOK_INTRO, item.intro)
                     })
                 }
                 val info = LinearLayout(this@SourceSearchActivity).apply {
