@@ -64,6 +64,7 @@ class MainActivity : Activity() {
             setPadding(0, dp(2), 0, dp(2))
         }
         val typeLabels = mutableListOf<TextView>()
+        var syncSearchType: ((String) -> Unit)? = null
         fun renderTypeChoices() {
             typeLabels.forEach { label ->
                 val chosen = label.tag == contentType
@@ -84,7 +85,11 @@ class MainActivity : Activity() {
                 setPadding(dp(18), dp(5), dp(18), dp(5))
                 isClickable = true
                 isFocusable = true
-                setOnClickListener { contentType = type; renderTypeChoices() }
+                setOnClickListener {
+                    contentType = type
+                    syncSearchType?.invoke(type)
+                    renderTypeChoices()
+                }
             }
             typeLabels += label
             typeChoices.addView(label, LinearLayout.LayoutParams(-2, dp(32)))
@@ -110,6 +115,7 @@ class MainActivity : Activity() {
             })
         }
         homeSearchBar = bar
+        syncSearchType = { selected -> bar.setContentType(selected) }
         val configuredBarHeight = getSharedPreferences("badcat_home_layout", MODE_PRIVATE)
             .getInt("home_search_bar_height_dp", 40).coerceIn(34, 46)
         addView(bar, LinearLayout.LayoutParams(
