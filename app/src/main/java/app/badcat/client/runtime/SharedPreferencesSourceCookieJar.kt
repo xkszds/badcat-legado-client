@@ -93,6 +93,16 @@ class SharedPreferencesSourceCookieJar(
         }
     }
 
+    /** Removes only cookies that would be sent to [url], preserving other host/path cookies. */
+    fun removeForUrl(url: String) {
+        val httpUrl = url.toHttpUrlOrNull() ?: return
+        synchronized(lock) {
+            reloadLocked()
+            cookies.entries.removeAll { (_, cookie) -> cookie.matches(httpUrl) }
+            persistLocked()
+        }
+    }
+
     /** Clears this source's persisted cookies across all jar instances. */
     fun clear() {
         synchronized(lock) {

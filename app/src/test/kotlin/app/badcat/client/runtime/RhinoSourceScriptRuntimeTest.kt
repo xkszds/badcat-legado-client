@@ -213,6 +213,32 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun exposesLegadoJavaGetPutTimeFormatAndAjaxHelpers() = runBlocking {
+        val source = BookSource(
+            id = "https://java-compat.example/",
+            name = "Java compatibility",
+            baseUrl = "https://java-compat.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime(
+            sourceAjax = { requestedSource, raw ->
+                check(requestedSource.id == source.id)
+                "ajax:" + raw
+            },
+        )
+        val result = runtime.evaluate(
+            source,
+            "java.put('headers', '{\\\"headers\\\":{}}'); java.get('headers') + '|' + java.ajax('https://java-compat.example/api')",
+        )
+        assertEquals(
+            "{\\\"headers\\\":{}}|ajax:https://java-compat.example/api",
+            (result as EngineResult.Success).value,
+        )
+        val formatted = runtime.evaluate(source, "java.timeFormat('0')")
+        assertTrue((formatted as EngineResult.Success).value.matches(Regex("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")))
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun exposesSourceScopedLegadoCookieLookupHelpers() = runBlocking {
         val sourceId = "https://cookie-helper.example/"
         val runtime = RhinoSourceScriptRuntime(

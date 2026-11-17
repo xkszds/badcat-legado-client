@@ -18,6 +18,11 @@ import app.badcat.engine.SourceSearchService
 import app.badcat.engine.SourceTocService
 import app.badcat.engine.SourceRequestClient
 import app.badcat.engine.SourceScriptRuntime
+import app.badcat.engine.SourceRequestFactory
+import app.badcat.engine.EngineResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import com.google.gson.JsonParser
 
 /**
  * Builds the Android host's shared, multi-source reading-engine graph.
@@ -35,13 +40,6 @@ class BadcatReadingEngineFactory(
     private val bookTextReplacement: BookTextReplacement = BookTextReplacement { text -> text },
     private val loginSessionStore: SourceLoginSessionStore = SharedPreferencesSourceLoginSessionStore(context.applicationContext),
 ) {
-    private val activeScriptRuntime: SourceScriptRuntime = scriptRuntime ?: RhinoSourceScriptRuntime(
-        sourceKeyValueStore = SharedPreferencesSourceScriptKeyValueStore(context.applicationContext),
-        sourceLoginSessionStore = loginSessionStore,
-        sourceCookieReader = { sourceId, url ->
-            SharedPreferencesSourceCookieJar(context.applicationContext, sourceId).getCookie(url)
-        },
-    )
     private val catalog = FileBookSourceCatalog(context.applicationContext)
     private val replaceRuleCatalog = FileReplaceRuleCatalog(context.applicationContext)
     private val badcatPurificationSettings = BadcatPurificationSettingsStore(context.applicationContext)
@@ -54,6 +52,35 @@ class BadcatReadingEngineFactory(
             },
         )
         val durableRequestClient = SourceLoginSessionRequestClient(transport, loginSessionStore)
+        val activeScriptRuntime: SourceScriptRuntime = scriptRuntime ?: RhinoSourceScriptRuntime(
+            sourceKeyValueStore = SharedPreferencesSourceScriptKeyValueStore(context.applicationContext),
+            sourceLoginSessionStore = loginSessionStore,
+            sourceCookieReader = { sourceId, url ->
+                SharedPreferencesSourceCookieJar(context.applicationContext, sourceId).getCookie(url)
+            },
+            sourceCookieRemover = { sourceId, url ->
+                SharedPreferencesSourceCookieJar(context.applicationContext, sourceId).removeForUrl(url)
+            },
+            sourceAjax = { source, urlAndOptions ->
+                val (url, headers) = parseAjaxUrlAndHeaders(urlAndOptions)
+                val request = when (val created = SourceRequestFactory.create(source, url, headers = headers)) {
+                    is EngineResult.Failure -> throw IllegalArgumentException(created.message)
+                    is EngineResult.Success -> created.value.copy(timeoutMillis = 8_000L, retryCount = 0)
+                }
+                when (val result = runBlocking(Dispatchers.IO) { durableRequestClient.execute(request) }) {
+                    is EngineResult.Failure -> throw IllegalStateException(result.message)
+                    is EngineResult.Success -> {
+                        require(result.value.statusCode in 200..299) {
+                            "java.ajax returned HTTP ${result.value.statusCode}"
+                        }
+                        require(result.value.body.length <= 8 * 1024 * 1024) {
+                            "java.ajax response exceeds the size limit"
+                        }
+                        result.value.body
+                    }
+                }
+            },
+        )
         val gateway = BadcatSourceHttpGatewayFactory(
             client = durableRequestClient,
             scriptRuntime = activeScriptRuntime,
@@ -95,4 +122,23 @@ class BadcatReadingEngineFactory(
 
     fun webViewPurificationAdapter(): BadcatWebViewPurificationAdapter =
         BadcatWebViewPurificationAdapter(purificationCoordinator())
+
+    private fun parseAjaxUrlAndHeaders(raw: String): Pair<String, Map<String, String>> {
+        require(raw.length <= 16 * 1024) { "java.ajax argument exceeds the size limit" }
+        val marker = raw.lastIndexOf(",{")
+        if (marker < 0) return raw.trim() to emptyMap()
+        val url = raw.substring(0, marker).trim()
+        val options = JsonParser.parseString(raw.substring(marker + 1).trim())
+        require(options.isJsonObject) { "java.ajax options must be a JSON object" }
+        val headerElement = options.asJsonObject.get("headers") ?: return url to emptyMap()
+        require(headerElement.isJsonObject) { "java.ajax headers must be a JSON object" }
+        val headers = LinkedHashMap<String, String>()
+        headerElement.asJsonObject.entrySet().forEach { (name, value) ->
+            require(value.isJsonPrimitive && value.asJsonPrimitive.isString) {
+                "java.ajax header values must be strings"
+            }
+            headers[name] = value.asString
+        }
+        return url to headers
+    }
 }

@@ -3,6 +3,9 @@ package app.badcat.client.runtime
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.security.MessageDigest
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.Base64
 import com.github.liuyueyi.quick.transfer.ChineseUtils as QuickChineseUtils
 import com.github.liuyueyi.quick.transfer.constants.TransType
@@ -18,6 +21,7 @@ class RhinoSafeSourceJavaExtensions(
     private val sourceId: String,
     private val store: SourceScriptKeyValueStore,
     private val cookieReader: (String) -> String = { "" },
+    private val ajaxRequest: (String) -> String = { throw UnsupportedOperationException("java.ajax is not connected to the source HTTP transport") },
 ) {
 
     fun getString(key: String): String {
@@ -31,6 +35,21 @@ class RhinoSafeSourceJavaExtensions(
         store.put(sourceId, key, value)
         return value
     }
+
+    /** Legado's general key/value aliases use the same source-isolated persistent store. */
+    fun get(key: String): String = getString(key)
+
+    fun put(key: String, value: String): String = putString(key, value)
+
+    /** Legado timestamp formatter used by imported source rules. */
+    fun timeFormat(timestamp: Number): String =
+        SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(timestamp.toLong()))
+
+    fun timeFormat(timestamp: String): String =
+        timestamp.toLongOrNull()?.let { timeFormat(it) }.orEmpty()
+
+    /** Synchronous compatibility bridge; the host enforces transport bounds. */
+    fun ajax(urlAndOptions: String): String = ajaxRequest(urlAndOptions)
 
     /** Legado-compatible, source-scoped cookie lookup. */
     fun getCookie(tag: String): String = cookieReader(tag)

@@ -26,6 +26,8 @@ class RhinoSourceScriptRuntime(
     private val sourceKeyValueStore: SourceScriptKeyValueStore = InMemorySourceScriptKeyValueStore,
     private val sourceLoginSessionStore: SourceLoginSessionStore = InMemorySourceLoginSessionStore,
     private val sourceCookieReader: (sourceId: String, url: String) -> String = { _, _ -> "" },
+    private val sourceCookieRemover: (sourceId: String, url: String) -> Unit = { _, _ -> },
+    private val sourceAjax: (source: BookSource, urlAndOptions: String) -> String = { _, _ -> throw UnsupportedOperationException("java.ajax is not connected to the source HTTP transport") },
 ) : SourceScriptRuntime {
     private val javaExtensions = ConcurrentHashMap<String, RhinoSafeSourceJavaExtensions>()
     private val sourceExtensions = ConcurrentHashMap<String, RhinoSourceLoginExtensions>()
@@ -93,10 +95,17 @@ class RhinoSourceScriptRuntime(
                 // source-scoped bridge. This shadows Rhino's package namespace;
                 // untrusted rules still cannot reach java.lang or Android APIs.
                 scope["java"] = javaExtensions.computeIfAbsent(source.id) {
-                    RhinoSafeSourceJavaExtensions(source.id, sourceKeyValueStore) { url ->
-                        sourceCookieReader(source.id, url)
-                    }
+                    RhinoSafeSourceJavaExtensions(
+                        sourceId = source.id,
+                        store = sourceKeyValueStore,
+                        cookieReader = { url -> sourceCookieReader(source.id, url) },
+                        ajaxRequest = { raw -> sourceAjax(source, raw) },
+                    )
                 }
+                scope["cookie"] = RhinoSourceCookieExtensions(
+                    cookieReader = { url -> sourceCookieReader(source.id, url) },
+                    cookieRemover = { url -> sourceCookieRemover(source.id, url) },
+                )
                 scope["source"] = sourceExtensions.computeIfAbsent(source.id) {
                     RhinoSourceLoginExtensions(source.id, sourceLoginSessionStore, sourceKeyValueStore, source.id)
                 }
