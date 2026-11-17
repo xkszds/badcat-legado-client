@@ -66,7 +66,7 @@ object JsonPathRuleEvaluator {
     }
 
     private fun evaluateCollectionPath(document: SourceDocument, path: String): EngineResult<List<String>> = try {
-        val selected = JsonPath.compile(path).read<Any?>(document.body)
+        val selected = JsonPath.parse(document.body).read<Any?>(path)
         val values = when (selected) {
             null -> emptyList()
             is Iterable<*> -> selected.mapNotNull { it?.let { value -> Gson().toJson(normalizeJsonValue(value)) } }
@@ -82,7 +82,7 @@ object JsonPathRuleEvaluator {
 
     private fun isSingleJsonPath(path: String): Boolean = runCatching {
         RuleExpressionTokenizer.splitByFirstTopLevelOperator(path).operator == null
-    }.getOrDefault(false)
+    }.getOrDefault(true)
 
     private fun normalizeJsonValue(value: Any?): Any? = when (value) {
         is Map<*, *> -> value.entries.associate { (key, item) -> key.toString() to normalizeJsonValue(item) }
