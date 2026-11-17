@@ -19,10 +19,10 @@ import app.badcat.engine.SourceTocService
 import app.badcat.engine.SourceRequestClient
 import app.badcat.engine.SourceScriptRuntime
 import app.badcat.engine.SourceRequestFactory
+import app.badcat.engine.LegadoUrlResolver
 import app.badcat.engine.EngineResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import com.google.gson.JsonParser
 
 /**
  * Builds the Android host's shared, multi-source reading-engine graph.
@@ -61,11 +61,17 @@ class BadcatReadingEngineFactory(
             sourceCookieRemover = { sourceId, url ->
                 SharedPreferencesSourceCookieJar(context.applicationContext, sourceId).removeForUrl(url)
             },
-            sourceAjax = { source, urlAndOptions ->
-                val (url, headers) = parseAjaxUrlAndHeaders(urlAndOptions)
-                val request = when (val created = SourceRequestFactory.create(source, url, headers = headers)) {
+            sourceAjax = { source, baseUrl, urlAndOptions ->
+                val resolved = when (val parsed = LegadoUrlResolver.resolve(baseUrl, urlAndOptions)) {
+                    is EngineResult.Failure -> throw IllegalArgumentException(parsed.message)
+                    is EngineResult.Success -> parsed.value
+                }
+                val request = when (val created = SourceRequestFactory.create(source, resolved)) {
                     is EngineResult.Failure -> throw IllegalArgumentException(created.message)
-                    is EngineResult.Success -> created.value.copy(timeoutMillis = 8_000L, retryCount = 0)
+                    is EngineResult.Success -> created.value.copy(
+                        timeoutMillis = (created.value.timeoutMillis ?: 8_000L).coerceAtMost(15_000L),
+                        retryCount = created.value.retryCount.coerceAtMost(1),
+                    )
                 }
                 when (val result = runBlocking(Dispatchers.IO) { durableRequestClient.execute(request) }) {
                     is EngineResult.Failure -> throw IllegalStateException(result.message)
@@ -123,22 +129,4 @@ class BadcatReadingEngineFactory(
     fun webViewPurificationAdapter(): BadcatWebViewPurificationAdapter =
         BadcatWebViewPurificationAdapter(purificationCoordinator())
 
-    private fun parseAjaxUrlAndHeaders(raw: String): Pair<String, Map<String, String>> {
-        require(raw.length <= 16 * 1024) { "java.ajax argument exceeds the size limit" }
-        val marker = raw.lastIndexOf(",{")
-        if (marker < 0) return raw.trim() to emptyMap()
-        val url = raw.substring(0, marker).trim()
-        val options = JsonParser.parseString(raw.substring(marker + 1).trim())
-        require(options.isJsonObject) { "java.ajax options must be a JSON object" }
-        val headerElement = options.asJsonObject.get("headers") ?: return url to emptyMap()
-        require(headerElement.isJsonObject) { "java.ajax headers must be a JSON object" }
-        val headers = LinkedHashMap<String, String>()
-        headerElement.asJsonObject.entrySet().forEach { (name, value) ->
-            require(value.isJsonPrimitive && value.asJsonPrimitive.isString) {
-                "java.ajax header values must be strings"
-            }
-            headers[name] = value.asString
-        }
-        return url to headers
-    }
 }

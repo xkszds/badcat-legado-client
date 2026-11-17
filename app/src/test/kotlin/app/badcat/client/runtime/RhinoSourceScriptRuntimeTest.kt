@@ -224,8 +224,9 @@ class RhinoSourceScriptRuntimeTest {
             baseUrl = "https://java-compat.example/",
         )
         val runtime = RhinoSourceScriptRuntime(
-            sourceAjax = { requestedSource, raw ->
+            sourceAjax = { requestedSource, baseUrl, raw ->
                 check(requestedSource.id == source.id)
+                check(baseUrl == source.baseUrl)
                 "ajax:" + raw
             },
         )

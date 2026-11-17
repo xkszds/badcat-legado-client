@@ -29,7 +29,7 @@ class RhinoSourceScriptRuntime(
     private val sourceLoginSessionStore: SourceLoginSessionStore = InMemorySourceLoginSessionStore,
     private val sourceCookieReader: (sourceId: String, url: String) -> String = { _, _ -> "" },
     private val sourceCookieRemover: (sourceId: String, url: String) -> Unit = { _, _ -> },
-    private val sourceAjax: (source: BookSource, urlAndOptions: String) -> String = { _, _ -> throw UnsupportedOperationException("java.ajax is not connected to the source HTTP transport") },
+    private val sourceAjax: (source: BookSource, baseUrl: String, urlAndOptions: String) -> String = { _, _, _ -> throw UnsupportedOperationException("java.ajax is not connected to the source HTTP transport") },
 ) : SourceScriptRuntime {
     private val javaExtensions = ConcurrentHashMap<String, RhinoSafeSourceJavaExtensions>()
     private val sourceExtensions = ConcurrentHashMap<String, RhinoSourceLoginExtensions>()
@@ -101,7 +101,13 @@ class RhinoSourceScriptRuntime(
                     sourceId = source.id,
                     store = sourceKeyValueStore,
                     cookieReader = { url -> sourceCookieReader(source.id, url) },
-                    ajaxRequest = { raw -> sourceAjax(source, raw) },
+                    ajaxRequest = { raw ->
+                        sourceAjax(
+                            source,
+                            bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                            raw,
+                        )
+                    },
                     ruleStringReader = { rule ->
                         runCatching {
                             val document = SourceDocument(
