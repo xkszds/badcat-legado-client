@@ -11,8 +11,8 @@ import java.net.URI
  * Upstream reference: LegadoTeam/legado AnalyzeUrl.kt at
  * 330e606c4d57e08adc056ff8ab7a4132c784da9.
  *
- * JavaScript-bearing forms are rejected explicitly until the pinned Rhino runtime
- * and its source bindings are integrated; they are never treated as literal URLs.
+ * The HTTP gateway evaluates URL JavaScript before calling this URI-only resolver.
+ * Any script/template marker that reaches this layer is rejected rather than sent literally.
  */
 object LegadoUrlResolver {
 
@@ -30,7 +30,7 @@ object LegadoUrlResolver {
         if (containsScript(ruleUrl)) {
             return EngineResult.Failure(
                 EngineErrorCode.UNSUPPORTED_RULE,
-                "This URL uses Legado JavaScript syntax; the Rhino runtime is not integrated yet",
+                "Unresolved Legado URL script/template marker reached URI parsing; URL preprocessing did not complete",
             )
         }
 
@@ -145,8 +145,7 @@ object LegadoUrlResolver {
     }
 
     private fun containsScript(value: String): Boolean =
-        value.contains("@js", ignoreCase = true) ||
-            value.contains("<js>", ignoreCase = true) ||
+        Regex("@js\\s*:|<js>", RegexOption.IGNORE_CASE).containsMatchIn(value) ||
             value.contains("{{") ||
             value.contains("}}")
 
