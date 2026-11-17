@@ -425,14 +425,22 @@ class SourceSearchActivity : Activity() {
     }
 
     private fun renderSourceSetupHint() {
-        if (!::historyPanel.isInitialized || enabledSources.isNotEmpty()) return
+        if (!::historyPanel.isInitialized) return
+        for (index in historyPanel.childCount - 1 downTo 0) {
+            if (historyPanel.getChildAt(index).tag == "source_setup_hint") {
+                historyPanel.removeViewAt(index)
+            }
+        }
+        if (enabledSources.isNotEmpty()) return
         historyPanel.addView(TextView(this).apply {
+            tag = "source_setup_hint"
             text = "尚未导入可搜索的小说书源"
             textSize = 13f
             setTextColor(muted)
             setPadding(dp(2), dp(12), dp(2), dp(6))
         })
         historyPanel.addView(android.widget.Button(this).apply {
+            tag = "source_setup_hint"
             text = "导入 / 管理书源"
             setOnClickListener {
                 startActivity(Intent(this@SourceSearchActivity, SourceCatalogActivity::class.java))
