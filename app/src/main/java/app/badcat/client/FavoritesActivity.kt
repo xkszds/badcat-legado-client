@@ -377,7 +377,7 @@ class FavoritesActivity : Activity() {
         isClickable = true; isFocusable = true
         setOnClickListener { selectedFolderId = folder.id; refresh() }
         setOnLongClickListener { showFolderActions(folder); true }
-        addView(TextView(this@FavoritesActivity).apply { text = "▰"; textSize = 24f; setTextColor(blue) })
+        addView(BadcatLineIconView(this@FavoritesActivity, "folder", blue).apply { contentDescription = "文件夹" }, LinearLayout.LayoutParams(dp(28), dp(28)))
         addView(TextView(this@FavoritesActivity).apply { text = folder.name; textSize = 12f; maxLines = 1; setTextColor(ink); gravity = Gravity.CENTER })
         addView(TextView(this@FavoritesActivity).apply { text = "$count 本小说"; textSize = 10f; setTextColor(muted) })
         if (showFolderPreview && count > 0) {
