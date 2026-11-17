@@ -99,7 +99,7 @@ class RhinoSourceScriptRuntimeTest {
         )
         val stored = runtime.evaluate(
             source,
-            "java.putString('token', 'source-value'); java.getString('token')",
+            "java.put('token', 'source-value'); java.get('token')",
         )
         val digest = runtime.evaluate(source, "java.md5Encode('abc')")
         val encoded = runtime.evaluate(source, "java.urlEncode('a b')")
@@ -122,7 +122,7 @@ class RhinoSourceScriptRuntimeTest {
         val secondRuntime = RhinoSourceScriptRuntime(sourceKeyValueStore = store)
 
         val written = firstRuntime.evaluate(source, "java.putString('refreshToken', 'persisted')")
-        val read = secondRuntime.evaluate(source, "java.getString('refreshToken')")
+        val read = secondRuntime.evaluate(source, "java.get('refreshToken')")
 
         assertEquals("persisted", (written as EngineResult.Success).value)
         assertEquals("persisted", (read as EngineResult.Success).value)
@@ -135,7 +135,7 @@ class RhinoSourceScriptRuntimeTest {
         val first = BookSource("https://safe-first.example/", "First", "https://safe-first.example/")
         val second = BookSource("https://safe-second.example/", "Second", "https://safe-second.example/")
         runtime.evaluate(first, "java.putString('session', 'first')")
-        val result = runtime.evaluate(second, "java.getString('session')")
+        val result = runtime.evaluate(second, "java.get('session')")
         assertEquals("", (result as EngineResult.Success).value)
         runtime.clearSourceState(first.id)
         runtime.clearSourceState(second.id)
@@ -235,6 +235,26 @@ class RhinoSourceScriptRuntimeTest {
         )
         val formatted = runtime.evaluate(source, "java.timeFormat('0')")
         assertTrue((formatted as EngineResult.Success).value.matches(Regex("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")))
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
+    fun javaGetStringExtractsFromTheCurrentJsonDocument() = runBlocking {
+        val source = BookSource(
+            id = "https://json-get-string.example/",
+            name = "JSON getString",
+            baseUrl = "https://json-get-string.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val result = runtime.evaluate(
+            source,
+            "java.getString('$.update_time') + '|' + java.getString('$.id')",
+            mapOf(
+                "result" to """{"update_time":123456,"id":"book-7"}""",
+                "baseUrl" to source.baseUrl,
+            ),
+        )
+        assertEquals("123456|book-7", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
 

@@ -25,6 +25,41 @@ class SourceTocServiceTest {
     }
 
     @Test
+    fun firstScriptTocPageIsOneBasedAndStartsAtOne() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"@js:buildChapterList()",
+                "chapterName":"a@text",
+                "chapterUrl":"a@href"
+            }""",
+        )
+        var observedPage = 0
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> {
+                observedPage = bindings["page"]?.toIntOrNull() ?: -1
+                return EngineResult.Success("<li><a href='/chapter/1'>Chapter One</a></li>")
+            }
+        }
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> =
+                EngineResult.Success(SourceHttpResponse(200, request.url, body = "<html></html>"))
+        }
+
+        val result = SourceTocService(SourceHttpGateway(client), scriptRuntime = runtime)
+            .load(source, "https://reader.example/book/1")
+
+        assertIs<EngineResult.Success<List<BookChapter>>>(result)
+        assertEquals(1, observedPage)
+    }
+
+    @Test
     fun redirectAliasesDoNotConsumeTheTocPageSafetyLimit() = runBlocking {
         val source = BookSource(
             id = "fixture",

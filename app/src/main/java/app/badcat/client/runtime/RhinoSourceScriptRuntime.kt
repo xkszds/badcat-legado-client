@@ -4,6 +4,8 @@ import app.badcat.engine.BookSource
 import app.badcat.engine.EngineErrorCode
 import app.badcat.engine.EngineResult
 import app.badcat.engine.SourceScriptRuntime
+import app.badcat.engine.LegadoRuleExpressionDispatcher
+import app.badcat.engine.SourceDocument
 import com.script.ScriptBindings
 import com.script.rhino.RhinoScriptEngine
 import kotlinx.coroutines.TimeoutCancellationException
@@ -94,14 +96,28 @@ class RhinoSourceScriptRuntime(
                 // Common, low-risk Legado helpers are exposed through a narrow
                 // source-scoped bridge. This shadows Rhino's package namespace;
                 // untrusted rules still cannot reach java.lang or Android APIs.
-                scope["java"] = javaExtensions.computeIfAbsent(source.id) {
-                    RhinoSafeSourceJavaExtensions(
-                        sourceId = source.id,
-                        store = sourceKeyValueStore,
-                        cookieReader = { url -> sourceCookieReader(source.id, url) },
-                        ajaxRequest = { raw -> sourceAjax(source, raw) },
-                    )
-                }
+                var currentRuleContent = bindings["result"].orEmpty()
+                val javaBridge = RhinoSafeSourceJavaExtensions(
+                    sourceId = source.id,
+                    store = sourceKeyValueStore,
+                    cookieReader = { url -> sourceCookieReader(source.id, url) },
+                    ajaxRequest = { raw -> sourceAjax(source, raw) },
+                    ruleStringReader = { rule ->
+                        runCatching {
+                            val document = SourceDocument(
+                                url = bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                                body = currentRuleContent,
+                            )
+                            when (val parsed = LegadoRuleExpressionDispatcher.evaluate(document, rule)) {
+                                is EngineResult.Failure -> ""
+                                is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(rule, parsed.value).orEmpty()
+                            }
+                        }.getOrDefault("")
+                    },
+                    contentWriter = { content -> currentRuleContent = content },
+                )
+                javaExtensions[source.id] = javaBridge
+                scope["java"] = javaBridge
                 scope["cookie"] = RhinoSourceCookieExtensions(
                     cookieReader = { url -> sourceCookieReader(source.id, url) },
                     cookieRemover = { url -> sourceCookieRemover(source.id, url) },

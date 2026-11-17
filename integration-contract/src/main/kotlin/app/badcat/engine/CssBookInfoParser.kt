@@ -28,15 +28,57 @@ class CssBookInfoParser {
                     it,
                 )
             }
-        val document = SourceDocument(response.finalUrl, response.body, response.contentType)
+        var currentResult = response.body
+        var document = SourceDocument(response.finalUrl, currentResult, response.contentType)
+        val initRule = rules["init"]?.trim().orEmpty()
+        if (initRule.isNotBlank()) {
+            val initialized = if (initRule.startsWith("@js:", true) || initRule.startsWith("javascript:", true)) {
+                when (val result = scriptRuntime.evaluate(
+                    source,
+                    initRule.substringAfter(':').trim(),
+                    mapOf(
+                        "result" to currentResult,
+                        "baseUrl" to response.finalUrl,
+                        "sourceUrl" to source.id,
+                        "sourceId" to source.id,
+                        "sourceName" to source.name,
+                        "ruleName" to "init",
+                    ),
+                )) {
+                    is EngineResult.Failure -> return result
+                    is EngineResult.Success -> result.value
+                }
+            } else {
+                val path = normalizeJsonRule(initRule)
+                when (val result = JsonPathRuleEvaluator.evaluateElements(document, path)) {
+                    is EngineResult.Failure -> return result
+                    is EngineResult.Success -> result.value.firstOrNull()
+                        ?: return EngineResult.Failure(EngineErrorCode.NOT_FOUND, "Book-info init rule returned no data")
+                }
+            }
+            currentResult = initialized
+            document = SourceDocument(response.finalUrl, currentResult, "application/json")
+        }
 
         suspend fun field(name: String): EngineResult<String?> {
             val expression = rules[name]?.takeIf(String::isNotBlank) ?: return EngineResult.Success(null)
-            var trimmed = expression.trim()
+            val (withoutPut, putAssignments) = splitPutAssignments(expression.trim())
+            for ((variable, valueRule) in putAssignments) {
+                val normalizedPutRule = normalizeJsonRuleForDocument(document, valueRule)
+                val putValue = when (val evaluated = LegadoRuleExpressionDispatcher.evaluate(document, normalizedPutRule)) {
+                    is EngineResult.Failure -> return evaluated
+                    is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(normalizedPutRule, evaluated.value)
+                } ?: continue
+                when (val stored = scriptRuntime.putString(source, variable, putValue)) {
+                    is EngineResult.Failure -> return stored
+                    is EngineResult.Success -> Unit
+                }
+            }
+            var trimmed = withoutPut
             trimmed = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
                     source = source,
                     template = trimmed,
-                    result = response.body,
+                    result = currentResult,
                     baseUrl = response.finalUrl,
                     ruleName = name,
                     scriptRuntime = scriptRuntime,
@@ -53,7 +95,7 @@ class CssBookInfoParser {
                     source,
                     script,
                     mapOf(
-                        "result" to response.body,
+                        "result" to currentResult,
                         "baseUrl" to response.finalUrl,
                         "sourceUrl" to source.id,
                         "sourceId" to source.id,
@@ -65,6 +107,7 @@ class CssBookInfoParser {
                     is EngineResult.Success -> EngineResult.Success(result.value.trim().takeIf(String::isNotEmpty))
                 }
             }
+            trimmed = normalizeJsonRuleForDocument(document, trimmed)
             val normalized = when (name) {
                 "coverUrl" -> LegadoRuleReplacement.transformExpression(trimmed) {
                     it.replace(Regex("@src$", RegexOption.IGNORE_CASE), "@attr(src)")
@@ -128,6 +171,33 @@ class CssBookInfoParser {
                 status = values["bookStatus"],
             ),
         )
+    }
+
+
+    private fun normalizeJsonRule(rule: String): String {
+        val trimmed = rule.trim()
+        return if (trimmed.startsWith("$") || trimmed.startsWith("@json", true)) trimmed else "$.$trimmed"
+    }
+
+    private fun normalizeJsonRuleForDocument(document: SourceDocument, rule: String): String {
+        val trimmed = rule.trim()
+        val isJson = document.body.trimStart().let { it.startsWith("{") || it.startsWith("[") }
+        val isBarePath = trimmed.matches(Regex("[A-Za-z_$][A-Za-z0-9_$]*(\\.[A-Za-z_$][A-Za-z0-9_$]*)*"))
+        return if (isJson && isBarePath) "$.$trimmed" else trimmed
+    }
+
+    private fun splitPutAssignments(expression: String): Pair<String, List<Pair<String, String>>> {
+        val match = Regex("@put\\s*:\\s*\\{([^}]*)\\}", RegexOption.IGNORE_CASE).find(expression)
+            ?: return expression to emptyList()
+        val assignments = match.groupValues[1].split(',').mapNotNull { entry ->
+            val separator = entry.indexOf(':')
+            if (separator <= 0) null else {
+                val key = entry.substring(0, separator).trim()
+                val value = entry.substring(separator + 1).trim()
+                if (key.isBlank() || value.isBlank()) null else key to value
+            }
+        }
+        return expression.removeRange(match.range).trim() to assignments
     }
 
     fun parse(

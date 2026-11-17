@@ -22,11 +22,23 @@ class RhinoSafeSourceJavaExtensions(
     private val store: SourceScriptKeyValueStore,
     private val cookieReader: (String) -> String = { "" },
     private val ajaxRequest: (String) -> String = { throw UnsupportedOperationException("java.ajax is not connected to the source HTTP transport") },
+    private val ruleStringReader: (String) -> String = { "" },
+    private val contentWriter: (String) -> Unit = {},
 ) {
 
-    fun getString(key: String): String {
+    /** Evaluate a Legado selector against the current AnalyzeRule content. */
+    fun getString(rule: String): String = ruleStringReader(rule)
+
+    /** Explicit stored-string accessor for host integrations. */
+    fun getStoredString(key: String): String {
         requireValidKey(key)
         return store.get(sourceId, key).orEmpty()
+    }
+
+    fun setContent(content: String): String {
+        require(content.length <= MAX_VALUE_CHARS * 512) { "Legado content exceeds the size limit" }
+        contentWriter(content)
+        return content
     }
 
     fun putString(key: String, value: String): String {

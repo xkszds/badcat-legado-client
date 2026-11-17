@@ -99,6 +99,46 @@ class CssBookInfoParserTest {
     }
 
     @Test
+    fun appliesJsonInitAndStoresBookInfoPutVariables() = runBlocking {
+        val source = BookSource(
+            id = "https://api-reader.example/",
+            name = "JSON fixture",
+            baseUrl = "https://api-reader.example/",
+            ruleBookInfoJson = """{
+                "init":"data.book",
+                "name":"title@put:{bid:id}",
+                "author":"author"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://api-reader.example/book/7",
+            contentType = "application/json",
+            body = """{"data":{"book":{"id":"42","title":"JSON Novel","author":"Writer"}}}""",
+        )
+        val stored = linkedMapOf<String, String>()
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> = EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "No script expected")
+
+            override suspend fun putString(source: BookSource, key: String, value: String): EngineResult<Unit> {
+                stored[key] = value
+                return EngineResult.Success(Unit)
+            }
+        }
+
+        val detail = assertIs<EngineResult.Success<BookDetail>>(
+            CssBookInfoParser().parseWithScripts(source, response, response.finalUrl, runtime),
+        ).value
+        assertEquals("JSON Novel", detail.name)
+        assertEquals("Writer", detail.author)
+        assertEquals("42", stored["bid"])
+    }
+
+    @Test
     fun rejectsBlankRequestedBookUrl() {
         val source = BookSource(
             id = "fixture",
