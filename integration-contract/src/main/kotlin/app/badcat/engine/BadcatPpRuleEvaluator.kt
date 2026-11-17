@@ -123,9 +123,14 @@ object BadcatPpRuleEvaluator {
                             it.userInfo == null
                     }?.toASCIIString()
                 }.getOrNull() ?: return@mapNotNull null
-                val label = element?.text()?.trim().orEmpty().ifBlank {
-                    root.text().trim()
-                }
+                // Some providers expose episode names only as tooltip/accessibility metadata.
+                val label = sequenceOf(
+                    element?.attr("title"),
+                    element?.attr("aria-label"),
+                    element?.text(),
+                    root.text(),
+                ).mapNotNull { it?.trim()?.takeIf(String::isNotEmpty) }
+                    .firstOrNull().orEmpty()
                 if (label.isBlank()) null else BadcatVideoLink(label, resolved)
             }.distinctBy { it.url }
             EngineResult.Success(links)
