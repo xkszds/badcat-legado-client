@@ -21,6 +21,7 @@ class BadcatSearchBarView(
     initialQuery: String = "",
     initialType: String = "小说",
     appearance: String = "integrated",
+    dark: Boolean = false,
     private val onSearch: (String, String) -> Unit,
     private val onTypeChanged: (String) -> Unit = { },
 ) : LinearLayout(context) {
@@ -34,7 +35,7 @@ class BadcatSearchBarView(
         gravity = Gravity.CENTER_VERTICAL
         val compact = appearance == "small"
         setPadding(dp(if (compact) 4 else 5), 0, dp(if (compact) 4 else 5), 0)
-        background = rounded(Color.WHITE, dp(if (compact) 22 else 25))
+        background = rounded(if (dark) Color.rgb(43, 48, 56) else Color.WHITE, dp(if (compact) 22 else 25))
         elevation = dp(1).toFloat()
 
         typeLabel.apply {
@@ -52,15 +53,15 @@ class BadcatSearchBarView(
         addView(typeLabel, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT))
 
         addView(TextView(context).apply {
-            setBackgroundColor(Color.rgb(230, 234, 239))
+            setBackgroundColor(if (dark) Color.rgb(76, 82, 92) else Color.rgb(230, 234, 239))
         }, LayoutParams(dp(1), dp(22)))
 
         input.apply {
             hint = hintFor(contentType)
             textSize = if (compact) 14f else 15f
             setSingleLine(true)
-            setTextColor(INK)
-            setHintTextColor(MUTED)
+            setTextColor(if (dark) Color.rgb(240, 242, 245) else INK)
+            setHintTextColor(if (dark) Color.rgb(165, 172, 182) else MUTED)
             background = null
             setPadding(dp(10), 0, dp(4), 0)
             setText(initialQuery)
