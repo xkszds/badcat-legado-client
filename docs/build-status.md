@@ -1,10 +1,35 @@
+## Chapter redirect destination cycle guard (2026-11-17)
+
+- Integrated the redirect-destination regression into the active implementation without replacing its current cache, script-runtime, or existing chapter tests.
+- The service records the post-redirect URL identity before parsing the next-page URL; a next link back to that destination must return a typed parse failure after one HTTP request.
+- The standalone branch was based on an older file snapshot; its complete source/test/docs blobs must not overwrite newer active-branch implementations.
+
+## Pagination URL identity hardening (2026-11-16)
+
+- Added a shared pagination identity helper that strips URL fragments before loop detection. TOC pending-page deduplication also compares fragment-free identities.
+- Added chapter and TOC regressions where only the fragment changes between the redirect's final URL and the next-page link; both must fail with a typed parse error after exactly one request.
+- Implementation commits: `47f8cd3f4ee2` (identity helper), `df60dbfe3ef8` (chapter service), `1888f0d52d2b` (TOC service). Regression test commits: `35de54fad493` (chapter) and `bbd49679b375` (TOC).
+- Run [#43828525378](https://github.com/xkszds/badcat-legado-client/actions/runs/43828525378) for `bbd49679b375` passed contract tests, bounded Rhino host tests, and Android Debug APK assembly; artifact upload completed. Artifact: 4,723,309 bytes, SHA-256 `42c7da1a07078276f7e045a756e44e825e6a1875d28a3aea6b4db35fdb1de42e`. GitHub Actions was still in post-job cleanup at last poll.
+- Run [#43828479790](https://github.com/xkszds/badcat-legado-client/actions/runs/43828479790) for the TOC implementation also completed successfully; artifact 4,723,305 bytes, SHA-256 `60bfe6db723d95774ce428db9121d23bdfc2f36bf84fb907a14022a5178fbc0b`.
+- This validates the automated contract suite and APK assembly, not real-device installation/runtime, full Legado compatibility, original Badcat UI parity or original purification parity.
+
 ## Latest implementation update (2026-11-16)
 
-- Hardened chapter-content pagination against redirect-destination loops: the service now records each non-empty post-redirect URL in the visited set before parsing the next-page link. If `nextContentUrl` points back to that redirect destination, the engine returns a typed `PARSE` failure before making a duplicate HTTP request.
-- Added a deterministic regression fixture in `SourceChapterContentServiceTest` that simulates a chapter URL redirecting to a canonical URL and then pointing its next-page rule back to that same canonical URL. The expected request count is one.
-- Opened draft PR [#1](https://github.com/xkszds/badcat-legado-client/pull/1) on branch `automation/chapter-redirect-cycle-guard-20261116`. The original APK and user data were not modified.
-- Re-checked the official [Legado repository](https://github.com/LegadoTeam/legado) on 2026-11-16: its latest commit remains the pinned `330e606c4d57e08adc056ff8ab7a4132c784da9a`; the GPL-3.0 license, Gradle 8.14.4, AGP 8.13.2, Kotlin 2.4.20, compile SDK 36 and `:app` / `:modules:book` / `:modules:rhino` module boundary remain consistent with the pin. The upstream `App.kt` startup registers source/rule model wrappers for Rhino, confirming that the app-layer runtime initialization is not supplied by the two library modules alone.
-- Validation boundary: both edited code files were read back from the PR branch and their new content was confirmed. No CI run/status has yet been reported for this PR. The last verified CI debug build is run `43719899764` at commit `a89b7d494f16b7b7d587f95e649dc711a9f3aa96`, which is 110 commits behind the current main head; it does not validate this patch or current main. This environment has Java 21 but no Gradle executable or Android SDK, so no local Gradle test, APK assembly, installation or device test is claimed.
+- Corrected chapter-content pagination page accounting: redirect request aliases and final URLs are tracked for cycle detection, while the safety limit counts only successfully parsed content pages. The implementation already uses a separate `pageCount`; this update adds a regression fixture proving two pages that each redirect still fit a two-page limit.
+- Regression test commit: `825c2d5aae8b`; GitHub Actions run [#43827758043](https://github.com/xkszds/badcat-legado-client/actions/runs/43827758043) completed successfully, including contract tests, bounded Rhino host tests, Android Debug APK assembly and artifact upload.
+- Artifact: `badcat-legado-debug`, 4,722,660 bytes, SHA-256 `111d6605081ad2e472438b0f092ea6da258417c3cb8e528464f754bdc96c56e9`.
+- The initial test commit `01b5e2c74597` failed because the expected test string encoded newline characters incorrectly; the assertion was corrected in `825c2d5aae8b`. A follow-up diagnostic assertion commit `86b152506bdc` also passed CI (run [#43827995701](https://github.com/xkszds/badcat-legado-client/actions/runs/43827995701)); its artifact is 4,722,658 bytes, SHA-256 `ecf62f2e3c7f90727cd317ee4da0b8bd02670ac346b1ea11e2e6a23b1864bea6`.
+- The documentation commits were also built successfully: run [#43828065748](https://github.com/xkszds/badcat-legado-client/actions/runs/43828065748) for `0f4e49fe74e1` (4,722,655 bytes; SHA-256 `81fad054258b16727d840fc96e325b0d7963eb191840bb1e9cdf57df40968499`) and run [#43828086379](https://github.com/xkszds/badcat-legado-client/actions/runs/43828086379) for `46369d43a5c5` (4,722,657 bytes; SHA-256 `9b5000591af0e3ba19275029282849f5d75f9d14e6f4a02f496bd46de5f1d137`). Both completed successfully.
+- This validates automated contract tests and APK assembly only. Physical-device installation/runtime, complete Legado compatibility, original Badcat UI parity and original purification parity remain unverified.
+
+## Latest implementation update (2026-11-16)
+
+- Chapter-content pagination now records each successful HTTP response's final redirect URL as a visited pagination identity. A subsequent next-page link targeting that canonical URL is rejected as a cycle before issuing a duplicate request.
+- Added a regression fixture where the chapter request redirects to `/canonical-chapter` and the parsed next-page link points back to that final URL; the expected behavior is a typed `PARSE` failure after exactly one HTTP request.
+- Implementation commit: `6fd9cae85d8f`; regression test commit: `8f8d51e9b823`.
+- GitHub Actions runs #43826998580 and #43827018055 both completed contract tests and Android Debug APK assembly and uploaded `badcat-legado-debug` artifacts. At the last poll, both jobs were still in post-job cleanup, with no failed steps reported.
+- Run #43827018055 artifact: 4,722,555 bytes, SHA-256 `a7cef2a8ccb206dd9fe7f80773c8843058103b86c9d8461404bf01354e06c6ca`.
+- This confirms CI contract tests and APK assembly only. It does not confirm installation, runtime behavior on a physical device, full Legado rule compatibility, original Badcat UI parity, or original Badcat purification parity.
 
 
 ## Latest implementation update (2026-11-15)
