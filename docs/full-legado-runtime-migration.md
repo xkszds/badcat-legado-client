@@ -40,6 +40,7 @@ The upstream `App` initialization and global services must be adapted explicitly
 - [x] Pin exact upstream commit and license.
 - [x] Add the upstream source as a submodule.
 - [x] Make CI check out the pinned source.
+- [x] Verify the submodule commit and GPL license in CI.
 - [ ] Record and verify upstream source and dependency checksums.
 
 ### Gate 1 — upstream model and runtime build
