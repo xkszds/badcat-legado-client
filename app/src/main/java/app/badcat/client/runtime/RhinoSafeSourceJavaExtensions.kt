@@ -169,9 +169,14 @@ class RhinoSafeSourceJavaExtensions(
             "downloadFile response exceeds the 8 MiB limit"
         }
         val token = downloadTokenForUrl(url)
-        fileStore.putBytes(sourceId, DOWNLOAD_FILE_PREFIX + token, bytes)
         val relativePath = "$token.${downloadExtension(url)}"
-        writePhysicalFile(relativePath, bytes)
+        fileStore.putBytes(sourceId, DOWNLOAD_FILE_PREFIX + token, bytes)
+        try {
+            writePhysicalFile(relativePath, bytes)
+        } catch (error: Throwable) {
+            fileStore.remove(sourceId, DOWNLOAD_FILE_PREFIX + token)
+            throw error
+        }
         return relativePath
     }
 
@@ -188,9 +193,14 @@ class RhinoSafeSourceJavaExtensions(
             "downloadFile response exceeds the 8 MiB limit"
         }
         val token = downloadTokenForUrl(url)
-        fileStore.putBytes(sourceId, DOWNLOAD_FILE_PREFIX + token, bytes)
         val relativePath = "$token.$extension"
-        writePhysicalFile(relativePath, bytes)
+        fileStore.putBytes(sourceId, DOWNLOAD_FILE_PREFIX + token, bytes)
+        try {
+            writePhysicalFile(relativePath, bytes)
+        } catch (error: Throwable) {
+            fileStore.remove(sourceId, DOWNLOAD_FILE_PREFIX + token)
+            throw error
+        }
         return relativePath
     }
 
@@ -244,12 +254,20 @@ class RhinoSafeSourceJavaExtensions(
         val parent = target.parentFile ?: root
         require(parent.isDirectory || parent.mkdirs()) { "Unable to create source file directory" }
         val temporary = java.io.File(parent, target.name + ".tmp")
+        val backup = java.io.File(parent, target.name + ".bak")
         try {
             temporary.outputStream().buffered().use { it.write(bytes) }
-            if (target.exists() && !target.delete()) throw IllegalStateException("Unable to replace source file")
-            if (!temporary.renameTo(target)) throw IllegalStateException("Unable to commit source file")
+            if (backup.exists() && !backup.delete()) throw IllegalStateException("Unable to clear source file backup")
+            val hadTarget = target.exists()
+            if (hadTarget && !target.renameTo(backup)) throw IllegalStateException("Unable to back up source file")
+            if (!temporary.renameTo(target)) {
+                if (hadTarget) backup.renameTo(target)
+                throw IllegalStateException("Unable to commit source file")
+            }
+            backup.delete()
         } catch (error: Throwable) {
             temporary.delete()
+            if (!target.exists() && backup.exists()) backup.renameTo(target)
             throw error
         }
     }
