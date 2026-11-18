@@ -155,35 +155,43 @@ class CssChapterContentParser {
                 is EngineResult.Failure -> return expanded
                 is EngineResult.Success -> expanded.value
             }
-            text = if (expandedReplacement.startsWith("@js:", true) || expandedReplacement.startsWith("javascript:", true)) {
-                val script = expandedReplacement.substringAfter(':').trim()
-                when (val evaluated = scriptRuntime.evaluate(
-                    source,
-                    script,
-                    mapOf(
-                        "result" to text,
-                        "baseUrl" to response.finalUrl,
-                        "sourceUrl" to source.id,
-                        "sourceId" to source.id,
-                        "sourceName" to source.name,
-                        "ruleName" to "replaceRegex",
-                        "page" to page.toString(),
-                    ),
-                )) {
-                    is EngineResult.Failure -> return evaluated
-                    is EngineResult.Success -> evaluated.value
+            val parsedReplacement = LegadoRuleReplacement.parse(expandedReplacement)
+            val replacementValue = when {
+                parsedReplacement.expression.isBlank() -> text
+                parsedReplacement.expression.startsWith("@js:", true) ||
+                    parsedReplacement.expression.startsWith("javascript:", true) -> {
+                    val script = parsedReplacement.expression.substringAfter(':').trim()
+                    when (val evaluated = scriptRuntime.evaluate(
+                        source,
+                        script,
+                        mapOf(
+                            "result" to text,
+                            "baseUrl" to response.finalUrl,
+                            "sourceUrl" to source.id,
+                            "sourceId" to source.id,
+                            "sourceName" to source.name,
+                            "ruleName" to "replaceRegex",
+                            "page" to page.toString(),
+                        ),
+                    )) {
+                        is EngineResult.Failure -> return evaluated
+                        is EngineResult.Success -> evaluated.value
+                    }
                 }
-            } else {
-                when (val evaluated = LegadoRuleExpressionDispatcher.evaluate(
+                else -> when (val evaluated = LegadoRuleExpressionDispatcher.evaluate(
                     replacementDocument.copy(body = text),
-                    expandedReplacement,
+                    parsedReplacement.expression,
                 )) {
                     is EngineResult.Failure -> return evaluated
                     is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(
-                        expandedReplacement,
+                        parsedReplacement.expression,
                         evaluated.value,
                     ).orEmpty()
                 }
+            }
+            text = when (val applied = parsedReplacement.apply(listOf(replacementValue))) {
+                is EngineResult.Failure -> return applied
+                is EngineResult.Success -> applied.value.firstOrNull().orEmpty()
             }
         }
         if (text.isBlank()) {
