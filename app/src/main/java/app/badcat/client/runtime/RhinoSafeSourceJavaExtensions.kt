@@ -43,6 +43,10 @@ class RhinoSafeSourceJavaExtensions(
         if (method.equals("GET", true) && body == null) httpGet(url, headers)
         else throw UnsupportedOperationException("java.$method HTTP transport is unavailable")
     },
+    private val httpRequestWithTimeout: (String, String, String?, Map<String, String>, Long?) -> SourceHttpResponse = { method, url, body, headers, timeout ->
+        require(timeout == null) { "Per-call timeout is not connected to the source HTTP transport" }
+        httpRequest(method, url, body, headers)
+    },
     private val ruleStringReader: (String) -> String = { "" },
     private val ruleStringReaderWithContent: (String, String) -> String = { rule, _ -> ruleStringReader(rule) },
     private val ruleStringListReader: (String) -> List<String> = { emptyList() },
@@ -220,10 +224,13 @@ class RhinoSafeSourceJavaExtensions(
      * failures become a synthetic response carrying the exception stack trace;
      * they must not abort the surrounding Rhino rule.
      */
-    fun connect(url: String): RhinoSourceHttpResponse = connect(url, null)
+    fun connect(url: String): RhinoSourceHttpResponse = connect(url, null, null)
 
-    fun connect(url: String, headers: Any?): RhinoSourceHttpResponse = try {
-        RhinoSourceHttpResponse(httpRequest("GET", url, null, parseRequestHeaders(headers)))
+    fun connect(url: String, headers: Any?): RhinoSourceHttpResponse = connect(url, headers, null)
+
+    fun connect(url: String, headers: Any?, callTimeout: Long?): RhinoSourceHttpResponse = try {
+        require(callTimeout == null || callTimeout > 0) { "connect callTimeout must be positive" }
+        RhinoSourceHttpResponse(httpRequestWithTimeout("GET", url, null, parseRequestHeaders(headers), callTimeout))
     } catch (error: Exception) {
         if (error is java.util.concurrent.CancellationException) throw error
         RhinoSourceHttpResponse(
