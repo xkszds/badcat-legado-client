@@ -76,30 +76,51 @@ object CssRuleEvaluator {
         return runCatching {
             var firstFailure: EngineResult.Failure? = null
             val values = RuleCombinationEvaluator.evaluateNested(rule) { part ->
-                val parsed = parseExpression(part) ?: run {
-                    if (firstFailure == null) firstFailure = EngineResult.Failure(
-                        EngineErrorCode.UNSUPPORTED_RULE,
-                        "Unsupported CSS collection rule: $part",
-                    )
-                    return@evaluateNested emptyList()
-                }
-                // Collection roots identify the repeated element nodes. A trailing
-                // scalar suffix such as @text, @href or @attr(id) is a field
-                // extraction mode, not a reason to reject the collection rule:
-                // downstream name/url/content fields are evaluated against each
-                // isolated element. Keep the selected node HTML here.
-                // @CSS: is a direct selector mode; @@ only forces JSoup mode
-                // and still retains the upstream ElementsSingle index suffix.
-                // Split the scalar extraction suffix first. Legacy list
-                // indexes belong to the selector head (".w_txt li.4"),
-                // not to the full expression ending in "@textNodes".
-                val indexedRule = if (explicitCss) null else LegadoElementIndex.parse(parsed.selector)
-                val selector = indexedRule?.selector ?: parsed.selector
                 val root = Jsoup.parse(document.body, document.url)
-                val selected = if (explicitCss) root.select(selector).toList()
-                    else selectLegadoStep(root, selector)
-                val matched = selected.map { it.outerHtml() }
-                if (indexedRule == null) matched else LegadoElementIndex.apply(matched, indexedRule)
+                if (explicitCss) {
+                    val parsed = parseExpression(part) ?: run {
+                        if (firstFailure == null) firstFailure = EngineResult.Failure(
+                            EngineErrorCode.UNSUPPORTED_RULE,
+                            "Unsupported explicit CSS collection rule: $part",
+                        )
+                        return@evaluateNested emptyList()
+                    }
+                    root.select(parsed.selector).map { it.outerHtml() }
+                } else {
+                    // Default Legado mode is a sequence of selector steps:
+                    // class.list@tag.ul@tag.li. The old implementation sent the
+                    // entire chain to one JSoup select(), so common community
+                    // sources (笔仙阁 / 爱下书 / 玄幻阁) could never build a list.
+                    // A final @text/@href suffix is extraction metadata; collection
+                    // parsing retains the selected element HTML for per-item rules.
+                    val chain = splitRuleChain(part)
+                    val selectorSteps = if (chain.lastOrNull()?.let(::parseValueMode) != null) {
+                        chain.dropLast(1)
+                    } else {
+                        chain
+                    }
+                    if (selectorSteps.isEmpty()) {
+                        if (firstFailure == null) firstFailure = EngineResult.Failure(
+                            EngineErrorCode.UNSUPPORTED_RULE,
+                            "Unsupported CSS collection rule: $part",
+                        )
+                        return@evaluateNested emptyList()
+                    }
+                    var selected: List<Element> = listOf(root)
+                    for (step in selectorSteps) {
+                        val indexedRule = LegadoElementIndex.parse(step)
+                        val selector = indexedRule?.selector ?: step
+                        if (selector.isBlank()) {
+                            selected = emptyList()
+                            break
+                        }
+                        val matched = selected.flatMap { parent -> selectLegadoStep(parent, selector) }
+                        selected = if (indexedRule == null) matched
+                            else LegadoElementIndex.apply(matched, indexedRule)
+                        if (selected.isEmpty()) break
+                    }
+                    selected.map { it.outerHtml() }
+                }
             }
             if (firstFailure != null && values.isEmpty()) firstFailure!! else EngineResult.Success(values)
         }.getOrElse {
