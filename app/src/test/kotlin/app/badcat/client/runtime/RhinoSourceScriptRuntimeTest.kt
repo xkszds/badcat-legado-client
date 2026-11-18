@@ -1831,13 +1831,18 @@ text + re.test('aa}}')"""
 
     @Test
     fun downloadFileUsesTheRuntimeInjectedSourceFileStore() = runBlocking {
-        val values = mutableMapOf<Pair<String, String>, String>()
+        val values = mutableMapOf<Pair<String, String>, ByteArray>()
         val writes = mutableListOf<Pair<String, String>>()
         val store = object : SourceScriptFileCacheStore {
-            override fun get(sourceId: String, key: String): String? = values[sourceId to key]
-            override fun put(sourceId: String, key: String, value: String) {
+            override fun get(sourceId: String, key: String): String? =
+                getBytes(sourceId, key)?.let { String(it, Charsets.UTF_8) }
+            override fun put(sourceId: String, key: String, value: String) =
+                putBytes(sourceId, key, value.toByteArray(Charsets.UTF_8))
+            override fun getBytes(sourceId: String, key: String): ByteArray? =
+                values[sourceId to key]?.copyOf()
+            override fun putBytes(sourceId: String, key: String, value: ByteArray) {
                 writes += sourceId to key
-                values[sourceId to key] = value
+                values[sourceId to key] = value.copyOf()
             }
             override fun remove(sourceId: String, key: String) {
                 values.remove(sourceId to key)
