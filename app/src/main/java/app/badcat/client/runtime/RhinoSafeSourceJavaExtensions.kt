@@ -274,10 +274,10 @@ class RhinoSafeSourceJavaExtensions(
 
     private fun normalizeArchiveEntryPath(path: String): String? {
         if (path.isBlank() || path.length > MAX_ARCHIVE_PATH_CHARS) return null
-        if (path.startsWith("/") || path.startsWith("\\\\") ||
+        if (path.startsWith("/") || path.startsWith("\\") ||
             Regex("^[A-Za-z]:").containsMatchIn(path)
         ) return null
-        val parts = path.replace('\\\\', '/').split('/')
+        val parts = path.replace('\\', '/').split('/')
         if (parts.any { it.isBlank() || it == "." || it == ".." }) return null
         if (parts.any { part -> part.any { it.code < 0x20 || it == '\\u0000' } }) return null
         return parts.joinToString("/")
