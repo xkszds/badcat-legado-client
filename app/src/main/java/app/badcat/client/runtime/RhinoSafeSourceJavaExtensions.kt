@@ -9,6 +9,8 @@ import java.util.SimpleTimeZone
 import java.util.Locale
 import java.util.UUID
 import java.util.Base64
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
 import java.net.URL
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
@@ -138,7 +140,7 @@ class RhinoSafeSourceJavaExtensions(
 
     fun connect(url: String, headers: Any?): RhinoSourceHttpResponse = get(url, headers)
 
-    /** Bounded Legado batch GET helper; requests are deliberately sequential. */
+    /** Bounded Legado batch GET helper with capped parallelism and input-order results. */
     fun ajaxAll(urls: Any?): Array<RhinoSourceHttpResponse> {
         val values = when (urls) {
             is Scriptable -> {
@@ -157,11 +159,23 @@ class RhinoSafeSourceJavaExtensions(
             else -> throw IllegalArgumentException("java.ajaxAll expects an array of URLs")
         }
         require(values.size <= MAX_AJAX_ALL_URLS) { "java.ajaxAll accepts at most $MAX_AJAX_ALL_URLS URLs" }
-        return values.map { value ->
-            val url = value?.toString()?.trim().orEmpty()
-            require(url.isNotEmpty()) { "java.ajaxAll URL must not be blank" }
-            RhinoSourceHttpResponse(httpRequest("GET", url, null, emptyMap()))
-        }.toTypedArray()
+        val normalizedUrls = values.map { value ->
+            value?.toString()?.trim().orEmpty().also { url ->
+                require(url.isNotEmpty()) { "java.ajaxAll URL must not be blank" }
+            }
+        }
+        if (normalizedUrls.isEmpty()) return emptyArray()
+        val executor = Executors.newFixedThreadPool(
+            minOf(MAX_AJAX_ALL_CONCURRENCY, normalizedUrls.size),
+        )
+        return try {
+            val tasks = normalizedUrls.map { url ->
+                Callable { RhinoSourceHttpResponse(httpRequest("GET", url, null, emptyMap())) }
+            }
+            executor.invokeAll(tasks).map { future -> future.get() }.toTypedArray()
+        } finally {
+            executor.shutdownNow()
+        }
     }
 
     private fun parseRequestHeaders(headers: Any?): Map<String, String> = when (headers) {
@@ -480,6 +494,7 @@ class RhinoSafeSourceJavaExtensions(
     companion object {
         const val DEFAULT_WEBVIEW_USER_AGENT = "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.0.0 Mobile Safari/537.36"
         private const val MAX_AJAX_ALL_URLS = 20
+        private const val MAX_AJAX_ALL_CONCURRENCY = 4
         private const val MAX_KEY_CHARS = 256
         private const val MAX_VALUE_CHARS = 16 * 1024
         private const val MAX_AES_INPUT_BYTES = 2 * 1024 * 1024
@@ -491,14 +506,29 @@ class RhinoSourceHttpResponse(private val response: SourceHttpResponse) {
     fun body(): String = response.body
     fun code(): Int = response.statusCode
     fun statusCode(): Int = response.statusCode
+    fun message(): String = response.statusMessage
     fun url(): String = response.finalUrl
     fun header(name: String): String =
         response.headers.entries.firstOrNull { it.key.equals(name, ignoreCase = true) }
             ?.value?.firstOrNull().orEmpty()
     fun headers(name: String): String = header(name)
+    fun headers(): Map<String, List<String>> = response.headers
+    fun raw(): RhinoSourceRawResponse = RhinoSourceRawResponse(response)
     fun parse(): LegadoSourceElement = LegadoSourceElement(response.body, response.finalUrl)
     fun select(selector: String): LegadoSourceElement = parse().select(selector)
-    fun charset(): String = response.contentType.orEmpty().substringAfter("charset=", "UTF-8").trim().trim('"')
+    fun charset(): String = response.contentType.orEmpty().substringAfter("charset=", "UTF-8").trim().trim('\"')
+    override fun toString(): String = "HTTP " + response.statusCode + " " + response.statusMessage + " " + response.finalUrl
+}
+
+/** Safe read-only raw-response metadata; no sockets or streams are exposed. */
+class RhinoSourceRawResponse(private val response: SourceHttpResponse) {
+    fun request(): RhinoSourceRawRequest = RhinoSourceRawRequest(response.finalUrl)
+    fun code(): Int = response.statusCode
+    fun message(): String = response.statusMessage
+}
+
+class RhinoSourceRawRequest(private val requestUrl: String) {
+    fun url(): String = requestUrl
 }
 
 /** Narrow URL metadata view for source rules; no connection or stream methods. */
