@@ -289,19 +289,29 @@ class RhinoLegadoSymmetricCrypto(
     key: ByteArray,
     iv: ByteArray,
 ) {
+    private val algorithm = transformation.substringBefore('/').uppercase()
     private val transformation = when (transformation.uppercase()) {
         "AES/CBC/PKCS5PADDING", "AES/CBC/PKCS7PADDING" -> "AES/CBC/PKCS5Padding"
-        else -> throw UnsupportedOperationException("Only AES/CBC/PKCS5Padding is supported")
+        "DES/CBC/PKCS5PADDING" -> "DES/CBC/PKCS5Padding"
+        else -> throw UnsupportedOperationException("Only AES/DES CBC with PKCS5/PKCS7 padding is supported")
     }
     private val keyBytes = key.copyOf()
     private val ivBytes = iv.copyOf()
 
     fun decryptStr(data: ByteArray): String {
-        require(data.size <= 2 * 1024 * 1024) { "AES input exceeds the size limit" }
-        require(keyBytes.size == 16 || keyBytes.size == 24 || keyBytes.size == 32) { "Invalid AES key length" }
-        require(ivBytes.size == 16) { "Invalid AES-CBC IV length" }
+        require(data.size <= 2 * 1024 * 1024) { "Symmetric crypto input exceeds the size limit" }
+        when (algorithm) {
+            "AES" -> {
+                require(keyBytes.size == 16 || keyBytes.size == 24 || keyBytes.size == 32) { "Invalid AES key length" }
+                require(ivBytes.size == 16) { "Invalid AES-CBC IV length" }
+            }
+            "DES" -> {
+                require(keyBytes.size == 8) { "Invalid DES key length" }
+                require(ivBytes.size == 8) { "Invalid DES-CBC IV length" }
+            }
+        }
         val cipher = Cipher.getInstance(transformation)
-        cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(keyBytes, "AES"), IvParameterSpec(ivBytes))
+        cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(keyBytes, algorithm), IvParameterSpec(ivBytes))
         return String(cipher.doFinal(data), Charsets.UTF_8)
     }
 }
