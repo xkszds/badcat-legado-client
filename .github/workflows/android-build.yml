@@ -55,6 +55,7 @@ jobs:
           python3 - <<'PY'
           import gzip
           import json
+          import re
           import urllib.parse
           import urllib.request
           from bs4 import BeautifulSoup
@@ -236,6 +237,21 @@ jobs:
           import urllib.request
           from bs4 import BeautifulSoup
 
+          def selector_part(part):
+              tokens = []
+              index = None
+              for token in part.strip().split():
+                  if token.startswith("class."):
+                      token = "." + token[len("class."):]
+                  elif token.startswith("tag."):
+                      token = token[len("tag."):]
+                  match = re.search(r"\.(-?\d+)$", token)
+                  if match:
+                      index = int(match.group(1))
+                      token = token[:match.start()]
+                  tokens.append(token)
+              return " ".join(tokens), index
+
           def simple_css(rule):
               rule = (rule or "").strip()
               if not rule or "<js>" in rule.lower() or "@js:" in rule.lower():
@@ -244,25 +260,39 @@ jobs:
                   return None
               if rule.lower().startswith("@css:"):
                   rule = rule[5:].strip()
-              # Convert the common Legado tag/class chain syntax without
-              # treating extraction suffixes (@text/@href) as CSS selectors.
-              parts = rule.split("@")
-              selectors = []
+              first = rule.split("@", 1)[0].strip()
+              selector, _ = selector_part(first)
+              return selector or None
+
+          def legado_field(node, rule):
+              parts = [part.strip() for part in (rule or "").split("@") if part.strip()]
+              current = [node]
               for part in parts:
-                  part = part.strip()
-                  if not part or part.lower() in {"text", "owntext", "textnodes", "html", "href", "src", "content", "tag"}:
-                      continue
-                  tokens = []
-                  for token in part.split():
-                      if token.startswith("class."):
-                          token = "." + token[len("class."):].replace(".", ".")
-                      elif token.startswith("tag."):
-                          token = token[len("tag."):]
-                      # Legado collection indexes are not CSS class names.
-                      token = __import__("re").sub(r"\.(-?\d+)$", "", token)
-                      tokens.append(token)
-                  selectors.append(" ".join(tokens))
-              return " ".join(x for x in selectors if x) or None
+                  mode = part.lower()
+                  if mode in {"text", "owntext", "textnodes", "html", "href", "src", "content", "tag"}:
+                      values = []
+                      for item in current:
+                          if mode == "text":
+                              values.append(item.get_text(" ", strip=True))
+                          elif mode == "owntext":
+                              values.append(" ".join(item.find_all(string=True, recursive=False)).strip())
+                          elif mode == "textnodes":
+                              values.append(" ".join(item.find_all(string=True)).strip())
+                          elif mode == "html":
+                              values.append(str(item))
+                          elif mode == "tag":
+                              values.append(item.name or "")
+                          else:
+                              values.append(item.get(mode, ""))
+                      return next((value for value in values if value), None)
+                  selector, index = selector_part(part)
+                  selected = []
+                  for item in current:
+                      selected.extend(item.select(selector) if selector else [item])
+                  if index is not None:
+                      selected = [selected[index]] if -len(selected) <= index < len(selected) else []
+                  current = selected
+              return current[0].get_text(" ", strip=True) if current else None
 
           collections = [
               ("liufuyou-yck", "https://raw.githubusercontent.com/liufuyou/read/main/sources/yck-novel.json"),
@@ -351,8 +381,12 @@ jobs:
                       link_count = text_body.lower().count("<a ")
                       list_rule = source.get("ruleSearch", {}).get("bookList", "")
                       list_css = simple_css(list_rule)
-                      name_css = simple_css(source.get("ruleSearch", {}).get("name", ""))
+                      name_rule = source.get("ruleSearch", {}).get("name", "")
+                      url_rule = source.get("ruleSearch", {}).get("bookUrl", "")
+                      name_css = simple_css(name_rule)
                       selected_count = 0
+                      extracted_count = 0
+                      valid_url_count = 0
                       matching_titles = []
                       if text_body.lstrip().startswith(("{", "[")):
                           try:
@@ -366,12 +400,15 @@ jobs:
                               result_nodes = soup.select(list_css)
                               selected_count = len(result_nodes)
                               for node in result_nodes[:100]:
-                                  title_node = node.select_one(name_css) if name_css else None
-                                  title = title_node.get_text(" ", strip=True) if title_node else node.get_text(" ", strip=True)
+                                  title = legado_field(node, name_rule)
+                                  book_url = legado_field(node, url_rule)
                                   if title:
+                                      extracted_count += 1
                                       if "斗罗大陆" in title:
                                           matching_titles.append(title[:100])
-                              print(f"PUBLIC_SOURCE_CSS {name}: list_rule={list_rule!r}, name_rule={source.get('ruleSearch', {}).get('name', '')!r}, selector={list_css!r}, name_selector={name_css!r}, items={selected_count}, matching_titles={matching_titles[:5]!r}")
+                                  if book_url and (book_url.startswith("/") or book_url.startswith("http://") or book_url.startswith("https://")):
+                                      valid_url_count += 1
+                              print(f"PUBLIC_SOURCE_CSS {name}: list_rule={list_rule!r}, name_rule={name_rule!r}, bookUrl_rule={url_rule!r}, selector={list_css!r}, items={selected_count}, extracted_names={extracted_count}, valid_book_urls={valid_url_count}, matching_titles={matching_titles[:5]!r}")
                           except Exception as parse_error:
                               print(f"PUBLIC_SOURCE_CSS_FAIL {name}: {type(parse_error).__name__}: {parse_error}")
                       json_keys = []
