@@ -582,4 +582,25 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(source.id)
     }
 
+
+    @Test
+    fun exposesLegadoGetElementsListAndIndexedAccess() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val source = BookSource(
+            id = "https://elements-helpers.example/",
+            name = "Element collection helpers",
+            baseUrl = "https://elements-helpers.example/",
+        )
+        val html = """<ul><li>First</li><li>Second</li></ul>"""
+        val result = runtime.evaluate(
+            source,
+            "var items = java.getElements('ul li'); items.size() + '|' + items.get(1).text() + '|' + items.toArray()[0].text() + '|' + items[0].text() + '|' + items.length",
+            mapOf("result" to html, "baseUrl" to source.baseUrl),
+        )
+
+        assertTrue("Legado getElements failed: $result", result is EngineResult.Success)
+        assertEquals("2|Second|First|First|2", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
 }
