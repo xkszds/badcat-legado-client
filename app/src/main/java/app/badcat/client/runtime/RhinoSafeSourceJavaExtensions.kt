@@ -376,9 +376,9 @@ class RhinoSafeSourceJavaExtensions(
     }
 
     private fun normalizeEscapedLineBreaks(text: String): String =
-        text.replace("\\\\r\\\\n", "\\n")
-            .replace("\\\\n", "\\n")
-            .replace("\\\\r", "\\n")
+        text.replace("\\r\\n", "\n")
+            .replace("\\n", "\n")
+            .replace("\\r", "\n")
 
     private fun formatHtmlText(html: String?, otherRegex: Regex = otherHtmlRegex): String {
         html ?: return ""
@@ -386,10 +386,10 @@ class RhinoSafeSourceJavaExtensions(
             .replace(nbspRegex, " ")
             .replace(espRegex, " ")
             .replace(noPrintRegex, "")
-            .replace(wrapHtmlRegex, "\\n")
+            .replace(wrapHtmlRegex, "\n")
             .replace(commentRegex, "")
             .replace(otherRegex, "")
-            .replace(indent1Regex, "\\n　　")
+            .replace(indent1Regex, "\n　　")
             .replace(indent2Regex, "　　")
             .replace(lastRegex, "")
     }
