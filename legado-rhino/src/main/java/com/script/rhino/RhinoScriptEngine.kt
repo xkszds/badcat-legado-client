@@ -287,7 +287,8 @@ object RhinoScriptEngine {
     fun callSourceFunction(action: Function, scope: VarScope): Any? {
         val context = Context.getCurrentContext() as? RhinoContext
             ?: throw IllegalStateException("Source callback requires an active Rhino context")
-        return action.call(context, scope, topLevelThis(scope), emptyArray())
+        val callbackScope = action.parentScope ?: scope
+        return action.call(context, callbackScope, topLevelThis(scope), emptyArray())
     }
 
     init {
