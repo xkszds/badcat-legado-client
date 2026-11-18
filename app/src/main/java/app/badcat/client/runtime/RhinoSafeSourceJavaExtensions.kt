@@ -180,6 +180,95 @@ class RhinoSafeSourceJavaExtensions(
         return String(bytes, java.nio.charset.Charset.forName(charsetName))
     }
 
+    /** Return the original downloaded bytes; null mirrors Legado's missing-file result. */
+    fun readFile(path: String): ByteArray? {
+        val token = downloadToken(path)
+        return fileStore.getBytes(sourceId, DOWNLOAD_FILE_PREFIX + token)
+    }
+
+    /**
+     * Read one entry from a ZIP supplied by URL or hexadecimal archive data.
+     * Both compressed input and expanded entry data are bounded to avoid
+     * untrusted source archives exhausting memory.
+     */
+    fun getZipByteArrayContent(url: String, path: String): ByteArray? {
+        require(path.isNotBlank()) { "ZIP entry path must not be blank" }
+        val archive = if (url.startsWith("http://", true) || url.startsWith("https://", true)) {
+            rateLimit(false)
+            val response = httpRequest("GET", url, null, emptyMap())
+            require(response.statusCode in 200..299) { "ZIP download returned HTTP ${response.statusCode}" }
+            response.bodyBytes ?: response.body.toByteArray(Charsets.UTF_8)
+        } else {
+            decodeHex(url)
+        }
+        require(archive.size <= MAX_DOWNLOAD_BYTES) { "ZIP archive exceeds the 8 MiB limit" }
+        java.util.zip.ZipInputStream(archive.inputStream()).use { zip ->
+            while (true) {
+                val entry = zip.nextEntry ?: break
+                if (!entry.isDirectory && entry.name == path) {
+                    val output = java.io.ByteArrayOutputStream()
+                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                    var total = 0
+                    while (true) {
+                        val count = zip.read(buffer)
+                        if (count < 0) break
+                        total += count
+                        require(total <= MAX_ARCHIVE_ENTRY_BYTES) {
+                            "ZIP entry exceeds the 16 MiB expanded limit"
+                        }
+                        output.write(buffer, 0, count)
+                    }
+                    return output.toByteArray()
+                }
+                zip.closeEntry()
+            }
+        }
+        return null
+    }
+
+    fun getZipStringContent(url: String, path: String): String {
+        val bytes = getZipByteArrayContent(url, path) ?: return ""
+        return String(bytes, detectTextCharset(bytes))
+    }
+
+    fun getZipStringContent(url: String, path: String, charsetName: String): String {
+        val bytes = getZipByteArrayContent(url, path) ?: return ""
+        return String(bytes, java.nio.charset.Charset.forName(charsetName))
+    }
+
+    private fun decodeHex(value: String): ByteArray {
+        require(value.length % 2 == 0 && value.length <= MAX_DOWNLOAD_BYTES * 2) {
+            "Invalid or oversized hexadecimal archive"
+        }
+        require(value.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }) {
+            "Archive input must be a URL or hexadecimal data"
+        }
+        return ByteArray(value.length / 2) { index ->
+            value.substring(index * 2, index * 2 + 2).toInt(16).toByte()
+        }
+    }
+
+    private fun detectTextCharset(bytes: ByteArray): java.nio.charset.Charset {
+        if (bytes.size >= 3 && bytes[0] == 0xEF.toByte() &&
+            bytes[1] == 0xBB.toByte() && bytes[2] == 0xBF.toByte()
+        ) return Charsets.UTF_8
+        if (bytes.size >= 2 && bytes[0] == 0xFF.toByte() && bytes[1] == 0xFE.toByte()) {
+            return Charsets.UTF_16LE
+        }
+        if (bytes.size >= 2 && bytes[0] == 0xFE.toByte() && bytes[1] == 0xFF.toByte()) {
+            return Charsets.UTF_16BE
+        }
+        val utf8 = Charsets.UTF_8.newDecoder()
+            .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+            .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
+        return try {
+            utf8.decode(java.nio.ByteBuffer.wrap(bytes))
+            Charsets.UTF_8
+        } catch (_: java.nio.charset.CharacterCodingException) {
+            java.nio.charset.Charset.forName("GBK")
+        }
+    }
+
     /** Delete only a source-owned downloaded text file token. */
     fun deleteFile(path: String): Boolean {
         val token = downloadToken(path)
@@ -858,6 +947,7 @@ class RhinoSafeSourceJavaExtensions(
         private const val MAX_VALUE_CHARS = 16 * 1024
         private const val MAX_AES_INPUT_BYTES = 2 * 1024 * 1024
         private const val MAX_DOWNLOAD_BYTES = 8 * 1024 * 1024
+        const val MAX_ARCHIVE_ENTRY_BYTES = 16 * 1024 * 1024
         private const val DOWNLOAD_FILE_PREFIX = "__legado_download__:"
     }
 }
