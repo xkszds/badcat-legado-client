@@ -238,12 +238,30 @@ class RhinoSafeSourceJavaExtensions(
             .replace(Regex("(&thinsp;|&zwnj;|&zwj;|\\u2009|\\u200C|\\u200D)", RegexOption.IGNORE_CASE), "")
 
         text = Regex("<img\\b[^>]*>", setOf(RegexOption.IGNORE_CASE)).replace(text) { match ->
-            val rawUrl = Regex("""(?i)\b(?:src|data-src|data-original|data-lazy-src)\s*=\s*["']([^"']+)["']""")
-                .find(match.value)?.groupValues?.getOrNull(1).orEmpty()
+            // Prefer lazy-load attributes over placeholder src values. Attribute
+            // matching must not let the "src" alternative steal the tail of
+            // "data-src" or "data-original".
+            val rawUrl = listOf("data-original", "data-src", "data-lazy-src", "src")
+                .firstNotNullOfOrNull { attribute ->
+                    Regex("""(?i)(?:^|\\s)${Regex.escape(attribute)}\\s*=\\s*["']([^"']+)["']""")
+                        .find(match.value)?.groupValues?.getOrNull(1)?.trim()
+                        ?.takeIf(String::isNotBlank)
+                }.orEmpty()
             if (rawUrl.isBlank()) return@replace ""
-            val absoluteUrl = if (redirectUrl == null) rawUrl else {
-                runCatching { app.badcat.engine.WebUrlResolver.resolve(redirectUrl, rawUrl) }.getOrDefault(rawUrl)
-            }
+            val absoluteUrl = runCatching {
+                if (redirectUrl != null) {
+                    app.badcat.engine.WebUrlResolver.resolve(redirectUrl, rawUrl)
+                } else {
+                    val candidate = java.net.URI(rawUrl)
+                    require(candidate.scheme.equals("http", true) || candidate.scheme.equals("https", true)) {
+                        "Relative image URL requires a base URL"
+                    }
+                    require(candidate.userInfo == null && !candidate.host.isNullOrBlank()) {
+                        "Unsafe image URL"
+                    }
+                    candidate.toASCIIString()
+                }
+            }.getOrNull() ?: return@replace ""
             val token = "__BADCAT_IMAGE_${imageIndex++}__"
             images[token] = "<img src=\"${absoluteUrl.replace("&", "&amp;").replace("\"", "&quot;")}\">"
             token
