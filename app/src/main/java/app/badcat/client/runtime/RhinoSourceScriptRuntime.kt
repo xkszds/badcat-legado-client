@@ -32,6 +32,12 @@ class RhinoSourceScriptRuntime(
     private val sourceLoginSessionStore: SourceLoginSessionStore = InMemorySourceLoginSessionStore,
     private val sourceCookieReader: (sourceId: String, url: String) -> String = { _, _ -> "" },
     private val sourceCookieRemover: (sourceId: String, url: String) -> Unit = { _, _ -> },
+    private val sourceCookieWriter: (sourceId: String, url: String, cookie: String) -> Unit = { _, _, _ ->
+        throw UnsupportedOperationException("cookie.setCookie is not connected to the source cookie jar")
+    },
+    private val sourceCookieReplacer: (sourceId: String, url: String, cookie: String) -> Unit = { _, _, _ ->
+        throw UnsupportedOperationException("cookie.replaceCookie is not connected to the source cookie jar")
+    },
     private val sourceAjax: (source: BookSource, baseUrl: String, urlAndOptions: String) -> String = { _, _, _ -> throw UnsupportedOperationException("java.ajax is not connected to the source HTTP transport") },
     private val sourceGet: (source: BookSource, baseUrl: String, url: String, headers: Map<String, String>) -> SourceHttpResponse = { _, _, _, _ -> throw UnsupportedOperationException("java.get is not connected to the source HTTP transport") },
     private val sourceHttpRequest: (source: BookSource, baseUrl: String, method: String, url: String, body: String?, headers: Map<String, String>) -> SourceHttpResponse = { source, baseUrl, method, url, body, headers ->
@@ -240,6 +246,8 @@ class RhinoSourceScriptRuntime(
                 scope["cookie"] = RhinoSourceCookieExtensions(
                     cookieReader = { url -> sourceCookieReader(source.id, url) },
                     cookieRemover = { url -> sourceCookieRemover(source.id, url) },
+                    cookieWriter = { url, value -> sourceCookieWriter(source.id, url, value) },
+                    cookieReplacer = { url, value -> sourceCookieReplacer(source.id, url, value) },
                 )
                 scope["source"] = sourceExtensions.computeIfAbsent(source.id) {
                     RhinoSourceLoginExtensions(source.id, sourceLoginSessionStore, sourceKeyValueStore, source.id)
