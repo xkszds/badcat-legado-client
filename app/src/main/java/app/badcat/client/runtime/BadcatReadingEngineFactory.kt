@@ -54,6 +54,7 @@ class BadcatReadingEngineFactory(
         )
         val durableRequestClient = SourceLoginSessionRequestClient(transport, loginSessionStore)
         val activeScriptRuntime: SourceScriptRuntime = scriptRuntime ?: RhinoSourceScriptRuntime(
+            webViewUserAgent = android.webkit.WebSettings.getDefaultUserAgent(context.applicationContext),
             sourceKeyValueStore = SharedPreferencesSourceScriptKeyValueStore(context.applicationContext),
             sourceLoginSessionStore = loginSessionStore,
             sourceCookieReader = { sourceId, url ->
