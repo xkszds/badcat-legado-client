@@ -26,7 +26,7 @@ internal object SourceLibArchiveReader {
                 val name = ArchiveEntry.pathnameUtf8(entry)
                     ?: ArchiveEntry.pathname(entry)?.toString(Charsets.UTF_8)
                     ?: continue
-                if (name != requestedPath) continue
+                if (!S_ISREG(ArchiveEntry.stat(entry).stMode) || name != requestedPath) continue
 
                 val output = Buffer()
                 val chunk = ByteBuffer.allocateDirect(DEFAULT_BUFFER_SIZE)
