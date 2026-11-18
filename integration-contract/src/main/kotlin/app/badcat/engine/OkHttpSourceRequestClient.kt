@@ -35,8 +35,8 @@ import kotlin.coroutines.resumeWithException
  * does not evaluate JavaScript URL expressions or implement WebView/DNS overrides.
  */
 class OkHttpSourceRequestClient(
-    private val connectTimeoutSeconds: Long = 15,
-    private val readTimeoutSeconds: Long = 30,
+    private val connectTimeoutSeconds: Long = 20,
+    private val readTimeoutSeconds: Long = 45,
     private val writeTimeoutSeconds: Long = 30,
     private val maxResponseBytes: Long = 8L * 1024 * 1024,
     /** Optional host-owned cookie persistence; jars remain isolated by source ID. */
@@ -143,6 +143,8 @@ class OkHttpSourceRequestClient(
                 .connectTimeout(connectTimeoutSeconds, TimeUnit.SECONDS)
                 .readTimeout(readTimeoutSeconds, TimeUnit.SECONDS)
                 .writeTimeout(writeTimeoutSeconds, TimeUnit.SECONDS)
+                // Bound the complete request, including DNS, redirects and body consumption.
+                .callTimeout(60, TimeUnit.SECONDS)
                 .followRedirects(true)
                 // Never downgrade an HTTPS source request to cleartext HTTP.
                 .followSslRedirects(false)
@@ -231,7 +233,7 @@ class OkHttpSourceRequestClient(
 /** Retry transient connection/read failures, but never TLS validation or DNS failures. */
 internal fun shouldRetryIOException(method: String, error: IOException): Boolean {
     if (!method.equals("GET", ignoreCase = true) && !method.equals("HEAD", ignoreCase = true)) return false
-    if (error is SSLException || error is UnknownHostException) return false
+    if (error is SSLException) return false
     return generateSequence(error as Throwable?) { it.cause }.any {
         it is SocketTimeoutException || it is SocketException || it is EOFException || it is ProtocolException
     }
