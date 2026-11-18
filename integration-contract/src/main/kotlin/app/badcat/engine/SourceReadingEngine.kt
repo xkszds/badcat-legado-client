@@ -115,7 +115,7 @@ class SourceReadingEngine(
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
         }
-        return tocService.load(source, bookUrl, detail.tocUrl, onChapters)
+        return tocService.load(source, bookUrl, detail.tocUrl, key = detail.name, onChapters = onChapters)
     }
 
     override suspend fun chapterContent(
