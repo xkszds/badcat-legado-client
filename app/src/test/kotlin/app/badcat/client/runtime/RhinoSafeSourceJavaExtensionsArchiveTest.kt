@@ -212,15 +212,18 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
                 },
             )
             val url = "https://physical-cache.example/helper.js"
-            val first = extensions.cacheFile(url)
-            assertEquals("version-1", first)
-            val cachedPath = extensions.cacheFile(url).let { extensions.cacheFile(url); "ignored" }
-            assertEquals("version-1", cachedPath.takeIf { it == "version-1" })
-            assertTrue(extensions.getFile(extensions.downloadFile(url)).exists())
-            val downloadedPath = extensions.downloadFile(url)
-            assertTrue(extensions.getFile(downloadedPath).delete())
-            assertEquals("version-4", extensions.cacheFile(url))
-            assertEquals(4, requests)
+            val token = java.security.MessageDigest.getInstance("MD5")
+                .digest(url.toByteArray(Charsets.UTF_8))
+                .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+                .substring(8, 24)
+            val path = "$token.js"
+
+            assertEquals("version-1", extensions.cacheFile(url))
+            assertTrue(extensions.getFile(path).exists())
+            assertTrue(extensions.getFile(path).delete())
+            assertNull(extensions.readFile(path))
+            assertEquals("version-2", extensions.cacheFile(url))
+            assertEquals(2, requests)
         } finally {
             parent.deleteRecursively()
         }
