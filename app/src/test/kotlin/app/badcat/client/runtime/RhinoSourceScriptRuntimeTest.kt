@@ -603,4 +603,27 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(source.id)
     }
 
+
+    @Test
+    fun supportsLegadoAesBase64AndSymmetricCryptoHelpers() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val source = BookSource(
+            id = "https://legacy-crypto.example/",
+            name = "Legacy crypto",
+            baseUrl = "https://legacy-crypto.example/",
+        )
+        val key = "0123456789abcdef".toByteArray(Charsets.UTF_8)
+        val iv = "abcdef0123456789".toByteArray(Charsets.UTF_8)
+        val plaintext = "Encrypted chapter payload".toByteArray(Charsets.UTF_8)
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(key, "AES"), IvParameterSpec(iv))
+        val encrypted = Base64.getEncoder().encodeToString(cipher.doFinal(plaintext))
+        val script = "java.aesBase64DecodeToString('$encrypted','0123456789abcdef','AES/CBC/PKCS7Padding','abcdef0123456789') + '|' + java.toURL(baseUrl).host"
+        val result = runtime.evaluate(source, script, mapOf("baseUrl" to source.baseUrl))
+
+        assertTrue("Legado crypto helper failed: $result", result is EngineResult.Success)
+        assertEquals("Encrypted chapter payload|legacy-crypto.example", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
 }
