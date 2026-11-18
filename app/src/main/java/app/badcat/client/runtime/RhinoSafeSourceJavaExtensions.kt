@@ -229,6 +229,8 @@ class RhinoSafeSourceJavaExtensions(
         var imageIndex = 0
         val images = linkedMapOf<String, String>()
         var text = html
+            .replace("\r\n", "\n")
+            .replace("\r", "\n")
             .replace("\\r\\n", "\\n")
             .replace("\\n", "\n")
             .replace("\\r", "\n")
