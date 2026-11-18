@@ -218,6 +218,7 @@ class OkHttpSourceRequestClient(
             headers = headerMap,
             body = String(bytes, charset),
             contentType = responseBody?.contentType()?.toString(),
+            statusMessage = response.message,
         )
     }
 
