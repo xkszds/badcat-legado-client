@@ -111,9 +111,9 @@ class CssBookInfoParserTest {
                 return EngineResult.Success("Resolved title")
             }
         }
-        val detail = assertIs<EngineResult.Success<BookDetail>>(
-            CssBookInfoParser().parseWithScripts(source, response, response.finalUrl, runtime),
-        ).value
+        val parsedDetail = CssBookInfoParser().parseWithScripts(source, response, response.finalUrl, runtime)
+        assertTrue("Book-info @put script parsing failed: $parsedDetail", parsedDetail is EngineResult.Success)
+        val detail = (parsedDetail as EngineResult.Success<BookDetail>).value
         assertEquals("Resolved title", detail.name)
         assertEquals("Writer", detail.author)
         assertEquals("https://reader.example/", seen["sourceId"])
