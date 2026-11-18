@@ -197,7 +197,7 @@ internal object RhinoRegexCompatibility {
      */
     private fun isLegacyIdentityEscape(char: Char): Boolean {
         val syntaxCharacters = "^$\\\\.*+?()[]{}|/"
-        val standardEscapes = "dDsSwWbBfnrtv0cxuUpP01234567"
+        val standardEscapes = "dDsSwWbBfnrtv0cxuUpPk01234567"
         return char !in syntaxCharacters && char !in standardEscapes
     }
 
