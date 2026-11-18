@@ -226,7 +226,18 @@ object CssRuleEvaluator {
         val argument = value.substringAfter('.', "")
         return when (type) {
             "children" -> parent.children().toList()
-            "class" -> if (argument.isNotBlank()) parent.getElementsByClass(argument).toList() else emptyList()
+            "class" -> if (argument.isNotBlank()) {
+                // Legado source rules sometimes list several required class names
+                // after class. (for example class.card novel-item). Match the
+                // element carrying every token, rather than passing the whole
+                // whitespace-separated value to Jsoup as one class name.
+                val classNames = argument.split(Regex("\\s+")).filter(String::isNotBlank)
+                if (classNames.size > 1 && classNames.all { it.matches(Regex("[A-Za-z0-9_-]+")) }) {
+                    parent.select(classNames.joinToString(separator = "") { ".$it" }).toList()
+                } else {
+                    parent.getElementsByClass(argument).toList()
+                }
+            } else emptyList()
             "tag" -> if (argument.isNotBlank()) parent.getElementsByTag(argument).toList() else emptyList()
             "id" -> if (argument.isNotBlank()) parent.getElementsByAttributeValue("id", argument).toList() else emptyList()
             "text" -> if (argument.isNotBlank()) parent.getElementsContainingOwnText(argument).toList() else emptyList()
