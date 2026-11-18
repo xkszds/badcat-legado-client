@@ -143,14 +143,15 @@ class SourceHttpGatewayTest {
     fun incompleteInterpolationMarkerNeverReachesTransport() {
         val client = RecordingClient()
         val result = kotlinx.coroutines.runBlocking {
-            SourceHttpGateway(client).execute(source(), "/search?q=}}")
+            SourceHttpGateway(client).execute(source(), "/search?q={{key")
         }
         assertEquals(
-            EngineErrorCode.UNSUPPORTED_RULE,
+            EngineErrorCode.INVALID_SOURCE,
             assertIs<EngineResult.Failure>(result).code,
         )
         assertTrue(client.captured == null)
     }
+
     @Test
     fun evaluatesUpstreamAtJsUrlRulesBeforeUriResolution() {
         val client = RecordingClient()
