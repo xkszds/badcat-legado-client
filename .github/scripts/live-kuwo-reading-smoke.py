@@ -4,6 +4,7 @@
 This intentionally verifies each stage independently: search -> book detail ->
 TOC -> chapter content. It does not treat HTTP 200 alone as a usable result.
 """
+import gzip
 import json
 import urllib.parse
 import urllib.request
@@ -51,6 +52,8 @@ def main():
         raw = response.read(8 * 1024 * 1024 + 1)
     if len(raw) > 8 * 1024 * 1024:
         raise RuntimeError("source collection exceeded 8 MiB limit")
+    if raw.startswith(b"\\x1f\\x8b"):
+        raw = gzip.decompress(raw)
     sources = json.loads(raw.decode("utf-8-sig"))
     source = next(
         (item for item in sources
