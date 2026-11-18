@@ -30,7 +30,9 @@ import org.htmlunit.corejs.javascript.Function
  * Explicitly allow-listed subset of Legado's `java` helper for source scripts.
  *
  * This object is deliberately not a general Java bridge: no class lookup,
- * reflection, filesystem, process, Android, network, Cookie or WebView access.
+ * unrestricted reflection, process, Android, Cookie or WebView access. Source
+ * files are exposed only through a canonical-path-confined cache root and a
+ * restricted file-handle facade; network access uses the injected source transport.
  * The small key/value store is isolated per book source, size-bounded, and backed by the host's storage adapter.
  */
 class RhinoSafeSourceJavaExtensions(
