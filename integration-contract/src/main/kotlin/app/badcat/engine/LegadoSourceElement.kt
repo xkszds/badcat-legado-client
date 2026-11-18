@@ -78,10 +78,12 @@ class LegadoSourceElement(
         selectionContext ?: elements().map { it.outerHtml() }
 
     private fun contextParents(): List<String?> =
-        selectionParents ?: elements().map { it.parents().firstOrNull()?.outerHtml() }
+        if (selectionContext != null && selectionParents == null) emptyList()
+        else selectionParents ?: elements().map { it.parents().firstOrNull()?.outerHtml() }
 
     private fun contextAncestors(): List<List<String>> =
-        selectionAncestors ?: elements().map { element -> element.parents().map { it.outerHtml() } }
+        if (selectionContext != null && selectionAncestors == null) emptyList()
+        else selectionAncestors ?: elements().map { element -> element.parents().map { it.outerHtml() } }
 
     companion object {
         /** Preserve list order so JavaScript .first().next() and .last().prev() work. */
