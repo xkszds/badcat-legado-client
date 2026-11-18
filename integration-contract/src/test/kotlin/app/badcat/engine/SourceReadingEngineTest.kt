@@ -183,8 +183,8 @@ class SourceReadingEngineTest {
                     request.url.contains("/search?") ->
                         """<div class="result"><h2>Novel</h2><a href="/book/1">Open</a></div>"""
                     request.url.endsWith("/book/1") ->
-                        """<h1 class="title">Novel</h1><a class="toc" href="/toc">Catalog</a>"""
-                    request.url.endsWith("/toc") ->
+                        """<h1 class="title">Novel</h1><a class="toc" href="/toc?q={{key}}">Catalog</a>"""
+                    request.url.contains("/toc?q=Novel") ->
                         """<ul class="chapters"><li><a href="/chapter/1">Chapter One</a></li></ul>"""
                     request.url.endsWith("/chapter/1") ->
                         """<div id="content"><p>Readable chapter text.</p></div>"""
@@ -220,7 +220,7 @@ class SourceReadingEngineTest {
             engine.bookDetail("fixture", candidates.single().bookUrl),
         ).value
         assertEquals("Novel", detail.name)
-        assertEquals("https://reader.example/toc", detail.tocUrl)
+        assertEquals("https://reader.example/toc?q=Novel", detail.tocUrl)
 
         val chapters = assertIs<EngineResult.Success<List<BookChapter>>>(
             engine.chapters("fixture", detail.bookUrl),
@@ -242,7 +242,7 @@ class SourceReadingEngineTest {
                 "https://reader.example/search?q=Novel",
                 "https://reader.example/book/1",
                 "https://reader.example/book/1",
-                "https://reader.example/toc",
+                "https://reader.example/toc?q=Novel",
                 "https://reader.example/chapter/1",
             ),
             requests,
