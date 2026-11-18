@@ -6,6 +6,16 @@ import kotlin.test.assertFailsWith
 
 class WebUrlResolverTest {
     @Test
+    fun preservesLegadoKeyAndPageTemplatesUntilRequestExecution() {
+        assertEquals(
+            "https://reader.example/toc?q={{key}}&page={{page}}",
+            WebUrlResolver.resolve(
+                "https://reader.example/book/1",
+                "/toc?q={{key}}&page={{page}}",
+            ),
+        )
+    }
+    @Test
     fun resolvesRelativeAndProtocolRelativeUrls() {
         assertEquals(
             "https://reader.example/chapter/1",
