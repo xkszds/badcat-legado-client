@@ -38,6 +38,25 @@ class BadcatSourceHttpGatewayFactory(
                 is EngineResult.Failure -> throw IllegalStateException(response.message, response.cause)
             }
         },
+        sourceHttpRequestWithTimeout = { source, baseUrl, method, url, body, headers, timeout ->
+            val resolved = when (val result = LegadoUrlResolver.resolve(baseUrl, url)) {
+                is EngineResult.Success -> result.value
+                is EngineResult.Failure -> throw IllegalArgumentException(result.message, result.cause)
+            }
+            val request = when (val result = SourceRequestFactory.create(source, resolved)) {
+                is EngineResult.Success -> result.value
+                is EngineResult.Failure -> throw IllegalArgumentException(result.message, result.cause)
+            }.copy(
+                method = method,
+                body = body,
+                headers = request.headers + headers,
+                timeoutMillis = timeout,
+            )
+            when (val response = runBlocking(Dispatchers.IO) { client.execute(request) }) {
+                is EngineResult.Success -> response.value
+                is EngineResult.Failure -> throw IllegalStateException(response.message, response.cause)
+            }
+        },
     )
 
     /** Use this gateway in shared Source*Service instances handling many sources. */
