@@ -7,10 +7,11 @@ on:
     branches: [ main, fix/favorites-search-ui, integration/legado-upstream-runtime ]
   workflow_dispatch:
 
-# Cancel superseded builds so rapid source updates do not queue redundant jobs.
+# Keep each pushed commit's verification run: rapid, independent fixes must
+# not cancel the tests/build that are validating the preceding commit.
 concurrency:
   group: badcat-android-build-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
