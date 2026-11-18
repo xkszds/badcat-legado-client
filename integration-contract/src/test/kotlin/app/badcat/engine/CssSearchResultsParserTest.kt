@@ -333,6 +333,39 @@ class CssSearchResultsParserTest {
     }
 
     @Test
+    fun resolvesImportedKuwoJsonPathBookUrlTemplateFromSearchItem() = runBlocking {
+        // Exact field-rule shapes from the supplied Nyasama "酷我小说" source.
+        val source = source(
+            """{"bookList":"$.data","name":"$.title","bookUrl":"/novels/api/book/{{$.book_id}}","author":"$.author_name","coverUrl":"$.cover_url","intro":"$.intro","kind":"{{$.category_name}},{{$.status}}@js:result.replace(/30/,\"连载\").replace(/50/,\"完结\")"}""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "http://appi.kuwo.cn/novels/api/book/search?keyword=%E9%81%93%E5%90%9B&pi=1&ps=30",
+            contentType = "application/json",
+            body = """{"data":[{"book_id":321,"title":"道君","author_name":"跃千愁","cover_url":"https://cdn.example/321.jpg","intro":"测试简介","category_name":"玄幻","status":30}]}""",
+        )
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> = EngineResult.Failure(
+                EngineErrorCode.UNSUPPORTED_RULE,
+                "No script is expected for required Kuwo search fields",
+            )
+        }
+
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parseWithScripts(source, response, runtime, key = "道君"),
+        ).value
+        assertEquals(1, books.size)
+        assertEquals("道君", books.single().name)
+        assertEquals("https://reader.example/novels/api/book/321", books.single().bookUrl)
+        assertEquals("跃千愁", books.single().author)
+        assertEquals("https://cdn.example/321.jpg", books.single().coverUrl)
+    }
+
+    @Test
     fun fallsBackFromInvalidRegexBranchesToCssSearchRules() {
         val source = source(
             """{"bookList":"@regex:a{2,1}||div.secondary","name":"@regex:a{2,1}||h2@text","bookUrl":"a@href"}""",
