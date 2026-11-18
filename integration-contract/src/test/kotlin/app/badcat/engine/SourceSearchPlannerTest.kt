@@ -32,6 +32,21 @@ class SourceSearchPlannerTest {
         )
     }
 
+
+    @Test
+    fun excludesAudioComicAndOtherSourceTypesFromNovelSearch() {
+        val sources = listOf(
+            BookSource("novel", "Novel", "https://novel.example/", searchUrl = "/search", sourceType = 0),
+            BookSource("audio", "Audio", "https://audio.example/", searchUrl = "/search", sourceType = 1),
+            BookSource("comic", "Comic", "https://comic.example/", searchUrl = "/search", sourceType = 2),
+            BookSource("other", "Other", "https://other.example/", searchUrl = "/search", sourceType = 3),
+        )
+
+        val plan = SourceSearchPlanner.plan(sources)
+
+        assertEquals(listOf("novel"), plan.map { it.source.id })
+    }
+
     @Test
     fun aggregateModeIncludesSearchAndEnabledExploreEntryPoints() {
         val sources = listOf(
