@@ -127,7 +127,21 @@ class RhinoSafeSourceJavaExtensions(
     fun base64Decode(value: String): String =
         String(Base64.getDecoder().decode(value), Charsets.UTF_8)
 
+    fun base64DecodeToString(value: String): String = base64Decode(value)
+
     fun base64DecodeToByteArray(value: String): ByteArray = base64DecodeBytes(value)
+
+    fun bytesToStr(value: ByteArray): String = utf8Decode(value)
+
+    fun hexDecodeToString(value: String): String {
+        require(value.length <= MAX_AES_INPUT_BYTES * 2 && value.length % 2 == 0) {
+            "Hex input must contain an even number of bounded characters"
+        }
+        val bytes = ByteArray(value.length / 2) { index ->
+            value.substring(index * 2, index * 2 + 2).toInt(16).toByte()
+        }
+        return utf8Decode(bytes)
+    }
 
     fun strToBytes(value: String): ByteArray = utf8Encode(value)
 
