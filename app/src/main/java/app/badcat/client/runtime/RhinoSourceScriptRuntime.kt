@@ -191,7 +191,7 @@ class RhinoSourceScriptRuntime(
                             )
                             when (val parsed = LegadoRuleExpressionDispatcher.evaluateElements(document, rule)) {
                                 is EngineResult.Failure -> null
-                                is EngineResult.Success -> parsed.value.firstOrNull()?.let { LegadoSourceElement(it, document.url) }
+                                is EngineResult.Success -> LegadoSourceElement.fromSelection(parsed.value, document.url).firstOrNull()
                             }
                         }.getOrNull()
                     },
@@ -215,7 +215,7 @@ class RhinoSourceScriptRuntime(
                             )
                             when (val parsed = LegadoRuleExpressionDispatcher.evaluateElements(document, rule)) {
                                 is EngineResult.Failure -> LegadoSourceElementList(emptyList())
-                                is EngineResult.Success -> LegadoSourceElementList(parsed.value.map { LegadoSourceElement(it, document.url) })
+                                is EngineResult.Success -> LegadoSourceElementList(LegadoSourceElement.fromSelection(parsed.value, document.url))
                             }
                         }.getOrDefault(LegadoSourceElementList(emptyList()))
                     },
