@@ -242,6 +242,11 @@ class RhinoSafeSourceJavaExtensions(
         }
         val token = runCatching { downloadToken(path) }.getOrNull()
         if (token != null) {
+            // When a physical cache root is configured, it is authoritative.
+            // Falling back to the duplicate byte-store entry after a script has
+            // deleted the file would resurrect a file that Legado considers gone
+            // and would prevent cacheFile() from downloading it again.
+            if (fileRoot != null) return null
             fileStore.getBytes(sourceId, DOWNLOAD_FILE_PREFIX + token)?.let { return it }
         }
         return fileStore.getBytes(sourceId, virtualFileKey(normalizeVirtualPath(path)))
