@@ -36,11 +36,11 @@ class FileChapterContentCache(context: Context) : ChapterContentCache {
     ): CachedChapterContent? = withContext(Dispatchers.IO) {
         chapterCacheMutex.withLock {
             val file = AtomicFile(cacheFile(sourceId, bookUrl, chapterUrl))
-            if (!file.baseFile.isFile || file.baseFile.length() > MAX_ENTRY_BYTES) {
-                return@withLock null
-            }
+            // openRead() must run before checking baseFile: AtomicFile restores
+            // its .bak after an interrupted commit, when the base file is absent.
             val cached = runCatching {
-                val json = JSONObject(file.openRead().bufferedReader(Charsets.UTF_8).use { it.readText() })
+                val encoded = file.openRead().use(::readBoundedEntry) ?: return@runCatching null
+                val json = JSONObject(String(encoded, Charsets.UTF_8))
                 CachedChapterContent(
                     content = ChapterContent(
                         title = json.optString("title"),
@@ -84,6 +84,21 @@ class FileChapterContentCache(context: Context) : ChapterContentCache {
                 throw error
             }
         }
+    }
+
+    /** Read at most one byte beyond the limit so corrupted entries stay bounded. */
+    private fun readBoundedEntry(input: java.io.InputStream): ByteArray? {
+        val output = java.io.ByteArrayOutputStream()
+        val buffer = ByteArray(8 * 1024)
+        var total = 0
+        while (true) {
+            val count = input.read(buffer)
+            if (count < 0) break
+            total += count
+            if (total > MAX_ENTRY_BYTES) return null
+            output.write(buffer, 0, count)
+        }
+        return output.toByteArray()
     }
 
     private fun cacheFile(sourceId: String, bookUrl: String, chapterUrl: String): File {
