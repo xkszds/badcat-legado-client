@@ -48,6 +48,52 @@ internal object SourceLibArchiveReader {
         }
     }
 
+    fun extractEntries(
+        input: InputStream,
+        maxEntryBytes: Int,
+        maxTotalBytes: Int,
+        maxEntries: Int,
+    ): Map<String, ByteArray> {
+        require(maxEntryBytes > 0 && maxTotalBytes >= maxEntryBytes && maxEntries > 0)
+        val archive = openArchive(input)
+        val extracted = linkedMapOf<String, ByteArray>()
+        var total = 0L
+        try {
+            while (true) {
+                val entry = Archive.readNextHeader(archive)
+                if (entry == 0L) break
+                val name = ArchiveEntry.pathnameUtf8(entry)
+                    ?: ArchiveEntry.pathname(entry)?.toString(Charsets.UTF_8)
+                    ?: continue
+                if (name.endsWith("/") || name.endsWith("\\\\")) continue
+                require(extracted.size < maxEntries) { "Archive contains too many files" }
+                val output = Buffer()
+                val chunk = ByteBuffer.allocateDirect(DEFAULT_BUFFER_SIZE)
+                var entrySize = 0
+                while (true) {
+                    chunk.clear()
+                    Archive.readData(archive, chunk)
+                    chunk.flip()
+                    if (!chunk.hasRemaining()) break
+                    val count = chunk.remaining()
+                    entrySize += count
+                    total += count
+                    require(entrySize <= maxEntryBytes) {
+                        "Archive entry exceeds the ${maxEntryBytes}-byte expanded limit"
+                    }
+                    require(total <= maxTotalBytes) {
+                        "Archive exceeds the ${maxTotalBytes}-byte total expanded limit"
+                    }
+                    output.write(chunk)
+                }
+                extracted[name] = output.readByteArray()
+            }
+        } finally {
+            Archive.free(archive)
+        }
+        return extracted
+    }
+
     private fun openArchive(input: InputStream): Long {
         val archive = Archive.readNew()
         var successful = false
