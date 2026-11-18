@@ -288,7 +288,9 @@ class RhinoSafeSourceJavaExtensions(
         if (resolved.path != safeRoot.path && !resolved.path.startsWith(safePrefix)) {
             throw SecurityException("Illegal source file path")
         }
-        return candidate
+        // Carry the validated canonical path into every filesystem operation.
+        // Returning the original candidate would follow a symlink again after validation.
+        return resolved
     }
 
     private fun writePhysicalFile(path: String, bytes: ByteArray) {
