@@ -17,7 +17,6 @@ import com.github.liuyueyi.quick.transfer.ChineseUtils as QuickChineseUtils
 import com.github.liuyueyi.quick.transfer.constants.TransType
 import app.badcat.engine.LegadoSourceElement
 import app.badcat.engine.LegadoSourceElementList
-import org.jsoup.Jsoup
 import app.badcat.engine.SourceHttpResponse
 import org.htmlunit.corejs.javascript.Scriptable
 import org.htmlunit.corejs.javascript.ScriptableObject
@@ -239,11 +238,8 @@ class RhinoSafeSourceJavaExtensions(
             .replace(Regex("(&thinsp;|&zwnj;|&zwj;|\\u2009|\\u200C|\\u200D)", RegexOption.IGNORE_CASE), "")
 
         text = Regex("<img\\b[^>]*>", setOf(RegexOption.IGNORE_CASE)).replace(text) { match ->
-            val image = Jsoup.parseBodyFragment(match.value).selectFirst("img")
-            val rawUrl = image?.let {
-                listOf("src", "data-src", "data-original", "data-lazy-src")
-                    .firstNotNullOfOrNull { key -> it.attr(key).takeIf(String::isNotBlank) }
-            }.orEmpty()
+            val rawUrl = Regex("""(?i)\\b(?:src|data-src|data-original|data-lazy-src)\\s*=\\s*["']([^"']+)["']""")
+                .find(match.value)?.groupValues?.getOrNull(1).orEmpty()
             if (rawUrl.isBlank()) return@replace ""
             val absoluteUrl = if (redirectUrl == null) rawUrl else {
                 runCatching { app.badcat.engine.WebUrlResolver.resolve(redirectUrl, rawUrl) }.getOrDefault(rawUrl)
