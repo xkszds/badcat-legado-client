@@ -781,4 +781,35 @@ class RhinoSourceScriptRuntimeTest {
         assertEquals("book-42|Found|200|", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
+    @Test
+    fun supportsLegadoHeadPostAndConnectHttpHelpers() = runBlocking {
+        val seen = mutableListOf<String>()
+        val runtime = RhinoSourceScriptRuntime(
+            sourceHttpRequest = { _, _, method, url, body, headers ->
+                seen += "$method|$url|${body.orEmpty()}|${headers["X-Token"].orEmpty()}"
+                app.badcat.engine.SourceHttpResponse(200, url, body = if (method == "HEAD") "" else "${method} response")
+            },
+        )
+        val source = BookSource(
+            id = "https://http-methods.example/",
+            name = "HTTP methods",
+            baseUrl = "https://http-methods.example/",
+        )
+        val result = runtime.evaluate(
+            source,
+            "java.head('/head', {'X-Token':'h'}).statusCode() + '|' + java.post('/submit', 'payload', {'X-Token':'p'}).body() + '|' + java.connect('/connect').body()",
+            mapOf("baseUrl" to source.baseUrl),
+        )
+        assertTrue("Legado HTTP method helpers failed: $result", result is EngineResult.Success)
+        assertEquals("200|POST response|GET response", (result as EngineResult.Success).value)
+        assertEquals(
+            listOf(
+                "HEAD|/head||h",
+                "POST|/submit|payload|p",
+                "GET|/connect||",
+            ),
+            seen,
+        )
+        runtime.clearSourceState(source.id)
+    }
 }
