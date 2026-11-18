@@ -218,13 +218,17 @@ class RhinoSafeSourceJavaExtensions(
 
     /** Return the original downloaded bytes; null mirrors Legado's missing-file result. */
     fun readFile(path: String): ByteArray? {
+        // The physical cache tree is authoritative when configured: scripts may
+        // mutate files through getFile(), just as they can in the pinned app.
+        val physical = fileRoot?.let { runCatching { resolveFile(path) }.getOrNull() }
+        physical?.takeIf { it.isFile }?.let { file ->
+            runCatching { file.readBytes() }.getOrNull()?.let { return it }
+        }
         val token = runCatching { downloadToken(path) }.getOrNull()
         if (token != null) {
             fileStore.getBytes(sourceId, DOWNLOAD_FILE_PREFIX + token)?.let { return it }
         }
-        fileStore.getBytes(sourceId, virtualFileKey(normalizeVirtualPath(path)))?.let { return it }
-        val physical = fileRoot?.let { runCatching { resolveFile(path) }.getOrNull() }
-        return physical?.takeIf { it.isFile }?.let { runCatching { it.readBytes() }.getOrNull() }
+        return fileStore.getBytes(sourceId, virtualFileKey(normalizeVirtualPath(path)))
     }
 
     /**
