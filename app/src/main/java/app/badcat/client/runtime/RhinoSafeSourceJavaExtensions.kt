@@ -781,14 +781,16 @@ class RhinoLegadoSymmetricCrypto(
 
     private fun decodeHutoolCipherText(value: String): ByteArray {
         require(value.length <= 4 * 1024 * 1024) { "Encoded symmetric crypto input exceeds the size limit" }
-        val text = value.trim()
-        require(text.isNotEmpty()) { "Encoded symmetric crypto input must not be empty" }
-        if (text.length % 2 == 0 && text.all { it.digitToIntOrNull(16) != null }) {
-            return ByteArray(text.length / 2) { index ->
-                text.substring(index * 2, index * 2 + 2).toInt(16).toByte()
+        // Legado's String.isHex() checks every character without trimming and
+        // does not pre-classify odd-length hexadecimal strings as Base64.
+        val isHex = value.all { it in '0'..'9' || it in 'A'..'F' || it in 'a'..'f' }
+        if (isHex) {
+            require(value.length % 2 == 0) { "Hexadecimal symmetric crypto input must have an even length" }
+            return ByteArray(value.length / 2) { index ->
+                value.substring(index * 2, index * 2 + 2).toInt(16).toByte()
             }
         }
-        return Base64.getDecoder().decode(text).also {
+        return Base64.getDecoder().decode(value).also {
             require(it.size <= 2 * 1024 * 1024) { "Symmetric crypto input exceeds the size limit" }
         }
     }
