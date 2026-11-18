@@ -23,6 +23,14 @@ class CssChapterContentParser {
         }
         val contentRule = rules["content"]?.takeIf(String::isNotBlank)
             ?: return unsupported(source, "missing content rule")
+        val unsupportedWebFields = listOf("webJs", "sourceRegex", "imageDecode", "payAction", "callBackJs", "contentBatch")
+            .filter { !rules[it].isNullOrBlank() }
+        if (unsupportedWebFields.isNotEmpty()) {
+            return unsupported(
+                source,
+                "content rule fields require unavailable WebView, image, payment or batch runtime: ${unsupportedWebFields.joinToString()}",
+            )
+        }
         val document = SourceDocument(response.finalUrl, response.body, response.contentType, page = page)
 
         suspend fun evaluateField(key: String, expression: String): EngineResult<String?> {
@@ -127,7 +135,57 @@ class CssChapterContentParser {
             }
         }
 
-        val text = htmlToReadableText(contentValue).orEmpty()
+        var text = htmlToReadableText(contentValue).orEmpty()
+        val replaceRule = rules["replaceRegex"]?.takeIf(String::isNotBlank)
+        if (replaceRule != null) {
+            val replacementDocument = SourceDocument(response.finalUrl, text, "text/plain", page = page)
+            val resolvedReplacement = when (val put = LegadoPutRule.resolve(source, replaceRule, replacementDocument, scriptRuntime)) {
+                is EngineResult.Failure -> return put
+                is EngineResult.Success -> put.value
+            }
+            val expandedReplacement = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
+                source = source,
+                template = resolvedReplacement,
+                result = text,
+                baseUrl = response.finalUrl,
+                ruleName = "replaceRegex",
+                scriptRuntime = scriptRuntime,
+                page = page,
+            )) {
+                is EngineResult.Failure -> return expanded
+                is EngineResult.Success -> expanded.value
+            }
+            text = if (expandedReplacement.startsWith("@js:", true) || expandedReplacement.startsWith("javascript:", true)) {
+                val script = expandedReplacement.substringAfter(':').trim()
+                when (val evaluated = scriptRuntime.evaluate(
+                    source,
+                    script,
+                    mapOf(
+                        "result" to text,
+                        "baseUrl" to response.finalUrl,
+                        "sourceUrl" to source.id,
+                        "sourceId" to source.id,
+                        "sourceName" to source.name,
+                        "ruleName" to "replaceRegex",
+                        "page" to page.toString(),
+                    ),
+                )) {
+                    is EngineResult.Failure -> return evaluated
+                    is EngineResult.Success -> evaluated.value
+                }
+            } else {
+                when (val evaluated = LegadoRuleExpressionDispatcher.evaluate(
+                    replacementDocument.copy(body = text),
+                    expandedReplacement,
+                )) {
+                    is EngineResult.Failure -> return evaluated
+                    is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(
+                        expandedReplacement,
+                        evaluated.value,
+                    ).orEmpty()
+                }
+            }
+        }
         if (text.isBlank()) {
             return EngineResult.Failure(
                 EngineErrorCode.NOT_FOUND,
