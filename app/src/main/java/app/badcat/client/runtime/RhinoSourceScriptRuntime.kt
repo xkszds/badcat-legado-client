@@ -274,7 +274,7 @@ class RhinoSourceScriptRuntime(
                     is String -> EngineResult.Success(result)
                     is CharSequence -> EngineResult.Success(result.toString())
                     is Number, is Boolean -> EngineResult.Success(result.toString())
-                    else -> arrayResultToHtml(result)?.let(EngineResult::Success)
+                    else -> arrayResultToHtml(result)?.let { EngineResult.Success(it) }
                         ?: EngineResult.Failure(
                             EngineErrorCode.UNSUPPORTED_RULE,
                             "Source JavaScript result must be a primitive value or a bounded array",
