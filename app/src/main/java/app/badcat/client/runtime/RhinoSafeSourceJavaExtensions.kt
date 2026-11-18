@@ -35,7 +35,6 @@ import org.htmlunit.corejs.javascript.Function
  */
 class RhinoSafeSourceJavaExtensions(
     private val sourceId: String,
-    private val rateLimit: (Boolean) -> Unit = {},
     private val store: SourceScriptKeyValueStore,
     private val cookieReader: (String) -> String = { "" },
     private val ajaxRequest: (String) -> String = { throw UnsupportedOperationException("java.ajax is not connected to the source HTTP transport") },
@@ -61,6 +60,7 @@ class RhinoSafeSourceJavaExtensions(
     private val fileStore: SourceScriptFileCacheStore = InMemorySourceScriptFileCacheStore,
     private val webViewUserAgent: String = DEFAULT_WEBVIEW_USER_AGENT,
     private val functionInvoker: (Function) -> Unit = { throw UnsupportedOperationException("source callback invoker is not connected") },
+    private val rateLimit: (Boolean) -> Unit = {},
 ) {
 
     /** Evaluate a Legado selector against the current AnalyzeRule content. */
