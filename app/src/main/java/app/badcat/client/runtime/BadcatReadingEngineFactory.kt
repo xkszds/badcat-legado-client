@@ -1,6 +1,10 @@
 package app.badcat.client.runtime
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
+import android.widget.Toast
 import app.badcat.client.FileBookSourceCatalog
 import app.badcat.client.FileReplaceRuleCatalog
 import app.badcat.client.BadcatAdMarkCatalog
@@ -58,6 +62,19 @@ class BadcatReadingEngineFactory(
             sourceKeyValueStore = SharedPreferencesSourceScriptKeyValueStore(context.applicationContext),
             sourceFileCacheStore = FileSourceScriptCacheStore(context.applicationContext),
             sourceFileRoot = context.externalCacheDir ?: context.cacheDir,
+            androidIdProvider = {
+                Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID).orEmpty()
+            },
+            toastPresenter = { message, long ->
+                val appContext = context.applicationContext
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(
+                        appContext,
+                        message,
+                        if (long) Toast.LENGTH_LONG else Toast.LENGTH_SHORT,
+                    ).show()
+                }
+            },
             sourceLoginSessionStore = loginSessionStore,
             sourceCookieReader = { sourceId, url ->
                 SharedPreferencesSourceCookieJar(context.applicationContext, sourceId).getCookie(url)

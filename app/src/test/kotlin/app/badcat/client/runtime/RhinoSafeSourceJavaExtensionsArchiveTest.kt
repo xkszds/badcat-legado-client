@@ -13,6 +13,26 @@ import org.junit.Test
 
 class RhinoSafeSourceJavaExtensionsArchiveTest {
     @Test
+    fun androidIdAndToastHelpersDelegateToExplicitHostCapabilities() {
+        val shown = mutableListOf<Pair<String, Boolean>>()
+        val extensions = RhinoSafeSourceJavaExtensions(
+            sourceId = "https://ui-bridge.example/",
+            sourceTag = "UI bridge",
+            store = InMemorySourceScriptKeyValueStore,
+            androidIdProvider = { "android-id-fixture" },
+            toastPresenter = { message, long -> shown += message to long },
+        )
+
+        assertEquals("android-id-fixture", extensions.androidId())
+        extensions.toast("hello")
+        extensions.longToast("later")
+        assertEquals(
+            listOf("UI bridge: hello" to false, "UI bridge: later" to true),
+            shown,
+        )
+    }
+
+    @Test
     fun binaryFileCacheCopiesBytesAndKeepsSourcesIsolated() {
         val sourceA = "binary-cache-source-a"
         val sourceB = "binary-cache-source-b"

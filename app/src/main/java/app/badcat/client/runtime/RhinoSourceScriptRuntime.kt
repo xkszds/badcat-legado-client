@@ -59,6 +59,8 @@ class RhinoSourceScriptRuntime(
         throw UnsupportedOperationException("Per-call timeout transport is not connected (requested ${timeout}ms)")
     },
     private val webViewUserAgent: String = RhinoSafeSourceJavaExtensions.DEFAULT_WEBVIEW_USER_AGENT,
+    private val androidIdProvider: () -> String = { throw UnsupportedOperationException("Android ID provider is not connected") },
+    private val toastPresenter: (String, Boolean) -> Unit = { _, _ -> throw UnsupportedOperationException("Toast presenter is not connected") },
     private val sourceRateLimit: (BookSource, Boolean) -> Unit = { source, skip -> LegadoConcurrentRateLimiter.acquire(source.id, source.concurrentRate, skip) },
 ) : SourceScriptRuntime {
     private val javaExtensions = ConcurrentHashMap<String, RhinoSafeSourceJavaExtensions>()
@@ -156,6 +158,8 @@ class RhinoSourceScriptRuntime(
                     ),
                     rateLimit = { skip -> sourceRateLimit(source, skip) },
                     store = sourceKeyValueStore,
+                    androidIdProvider = androidIdProvider,
+                    toastPresenter = toastPresenter,
                     cookieReader = { url -> sourceCookieReader(source.id, url) },
                     ajaxRequest = { raw ->
                         sourceAjax(

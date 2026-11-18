@@ -65,6 +65,8 @@ class RhinoSafeSourceJavaExtensions(
     private val functionInvoker: (Function) -> Unit = { throw UnsupportedOperationException("source callback invoker is not connected") },
     private val rateLimit: (Boolean) -> Unit = {},
     private val sourceTag: String = sourceId,
+    private val androidIdProvider: () -> String = { throw UnsupportedOperationException("java.androidId is not connected to the Android host") },
+    private val toastPresenter: (String, Boolean) -> Unit = { _, _ -> throw UnsupportedOperationException("java.toast is not connected to the Android host") },
     private val sourceDescriptor: Map<String, Any?> = emptyMap(),
     private val archiveEntryReader: (java.io.InputStream, String, Int) -> ByteArray? =
         { input, path, maxBytes -> SourceLibArchiveReader.readEntry(input, path, maxBytes) },
@@ -73,6 +75,18 @@ class RhinoSafeSourceJavaExtensions(
             SourceLibArchiveReader.extractEntries(bytes.inputStream(), maxEntry, maxTotal, maxEntries)
         },
 ) {
+
+    /** Device identifier exposed by the pinned upstream API. */
+    fun androidId(): String = androidIdProvider()
+
+    /** Display source-attributed transient feedback on the host UI thread. */
+    fun toast(msg: Any?) {
+        toastPresenter("${sourceTag}: ${msg.toString()}", false)
+    }
+
+    fun longToast(msg: Any?) {
+        toastPresenter("${sourceTag}: ${msg.toString()}", true)
+    }
 
     /** Legado source metadata helpers; expose a read-only map rather than the Android entity. */
     fun getTag(): String = sourceTag
