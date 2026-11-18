@@ -63,6 +63,8 @@ class RhinoSafeSourceJavaExtensions(
     private val rateLimit: (Boolean) -> Unit = {},
     private val sourceTag: String = sourceId,
     private val sourceDescriptor: Map<String, Any?> = emptyMap(),
+    private val archiveEntryReader: (java.io.InputStream, String, Int) -> ByteArray? =
+        { input, path, maxBytes -> SourceLibArchiveReader.readEntry(input, path, maxBytes) },
 ) {
 
     /** Legado source metadata helpers; expose a read-only map rather than the Android entity. */
@@ -289,7 +291,7 @@ class RhinoSafeSourceJavaExtensions(
             "Archive exceeds the 8 MiB compressed limit"
         }
         return archiveBytes.inputStream().use {
-            SourceLibArchiveReader.readEntry(it, path, MAX_ARCHIVE_ENTRY_BYTES)
+            archiveEntryReader(it, path, MAX_ARCHIVE_ENTRY_BYTES)
         }
     }
 
