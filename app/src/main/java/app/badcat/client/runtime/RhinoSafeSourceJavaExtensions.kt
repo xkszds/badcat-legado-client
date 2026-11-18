@@ -31,6 +31,10 @@ class RhinoSafeSourceJavaExtensions(
     private val cookieReader: (String) -> String = { "" },
     private val ajaxRequest: (String) -> String = { throw UnsupportedOperationException("java.ajax is not connected to the source HTTP transport") },
     private val httpGet: (String, Map<String, String>) -> SourceHttpResponse = { _, _ -> throw UnsupportedOperationException("java.get HTTP transport is unavailable") },
+    private val httpRequest: (String, String, String?, Map<String, String>) -> SourceHttpResponse = { method, url, body, headers ->
+        if (method.equals("GET", true) && body == null) httpGet(url, headers)
+        else throw UnsupportedOperationException("java.$method HTTP transport is unavailable")
+    },
     private val ruleStringReader: (String) -> String = { "" },
     private val ruleStringReaderWithContent: (String, String) -> String = { rule, _ -> ruleStringReader(rule) },
     private val ruleStringListReader: (String) -> List<String> = { emptyList() },
@@ -93,7 +97,17 @@ class RhinoSafeSourceJavaExtensions(
     fun get(url: String): RhinoSourceHttpResponse = RhinoSourceHttpResponse(httpGet(url, emptyMap()))
 
     fun get(url: String, headers: Any?): RhinoSourceHttpResponse =
-        RhinoSourceHttpResponse(httpGet(url, parseRequestHeaders(headers)))
+        RhinoSourceHttpResponse(httpRequest("GET", url, null, parseRequestHeaders(headers)))
+
+    fun head(url: String, headers: Any?): RhinoSourceHttpResponse =
+        RhinoSourceHttpResponse(httpRequest("HEAD", url, null, parseRequestHeaders(headers)))
+
+    fun post(url: String, body: String, headers: Any?): RhinoSourceHttpResponse =
+        RhinoSourceHttpResponse(httpRequest("POST", url, body, parseRequestHeaders(headers)))
+
+    fun connect(url: String): RhinoSourceHttpResponse = get(url)
+
+    fun connect(url: String, headers: Any?): RhinoSourceHttpResponse = get(url, headers)
 
     private fun parseRequestHeaders(headers: Any?): Map<String, String> = when (headers) {
         null -> emptyMap()
