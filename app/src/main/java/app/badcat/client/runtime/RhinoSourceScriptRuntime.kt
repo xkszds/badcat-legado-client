@@ -9,6 +9,11 @@ import app.badcat.engine.LegadoSourceElement
 import app.badcat.engine.LegadoSourceElementList
 import app.badcat.engine.SourceDocument
 import app.badcat.engine.SourceHttpResponse
+import com.google.gson.JsonArray
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
 import com.script.ScriptBindings
 import com.script.rhino.RhinoScriptEngine
 import kotlinx.coroutines.Dispatchers
@@ -380,6 +385,20 @@ class RhinoSourceScriptRuntime(
             require(values.size <= MAX_SCRIPT_RESULT_ITEMS) {
                 "Source JavaScript array result exceeds the item limit"
             }
+            // Legado TOC rules commonly return [{title, url}, ...] from
+            // @js chapterList scripts. Preserve those objects as JSON so the
+            // downstream JSONPath field rules can read title/url; calling
+            // NativeObject.toString() here would collapse every row to
+            // "[object Object]" and silently produce an empty chapter list.
+            if (values.isNotEmpty() && values.all { item ->
+                    item is org.htmlunit.corejs.javascript.Scriptable &&
+                        (org.htmlunit.corejs.javascript.ScriptableObject.getProperty(item, "length") as? Number) == null
+                }
+            ) {
+                val array = JsonArray()
+                values.forEach { item -> array.add(scriptableObjectToJson(item as org.htmlunit.corejs.javascript.Scriptable, 0)) }
+                return array.toString()
+            }
             return values.joinToString("\n") { item ->
                 when (item) {
                     null -> ""
@@ -389,7 +408,54 @@ class RhinoSourceScriptRuntime(
             }
         }
 
+        private fun scriptableObjectToJson(
+            value: org.htmlunit.corejs.javascript.Scriptable,
+            depth: Int,
+        ): JsonObject {
+            require(depth <= MAX_SCRIPT_RESULT_JSON_DEPTH) { "Source JavaScript object result is too deeply nested" }
+            val ids = value.ids
+            require(ids.size <= MAX_SCRIPT_RESULT_OBJECT_PROPERTIES) {
+                "Source JavaScript object result has too many properties"
+            }
+            return JsonObject().apply {
+                ids.forEach { rawKey ->
+                    val key = rawKey.toString()
+                    val item = org.htmlunit.corejs.javascript.ScriptableObject.getProperty(value, key)
+                    add(key, scriptableValueToJson(item, depth + 1))
+                }
+            }
+        }
+
+        private fun scriptableValueToJson(value: Any?, depth: Int): JsonElement {
+            require(depth <= MAX_SCRIPT_RESULT_JSON_DEPTH) { "Source JavaScript object result is too deeply nested" }
+            return when (value) {
+                null -> JsonNull.INSTANCE
+                is String, is CharSequence -> JsonPrimitive(value.toString())
+                is Number -> JsonPrimitive(value)
+                is Boolean -> JsonPrimitive(value)
+                is org.htmlunit.corejs.javascript.Scriptable -> {
+                    val length = (org.htmlunit.corejs.javascript.ScriptableObject.getProperty(value, "length") as? Number)?.toInt()
+                    if (length != null) {
+                        require(length in 0..MAX_SCRIPT_RESULT_ITEMS) { "Source JavaScript array property exceeds the item limit" }
+                        JsonArray().apply {
+                            for (index in 0 until length) {
+                                add(scriptableValueToJson(
+                                    org.htmlunit.corejs.javascript.ScriptableObject.getProperty(value, index.toString()),
+                                    depth + 1,
+                                ))
+                            }
+                        }
+                    } else {
+                        scriptableObjectToJson(value, depth + 1)
+                    }
+                }
+                else -> JsonPrimitive(value.toString())
+            }
+        }
+
         const val MAX_SCRIPT_RESULT_ITEMS = 1_000
+        const val MAX_SCRIPT_RESULT_OBJECT_PROPERTIES = 256
+        const val MAX_SCRIPT_RESULT_JSON_DEPTH = 8
         const val DEFAULT_TIMEOUT_MILLIS = 15_000L
         const val MAX_TIMEOUT_MILLIS = 30_000L
         const val MAX_SCRIPT_CHARS = 128 * 1024
