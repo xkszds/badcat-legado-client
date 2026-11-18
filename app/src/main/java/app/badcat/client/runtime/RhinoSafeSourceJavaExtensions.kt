@@ -183,7 +183,7 @@ class RhinoSafeSourceJavaExtensions(
         require(url.isNotBlank()) { "downloadFile URL must not be blank" }
         rateLimit(false)
         val requestUrl = urlOptionStart(url)?.let { url.substring(0, it) } ?: url
-        val response = httpRequest("GET", requestUrl, null, emptyMap())
+        val response = httpGet(requestUrl, emptyMap())
         require(response.statusCode in 200..299) {
             "downloadFile returned HTTP ${response.statusCode} ${response.statusMessage}".trim()
         }
@@ -516,7 +516,7 @@ class RhinoSafeSourceJavaExtensions(
         require(path.isNotBlank()) { "ZIP entry path must not be blank" }
         val archive = if (url.startsWith("http://", true) || url.startsWith("https://", true)) {
             rateLimit(false)
-            val response = httpRequest("GET", url, null, emptyMap())
+            val response = httpGet(url, emptyMap())
             require(response.statusCode in 200..299) { "ZIP download returned HTTP ${response.statusCode}" }
             response.bodyBytes ?: response.body.toByteArray(Charsets.UTF_8)
         } else {
@@ -581,7 +581,7 @@ class RhinoSafeSourceJavaExtensions(
             url.startsWith("http://", true) || url.startsWith("https://", true)
         ) {
             rateLimit(false)
-            val response = httpRequest("GET", url, null, emptyMap())
+            val response = httpGet(url, emptyMap())
             require(response.statusCode in 200..299) {
                 "Archive download returned HTTP ${response.statusCode} ${response.statusMessage}".trim()
             }
@@ -728,7 +728,7 @@ class RhinoSafeSourceJavaExtensions(
     fun get(urlOrKey: String): Any =
         if (isHttpTarget(urlOrKey)) {
             rateLimit(false)
-            RhinoSourceHttpResponse(httpRequest("GET", urlOrKey, null, emptyMap()))
+            RhinoSourceHttpResponse(httpGet(urlOrKey, emptyMap()))
         } else {
             getStoredString(urlOrKey)
         }
@@ -834,7 +834,7 @@ class RhinoSafeSourceJavaExtensions(
         )
         return try {
             val tasks = normalizedUrls.map { url ->
-                Callable { rateLimit(skipRateLimit); RhinoSourceHttpResponse(httpRequest("GET", url, null, emptyMap())) }
+                Callable { rateLimit(skipRateLimit); RhinoSourceHttpResponse(httpGet(url, emptyMap())) }
             }
             executor.invokeAll(tasks).map { future -> future.get() }.toTypedArray()
         } finally {
