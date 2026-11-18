@@ -53,6 +53,19 @@ class LegadoUrlResolverTest {
     }
 
     @Test
+    fun parsesLegacySingleQuotedStaticPostOptionsUsedByPublicBookSources() {
+        val result = LegadoUrlResolver.resolve(
+            "https://69shuba.cx/",
+            "/modules/article/search.php,{'charset':'gbk','body':'searchkey=Douluo&searchtype=all','method':'POST'}",
+        )
+        val value = assertIs<EngineResult.Success<LegadoResolvedUrl>>(result).value
+        assertEquals("https://69shuba.cx/modules/article/search.php", value.url)
+        assertEquals("POST", value.method)
+        assertEquals("gbk", value.charset)
+        assertEquals("searchkey=Douluo&searchtype=all", value.body)
+    }
+
+    @Test
     fun acceptsBodyMethodsImplementedByTheHttpTransport() {
         listOf("PUT", "PATCH", "PROPPATCH", "REPORT").forEach { method ->
             val result = LegadoUrlResolver.resolve(
