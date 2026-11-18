@@ -23,11 +23,13 @@ class LegadoElementIndexTest {
     }
 
     @Test
-    fun supportsLegacyRangeAndExclusion() {
+    fun supportsLegacyColonSeparatedIndexListsAndExclusion() {
         val range = LegadoElementIndex.parse("li.item.1:4:2")!!
         val exclusion = LegadoElementIndex.parse("li.item!1:3")!!
-        assertEquals(listOf("b", "d"), LegadoElementIndex.apply(items, range))
-        assertEquals(listOf("a", "e"), LegadoElementIndex.apply(items, exclusion))
+        // Upstream ElementsSingle treats ':' as a list separator in the
+        // legacy dot/bang syntax. Ranges use the bracket form above.
+        assertEquals(listOf("b", "e", "c"), LegadoElementIndex.apply(items, range))
+        assertEquals(listOf("a", "c", "e"), LegadoElementIndex.apply(items, exclusion))
     }
 
     @Test
