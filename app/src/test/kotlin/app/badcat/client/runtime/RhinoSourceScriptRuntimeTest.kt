@@ -1321,6 +1321,28 @@ text + re.test('aa}}')"""
     }
 
     @Test
+    fun connectReturnsErrorResponseInsteadOfThrowingWhenTransportFails() = runBlocking {
+        val source = BookSource(
+            id = "connect-error-source",
+            name = "Connect error source",
+            baseUrl = "https://connect-error.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime(
+            sourceHttpRequest = { _, _, _, _, _, _ -> throw IllegalStateException("connect network failed") },
+        )
+        val result = runtime.evaluate(
+            source,
+            "var response = java.connect('/failure'); response.code() + '|' + response.body().indexOf('connect network failed')",
+            mapOf("baseUrl" to source.baseUrl),
+        )
+
+        assertTrue("Legado connect should return an error response: $result", result is EngineResult.Success)
+        assertTrue((result as EngineResult.Success).value.startsWith("200|"))
+        assertTrue(result.value.substringAfter('|').toInt() >= 0)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun ajaxReturnsLegadoStackTraceStringWhenTransportFails() = runBlocking {
         val source = BookSource(
             id = "ajax-error-source",
