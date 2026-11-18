@@ -6,6 +6,7 @@ import app.badcat.engine.EngineResult
 import app.badcat.engine.SourceScriptRuntime
 import app.badcat.engine.LegadoRuleExpressionDispatcher
 import app.badcat.engine.LegadoSourceElement
+import app.badcat.engine.LegadoSourceElementList
 import app.badcat.engine.SourceDocument
 import com.script.ScriptBindings
 import com.script.rhino.RhinoScriptEngine
@@ -139,12 +140,23 @@ class RhinoSourceScriptRuntime(
                                 url = bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
                                 body = currentRuleContent,
                             )
-                            val htmlRule = if (rule.trim().endsWith("@html", true)) rule else "$rule@html"
-                            when (val parsed = LegadoRuleExpressionDispatcher.evaluate(document, htmlRule)) {
+                            when (val parsed = LegadoRuleExpressionDispatcher.evaluateElements(document, rule)) {
                                 is EngineResult.Failure -> null
                                 is EngineResult.Success -> parsed.value.firstOrNull()?.let(::LegadoSourceElement)
                             }
                         }.getOrNull()
+                    },
+                    ruleElementsReader = { rule ->
+                        runCatching {
+                            val document = SourceDocument(
+                                url = bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                                body = currentRuleContent,
+                            )
+                            when (val parsed = LegadoRuleExpressionDispatcher.evaluateElements(document, rule)) {
+                                is EngineResult.Failure -> LegadoSourceElementList(emptyList())
+                                is EngineResult.Success -> LegadoSourceElementList(parsed.value.map(::LegadoSourceElement))
+                            }
+                        }.getOrDefault(LegadoSourceElementList(emptyList()))
                     },
                     contentWriter = { content -> currentRuleContent = content },
                 )
