@@ -134,12 +134,47 @@ object LegadoEmbeddedRuleTemplate {
             override suspend fun putString(key: String, value: String): EngineResult<Unit> =
                 evaluator.putString(key, value)
         }
-        return LegadoEmbeddedUrlTemplate.resolve(
+        val urlTemplate = when (val resolved = resolveJsonPathPlaceholders(
             template = expandedTemplate,
+            result = result,
+            baseUrl = baseUrl,
+        )) {
+            is EngineResult.Failure -> return resolved
+            is EngineResult.Success -> resolved.value
+        }
+        return LegadoEmbeddedUrlTemplate.resolve(
+            template = urlTemplate,
             key = key,
             evaluator = contextualEvaluator,
             page = page,
         )
+    }
+
+    /**
+     * Legado source collections use both {{$.field}} and {$.field} in URL
+     * templates. These are AnalyzeRule JSONPath references, not JavaScript
+     * expressions; resolve them against the current result before passing
+     * remaining {{key}} / {{page}} expressions to the bounded JS evaluator.
+     */
+    private fun resolveJsonPathPlaceholders(
+        template: String,
+        result: String,
+        baseUrl: String,
+    ): EngineResult<String> {
+        val document = SourceDocument(baseUrl, result)
+        var expanded = template
+        for (pattern in listOf(DOUBLE_BRACE_JSON_PATH, SINGLE_BRACE_JSON_PATH)) {
+            val matches = pattern.findAll(expanded).toList()
+            for (match in matches.asReversed()) {
+                val path = match.groupValues[1].trim()
+                val value = when (val selected = JsonPathRuleEvaluator.evaluate(document, path)) {
+                    is EngineResult.Failure -> return selected
+                    is EngineResult.Success -> selected.value.firstOrNull().orEmpty()
+                }
+                expanded = expanded.replaceRange(match.range, value)
+            }
+        }
+        return EngineResult.Success(expanded)
     }
 
     fun containsVariableRule(value: String): Boolean =
@@ -206,4 +241,6 @@ object LegadoEmbeddedRuleTemplate {
     private const val MAX_VARIABLE_KEY_CHARS = 256
     private const val MAX_VARIABLE_VALUE_CHARS = 16 * 1024
     private val GET_PATTERN = Regex("@get:\\{([^}]+?)\\}", RegexOption.IGNORE_CASE)
+    private val DOUBLE_BRACE_JSON_PATH = Regex("""\\{\\{\\s*(\\$(?:\\.|\\[)[^{}]*?)\\s*\\}\\}""")
+    private val SINGLE_BRACE_JSON_PATH = Regex("""(?<!\\{)\\{\\s*(\\$(?:\\.|\\[)[^{}]*?)\\s*\\}(?!\\})""")
 }
