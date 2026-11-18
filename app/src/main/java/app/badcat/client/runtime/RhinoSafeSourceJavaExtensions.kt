@@ -472,10 +472,22 @@ class RhinoSafeSourceJavaExtensions(
             return existed
         }
         val safePath = normalizeVirtualPath(path)
-        val key = virtualFileKey(safePath)
-        val existed = fileStore.getBytes(sourceId, key) != null
-        if (existed) fileStore.remove(sourceId, key)
-        return existed
+        return deleteVirtualTree(safePath)
+    }
+
+    private fun deleteVirtualTree(path: String): Boolean {
+        val fileKey = virtualFileKey(path)
+        val fileExists = fileStore.getBytes(sourceId, fileKey) != null
+        if (fileExists) fileStore.remove(sourceId, fileKey)
+        val manifestKey = VIRTUAL_DIR_PREFIX + path
+        val children = fileStore.get(sourceId, manifestKey)?.split("\\n")
+            ?.filter(String::isNotEmpty).orEmpty()
+        var removed = fileExists || children.isNotEmpty()
+        children.forEach { child ->
+            removed = deleteVirtualTree("$path/$child") || removed
+        }
+        if (children.isNotEmpty()) fileStore.remove(sourceId, manifestKey)
+        return removed
     }
 
     private fun downloadToken(path: String): String {
