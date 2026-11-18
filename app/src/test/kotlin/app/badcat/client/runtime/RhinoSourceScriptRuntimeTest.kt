@@ -268,6 +268,31 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun javaGetWithOneRelativeUrlArgumentStillPerformsHttpGet() = runBlocking {
+        val source = BookSource(
+            id = "https://java-get-overload.example/",
+            name = "Java get overload",
+            baseUrl = "https://java-get-overload.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime(
+            sourceGet = { requestedSource, baseUrl, url, headers ->
+                assertEquals(source.id, requestedSource.id)
+                assertEquals(source.baseUrl, baseUrl)
+                assertEquals("/chapter/1", url)
+                assertTrue(headers.isEmpty())
+                SourceHttpResponse(200, "https://java-get-overload.example/chapter/1", body = "chapter body")
+            },
+        )
+        val result = runtime.evaluate(
+            source,
+            "java.get('/chapter/1').body()",
+            mapOf("baseUrl" to source.baseUrl),
+        )
+        assertEquals("chapter body", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun javaGetStringExtractsFromTheCurrentJsonDocument() = runBlocking {
         val source = BookSource(
             id = "https://json-get-string.example/",
