@@ -166,11 +166,28 @@ class RhinoSafeSourceJavaExtensions(
         return "downloads/$token.txt"
     }
 
+    /** Legacy hexadecimal-data overload retained for older imported sources. */
+    @Deprecated("Use downloadFile(url)", ReplaceWith("downloadFile(url)"))
+    fun downloadFile(content: String, url: String): String {
+        require(url.isNotBlank()) { "downloadFile URL must not be blank" }
+        val extension = runCatching {
+            URL(url).path.substringAfterLast('/', "").substringAfterLast('.', "")
+        }.getOrDefault("")
+        if (extension.isBlank() || !extension.matches(Regex("^[A-Za-z0-9]{1,10}$"))) return ""
+        val bytes = decodeHex(content)
+        require(bytes.size <= MAX_DOWNLOAD_BYTES) {
+            "downloadFile response exceeds the 8 MiB limit"
+        }
+        val token = UUID.randomUUID().toString()
+        fileStore.putBytes(sourceId, DOWNLOAD_FILE_PREFIX + token, bytes)
+        return "downloads/$token.$extension"
+    }
+
     /** Read only opaque tokens returned by this source's downloadFile call. */
     fun readTxtFile(path: String): String {
         val token = downloadToken(path)
         val bytes = fileStore.getBytes(sourceId, DOWNLOAD_FILE_PREFIX + token) ?: return ""
-        return String(bytes, Charsets.UTF_8)
+        return String(bytes, detectTextCharset(bytes))
     }
 
     /** Decode the original downloaded bytes using the requested source charset. */
@@ -279,10 +296,10 @@ class RhinoSafeSourceJavaExtensions(
     }
 
     private fun downloadToken(path: String): String {
-        require(path.matches(Regex("^downloads/[0-9a-fA-F-]{36}\\.txt$"))) {
+        require(path.matches(Regex("^downloads/[0-9a-fA-F-]{36}(?:\\.[A-Za-z0-9]{1,10})?$"))) {
             "Invalid or unsafe Legado download path"
         }
-        return path.removePrefix("downloads/").removeSuffix(".txt")
+        return path.removePrefix("downloads/").substringBeforeLast(".")
     }
 
     fun putString(key: String, value: String): String {
