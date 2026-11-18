@@ -73,6 +73,48 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
     }
 
     @Test
+    fun libarchiveBackedRarAndSevenZipHelpersReadUrlAndHexArchives() {
+        // ZIP is also a libarchive-supported format and provides a portable fixture
+        // for verifying the shared RAR/7z transport and entry-reading path.
+        val archive = zipOf("folder/content.txt", "archive payload".toByteArray())
+        val sourceId = "https://libarchive-fixture.example/"
+        val extensions = RhinoSafeSourceJavaExtensions(
+            sourceId = sourceId,
+            store = InMemorySourceScriptKeyValueStore,
+            httpRequest = { _, url, _, _ ->
+                assertEquals("https://libarchive-fixture.example/archive", url)
+                SourceHttpResponse(
+                    statusCode = 200,
+                    finalUrl = url,
+                    body = "not archive data",
+                    bodyBytes = archive,
+                )
+            },
+        )
+        val hex = archive.joinToString("") { "%02x".format(it) }
+
+        assertArrayEquals(
+            "archive payload".toByteArray(),
+            extensions.getRarByteArrayContent(hex, "folder/content.txt"),
+        )
+        assertArrayEquals(
+            "archive payload".toByteArray(),
+            extensions.get7zByteArrayContent(
+                "https://libarchive-fixture.example/archive",
+                "folder/content.txt",
+            ),
+        )
+        assertEquals(
+            "archive payload",
+            extensions.getRarStringContent(hex, "folder/content.txt", "UTF-8"),
+        )
+        assertEquals(
+            "archive payload",
+            extensions.get7zStringContent(hex, "folder/content.txt", "UTF-8"),
+        )
+    }
+
+    @Test
     fun zipEntryExpansionIsBounded() {
         val archive = zipOf("large.bin", ByteArray(16 * 1024 * 1024 + 1))
         val extensions = RhinoSafeSourceJavaExtensions(
