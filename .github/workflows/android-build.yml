@@ -60,6 +60,12 @@ jobs:
           import urllib.request
           from bs4 import BeautifulSoup
 
+          multi_class_css, multi_class_index = selector_part("class.foo bar baz")
+          assert multi_class_css == ".foo.bar.baz" and multi_class_index is None, (multi_class_css, multi_class_index)
+          fixture = BeautifulSoup('<div class="foo bar baz"></div><div class="foo bar"></div>', "html.parser")
+          assert len(fixture.select(multi_class_css)) == 1, "multi-class selector must match only the element carrying every class"
+          print("PUBLIC_SELECTOR_SELF_TEST multi-class Legado class selector: PASS")
+
           def simple_css(rule):
               rule = (rule or "").strip()
               if not rule or "<js>" in rule.lower() or "@js:" in rule.lower():
@@ -239,9 +245,17 @@ jobs:
           from bs4 import BeautifulSoup
 
           def selector_part(part):
-              tokens = []
+              raw_tokens = part.strip().split()
               index = None
-              for token in part.strip().split():
+              # Legado's class.foo bar baz means one element carrying all
+              # three classes, not a descendant chain. Keep the smoke parser
+              # aligned with CssRuleEvaluator's compound-class semantics.
+              if raw_tokens and raw_tokens[0].startswith("class.") and len(raw_tokens) > 1:
+                  class_names = [raw_tokens[0][len("class."):], *raw_tokens[1:]]
+                  if all(re.fullmatch(r"[A-Za-z0-9_-]+", name) for name in class_names):
+                      return "".join("." + name for name in class_names), None
+              tokens = []
+              for token in raw_tokens:
                   if token.startswith("class."):
                       token = "." + token[len("class."):]
                   elif token.startswith("tag."):
