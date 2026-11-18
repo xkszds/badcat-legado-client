@@ -284,10 +284,16 @@ class RhinoSafeSourceJavaExtensions(
         }
     }
 
-    /** Extract an archive into source-private virtual files and return its relative folder. */
-    fun unzipFile(zipPath: String): String = extractArchive(zipPath, false)
-    fun un7zFile(zipPath: String): String = extractArchive(zipPath, true)
-    fun unrarFile(zipPath: String): String = extractArchive(zipPath, true)
+    /**
+     * The pinned Legado API routes all three format-named helpers through the
+     * same ArchiveUtils.deCompress implementation. Keep that dispatch here:
+     * ZIP/RAR/7z are format hints for scripts, not different extraction contracts.
+     */
+    fun unzipFile(zipPath: String): String = unArchiveFile(zipPath)
+    fun un7zFile(zipPath: String): String = unArchiveFile(zipPath)
+    fun unrarFile(zipPath: String): String = unArchiveFile(zipPath)
+
+    /** Try ZIP first, then the bounded libarchive adapter for RAR/7z formats. */
     fun unArchiveFile(zipPath: String): String =
         runCatching { extractArchive(zipPath, false) }.getOrElse { extractArchive(zipPath, true) }
 
