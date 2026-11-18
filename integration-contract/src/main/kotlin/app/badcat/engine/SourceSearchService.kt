@@ -22,7 +22,7 @@ class SourceSearchService(
                 "Search is disabled for source '${source.id}'",
             )
         }
-        val response = when (val result = http.execute(source, searchRuleUrl, page, keyword)) {
+        val response = when (val result = http.execute(source, searchRuleUrl, page, keyword, resolveJsonPathUrlTemplates = false)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
         }
