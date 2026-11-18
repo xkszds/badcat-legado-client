@@ -264,7 +264,7 @@ class RhinoSafeSourceJavaExtensions(
 
     private fun safeFileRoot(): java.io.File {
         val root = fileRoot ?: throw UnsupportedOperationException("Source file root is not configured")
-        return (root.parentFile ?: root).canonicalFile
+        return root.canonicalFile
     }
 
     private fun isWithinSafeFileRoot(file: java.io.File): Boolean = runCatching {
