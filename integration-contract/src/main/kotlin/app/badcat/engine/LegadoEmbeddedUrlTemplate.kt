@@ -120,6 +120,8 @@ object LegadoEmbeddedUrlTemplate {
             }
         }
 
+    }
+
     /**
      * Finds the closing template marker without treating braces inside JavaScript
      * strings, comments, regular-expression literals or object literals as the
@@ -251,6 +253,5 @@ object LegadoEmbeddedUrlTemplate {
             index++
         }
         return -1
-    }
     }
 }
