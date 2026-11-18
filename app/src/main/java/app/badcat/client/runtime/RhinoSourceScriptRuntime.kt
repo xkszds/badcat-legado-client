@@ -157,6 +157,18 @@ class RhinoSourceScriptRuntime(
                             }
                         }.getOrDefault(emptyList())
                     },
+                    ruleStringListReaderWithContent = { rule, content ->
+                        runCatching {
+                            val document = SourceDocument(
+                                url = bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                                body = content,
+                            )
+                            when (val parsed = LegadoRuleExpressionDispatcher.evaluate(document, rule)) {
+                                is EngineResult.Failure -> emptyList()
+                                is EngineResult.Success -> parsed.value
+                            }
+                        }.getOrDefault(emptyList())
+                    },
                     ruleElementReader = { rule ->
                         runCatching {
                             val document = SourceDocument(
@@ -169,11 +181,35 @@ class RhinoSourceScriptRuntime(
                             }
                         }.getOrNull()
                     },
+                    ruleElementReaderWithContent = { rule, content ->
+                        runCatching {
+                            val document = SourceDocument(
+                                url = bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                                body = content,
+                            )
+                            when (val parsed = LegadoRuleExpressionDispatcher.evaluateElements(document, rule)) {
+                                is EngineResult.Failure -> null
+                                is EngineResult.Success -> parsed.value.firstOrNull()?.let(::LegadoSourceElement)
+                            }
+                        }.getOrNull()
+                    },
                     ruleElementsReader = { rule ->
                         runCatching {
                             val document = SourceDocument(
                                 url = bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
                                 body = currentRuleContent,
+                            )
+                            when (val parsed = LegadoRuleExpressionDispatcher.evaluateElements(document, rule)) {
+                                is EngineResult.Failure -> LegadoSourceElementList(emptyList())
+                                is EngineResult.Success -> LegadoSourceElementList(parsed.value.map(::LegadoSourceElement))
+                            }
+                        }.getOrDefault(LegadoSourceElementList(emptyList()))
+                    },
+                    ruleElementsReaderWithContent = { rule, content ->
+                        runCatching {
+                            val document = SourceDocument(
+                                url = bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                                body = content,
                             )
                             when (val parsed = LegadoRuleExpressionDispatcher.evaluateElements(document, rule)) {
                                 is EngineResult.Failure -> LegadoSourceElementList(emptyList())
