@@ -108,7 +108,11 @@ internal object SourceLibArchiveReader {
             Archive.readSetReadCallback<Any?>(archive) { _, _ ->
                 buffer.clear()
                 val count = try {
-                    input.read(buffer.array())
+                    var bytesRead: Int
+                    do {
+                        bytesRead = input.read(buffer.array())
+                    } while (bytesRead == 0)
+                    bytesRead
                 } catch (error: IOException) {
                     throw ArchiveException(Archive.ERRNO_FATAL, "InputStream.read", error)
                 }
