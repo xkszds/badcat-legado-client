@@ -1162,7 +1162,18 @@ text + re.test('aa}}')"""
     @Test
     fun supportsSourceScopedCacheAndCommonStringHelpers() = runBlocking {
         val runtime = RhinoSourceScriptRuntime(
-            sourceAjax = { _, _, url -> if (url == "/helper.js") "({value:'imported'})" else "" },
+            sourceHttpRequest = { _, _, _, url, _, _ ->
+                if (url == "https://cache-one.example/helper.js") {
+                    SourceHttpResponse(
+                        statusCode = 200,
+                        finalUrl = url,
+                        body = "({value:'imported'})",
+                        bodyBytes = "({value:'imported'})".toByteArray(Charsets.UTF_8),
+                    )
+                } else {
+                    SourceHttpResponse(statusCode = 404, finalUrl = url, body = "")
+                }
+            },
         )
         val first = BookSource(
             id = "https://cache-one.example/",
@@ -1172,7 +1183,7 @@ text + re.test('aa}}')"""
         val second = first.copy(id = "https://cache-two.example/", baseUrl = "https://cache-two.example/")
         val firstResult = runtime.evaluate(
             first,
-            "cache.putMemory('token', {value:'cached'}); cache.getFromMemory('token').value + '|' + java.hexDecodeToString('48656c6c6f') + '|' + java.bytesToStr(java.base64DecodeToByteArray('V29ybGQ=')) + '|' + java.importScript('/helper.js')",
+            "cache.putMemory('token', {value:'cached'}); cache.getFromMemory('token').value + '|' + java.hexDecodeToString('48656c6c6f') + '|' + java.bytesToStr(java.base64DecodeToByteArray('V29ybGQ=')) + '|' + java.importScript('https://cache-one.example/helper.js')",
         )
         val secondResult = runtime.evaluate(second, "String(cache.getFromMemory('token'))")
 
