@@ -350,6 +350,7 @@ class RhinoSourceScriptRuntime(
             sourceExtensions.remove(sourceId)
             cacheExtensions.remove(sourceId)?.clear()
             sourceKeyValueStore.clearSource(sourceId)
+            sourceFileCacheStore.clearSource(sourceId)
             sourceLoginSessionStore.clearSource(sourceId)
         }
     }
