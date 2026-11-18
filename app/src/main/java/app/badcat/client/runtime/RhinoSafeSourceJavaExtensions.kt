@@ -476,7 +476,9 @@ class RhinoSafeSourceJavaExtensions(
         val number = match.groupValues[2]
         val normalized = fullWidthToHalf(number).replace("\\s+".toRegex(), "")
         val parsed = normalized.toIntOrNull() ?: legadoChineseNumberToInt(normalized)
-        return source.replaceRange(match.range, "${match.groupValues[1]}${parsed}${match.groupValues[3]}")
+        // Upstream JsExtensions.toNumChapter returns only the matched chapter label,
+        // not the original title text surrounding it.
+        return "${match.groupValues[1]}${parsed}${match.groupValues[3]}"
     }
 
     fun toURL(value: String): RhinoLegadoUrl = RhinoLegadoUrl(value)

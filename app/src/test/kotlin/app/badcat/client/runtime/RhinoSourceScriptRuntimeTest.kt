@@ -978,6 +978,8 @@ text + re.test('aa}}')"""
                     java.toNumChapter('第１２章'),
                     java.toNumChapter('第一千零二十五章'),
                     java.toNumChapter('第两百三十章'),
+                    java.toNumChapter('前缀第十二章后缀'),
+                    java.toNumChapter('壹佰贰拾叁'),
                     java.toNumChapter('序章'),
                     java.toNumChapter(null)
                 ].join('|');
@@ -985,7 +987,7 @@ text + re.test('aa}}')"""
         )
 
         assertTrue("Legado toNumChapter failed: $result", result is EngineResult.Success)
-        assertEquals("第12章|第12章|第1025章|第230章|序章|", (result as EngineResult.Success).value)
+        assertEquals("第12章|第12章|第1025章|第230章|第12章|壹佰贰拾叁|-1|序章|", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
 
