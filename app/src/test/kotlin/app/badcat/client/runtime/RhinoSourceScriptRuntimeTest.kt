@@ -1346,6 +1346,10 @@ text + re.test('aa}}')"""
                 seen += "$method|$url|${body.orEmpty()}|${headers["X-Token"].orEmpty()}"
                 app.badcat.engine.SourceHttpResponse(200, url, body = if (method == "HEAD") "" else "${method} response")
             },
+            sourceGet = { _, _, url, headers ->
+                seen += "GET|$url||${headers["X-Token"].orEmpty()}"
+                app.badcat.engine.SourceHttpResponse(200, url, body = "GET response")
+            },
         )
         val source = BookSource(
             id = "https://http-methods.example/",
@@ -1373,7 +1377,7 @@ text + re.test('aa}}')"""
     fun forwardsOptionalTimeoutsForGetHeadAndPostHelpers() = runBlocking {
         val timeouts = mutableListOf<Long>()
         val runtime = RhinoSourceScriptRuntime(
-            sourceHttpRequestWithTimeout = { _, _, method, url, body, headers, timeout ->
+            sourceHttpRequestNoRedirectWithTimeout = { _, _, method, url, body, headers, timeout ->
                 timeouts += timeout
                 assertEquals(if (method == "POST") "payload" else null, body)
                 assertEquals("t", headers["X-Token"])
