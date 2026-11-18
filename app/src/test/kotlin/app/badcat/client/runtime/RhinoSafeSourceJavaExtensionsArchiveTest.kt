@@ -58,7 +58,7 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
         val extensions = RhinoSafeSourceJavaExtensions(
             sourceId = "https://zip-fixture.example/",
             store = InMemorySourceScriptKeyValueStore,
-            httpRequest = { _, url, _, _ ->
+            httpGet = { url, _ ->
                 assertEquals("https://zip-fixture.example/book.zip", url)
                 SourceHttpResponse(
                     statusCode = 200,
@@ -100,7 +100,7 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
         val extensions = RhinoSafeSourceJavaExtensions(
             sourceId = "https://download-option.example/",
             store = InMemorySourceScriptKeyValueStore,
-            httpRequest = { _, url, _, _ ->
+            httpGet = { url, _ ->
                 requested += url
                 SourceHttpResponse(statusCode = 200, finalUrl = url, body = "document")
             },
@@ -154,7 +154,7 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
         val extensions = RhinoSafeSourceJavaExtensions(
             sourceId = "https://big5-file.example/",
             store = InMemorySourceScriptKeyValueStore,
-            httpRequest = { _, url, _, _ ->
+            httpGet = { url, _ ->
                 SourceHttpResponse(
                     statusCode = 200,
                     finalUrl = url,
@@ -173,7 +173,7 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
         val extensions = RhinoSafeSourceJavaExtensions(
             sourceId = "https://cache-file.example/",
             store = InMemorySourceScriptKeyValueStore,
-            httpRequest = { _, url, _, _ ->
+            httpGet = { url, _ ->
                 requests++
                 SourceHttpResponse(
                     statusCode = 200,
@@ -200,7 +200,7 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
                 sourceId = "https://physical-cache.example/",
                 store = InMemorySourceScriptKeyValueStore,
                 fileRoot = root,
-                httpRequest = { _, url, _, _ ->
+                httpGet = { url, _ ->
                     requests++
                     val body = "version-$requests"
                     SourceHttpResponse(
@@ -237,7 +237,7 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
         val extensions = RhinoSafeSourceJavaExtensions(
             sourceId = sourceId,
             store = InMemorySourceScriptKeyValueStore,
-            httpRequest = { _, url, _, _ ->
+            httpGet = { url, _ ->
                 requests += url
                 SourceHttpResponse(
                     statusCode = 200,
@@ -322,7 +322,7 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
         val extensions = RhinoSafeSourceJavaExtensions(
             sourceId = "https://extract-fixture.example/",
             store = InMemorySourceScriptKeyValueStore,
-            httpRequest = { _, url, _, _ ->
+            httpGet = { url, _ ->
                 SourceHttpResponse(
                     statusCode = 200,
                     finalUrl = url,
@@ -361,7 +361,7 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
                 sourceId = "https://physical-archive-cache.example/",
                 store = InMemorySourceScriptKeyValueStore,
                 fileRoot = root,
-                httpRequest = { _, url, _, _ ->
+                httpGet = { url, _ ->
                     SourceHttpResponse(statusCode = 200, finalUrl = url, body = "", bodyBytes = archive)
                 },
             )
@@ -391,7 +391,7 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
                 sourceId = "https://physical-archive-folder.example/",
                 store = InMemorySourceScriptKeyValueStore,
                 fileRoot = root,
-                httpRequest = { _, url, _, _ ->
+                httpGet = { url, _ ->
                     SourceHttpResponse(statusCode = 200, finalUrl = url, body = "", bodyBytes = archive)
                 },
             )
@@ -418,7 +418,7 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
                 sourceId = "physical-file-source",
                 store = InMemorySourceScriptKeyValueStore,
                 fileRoot = root,
-                httpRequest = { _, url, _, _ ->
+                httpGet = { url, _ ->
                     if (url.endsWith(".zip")) {
                         SourceHttpResponse(statusCode = 200, finalUrl = url, body = "", bodyBytes = archive)
                     } else {
@@ -473,7 +473,7 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
         val extensions = RhinoSafeSourceJavaExtensions(
             sourceId = "https://virtual-archive.example/",
             store = InMemorySourceScriptKeyValueStore,
-            httpRequest = { _, url, _, _ ->
+            httpGet = { url, _ ->
                 SourceHttpResponse(statusCode = 200, finalUrl = url, body = "", bodyBytes = archive)
             },
             archiveExtractor = { bytes, maxEntry, maxTotal, maxEntries ->
