@@ -140,11 +140,17 @@ object CssRuleEvaluator {
 
         return runCatching {
             val doc = Jsoup.parse(document.body, document.url)
-            val elements = if (allowChainedSelectors) {
-                selectLegadoStep(doc, parsed.selector)
+            // Legado's default-mode ElementsSingle index suffix is part of the
+            // selector head (for example ".w_txt li.4@textNodes"), not a CSS
+            // class named "4". Apply it before extracting text/attributes.
+            val indexedRule = if (allowChainedSelectors) LegadoElementIndex.parse(parsed.selector) else null
+            val selector = indexedRule?.selector ?: parsed.selector
+            val selected = if (allowChainedSelectors) {
+                selectLegadoStep(doc, selector)
             } else {
-                doc.select(parsed.selector).toList()
+                doc.select(selector).toList()
             }
+            val elements = if (indexedRule == null) selected else LegadoElementIndex.apply(selected, indexedRule)
             val values = when (parsed.valueMode) {
                 ValueMode.ALL -> listOf(elements.joinToString(separator = "") { it.outerHtml() })
                     .filter(String::isNotEmpty)
