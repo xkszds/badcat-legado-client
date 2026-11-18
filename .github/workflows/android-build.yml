@@ -51,11 +51,26 @@ jobs:
       - name: Live smoke imported Nyasama source endpoints (best effort)
         continue-on-error: true
         run: |
+          python3 -m pip install --quiet beautifulsoup4==4.13.4
           python3 - <<'PY'
           import gzip
           import json
           import urllib.parse
           import urllib.request
+          from bs4 import BeautifulSoup
+
+          def simple_css(rule):
+              rule = (rule or "").strip()
+              if not rule or "<js>" in rule.lower() or "@js:" in rule.lower():
+                  return None
+              rule = rule.split("||", 1)[0].strip()
+              rule = rule.replace("@", " ").replace("tag.", "")
+              if rule.startswith("class."):
+                  classes = rule[len("class."):].split()
+                  rule = "." + ".".join(classes)
+              if any(token in rule for token in ("{{", "!", "##", "&&")):
+                  return None
+              return rule
 
           collection_url = "https://shuyuan.nyasama.cc/shuyuan/12f348d3510bac0e5f1b164274f0b136.json"
           collection_request = urllib.request.Request(
@@ -305,6 +320,31 @@ jobs:
                           usable_http += 1
                       keyword_hit = "斗罗大陆" in text_body
                       link_count = text_body.lower().count("<a ")
+                      list_rule = source.get("ruleSearch", {}).get("bookList", "")
+                      list_css = simple_css(list_rule)
+                      name_css = simple_css(source.get("ruleSearch", {}).get("name", ""))
+                      selected_count = 0
+                      matching_titles = []
+                      if text_body.lstrip().startswith(("{", "[")):
+                          try:
+                              payload_for_rows = json.loads(text_body)
+                              print(f"PUBLIC_SOURCE_JSON {name}: root={type(payload_for_rows).__name__}, keys={list(payload_for_rows)[:10] if isinstance(payload_for_rows, dict) else 'array'}")
+                          except Exception:
+                              pass
+                      elif list_css:
+                          try:
+                              soup = BeautifulSoup(text_body, "html.parser")
+                              result_nodes = soup.select(list_css)
+                              selected_count = len(result_nodes)
+                              for node in result_nodes[:100]:
+                                  title_node = node.select_one(name_css) if name_css else None
+                                  title = title_node.get_text(" ", strip=True) if title_node else node.get_text(" ", strip=True)
+                                  if title:
+                                      if "斗罗大陆" in title:
+                                          matching_titles.append(title[:100])
+                              print(f"PUBLIC_SOURCE_CSS {name}: selector={list_css!r}, items={selected_count}, matching_titles={matching_titles[:5]!r}")
+                          except Exception as parse_error:
+                              print(f"PUBLIC_SOURCE_CSS_FAIL {name}: {type(parse_error).__name__}: {parse_error}")
                       json_keys = []
                       json_rows = 0
                       try:
@@ -331,7 +371,7 @@ jobs:
                   print(f"PUBLIC_SOURCE_FAIL {index:02d} [{collection}] {name}: {type(error).__name__}: {error}")
 
           print(f"Public source endpoint sweep: {len(selected)} attempted, {usable_http} non-empty HTTP 200 responses")
-          print("NOTE: endpoint reachability is not a Legado rule-parse pass; full parser compatibility is tested separately.")
+          print("NOTE: CSS selector smoke checks validate list extraction only, not the complete Legado JS/rule pipeline.")
           PY
 
       - name: Run contract unit tests
