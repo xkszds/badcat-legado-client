@@ -27,7 +27,9 @@ class RhinoSourceFileHandle internal constructor(
     val absolutePath: String get() = checked().absolutePath
     val parent: String? get() = checked().parent
     val parentFile: RhinoSourceFileHandle?
-        get() = checked().parentFile?.let { runCatching { RhinoSourceFileHandle(it, safeRoot) }.getOrNull() }
+        get() = checked().parentFile?.let { parent ->
+            runCatching { RhinoSourceFileHandle(parent, safeRoot).also { it.checked() } }.getOrNull()
+        }
     val isFile: Boolean get() = checked().isFile
     val isDirectory: Boolean get() = checked().isDirectory
     val isAbsolute: Boolean get() = checked().isAbsolute
