@@ -46,6 +46,7 @@ class RhinoSafeSourceJavaExtensions(
     private val ruleElementsReader: (String) -> LegadoSourceElementList = { LegadoSourceElementList(emptyList()) },
     private val ruleElementsReaderWithContent: (String, String) -> LegadoSourceElementList = { rule, _ -> ruleElementsReader(rule) },
     private val contentWriter: (String) -> Unit = {},
+    private val webViewUserAgent: String = DEFAULT_WEBVIEW_USER_AGENT,
 ) {
 
     /** Evaluate a Legado selector against the current AnalyzeRule content. */
@@ -218,7 +219,7 @@ class RhinoSafeSourceJavaExtensions(
     fun importScript(url: String): String = ajaxRequest(url)
 
     /** Stable mobile WebView-compatible UA for rules that request the host UA. */
-    fun getWebViewUA(): String = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.0.0 Mobile Safari/537.36"
+    fun getWebViewUA(): String = webViewUserAgent
 
     /** Legado-compatible, source-scoped cookie lookup. */
     fun getCookie(tag: String): String = cookieReader(tag)
@@ -394,7 +395,10 @@ class RhinoSafeSourceJavaExtensions(
     }
 
     companion object {
-        private const val MAX_AJAX_ALL_URLS = 20
+        private companion object {
+        const val DEFAULT_WEBVIEW_USER_AGENT = "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.0.0 Mobile Safari/537.36"
+        const val MAX_AJAX_ALL_URLS = 20
+    }
     private const val MAX_KEY_CHARS = 256
         private const val MAX_VALUE_CHARS = 16 * 1024
         private const val MAX_AES_INPUT_BYTES = 2 * 1024 * 1024
