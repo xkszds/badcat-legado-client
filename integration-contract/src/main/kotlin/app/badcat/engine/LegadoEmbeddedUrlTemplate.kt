@@ -11,6 +11,10 @@ package app.badcat.engine
 fun interface LegadoEmbeddedScriptEvaluator {
     suspend fun evaluate(script: String, key: String, page: Int): EngineResult<Any?>
 
+    /** Evaluate an embedded Legado default-mode selector against the current result. */
+    suspend fun evaluateRule(rule: String, key: String, page: Int): EngineResult<Any?> =
+        EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Embedded Legado selector rules are unavailable")
+
     /** Optional current-result binding used by upstream AnalyzeUrl @js rules. */
     suspend fun evaluateWithResult(
         script: String,
@@ -76,8 +80,20 @@ object LegadoEmbeddedUrlTemplate {
                 )
             }
 
+            // Some imported sources embed a default-mode selector inside {{...}}.
+            // A leading @. / @tag. / @class. is Legado's selector marker, not valid
+            // JavaScript. Route that narrow, unambiguous form through AnalyzeRule
+            // instead of sending it to Rhino (which throws EvaluatorException).
+            val isDefaultSelector = expression.startsWith("@@") ||
+                expression.startsWith("@.") ||
+                Regex("^@(children|class|tag|id|text)\\.", RegexOption.IGNORE_CASE)
+                    .containsMatchIn(expression.trim())
             val evaluated = when (
-                val result = evaluator.evaluate(expression, key, page)
+                val result = if (isDefaultSelector) {
+                    evaluator.evaluateRule(expression, key, page)
+                } else {
+                    evaluator.evaluate(expression, key, page)
+                }
             ) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
