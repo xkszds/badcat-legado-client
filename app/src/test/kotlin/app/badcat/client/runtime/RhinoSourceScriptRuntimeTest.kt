@@ -83,6 +83,21 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun bindsPageAsNumberLikeLegadoAnalyzeUrl() = runBlocking {
+        val source = BookSource(
+            id = "https://numeric-page.example/",
+            name = "Numeric page binding",
+            baseUrl = "https://numeric-page.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val result = RhinoEmbeddedUrlScriptEvaluator(source, runtime)
+            .evaluate("typeof page + ':' + (page + 1)", "", 2)
+
+        assertEquals("number:3", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun urlScriptsCannotAccessJavaRuntime() = runBlocking {
         val source = BookSource(
             id = "https://restricted.example/",
