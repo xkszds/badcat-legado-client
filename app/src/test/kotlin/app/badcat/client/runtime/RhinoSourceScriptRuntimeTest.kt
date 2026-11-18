@@ -1571,7 +1571,7 @@ class RhinoSourceScriptRuntimeTest {
         val runtime = RhinoSourceScriptRuntime()
         val result = runtime.evaluate(
             source,
-            """'a}}'.match(/\\.*?}}/)[0];""",
+            """'a}}'.match(/\.*?}}/)[0];""",
         )
 
         assertTrue("ECMAScript regex with literal closing braces failed: $result", result is EngineResult.Success)
