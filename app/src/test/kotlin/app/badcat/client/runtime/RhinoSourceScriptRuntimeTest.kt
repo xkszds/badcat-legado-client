@@ -425,6 +425,16 @@ text + re.test('aa}}')"""
     }
 
     @Test
+    fun timeFormatUsesLegadoDefaultDatePattern() {
+        val formatted = RhinoSafeSourceJavaExtensions(
+            sourceId = "https://time-format.example/",
+            store = InMemorySourceScriptKeyValueStore,
+        ).timeFormat(0L)
+
+        assertTrue(Regex("^\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}$").matches(formatted))
+    }
+
+    @Test
     fun supportsLegadoStringByteAndHexOverloads() = runBlocking {
         val source = BookSource(
             id = "https://encoding-overloads.example/",
