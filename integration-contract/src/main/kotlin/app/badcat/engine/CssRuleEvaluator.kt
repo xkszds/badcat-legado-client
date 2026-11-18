@@ -325,6 +325,7 @@ object CssRuleEvaluator {
         // Do not classify bare selector steps like "a", "li" or "title" as
         // arbitrary attributes here. Collection roots are element selectors;
         // only explicit extraction modes are stripped at this boundary.
+        return false
     }
 
     private fun parseValueMode(suffix: String): Pair<ValueMode, String?>? {
