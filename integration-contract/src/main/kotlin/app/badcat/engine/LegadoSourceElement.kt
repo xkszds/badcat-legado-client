@@ -52,5 +52,7 @@ class LegadoSourceElementList(private val items: List<LegadoSourceElement>) :
         get() = items.size
 
     override fun get(index: Int): LegadoSourceElement = items[index]
+    fun first(): LegadoSourceElement? = items.firstOrNull()
+    fun last(): LegadoSourceElement? = items.lastOrNull()
     fun getLength(): Int = size
 }
