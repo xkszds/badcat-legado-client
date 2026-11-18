@@ -33,32 +33,38 @@ class CssBookInfoParser {
         var document = SourceDocument(response.finalUrl, currentResult, response.contentType)
         val initRule = rules["init"]?.trim().orEmpty()
         if (initRule.isNotBlank()) {
-            val initialized = if (initRule.startsWith("@js:", true) || initRule.startsWith("javascript:", true)) {
-                when (val result = scriptRuntime.evaluate(
-                    source,
-                    initRule.substringAfter(':').trim(),
-                    mapOf(
-                        "result" to currentResult,
-                        "baseUrl" to response.finalUrl,
-                        "sourceUrl" to source.id,
-                        "sourceId" to source.id,
-                        "sourceName" to source.name,
-                        "ruleName" to "init",
-                    ),
-                )) {
-                    is EngineResult.Failure -> return result
-                    is EngineResult.Success -> result.value
-                }
-            } else {
-                val path = normalizeJsonRule(initRule)
-                when (val result = JsonPathRuleEvaluator.evaluateElements(document, path)) {
-                    is EngineResult.Failure -> return result
-                    is EngineResult.Success -> result.value.firstOrNull()
-                        ?: return EngineResult.Failure(EngineErrorCode.NOT_FOUND, "Book-info init rule returned no data")
-                }
+            val withoutPut = when (val put = LegadoPutRule.resolve(source, initRule, document, scriptRuntime)) {
+                is EngineResult.Failure -> return put
+                is EngineResult.Success -> put.value
             }
-            currentResult = initialized
-            document = SourceDocument(response.finalUrl, currentResult, "application/json")
+            if (withoutPut.isNotBlank()) {
+                val initialized = if (withoutPut.startsWith("@js:", true) || withoutPut.startsWith("javascript:", true)) {
+                    when (val result = scriptRuntime.evaluate(
+                        source,
+                        withoutPut.substringAfter(':').trim(),
+                        mapOf(
+                            "result" to currentResult,
+                            "baseUrl" to response.finalUrl,
+                            "sourceUrl" to source.id,
+                            "sourceId" to source.id,
+                            "sourceName" to source.name,
+                            "ruleName" to "init",
+                        ),
+                    )) {
+                        is EngineResult.Failure -> return result
+                        is EngineResult.Success -> result.value
+                    }
+                } else {
+                    val path = normalizeJsonRule(withoutPut)
+                    when (val result = JsonPathRuleEvaluator.evaluateElements(document, path)) {
+                        is EngineResult.Failure -> return result
+                        is EngineResult.Success -> result.value.firstOrNull()
+                            ?: return EngineResult.Failure(EngineErrorCode.NOT_FOUND, "Book-info init rule returned no data")
+                    }
+                }
+                currentResult = initialized
+                document = SourceDocument(response.finalUrl, currentResult, "application/json")
+            }
         }
 
         suspend fun field(name: String): EngineResult<String?> {
