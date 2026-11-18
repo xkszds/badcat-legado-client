@@ -293,6 +293,31 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun supportsBoundedLegadoAjaxAllArrayRequests() = runBlocking {
+        val source = BookSource(
+            id = "https://ajax-all.example/",
+            name = "Ajax all",
+            baseUrl = "https://ajax-all.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime(
+            sourceHttpRequest = { _, _, method, url, _, _ ->
+                assertEquals("GET", method)
+                SourceHttpResponse(200, "https://ajax-all.example$url", body = "body:$url")
+            },
+        )
+        val result = runtime.evaluate(
+            source,
+            "var responses = java.ajaxAll(['/one', '/two']); responses.length + '|' + responses[0].body() + '|' + responses[1].code() + '|' + responses[1].url()",
+            mapOf("baseUrl" to source.baseUrl),
+        )
+        assertEquals(
+            "2|body:/one|200|https://ajax-all.example/two",
+            (result as EngineResult.Success).value,
+        )
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun javaGetStringExtractsFromTheCurrentJsonDocument() = runBlocking {
         val source = BookSource(
             id = "https://json-get-string.example/",
