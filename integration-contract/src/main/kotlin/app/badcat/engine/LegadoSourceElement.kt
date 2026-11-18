@@ -24,8 +24,7 @@ class LegadoSourceElement(private val fragments: List<String>) {
     fun attr(name: String): String = elements().firstOrNull()?.attr(name).orEmpty()
     fun select(selector: String): LegadoSourceElement =
         LegadoSourceElement(elements().select(selector).map { it.outerHtml() })
-    fun selectFirst(selector: String): LegadoSourceElement? =
-        elements().selectFirst(selector)?.let { LegadoSourceElement(it.outerHtml()) }
+    fun selectFirst(selector: String): LegadoSourceElement? = select(selector).first()
     fun first(): LegadoSourceElement? = elements().firstOrNull()?.let { LegadoSourceElement(it.outerHtml()) }
     fun last(): LegadoSourceElement? = elements().lastOrNull()?.let { LegadoSourceElement(it.outerHtml()) }
     fun size(): Int = elements().size
@@ -37,7 +36,6 @@ class LegadoSourceElement(private val fragments: List<String>) {
     fun className(): String = elements().firstOrNull()?.className().orEmpty()
     fun id(): String = elements().firstOrNull()?.id().orEmpty()
     fun hasClass(name: String): Boolean = elements().firstOrNull()?.hasClass(name) ?: false
-    fun value(): String = elements().firstOrNull()?.`val`().orEmpty()
     fun absUrl(attribute: String): String = elements().firstOrNull()?.absUrl(attribute).orEmpty()
     fun children(): LegadoSourceElementList = LegadoSourceElementList(
         elements().flatMap { it.children().map { child -> LegadoSourceElement(child.outerHtml()) } },
