@@ -39,7 +39,7 @@ class FileChapterContentCache(context: Context) : ChapterContentCache {
             // openRead() must run before checking baseFile: AtomicFile restores
             // its .bak after an interrupted commit, when the base file is absent.
             val cached = runCatching {
-                val encoded = file.openRead().use(::readBoundedEntry) ?: return@runCatching null
+                val encoded = file.openRead().use { readBoundedChapterCacheEntry(it, MAX_ENTRY_BYTES) } ?: return@runCatching null
                 val json = JSONObject(String(encoded, Charsets.UTF_8))
                 CachedChapterContent(
                     content = ChapterContent(
@@ -86,21 +86,6 @@ class FileChapterContentCache(context: Context) : ChapterContentCache {
         }
     }
 
-    /** Read at most one byte beyond the limit so corrupted entries stay bounded. */
-    private fun readBoundedEntry(input: java.io.InputStream): ByteArray? {
-        val output = java.io.ByteArrayOutputStream()
-        val buffer = ByteArray(8 * 1024)
-        var total = 0
-        while (true) {
-            val count = input.read(buffer)
-            if (count < 0) break
-            total += count
-            if (total > MAX_ENTRY_BYTES) return null
-            output.write(buffer, 0, count)
-        }
-        return output.toByteArray()
-    }
-
     private fun cacheFile(sourceId: String, bookUrl: String, chapterUrl: String): File {
         val raw = "$sourceId\n$bookUrl\n$chapterUrl".toByteArray(Charsets.UTF_8)
         val digest = MessageDigest.getInstance("SHA-256").digest(raw)
@@ -125,4 +110,23 @@ class FileChapterContentCache(context: Context) : ChapterContentCache {
         const val MAX_ENTRY_BYTES = 4L * 1024 * 1024
         const val MAX_CACHE_BYTES = 64L * 1024 * 1024
     }
+}
+
+/** Read at most one byte beyond the limit so corrupted entries stay bounded. */
+internal fun readBoundedChapterCacheEntry(
+    input: java.io.InputStream,
+    maxBytes: Long,
+): ByteArray? {
+    require(maxBytes >= 0)
+    val output = java.io.ByteArrayOutputStream()
+    val buffer = ByteArray(8 * 1024)
+    var total = 0L
+    while (true) {
+        val count = input.read(buffer)
+        if (count < 0) break
+        total += count
+        if (total > maxBytes) return null
+        output.write(buffer, 0, count)
+    }
+    return output.toByteArray()
 }
