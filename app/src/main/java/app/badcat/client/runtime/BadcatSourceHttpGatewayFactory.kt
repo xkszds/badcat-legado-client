@@ -43,13 +43,14 @@ class BadcatSourceHttpGatewayFactory(
                 is EngineResult.Success -> result.value
                 is EngineResult.Failure -> throw IllegalArgumentException(result.message, result.cause)
             }
-            val request = when (val result = SourceRequestFactory.create(source, resolved)) {
+            val baseRequest = when (val result = SourceRequestFactory.create(source, resolved)) {
                 is EngineResult.Success -> result.value
                 is EngineResult.Failure -> throw IllegalArgumentException(result.message, result.cause)
-            }.copy(
+            }
+            val request = baseRequest.copy(
                 method = method,
                 body = body,
-                headers = request.headers + headers,
+                headers = baseRequest.headers + headers,
                 timeoutMillis = timeout,
             )
             when (val response = runBlocking(Dispatchers.IO) { client.execute(request) }) {
