@@ -514,7 +514,12 @@ class RhinoSafeSourceJavaExtensions(
         val urlSafe = flags and BASE64_URL_SAFE != 0
         var encoder = if (urlSafe) Base64.getUrlEncoder() else Base64.getEncoder()
         if (flags and BASE64_NO_PADDING != 0) encoder = encoder.withoutPadding()
-        return encoder.encodeToString(value)
+        if (flags and BASE64_NO_WRAP != 0) return encoder.encodeToString(value)
+        val lineSeparator = if (flags and BASE64_CRLF != 0) byteArrayOf(13, 10) else byteArrayOf(10)
+        val wrapped = (if (urlSafe) Base64.getUrlEncoder() else Base64.getEncoder())
+            .let { if (flags and BASE64_NO_PADDING != 0) it.withoutPadding() else it }
+            .let { Base64.getMimeEncoder(76, lineSeparator).encodeToString(value) }
+        return if (wrapped.isEmpty()) wrapped else wrapped + String(lineSeparator, Charsets.US_ASCII)
     }
 
     private fun decodeBase64(value: String, flags: Int): ByteArray {
@@ -658,6 +663,7 @@ class RhinoSafeSourceJavaExtensions(
         private const val BASE64_DEFAULT = 0
         private const val BASE64_NO_PADDING = 1
         private const val BASE64_NO_WRAP = 2
+        private const val BASE64_CRLF = 4
         private const val BASE64_URL_SAFE = 8
 
         const val DEFAULT_WEBVIEW_USER_AGENT = "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.0.0 Mobile Safari/537.36"

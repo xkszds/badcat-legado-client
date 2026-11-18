@@ -442,6 +442,7 @@ text + re.test('aa}}')"""
             """
                 [
                     java.base64Encode('你好', 10),
+                    java.base64Encode('a', 0).replace('\\n', '!'),
                     java.base64Decode('5L2g5aW9', 'UTF-8'),
                     java.base64Decode('V29y\n bGQ=', 0),
                     java.bytesToStr(java.base64DecodeToByteArray('SGVsbG8=', 0))
@@ -449,7 +450,7 @@ text + re.test('aa}}')"""
             """.trimIndent(),
         )
         assertTrue("Legado Base64 overloads failed: $result", result is EngineResult.Success)
-        assertEquals("5L2g5aW9|你好|World|Hello", (result as EngineResult.Success).value)
+        assertEquals("5L2g5aW9|YQ==!|你好|World|Hello", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
 
