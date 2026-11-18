@@ -65,7 +65,7 @@ internal object SourceLibArchiveReader {
                 val name = ArchiveEntry.pathnameUtf8(entry)
                     ?: ArchiveEntry.pathname(entry)?.toString(Charsets.UTF_8)
                     ?: continue
-                if (name.endsWith("/") || name.endsWith("\\\\")) continue
+                if (!S_ISREG(ArchiveEntry.stat(entry).stMode)) continue
                 require(extracted.size < maxEntries) { "Archive contains too many files" }
                 val output = Buffer()
                 val chunk = ByteBuffer.allocateDirect(DEFAULT_BUFFER_SIZE)
