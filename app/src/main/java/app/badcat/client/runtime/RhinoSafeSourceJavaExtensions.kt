@@ -395,6 +395,10 @@ class RhinoSafeSourceJavaExtensions(
 
     fun toURL(value: String): RhinoLegadoUrl = RhinoLegadoUrl(value)
 
+    /** Resolve a relative URL against an explicit HTTP(S) base, matching Legado's two-argument helper. */
+    fun toURL(value: String, baseUrl: String): RhinoLegadoUrl =
+        RhinoLegadoUrl(app.badcat.engine.WebUrlResolver.resolve(baseUrl, value))
+
     /** Narrow byte helpers used only by the reviewed JavaImporter AES compatibility shim. */
     fun utf8Encode(value: String): ByteArray {
         require(value.length <= MAX_AES_INPUT_BYTES) { "AES input text exceeds the size limit" }
