@@ -1371,4 +1371,73 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(source.id)
     }
 
+
+    @Test
+    fun restrictedJavaImporterRejectsNonAllowListedCryptoAndJavaClasses() = runBlocking {
+        val source = BookSource(
+            id = "https://crypto-boundary.example/",
+            name = "Crypto boundary",
+            baseUrl = "https://crypto-boundary.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+
+        val unsupportedCipher = runtime.evaluate(
+            source,
+            "Packages.javax.crypto.Cipher.getInstance('AES/GCM/NoPadding')",
+        )
+        val arbitraryJavaClass = runtime.evaluate(
+            source,
+            "Packages.java.lang.Runtime.getRuntime().availableProcessors()",
+        )
+        val arbitraryPackage = runtime.evaluate(
+            source,
+            "new JavaImporter(Packages.java.io)",
+        )
+
+        assertTrue("Only AES/CBC/PKCS5Padding may be requested", unsupportedCipher is EngineResult.Failure)
+        assertTrue("General Java classes must remain unavailable", arbitraryJavaClass is EngineResult.Failure)
+        assertTrue("Unlisted Java packages must remain unavailable", arbitraryPackage is EngineResult.Success)
+        assertEquals("undefined", (runtime.evaluate(source, "typeof Packages.java.io.File") as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
+    fun restrictedAesImporterRejectsInvalidKeyAndIvLengths() = runBlocking {
+        val source = BookSource(
+            id = "https://aes-boundary.example/",
+            name = "AES boundary",
+            baseUrl = "https://aes-boundary.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val invalidKey = runtime.evaluate(
+            source,
+            """
+                var importer = new JavaImporter();
+                importer.importPackage(Packages.javax.crypto.spec, Packages.javax.crypto);
+                with (importer) {
+                    var key = new SecretKeySpec('short'.getBytes(), 'AES');
+                    var iv = new IvParameterSpec(new Array(16));
+                    Cipher.getInstance('AES/CBC/PKCS5Padding').init(2, key, iv);
+                }
+            """.trimIndent(),
+        )
+        val invalidIv = runtime.evaluate(
+            source,
+            """
+                var importer = new JavaImporter();
+                importer.importPackage(Packages.javax.crypto.spec, Packages.javax.crypto);
+                with (importer) {
+                    var key = new SecretKeySpec('0123456789abcdef'.getBytes(), 'AES');
+                    var iv = new IvParameterSpec(new Array(8));
+                    var cipher = Cipher.getInstance('AES/CBC/PKCS5Padding');
+                    cipher.init(2, key, iv);
+                }
+            """.trimIndent(),
+        )
+
+        assertTrue("AES keys outside 128/192/256 bits must be rejected", invalidKey is EngineResult.Failure)
+        assertTrue("AES-CBC IVs other than 16 bytes must be rejected", invalidIv is EngineResult.Failure)
+        runtime.clearSourceState(source.id)
+    }
+
 }
