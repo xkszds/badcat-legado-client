@@ -146,7 +146,7 @@ class SourceHttpGatewayTest {
             SourceHttpGateway(client).execute(source(), "/search?q={{key")
         }
         assertEquals(
-            EngineErrorCode.INVALID_SOURCE,
+            EngineErrorCode.UNSUPPORTED_RULE,
             assertIs<EngineResult.Failure>(result).code,
         )
         assertTrue(client.captured == null)
