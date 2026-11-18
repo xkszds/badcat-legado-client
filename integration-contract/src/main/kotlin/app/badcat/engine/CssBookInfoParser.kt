@@ -100,6 +100,10 @@ class CssBookInfoParser {
                     is EngineResult.Failure -> return expanded
                     is EngineResult.Success -> expanded.value
                 }
+            if ((name == "coverUrl" || name == "tocUrl") && isLiteralUrlRule(trimmed)) {
+                return runCatching { EngineResult.Success(WebUrlResolver.resolve(response.finalUrl, trimmed)) }
+                    .getOrElse { EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Book-info $name literal must resolve to a credential-free HTTP(S) URL", it) }
+            }
             if (trimmed.startsWith("@js:", true) || trimmed.startsWith("javascript:", true)) {
                 val script = trimmed.substringAfter(':').trim()
                 if (script.isBlank()) return EngineResult.Failure(
@@ -187,6 +191,10 @@ class CssBookInfoParser {
         )
     }
 
+
+    private fun isLiteralUrlRule(value: String): Boolean =
+        value.startsWith("http://", true) || value.startsWith("https://", true) ||
+            value.startsWith("/") || value.startsWith("./") || value.startsWith("../")
 
     private fun normalizeJsonRule(rule: String): String {
         val trimmed = rule.trim()
