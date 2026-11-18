@@ -3,6 +3,7 @@ package app.badcat.client.runtime
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.security.MessageDigest
+import javax.crypto.Mac
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.SimpleTimeZone
@@ -336,6 +337,25 @@ class RhinoSafeSourceJavaExtensions(
     fun log(value: Any?): String = value?.toString().orEmpty()
 
     fun md5Encode(value: String): String = digest("MD5", value)
+
+    /** Legado digest helpers; algorithm names are explicitly allow-listed. */
+    fun digestHex(data: String, algorithm: String): String =
+        digest(requireDigestAlgorithm(algorithm), data)
+
+    fun digestBase64Str(data: String, algorithm: String): String {
+        val bytes = MessageDigest.getInstance(requireDigestAlgorithm(algorithm))
+            .digest(data.toByteArray(Charsets.UTF_8))
+        return Base64.getEncoder().encodeToString(bytes)
+    }
+
+    fun HMacHex(data: String, algorithm: String, key: String): String =
+        hmac(data, algorithm, key).joinToString("") { byte ->
+            "%02x".format(byte.toInt() and 0xff)
+        }
+
+    fun HMacBase64(data: String, algorithm: String, key: String): String =
+        Base64.getEncoder().encodeToString(hmac(data, algorithm, key))
+
     fun md5Encode16(value: String): String = md5Encode(value).substring(8, 24)
 
     fun base64Encode(value: String): String =
@@ -480,6 +500,29 @@ class RhinoSafeSourceJavaExtensions(
 
     /** Legado-compatible simplified-to-traditional conversion. */
     fun s2t(value: String): String = QuickChineseUtils.s2t(value)
+
+    private fun requireDigestAlgorithm(value: String): String {
+        val normalized = value.trim().uppercase(Locale.ROOT).replace("-", "")
+        val supported = mapOf(
+            "MD5" to "MD5",
+            "SHA1" to "SHA-1",
+            "SHA256" to "SHA-256",
+            "SHA384" to "SHA-384",
+            "SHA512" to "SHA-512",
+        )
+        return supported[normalized] ?: throw IllegalArgumentException("Unsupported digest algorithm")
+    }
+
+    private fun hmac(data: String, algorithm: String, key: String): ByteArray {
+        require(key.isNotEmpty() && key.length <= MAX_KEY_CHARS) { "HMAC key is blank or too long" }
+        val normalized = algorithm.trim().uppercase(Locale.ROOT).replace("-", "")
+        val supported = setOf("HMACSHA1", "HMACSHA256", "HMACSHA384", "HMACSHA512")
+        require(normalized in supported) { "Unsupported HMAC algorithm" }
+        require(data.length <= MAX_VALUE_CHARS * 128) { "HMAC input exceeds the size limit" }
+        val mac = Mac.getInstance(normalized)
+        mac.init(javax.crypto.spec.SecretKeySpec(key.toByteArray(Charsets.UTF_8), normalized))
+        return mac.doFinal(data.toByteArray(Charsets.UTF_8))
+    }
 
     private fun digest(algorithm: String, value: String): String =
         MessageDigest.getInstance(algorithm).digest(value.toByteArray(Charsets.UTF_8))
