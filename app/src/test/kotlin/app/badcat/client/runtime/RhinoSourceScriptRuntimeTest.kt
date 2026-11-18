@@ -1376,6 +1376,31 @@ text + re.test('aa}}')"""
     }
 
     @Test
+    fun ajaxAllForwardsSkipRateLimitForEveryRequest() = runBlocking {
+        val source = BookSource(
+            id = "ajax-all-rate-limit",
+            name = "AJAX all rate limit",
+            baseUrl = "https://ajax-all-rate-limit.example/",
+            concurrentRate = "1/1000",
+        )
+        val skipFlags = java.util.Collections.synchronizedList(mutableListOf<Boolean>())
+        val runtime = RhinoSourceScriptRuntime(
+            sourceHttpRequest = { _, _, _, url, _, _ ->
+                app.badcat.engine.SourceHttpResponse(200, url, body = "ok")
+            },
+            sourceRateLimit = { _, skip -> skipFlags += skip },
+        )
+        val result = runtime.evaluate(
+            source,
+            "java.ajaxAll(['/one', '/two'], true).length",
+            mapOf("baseUrl" to source.baseUrl),
+        )
+        assertEquals("2", (result as EngineResult.Success).value)
+        assertEquals(listOf(true, true), skipFlags.sortedBy { it.toString() })
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun connectCallTimeoutIsForwardedToTheTransport() = runBlocking {
         val source = BookSource(
             id = "connect-timeout-source",
