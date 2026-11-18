@@ -3,6 +3,7 @@ package app.badcat.client.runtime
 import android.content.Context
 import android.util.Base64
 import okhttp3.Cookie
+import okhttp3.Headers
 import okhttp3.CookieJar
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -90,6 +91,44 @@ class SharedPreferencesSourceCookieJar(
             removeExpiredLocked(System.currentTimeMillis())
             persistLocked()
             applicableSourceCookieHeader(httpUrl, cookies.values)
+        }
+    }
+
+    /** Adds or updates one Set-Cookie value for this source and URL. */
+    fun setCookie(url: String, cookieHeader: String) {
+        saveCookieHeader(url, cookieHeader, replaceApplicable = false)
+    }
+
+    /** Replaces all cookies applicable to this URL with the supplied Set-Cookie value. */
+    fun replaceCookie(url: String, cookieHeader: String) {
+        saveCookieHeader(url, cookieHeader, replaceApplicable = true)
+    }
+
+    private fun saveCookieHeader(url: String, cookieHeader: String, replaceApplicable: Boolean) {
+        val httpUrl = url.toHttpUrlOrNull()
+            ?: throw IllegalArgumentException("Cookie URL must be a valid HTTP(S) URL")
+        require(cookieHeader.isNotBlank() && cookieHeader.length <= MAX_COOKIE_HEADER_CHARS) {
+            "Cookie header is blank or exceeds the size limit"
+        }
+        val parsed = Cookie.parseAll(
+            httpUrl,
+            Headers.Builder().add("Set-Cookie", cookieHeader).build(),
+        ).filter(Cookie::isWithinStorageLimits)
+        require(parsed.isNotEmpty()) { "Cookie header is invalid for the supplied URL" }
+        synchronized(lock) {
+            reloadLocked()
+            if (replaceApplicable) {
+                cookies.entries.removeAll { (_, cookie) -> cookie.matches(httpUrl) }
+            }
+            val now = System.currentTimeMillis()
+            parsed.forEach { cookie ->
+                val key = cookieKey(cookie)
+                cookies.remove(key)
+                if (cookie.expiresAt > now) cookies[key] = cookie
+            }
+            removeExpiredLocked(now)
+            trimToCookieLimitLocked()
+            persistLocked()
         }
     }
 
@@ -200,6 +239,7 @@ class SharedPreferencesSourceCookieJar(
         private const val MAX_COOKIE_DOMAIN_CHARS = 253
         private const val MAX_COOKIE_PATH_CHARS = 2_048
         private const val MAX_STORAGE_CHARS = 256 * 1024
+        private const val MAX_COOKIE_HEADER_CHARS = 8 * 1024
         private val locks = ConcurrentHashMap<String, Any>()
     }
 }
