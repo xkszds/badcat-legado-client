@@ -1753,7 +1753,7 @@ class BadcatSourceHttpGatewayFactoryAjaxTest {
             source,
             """
                 var doc = org.jsoup.Jsoup.parse(
-                    '<ul><li id="one">First</li><li id="two"><a href="/chapter">Second</a></li></ul>',
+                    '<ul><li id="one">First</li><li id="two" class="selected"><a href="/chapter">Second</a></li></ul>',
                     'https://reader.example/catalog'
                 );
                 var imported = new JavaImporter(Packages.org.jsoup);
@@ -1772,6 +1772,9 @@ class BadcatSourceHttpGatewayFactoryAjaxTest {
                     doc.select('li').size(),
                     selectedFirst.text(),
                     second.selectFirst('a').absUrl('href'),
+                    second.hasClass('selected'),
+                    second.parent().tagName(),
+                    doc.select('missing').isEmpty(),
                     viaPackages.text(),
                     viaImporter.text()
                 ].join('|');
@@ -1779,7 +1782,7 @@ class BadcatSourceHttpGatewayFactoryAjaxTest {
         )
 
         assertTrue("Legado org.jsoup.Jsoup.parse facade failed: $result", result is EngineResult.Success)
-        assertEquals("2|Second|two|1|First|https://reader.example/chapter|Packages|Importer", (result as EngineResult.Success).value)
+        assertEquals("2|Second|two|1|First|https://reader.example/chapter|true|ul|true|Packages|Importer", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
 
