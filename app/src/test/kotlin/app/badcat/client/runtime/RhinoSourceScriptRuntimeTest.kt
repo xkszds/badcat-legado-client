@@ -1391,7 +1391,7 @@ class RhinoSourceScriptRuntimeTest {
         )
         val unlistedPackage = runtime.evaluate(
             source,
-            "typeof Packages.java.io.File",
+            "typeof Packages.java.io",
         )
 
         assertTrue("Only AES/CBC/PKCS5Padding may be requested", unsupportedCipher is EngineResult.Failure)
