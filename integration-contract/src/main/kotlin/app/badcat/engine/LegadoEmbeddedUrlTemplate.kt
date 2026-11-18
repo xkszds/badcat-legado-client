@@ -84,10 +84,16 @@ object LegadoEmbeddedUrlTemplate {
             // A leading @. / @tag. / @class. is Legado's selector marker, not valid
             // JavaScript. Route that narrow, unambiguous form through AnalyzeRule
             // instead of sending it to Rhino (which throws EvaluatorException).
-            val isDefaultSelector = expression.startsWith("@@") ||
-                expression.startsWith("@.") ||
-                Regex("^@(children|class|tag|id|text)\\.", RegexOption.IGNORE_CASE)
-                    .containsMatchIn(expression.trim())
+            val trimmedExpression = expression.trimStart()
+            // Legado's {{...}} template rule dispatches every leading-@ form
+            // (including @. selectors, @css/@xpath/@json and @@) to AnalyzeRule.
+            // Only explicit executable @js: and regex modes stay out of this path.
+            // Testing the untrimmed string here used to miss valid sources whose
+            // template put a newline/space immediately after "{{", then Rhino tried
+            // to compile "@.w_txt ..." as JavaScript.
+            val isDefaultSelector = trimmedExpression.startsWith("@") &&
+                !trimmedExpression.startsWith("@js:", ignoreCase = true) &&
+                !trimmedExpression.startsWith("@regex:", ignoreCase = true)
             val evaluated = when (
                 val result = if (isDefaultSelector) {
                     evaluator.evaluateRule(expression, key, page)
