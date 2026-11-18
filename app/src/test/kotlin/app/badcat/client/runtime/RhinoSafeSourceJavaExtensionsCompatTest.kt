@@ -33,8 +33,11 @@ class RhinoSafeSourceJavaExtensionsCompatTest {
 
     @Test
     fun parseJsRequestHeadersRejectsInvalidJsonAndUnsupportedTypes() {
-        assertThrows(IllegalStateException::class.java) {
+        assertThrows(IllegalArgumentException::class.java) {
             extensions.parseJsRequestHeaders("[1,2]")
+        }
+        assertThrows(RuntimeException::class.java) {
+            extensions.parseJsRequestHeaders("{invalid")
         }
         assertThrows(IllegalArgumentException::class.java) {
             extensions.parseJsRequestHeaders(42)
