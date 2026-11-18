@@ -63,7 +63,8 @@ class LegadoSourceElement(
     )
     fun size(): Int = elements().size
     fun getLength(): Int = size()
-    fun get(index: Int): LegadoSourceElement = selectedElement(index)
+    fun get(index: Int): LegadoSourceElement =
+        selectedElement(index) ?: throw IndexOutOfBoundsException("Index: $index, size: ${contextHtml().size}")
     fun toArray(): Array<LegadoSourceElement> =
         contextHtml().indices.mapNotNull(::selectedElement).toTypedArray()
 
