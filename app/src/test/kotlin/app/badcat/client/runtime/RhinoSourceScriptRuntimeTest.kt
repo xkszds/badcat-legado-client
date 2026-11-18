@@ -561,4 +561,25 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(source.id)
     }
 
+
+    @Test
+    fun exposesLegadoGetStringListAndGetElementHelpers() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val source = BookSource(
+            id = "https://element-helpers.example/",
+            name = "Element helpers",
+            baseUrl = "https://element-helpers.example/",
+        )
+        val html = """<ul><li>First</li><li>Second</li></ul>"""
+        val result = runtime.evaluate(
+            source,
+            "java.getStringList('ul li@text').toArray().map(function(v) { return String(v); }).join('|') + '|' + java.getElement('ul li.0').text() + '|' + java.getElement('ul li.1').toString()",
+            mapOf("result" to html, "baseUrl" to source.baseUrl),
+        )
+
+        assertTrue("Legado element helpers failed: $result", result is EngineResult.Success)
+        assertEquals("First|Second|First|<li>Second</li>", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
 }
