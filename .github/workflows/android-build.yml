@@ -54,6 +54,7 @@ jobs:
           python3 -m pip install --quiet beautifulsoup4==4.13.4
           python3 - <<'PY'
           import gzip
+          import ast
           import json
           import re
           import urllib.parse
@@ -313,6 +314,9 @@ jobs:
               ("liufuyou-yck", "https://raw.githubusercontent.com/liufuyou/read/main/sources/yck-novel.json"),
               ("liufuyou-yiove", "https://raw.githubusercontent.com/liufuyou/read/main/sources/yiove-novel.json"),
               ("cjj-curated", "https://raw.githubusercontent.com/cjj200011222/legado-booksource/master/all.json"),
+              # A small, separately maintained public source set with known static
+              # POST descriptors; used only for bounded live POST compatibility probes.
+              ("XIU2-Yuedu", "https://raw.githubusercontent.com/XIU2/Yuedu/master/shuyuan"),
           ]
           sources = []
           for label, url in collections:
@@ -451,8 +455,121 @@ jobs:
               except Exception as error:
                   print(f"PUBLIC_SOURCE_FAIL {index:02d} [{collection}] {name}: {type(error).__name__}: {error}")
 
-          print(f"Public source endpoint sweep: {len(selected)} attempted, {usable_http} non-empty HTTP 200 responses")
-          print("NOTE: CSS selector smoke checks validate list extraction only, not the complete Legado JS/rule pipeline.")
+          # Probe a few real, static POST descriptors using Legado's
+          # "URL,{JSON-or-Python-dict-options}" syntax. Dynamic @js/<js>
+          # descriptors are deliberately excluded: they require the bounded
+          # Android Rhino runtime and must not be approximated here.
+          def parse_static_request_descriptor(search_url):
+              match = re.search(r",\s*(?=\{)", search_url)
+              if not match:
+                  return search_url.strip(), {}
+              endpoint = search_url[:match.start()].strip()
+              raw_options = search_url[match.end():].strip()
+              try:
+                  options = json.loads(raw_options)
+              except json.JSONDecodeError:
+                  options = ast.literal_eval(raw_options)
+              if not isinstance(options, dict):
+                  raise ValueError("Legado URL options are not an object")
+              return endpoint, options
+
+          post_preferred = ["69书吧", "艾途小说", "武林中文网"]
+          post_sources = []
+          seen_post = set()
+          for wanted in post_preferred:
+              for source in sources:
+                  name = source.get("bookSourceName", "")
+                  search = source.get("searchUrl", "")
+                  if name != wanted or source.get("enabled") is False:
+                      continue
+                  if not isinstance(search, str) or not search or "@js" in search.lower() or "<js>" in search.lower():
+                      continue
+                  if not source.get("ruleSearch", {}).get("bookList"):
+                      continue
+                  try:
+                      endpoint, options = parse_static_request_descriptor(search)
+                  except Exception:
+                      continue
+                  if str(options.get("method", "GET")).upper() != "POST":
+                      continue
+                  identity = (source.get("_collection"), name, source.get("bookSourceUrl"), search)
+                  if identity not in seen_post:
+                      seen_post.add(identity)
+                      post_sources.append((source, endpoint, options))
+                  break
+
+          post_success = 0
+          for index, (source, endpoint, options) in enumerate(post_sources, 1):
+              name = source.get("bookSourceName", "未命名")
+              base = source.get("bookSourceUrl", "").split("#", 1)[0].strip()
+              keyword = "斗罗大陆"
+              url = endpoint.replace("{{key}}", urllib.parse.quote(keyword, safe="")).replace("{{page}}", "1")
+              if url.startswith("/"):
+                  url = urllib.parse.urljoin(base.rstrip("/") + "/", url.lstrip("/"))
+              elif not url.startswith(("http://", "https://")):
+                  url = urllib.parse.urljoin(base.rstrip("/") + "/", url)
+              charset = options.get("charset") or "utf-8"
+              try:
+                  keyword_encoded = urllib.parse.quote_from_bytes(keyword.encode(charset), safe="")
+                  body_template = options.get("body")
+                  if body_template is None:
+                      raise ValueError("POST descriptor has no body")
+                  if not isinstance(body_template, str):
+                      body_template = json.dumps(body_template, ensure_ascii=False, separators=(",", ":"))
+                  body_text = body_template.replace("{{key}}", keyword_encoded).replace("{{page}}", "1")
+                  body_bytes = body_text.encode(charset)
+                  headers = {
+                      "User-Agent": "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36",
+                      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                  }
+                  option_headers = options.get("headers") or {}
+                  if isinstance(option_headers, dict):
+                      headers.update({str(k): str(v) for k, v in option_headers.items()})
+                  if not any(k.lower() == "content-type" for k in headers):
+                      headers["Content-Type"] = f"application/x-www-form-urlencoded; charset={charset}"
+                  if not any(k.lower() == "referer" for k in headers):
+                      headers["Referer"] = base.rstrip("/") + "/"
+                  request = urllib.request.Request(url, data=body_bytes, headers=headers, method="POST")
+                  with urllib.request.urlopen(request, timeout=18) as response:
+                      raw_body = response.read(1024 * 1024 + 1)
+                      if len(raw_body) > 1024 * 1024:
+                          raise RuntimeError("response exceeds 1 MiB safety limit")
+                      response_text = raw_body.decode(charset, errors="replace")
+                      status = response.status
+                  list_rule = source.get("ruleSearch", {}).get("bookList", "")
+                  name_rule = source.get("ruleSearch", {}).get("name", "")
+                  url_rule = source.get("ruleSearch", {}).get("bookUrl", "")
+                  selector = simple_css(list_rule)
+                  items = []
+                  names = []
+                  valid_urls = 0
+                  if selector and response_text.strip().startswith("<"):
+                      soup = BeautifulSoup(response_text, "html.parser")
+                      items = soup.select(selector)
+                      for node in items[:100]:
+                          title = legado_field(node, name_rule)
+                          book_url = legado_field(node, url_rule)
+                          if title:
+                              names.append(title[:100])
+                          if book_url and (book_url.startswith("/") or book_url.startswith("http://") or book_url.startswith("https://")):
+                              valid_urls += 1
+                  keyword_hits = [title for title in names if keyword in title]
+                  print(
+                      f"PUBLIC_SOURCE_POST {index:02d} {name}: HTTP {status}, "
+                      f"bytes={len(raw_body)}, charset={charset}, items={len(items)}, "
+                      f"extracted_names={len(names)}, valid_book_urls={valid_urls}, "
+                      f"keyword_hits={keyword_hits[:5]!r}"
+                  )
+                  if status == 200 and items and names and valid_urls:
+                      post_success += 1
+                  else:
+                      print(f"PUBLIC_SOURCE_POST_INCOMPLETE {name}: HTTP success alone is not a parsed book result")
+              except Exception as error:
+                  print(f"PUBLIC_SOURCE_POST_FAIL {index:02d} {name}: {type(error).__name__}: {error}")
+
+          print(f"Public static POST source probe: {len(post_sources)} attempted, {post_success} returned parsed list entries with names and valid book URLs")
+          print(f"Public source endpoint sweep: {len(selected)} GET attempted, {usable_http} non-empty HTTP 200 responses")
+          print("NOTE: GET/POST smoke checks validate bounded search-list extraction only, not the complete Legado JS/rule pipeline.")
           PY
 
       - name: Run contract unit tests
