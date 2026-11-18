@@ -12,10 +12,9 @@ interface SourceScriptFileCacheStore {
     fun put(sourceId: String, key: String, value: String)
     fun remove(sourceId: String, key: String)
     fun clearSource(sourceId: String)
-    fun getBytes(sourceId: String, key: String): ByteArray? =
-        get(sourceId, key)?.toByteArray(Charsets.UTF_8)
-    fun putBytes(sourceId: String, key: String, value: ByteArray) =
-        put(sourceId, key, String(value, Charsets.UTF_8))
+    /** Implementations must preserve arbitrary bytes; UTF-8 conversion is not lossless. */
+    fun getBytes(sourceId: String, key: String): ByteArray?
+    fun putBytes(sourceId: String, key: String, value: ByteArray)
 }
 
 /** JVM fallback for tests; production uses the app-private disk implementation. */
