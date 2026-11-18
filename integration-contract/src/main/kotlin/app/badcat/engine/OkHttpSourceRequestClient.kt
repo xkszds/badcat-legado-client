@@ -14,6 +14,12 @@ import okhttp3.Response
 import okhttp3.Interceptor
 import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.io.EOFException
+import java.net.ProtocolException
+import java.net.SocketException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
+import javax.net.ssl.SSLException
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.ConcurrentHashMap
@@ -96,8 +102,9 @@ class OkHttpSourceRequestClient(
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (io: IOException) {
-                    if (attempt >= request.retryCount) throw io
+                    if (attempt >= request.retryCount || !shouldRetryIOException(method, io)) throw io
                     attempt++
+                    delay((250L shl (attempt - 1).coerceAtMost(3)).coerceAtMost(2_000L))
                 }
             }
             @Suppress("UNREACHABLE_CODE")
@@ -217,6 +224,15 @@ class OkHttpSourceRequestClient(
     companion object {
         private val BODY_REQUIRED_METHODS = setOf("POST", "PUT", "PATCH", "PROPPATCH", "REPORT")
         private val BODY_FORBIDDEN_METHODS = setOf("GET", "HEAD")
+    }
+}
+
+/** Retry transient connection/read failures, but never TLS validation or DNS failures. */
+internal fun shouldRetryIOException(method: String, error: IOException): Boolean {
+    if (!method.equals("GET", ignoreCase = true) && !method.equals("HEAD", ignoreCase = true)) return false
+    if (error is SSLException || error is UnknownHostException) return false
+    return generateSequence(error as Throwable?) { it.cause }.any {
+        it is SocketTimeoutException || it is SocketException || it is EOFException || it is ProtocolException
     }
 }
 
