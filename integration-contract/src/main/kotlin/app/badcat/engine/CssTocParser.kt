@@ -120,6 +120,10 @@ class CssTocParser {
             if (!trimmed.startsWith("@js:", true) && !trimmed.startsWith("javascript:", true)) {
                 trimmed = normalizeJsonRule(itemHtml, trimmed)
             }
+            if (key == "chapterUrl" && isLiteralUrlRule(trimmed)) {
+                return runCatching { EngineResult.Success(WebUrlResolver.resolve(response.finalUrl, trimmed)) }
+                    .getOrElse { unsupported(source, "chapterUrl literal must resolve to a credential-free HTTP(S) URL") }
+            }
             if (trimmed.startsWith("@js:", true) || trimmed.startsWith("javascript:", true)) {
                 val script = trimmed.substringAfter(':').trim()
                 if (script.isBlank()) return unsupported(source, "empty JavaScript rule for '$key'")
@@ -411,6 +415,10 @@ class CssTocParser {
         }
         return EngineResult.Success(ParsedTocPage(chapters, nextUrls))
     }
+
+    private fun isLiteralUrlRule(value: String): Boolean =
+        value.startsWith("http://", true) || value.startsWith("https://", true) ||
+            value.startsWith("/") || value.startsWith("./") || value.startsWith("../")
 
     private fun evaluateCollectionRule(document: SourceDocument, rule: String): EngineResult<List<String>> {
         val trimmed = rule.trim()
