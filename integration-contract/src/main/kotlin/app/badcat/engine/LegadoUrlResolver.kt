@@ -212,8 +212,7 @@ object LegadoUrlResolver {
 
     private fun containsScript(value: String): Boolean =
         Regex("@js\\s*:|<js>", RegexOption.IGNORE_CASE).containsMatchIn(value) ||
-            value.contains("{{") ||
-            value.contains("}}")
+            value.contains("{{")
 
     private fun parseHeaders(value: JsonElement?): Map<String, String> {
         if (value == null || value.isJsonNull) return emptyMap()
