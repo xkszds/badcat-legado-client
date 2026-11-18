@@ -157,9 +157,24 @@ internal object RhinoRegexCompatibility {
             val char = pattern[index]
             when {
                 char == '\\' -> {
-                    output.append(char)
-                    index++
-                    if (index < pattern.length) output.append(pattern[index++])
+                    val escaped = pattern.getOrNull(index + 1)
+                    when {
+                        escaped == null -> {
+                            output.append(char)
+                            index++
+                        }
+                        isLegacyIdentityEscape(escaped) -> {
+                            // ECMAScript non-Unicode regexes treat unknown escapes such as
+                            // \\い and \\く as the escaped character itself. ICU rejects
+                            // those escapes, so drop only the redundant backslash.
+                            output.append(escaped)
+                            index += 2
+                        }
+                        else -> {
+                            output.append(char).append(escaped)
+                            index += 2
+                        }
+                    }
                 }
                 char == '[' -> { inCharacterClass = true; output.append(char); index++ }
                 char == ']' -> { inCharacterClass = false; output.append(char); index++ }
@@ -173,6 +188,17 @@ internal object RhinoRegexCompatibility {
             }
         }
         return output.toString()
+    }
+
+    /**
+     * Returns true for ECMAScript Annex B identity escapes that ICU does not
+     * accept as escapes. Syntax characters and standard RegExp escapes remain
+     * escaped; legacy unknown escapes become literal characters.
+     */
+    private fun isLegacyIdentityEscape(char: Char): Boolean {
+        val syntaxCharacters = "^$\\\\.*+?()[]{}|/"
+        val standardEscapes = "dDsSwWbBfnrtv0cxuUpP01234567"
+        return char !in syntaxCharacters && char !in standardEscapes
     }
 
     private fun findQuantifierEnd(pattern: String, start: Int): Int {
