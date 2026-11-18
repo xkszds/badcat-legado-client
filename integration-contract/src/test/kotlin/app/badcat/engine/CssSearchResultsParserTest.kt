@@ -588,4 +588,37 @@ class CssSearchResultsParserTest {
         assertEquals("Embedded title", books.single().name)
     }
 
+
+    @Test
+    fun supportsCommonUnquotedPutDirectivesForJsonSearchResults() = runBlocking {
+        val source = source(
+            """{"bookList":"$.data[*]","name":"$.title@put:{bid:id}","bookUrl":"https://reader.example/book/@get:{bid}"}""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/search",
+            contentType = "application/json",
+            body = """{"data":[{"id":"book-73","title":"Stored ID Novel"}]}""",
+        )
+        val values = mutableMapOf<String, String>()
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(source: BookSource, script: String, bindings: Map<String, String>) =
+                EngineResult.Success(script)
+            override suspend fun putString(source: BookSource, key: String, value: String): EngineResult<Unit> {
+                values[key] = value
+                return EngineResult.Success(Unit)
+            }
+            override suspend fun getString(source: BookSource, key: String): EngineResult<String?> =
+                EngineResult.Success(values[key])
+        }
+
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parseWithScripts(source, response, runtime),
+        ).value
+
+        assertEquals("book-73", values["bid"])
+        assertEquals("Stored ID Novel", books.single().name)
+        assertEquals("https://reader.example/book/book-73", books.single().bookUrl)
+    }
+
 }
