@@ -277,16 +277,16 @@ class RhinoSourceScriptRuntime(
                         // Re-evaluating top-level let/const declarations on every request
                         // would cause duplicate lexical declaration errors.
                         if (jsLibHash != null && sourceJsLibHashes[source.id] == null) {
-                            RhinoScriptEngine.evalSuspend(jsLib, scope)
+                            RhinoScriptEngine.evalSuspend(RhinoRegexCompatibility.normalize(jsLib), scope)
                             sourceJsLibHashes[source.id] = jsLibHash
                         }
                         // Source mainJs initializes helper functions and globals once,
                         // after jsLib and before the first rule for this source.
                         if (mainJsHash != null && sourceMainJsHashes[source.id] == null) {
-                            RhinoScriptEngine.evalSuspend(mainJs, scope)
+                            RhinoScriptEngine.evalSuspend(RhinoRegexCompatibility.normalize(mainJs), scope)
                             sourceMainJsHashes[source.id] = mainJsHash
                         }
-                        RhinoScriptEngine.evalSuspend(script, scope)
+                        RhinoScriptEngine.evalSuspend(RhinoRegexCompatibility.normalize(script), scope)
                     }
                 } finally {
                     // Request bindings must not leak into the persistent source scope.
