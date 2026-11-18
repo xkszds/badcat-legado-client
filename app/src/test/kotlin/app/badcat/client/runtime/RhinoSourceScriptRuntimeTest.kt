@@ -1442,4 +1442,33 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(source.id)
     }
 
+
+    @Test
+    fun restrictedAesImporterDecryptsKnownAesCbcPkcs5PaddingVector() = runBlocking {
+        val source = BookSource(
+            id = "https://aes-known-vector.example/",
+            name = "AES known vector",
+            baseUrl = "https://aes-known-vector.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val result = runtime.evaluate(
+            source,
+            """
+                var importer = new JavaImporter();
+                importer.importPackage(Packages.javax.crypto.spec, Packages.javax.crypto);
+                with (importer) {
+                    var key = new SecretKeySpec(java.utf8Encode('0123456789abcdef'), 'AES');
+                    var iv = new IvParameterSpec(java.utf8Encode('abcdef9876543210'));
+                    var cipher = Cipher.getInstance('AES/CBC/PKCS5Padding');
+                    cipher.init(Cipher.DECRYPT_MODE, key, iv);
+                    cipher.doFinal(java.base64DecodeBytes('22Al9WL3X2jrWxylxjjTcw==')).toString();
+                }
+            """.trimIndent(),
+        )
+
+        assertTrue("AES-CBC known-vector decryption failed: $result", result is EngineResult.Success)
+        assertEquals("badcat AES test", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
 }
