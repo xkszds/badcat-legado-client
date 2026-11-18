@@ -252,7 +252,7 @@ class RhinoSourceScriptRuntime(
                 scope["source"] = sourceExtensions.computeIfAbsent(source.id) {
                     RhinoSourceLoginExtensions(source.id, sourceLoginSessionStore, sourceKeyValueStore, source.id)
                 }
-                scope["cache"] = cacheExtensions.computeIfAbsent(source.id) { RhinoSourceCacheExtensions() }
+                scope["cache"] = cacheExtensions.computeIfAbsent(source.id) { RhinoSourceCacheExtensions(source.id, sourceKeyValueStore) }
                 val result = try {
                     withTimeout(timeoutMillis) {
                         // A tightly scoped compatibility shim exposes only the crypto classes
