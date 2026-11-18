@@ -773,19 +773,23 @@ class RhinoSafeSourceJavaExtensions(
 /** Read-only response facade returned by the Legado java.get(url, headers) helper. */
 class RhinoSourceHttpResponse(private val response: SourceHttpResponse) {
     fun body(): String = response.body
+    fun getBody(): String = response.body
     fun code(): Int = response.statusCode
     fun statusCode(): Int = response.statusCode
     fun isSuccessful(): Boolean = response.statusCode in 200..299
     fun message(): String = response.statusMessage
     /** Elapsed HTTP request time in milliseconds, as on Legado StrResponse. */
     fun callTime(): Int = response.callTime
+    fun getCallTime(): Int = response.callTime
     fun url(): String = response.finalUrl
+    fun getUrl(): String = response.finalUrl
     fun header(name: String): String =
         response.headers.entries.firstOrNull { it.key.equals(name, ignoreCase = true) }
             ?.value?.firstOrNull().orEmpty()
     fun headers(name: String): String = header(name)
     fun headers(): Map<String, List<String>> = response.headers
     fun raw(): RhinoSourceRawResponse = RhinoSourceRawResponse(response)
+    fun getRaw(): RhinoSourceRawResponse = raw()
     fun parse(): LegadoSourceElement = LegadoSourceElement(response.body, response.finalUrl)
     fun select(selector: String): LegadoSourceElement = parse().select(selector)
     fun charset(): String = response.contentType.orEmpty().substringAfter("charset=", "UTF-8").trim().trim('\"')
