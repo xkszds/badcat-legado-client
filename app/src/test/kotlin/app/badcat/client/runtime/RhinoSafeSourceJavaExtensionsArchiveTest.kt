@@ -149,6 +149,8 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
         assertNull(extensions.readFile("$directory/nested/part.txt"))
 
         val secondDownload = extensions.downloadFile("https://extract-fixture.example/book.zip")
+        assertEquals(downloaded, secondDownload)
+        assertTrue(secondDownload.endsWith(".zip"))
         val secondDirectory = extensions.unzipFile(secondDownload)
         assertTrue(extensions.deleteFile(secondDirectory))
         assertFalse(extensions.deleteFile(secondDirectory))
