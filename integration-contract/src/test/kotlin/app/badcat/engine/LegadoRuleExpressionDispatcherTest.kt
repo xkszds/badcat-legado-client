@@ -59,6 +59,44 @@ class LegadoRuleExpressionDispatcherTest {
     }
 
 
+
+    @Test
+    fun evaluatesRealWorldLegadoChainedCollectionRoots() {
+        val document = SourceDocument(
+            url = "https://reader.example/search",
+            body = """
+                <div class="list">
+                  <ul>
+                    <li><a href="/book/1">Book One</a></li>
+                    <li><a href="/book/2">Book Two</a></li>
+                  </ul>
+                </div>
+                <div id="readerlist">
+                  <ul><li><a href="/chapter/1">Chapter One</a></li></ul>
+                </div>
+            """.trimIndent(),
+        )
+        val bixiange = LegadoRuleExpressionDispatcher.evaluateElements(
+            document,
+            "class.list@tag.ul@tag.li",
+        )
+        assertEquals(
+            listOf(
+                """<li><a href="/book/1">Book One</a></li>""",
+                """<li><a href="/book/2">Book Two</a></li>""",
+            ),
+            assertIs<EngineResult.Success<List<String>>>(bixiange).value,
+        )
+        val xuanhuange = LegadoRuleExpressionDispatcher.evaluateElements(
+            document,
+            "id.readerlist@tag.li",
+        )
+        assertEquals(
+            listOf("""<li><a href="/chapter/1">Chapter One</a></li>"""),
+            assertIs<EngineResult.Success<List<String>>>(xuanhuange).value,
+        )
+    }
+
     @Test
     fun evaluatesLegacyIndexedTextNodesInScalarRuleContext() {
         val document = SourceDocument(
