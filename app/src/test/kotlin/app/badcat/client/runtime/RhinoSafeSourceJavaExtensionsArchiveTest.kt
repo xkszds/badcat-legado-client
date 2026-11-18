@@ -66,8 +66,13 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
         @Suppress("DEPRECATION")
         val path = extensions.downloadFile(hex, "https://legacy-file.example/font.dat")
 
-        assertTrue(path.endsWith(".dat"))
+        val expectedName = java.security.MessageDigest.getInstance("MD5")
+            .digest("https://legacy-file.example/font.dat".toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+            .substring(8, 24)
+        assertEquals("downloads/$expectedName.dat", path)
         assertArrayEquals(gbk, extensions.readFile(path))
+        assertArrayEquals(gbk, extensions.readFile("/$path"))
         assertEquals("中文内容", extensions.readTxtFile(path))
         assertTrue(extensions.deleteFile(path))
         assertNull(extensions.readFile(path))
