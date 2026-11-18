@@ -315,8 +315,7 @@ class RhinoSafeSourceJavaExtensions(
             ?: throw IllegalStateException("Legado concurrency callbacks require an active Rhino context")
         val parent = action.parentScope
         val top = parent?.let { ScriptableObject.getTopLevelScope(it) }
-        val thisObject = top?.let { ScriptableObject.getProperty(it, "globalThis") as? Scriptable }
-            ?: top
+        val thisObject = top
             ?: throw IllegalStateException("Legado concurrency callback has no Rhino global scope")
         action.call(context, parent, thisObject, emptyArray())
     }
