@@ -131,3 +131,16 @@
 - Legado contract tests (362), bounded Rhino host tests, Android Debug APK assembly and artifact upload all passed for that exact commit. Artifact SHA-256: `a0227b5b66675954a12e8b544a1d788a1b836bf00e5a57fa8999fcc3007b5339`.
 - Reader/UI stability: cover image loading now needs a bounded pending-work queue; this is being added with an executor contract test to prevent unbounded task accumulation during rapid list scrolling.
 - Passing CI does not close the remaining P0 gates: full upstream Legado compatibility, full original UI parity, complete AdMark/PPRule behavior, real-device acceptance and release signing remain incomplete.
+
+
+## 坏坏猫复刻五大类总清单（长期基准）
+
+用户所说的“五大类”是坏坏猫产品复刻范围，不是 Legado 的五个技术模块。统一入口见 [坏坏猫复刻五大类用户目标与总验收清单](BADCAT_REPLICATION_FIVE_CATEGORIES.md)。五类为：
+
+1. 原版 UI、页面结构与交互复刻；
+2. 原版阅读器与阅读体验复刻；
+3. Legado 书源、搜索与内容引擎；
+4. 坏坏猫原版广告净化、AdBlock 与 AdMark；
+5. 坏坏猫原版 PPRule 规则系统（小说/漫画/视频）。
+
+每轮开发须并行维护五类进度，不得用 Legado 引擎工作代替 UI、阅读器、AdBlock/AdMark 或 PPRule 的复刻。该总清单高于单个技术模块的局部迁移计划。
