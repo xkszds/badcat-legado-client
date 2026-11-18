@@ -63,7 +63,7 @@ object LegadoRuleExpressionDispatcher {
                     // Always pass the normalized expression. In particular, a
                     // single leading '@' is Legado's CSS mode marker, not part
                     // of the selector text.
-                    SelectorRuleType.CSS -> CssRuleEvaluator.evaluateElements(document, resolved.value.expression)
+                    SelectorRuleType.CSS -> UpstreamLegadoCssRuleEvaluator.getElementHtmlList(document.body, document.url, toUpstreamCssRule(leaf))
                     SelectorRuleType.XPATH -> XPathRuleEvaluator.evaluateElements(document, resolved.value.expression)
                     SelectorRuleType.JSON_PATH -> JsonPathRuleEvaluator.evaluateElements(document, resolved.value.expression)
                 }
@@ -128,7 +128,11 @@ object LegadoRuleExpressionDispatcher {
                 when (val resolved = resolve(branch)) {
                     is EngineResult.Failure -> resolved
                     is EngineResult.Success ->
-                        SelectorRuleEvaluator.evaluate(document, resolved.value.type, resolved.value.expression)
+                        if (resolved.value.type == SelectorRuleType.CSS) {
+                            UpstreamLegadoCssRuleEvaluator.getStringList(document.body, document.url, toUpstreamCssRule(branch))
+                        } else {
+                            SelectorRuleEvaluator.evaluate(document, resolved.value.type, resolved.value.expression)
+                        }
                 }
             }
         }
@@ -191,6 +195,15 @@ object LegadoRuleExpressionDispatcher {
             branches.flatten()
         }
         return EngineResult.Success(combined)
+    }
+
+    private fun toUpstreamCssRule(expression: String): String {
+        val raw = expression.trim()
+        return when {
+            raw.startsWith("@@") -> "@CSS:${raw.substring(2).trim()}"
+            raw.startsWith("@css:", ignoreCase = true) -> raw
+            else -> raw
+        }
     }
 
     fun firstScalarValue(expression: String, values: List<String>): String? {

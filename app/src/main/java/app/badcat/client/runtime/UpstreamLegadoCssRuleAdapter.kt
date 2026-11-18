@@ -1,28 +1,15 @@
 package app.badcat.client.runtime
 
-import io.legado.app.model.analyzeRule.AnalyzeByJSoup
-import io.legado.app.model.analyzeRule.parseSourceHtml
+import io.legado.app.model.analyzeRule.UpstreamLegadoCssRuleEvaluator
 
-/**
- * Entry point for the pinned upstream Legado JSoup rule parser.
- *
- * This intentionally delegates parsing and selector semantics to the upstream
- * implementation instead of translating rules through Badcat's bounded CSS
- * evaluator. It is the first parser adapter in the staged runtime migration.
- */
+/** Delegates to the pinned upstream Legado JSoup parser hosted in integration-contract. */
 class UpstreamLegadoCssRuleAdapter {
-    fun getStringList(html: String, baseUrl: String, rule: String): List<String> {
-        val document = parseSourceHtml(html).also { it.setBaseUri(baseUrl) }
-        return AnalyzeByJSoup(document).getStringList(rule)
-    }
+    fun getStringList(html: String, baseUrl: String, rule: String): List<String> =
+        UpstreamLegadoCssRuleEvaluator.getStringList(html, baseUrl, rule)
 
-    fun getString(html: String, baseUrl: String, rule: String): String? {
-        val document = parseSourceHtml(html).also { it.setBaseUri(baseUrl) }
-        return AnalyzeByJSoup(document).getString(rule)
-    }
+    fun getString(html: String, baseUrl: String, rule: String): String? =
+        UpstreamLegadoCssRuleEvaluator.getString(html, baseUrl, rule)
 
-    fun getElementHtmlList(html: String, baseUrl: String, rule: String): List<String> {
-        val document = parseSourceHtml(html).also { it.setBaseUri(baseUrl) }
-        return AnalyzeByJSoup(document).getElements(rule).map { it.outerHtml() }
-    }
+    fun getElementHtmlList(html: String, baseUrl: String, rule: String): List<String> =
+        UpstreamLegadoCssRuleEvaluator.getElementHtmlList(html, baseUrl, rule)
 }
