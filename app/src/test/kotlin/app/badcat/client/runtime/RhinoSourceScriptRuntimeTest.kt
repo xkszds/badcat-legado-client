@@ -533,12 +533,12 @@ class RhinoSourceScriptRuntimeTest {
             source,
             "typeof Packages + '|' + typeof JavaImporter + '|' + typeof String.prototype.getBytes + '|' + typeof Packages.javax + '|' + typeof Packages.javax.crypto.spec",
         )
-        assertTrue(shimCheck is EngineResult.Success, "Restricted JavaImporter shim unavailable: $shimCheck")
+        assertTrue("Restricted JavaImporter shim unavailable: $shimCheck", shimCheck is EngineResult.Success)
         assertEquals("object|function|function|object|object", (shimCheck as EngineResult.Success).value)
 
         val result = runtime.evaluate(source, script)
 
-        assertTrue(result is EngineResult.Success, "Restricted AES script failed: $result")
+        assertTrue("Restricted AES script failed: $result", result is EngineResult.Success)
         assertEquals("Legado AES fixture", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
@@ -577,7 +577,7 @@ class RhinoSourceScriptRuntimeTest {
             mapOf("result" to html, "baseUrl" to source.baseUrl),
         )
 
-        assertTrue(result is EngineResult.Success, "Legado element helpers failed: $result")
+        assertTrue("Legado element helpers failed: $result", result is EngineResult.Success)
         assertEquals("First|Second|First|<li>Second</li>", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
@@ -598,7 +598,7 @@ class RhinoSourceScriptRuntimeTest {
             mapOf("result" to html, "baseUrl" to source.baseUrl),
         )
 
-        assertTrue(result is EngineResult.Success, "Legado getElements failed: $result")
+        assertTrue("Legado getElements failed: $result", result is EngineResult.Success)
         assertEquals("2|Second|First|First|2", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
@@ -621,7 +621,7 @@ class RhinoSourceScriptRuntimeTest {
         val script = "java.aesBase64DecodeToString('$encrypted','0123456789abcdef','AES/CBC/PKCS7Padding','abcdef0123456789') + '|' + java.toURL(baseUrl).host"
         val result = runtime.evaluate(source, script, mapOf("baseUrl" to source.baseUrl))
 
-        assertTrue(result is EngineResult.Success, "Legado crypto helper failed: $result")
+        assertTrue("Legado crypto helper failed: $result", result is EngineResult.Success)
         assertEquals("Encrypted chapter payload|legacy-crypto.example", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
@@ -654,7 +654,7 @@ class RhinoSourceScriptRuntimeTest {
             mapOf("baseUrl" to source.baseUrl),
         )
 
-        assertTrue(result is EngineResult.Success, "Legado java.get overload failed: $result")
+        assertTrue("Legado java.get overload failed: $result", result is EngineResult.Success)
         assertEquals("GET response body|200|/redirected", (result as EngineResult.Success).value)
         assertEquals("/resource", captured["url"])
         assertEquals("Legado fixture", captured["User-Agent"])
@@ -675,7 +675,7 @@ class RhinoSourceScriptRuntimeTest {
             "java.getString('a@text', '<a>Explicit fragment</a>')",
         )
 
-        assertTrue(result is EngineResult.Success, "Explicit-content getString failed: $result")
+        assertTrue("Explicit-content getString failed: $result", result is EngineResult.Success)
         assertEquals("Explicit fragment", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
@@ -700,7 +700,7 @@ class RhinoSourceScriptRuntimeTest {
             "java.createSymmetricCrypto('DES/CBC/PKCS5Padding','12345678','abcdefgh').decryptStr(java.base64DecodeToByteArray('$encrypted'))",
         )
 
-        assertTrue(result is EngineResult.Success, "Legado DES helper failed: $result")
+        assertTrue("Legado DES helper failed: $result", result is EngineResult.Success)
         assertEquals("DES encrypted chapter", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
@@ -723,7 +723,7 @@ class RhinoSourceScriptRuntimeTest {
         )
         val secondResult = runtime.evaluate(second, "String(cache.getFromMemory('token'))")
 
-        assertTrue(firstResult is EngineResult.Success, "Source cache/string helpers failed: $firstResult")
+        assertTrue("Source cache/string helpers failed: $firstResult", firstResult is EngineResult.Success)
         assertEquals("cached|Hello|World|({value:'imported'})", (firstResult as EngineResult.Success).value)
         assertTrue(secondResult is EngineResult.Success)
         assertEquals("null", (secondResult as EngineResult.Success).value)
@@ -750,7 +750,7 @@ class RhinoSourceScriptRuntimeTest {
             mapOf("baseUrl" to source.baseUrl),
         )
 
-        assertTrue(result is EngineResult.Success, "Legado helper overloads failed: $result")
+        assertTrue("Legado helper overloads failed: $result", result is EngineResult.Success)
         assertEquals("A|B|B|A|one argument GET", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
@@ -777,7 +777,7 @@ class RhinoSourceScriptRuntimeTest {
             "var res = java.get('/search', {'X-Test':'yes'}); res.select('.page-search').attr('data-id') + '|' + res.parse().select('.page-search').text() + '|' + res.statusCode() + '|' + res.header('Content-Type')",
             mapOf("baseUrl" to source.baseUrl),
         )
-        assertTrue(result is EngineResult.Success, "Legado Jsoup response helpers failed: $result")
+        assertTrue("Legado Jsoup response helpers failed: $result", result is EngineResult.Success)
         assertEquals("book-42|Found|200|", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
@@ -800,7 +800,7 @@ class RhinoSourceScriptRuntimeTest {
             "java.head('/head', {'X-Token':'h'}).statusCode() + '|' + java.post('/submit', 'payload', {'X-Token':'p'}).body() + '|' + java.connect('/connect').body()",
             mapOf("baseUrl" to source.baseUrl),
         )
-        assertTrue(result is EngineResult.Success, "Legado HTTP method helpers failed: $result")
+        assertTrue("Legado HTTP method helpers failed: $result", result is EngineResult.Success)
         assertEquals("200|POST response|GET response", (result as EngineResult.Success).value)
         assertEquals(
             listOf(
@@ -826,7 +826,7 @@ class RhinoSourceScriptRuntimeTest {
             "var items = java.getElements('li.chapter'); items.first().id() + '|' + items.last().selectFirst('a').absUrl('href') + '|' + items.get(0).hasClass('chapter') + '|' + items.get(1).children().get(0).tagName() + '|' + items.get(0).children().size()",
             mapOf("result" to html, "baseUrl" to source.baseUrl),
         )
-        assertTrue(result is EngineResult.Success, "Jsoup element navigation failed: $result")
+        assertTrue("Jsoup element navigation failed: $result", result is EngineResult.Success)
         assertEquals("one|https://element-navigation.example/two|true|a|1", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
@@ -844,7 +844,7 @@ class RhinoSourceScriptRuntimeTest {
             baseUrl = "https://slow-ajax.example/",
         )
         val result = runtime.evaluate(source, "java.ajax('/slow')", mapOf("baseUrl" to source.baseUrl))
-        assertTrue(result is EngineResult.Success, "Normal source HTTP latency should not exceed the JS execution budget: $result")
+        assertTrue("Normal source HTTP latency should not exceed the JS execution budget: $result", result is EngineResult.Success)
         assertEquals("slow but successful response", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
