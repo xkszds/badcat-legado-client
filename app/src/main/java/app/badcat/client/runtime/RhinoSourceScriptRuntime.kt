@@ -29,9 +29,10 @@ import kotlin.coroutines.cancellation.CancellationException
  * Android host adapter for bounded source JavaScript.
  *
  * The host keeps an isolated Rhino global per source and exposes only a small
- * allow-listed java helper (string state, digest, Base64, URL encoding and
- * source-scoped cookie operations). It never exposes Java package reflection,
- * Android Context, filesystem, arbitrary network, WebView or process APIs.
+ * allow-listed java helper. Network calls are routed through the source
+ * transport; filesystem access is limited to a canonical-path-confined cache
+ * root and a restricted Rhino file-handle facade. Java package reflection,
+ * Android Context, WebView and process APIs remain unavailable.
  */
 class RhinoSourceScriptRuntime(
     private val timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS,
