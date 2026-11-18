@@ -1340,7 +1340,7 @@ text + re.test('aa}}')"""
         )
         val result = runtime.evaluate(
             source,
-            "java.connect('/slow', null, 1234).body() + '|' + java.connect('/slow', null, 1234).callTime()",
+            "var response = java.connect('/slow', null, 1234); response.body() + '|' + response.callTime()",
             mapOf("baseUrl" to source.baseUrl),
         )
         assertEquals("ok|77", (result as EngineResult.Success).value)
