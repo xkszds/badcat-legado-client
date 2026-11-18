@@ -335,7 +335,7 @@ class RhinoSafeSourceJavaExtensions(
                         SourceHttpResponse(
                             statusCode = 200,
                             finalUrl = runCatching { URL(url).toString() }.getOrDefault("http://localhost/"),
-                            body = error.stackTraceToString().ifEmpty { error.localizedMessage ?: "noErrorMsg" },
+                            body = error.message,
                             statusMessage = "OK",
                             callTime = code,
                         )
