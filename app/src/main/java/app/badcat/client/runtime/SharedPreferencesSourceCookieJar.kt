@@ -113,7 +113,7 @@ class SharedPreferencesSourceCookieJar(
         val parsed = Cookie.parseAll(
             httpUrl,
             Headers.Builder().add("Set-Cookie", cookieHeader).build(),
-        ).filter(Cookie::isWithinStorageLimits)
+        ).filter { cookie -> cookie.isWithinStorageLimits() }
         require(parsed.isNotEmpty()) { "Cookie header is invalid for the supplied URL" }
         synchronized(lock) {
             reloadLocked()
