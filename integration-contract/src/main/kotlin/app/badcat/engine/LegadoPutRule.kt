@@ -6,7 +6,7 @@ package app.badcat.engine
  * commonly unquoted (for example @put:{cid:chapter_id}).
  */
 object LegadoPutRule {
-    data class Assignment(val key: String, val rule: String)
+    data class Assignment(val key: String, val rule: String, val literal: Boolean)
     data class Parsed(val expression: String, val assignments: List<Assignment>)
 
     fun parse(expression: String): EngineResult<Parsed> {
@@ -23,8 +23,12 @@ object LegadoPutRule {
             val separator = findTopLevelColon(entry)
             if (separator <= 0) null else {
                 val key = unquote(entry.substring(0, separator).trim())
-                val rule = unquote(entry.substring(separator + 1).trim())
-                if (key.isBlank() || rule.isBlank()) null else Assignment(key, rule)
+                val rawRule = entry.substring(separator + 1).trim()
+                val literal = rawRule.length >= 2 &&
+                    (rawRule.first() == '"' || rawRule.first() == '\'') &&
+                    rawRule.last() == rawRule.first()
+                val rule = unquote(rawRule)
+                if (key.isBlank() || rule.isBlank()) null else Assignment(key, rule, literal)
             }
         }
         if (assignments.isEmpty() || assignments.size != entries.size) {
@@ -49,12 +53,16 @@ object LegadoPutRule {
             is EngineResult.Success -> result.value
         }
         for (assignment in parsed.assignments) {
-            val rule = normalizeJsonRule(document.body, assignment.rule)
-            val value = when (val result = LegadoRuleExpressionDispatcher.evaluate(document, rule)) {
-                is EngineResult.Failure -> return result
-                is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(rule, result.value)
-                    ?.trim()?.takeIf(String::isNotEmpty)
-            } ?: continue
+            val value = if (assignment.literal) {
+                assignment.rule
+            } else {
+                val rule = normalizeJsonRule(document.body, assignment.rule)
+                when (val result = LegadoRuleExpressionDispatcher.evaluate(document, rule)) {
+                    is EngineResult.Failure -> return result
+                    is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(rule, result.value)
+                        ?.trim()?.takeIf(String::isNotEmpty)
+                } ?: continue
+            }
             when (val stored = runtime.putString(source, assignment.key, value)) {
                 is EngineResult.Failure -> return stored
                 is EngineResult.Success -> Unit
