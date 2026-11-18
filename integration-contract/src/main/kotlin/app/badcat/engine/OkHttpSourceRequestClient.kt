@@ -235,7 +235,7 @@ internal fun shouldRetryIOException(method: String, error: IOException): Boolean
     if (!method.equals("GET", ignoreCase = true) && !method.equals("HEAD", ignoreCase = true)) return false
     if (error is SSLException) return false
     return generateSequence(error as Throwable?) { it.cause }.any {
-        it is SocketTimeoutException || it is SocketException || it is EOFException || it is ProtocolException
+        it is UnknownHostException || it is SocketTimeoutException || it is SocketException || it is EOFException || it is ProtocolException
     }
 }
 
