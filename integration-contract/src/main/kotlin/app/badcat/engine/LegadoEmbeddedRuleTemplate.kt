@@ -49,7 +49,7 @@ object LegadoEmbeddedRuleTemplate {
             override suspend fun putString(key: String, value: String): EngineResult<Unit> =
                 scriptRuntime.putString(source, key, value)
         }
-        return resolve(template, key, page, result, evaluator)
+        return resolve(template, key, page, result, evaluator, baseUrl)
     }
 
     suspend fun resolve(
@@ -58,6 +58,7 @@ object LegadoEmbeddedRuleTemplate {
         page: Int,
         result: String,
         evaluator: LegadoEmbeddedScriptEvaluator,
+        baseUrl: String = "",
     ): EngineResult<String> {
         if (template.length > MAX_TEMPLATE_CHARS) {
             return EngineResult.Failure(
