@@ -60,12 +60,6 @@ jobs:
           import urllib.request
           from bs4 import BeautifulSoup
 
-          multi_class_css, multi_class_index = selector_part("class.foo bar baz")
-          assert multi_class_css == ".foo.bar.baz" and multi_class_index is None, (multi_class_css, multi_class_index)
-          fixture = BeautifulSoup('<div class="foo bar baz"></div><div class="foo bar"></div>', "html.parser")
-          assert len(fixture.select(multi_class_css)) == 1, "multi-class selector must match only the element carrying every class"
-          print("PUBLIC_SELECTOR_SELF_TEST multi-class Legado class selector: PASS")
-
           def simple_css(rule):
               rule = (rule or "").strip()
               if not rule or "<js>" in rule.lower() or "@js:" in rule.lower():
@@ -266,6 +260,12 @@ jobs:
                       token = token[:match.start()]
                   tokens.append(token)
               return " ".join(tokens), index
+
+          multi_class_css, multi_class_index = selector_part("class.foo bar baz")
+          assert multi_class_css == ".foo.bar.baz" and multi_class_index is None, (multi_class_css, multi_class_index)
+          fixture = BeautifulSoup('<div class="foo bar baz"></div><div class="foo bar"></div>', "html.parser")
+          assert len(fixture.select(multi_class_css)) == 1, "multi-class selector must match only the element carrying every class"
+          print("PUBLIC_SELECTOR_SELF_TEST multi-class Legado class selector: PASS")
 
           def simple_css(rule):
               rule = (rule or "").strip()
