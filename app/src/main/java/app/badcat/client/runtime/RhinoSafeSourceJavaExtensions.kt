@@ -146,9 +146,9 @@ class RhinoSafeSourceJavaExtensions(
     }
 
     /**
-     * Download a text response into the source-private cache and return an opaque
-     * relative token. The current HTTP facade exposes decoded text, not raw bytes;
-     * binary/archive download APIs are intentionally not claimed as supported.
+     * Download the original response octets into the source-private cache.
+     * The transport supplies raw bytes so images, archives and legacy text
+     * encodings are not corrupted by an earlier UTF-8 String conversion.
      */
     fun downloadFile(url: String): String {
         require(url.isNotBlank()) { "downloadFile URL must not be blank" }
@@ -157,29 +157,27 @@ class RhinoSafeSourceJavaExtensions(
         require(response.statusCode in 200..299) {
             "downloadFile returned HTTP ${response.statusCode} ${response.statusMessage}".trim()
         }
-        val body = response.body
-        require(body.toByteArray(Charsets.UTF_8).size <= MAX_DOWNLOAD_BYTES) {
-            "downloadFile response exceeds the 8 MiB text limit"
+        val bytes = response.bodyBytes ?: response.body.toByteArray(Charsets.UTF_8)
+        require(bytes.size <= MAX_DOWNLOAD_BYTES) {
+            "downloadFile response exceeds the 8 MiB limit"
         }
         val token = UUID.randomUUID().toString()
-        fileStore.put(sourceId, DOWNLOAD_FILE_PREFIX + token, body)
+        fileStore.putBytes(sourceId, DOWNLOAD_FILE_PREFIX + token, bytes)
         return "downloads/$token.txt"
     }
 
     /** Read only opaque tokens returned by this source's downloadFile call. */
     fun readTxtFile(path: String): String {
         val token = downloadToken(path)
-        return fileStore.get(sourceId, DOWNLOAD_FILE_PREFIX + token).orEmpty()
+        val bytes = fileStore.getBytes(sourceId, DOWNLOAD_FILE_PREFIX + token) ?: return ""
+        return String(bytes, Charsets.UTF_8)
     }
 
-    /**
-     * Legado charset overload. Downloaded text is retained as UTF-8 in the
-     * bounded source cache; decode its stored bytes with the requested charset.
-     */
+    /** Decode the original downloaded bytes using the requested source charset. */
     fun readTxtFile(path: String, charsetName: String): String {
         val token = downloadToken(path)
-        val value = fileStore.get(sourceId, DOWNLOAD_FILE_PREFIX + token) ?: return ""
-        return String(value.toByteArray(Charsets.UTF_8), java.nio.charset.Charset.forName(charsetName))
+        val bytes = fileStore.getBytes(sourceId, DOWNLOAD_FILE_PREFIX + token) ?: return ""
+        return String(bytes, java.nio.charset.Charset.forName(charsetName))
     }
 
     /** Delete only a source-owned downloaded text file token. */
