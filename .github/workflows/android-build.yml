@@ -606,6 +606,23 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+      - name: Live full reading from uploaded 235-source corpus (best effort)
+        timeout-minutes: 4
+        continue-on-error: true
+        run: |
+          python3 -m pip install --quiet beautifulsoup4==4.13.4
+          set -o pipefail
+          python3 .github/scripts/live-uploaded-source-reading-smoke.py 2>&1 | tee live-uploaded-source-reading-smoke.log
+
+      - name: Upload uploaded-corpus live reading report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: badcat-uploaded-corpus-live-reading-report
+          path: live-uploaded-source-reading-smoke.log
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Run contract unit tests
         run: gradle --no-daemon :integration-contract:test
 
