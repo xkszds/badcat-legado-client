@@ -160,7 +160,8 @@ class RhinoSafeSourceJavaExtensions(
     fun downloadFile(url: String): String {
         require(url.isNotBlank()) { "downloadFile URL must not be blank" }
         rateLimit(false)
-        val response = httpRequest("GET", url, null, emptyMap())
+        val requestUrl = urlOptionStart(url)?.let { url.substring(0, it) } ?: url
+        val response = httpRequest("GET", requestUrl, null, emptyMap())
         require(response.statusCode in 200..299) {
             "downloadFile returned HTTP ${response.statusCode} ${response.statusMessage}".trim()
         }
