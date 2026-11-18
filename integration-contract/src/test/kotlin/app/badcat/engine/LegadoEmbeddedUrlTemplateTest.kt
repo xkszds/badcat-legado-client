@@ -25,10 +25,10 @@ class LegadoEmbeddedUrlTemplateTest {
     @Test
     fun keepsClosingBracesInsideJavaScriptRegexLiteralUntilTemplateEnd() = kotlinx.coroutines.runBlocking {
         val result = LegadoEmbeddedUrlTemplate.resolve(
-            template = """https://example.test/search?matched={{/\\.*?}}/.test(key)}}""",
+            template = """https://example.test/search?matched={{/\.*?}}/.test(key)}}""",
             key = "abc..}}",
             evaluator = LegadoEmbeddedScriptEvaluator { script, _, _ ->
-                assertEquals("""/\\.*?}}/.test(key)""", script)
+                assertEquals("""/\.*?}}/.test(key)""", script)
                 EngineResult.Success(true)
             },
         )
