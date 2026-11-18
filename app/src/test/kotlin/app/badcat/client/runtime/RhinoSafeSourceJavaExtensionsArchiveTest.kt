@@ -162,6 +162,42 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
     }
 
     @Test
+    fun folderTextReadDetectsEachEncodingAndSkipsSymlinksOutsideCache() {
+        val parent = java.nio.file.Files.createTempDirectory("source-folder-parent").toFile()
+        val root = java.io.File(parent, "cache").apply { mkdirs() }
+        val folder = java.io.File(root, "mixed").apply { mkdirs() }
+        try {
+            java.io.File(folder, "utf8.txt").writeBytes("UTF-8 文本".toByteArray(Charsets.UTF_8))
+            java.io.File(folder, "gbk.txt").writeBytes(
+                "GBK 中文".toByteArray(java.nio.charset.Charset.forName("GBK")),
+            )
+            val outside = java.io.File("/etc/hostname")
+            if (outside.isFile) {
+                java.nio.file.Files.createSymbolicLink(
+                    java.io.File(folder, "outside-link.txt").toPath(),
+                    outside.toPath(),
+                )
+            }
+
+            val extensions = RhinoSafeSourceJavaExtensions(
+                sourceId = "https://folder-encoding.example/",
+                store = InMemorySourceScriptKeyValueStore,
+                fileRoot = root,
+            )
+            val result = extensions.getTxtInFolder("mixed")
+
+            assertTrue(result.contains("UTF-8 文本"))
+            assertTrue(result.contains("GBK 中文"))
+            if (outside.isFile) {
+                assertFalse(result.contains(outside.readText()))
+            }
+            assertFalse(folder.exists())
+        } finally {
+            parent.deleteRecursively()
+        }
+    }
+
+    @Test
     fun unzipCreatesSourcePrivateFilesAndRejectsTraversalEntries() {
         val archive = zipOf(
             "chapter.txt" to "第一章".toByteArray(Charsets.UTF_8),

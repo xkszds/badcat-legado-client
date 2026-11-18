@@ -245,6 +245,13 @@ class RhinoSafeSourceJavaExtensions(
         return (root.parentFile ?: root).canonicalFile
     }
 
+    private fun isWithinSafeFileRoot(file: java.io.File): Boolean = runCatching {
+        val safeRoot = safeFileRoot()
+        val resolved = file.canonicalFile
+        resolved.path == safeRoot.path ||
+            resolved.path.startsWith(safeRoot.path + java.io.File.separator)
+    }.getOrDefault(false)
+
     private fun resolveFile(path: String): java.io.File {
         val root = fileRoot ?: throw UnsupportedOperationException("Source file root is not configured")
         require(path.isNotBlank()) { "Source file path must not be blank" }
@@ -418,10 +425,21 @@ class RhinoSafeSourceJavaExtensions(
         val directory = normalizeVirtualPath(path)
         val physical = fileRoot?.let { runCatching { resolveFile(path) }.getOrNull() }
         if (physical?.isDirectory == true) {
-            val content = physical.listFiles()?.filter { it.isFile }?.joinToString("\n") { file ->
-                val bytes = file.readBytes()
-                String(bytes, detectTextCharset(bytes))
-            }.orEmpty()
+            // File.isFile follows symlinks. The directory itself may be confined
+            // while one of its children points outside the source cache, so
+            // validate each canonical child before reading it.
+            val content = physical.listFiles()
+                ?.asSequence()
+                ?.filter { file ->
+                    file.isFile && isWithinSafeFileRoot(file)
+                }
+                ?.map { file ->
+                    val bytes = file.readBytes()
+                    String(bytes, detectTextCharset(bytes))
+                }
+                ?.toList()
+                ?.joinToString("\n")
+                .orEmpty()
             physical.deleteRecursively()
             deleteVirtualTree(directory)
             return content
