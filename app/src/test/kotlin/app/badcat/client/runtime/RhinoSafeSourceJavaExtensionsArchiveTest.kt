@@ -223,6 +223,9 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
             assertTrue(file.isFile)
             assertEquals("physical bytes", String(extensions.readFile(path)!!, Charsets.UTF_8))
             assertEquals("physical bytes", extensions.readTxtFile(path))
+            file.writeText("changed through file handle")
+            assertEquals("changed through file handle", extensions.readTxtFile(path))
+            assertEquals("changed through file handle", String(extensions.readFile(path)!!, Charsets.UTF_8))
             assertTrue(runCatching { extensions.getFile("../../outside.txt") }.exceptionOrNull() is SecurityException)
 
             val archivePath = extensions.downloadFile("https://physical-file.example/book.zip")
