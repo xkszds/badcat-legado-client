@@ -152,7 +152,7 @@ object LegadoUrlResolver {
                         '\\' -> output.append("\\\\")
                         '\'' -> output.append('\'')
                         '"' -> output.append("\\\"")
-                        else -> output.append('\\').append(char)
+                        else -> output.append("\\\\").append(char)
                     }
                     escaped = false
                 }
