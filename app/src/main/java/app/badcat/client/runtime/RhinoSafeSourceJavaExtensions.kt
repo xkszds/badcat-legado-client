@@ -285,7 +285,8 @@ class RhinoSafeSourceJavaExtensions(
 
     private fun normalizeVirtualPath(path: String): String {
         require(path.isNotBlank() && path.length <= MAX_ARCHIVE_PATH_CHARS)
-        val normalized = path.replace('\\', '/').trimStart('/')
+        require(!path.startsWith("/") && !path.startsWith("\\")) { "Absolute source file paths are not allowed" }
+        val normalized = path.replace('\\', '/')
         require(normalized.split('/').none { it.isBlank() || it == "." || it == ".." }) {
             "Invalid source file path"
         }
@@ -307,8 +308,10 @@ class RhinoSafeSourceJavaExtensions(
 
     private fun appendDirectoryChild(directory: String, child: String) {
         val key = VIRTUAL_DIR_PREFIX + directory
-            ?.split("\n")?.filter(String::isNotEmpty).orEmpty()
-        if (child !in existing) fileStore.put(sourceId, key, (existing + child).joinToString("\n"))
+        val existing = fileStore.get(sourceId, key)?.split("\n")?.filter(String::isNotEmpty).orEmpty()
+        if (child !in existing) {
+            fileStore.put(sourceId, key, (existing + child).joinToString("\n"))
+        }
     }
 
     fun getTxtInFolder(path: String): String {
