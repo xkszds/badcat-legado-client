@@ -1375,7 +1375,7 @@ text + re.test('aa}}')"""
         val runtime = RhinoSourceScriptRuntime(
             sourceHttpRequestWithTimeout = { _, _, method, url, body, headers, timeout ->
                 timeouts += timeout
-                assertEquals(null, body)
+                assertEquals(if (method == "POST") "payload" else null, body)
                 assertEquals("t", headers["X-Token"])
                 app.badcat.engine.SourceHttpResponse(
                     statusCode = 200,
@@ -1394,7 +1394,7 @@ text + re.test('aa}}')"""
             source,
             "java.get('/get', {'X-Token':'t'}, 321).body() + '|' + " +
                 "java.head('/head', {'X-Token':'t'}, 654).statusCode() + '|' + " +
-                "java.post('/post', null, {'X-Token':'t'}, 987).body()",
+                "java.post('/post', 'payload', {'X-Token':'t'}, 987).body()",
             mapOf("baseUrl" to source.baseUrl),
         )
 
