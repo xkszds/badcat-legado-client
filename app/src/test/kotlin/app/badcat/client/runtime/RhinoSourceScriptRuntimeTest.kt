@@ -62,6 +62,44 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun downloadFileDoesNotFollowPrecreatedTemporarySymlink() {
+        val parent = java.nio.file.Files.createTempDirectory("rhino-download-temp-link").toFile()
+        val root = java.io.File(parent, "cache").apply { mkdirs() }
+        val outside = java.io.File(parent, "outside.txt").apply { writeText("keep me") }
+        val url = "https://download-temp-link.example/payload.txt"
+        val token = java.security.MessageDigest.getInstance("MD5")
+            .digest(url.toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+            .substring(8, 24)
+        try {
+            java.nio.file.Files.createSymbolicLink(
+                java.io.File(root, "$token.txt.tmp").toPath(),
+                outside.toPath(),
+            )
+            val extensions = RhinoSafeSourceJavaExtensions(
+                sourceId = "https://download-temp-link.example/",
+                store = InMemorySourceScriptKeyValueStore,
+                fileRoot = root,
+                httpRequest = { _, requestUrl, _, _ ->
+                    SourceHttpResponse(
+                        statusCode = 200,
+                        finalUrl = requestUrl,
+                        body = "new payload",
+                        bodyBytes = "new payload".toByteArray(Charsets.UTF_8),
+                    )
+                },
+            )
+
+            val path = extensions.downloadFile(url)
+
+            assertEquals("keep me", outside.readText())
+            assertEquals("new payload", String(java.io.File(root, path).readBytes(), Charsets.UTF_8))
+        } finally {
+            parent.deleteRecursively()
+        }
+    }
+
+    @Test
     fun sourceFileHandlesRejectSymlinksThatEscapeTheCacheRoot() = runBlocking {
         val parent = java.nio.file.Files.createTempDirectory("rhino-source-symlink").toFile()
         val root = java.io.File(parent, "cache").apply { mkdirs() }
