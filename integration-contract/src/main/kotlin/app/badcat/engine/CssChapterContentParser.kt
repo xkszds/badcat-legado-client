@@ -257,13 +257,19 @@ class CssChapterContentParser {
         }
         val nextRule = rules["nextContentUrl"]?.trim().orEmpty()
         val nextUrl = if (nextRule.isEmpty()) null else {
-            val rawLink = when (val result = evaluateOptional(
+            val rawLink = when (val result = LegadoRuleExpressionDispatcher.evaluate(
                 document,
                 normalizeLinkExpression(nextRule),
-                response.finalUrl,
             )) {
-                is EngineResult.Failure -> return result
-                is EngineResult.Success -> result.value
+                is EngineResult.Failure -> {
+                    if (result.code == EngineErrorCode.PARSE) {
+                        return unsupported(source, "invalid nextContentUrl selector")
+                    }
+                    return result
+                }
+                is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(
+                    normalizeLinkExpression(nextRule), result.value,
+                )?.trim()?.takeIf(String::isNotEmpty)
             }
             if (rawLink.isNullOrBlank()) null else {
                 runCatching { WebUrlResolver.resolve(response.finalUrl, rawLink) }.getOrElse {
