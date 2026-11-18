@@ -62,4 +62,12 @@ class LegadoPutRuleTest {
         assertEquals("<h1>Novel</h1>:3", (result as EngineResult.Success).value)
         assertEquals("<h1>Novel</h1>:3", values["payload"])
     }
+    @Test
+    fun parsesMultiplePutDirectivesInOneExpression() {
+        val parsed = assertIs<EngineResult.Success<LegadoPutRule.Parsed>>(
+            LegadoPutRule.parse("@put:{first:'one'} .item @put:{second:'two'} @get:{first}"),
+        ).value
+        assertEquals(listOf("first", "second"), parsed.assignments.map { it.key })
+        assertEquals(".item @get:{first}", parsed.expression)
+    }
 }
