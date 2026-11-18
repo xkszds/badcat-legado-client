@@ -94,7 +94,7 @@ object CssRuleEvaluator {
                     // A final @text/@href suffix is extraction metadata; collection
                     // parsing retains the selected element HTML for per-item rules.
                     val chain = splitRuleChain(part)
-                    val selectorSteps = if (chain.lastOrNull()?.let(::parseValueMode) != null) {
+                    val selectorSteps = if (chain.lastOrNull()?.let(::isCollectionValueSuffix) == true) {
                         chain.dropLast(1)
                     } else {
                         chain
@@ -307,6 +307,22 @@ object CssRuleEvaluator {
         }
         if (start > 0) parts += expression.substring(start).trim()
         return if (parts.isEmpty()) listOf(expression.trim()) else parts
+    }
+
+    /**
+     * A collection selector step such as "tag.li" or "div.book" must not be
+     * mistaken for an attribute extraction suffix. Attribute names in Legado's
+     * final @suffix form do not contain selector separators.
+     */
+    private fun isCollectionValueSuffix(value: String): Boolean {
+        val suffix = value.trim()
+        if (suffix.equals("text", true) || suffix.equals("textNodes", true) ||
+            suffix.equals("ownText", true) || suffix.equals("html", true) ||
+            suffix.equals("all", true) || suffix.equals("href", true) ||
+            suffix.equals("src", true) || suffix.equals("tag", true)
+        ) return true
+        if (suffix.startsWith("attr(", true) && suffix.endsWith(")")) return true
+        return suffix.matches(Regex("[A-Za-z_:][A-Za-z0-9_:-]*"))
     }
 
     private fun parseValueMode(suffix: String): Pair<ValueMode, String?>? {
