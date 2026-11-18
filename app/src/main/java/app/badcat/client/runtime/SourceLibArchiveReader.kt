@@ -1,5 +1,7 @@
 package app.badcat.client.runtime
 
+import android.system.OsConstants.S_ISREG
+
 import me.zhanghai.android.libarchive.Archive
 import me.zhanghai.android.libarchive.ArchiveEntry
 import me.zhanghai.android.libarchive.ArchiveException
