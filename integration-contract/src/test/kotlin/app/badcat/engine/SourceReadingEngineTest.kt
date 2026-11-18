@@ -220,7 +220,7 @@ class SourceReadingEngineTest {
             engine.bookDetail("fixture", candidates.single().bookUrl),
         ).value
         assertEquals("Novel", detail.name)
-        assertEquals("https://reader.example/toc?q=Novel", detail.tocUrl)
+        assertEquals("https://reader.example/toc?q={{key}}", detail.tocUrl)
 
         val chapters = assertIs<EngineResult.Success<List<BookChapter>>>(
             engine.chapters("fixture", detail.bookUrl),
