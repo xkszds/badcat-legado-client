@@ -1370,6 +1370,41 @@ text + re.test('aa}}')"""
         runtime.clearSourceState(source.id)
     }
     @Test
+    fun forwardsOptionalTimeoutsForGetHeadAndPostHelpers() = runBlocking {
+        val timeouts = mutableListOf<Long>()
+        val runtime = RhinoSourceScriptRuntime(
+            sourceHttpRequestWithTimeout = { _, _, method, url, body, headers, timeout ->
+                timeouts += timeout
+                assertEquals(null, body)
+                assertEquals("t", headers["X-Token"])
+                app.badcat.engine.SourceHttpResponse(
+                    statusCode = 200,
+                    finalUrl = url,
+                    body = "$method response",
+                )
+            },
+        )
+        val source = BookSource(
+            id = "https://http-timeouts.example/",
+            name = "HTTP timeout overloads",
+            baseUrl = "https://http-timeouts.example/",
+        )
+
+        val result = runtime.evaluate(
+            source,
+            "java.get('/get', {'X-Token':'t'}, 321).body() + '|' + " +
+                "java.head('/head', {'X-Token':'t'}, 654).statusCode() + '|' + " +
+                "java.post('/post', null, {'X-Token':'t'}, 987).body()",
+            mapOf("baseUrl" to source.baseUrl),
+        )
+
+        assertTrue("HTTP timeout overloads failed: $result", result is EngineResult.Success)
+        assertEquals("GET response|200|POST response", (result as EngineResult.Success).value)
+        assertEquals(listOf(321L, 654L, 987L), timeouts)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun supportsCommonJsoupElementNavigationAndAttributes() = runBlocking {
         val runtime = RhinoSourceScriptRuntime()
         val source = BookSource(
