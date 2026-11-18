@@ -29,7 +29,7 @@ class SourceExploreService(
                 "Book source '${source.id}' has no exploreUrl",
             )
         }
-        val response = when (val result = http.execute(source, url, page, keyword)) {
+        val response = when (val result = http.execute(source, url, page, keyword, resolveJsonPathUrlTemplates = false)) {
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
         }
