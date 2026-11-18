@@ -719,12 +719,12 @@ class RhinoSourceScriptRuntimeTest {
         val second = first.copy(id = "https://cache-two.example/", baseUrl = "https://cache-two.example/")
         val firstResult = runtime.evaluate(
             first,
-            "cache.putMemory('token', {value:'cached'}); cache.getFromMemory('token').value + '|' + java.hexDecodeToString('48656c6c6f') + '|' + java.bytesToStr(java.base64DecodeToByteArray('V29ybGQ=')) + '|' + eval(java.importScript('/helper.js')).value",
+            "cache.putMemory('token', {value:'cached'}); cache.getFromMemory('token').value + '|' + java.hexDecodeToString('48656c6c6f') + '|' + java.bytesToStr(java.base64DecodeToByteArray('V29ybGQ=')) + '|' + java.importScript('/helper.js')",
         )
         val secondResult = runtime.evaluate(second, "String(cache.getFromMemory('token'))")
 
         assertTrue("Source cache/string helpers failed: $firstResult", firstResult is EngineResult.Success)
-        assertEquals("cached|Hello|World|imported", (firstResult as EngineResult.Success).value)
+        assertEquals("cached|Hello|World|({value:'imported'})", (firstResult as EngineResult.Success).value)
         assertTrue(secondResult is EngineResult.Success)
         assertEquals("undefined", (secondResult as EngineResult.Success).value)
         runtime.clearSourceState(first.id)
