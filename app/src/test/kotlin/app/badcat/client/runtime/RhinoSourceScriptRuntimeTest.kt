@@ -256,7 +256,7 @@ class RhinoSourceScriptRuntimeTest {
         )
         val result = runtime.evaluate(
             source,
-            "java.put('headers', '{\\\"headers\\\":{}}'); java.get('headers') + '|' + java.ajax('https://java-compat.example/api') + '|' + java.ajax(['https://java-compat.example/list']) + '|' + (java.randomUUID().length === 36)",
+            "java.put('headers', '{\\\"headers\\\":{}}'); java.get('headers') + '|' + java.ajax('https://java-compat.example/api') + '|' + java.ajax(['https://java-compat.example/list']) + '|' + (java.randomUUID().length() === 36)",
         )
         assertEquals(
             "{\"headers\":{}}|ajax:https://java-compat.example/api|ajax:https://java-compat.example/list|true",
@@ -304,6 +304,7 @@ class RhinoSourceScriptRuntimeTest {
             source,
             "java.htmlFormat('<div>Hello&nbsp;<b>world</b></div><p>Second</p><img data-src=\'/cover.jpg\'>', 'https://reader.example/book/1')",
         )
+        assertTrue(result is EngineResult.Success, "Legado htmlFormat failed: $result")
         val formatted = (result as EngineResult.Success).value
         assertTrue(formatted.contains("Hello world"))
         assertTrue(formatted.contains("Second"))
