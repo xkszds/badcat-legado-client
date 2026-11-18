@@ -1484,16 +1484,16 @@ class RhinoSourceScriptRuntimeTest {
             source,
             """
                 var mkzhanCover = 'https://img.example/cover.jpg?size=large'
-                    .replace(/\\.(jpg|JPG).*/g, '.$1!cover-400');
+                    .replace(/\.(jpg|JPG).*/g, '.$1!cover-400');
                 var kuwoStatus = '30 50'
                     .replace(/30/, '连载')
                     .replace(/50/, '完结');
                 var qqPayload = "data: 'payload-123'"
-                    .match(/data:\\s*'(.*?)'/)[1];
+                    .match(/data:\s*'(.*?)'/)[1];
                 var kanmanKind = 'action|fantasy'
-                    .replace(/[a-zA-Z]|\\|/g, '');
+                    .replace(/[a-zA-Z]|\|/g, '');
                 var legacyPattern = '[M comic title}'
-                    .match(/\\[M.*?}/)[0];
+                    .match(/\[M.*?}/)[0];
                 [mkzhanCover, kuwoStatus, qqPayload, kanmanKind, legacyPattern].join('|');
             """.trimIndent(),
         )
