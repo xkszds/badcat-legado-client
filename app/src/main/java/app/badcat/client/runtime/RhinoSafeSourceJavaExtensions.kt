@@ -324,10 +324,10 @@ class RhinoSafeSourceJavaExtensions(
     fun timeFormat(timestamp: String): String =
         timestamp.toLongOrNull()?.let { timeFormat(it) }.orEmpty()
 
-    /** Upstream JsExtensions.timeFormatUTC takes a timezone offset in hours. */
+    /** Matches the original JsExtensions contract: sh is a raw millisecond offset. */
     fun timeFormatUTC(timestamp: Number, format: String, sh: Int): String =
         SimpleDateFormat(format, Locale.getDefault()).run {
-            timeZone = SimpleTimeZone(Math.multiplyExact(sh, 60 * 60 * 1000), "UTC")
+            timeZone = SimpleTimeZone(sh, "UTC")
             format(Date(timestamp.toLong()))
         }
 
@@ -603,9 +603,10 @@ class RhinoSafeSourceJavaExtensions(
         URLEncoder.encode(value, charset)
     }.getOrDefault("")
 
-    /** JavaScript encodeURI: retain URI syntax delimiters, encode all other UTF-8 bytes. */
-    fun encodeURI(value: String): String =
-        encodeJsUri(value, "-_.!~*'();,/?:@&=+$#")
+    /** Matches Legado's form-style URLEncoder overload using UTF-8. */
+    fun encodeURI(value: String): String = runCatching {
+        URLEncoder.encode(value, Charsets.UTF_8.name())
+    }.getOrDefault("")
 
     /** JavaScript encodeURIComponent: retain only the component-safe punctuation. */
     fun encodeURIComponent(value: String): String =

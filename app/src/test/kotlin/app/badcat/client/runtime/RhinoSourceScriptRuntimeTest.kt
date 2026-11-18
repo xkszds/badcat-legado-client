@@ -514,9 +514,9 @@ text + re.test('aa}}')"""
         val runtime = RhinoSourceScriptRuntime()
         val result = runtime.evaluate(
             source,
-            "java.hexEncodeToString('AB') + '|' + java.bytesToStr(java.hexDecodeToByteArray('4142')) + '|' + java.timeFormatUTC(0, 'yyyy-MM-dd HH:mm', 8) + '|' + java.encodeURI('a b/雪', 'UTF-8')",
+            "java.hexEncodeToString('AB') + '|' + java.bytesToStr(java.hexDecodeToByteArray('4142')) + '|' + java.timeFormatUTC(0, 'yyyy-MM-dd HH:mm', 28800000) + '|' + java.encodeURI('a b/雪') + '|' + java.encodeURI('a b/雪', 'UTF-8')",
         )
-        assertEquals("4142|AB|1970-01-01 08:00|a+b%2F%E9%9B%AA", (result as EngineResult.Success).value)
+        assertEquals("4142|AB|1970-01-01 08:00|a+b%2F%E9%9B%AA|a+b%2F%E9%9B%AA", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
 
