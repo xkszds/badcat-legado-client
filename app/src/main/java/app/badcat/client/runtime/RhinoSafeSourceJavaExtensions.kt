@@ -5,6 +5,7 @@ import java.net.URLEncoder
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.SimpleTimeZone
 import java.util.Locale
 import java.util.UUID
 import java.util.Base64
@@ -195,6 +196,28 @@ class RhinoSafeSourceJavaExtensions(
 
     fun timeFormat(timestamp: String): String =
         timestamp.toLongOrNull()?.let { timeFormat(it) }.orEmpty()
+
+    fun timeFormatUTC(timestamp: Number, format: String, offsetMillis: Int): String =
+        SimpleDateFormat(format, Locale.getDefault()).run {
+            timeZone = SimpleTimeZone(offsetMillis, "UTC")
+            format(Date(timestamp.toLong()))
+        }
+
+    fun timeFormatUTC(timestamp: String, format: String, offsetMillis: Int): String =
+        timestamp.toLongOrNull()?.let { timeFormatUTC(it, format, offsetMillis) }.orEmpty()
+
+    fun hexDecodeToByteArray(hex: String): ByteArray? {
+        val value = hex.trim()
+        if (value.length % 2 != 0 || value.any { it.digitToIntOrNull(16) == null }) return null
+        return ByteArray(value.length / 2) { index ->
+            ((value[index * 2].digitToInt(16) shl 4) or value[index * 2 + 1].digitToInt(16)).toByte()
+        }
+    }
+
+    fun hexEncodeToString(value: String): String =
+        value.toByteArray(Charsets.UTF_8).joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
+
+    fun logType(value: Any?): String = value?.javaClass?.name ?: "null"
 
     /** Synchronous compatibility bridge; the host enforces transport bounds. */
     fun ajax(urlAndOptions: String): String = ajaxRequest(urlAndOptions)
