@@ -37,7 +37,7 @@ class BadcatSourceHttpGatewayFactoryTest {
 
         val result = gateway.execute(
             source = source,
-            ruleUrl = """https://reader.example/search?q=@js:return java.ajax('/form').match(/action="(.+?)"/)[1]""",
+            ruleUrl = """https://reader.example/search?q=@js:java.ajax('/form').match(/action="(.+?)"/)[1]""",
             key = "cat",
         )
 
