@@ -556,4 +556,44 @@ class CssTocParserTest {
         )
     }
 
+
+    @Test
+    fun supportsCommonUnquotedPutGetDirectivesAcrossTocRows() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"$.data[*]",
+                "chapterName":"$.title@put:{cid:chapter_id}",
+                "chapterUrl":"https://reader.example/chapter/@get:{cid}"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/catalog",
+            contentType = "application/json",
+            body = """{"data":[{"chapter_id":"c-19","title":"Stored Chapter"}]}""",
+        )
+        val values = mutableMapOf<String, String>()
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(source: BookSource, script: String, bindings: Map<String, String>) =
+                EngineResult.Success(script)
+            override suspend fun putString(source: BookSource, key: String, value: String): EngineResult<Unit> {
+                values[key] = value
+                return EngineResult.Success(Unit)
+            }
+            override suspend fun getString(source: BookSource, key: String): EngineResult<String?> =
+                EngineResult.Success(values[key])
+        }
+
+        val page = assertIs<EngineResult.Success<ParsedTocPage>>(
+            CssTocParser().parseWithScripts(source, response, "https://reader.example/book", runtime),
+        ).value
+
+        assertEquals("c-19", values["cid"])
+        assertEquals(listOf("Stored Chapter"), page.chapters.map { it.title })
+        assertEquals(listOf("https://reader.example/chapter/c-19"), page.chapters.map { it.url })
+    }
+
 }
