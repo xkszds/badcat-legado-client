@@ -205,10 +205,13 @@ object LegadoRuleExpressionDispatcher {
 
     private fun toUpstreamCssRule(expression: String): String {
         val raw = expression.trim()
+        val normalized = raw.replace(Regex("@attr\\(([^)]+)\\)", RegexOption.IGNORE_CASE)) {
+            "@${it.groupValues[1]}"
+        }
         return when {
-            raw.startsWith("@@") -> "@CSS:${raw.substring(2).trim()}"
-            raw.startsWith("@css:", ignoreCase = true) -> raw
-            else -> raw
+            normalized.startsWith("@@") -> "@CSS:${normalized.substring(2).trim()}"
+            normalized.startsWith("@css:", ignoreCase = true) -> normalized
+            else -> normalized
         }
     }
 
