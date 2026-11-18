@@ -48,6 +48,59 @@ jobs:
         with:
           gradle-version: '8.14.4'
 
+      - name: Live smoke imported Nyasama source endpoints (best effort)
+        continue-on-error: true
+        run: |
+          python3 - <<'PY'
+          import json
+          import urllib.parse
+          import urllib.request
+
+          collection_url = "https://shuyuan.nyasama.cc/shuyuan/12f348d3510bac0e5f1b164274f0b136.json"
+          with urllib.request.urlopen(collection_url, timeout=20) as response:
+              sources = json.loads(response.read().decode("utf-8"))
+
+          checks = [
+              ("漫客栈", "海贼王", lambda s: s.get("bookSourceUrl", "").startswith("http://comic.mkzhan.com") and "search/keyword/" in s.get("searchUrl", "")),
+              ("酷我小说", "道君", lambda s: s.get("bookSourceName") == "酷我小说"),
+              ("看漫画", "海贼王", lambda s: s.get("bookSourceName") == "看漫画"),
+              ("腾讯漫画", "海贼王", lambda s: s.get("bookSourceName") == "腾讯漫画"),
+          ]
+
+          failures = 0
+          for name, keyword, predicate in checks:
+              source = next((item for item in sources if predicate(item)), None)
+              if source is None:
+                  print(f"LIVE_FAIL {name}: source entry not found in collection")
+                  failures += 1
+                  continue
+
+              url = source.get("searchUrl", "")
+              url = url.replace("{{key}}", urllib.parse.quote(keyword, safe=""))
+              url = url.replace("{{page}}", "1")
+              base_url = source.get("bookSourceUrl", "").split("#", 1)[0]
+              if url.startswith("/"):
+                  url = urllib.parse.urljoin(base_url.rstrip("/") + "/", url.lstrip("/"))
+
+              try:
+                  headers = json.loads(source.get("header") or "{}")
+                  if not isinstance(headers, dict):
+                      headers = {}
+                  headers.setdefault("User-Agent", "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36")
+                  request = urllib.request.Request(url, headers=headers)
+                  with urllib.request.urlopen(request, timeout=20) as response:
+                      body = response.read(2 * 1024 * 1024 + 1)
+                      if response.status < 200 or response.status >= 300 or not body:
+                          raise RuntimeError(f"HTTP {response.status}, {len(body)} bytes")
+                      print(f"LIVE_OK {name}: HTTP {response.status}, {len(body)} bytes, {response.geturl()}")
+              except Exception as error:
+                  failures += 1
+                  print(f"LIVE_FAIL {name}: {type(error).__name__}: {error}")
+
+          print(f"Nyasama live source smoke: {len(checks) - failures}/{len(checks)} endpoints reachable")
+          raise SystemExit(1 if failures else 0)
+          PY
+
       - name: Run contract unit tests
         run: gradle --no-daemon :integration-contract:test
 
