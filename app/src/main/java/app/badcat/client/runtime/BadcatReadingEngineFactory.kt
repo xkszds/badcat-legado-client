@@ -70,7 +70,7 @@ class BadcatReadingEngineFactory(
                 val request = when (val created = SourceRequestFactory.create(source, resolved)) {
                     is EngineResult.Failure -> throw IllegalArgumentException(created.message)
                     is EngineResult.Success -> created.value.copy(
-                        timeoutMillis = (created.value.timeoutMillis ?: 8_000L).coerceAtMost(15_000L),
+                        timeoutMillis = (created.value.timeoutMillis ?: 15_000L).coerceAtMost(30_000L),
                         retryCount = created.value.retryCount.coerceAtMost(3),
                     )
                 }
@@ -94,7 +94,7 @@ class BadcatReadingEngineFactory(
                     headers = headers,
                 )) {
                     is EngineResult.Failure -> throw IllegalArgumentException(created.message)
-                    is EngineResult.Success -> created.value.copy(timeoutMillis = 8_000L)
+                    is EngineResult.Success -> created.value.copy(timeoutMillis = 15_000L)
                 }
                 when (val result = runBlocking(Dispatchers.IO) { durableRequestClient.execute(request) }) {
                     is EngineResult.Failure -> throw IllegalStateException(result.message)
