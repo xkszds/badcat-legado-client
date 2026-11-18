@@ -92,6 +92,14 @@
 - [ ] 只有五大类所有必需项完成、核心差异清零或经用户明确接受、CI 通过、真机端到端通过，才能宣称“与该固定版本原版 Legado 等价”。
 - [ ] 若某项暂不支持，必须在文档/UI 明确标记，不可吞掉规则、静默回退并返回空结果。
 
+## 2026-11-19 增量验证记录
+
+- 提交 `04d96e0336bfdf78cd0cc1c851241dff2ce13aa4`：扩展 Rhino JSoup 兼容回归，覆盖 `selectFirst()` 与带 base URI 的相对链接 `absUrl()`。
+- GitHub Actions run `44391264577`：`:integration-contract:test` 对应的 contract unit tests 通过；`:app:testDebugUnitTest` 对应的 bounded Rhino replacement host tests 通过；`:app:assembleDebug` 通过，debug APK 已上传为 artifact `14469785604`（SHA-256 `7f444ea967152796dba6fc0b921fa3a4b0bf64b77a12bfb05ee1f6d1c1a2f06f`）。
+- 同一提交的实时书源探测步骤仍在执行中；它们不是 Kotlin 引擎单测，也不能代替真机验收。
+- 后续提交 `20c321510e6f075b3975d21d262b7518c796f4e6`：继续扩展 JSoup facade 回归，新增 `Element.hasClass()`、`Element.parent().tagName()`、`Elements.isEmpty()` 的调用覆盖；该提交的 CI 尚待执行。
+- 旧记录中列出的集合解析/冒号索引/Bixiange 三项失败，已在 run `44391264577` 的 contract unit test 步骤中整体通过；仍需持续保留这些回归用例。
+
 ## 当前已知状态（2026-11-19）
 
 - 已固定上游 submodule：`upstream/legado` -> `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
