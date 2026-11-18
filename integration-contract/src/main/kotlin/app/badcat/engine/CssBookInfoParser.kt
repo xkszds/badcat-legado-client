@@ -74,11 +74,15 @@ class CssBookInfoParser {
                 is EngineResult.Success -> parsed.value
             }
             for (assignment in parsedPut.assignments) {
-                val normalizedPutRule = normalizeJsonRuleForDocument(document, assignment.rule)
-                val putValue = when (val evaluated = LegadoRuleExpressionDispatcher.evaluate(document, normalizedPutRule)) {
-                    is EngineResult.Failure -> return evaluated
-                    is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(normalizedPutRule, evaluated.value)
-                } ?: continue
+                val putValue = if (assignment.literal) {
+                    assignment.rule
+                } else {
+                    val normalizedPutRule = normalizeJsonRuleForDocument(document, assignment.rule)
+                    when (val evaluated = LegadoRuleExpressionDispatcher.evaluate(document, normalizedPutRule)) {
+                        is EngineResult.Failure -> return evaluated
+                        is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(normalizedPutRule, evaluated.value)
+                    } ?: continue
+                }
                 when (val stored = scriptRuntime.putString(source, assignment.key, putValue)) {
                     is EngineResult.Failure -> return stored
                     is EngineResult.Success -> Unit
