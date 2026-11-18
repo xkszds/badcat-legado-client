@@ -206,6 +206,15 @@ class CssTocParser {
             )
         }
         var nextRule = rules["nextTocUrl"]?.trim().orEmpty()
+        nextRule = when (val put = LegadoPutRule.resolve(
+            source,
+            nextRule,
+            SourceDocument(response.finalUrl, response.body, response.contentType, page = page),
+            scriptRuntime,
+        )) {
+            is EngineResult.Failure -> return put
+            is EngineResult.Success -> put.value
+        }
         nextRule = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
             source = source,
             template = nextRule,
