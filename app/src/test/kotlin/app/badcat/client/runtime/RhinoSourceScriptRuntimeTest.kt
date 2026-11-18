@@ -1676,6 +1676,30 @@ text + re.test('aa}}')"""
     }
 
     @Test
+    fun downloadFilePreservesOriginalBytesForLegacyCharsetDecoding() {
+        val sourceId = "https://binary-download.example/"
+        val rawBytes = byteArrayOf(0x63, 0x61, 0x66, 0xe9.toByte())
+        val extensions = RhinoSafeSourceJavaExtensions(
+            sourceId = sourceId,
+            store = InMemorySourceScriptKeyValueStore,
+            httpRequest = { _, _, _, _ ->
+                SourceHttpResponse(
+                    statusCode = 200,
+                    finalUrl = "https://binary-download.example/legacy.txt",
+                    body = "incorrect utf8 replacement",
+                    bodyBytes = rawBytes,
+                )
+            },
+        )
+
+        val path = extensions.downloadFile("https://binary-download.example/legacy.txt")
+
+        assertEquals("café", extensions.readTxtFile(path, "ISO-8859-1"))
+        assertEquals("caf�", extensions.readTxtFile(path))
+        assertTrue(extensions.deleteFile(path))
+    }
+
+    @Test
     fun downloadFileUsesTheRuntimeInjectedSourceFileStore() = runBlocking {
         val values = mutableMapOf<Pair<String, String>, String>()
         val writes = mutableListOf<Pair<String, String>>()
