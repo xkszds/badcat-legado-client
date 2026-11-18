@@ -75,6 +75,28 @@ class SourceExploreServiceTest {
     }
 
     @Test
+    fun evaluatesDollarExpressionsInExploreUrlAsJavaScript() = runBlocking {
+        val client = FixtureClient()
+        val seenScripts = mutableListOf<String>()
+        val evaluator = LegadoEmbeddedScriptEvaluator { script, _, _ ->
+            seenScripts += script
+            EngineResult.Success("javascript-filter")
+        }
+        val exploreSource = source().copy(exploreUrl = "/explore?filter={{$.filter}}")
+
+        val result = SourceExploreService(
+            SourceHttpGateway(client, embeddedScriptEvaluator = evaluator),
+        ).explore(exploreSource)
+
+        assertIs<EngineResult.Success<List<BookCandidate>>>(result)
+        assertEquals(listOf("$.filter"), seenScripts)
+        assertEquals(
+            "https://reader.example/explore?filter=javascript-filter",
+            client.requests.single().url,
+        )
+    }
+
+    @Test
     fun refusesDisabledExploreWithoutMakingARequest() = runBlocking {
         val client = FixtureClient()
         val result = assertIs<EngineResult.Failure>(
