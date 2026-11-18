@@ -20,6 +20,7 @@ import app.badcat.engine.SourceRequestClient
 import app.badcat.engine.SourceScriptRuntime
 import app.badcat.engine.SourceRequestFactory
 import app.badcat.engine.LegadoUrlResolver
+import app.badcat.engine.WebUrlResolver
 import app.badcat.engine.EngineResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -89,7 +90,7 @@ class BadcatReadingEngineFactory(
             sourceGet = { source, baseUrl, url, headers ->
                 val request = when (val created = SourceRequestFactory.create(
                     source = source,
-                    url = url,
+                    url = WebUrlResolver.resolve(baseUrl, url),
                     headers = headers,
                 )) {
                     is EngineResult.Failure -> throw IllegalArgumentException(created.message)
