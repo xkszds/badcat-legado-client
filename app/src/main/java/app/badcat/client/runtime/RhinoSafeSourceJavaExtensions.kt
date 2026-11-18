@@ -73,7 +73,7 @@ class RhinoSafeSourceJavaExtensions(
     fun getString(rule: String, content: Any?, isUrl: Boolean): String {
         if (content == null) return ruleStringReader(rule)
         val value = content.toString()
-        val actualContent = if (isUrl) httpRequest("GET", value, null, emptyMap()).body else value
+        val actualContent = if (isUrl) { rateLimit(false); httpRequest("GET", value, null, emptyMap()).body } else value
         return ruleStringReaderWithContent(rule, actualContent)
     }
 
@@ -145,6 +145,7 @@ class RhinoSafeSourceJavaExtensions(
      */
     fun downloadFile(url: String): String {
         require(url.isNotBlank()) { "downloadFile URL must not be blank" }
+        rateLimit(false)
         val response = httpRequest("GET", url, null, emptyMap())
         require(response.statusCode in 200..299) {
             "downloadFile returned HTTP ${response.statusCode} ${response.statusMessage}".trim()
@@ -213,10 +214,10 @@ class RhinoSafeSourceJavaExtensions(
     }
 
     fun get(url: String, headers: Any?): RhinoSourceHttpResponse =
-        RhinoSourceHttpResponse(httpRequest("GET", url, null, parseRequestHeaders(headers)))
+        rateLimit(false).let { RhinoSourceHttpResponse(httpRequest("GET", url, null, parseRequestHeaders(headers))) }
 
     fun head(url: String, headers: Any?): RhinoSourceHttpResponse =
-        RhinoSourceHttpResponse(httpRequest("HEAD", url, null, parseRequestHeaders(headers)))
+        rateLimit(false).let { RhinoSourceHttpResponse(httpRequest("HEAD", url, null, parseRequestHeaders(headers))) }
 
     fun post(url: String, body: String, headers: Any?): RhinoSourceHttpResponse =
         rateLimit(false).let { RhinoSourceHttpResponse(httpRequest("POST", url, body, parseRequestHeaders(headers))) }
