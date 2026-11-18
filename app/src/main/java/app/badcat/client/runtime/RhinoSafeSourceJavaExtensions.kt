@@ -742,14 +742,35 @@ class RhinoSafeSourceJavaExtensions(
             candidate.contains('/')
     }
 
-    fun get(url: String, headers: Any?): RhinoSourceHttpResponse =
-        rateLimit(false).let { RhinoSourceHttpResponse(httpRequest("GET", url, null, parseRequestHeaders(headers))) }
+    fun get(url: String, headers: Any?): RhinoSourceHttpResponse = get(url, headers, null)
 
-    fun head(url: String, headers: Any?): RhinoSourceHttpResponse =
-        rateLimit(false).let { RhinoSourceHttpResponse(httpRequest("HEAD", url, null, parseRequestHeaders(headers))) }
+    fun get(url: String, headers: Any?, timeout: Int?): RhinoSourceHttpResponse =
+        requestWithOptionalTimeout("GET", url, null, headers, timeout)
+
+    fun head(url: String, headers: Any?): RhinoSourceHttpResponse = head(url, headers, null)
+
+    fun head(url: String, headers: Any?, timeout: Int?): RhinoSourceHttpResponse =
+        requestWithOptionalTimeout("HEAD", url, null, headers, timeout)
 
     fun post(url: String, body: String, headers: Any?): RhinoSourceHttpResponse =
-        rateLimit(false).let { RhinoSourceHttpResponse(httpRequest("POST", url, body, parseRequestHeaders(headers))) }
+        post(url, body, headers, null)
+
+    fun post(url: String, body: String, headers: Any?, timeout: Int?): RhinoSourceHttpResponse =
+        requestWithOptionalTimeout("POST", url, body, headers, timeout)
+
+    private fun requestWithOptionalTimeout(
+        method: String,
+        url: String,
+        body: String?,
+        headers: Any?,
+        timeout: Int?,
+    ): RhinoSourceHttpResponse {
+        require(timeout == null || timeout > 0) { "HTTP timeout must be positive" }
+        rateLimit(false)
+        return RhinoSourceHttpResponse(
+            httpRequestWithTimeout(method, url, body, parseRequestHeaders(headers), timeout?.toLong()),
+        )
+    }
 
     /**
      * Legado connect() always returns a StrResponse-shaped value. Transport
