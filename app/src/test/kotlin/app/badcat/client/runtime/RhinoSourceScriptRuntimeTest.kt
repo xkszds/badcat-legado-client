@@ -1412,7 +1412,7 @@ text + re.test('aa}}')"""
             sourceHttpRequestWithTimeout = { _, _, method, url, body, headers, timeout ->
                 receivedTimeout = timeout
                 assertEquals("GET", method)
-                assertEquals("https://connect-timeout.example/slow", url)
+                assertEquals("/slow", url)
                 assertEquals(null, body)
                 assertTrue(headers.isEmpty())
                 app.badcat.engine.SourceHttpResponse(200, url, body = "ok", callTime = 77)
