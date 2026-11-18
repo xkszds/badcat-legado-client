@@ -109,7 +109,7 @@ class RhinoSafeSourceJavaExtensions(
     fun getString(rule: String, content: Any?, isUrl: Boolean): String {
         if (content == null) return ruleStringReader(rule)
         val value = content.toString()
-        val actualContent = if (isUrl) { rateLimit(false); httpRequest("GET", value, null, emptyMap()).body } else value
+        val actualContent = if (isUrl) { rateLimit(false); httpGet(value, emptyMap()).body } else value
         return ruleStringReaderWithContent(rule, actualContent)
     }
 
@@ -123,7 +123,7 @@ class RhinoSafeSourceJavaExtensions(
     fun getStringList(rule: String, content: Any?, isUrl: Boolean): Array<String> {
         if (content == null) return ruleStringListReader(rule).toTypedArray()
         val value = content.toString()
-        val actualContent = if (isUrl) { rateLimit(false); httpRequest("GET", value, null, emptyMap()).body } else value
+        val actualContent = if (isUrl) { rateLimit(false); httpGet(value, emptyMap()).body } else value
         return ruleStringListReaderWithContent(rule, actualContent).toTypedArray()
     }
 
