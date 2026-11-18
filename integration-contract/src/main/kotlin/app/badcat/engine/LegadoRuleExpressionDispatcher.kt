@@ -65,7 +65,9 @@ object LegadoRuleExpressionDispatcher {
                     // Always pass the normalized expression. In particular, a
                     // single leading '@' is Legado's CSS mode marker, not part
                     // of the selector text.
-                    SelectorRuleType.CSS -> UpstreamLegadoCssRuleEvaluator.getElementHtmlList(document.body, document.url, toUpstreamCssRule(leaf))
+                    SelectorRuleType.CSS -> EngineResult.Success(
+                        UpstreamLegadoCssRuleEvaluator.getElementHtmlList(document.body, document.url, toUpstreamCssRule(leaf)),
+                    )
                     SelectorRuleType.XPATH -> XPathRuleEvaluator.evaluateElements(document, resolved.value.expression)
                     SelectorRuleType.JSON_PATH -> JsonPathRuleEvaluator.evaluateElements(document, resolved.value.expression)
                 }
@@ -131,7 +133,9 @@ object LegadoRuleExpressionDispatcher {
                     is EngineResult.Failure -> resolved
                     is EngineResult.Success ->
                         if (resolved.value.type == SelectorRuleType.CSS) {
-                            UpstreamLegadoCssRuleEvaluator.getStringList(document.body, document.url, toUpstreamCssRule(branch))
+                            EngineResult.Success(
+                                UpstreamLegadoCssRuleEvaluator.getStringList(document.body, document.url, toUpstreamCssRule(branch)),
+                            )
                         } else {
                             SelectorRuleEvaluator.evaluate(document, resolved.value.type, resolved.value.expression)
                         }
