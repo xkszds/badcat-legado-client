@@ -1,5 +1,7 @@
 # Full upstream Legado runtime migration
 
+> 长期用户需求与五大类完整验收清单：[docs/USER_REQUIREMENTS_AND_PARITY_CHECKLIST.md](USER_REQUIREMENTS_AND_PARITY_CHECKLIST.md)。每次继续开发前必须先读该清单并更新完成状态。
+
 ## Goal
 
 Make Badcat's online book-source execution use the same implementation and semantics as the pinned Legado Android app, rather than extending the bounded in-house parser. The compatibility target is the upstream application at:
@@ -70,4 +72,4 @@ The upstream `App` initialization and global services must be adapted explicitly
 
 ## Current status
 
-This branch now includes the immutable upstream source baseline, exact pinned Rhino core, and a first verbatim port of the upstream JSoup rule parser with an app adapter. This parser adapter is not yet wired into the four production reading services; those services still use the bounded contract parsers. It does **not** yet integrate the complete runtime or claim compatibility. The existing bounded engine remains in place until each upstream-backed stage passes its tests; it must not silently fall back on unsupported rules and report false success.
+This branch includes the immutable upstream source baseline and an attempted integration of upstream JSoup rule evaluation into the shared dispatcher. The latest CI run `44385813513` is **failed** at `:integration-contract:test`: chained collection root extraction, legacy colon-separated index/exclusion semantics, and the Bixiange public source search fixture all fail. Fix these before extending parser coverage. This branch does **not** integrate the complete runtime and does not claim compatibility. The full five-category user scope and per-session requirements are tracked in `USER_REQUIREMENTS_AND_PARITY_CHECKLIST.md`.
