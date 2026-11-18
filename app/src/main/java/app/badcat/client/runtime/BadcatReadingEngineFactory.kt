@@ -101,6 +101,22 @@ class BadcatReadingEngineFactory(
                     is EngineResult.Success -> result.value
                 }
             },
+            sourceHttpRequest = { source, baseUrl, method, url, body, headers ->
+                val request = when (val created = SourceRequestFactory.create(
+                    source = source,
+                    url = WebUrlResolver.resolve(baseUrl, url),
+                    method = method,
+                    headers = headers,
+                    body = body,
+                )) {
+                    is EngineResult.Failure -> throw IllegalArgumentException(created.message)
+                    is EngineResult.Success -> created.value.copy(timeoutMillis = 8_000L)
+                }
+                when (val result = runBlocking(Dispatchers.IO) { durableRequestClient.execute(request) }) {
+                    is EngineResult.Failure -> throw IllegalStateException(result.message)
+                    is EngineResult.Success -> result.value
+                }
+            },
         )
         val gateway = BadcatSourceHttpGatewayFactory(
             client = durableRequestClient,
