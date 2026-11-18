@@ -53,15 +53,43 @@ object LegadoPutRule {
             is EngineResult.Success -> result.value
         }
         for (assignment in parsed.assignments) {
-            val value = if (assignment.literal) {
-                assignment.rule
-            } else {
-                val rule = normalizeJsonRule(document.body, assignment.rule)
-                when (val result = LegadoRuleExpressionDispatcher.evaluate(document, rule)) {
-                    is EngineResult.Failure -> return result
-                    is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(rule, result.value)
-                        ?.trim()?.takeIf(String::isNotEmpty)
-                } ?: continue
+            val value = when {
+                assignment.literal -> assignment.rule
+                assignment.rule.startsWith("@js:", true) ||
+                    assignment.rule.startsWith("javascript:", true) -> {
+                    val script = assignment.rule.substringAfter(':').trim()
+                    if (script.isBlank()) {
+                        return EngineResult.Failure(
+                            EngineErrorCode.UNSUPPORTED_RULE,
+                            "Legado @put JavaScript assignment '${assignment.key}' is blank",
+                        )
+                    }
+                    when (val evaluated = runtime.evaluate(
+                        source,
+                        script,
+                        mapOf(
+                            "result" to document.body,
+                            "baseUrl" to document.url,
+                            "sourceUrl" to source.id,
+                            "sourceId" to source.id,
+                            "sourceName" to source.name,
+                            "ruleName" to "put:${assignment.key}",
+                            "key" to document.key,
+                            "page" to document.page.toString(),
+                        ),
+                    )) {
+                        is EngineResult.Failure -> return evaluated
+                        is EngineResult.Success -> evaluated.value
+                    }
+                }
+                else -> {
+                    val rule = normalizeJsonRule(document.body, assignment.rule)
+                    when (val result = LegadoRuleExpressionDispatcher.evaluate(document, rule)) {
+                        is EngineResult.Failure -> return result
+                        is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(rule, result.value)
+                            ?.trim()?.takeIf(String::isNotEmpty)
+                    } ?: continue
+                }
             }
             when (val stored = runtime.putString(source, assignment.key, value)) {
                 is EngineResult.Failure -> return stored
