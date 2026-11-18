@@ -195,6 +195,7 @@ class CssSearchResultsParser {
 
         suspend fun fieldValue(fieldName: String, itemHtml: String): EngineResult<String?> {
             val expression = rules[fieldName]?.takeIf(String::isNotBlank) ?: return EngineResult.Success(null)
+            val directGet = LegadoPutRule.isDirectGet(expression)
             val itemDocument = SourceDocument(response.finalUrl, itemHtml, response.contentType, key, page)
             val withoutPut = when (val put = LegadoPutRule.resolve(source, expression, itemDocument, scriptRuntime)) {
                 is EngineResult.Failure -> return put
@@ -213,6 +214,7 @@ class CssSearchResultsParser {
                 is EngineResult.Failure -> return expanded
                 is EngineResult.Success -> expanded.value
             }
+            if (directGet) return EngineResult.Success(trimmed.trim().takeIf(String::isNotEmpty))
             if ((fieldName == "bookUrl" || fieldName == "coverUrl") && isLiteralUrlRule(trimmed)) {
                 return runCatching { EngineResult.Success(WebUrlResolver.resolve(response.finalUrl, trimmed)) }
                     .getOrElse { unsupported(source, "$fieldName literal must resolve to a credential-free HTTP(S) URL") }
