@@ -259,7 +259,7 @@ jobs:
                       elif token.startswith("tag."):
                           token = token[len("tag."):]
                       # Legado collection indexes are not CSS class names.
-                      token = __import__("re").sub(r"\\.(-?\\d+)$", "", token)
+                      token = __import__("re").sub(r"\.(-?\d+)$", "", token)
                       tokens.append(token)
                   selectors.append(" ".join(tokens))
               return " ".join(x for x in selectors if x) or None
