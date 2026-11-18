@@ -134,7 +134,7 @@ def valid_text(value):
 
 def run_source(source):
     name = source["name"]
-    search_url = source["base"].rstrip("/") + source["search"].replace("{{key}}", urllib.parse.quote("斗罗大陆", safe=""))
+    search_url = source["base"].rstrip("/") + source["search"].replace("{{key}}", urllib.parse.quote("剑来", safe=""))
     print(f"SOURCE_START {name}: {search_url}")
     try:
         search_final, search_html = fetch(search_url)
