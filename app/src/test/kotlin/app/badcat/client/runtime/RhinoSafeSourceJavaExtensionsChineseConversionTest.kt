@@ -54,7 +54,7 @@ class RhinoSafeSourceJavaExtensionsChineseConversionTest {
             sourceId = "file-helper-test",
             store = InMemorySourceScriptKeyValueStore,
             fileStore = fileStore,
-            httpRequest = { _, url, _, _ ->
+            httpGet = { url, _ ->
                 app.badcat.engine.SourceHttpResponse(
                     statusCode = 200,
                     finalUrl = url,
