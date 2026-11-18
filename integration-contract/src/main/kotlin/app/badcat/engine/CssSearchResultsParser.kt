@@ -226,6 +226,55 @@ class CssSearchResultsParser {
                 return runCatching { EngineResult.Success(WebUrlResolver.resolve(response.finalUrl, trimmed)) }
                     .getOrElse { unsupported(source, "$fieldName literal must resolve to a credential-free HTTP(S) URL") }
             }
+            val jsSuffixIndex = trimmed.indexOf("@js:", ignoreCase = true)
+            val scriptSuffix = jsSuffixIndex > 0
+            if (scriptSuffix) {
+                val selectorExpression = trimmed.substring(0, jsSuffixIndex).trim()
+                val script = trimmed.substring(jsSuffixIndex + "@js:".length).trim()
+                if (selectorExpression.isBlank() || script.isBlank()) {
+                    return unsupported(source, "JavaScript suffix for '$fieldName' requires a selector and script")
+                }
+                val selected = try {
+                    field(
+                        source,
+                        rules,
+                        fieldName,
+                        itemDocument,
+                        expressionOverride = normalizeJsonRule(itemHtml, selectorExpression),
+                        legacyRegexMode = legacyRegexMode,
+                    )
+                } catch (failure: SearchParseFailure) {
+                    return failure.failure
+                } catch (failure: UnsupportedSearchRule) {
+                    return unsupported(source, failure.message ?: "unsupported selector before JavaScript suffix")
+                }
+                if (selected.isNullOrBlank()) return EngineResult.Success(null)
+                val evaluated = when (val result = scriptRuntime.evaluate(
+                    source = source,
+                    script = script,
+                    bindings = mapOf(
+                        "result" to selected,
+                        "baseUrl" to response.finalUrl,
+                        "sourceUrl" to source.id,
+                        "sourceId" to source.id,
+                        "sourceName" to source.name,
+                        "ruleName" to fieldName,
+                        "key" to key,
+                        "page" to page.toString(),
+                    ),
+                )) {
+                    is EngineResult.Failure -> return result
+                    is EngineResult.Success -> result.value.trim().takeIf(String::isNotEmpty)
+                }
+                if (evaluated == null) return EngineResult.Success(null)
+                if (fieldName == "bookUrl" || fieldName == "coverUrl") {
+                    return runCatching { WebUrlResolver.resolve(response.finalUrl, evaluated) }.fold(
+                        onSuccess = { EngineResult.Success(it) },
+                        onFailure = { unsupported(source, "$fieldName script result must be a credential-free HTTP(S) URL") },
+                    )
+                }
+                return EngineResult.Success(evaluated)
+            }
             if (trimmed.startsWith("@js:", true) || trimmed.startsWith("javascript:", true)) {
                 val script = trimmed.substringAfter(':').trim()
                 if (script.isBlank()) return unsupported(source, "empty JavaScript rule for '$fieldName'")
