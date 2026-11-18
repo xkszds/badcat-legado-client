@@ -374,6 +374,9 @@ class RhinoSafeSourceJavaExtensions(
 
     private fun normalizeVirtualPath(path: String): String {
         require(path.isNotBlank() && path.length <= MAX_ARCHIVE_PATH_CHARS)
+        require(!path.startsWith("/") || fileRoot != null) {
+            "Absolute source paths require the configured cache root"
+        }
         val normalized = path.replace('\\', '/').trimStart('/')
         require(normalized.split('/').none { it.isBlank() || it == "." || it == ".." }) {
             "Invalid source file path"
