@@ -436,10 +436,11 @@ class RhinoSafeSourceJavaExtensions(
         java.util.regex.Pattern.compile("\\s*,\\s*(?=\\{)")
 
     /** Synchronous compatibility bridge; the host enforces transport bounds. */
-    fun ajax(urlAndOptions: String): String = ajaxRequest(urlAndOptions)
+    /** URL/options overload; Legado returns a stack trace string rather than throwing request failures into Rhino. */
+    fun ajax(urlAndOptions: String): String = ajax(urlAndOptions as Any?)
 
     /** Upstream accepts either a URL string or a list whose first item is the URL. */
-    fun ajax(url: Any?): String {
+    fun ajax(url: Any?): String = runCatching {
         val value = when (url) {
             is List<*> -> url.firstOrNull()?.toString().orEmpty()
             is Scriptable -> {
@@ -449,7 +450,9 @@ class RhinoSafeSourceJavaExtensions(
             else -> url?.toString().orEmpty()
         }
         require(value.isNotBlank()) { "java.ajax URL must not be blank" }
-        return ajaxRequest(value)
+        ajaxRequest(value)
+    }.getOrElse { error ->
+        error.stackTraceToString().ifEmpty { error.localizedMessage ?: "noErrorMsg" }
     }
 
     fun randomUUID(): String = UUID.randomUUID().toString()
