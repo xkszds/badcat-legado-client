@@ -44,10 +44,7 @@ object LegadoUrlResolver {
                 expanded = expanded.substring(0, optionStart.range.first).trim()
             }
 
-            val options = if (optionJson == null) null else {
-                JsonParser.parseString(optionJson).takeIf { it.isJsonObject }?.asJsonObject
-                    ?: throw IllegalArgumentException("URL options must be a JSON object")
-            }
+            val options = if (optionJson == null) null else parseOptions(optionJson)
             // URI rejects raw Unicode and spaces in query values; Legado encodes them later.
             expanded = encodeQueryForUri(expanded, options?.string("charset"))
             val base = URI(baseUrl)
@@ -128,6 +125,72 @@ object LegadoUrlResolver {
                 EngineResult.Failure(EngineErrorCode.INVALID_SOURCE, error.message ?: "Invalid Legado URL rule", error)
             }
         }
+    }
+
+    private fun parseOptions(raw: String): JsonObject {
+        val parsed = runCatching { JsonParser.parseString(raw) }.getOrNull()
+        if (parsed != null && parsed.isJsonObject) return parsed.asJsonObject
+
+        // Many established Legado sources use the historical Python/JS-style
+        // single-quoted option dictionary: {'method':'POST','body':'q={{key}}'}.
+        // Convert only quoted-string delimiters, preserving escaped content,
+        // then let Gson validate the resulting JSON structure and value types.
+        val normalized = normalizeSingleQuotedObject(raw)
+        return JsonParser.parseString(normalized).takeIf { it.isJsonObject }?.asJsonObject
+            ?: throw IllegalArgumentException("URL options must be an object")
+    }
+
+    private fun normalizeSingleQuotedObject(raw: String): String {
+        val output = StringBuilder(raw.length + 8)
+        var inSingle = false
+        var inDouble = false
+        var escaped = false
+        raw.forEach { char ->
+            when {
+                inSingle && escaped -> {
+                    when (char) {
+                        '\\' -> output.append("\\\\")
+                        '\'' -> output.append('\'')
+                        '"' -> output.append("\\\"")
+                        else -> output.append('\\').append(char)
+                    }
+                    escaped = false
+                }
+                inSingle && char == '\\' -> escaped = true
+                inSingle && char == '\'' -> {
+                    output.append('"')
+                    inSingle = false
+                }
+                inSingle && char == '"' -> output.append("\\\"")
+                inSingle && char == '\n' -> output.append("\\n")
+                inSingle && char == '\r' -> output.append("\\r")
+                inSingle && char == '\t' -> output.append("\\t")
+                inSingle -> output.append(char)
+                inDouble && escaped -> {
+                    output.append(char)
+                    escaped = false
+                }
+                inDouble && char == '\\' -> {
+                    output.append(char)
+                    escaped = true
+                }
+                inDouble && char == '"' -> {
+                    output.append(char)
+                    inDouble = false
+                }
+                !inDouble && char == '\'' -> {
+                    output.append('"')
+                    inSingle = true
+                }
+                !inDouble && char == '"' -> {
+                    output.append(char)
+                    inDouble = true
+                }
+                else -> output.append(char)
+            }
+        }
+        require(!inSingle && !escaped) { "Unterminated single-quoted URL option string" }
+        return output.toString()
     }
 
     private fun encodeQueryForUri(rule: String, charsetName: String?): String {
