@@ -69,26 +69,10 @@ class CssBookInfoParser {
 
         suspend fun field(name: String): EngineResult<String?> {
             val expression = rules[name]?.takeIf(String::isNotBlank) ?: return EngineResult.Success(null)
-            val parsedPut = when (val parsed = LegadoPutRule.parse(expression.trim())) {
-                is EngineResult.Failure -> return parsed
-                is EngineResult.Success -> parsed.value
+            var trimmed = when (val put = LegadoPutRule.resolve(source, expression.trim(), document, scriptRuntime)) {
+                is EngineResult.Failure -> return put
+                is EngineResult.Success -> put.value
             }
-            for (assignment in parsedPut.assignments) {
-                val putValue = if (assignment.literal) {
-                    assignment.rule
-                } else {
-                    val normalizedPutRule = normalizeJsonRuleForDocument(document, assignment.rule)
-                    when (val evaluated = LegadoRuleExpressionDispatcher.evaluate(document, normalizedPutRule)) {
-                        is EngineResult.Failure -> return evaluated
-                        is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(normalizedPutRule, evaluated.value)
-                    } ?: continue
-                }
-                when (val stored = scriptRuntime.putString(source, assignment.key, putValue)) {
-                    is EngineResult.Failure -> return stored
-                    is EngineResult.Success -> Unit
-                }
-            }
-            var trimmed = parsedPut.expression
             trimmed = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
                     source = source,
                     template = trimmed,
