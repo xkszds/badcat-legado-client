@@ -958,7 +958,7 @@ text + re.test('aa}}')"""
         )
 
         assertTrue("Legado symmetric encrypt helpers failed: $result", result is EngineResult.Success)
-        assertEquals("Legado crypto roundtrip|Legado crypto roundtrip|true|true", (result as EngineResult.Success).value, "Unexpected crypto roundtrip result: $result")
+        assertEquals("Unexpected crypto roundtrip result: $result", "Legado crypto roundtrip|Legado crypto roundtrip|true|true", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
 
