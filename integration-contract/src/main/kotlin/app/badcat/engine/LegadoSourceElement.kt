@@ -10,6 +10,10 @@ import org.jsoup.select.Elements
 class LegadoSourceElement(
     private val fragments: List<String>,
     private val baseUri: String = "",
+    private val selectionContext: List<String>? = null,
+    private val selectionIndex: Int = 0,
+    private val selectionParents: List<String?>? = null,
+    private val selectionAncestors: List<List<String>>? = null,
 ) {
     constructor(fragment: String, baseUri: String = "") : this(listOf(fragment), baseUri)
 
@@ -30,34 +34,51 @@ class LegadoSourceElement(
     fun hasAttr(name: String): Boolean = elements().firstOrNull()?.hasAttr(name) ?: false
     fun `val`(): String = elements().firstOrNull()?.`val`().orEmpty()
     fun data(): String = elements().firstOrNull()?.data().orEmpty()
-    fun select(selector: String): LegadoSourceElement =
-        LegadoSourceElement(elements().select(selector).map { it.outerHtml() }, baseUri)
+    fun select(selector: String): LegadoSourceElement {
+        val selected = elements().select(selector)
+        val html = selected.map { it.outerHtml() }
+        return LegadoSourceElement(
+            fragments = html,
+            baseUri = baseUri,
+            selectionContext = html,
+            selectionParents = selected.map { it.parents().firstOrNull()?.outerHtml() },
+            selectionAncestors = selected.map { element -> element.parents().map { it.outerHtml() } },
+        )
+    }
     fun selectFirst(selector: String): LegadoSourceElement? = select(selector).first()
-    fun first(): LegadoSourceElement? = elements().firstOrNull()?.let { LegadoSourceElement(it.outerHtml(), baseUri) }
-    fun last(): LegadoSourceElement? = elements().lastOrNull()?.let { LegadoSourceElement(it.outerHtml(), baseUri) }
-    fun parent(): LegadoSourceElement? = elements().firstOrNull()?.parents()?.firstOrNull()
-        ?.let { LegadoSourceElement(it.outerHtml(), baseUri) }
+    fun first(): LegadoSourceElement? = if (elements().isEmpty()) null else selectedElement(0)
+    fun last(): LegadoSourceElement? = if (elements().isEmpty()) null else selectedElement(elements().lastIndex)
+    fun parent(): LegadoSourceElement? = selectionParents?.getOrNull(selectionIndex)?.let { LegadoSourceElement(it, baseUri) }
+        ?: elements().firstOrNull()?.parents()?.firstOrNull()?.let { LegadoSourceElement(it.outerHtml(), baseUri) }
     fun parents(): LegadoSourceElementList = LegadoSourceElementList(
-        elements().firstOrNull()?.parents()?.map { LegadoSourceElement(it.outerHtml(), baseUri) }.orEmpty(),
+        selectionAncestors?.getOrNull(selectionIndex)?.map { LegadoSourceElement(it, baseUri) }
+            ?: elements().firstOrNull()?.parents()?.map { LegadoSourceElement(it.outerHtml(), baseUri) }.orEmpty(),
     )
-    fun next(): LegadoSourceElement? = elements().firstOrNull()?.let { current ->
-        val siblings = current.parents().firstOrNull()?.children() ?: return@let null
-        siblings.getOrNull(current.elementSiblingIndex() + 1)
-            ?.let { LegadoSourceElement(it.outerHtml(), baseUri) }
-    }
-    fun prev(): LegadoSourceElement? = elements().firstOrNull()?.let { current ->
-        val siblings = current.parents().firstOrNull()?.children() ?: return@let null
-        siblings.getOrNull(current.elementSiblingIndex() - 1)
-            ?.let { LegadoSourceElement(it.outerHtml(), baseUri) }
-    }
+    fun next(): LegadoSourceElement? = selectedElement(selectionIndex + 1)
+    fun prev(): LegadoSourceElement? = selectedElement(selectionIndex - 1)
     fun siblings(): LegadoSourceElementList = LegadoSourceElementList(
-        elements().firstOrNull()?.siblingElements()?.map { LegadoSourceElement(it.outerHtml(), baseUri) }.orEmpty(),
+        (selectionContext ?: fragments).indices
+            .filter { it != selectionIndex }
+            .mapNotNull { index -> selectedElement(index) },
     )
     fun size(): Int = elements().size
     fun getLength(): Int = size()
-    fun get(index: Int): LegadoSourceElement = LegadoSourceElement(elements().get(index).outerHtml(), baseUri)
+    fun get(index: Int): LegadoSourceElement = selectedElement(index)
     fun toArray(): Array<LegadoSourceElement> =
-        elements().map { LegadoSourceElement(it.outerHtml(), baseUri) }.toTypedArray()
+        (selectionContext ?: fragments).indices.mapNotNull(::selectedElement).toTypedArray()
+
+    private fun selectedElement(index: Int): LegadoSourceElement? {
+        val context = selectionContext ?: fragments
+        val html = context.getOrNull(index) ?: return null
+        return LegadoSourceElement(
+            fragments = listOf(html),
+            baseUri = baseUri,
+            selectionContext = context,
+            selectionIndex = index,
+            selectionParents = selectionParents,
+            selectionAncestors = selectionAncestors,
+        )
+    }
     fun ownText(): String = elements().firstOrNull()?.ownText().orEmpty()
     fun tagName(): String = elements().firstOrNull()?.tagName().orEmpty()
     fun className(): String = elements().firstOrNull()?.className().orEmpty()
