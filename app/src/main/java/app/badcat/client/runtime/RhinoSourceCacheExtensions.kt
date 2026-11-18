@@ -82,14 +82,14 @@ class RhinoSourceCacheExtensions(
         val seconds = saveTime.toLong()
         require(seconds >= 0L && seconds <= MAX_TTL_SECONDS) { "cache file saveTime is outside the supported range" }
         val expiresAt = if (seconds == 0L) 0L else nowMillis() + seconds * 1_000L
-        fileStore.put(sourceId, storageKey(key), "$expiresAt\\n$value")
+        fileStore.put(sourceId, storageKey(key), "$expiresAt\n$value")
         return value
     }
 
     fun getFile(key: String): String? {
         requireValidKey(key)
         val raw = fileStore.get(sourceId, storageKey(key)) ?: return null
-        val separator = raw.indexOf('\\n')
+        val separator = raw.indexOf('\n')
         if (separator <= 0) {
             fileStore.remove(sourceId, storageKey(key))
             return null
