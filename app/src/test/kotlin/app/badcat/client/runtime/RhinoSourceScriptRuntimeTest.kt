@@ -823,11 +823,11 @@ class RhinoSourceScriptRuntimeTest {
         val html = "<ul><li class='chapter' id='one'><a href='/one'>One</a></li><li class='chapter' id='two'><a href='/two'>Two</a></li></ul>"
         val result = runtime.evaluate(
             source,
-            "var items = java.getElements('li.chapter'); items.first().id() + '|' + items.last().selectFirst('a').absUrl('href') + '|' + items.get(0).hasClass('chapter') + '|' + items.get(1).children().get(0).tagName() + '|' + items.get(0).children().size()",
+            "var items = java.getElements('li.chapter'); items.first().id() + '|' + items.last().selectFirst('a').absUrl('href') + '|' + items.get(0).hasClass('chapter') + '|' + items.get(1).children().get(0).tagName() + '|' + items.get(0).children().size() + '|' + items.first().next().id() + '|' + items.last().prev().id() + '|' + java.getElement('ul').select('li.chapter').first().parent().tagName() + '|' + java.getElement('ul').select('li.chapter').first().siblings().size()",
             mapOf("result" to html, "baseUrl" to source.baseUrl),
         )
         assertTrue("Jsoup element navigation failed: $result", result is EngineResult.Success)
-        assertEquals("one|https://element-navigation.example/two|true|a|1", (result as EngineResult.Success).value)
+        assertEquals("one|https://element-navigation.example/two|true|a|1|two|one|ul|1", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
     @Test
