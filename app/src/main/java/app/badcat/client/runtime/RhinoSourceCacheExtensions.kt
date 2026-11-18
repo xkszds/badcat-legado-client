@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
 class RhinoSourceCacheExtensions(
     private val sourceId: String,
     private val store: SourceScriptKeyValueStore,
+    private val fileStore: SourceScriptFileCacheStore = InMemorySourceScriptFileCacheStore,
     private val nowMillis: () -> Long = System::currentTimeMillis,
 ) {
     private val values = ConcurrentHashMap<String, Any>()
@@ -70,11 +71,47 @@ class RhinoSourceCacheExtensions(
         store.remove(sourceId, storageKey(key))
     }
 
+    fun putFile(key: String, value: String): String = putFile(key, value, 0L)
+
+    /** File cache is intended for larger source data; saveTime is measured in seconds. */
+    fun putFile(key: String, value: String, saveTime: Number): String {
+        requireValidKey(key)
+        require(value.toByteArray(Charsets.UTF_8).size <= MAX_FILE_VALUE_BYTES) {
+            "cache file value exceeds the size limit"
+        }
+        val seconds = saveTime.toLong()
+        require(seconds >= 0L && seconds <= MAX_TTL_SECONDS) { "cache file saveTime is outside the supported range" }
+        val expiresAt = if (seconds == 0L) 0L else nowMillis() + seconds * 1_000L
+        val entry = JsonObject().apply {
+            addProperty("value", value)
+            addProperty("expiresAt", expiresAt)
+        }
+        fileStore.put(sourceId, storageKey(key), entry.toString())
+        return value
+    }
+
+    fun getFile(key: String): String? {
+        requireValidKey(key)
+        val raw = fileStore.get(sourceId, storageKey(key)) ?: return null
+        val entry = runCatching { JsonParser.parseString(raw).asJsonObject }.getOrNull()
+            ?: run {
+                fileStore.remove(sourceId, storageKey(key))
+                return null
+            }
+        val expiresAt = entry.get("expiresAt")?.asLong ?: 0L
+        if (expiresAt > 0L && nowMillis() >= expiresAt) {
+            fileStore.remove(sourceId, storageKey(key))
+            return null
+        }
+        return entry.get("value")?.takeIf { it.isJsonPrimitive }?.asString
+    }
+
     /** Kept as a compatibility alias for callers that used the old in-memory API. */
     fun remove(key: String) = deleteMemory(key)
 
     fun clear() {
         values.clear()
+        fileStore.clearSource(sourceId)
     }
 
     private fun storageKey(key: String) = STORAGE_PREFIX + key
@@ -87,6 +124,7 @@ class RhinoSourceCacheExtensions(
         const val STORAGE_PREFIX = "__legado_cache__:"
         const val MAX_KEY_CHARS = 256
         const val MAX_VALUE_CHARS = 64 * 1024
+        const val MAX_FILE_VALUE_BYTES = 50 * 1024 * 1024
         const val MAX_TTL_SECONDS = 365L * 24L * 60L * 60L
     }
 }
