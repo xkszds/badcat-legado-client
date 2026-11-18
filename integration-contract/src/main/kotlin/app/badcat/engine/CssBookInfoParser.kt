@@ -69,6 +69,7 @@ class CssBookInfoParser {
 
         suspend fun field(name: String): EngineResult<String?> {
             val expression = rules[name]?.takeIf(String::isNotBlank) ?: return EngineResult.Success(null)
+            val directGet = LegadoPutRule.isDirectGet(expression)
             var trimmed = when (val put = LegadoPutRule.resolve(source, expression.trim(), document, scriptRuntime)) {
                 is EngineResult.Failure -> return put
                 is EngineResult.Success -> put.value
@@ -84,6 +85,7 @@ class CssBookInfoParser {
                     is EngineResult.Failure -> return expanded
                     is EngineResult.Success -> expanded.value
                 }
+            if (directGet) return EngineResult.Success(trimmed.trim().takeIf(String::isNotEmpty))
             if ((name == "coverUrl" || name == "tocUrl") && isLiteralUrlRule(trimmed)) {
                 return runCatching { EngineResult.Success(WebUrlResolver.resolve(response.finalUrl, trimmed)) }
                     .getOrElse { EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Book-info $name literal must resolve to a credential-free HTTP(S) URL", it) }
