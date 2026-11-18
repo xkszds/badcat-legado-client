@@ -1321,6 +1321,31 @@ text + re.test('aa}}')"""
     }
 
     @Test
+    fun ajaxTestAllUsesTimeoutAndMapsTransportErrorsToNegativeCallTime() = runBlocking {
+        val source = BookSource(
+            id = "ajax-test-all-source",
+            name = "AJAX test all",
+            baseUrl = "https://ajax-test-all.example/",
+        )
+        val receivedTimeouts = java.util.Collections.synchronizedList(mutableListOf<Long>())
+        val runtime = RhinoSourceScriptRuntime(
+            sourceHttpRequestWithTimeout = { _, _, _, url, _, _, timeout ->
+                receivedTimeouts += timeout
+                if (url.endsWith("/dns")) throw java.net.UnknownHostException("missing host")
+                app.badcat.engine.SourceHttpResponse(200, url, body = "ok", callTime = 12)
+            },
+        )
+        val result = runtime.evaluate(
+            source,
+            "var r = java.ajaxTestAll(['/ok', '/dns'], 1500, true); r.length + '|' + r[0].body() + '|' + r[0].callTime() + '|' + r[1].callTime()",
+            mapOf("baseUrl" to source.baseUrl),
+        )
+        assertEquals("2|ok|12|-3", (result as EngineResult.Success).value)
+        assertEquals(listOf(1500L, 1500L), receivedTimeouts.sorted())
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun connectCallTimeoutIsForwardedToTheTransport() = runBlocking {
         val source = BookSource(
             id = "connect-timeout-source",
