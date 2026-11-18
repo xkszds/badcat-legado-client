@@ -382,6 +382,34 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
     }
 
     @Test
+    fun deletedPhysicalArchiveFolderDoesNotResurrectVirtualManifest() {
+        val parent = java.nio.file.Files.createTempDirectory("source-archive-folder").toFile()
+        val root = java.io.File(parent, "cache").apply { mkdirs() }
+        try {
+            val archive = zipOf("chapter.txt", "archive chapter".toByteArray(Charsets.UTF_8))
+            val extensions = RhinoSafeSourceJavaExtensions(
+                sourceId = "https://physical-archive-folder.example/",
+                store = InMemorySourceScriptKeyValueStore,
+                fileRoot = root,
+                httpRequest = { _, url, _, _ ->
+                    SourceHttpResponse(statusCode = 200, finalUrl = url, body = "", bodyBytes = archive)
+                },
+            )
+            val archivePath = extensions.downloadFile("https://physical-archive-folder.example/book.zip")
+            val directory = extensions.unzipFile(archivePath)
+            val entryPath = "$directory/chapter.txt"
+
+            assertEquals("archive chapter", extensions.readTxtFile(entryPath))
+            assertTrue(extensions.getFile(directory).deleteRecursively())
+            assertFalse(extensions.getFile(directory).exists())
+            assertEquals("", extensions.getTxtInFolder(directory))
+            assertNull(extensions.readFile(entryPath))
+        } finally {
+            parent.deleteRecursively()
+        }
+    }
+
+    @Test
     fun physicalFileApiUsesConfinedCacheRootAndCleansExtractedFolder() {
         val root = java.nio.file.Files.createTempDirectory("legado-source-files").toFile()
         try {
