@@ -214,7 +214,14 @@ class CssSearchResultsParser {
                 is EngineResult.Failure -> return expanded
                 is EngineResult.Success -> expanded.value
             }
-            if (directGet) return EngineResult.Success(trimmed.trim().takeIf(String::isNotEmpty))
+            if (directGet) {
+                val value = trimmed.trim().takeIf(String::isNotEmpty) ?: return EngineResult.Success(null)
+                if (fieldName == "bookUrl" || fieldName == "coverUrl") {
+                    return runCatching { EngineResult.Success(WebUrlResolver.resolve(response.finalUrl, value)) }
+                        .getOrElse { unsupported(source, "$fieldName stored value must resolve to a credential-free HTTP(S) URL") }
+                }
+                return EngineResult.Success(value)
+            }
             if ((fieldName == "bookUrl" || fieldName == "coverUrl") && isLiteralUrlRule(trimmed)) {
                 return runCatching { EngineResult.Success(WebUrlResolver.resolve(response.finalUrl, trimmed)) }
                     .getOrElse { unsupported(source, "$fieldName literal must resolve to a credential-free HTTP(S) URL") }
