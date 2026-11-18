@@ -132,6 +132,18 @@ class RhinoSourceScriptRuntime(
                             }
                         }.getOrDefault("")
                     },
+                    ruleStringReaderWithContent = { rule, content ->
+                        runCatching {
+                            val document = SourceDocument(
+                                url = bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                                body = content,
+                            )
+                            when (val parsed = LegadoRuleExpressionDispatcher.evaluate(document, rule)) {
+                                is EngineResult.Failure -> ""
+                                is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(rule, parsed.value).orEmpty()
+                            }
+                        }.getOrDefault("")
+                    },
                     ruleStringListReader = { rule ->
                         runCatching {
                             val document = SourceDocument(
