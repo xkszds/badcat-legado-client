@@ -1332,13 +1332,13 @@ text + re.test('aa}}')"""
         )
         val result = runtime.evaluate(
             source,
-            "var response = java.connect('/failure'); response.code() + '|' + response.body().indexOf('connect network failed')",
+            "var response = java.connect('/failure'); response.code() + '|' + response.url() + '|' + response.body().indexOf('connect network failed')",
             mapOf("baseUrl" to source.baseUrl),
         )
 
         assertTrue("Legado connect should return an error response: $result", result is EngineResult.Success)
-        assertTrue((result as EngineResult.Success).value.startsWith("200|"))
-        assertTrue(result.value.substringAfter('|').toInt() >= 0)
+        assertTrue((result as EngineResult.Success).value.startsWith("200|http://localhost/|"))
+        assertTrue(result.value.substringAfterLast('|').toInt() >= 0)
         runtime.clearSourceState(source.id)
     }
 
