@@ -1,5 +1,6 @@
 package app.badcat.client.runtime
 
+import androidx.annotation.Keep
 import java.io.File
 import java.nio.charset.Charset
 
@@ -7,6 +8,7 @@ import java.nio.charset.Charset
  * Narrow Rhino-visible file facade. The backing java.io.File is never returned
  * to JavaScript because the Rhino class shutter deliberately blocks File.
  */
+@Keep
 class RhinoSourceFileHandle internal constructor(
     private val file: File,
     private val safeRoot: File,
