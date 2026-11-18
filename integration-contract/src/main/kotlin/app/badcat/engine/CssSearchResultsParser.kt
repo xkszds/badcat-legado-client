@@ -234,7 +234,14 @@ class CssSearchResultsParser {
                 if (selectorExpression.isBlank() || script.isBlank()) {
                     return unsupported(source, "JavaScript suffix for '$fieldName' requires a selector and script")
                 }
-                val selected = try {
+                val selected = if (withoutPut.contains("{{")) {
+                    // Some imported Legado sources build the JS input directly
+                    // from JSONPath template values, e.g.
+                    // "{{$.category_name}},{{$.status}}@js:...".
+                    // The template resolver above has already expanded these
+                    // values; treating the prefix as a CSS selector loses them.
+                    selectorExpression
+                } else try {
                     field(
                         source,
                         rules,
