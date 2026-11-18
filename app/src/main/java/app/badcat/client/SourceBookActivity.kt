@@ -51,6 +51,7 @@ class SourceBookActivity : Activity() {
     private lateinit var coverView: ImageView
     private lateinit var startReadingButton: Button
     private var pendingStartReading = false
+    private var bookLoading = false
     private var introExpanded = false
     private var currentCoverUrl: String? = null
     private var currentBookStatus: String? = null
@@ -250,6 +251,10 @@ class SourceBookActivity : Activity() {
     private fun dpBook(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun loadBook() {
+        if (bookLoading || isFinishing || isDestroyed) return
+        bookLoading = true
+        startReadingButton.isEnabled = false
+        startReadingButton.text = "正在加载目录…"
         worker.execute {
             val (detail, toc) = runBlocking {
                 coroutineScope {
@@ -269,6 +274,8 @@ class SourceBookActivity : Activity() {
                 }
             }
             mainHandler.post {
+                if (isFinishing || isDestroyed) return@post
+                bookLoading = false
                 when (detail) {
                     is EngineResult.Failure -> {
                         val fallbackIntro = candidateIntro?.takeIf { it.isNotBlank() }
@@ -302,10 +309,21 @@ class SourceBookActivity : Activity() {
                 when (toc) {
                     is EngineResult.Success -> showChapters(toc.value)
                     is EngineResult.Failure -> {
-                        startReadingButton.isEnabled = true
+                        // Do not leave a failed catalog in the "waiting to read" state.
+                        // If no chapters arrived, turn the primary action into an explicit retry.
+                        pendingStartReading = false
                         if (status.text.isNotBlank()) status.append("\n\n")
                         status.append("目录加载失败（${toc.code}）：${toc.message}")
                         detailMetadata.append("\n目录加载失败")
+                        if (allChapters.isEmpty()) {
+                            startReadingButton.text = "重试目录"
+                            startReadingButton.isEnabled = true
+                            startReadingButton.setOnClickListener { loadBook() }
+                        } else {
+                            startReadingButton.text = "开始阅读"
+                            startReadingButton.isEnabled = true
+                            startReadingButton.setOnClickListener { beginReadingOrQueue() }
+                        }
                     }
                 }
                 BadcatTheme.applyTree(this@SourceBookActivity, window.decorView)
@@ -385,7 +403,9 @@ class SourceBookActivity : Activity() {
 
     private fun showChapters(chapters: List<BookChapter>) {
         allChapters = chapters
+        startReadingButton.text = "开始阅读"
         startReadingButton.isEnabled = chapters.isNotEmpty()
+        startReadingButton.setOnClickListener { beginReadingOrQueue() }
         if (pendingStartReading && chapters.isNotEmpty()) {
             pendingStartReading = false
             openChapter(chapters.first())
