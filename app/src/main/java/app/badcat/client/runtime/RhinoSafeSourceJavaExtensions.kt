@@ -101,6 +101,12 @@ class RhinoSafeSourceJavaExtensions(
     /** Synchronous compatibility bridge; the host enforces transport bounds. */
     fun ajax(urlAndOptions: String): String = ajaxRequest(urlAndOptions)
 
+    /** Fetch a source-owned helper script; callers decide whether/how to evaluate its text. */
+    fun importScript(url: String): String = ajaxRequest(url)
+
+    /** Stable mobile WebView-compatible UA for rules that request the host UA. */
+    fun getWebViewUA(): String = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.0.0 Mobile Safari/537.36"
+
     /** Legado-compatible, source-scoped cookie lookup. */
     fun getCookie(tag: String): String = cookieReader(tag)
 
