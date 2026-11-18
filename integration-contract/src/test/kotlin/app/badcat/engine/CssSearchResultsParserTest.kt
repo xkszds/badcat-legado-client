@@ -366,6 +366,93 @@ class CssSearchResultsParserTest {
     }
 
     @Test
+    fun resolvesImportedKanmanJsonPathTemplatesAndStoredBookId() = runBlocking {
+        // Exact search-rule shapes from the supplied Nyasama "看漫画" source.
+        val source = source(
+            """{"bookList":"$.data.data||$.data","author":"$.cartoon_author_list_name||$.comic_author","bookUrl":"https://m.kanman.com/{{$.comic_id}}/","coverUrl":"https://image.yqmh.com/mh/{{$.comic_id}}.jpg-300x400.webp","intro":"$.cartoon_desc","lastChapter":"$.latest_cartoon_topic_name||$.last_chapter_name","name":"$.comic_name@put:{bid:$.comic_id}"}""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://m.kanman.com/api/serachcomic/?serachKey=%E6%B5%B7%E8%B4%BC%E7%8E%8B",
+            contentType = "application/json",
+            body = """{"data":[{"comic_id":107477,"comic_name":"某天成为王的女儿","comic_author":"童亦白","cartoon_desc":"测试漫画简介","latest_cartoon_topic_name":"第613话"}],"status":1,"msg":"success"}""",
+        )
+        val stored = mutableMapOf<String, String>()
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> = error("No JavaScript expected for Kanman search fields")
+
+            override suspend fun getString(source: BookSource, key: String): EngineResult<String?> =
+                EngineResult.Success(stored[key])
+
+            override suspend fun putString(source: BookSource, key: String, value: String): EngineResult<Unit> {
+                stored[key] = value
+                return EngineResult.Success(Unit)
+            }
+        }
+
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parseWithScripts(source, response, runtime, key = "海贼王"),
+        ).value
+        assertEquals(1, books.size)
+        assertEquals("某天成为王的女儿", books.single().name)
+        assertEquals("http://m.kanman.com/107477/", books.single().bookUrl)
+        assertEquals("https://image.yqmh.com/mh/107477.jpg-300x400.webp", books.single().coverUrl)
+        assertEquals("童亦白", books.single().author)
+        assertEquals("第613话", books.single().latestChapter)
+        assertEquals("107477", stored["bid"])
+    }
+
+    @Test
+    fun resolvesImportedMkzhanSingleBraceJsonPathAndJsCoverRule() = runBlocking {
+        // Exact search-rule shapes from the supplied Nyasama "漫客栈" API source.
+        val source = source(
+            """{"bookList":"$.data.list.*","author":"$.author_title@put:{author:$.author_title}","bookUrl":"https://comic.mkzhan.com/comic/info/?comic_id={$.comic_id}","coverUrl":"$.cover@js:result.replace(/\\.(jpg|JPG).*/g,\".$1!cover-400\")","lastChapter":"$.chapter_title","name":"$.title@put:{comic_id:$.comic_id}"}""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://comic.mkzhan.com/search/keyword/?keyword=test",
+            contentType = "application/json",
+            body = """{"data":{"list":[{"comic_id":987,"title":"测试漫画","author_title":"测试作者","cover":"https://cdn.example/987.jpg?x=1","chapter_title":"第10话"}]}}""",
+        )
+        val stored = mutableMapOf<String, String>()
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> {
+                assertEquals("""result.replace(/\\.(jpg|JPG).*/g,".$1!cover-400")""", script)
+                assertEquals("https://cdn.example/987.jpg?x=1", bindings["result"])
+                return EngineResult.Success("https://cdn.example/987.jpg!cover-400")
+            }
+
+            override suspend fun getString(source: BookSource, key: String): EngineResult<String?> =
+                EngineResult.Success(stored[key])
+
+            override suspend fun putString(source: BookSource, key: String, value: String): EngineResult<Unit> {
+                stored[key] = value
+                return EngineResult.Success(Unit)
+            }
+        }
+
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parseWithScripts(source, response, runtime, key = "test"),
+        ).value
+        assertEquals(1, books.size)
+        assertEquals("测试漫画", books.single().name)
+        assertEquals("https://comic.mkzhan.com/comic/info/?comic_id=987", books.single().bookUrl)
+        assertEquals("https://cdn.example/987.jpg!cover-400", books.single().coverUrl)
+        assertEquals("测试作者", books.single().author)
+        assertEquals("第10话", books.single().latestChapter)
+        assertEquals("987", stored["comic_id"])
+        assertEquals("测试作者", stored["author"])
+    }
+
+    @Test
     fun fallsBackFromInvalidRegexBranchesToCssSearchRules() {
         val source = source(
             """{"bookList":"@regex:a{2,1}||div.secondary","name":"@regex:a{2,1}||h2@text","bookUrl":"a@href"}""",
