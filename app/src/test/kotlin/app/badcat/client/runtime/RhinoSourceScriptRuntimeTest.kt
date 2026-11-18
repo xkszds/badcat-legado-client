@@ -573,7 +573,7 @@ class RhinoSourceScriptRuntimeTest {
         val html = """<ul><li>First</li><li>Second</li></ul>"""
         val result = runtime.evaluate(
             source,
-            "java.getStringList('ul li@text').toArray().map(function(v) { return String(v); }).join('|') + '|' + java.getElement('ul li.0').text() + '|' + java.getElement('ul li.1').toString()",
+            "java.getStringList('ul li@text').map(function(v) { return String(v); }).join('|') + '|' + java.getElement('ul li.0').text() + '|' + java.getElement('ul li.1').toString()",
             mapOf("result" to html, "baseUrl" to source.baseUrl),
         )
 
