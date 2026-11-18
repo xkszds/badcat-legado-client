@@ -51,7 +51,7 @@ class RhinoSourceScriptRuntimeTest {
         val secondResult = runtime.evaluate(second, "typeof sourceOnlyHelper")
 
         assertEquals("first", (firstResult as EngineResult.Success).value)
-        assertEquals("undefined", (secondResult as EngineResult.Success).value)
+        assertEquals("null", (secondResult as EngineResult.Success).value)
         runtime.clearSourceState(first.id)
         runtime.clearSourceState(second.id)
     }
