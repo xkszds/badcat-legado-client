@@ -241,6 +241,6 @@ object LegadoEmbeddedRuleTemplate {
     private const val MAX_VARIABLE_KEY_CHARS = 256
     private const val MAX_VARIABLE_VALUE_CHARS = 16 * 1024
     private val GET_PATTERN = Regex("@get:\\{([^}]+?)\\}", RegexOption.IGNORE_CASE)
-    private val DOUBLE_BRACE_JSON_PATH = Regex("""\\{\\{\\s*(\\$(?:\\.|\\[)[^{}]*?)\\s*\\}\\}""")
-    private val SINGLE_BRACE_JSON_PATH = Regex("""(?<!\\{)\\{\\s*(\\$(?:\\.|\\[)[^{}]*?)\\s*\\}(?!\\})""")
+    private val DOUBLE_BRACE_JSON_PATH = Regex("""\{\{\s*(\$(?:\.|\[)[^{}]*?)\s*\}\}""")
+    private val SINGLE_BRACE_JSON_PATH = Regex("""(?<!\{)\{\s*(\$(?:\.|\[)[^{}]*?)\s*\}(?!\})""")
 }
