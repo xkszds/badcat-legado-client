@@ -16,13 +16,20 @@ import java.nio.ByteBuffer
  * the native archive handle, including when decoding fails.
  */
 internal object SourceLibArchiveReader {
+    private const val MAX_ARCHIVE_HEADERS = 10_000
+    private const val MAX_HEADERS_PER_OUTPUT_ENTRY = 8L
+
     fun readEntry(input: InputStream, requestedPath: String, maxBytes: Int): ByteArray? {
         require(requestedPath.isNotBlank()) { "Archive entry path must not be blank" }
+        require(maxBytes > 0) { "Archive entry limit must be positive" }
         val archive = openArchive(input)
+        var headersRead = 0
         try {
             while (true) {
                 val entry = Archive.readNextHeader(archive)
                 if (entry == 0L) return null
+                headersRead++
+                require(headersRead <= MAX_ARCHIVE_HEADERS) { "Archive contains too many entries" }
                 val name = ArchiveEntry.pathnameUtf8(entry)
                     ?: ArchiveEntry.pathname(entry)?.toString(Charsets.UTF_8)
                     ?: continue
@@ -60,10 +67,15 @@ internal object SourceLibArchiveReader {
         val archive = openArchive(input)
         val extracted = linkedMapOf<String, ByteArray>()
         var total = 0L
+        var headersRead = 0
+        val maxHeaders = (maxEntries.toLong() * MAX_HEADERS_PER_OUTPUT_ENTRY)
+            .coerceAtMost(MAX_ARCHIVE_HEADERS.toLong()).toInt()
         try {
             while (true) {
                 val entry = Archive.readNextHeader(archive)
                 if (entry == 0L) break
+                headersRead++
+                require(headersRead <= maxHeaders) { "Archive contains too many entries" }
                 val name = ArchiveEntry.pathnameUtf8(entry)
                     ?: ArchiveEntry.pathname(entry)?.toString(Charsets.UTF_8)
                     ?: continue
