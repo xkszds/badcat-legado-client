@@ -153,4 +153,13 @@ class OkHttpSourceRequestClientTest {
         val from = "http://reader.example/book/1".toHttpUrl()
         assertTrue(isSafeRedirectTarget(from, "https://reader.example/book/1"))
     }
+    @Test
+    fun retriesTransientReadIoFailuresButNeverTlsDnsOrWrites() {
+        assertTrue(shouldRetryIOException("GET", java.net.SocketTimeoutException("read timed out")))
+        assertTrue(shouldRetryIOException("HEAD", java.io.EOFException("unexpected end of stream")))
+        assertTrue(shouldRetryIOException("GET", java.net.ProtocolException("unexpected end of stream")))
+        assertTrue(!shouldRetryIOException("GET", javax.net.ssl.SSLHandshakeException("certificate verify failed")))
+        assertTrue(!shouldRetryIOException("GET", java.net.UnknownHostException("missing host")))
+        assertTrue(!shouldRetryIOException("POST", java.net.SocketTimeoutException("write timed out")))
+    }
 }
