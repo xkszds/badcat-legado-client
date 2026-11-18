@@ -216,7 +216,7 @@ object LegadoRuleExpressionDispatcher {
         val raw = expression.trim()
         return raw.startsWith("@.") || raw.startsWith("@class.", ignoreCase = true) ||
             raw.startsWith("@tag.", ignoreCase = true) || raw.contains("@tag.", ignoreCase = true) ||
-            Regex("""[.!]-?\\d+(?=@|$)""").containsMatchIn(raw)
+            Regex("""[.!]-?\d+(?=@|$)""").containsMatchIn(raw)
     }
 
     private fun stripExtractionSuffix(expression: String): String {
