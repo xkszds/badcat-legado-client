@@ -174,14 +174,22 @@ class LegadoUrlResolverTest {
         listOf(
             "{{key/search",
             "search/{{key",
-            "search/}}",
-            "search?q=}}",
         ).forEach { rule ->
             val failure = assertIs<EngineResult.Failure>(
                 LegadoUrlResolver.resolve("https://example.com/", rule),
             )
             assertEquals(EngineErrorCode.UNSUPPORTED_RULE, failure.code)
         }
+    }
+
+    @Test
+    fun allowsLiteralClosingBracesInsideStaticPostBodies() {
+        val result = LegadoUrlResolver.resolve(
+            "https://example.com/",
+            """search, {"method":"POST","body":"literal }}"}""",
+        )
+        val resolved = assertIs<EngineResult.Success<LegadoResolvedUrl>>(result).value
+        assertEquals("literal }}", resolved.body)
     }
 
     @Test
