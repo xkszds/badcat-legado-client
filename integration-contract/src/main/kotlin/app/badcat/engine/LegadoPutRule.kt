@@ -49,6 +49,12 @@ object LegadoPutRule {
         ranges.asReversed().forEach { cleaned = cleaned.removeRange(it) }
         return EngineResult.Success(Parsed(cleaned.trim(), assignments))
     }
+    /** A sole @get token yields a stored value, not another selector expression. */
+    fun isDirectGet(expression: String): Boolean {
+        val parsed = parse(expression.trim())
+        return parsed is EngineResult.Success && GET_PATTERN.matches(parsed.value.expression.trim())
+    }
+
     suspend fun resolve(
         source: BookSource,
         expression: String,
