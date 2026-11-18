@@ -58,6 +58,30 @@ class LegadoRuleExpressionDispatcherTest {
         assertEquals(".w_txt li.4@textNodes", resolved.expression)
     }
 
+
+    @Test
+    fun evaluatesLegacyIndexedTextNodesInScalarRuleContext() {
+        val document = SourceDocument(
+            url = "https://reader.example/book/7",
+            body = """
+                <div class="w">
+                  <txt>
+                    <li>zero</li><li>one</li><li>two</li><li>three</li>
+                    <li>Novel title</li>
+                  </txt>
+                </div>
+            """.trimIndent(),
+        )
+        val result = LegadoRuleExpressionDispatcher.evaluate(
+            document,
+            "@.w txt li.4@textNodes",
+        )
+        assertEquals(
+            listOf("Novel title"),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
     @Test
     fun evaluatesLegacySingleAtIndexedTextNodesRuleAsCollectionRoot() {
         val document = SourceDocument(
