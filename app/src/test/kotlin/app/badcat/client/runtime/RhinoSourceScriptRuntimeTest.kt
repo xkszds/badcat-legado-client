@@ -329,7 +329,7 @@ text + re.test('aa}}')"""
             (result as EngineResult.Success).value,
         )
         val formatted = runtime.evaluate(source, "java.timeFormat('0')")
-        assertTrue((formatted as EngineResult.Success).value.matches(Regex("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")))
+        assertTrue((formatted as EngineResult.Success).value.matches(Regex("\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}")))
         runtime.clearSourceState(source.id)
     }
 
