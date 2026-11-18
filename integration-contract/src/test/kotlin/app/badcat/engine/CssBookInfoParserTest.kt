@@ -367,8 +367,8 @@ class CssBookInfoParserTest {
 
         assertEquals("Stored Novel", detail.name)
         assertEquals("Stored Writer", detail.author)
-        assertEquals("Stored Novel", values["n"])
-        assertEquals("Stored Writer", values["a"])
+        assertEquals("meta[property='book_name']@content", values["n"])
+        assertEquals("meta[property='author']@content", values["a"])
     }
 
 }
