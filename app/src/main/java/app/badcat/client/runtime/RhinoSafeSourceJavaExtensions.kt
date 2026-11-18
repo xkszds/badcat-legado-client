@@ -445,7 +445,13 @@ class RhinoSafeSourceJavaExtensions(
     fun getTxtInFolder(path: String): String {
         if (path.isEmpty()) return ""
         val directory = normalizeVirtualPath(path)
-        val physical = fileRoot?.let { runCatching { resolveFile(path) }.getOrNull() }
+        val physical = fileRoot?.let { resolveFile(path) }
+        if (fileRoot != null && physical?.isDirectory != true) {
+            // The physical tree is authoritative when configured. A deleted
+            // directory must not be reconstructed from its virtual manifest.
+            deleteVirtualTree(directory)
+            return ""
+        }
         if (physical?.isDirectory == true) {
             // File.isFile follows symlinks. The directory itself may be confined
             // while one of its children points outside the source cache, so
