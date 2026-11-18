@@ -400,7 +400,7 @@ class RhinoSafeSourceJavaExtensions(
     fun getTxtInFolder(path: String): String {
         if (path.isEmpty()) return ""
         val directory = normalizeVirtualPath(path)
-        val physical = fileRoot?.let { runCatching { getFile(path) }.getOrNull() }
+        val physical = fileRoot?.let { runCatching { resolveFile(path) }.getOrNull() }
         if (physical?.isDirectory == true) {
             val content = physical.listFiles()?.filter { it.isFile }?.joinToString("\n") { file ->
                 val bytes = file.readBytes()
@@ -565,14 +565,14 @@ class RhinoSafeSourceJavaExtensions(
             val key = DOWNLOAD_FILE_PREFIX + token
             val existedInStore = fileStore.getBytes(sourceId, key) != null
             if (existedInStore) fileStore.remove(sourceId, key)
-            val physical = fileRoot?.let { runCatching { getFile(path) }.getOrNull() }
+            val physical = fileRoot?.let { runCatching { resolveFile(path) }.getOrNull() }
             val existedOnDisk = physical?.exists() == true
             if (existedOnDisk) physical?.deleteRecursively()
             return existedInStore || existedOnDisk
         }
         val safePath = normalizeVirtualPath(path)
         val removedVirtual = deleteVirtualTree(safePath)
-        val physical = fileRoot?.let { runCatching { getFile(path) }.getOrNull() }
+        val physical = fileRoot?.let { runCatching { resolveFile(path) }.getOrNull() }
         val removedPhysical = physical?.exists() == true && physical.deleteRecursively()
         return removedVirtual || removedPhysical
     }
