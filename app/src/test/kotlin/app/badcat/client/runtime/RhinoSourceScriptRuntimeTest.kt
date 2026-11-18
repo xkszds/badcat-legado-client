@@ -113,6 +113,28 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun supportsLegacyIdentityEscapesInNonAsciiRegexLiterals() = runBlocking {
+        val source = BookSource(
+            id = "https://legacy-identity-regex.example/",
+            name = "Legacy identity regex compatibility",
+            baseUrl = "https://legacy-identity-regex.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val result = runtime.evaluate(
+            source,
+            """
+                var japaneseWord = 'いくabc}'.match(/\\いく.*?}/)[0];
+                var repeatedWord = 'く}}'.match(/\\く*?}}/)[0];
+                japaneseWord + '|' + repeatedWord;
+            """.trimIndent(),
+        )
+
+        assertTrue("ECMAScript identity escapes must execute in Rhino: $result", result is EngineResult.Success)
+        assertEquals("いくabc}|く}}", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun regexCompatibilityDoesNotRewriteStringsCommentsOrValidQuantifiers() {
         val script = """var text = '}}'; // }}
 var re = /a{2,3}}/;
