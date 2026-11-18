@@ -1560,6 +1560,25 @@ class RhinoSourceScriptRuntimeTest {
     }
 
 
+
+    @Test
+    fun supportsJavaScriptRegexWithUnescapedClosingBracesUsedByTemplates() = runBlocking {
+        val source = BookSource(
+            id = "https://regex-braces.example/",
+            name = "Regex brace compatibility",
+            baseUrl = "https://regex-braces.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val result = runtime.evaluate(
+            source,
+            """'a}}'.match(/\\.*?}}/)[0];""",
+        )
+
+        assertTrue("ECMAScript regex with literal closing braces failed: $result", result is EngineResult.Success)
+        assertEquals("}}", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
     @Test
     fun javaAjaxSupportsSearchFormRegexCaptureUsedByImportedSources() = runBlocking {
         val source = BookSource(
