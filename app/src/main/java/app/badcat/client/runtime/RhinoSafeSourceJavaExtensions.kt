@@ -321,6 +321,7 @@ class RhinoSafeSourceJavaExtensions(
             normalizedUrls.map { url ->
                 Callable {
                     val response = try {
+                        rateLimit(skipRateLimit)
                         httpRequestWithTimeout("GET", url, null, emptyMap(), timeout.toLong())
                     } catch (error: Exception) {
                         if (error is kotlin.coroutines.cancellation.CancellationException) throw error
