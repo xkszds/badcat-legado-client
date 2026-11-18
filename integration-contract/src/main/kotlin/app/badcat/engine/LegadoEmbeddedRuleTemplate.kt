@@ -15,6 +15,7 @@ object LegadoEmbeddedRuleTemplate {
         scriptRuntime: SourceScriptRuntime,
         key: String = "",
         page: Int = 1,
+        resolveJsonPathUrlTemplates: Boolean = true,
     ): EngineResult<String> {
         val evaluator = object : LegadoEmbeddedScriptEvaluator {
             override suspend fun evaluate(script: String, key: String, page: Int): EngineResult<Any?> =
@@ -49,7 +50,7 @@ object LegadoEmbeddedRuleTemplate {
             override suspend fun putString(key: String, value: String): EngineResult<Unit> =
                 scriptRuntime.putString(source, key, value)
         }
-        return resolve(template, key, page, result, evaluator, baseUrl)
+        return resolve(template, key, page, result, evaluator, baseUrl, resolveJsonPathUrlTemplates)
     }
 
     suspend fun resolve(
@@ -59,6 +60,7 @@ object LegadoEmbeddedRuleTemplate {
         result: String,
         evaluator: LegadoEmbeddedScriptEvaluator,
         baseUrl: String = "",
+        resolveJsonPathUrlTemplates: Boolean = true,
     ): EngineResult<String> {
         if (template.length > MAX_TEMPLATE_CHARS) {
             return EngineResult.Failure(
@@ -135,13 +137,17 @@ object LegadoEmbeddedRuleTemplate {
             override suspend fun putString(key: String, value: String): EngineResult<Unit> =
                 evaluator.putString(key, value)
         }
-        val urlTemplate = when (val resolved = resolveJsonPathPlaceholders(
-            template = expandedTemplate,
-            result = result,
-            baseUrl = baseUrl,
-        )) {
-            is EngineResult.Failure -> return resolved
-            is EngineResult.Success -> resolved.value
+        val urlTemplate = if (resolveJsonPathUrlTemplates) {
+            when (val resolved = resolveJsonPathPlaceholders(
+                template = expandedTemplate,
+                result = result,
+                baseUrl = baseUrl,
+            )) {
+                is EngineResult.Failure -> return resolved
+                is EngineResult.Success -> resolved.value
+            }
+        } else {
+            expandedTemplate
         }
         return LegadoEmbeddedUrlTemplate.resolve(
             template = urlTemplate,
