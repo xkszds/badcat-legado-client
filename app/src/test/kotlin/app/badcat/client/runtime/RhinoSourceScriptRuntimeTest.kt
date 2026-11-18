@@ -1187,4 +1187,25 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(source.id)
     }
 
+    @Test
+    fun resolvesRelativeUrlsThroughLegadoToUrlBaseOverload() = runBlocking {
+        val source = BookSource(
+            id = "https://to-url-overload.example/",
+            name = "toURL base overload",
+            baseUrl = "https://to-url-overload.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val result = runtime.evaluate(
+            source,
+            "var u = java.toURL('../chapter/2?x=1', 'https://reader.example/book/1'); " +
+                "u.getProtocol() + '|' + u.getHost() + '|' + u.getPath() + '|' + u.getQuery()",
+        )
+        assertTrue("Legado java.toURL(url, baseUrl) failed: $result", result is EngineResult.Success)
+        assertEquals(
+            "https|reader.example|/chapter/2|x=1",
+            (result as EngineResult.Success).value,
+        )
+        runtime.clearSourceState(source.id)
+    }
+
 }
