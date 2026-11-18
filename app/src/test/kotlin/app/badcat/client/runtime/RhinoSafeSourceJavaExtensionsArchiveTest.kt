@@ -191,6 +191,42 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
     }
 
     @Test
+    fun deletingPhysicalDownloadInvalidatesCacheFileAndTriggersRedownload() {
+        val parent = java.nio.file.Files.createTempDirectory("source-download-cache").toFile()
+        val root = java.io.File(parent, "cache").apply { mkdirs() }
+        var requests = 0
+        try {
+            val extensions = RhinoSafeSourceJavaExtensions(
+                sourceId = "https://physical-cache.example/",
+                store = InMemorySourceScriptKeyValueStore,
+                fileRoot = root,
+                httpRequest = { _, url, _, _ ->
+                    requests++
+                    val body = "version-$requests"
+                    SourceHttpResponse(
+                        statusCode = 200,
+                        finalUrl = url,
+                        body = body,
+                        bodyBytes = body.toByteArray(Charsets.UTF_8),
+                    )
+                },
+            )
+            val url = "https://physical-cache.example/helper.js"
+            val first = extensions.cacheFile(url)
+            assertEquals("version-1", first)
+            val cachedPath = extensions.cacheFile(url).let { extensions.cacheFile(url); "ignored" }
+            assertEquals("version-1", cachedPath.takeIf { it == "version-1" })
+            assertTrue(extensions.getFile(extensions.downloadFile(url)).exists())
+            val downloadedPath = extensions.downloadFile(url)
+            assertTrue(extensions.getFile(downloadedPath).delete())
+            assertEquals("version-4", extensions.cacheFile(url))
+            assertEquals(4, requests)
+        } finally {
+            parent.deleteRecursively()
+        }
+    }
+
+    @Test
     fun rarAndSevenZipHelpersPreserveUrlHexAndCharsetContracts() {
         val sourceId = "https://libarchive-fixture.example/"
         val archive = "archive bytes".toByteArray()
