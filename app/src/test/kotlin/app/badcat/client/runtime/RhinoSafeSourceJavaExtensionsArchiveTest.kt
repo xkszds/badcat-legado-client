@@ -185,12 +185,17 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
     fun physicalFileApiUsesConfinedCacheRootAndCleansExtractedFolder() {
         val root = java.nio.file.Files.createTempDirectory("legado-source-files").toFile()
         try {
+            val archive = zipOf("chapter.txt", "真实解压文件".toByteArray(Charsets.UTF_8))
             val extensions = RhinoSafeSourceJavaExtensions(
                 sourceId = "physical-file-source",
                 store = InMemorySourceScriptKeyValueStore,
                 fileRoot = root,
                 httpRequest = { _, url, _, _ ->
-                    SourceHttpResponse(statusCode = 200, finalUrl = url, body = "physical bytes")
+                    if (url.endsWith(".zip")) {
+                        SourceHttpResponse(statusCode = 200, finalUrl = url, body = "", bodyBytes = archive)
+                    } else {
+                        SourceHttpResponse(statusCode = 200, finalUrl = url, body = "physical bytes")
+                    }
                 },
             )
             val path = extensions.downloadFile("https://physical-file.example/book.txt")
@@ -200,11 +205,13 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
             assertEquals("physical bytes", extensions.readTxtFile(path))
             assertTrue(runCatching { extensions.getFile("../../outside.txt") }.exceptionOrNull() is SecurityException)
 
-            val folder = java.io.File(root, "ArchiveTemp/fixture")
-            assertTrue(folder.mkdirs())
-            java.io.File(folder, "chapter.txt").writeText("真实文件目录")
-            assertEquals("真实文件目录", extensions.getTxtInFolder("ArchiveTemp/fixture"))
-            assertFalse(folder.exists())
+            val archivePath = extensions.downloadFile("https://physical-file.example/book.zip")
+            val extractedFolder = extensions.unzipFile(archivePath)
+            val extractedFile = extensions.getFile("$extractedFolder/chapter.txt")
+            assertTrue(extractedFile.isFile)
+            assertEquals("真实解压文件", extensions.readTxtFile("$extractedFolder/chapter.txt"))
+            assertEquals("真实解压文件", extensions.getTxtInFolder(extractedFolder))
+            assertFalse(extensions.getFile(extractedFolder).exists())
             assertTrue(extensions.deleteFile(path))
             assertFalse(file.exists())
         } finally {
