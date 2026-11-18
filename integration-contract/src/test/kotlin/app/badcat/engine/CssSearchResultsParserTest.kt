@@ -613,7 +613,7 @@ class CssSearchResultsParserTest {
         }
 
         val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
-            CssSearchResultsParser().parseWithScripts(source, response, runtime),
+            CssSearchResultsParser().parseWithScripts(source, response, runtime), "Search @put result: $result",
         ).value
 
         assertEquals("book-73", values["bid"])
