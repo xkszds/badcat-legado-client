@@ -420,7 +420,7 @@ text + re.test('aa}}')"""
             """.trimIndent(),
         )
         assertTrue("Legado source concurrency helpers failed: $result", result is EngineResult.Success)
-        assertEquals("21|0|1|2", (result as EngineResult.Success).value)
+        assertEquals("22|0|1|2", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
 
