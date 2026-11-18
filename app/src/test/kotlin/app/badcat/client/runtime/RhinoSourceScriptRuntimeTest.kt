@@ -655,6 +655,34 @@ class RhinoSourceScriptRuntimeTest {
 
 
     @Test
+    fun returnsBoundedJavaScriptAndLegadoElementArraysAsHtmlFragments() = runBlocking {
+        val source = BookSource(
+            id = "https://array-results.example/",
+            name = "Array results",
+            baseUrl = "https://array-results.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val html = "<ul><li>First</li><li>Second</li></ul>"
+        val elements = runtime.evaluate(
+            source,
+            "java.getElements('ul li')",
+            mapOf("result" to html, "baseUrl" to source.baseUrl),
+        )
+        val elementHtml = (elements as EngineResult.Success).value
+        assertTrue(elementHtml.contains("<li>First</li>"))
+        assertTrue(elementHtml.contains("<li>Second</li>"))
+
+        val nativeArray = runtime.evaluate(
+            source,
+            "['<li>Alpha</li>', '<li>Beta</li>']",
+        )
+        val arrayHtml = (nativeArray as EngineResult.Success).value
+        assertTrue(arrayHtml.contains("<li>Alpha</li>"))
+        assertTrue(arrayHtml.contains("<li>Beta</li>"))
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun supportsLegadoAesBase64AndSymmetricCryptoHelpers() = runBlocking {
         val runtime = RhinoSourceScriptRuntime()
         val source = BookSource(
