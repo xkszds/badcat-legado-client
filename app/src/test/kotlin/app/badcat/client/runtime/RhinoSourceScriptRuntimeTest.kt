@@ -1321,6 +1321,22 @@ text + re.test('aa}}')"""
     }
 
     @Test
+    fun ajaxReturnsLegadoStackTraceStringWhenTransportFails() = runBlocking {
+        val source = BookSource(
+            id = "ajax-error-source",
+            name = "AJAX error source",
+            baseUrl = "https://ajax-error.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime(
+            sourceAjax = { _, _, _ -> throw IllegalStateException("network failed") },
+        )
+        val result = runtime.evaluate(source, "java.ajax('/failure')", mapOf("baseUrl" to source.baseUrl))
+
+        assertTrue("Legado ajax should return an error string: $result", result is EngineResult.Success)
+        assertTrue((result as EngineResult.Success).value.contains("network failed"))
+    }
+
+    @Test
     fun ajaxAllUsesBoundedParallelRequestsAndPreservesInputOrder() = runBlocking {
         val active = AtomicInteger(0)
         val peak = AtomicInteger(0)
