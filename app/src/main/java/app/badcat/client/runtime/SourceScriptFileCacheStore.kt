@@ -49,17 +49,29 @@ class FileSourceScriptCacheStore(context: Context) : SourceScriptFileCacheStore 
     private val directory = File(context.applicationContext.cacheDir, CACHE_DIRECTORY).apply { mkdirs() }
 
     @Synchronized
-    override fun get(sourceId: String, key: String): String? {
-        val target = AtomicFile(cacheFile(sourceId, key))
-        if (!target.baseFile.isFile || target.baseFile.length() > MAX_CACHE_BYTES) return null
-        return getBytes(sourceId, key)?.let { String(it, Charsets.UTF_8) }
-    }
+    override fun get(sourceId: String, key: String): String? =
+        getBytes(sourceId, key)?.let { String(it, Charsets.UTF_8) }
 
     @Synchronized
     override fun getBytes(sourceId: String, key: String): ByteArray? {
         val target = AtomicFile(cacheFile(sourceId, key))
-        if (!target.baseFile.isFile || target.baseFile.length() > MAX_CACHE_BYTES) return null
-        return runCatching { target.openRead().use { it.readBytes() } }.getOrNull()
+        return runCatching {
+            // openRead performs AtomicFile backup recovery; checking baseFile first
+            // would incorrectly hide a valid .bak after an interrupted write.
+            target.openRead().use { input ->
+                val output = java.io.ByteArrayOutputStream()
+                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                var total = 0
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    total += count
+                    if (total > MAX_CACHE_BYTES) return null
+                    output.write(buffer, 0, count)
+                }
+                output.toByteArray()
+            }
+        }.getOrNull()
     }
 
     @Synchronized
