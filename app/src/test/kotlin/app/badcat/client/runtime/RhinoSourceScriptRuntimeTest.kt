@@ -304,7 +304,7 @@ class RhinoSourceScriptRuntimeTest {
             source,
             "java.htmlFormat('<div>Hello&nbsp;<b>world</b></div><p>Second</p><img data-src=\\\"/cover.jpg\\\">', 'https://reader.example/book/1')",
         )
-        assertTrue(result is EngineResult.Success, "Legado htmlFormat failed: $result")
+        assertTrue("Legado htmlFormat failed: $result", result is EngineResult.Success)
         val formatted = (result as EngineResult.Success).value
         assertTrue(formatted.contains("Hello world"))
         assertTrue(formatted.contains("Second"))
