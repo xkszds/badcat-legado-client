@@ -99,7 +99,7 @@ class LegadoSourceElement(
                     baseUri = baseUri,
                     selectionContext = items,
                     selectionIndex = index,
-                    selectionParents = parentHtml?.let { List(items.size) { it } },
+                    selectionParents = parentHtml?.let { parent -> List(items.size) { parent } },
                     selectionAncestors = parentHtml?.let { parent ->
                         val chain = listOf(parent) + ancestors
                         List(items.size) { chain }
