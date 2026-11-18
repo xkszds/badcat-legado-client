@@ -515,11 +515,10 @@ class RhinoSafeSourceJavaExtensions(
         var encoder = if (urlSafe) Base64.getUrlEncoder() else Base64.getEncoder()
         if (flags and BASE64_NO_PADDING != 0) encoder = encoder.withoutPadding()
         if (flags and BASE64_NO_WRAP != 0) return encoder.encodeToString(value)
-        val lineSeparator = if (flags and BASE64_CRLF != 0) byteArrayOf(13, 10) else byteArrayOf(10)
-        val wrapped = (if (urlSafe) Base64.getUrlEncoder() else Base64.getEncoder())
-            .let { if (flags and BASE64_NO_PADDING != 0) it.withoutPadding() else it }
-            .let { Base64.getMimeEncoder(76, lineSeparator).encodeToString(value) }
-        return if (wrapped.isEmpty()) wrapped else wrapped + String(lineSeparator, Charsets.US_ASCII)
+        val encoded = encoder.encodeToString(value)
+        if (encoded.isEmpty()) return encoded
+        val lineSeparator = if (flags and BASE64_CRLF != 0) "\\r\\n" else "\\n"
+        return encoded.chunked(76).joinToString(lineSeparator) + lineSeparator
     }
 
     private fun decodeBase64(value: String, flags: Int): ByteArray {
