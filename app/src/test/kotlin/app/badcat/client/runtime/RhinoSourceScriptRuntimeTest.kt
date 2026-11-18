@@ -957,7 +957,34 @@ text + re.test('aa}}')"""
         )
 
         assertTrue("Legado symmetric encrypt helpers failed: $result", result is EngineResult.Success)
-        assertEquals("Legado crypto roundtrip|Legado crypto roundtrip|true|true", (result as EngineResult.Success).value)
+        assertEquals("Legado crypto roundtrip|Legado crypto roundtrip|true|true", (result as EngineResult.Success).value, "Unexpected crypto roundtrip result: $result")
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
+    fun supportsLegadoToNumChapterNumberNormalization() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val source = BookSource(
+            id = "https://to-num-chapter.example/",
+            name = "toNumChapter compatibility",
+            baseUrl = "https://to-num-chapter.example/",
+        )
+        val result = runtime.evaluate(
+            source,
+            """
+                [
+                    java.toNumChapter('第12章'),
+                    java.toNumChapter('第１２章'),
+                    java.toNumChapter('第一千零二十五章'),
+                    java.toNumChapter('第两百三十章'),
+                    java.toNumChapter('序章'),
+                    java.toNumChapter(null)
+                ].join('|');
+            """.trimIndent(),
+        )
+
+        assertTrue("Legado toNumChapter failed: $result", result is EngineResult.Success)
+        assertEquals("第12章|第12章|第1025章|第230章|序章|", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
 

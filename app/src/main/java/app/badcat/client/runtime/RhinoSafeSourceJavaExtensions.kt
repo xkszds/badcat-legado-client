@@ -469,6 +469,16 @@ class RhinoSafeSourceJavaExtensions(
     fun createSymmetricCrypto(transformation: String, key: String, iv: String): RhinoLegadoSymmetricCrypto =
         RhinoLegadoSymmetricCrypto(transformation, utf8Encode(key), utf8Encode(iv))
 
+    /** Legado's chapter-title number normalization, matching StringUtils.stringToInt. */
+    fun toNumChapter(source: String?): String? {
+        if (source.isNullOrEmpty()) return source
+        val match = LEGADO_TITLE_NUMBER_PATTERN.find(source) ?: return source
+        val number = match.groupValues[2]
+        val normalized = fullWidthToHalf(number).replace("\\s+".toRegex(), "")
+        val parsed = normalized.toIntOrNull() ?: legadoChineseNumberToInt(normalized)
+        return source.replaceRange(match.range, "${match.groupValues[1]}${parsed}${match.groupValues[3]}")
+    }
+
     fun toURL(value: String): RhinoLegadoUrl = RhinoLegadoUrl(value)
 
     /** Resolve a relative URL against an explicit HTTP(S) base, matching Legado's two-argument helper. */
@@ -663,6 +673,63 @@ class RhinoLegadoUrl(value: String) {
     fun getPath(): String = parsed.path
     fun getProtocol(): String = parsed.protocol
     fun getQuery(): String? = parsed.query
+}
+
+private val LEGADO_TITLE_NUMBER_PATTERN = Regex("(第)(.+?)(章)")
+
+private fun fullWidthToHalf(value: String): String = buildString(value.length) {
+    value.forEach { char ->
+        append(when (char.code) {
+            12288 -> ' '
+            in 65281..65374 -> (char.code - 65248).toChar()
+            else -> char
+        })
+    }
+}
+
+private fun legadoChineseNumberToInt(value: String): Int {
+    val numbers = mapOf(
+        '零' to 0, '一' to 1, '二' to 2, '三' to 3, '四' to 4, '五' to 5,
+        '六' to 6, '七' to 7, '八' to 8, '九' to 9, '十' to 10,
+        '〇' to 0, '壹' to 1, '贰' to 2, '叁' to 3, '肆' to 4, '伍' to 5,
+        '陆' to 6, '柒' to 7, '捌' to 8, '玖' to 9, '拾' to 10,
+        '两' to 2, '百' to 100, '佰' to 100, '千' to 1000, '仟' to 1000,
+        '万' to 10000, '亿' to 100000000,
+    )
+    var result = 0
+    var temporary = 0
+    var billion = 0
+    return runCatching {
+        value.forEachIndexed { index, char ->
+            val number = numbers[char] ?: error("Unsupported Chinese numeral")
+            when (number) {
+                100000000 -> {
+                    result += temporary
+                    result *= number
+                    billion = billion * 100000000 + result
+                    result = 0
+                    temporary = 0
+                }
+                10000 -> {
+                    result += temporary
+                    result *= number
+                    temporary = 0
+                }
+                in 10..9999 -> {
+                    if (temporary == 0) temporary = 1
+                    result += number * temporary
+                    temporary = 0
+                }
+                else -> {
+                    temporary = if (index >= 2 && index == value.lastIndex &&
+                        (numbers[value[index - 1]] ?: 0) > 10
+                    ) number * (numbers[value[index - 1]] ?: 0) / 10
+                    else temporary * 10 + number
+                }
+            }
+        }
+        result + temporary + billion
+    }.getOrDefault(-1)
 }
 
 /** Allow-listed AES-CBC helper matching the common Legado crypto extension. */
