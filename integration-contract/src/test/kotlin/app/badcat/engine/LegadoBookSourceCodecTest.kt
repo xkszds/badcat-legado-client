@@ -59,6 +59,7 @@ class LegadoBookSourceCodecTest {
               "ruleToc": {"chapterList": "a.chapter"},
               "ruleContent": {"content": "#content"},
               "mainJs": "function search() { return []; }",
+              "concurrentRate": "2/500",
               "futureField": {"keep": true}
             }
         """.trimIndent()
@@ -73,6 +74,8 @@ class LegadoBookSourceCodecTest {
         assertEquals(source.name, engineSource.name)
         assertEquals(source.group, engineSource.group)
         assertEquals(source.rawJson, engineSource.rawJson)
+        assertEquals("2/500", source.concurrentRate)
+        assertEquals("2/500", engineSource.concurrentRate)
         assertFalse(engineSource.enabledExplore)
         assertEquals(true, engineSource.enabledCookieJar)
         assertEquals("https://reader.example/search?q={{key}}", engineSource.searchUrl)
