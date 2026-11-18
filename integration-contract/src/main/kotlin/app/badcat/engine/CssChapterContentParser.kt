@@ -26,7 +26,10 @@ class CssChapterContentParser {
         val document = SourceDocument(response.finalUrl, response.body, response.contentType, page = page)
 
         suspend fun evaluateField(key: String, expression: String): EngineResult<String?> {
-            var trimmed = expression.trim()
+            var trimmed = when (val put = LegadoPutRule.resolve(source, expression.trim(), document, scriptRuntime)) {
+                is EngineResult.Failure -> return put
+                is EngineResult.Success -> put.value
+            }
             trimmed = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
                     source = source,
                     template = trimmed,
