@@ -499,8 +499,12 @@ class RhinoSafeSourceJavaExtensions(
         return removed
     }
 
+    // Pinned Legado uses MD5Utils.md5Encode16(url), i.e. the middle 16
+    // hexadecimal characters of the MD5 digest, for its deterministic cache name.
     private fun downloadTokenForUrl(url: String): String =
-        UUID.nameUUIDFromBytes(("$sourceId\\n$url").toByteArray(Charsets.UTF_8)).toString()
+        MessageDigest.getInstance("MD5").digest(url.toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+            .substring(8, 24)
 
     private fun downloadExtension(url: String): String {
         val parsed = runCatching { URL(url) }.getOrNull()
@@ -514,7 +518,7 @@ class RhinoSafeSourceJavaExtensions(
     }
 
     private fun downloadToken(path: String): String {
-        require(path.matches(Regex("^downloads/[0-9a-fA-F-]{36}(?:\\.[A-Za-z0-9]{1,10})?$"))) {
+        require(path.matches(Regex("^downloads/[0-9a-fA-F]{16}(?:\\.[A-Za-z0-9]{1,10})?$"))) {
             "Invalid or unsafe Legado download path"
         }
         return path.removePrefix("downloads/").substringBeforeLast(".")
