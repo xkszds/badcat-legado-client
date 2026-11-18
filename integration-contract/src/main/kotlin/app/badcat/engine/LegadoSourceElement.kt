@@ -14,7 +14,9 @@ class LegadoSourceElement(private val fragments: List<String>) {
         val result = Elements()
         fragments.forEach { fragment ->
             val body = Jsoup.parseBodyFragment(fragment).body()
-            if (body.children().isEmpty()) result.add(body) else result.addAll(body.children())
+            if (body.children().isEmpty()) {
+                if (body.html().isNotBlank()) result.add(body)
+            } else result.addAll(body.children())
         }
         return result
     }
