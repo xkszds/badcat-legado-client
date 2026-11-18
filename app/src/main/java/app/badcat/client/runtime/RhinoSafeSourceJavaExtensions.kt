@@ -243,7 +243,7 @@ class RhinoSafeSourceJavaExtensions(
             // "data-src" or "data-original".
             val rawUrl = listOf("data-original", "data-src", "data-lazy-src", "src")
                 .firstNotNullOfOrNull { attribute ->
-                    Regex("""(?i)(?:^|\\s)${Regex.escape(attribute)}\\s*=\\s*["']([^"']+)["']""")
+                    Regex("""(?i)(?:^|\s)${Regex.escape(attribute)}\s*=\s*["']([^"']+)["']""")
                         .find(match.value)?.groupValues?.getOrNull(1)?.trim()
                         ?.takeIf(String::isNotBlank)
                 }.orEmpty()
