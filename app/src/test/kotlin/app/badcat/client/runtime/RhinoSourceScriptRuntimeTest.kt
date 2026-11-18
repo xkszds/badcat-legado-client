@@ -400,6 +400,32 @@ text + re.test('aa}}')"""
     }
 
     @Test
+    fun supportsLegadoStringByteAndHexOverloads() = runBlocking {
+        val source = BookSource(
+            id = "https://encoding-overloads.example/",
+            name = "Encoding overloads",
+            baseUrl = "https://encoding-overloads.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val result = runtime.evaluate(
+            source,
+            """
+                [
+                    java.bytesToStr(java.strToBytes('你好', 'UTF-8'), 'UTF-8'),
+                    java.hexEncodeToString('Legado'),
+                    java.hexDecodeToString('4c656761646f'),
+                    java.hexDecodeToString('4c 65'),
+                    java.base64DecodeToByteArray(null) === null ? 'null' : 'not-null',
+                    java.base64DecodeToByteArray('SGVsbG8=')[0]
+                ].join('|');
+            """.trimIndent(),
+        )
+        assertTrue("Legado encoding overloads failed: $result", result is EngineResult.Success)
+        assertEquals("你好|4c656761646f|Legado|null|72", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun supportsLegadoJsUrlPropertiesAndRelativeResolution() = runBlocking {
         val source = BookSource(
             id = "https://js-url.example/",

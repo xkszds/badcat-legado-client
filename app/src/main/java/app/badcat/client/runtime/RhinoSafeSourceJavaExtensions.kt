@@ -297,13 +297,16 @@ class RhinoSafeSourceJavaExtensions(
     fun timeFormatUTC(timestamp: String, format: String, offsetMillis: Int): String =
         timestamp.toLongOrNull()?.let { timeFormatUTC(it, format, offsetMillis) }.orEmpty()
 
+    /** Mirrors Hutool HexUtil.decodeHex: whitespace is not silently trimmed. */
     fun hexDecodeToByteArray(hex: String): ByteArray? {
-        val value = hex.trim()
-        if (value.length % 2 != 0 || value.any { it.digitToIntOrNull(16) == null }) return null
-        return ByteArray(value.length / 2) { index ->
-            ((value[index * 2].digitToInt(16) shl 4) or value[index * 2 + 1].digitToInt(16)).toByte()
+        if (hex.length % 2 != 0 || hex.any { it.digitToIntOrNull(16) == null }) return null
+        return ByteArray(hex.length / 2) { index ->
+            ((hex[index * 2].digitToInt(16) shl 4) or hex[index * 2 + 1].digitToInt(16)).toByte()
         }
     }
+
+    fun hexDecodeToString(hex: String): String? =
+        hexDecodeToByteArray(hex)?.let { String(it, Charsets.UTF_8) }
 
     fun hexEncodeToString(value: String): String =
         value.toByteArray(Charsets.UTF_8).joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
@@ -450,24 +453,21 @@ class RhinoSafeSourceJavaExtensions(
 
     fun base64DecodeToString(value: String): String = base64Decode(value)
 
-    fun base64DecodeToByteArray(value: String): ByteArray = base64DecodeBytes(value)
+    fun base64DecodeToByteArray(value: String?): ByteArray? =
+        value?.takeIf(String::isNotBlank)?.let { decodeBase64(it, BASE64_DEFAULT) }
 
     fun base64DecodeToByteArray(value: String?, flags: Int): ByteArray? =
         value?.takeIf(String::isNotBlank)?.let { decodeBase64(it, flags) }
 
-    fun bytesToStr(value: ByteArray): String = utf8Decode(value)
+    fun bytesToStr(value: ByteArray): String = bytesToStr(value, Charsets.UTF_8.name())
 
-    fun hexDecodeToString(value: String): String {
-        require(value.length <= MAX_AES_INPUT_BYTES * 2 && value.length % 2 == 0) {
-            "Hex input must contain an even number of bounded characters"
-        }
-        val bytes = ByteArray(value.length / 2) { index ->
-            value.substring(index * 2, index * 2 + 2).toInt(16).toByte()
-        }
-        return utf8Decode(bytes)
-    }
+    fun bytesToStr(value: ByteArray, charset: String): String =
+        String(value, java.nio.charset.Charset.forName(charset))
 
-    fun strToBytes(value: String): ByteArray = utf8Encode(value)
+    fun strToBytes(value: String): ByteArray = strToBytes(value, Charsets.UTF_8.name())
+
+    fun strToBytes(value: String, charset: String): ByteArray =
+        value.toByteArray(java.nio.charset.Charset.forName(charset))
 
     fun aesBase64DecodeToString(value: String, key: String, transformation: String, iv: String): String =
         createSymmetricCrypto(transformation, utf8Encode(key), utf8Encode(iv))
