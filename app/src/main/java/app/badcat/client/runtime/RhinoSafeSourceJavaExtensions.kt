@@ -279,13 +279,13 @@ class RhinoSafeSourceJavaExtensions(
         ) return null
         val parts = path.replace('\\', '/').split('/')
         if (parts.any { it.isBlank() || it == "." || it == ".." }) return null
-        if (parts.any { part -> part.any { it.code < 0x20 || it == '\\u0000' } }) return null
+        if (parts.any { part -> part.any { it.code < 0x20 || it == '\u0000' } }) return null
         return parts.joinToString("/")
     }
 
     private fun normalizeVirtualPath(path: String): String {
         require(path.isNotBlank() && path.length <= MAX_ARCHIVE_PATH_CHARS)
-        val normalized = path.replace('\\\\', '/').trimStart('/')
+        val normalized = path.replace('\\', '/').trimStart('/')
         require(normalized.split('/').none { it.isBlank() || it == "." || it == ".." }) {
             "Invalid source file path"
         }
@@ -307,15 +307,15 @@ class RhinoSafeSourceJavaExtensions(
 
     private fun appendDirectoryChild(directory: String, child: String) {
         val key = VIRTUAL_DIR_PREFIX + directory
-        val existing = fileStore.get(sourceId, key)?.split('\\n')?.filter(String::isNotEmpty).orEmpty()
-        if (child !in existing) fileStore.put(sourceId, key, (existing + child).joinToString("\\n"))
+            ?.split("\n")?.filter(String::isNotEmpty).orEmpty()
+        if (child !in existing) fileStore.put(sourceId, key, (existing + child).joinToString("\n"))
     }
 
     fun getTxtInFolder(path: String): String {
         if (path.isEmpty()) return ""
         val directory = normalizeVirtualPath(path)
         val children = fileStore.get(sourceId, VIRTUAL_DIR_PREFIX + directory)
-            ?.split('\\n')?.filter(String::isNotEmpty).orEmpty()
+            ?.split("\n")?.filter(String::isNotEmpty).orEmpty()
         return children.mapNotNull { child ->
             val bytes = fileStore.getBytes(sourceId, virtualFileKey("$directory/$child"))
             bytes?.let { String(it, detectTextCharset(it)) }
