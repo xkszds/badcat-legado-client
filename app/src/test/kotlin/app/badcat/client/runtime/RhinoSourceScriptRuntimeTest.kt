@@ -830,4 +830,22 @@ class RhinoSourceScriptRuntimeTest {
         assertEquals("one|https://element-navigation.example/two|true|a|1", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
+    @Test
+    fun allowsNormalSourceAjaxLatencyWithinTheBoundedScriptTimeout() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime(
+            sourceAjax = { _, _, _ ->
+                Thread.sleep(1_800)
+                "slow but successful response"
+            },
+        )
+        val source = BookSource(
+            id = "https://slow-ajax.example/",
+            name = "Slow ajax",
+            baseUrl = "https://slow-ajax.example/",
+        )
+        val result = runtime.evaluate(source, "java.ajax('/slow')", mapOf("baseUrl" to source.baseUrl))
+        assertTrue(result is EngineResult.Success, "Normal source HTTP latency should not exceed the JS execution budget: $result")
+        assertEquals("slow but successful response", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
 }
