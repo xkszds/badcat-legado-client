@@ -229,7 +229,7 @@ class RhinoSafeSourceJavaExtensions(
         RhinoSourceHttpResponse(
             SourceHttpResponse(
                 statusCode = 200,
-                finalUrl = runCatching { URL(URL("https://localhost/"), url).toString() }.getOrDefault("https://localhost/"),
+                finalUrl = runCatching { URL(url).toString() }.getOrDefault("http://localhost/"),
                 body = error.stackTraceToString().ifEmpty { error.localizedMessage ?: "noErrorMsg" },
                 statusMessage = "OK",
             ),
