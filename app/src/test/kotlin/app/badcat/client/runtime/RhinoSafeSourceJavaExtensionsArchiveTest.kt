@@ -74,6 +74,25 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
     }
 
     @Test
+    fun downloadFileParsesAnalyzeUrlTypeAndStripsOptionBeforeRequest() {
+        val requested = mutableListOf<String>()
+        val extensions = RhinoSafeSourceJavaExtensions(
+            sourceId = "https://download-option.example/",
+            store = InMemorySourceScriptKeyValueStore,
+            httpRequest = { _, url, _, _ ->
+                requested += url
+                SourceHttpResponse(statusCode = 200, finalUrl = url, body = "document")
+            },
+        )
+        val path = extensions.downloadFile(
+            "https://download-option.example/book,{\"type\":\"epub\"}",
+        )
+        assertTrue(path.endsWith(".epub"))
+        assertEquals(listOf("https://download-option.example/book"), requested)
+        assertEquals("document", extensions.readTxtFile(path))
+    }
+
+    @Test
     fun legacyHexDownloadAndAutomaticCharsetDetectionPreserveFileSemantics() {
         val extensions = RhinoSafeSourceJavaExtensions(
             sourceId = "https://legacy-file.example/",
