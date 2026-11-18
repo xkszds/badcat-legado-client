@@ -187,9 +187,14 @@ class CssSearchResultsParser {
 
         suspend fun fieldValue(fieldName: String, itemHtml: String): EngineResult<String?> {
             val expression = rules[fieldName]?.takeIf(String::isNotBlank) ?: return EngineResult.Success(null)
+            val itemDocument = SourceDocument(response.finalUrl, itemHtml, response.contentType, key, page)
+            val withoutPut = when (val put = LegadoPutRule.resolve(source, expression, itemDocument, scriptRuntime)) {
+                is EngineResult.Failure -> return put
+                is EngineResult.Success -> put.value
+            }
             val trimmed = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
                 source = source,
-                template = expression,
+                template = withoutPut,
                 result = itemHtml,
                 baseUrl = response.finalUrl,
                 ruleName = fieldName,
