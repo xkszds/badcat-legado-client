@@ -293,6 +293,22 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun supportsLegadoHexAndUtcTimeHelpers() = runBlocking {
+        val source = BookSource(
+            id = "https://utility-helpers.example/",
+            name = "Utility helpers",
+            baseUrl = "https://utility-helpers.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val result = runtime.evaluate(
+            source,
+            "java.hexEncodeToString('AB') + '|' + java.bytesToStr(java.hexDecodeToByteArray('4142')) + '|' + java.timeFormatUTC(0, 'yyyy-MM-dd HH:mm', 0)",
+        )
+        assertEquals("4142|AB|1970-01-01 00:00", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun supportsBoundedLegadoAjaxAllArrayRequests() = runBlocking {
         val source = BookSource(
             id = "https://ajax-all.example/",
