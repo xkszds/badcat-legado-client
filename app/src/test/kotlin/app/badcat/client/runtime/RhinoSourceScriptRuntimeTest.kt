@@ -1773,9 +1773,8 @@ text + re.test('aa}}')"""
             baseUrl = "https://get-string-url.example/",
         )
         val runtime = RhinoSourceScriptRuntime(
-            sourceHttpRequest = { _, baseUrl, method, url, _, _ ->
+            sourceGet = { _, baseUrl, url, _ ->
                 assertEquals(source.baseUrl, baseUrl)
-                assertEquals("GET", method)
                 assertEquals("/fragment", url)
                 app.badcat.engine.SourceHttpResponse(200, "https://get-string-url.example/fragment", body = "<h1>Fetched title</h1><p>Body</p>")
             },
