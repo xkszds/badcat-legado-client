@@ -48,11 +48,17 @@ class LegadoSourceElement(
     fun selectFirst(selector: String): LegadoSourceElement? = select(selector).first()
     fun first(): LegadoSourceElement? = if (contextHtml().isEmpty()) null else selectedElement(0)
     fun last(): LegadoSourceElement? = if (contextHtml().isEmpty()) null else selectedElement(contextHtml().lastIndex)
-    fun parent(): LegadoSourceElement? = selectionParents?.getOrNull(selectionIndex)?.let { LegadoSourceElement(it, baseUri) }
-        ?: elements().firstOrNull()?.parents()?.firstOrNull()?.let { LegadoSourceElement(it.outerHtml(), baseUri) }
+    fun parent(): LegadoSourceElement? = if (selectionContext != null) {
+        selectionParents?.getOrNull(selectionIndex)?.let { LegadoSourceElement(it, baseUri) }
+    } else {
+        elements().firstOrNull()?.parents()?.firstOrNull()?.let { LegadoSourceElement(it.outerHtml(), baseUri) }
+    }
     fun parents(): LegadoSourceElementList = LegadoSourceElementList(
-        selectionAncestors?.getOrNull(selectionIndex)?.map { LegadoSourceElement(it, baseUri) }
-            ?: elements().firstOrNull()?.parents()?.map { LegadoSourceElement(it.outerHtml(), baseUri) }.orEmpty(),
+        if (selectionContext != null) {
+            selectionAncestors?.getOrNull(selectionIndex)?.map { LegadoSourceElement(it, baseUri) }.orEmpty()
+        } else {
+            elements().firstOrNull()?.parents()?.map { LegadoSourceElement(it.outerHtml(), baseUri) }.orEmpty()
+        },
     )
     fun next(): LegadoSourceElement? = selectedElement(selectionIndex + 1)
     fun prev(): LegadoSourceElement? = selectedElement(selectionIndex - 1)
@@ -76,6 +82,19 @@ class LegadoSourceElement(
 
     private fun contextAncestors(): List<List<String>> =
         selectionAncestors ?: elements().map { element -> element.parents().map { it.outerHtml() } }
+
+    companion object {
+        /** Preserve list order so JavaScript .first().next() and .last().prev() work. */
+        fun fromSelection(items: List<String>, baseUri: String): List<LegadoSourceElement> =
+            items.mapIndexed { index, html ->
+                LegadoSourceElement(
+                    fragments = listOf(html),
+                    baseUri = baseUri,
+                    selectionContext = items,
+                    selectionIndex = index,
+                )
+            }
+    }
 
     private fun selectedElement(index: Int): LegadoSourceElement? {
         val context = contextHtml()
