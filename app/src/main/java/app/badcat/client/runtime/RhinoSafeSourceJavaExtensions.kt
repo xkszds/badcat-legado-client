@@ -290,8 +290,7 @@ class RhinoSafeSourceJavaExtensions(
 
     private fun normalizeVirtualPath(path: String): String {
         require(path.isNotBlank() && path.length <= MAX_ARCHIVE_PATH_CHARS)
-        require(!path.startsWith("/") && !path.startsWith("\\")) { "Absolute source file paths are not allowed" }
-        val normalized = path.replace('\\', '/')
+        val normalized = path.replace('\\', '/').trimStart('/')
         require(normalized.split('/').none { it.isBlank() || it == "." || it == ".." }) {
             "Invalid source file path"
         }
@@ -518,10 +517,11 @@ class RhinoSafeSourceJavaExtensions(
     }
 
     private fun downloadToken(path: String): String {
-        require(path.matches(Regex("^downloads/[0-9a-fA-F]{16}(?:\\.[A-Za-z0-9]{1,10})?$"))) {
+        val relative = path.removePrefix("/")
+        require(relative.matches(Regex("^downloads/[0-9a-fA-F]{16}(?:\\.[A-Za-z0-9]{1,10})?$"))) {
             "Invalid or unsafe Legado download path"
         }
-        return path.removePrefix("downloads/").substringBeforeLast(".")
+        return relative.removePrefix("downloads/").substringBeforeLast(".")
     }
 
     fun putString(key: String, value: String): String {
