@@ -903,6 +903,9 @@ class RhinoSafeSourceJavaExtensions(
         else -> throw IllegalArgumentException("HTTP headers must be an object or JSON string")
     }
 
+    /** Exact pinned JsExtensions alias used by request helpers. */
+    fun parseJsRequestHeaders(headers: Any?): Map<String, String> = parseRequestHeaders(headers)
+
     /** Legado source-scoped single-flight execution; successful work is coalesced by key. */
     fun singleFlight(name: String, action: Function) = singleFlight(name, action, 15_000L)
 
