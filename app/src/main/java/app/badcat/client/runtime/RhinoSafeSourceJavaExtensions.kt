@@ -138,6 +138,10 @@ class RhinoSafeSourceJavaExtensions(
     fun createSymmetricCrypto(transformation: String, key: ByteArray, iv: ByteArray): RhinoLegadoSymmetricCrypto =
         RhinoLegadoSymmetricCrypto(transformation, key, iv)
 
+    /** Common source rules pass UTF-8 key/IV strings instead of byte arrays. */
+    fun createSymmetricCrypto(transformation: String, key: String, iv: String): RhinoLegadoSymmetricCrypto =
+        RhinoLegadoSymmetricCrypto(transformation, utf8Encode(key), utf8Encode(iv))
+
     fun toURL(value: String): RhinoLegadoUrl = RhinoLegadoUrl(value)
 
     /** Narrow byte helpers used only by the reviewed JavaImporter AES compatibility shim. */
