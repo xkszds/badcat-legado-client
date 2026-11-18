@@ -105,7 +105,7 @@ class RhinoSourceScriptRuntimeTest {
             baseUrl = "https://legacy-regex.example/",
         )
         val runtime = RhinoSourceScriptRuntime()
-        val script = """'abc..}}'.match(/\\.*?}}/) ? 'matched' : 'not matched'"""
+        val script = """'abc..}}'.match(/\.*?}}/) ? 'matched' : 'not matched'"""
         val result = runtime.evaluate(source, script)
 
         assertEquals("matched", (result as EngineResult.Success).value)
