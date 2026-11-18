@@ -1165,4 +1165,26 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(source.id)
     }
 
+
+    @Test
+    fun supportsLegadoPersistentFileCacheAcrossEvaluations() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val source = BookSource(
+            id = "https://cache-file-compat.example/",
+            name = "Cache file compatibility",
+            baseUrl = "https://cache-file-compat.example/",
+        )
+        val first = runtime.evaluate(
+            source,
+            "cache.putFile('large-data','file-backed-content',60); cache.getFile('large-data')",
+        )
+        assertTrue("Legado cache.putFile/getFile failed: $first", first is EngineResult.Success)
+        assertEquals("file-backed-content", (first as EngineResult.Success).value)
+
+        val second = runtime.evaluate(source, "cache.getFile('large-data')")
+        assertTrue(second is EngineResult.Success)
+        assertEquals("file-backed-content", (second as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
 }
