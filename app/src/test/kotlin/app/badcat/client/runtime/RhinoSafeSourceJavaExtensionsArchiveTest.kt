@@ -120,6 +120,7 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
     fun unzipCreatesSourcePrivateFilesAndRejectsTraversalEntries() {
         val archive = zipOf(
             "chapter.txt" to "第一章".toByteArray(Charsets.UTF_8),
+            "readme.txt" to "目录说明".toByteArray(Charsets.UTF_8),
             "../outside.txt" to "must not escape".toByteArray(),
             "nested/part.txt" to "nested".toByteArray(),
         )
@@ -141,10 +142,11 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
         assertTrue(directory.startsWith("ArchiveTemp/"))
         assertEquals("第一章", extensions.readTxtFile("$directory/chapter.txt"))
         assertEquals("nested", extensions.readTxtFile("$directory/nested/part.txt"))
-        assertEquals("第一章", extensions.getTxtInFolder(directory))
+        assertEquals("第一章\n目录说明", extensions.getTxtInFolder(directory))
         assertTrue(runCatching { extensions.readFile("$directory/../outside.txt") }.exceptionOrNull() is IllegalArgumentException)
-        assertTrue(extensions.deleteFile("$directory/chapter.txt"))
+        assertTrue(extensions.deleteFile(directory))
         assertNull(extensions.readFile("$directory/chapter.txt"))
+        assertNull(extensions.readFile("$directory/nested/part.txt"))
     }
 
     @Test
