@@ -107,6 +107,8 @@ data class BookSource(
     val ruleContentJson: String? = null,
     /** Full upstream JSON, including rule fields not yet mapped by the host. */
     val rawJson: String? = null,
+    /** Legado per-source request limit: N/M requests per M milliseconds, or M for 1/M. */
+    val concurrentRate: String? = null,
 )
 
 data class BookCandidate(
