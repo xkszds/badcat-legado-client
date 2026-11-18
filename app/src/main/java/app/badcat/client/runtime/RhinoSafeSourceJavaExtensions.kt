@@ -336,6 +336,7 @@ class RhinoSafeSourceJavaExtensions(
     private fun digestFileName(name: String): String =
         MessageDigest.getInstance("MD5").digest(name.toByteArray(Charsets.UTF_8))
             .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+            .substring(8, 24)
 
     /**
      * Read one entry from a ZIP supplied by URL or hexadecimal archive data.
