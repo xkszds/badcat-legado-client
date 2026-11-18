@@ -247,6 +247,7 @@ class RhinoSafeSourceJavaExtensions(
 
     private fun extractZipEntries(bytes: ByteArray): Map<String, ByteArray> {
         val result = linkedMapOf<String, ByteArray>()
+        var totalExpanded = 0L
         java.util.zip.ZipInputStream(bytes.inputStream()).use { zip ->
             while (true) {
                 val entry = zip.nextEntry ?: break
@@ -259,8 +260,12 @@ class RhinoSafeSourceJavaExtensions(
                         val count = zip.read(buffer)
                         if (count < 0) break
                         countTotal += count
+                        totalExpanded += count
                         require(countTotal <= MAX_ARCHIVE_ENTRY_BYTES) {
                             "Archive entry exceeds the 16 MiB expanded limit"
+                        }
+                        require(totalExpanded <= MAX_ARCHIVE_TOTAL_BYTES) {
+                            "Archive exceeds the 64 MiB total expanded limit"
                         }
                         output.write(buffer, 0, count)
                     }
