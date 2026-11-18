@@ -87,7 +87,7 @@ class RhinoSafeSourceJavaExtensions(
     fun getStringList(rule: String, content: Any?, isUrl: Boolean): Array<String> {
         if (content == null) return ruleStringListReader(rule).toTypedArray()
         val value = content.toString()
-        val actualContent = if (isUrl) httpRequest("GET", value, null, emptyMap()).body else value
+        val actualContent = if (isUrl) { rateLimit(false); httpRequest("GET", value, null, emptyMap()).body } else value
         return ruleStringListReaderWithContent(rule, actualContent).toTypedArray()
     }
 
