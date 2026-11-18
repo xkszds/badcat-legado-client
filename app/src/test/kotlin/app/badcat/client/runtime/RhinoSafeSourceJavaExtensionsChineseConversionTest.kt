@@ -1,6 +1,8 @@
 package app.badcat.client.runtime
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RhinoSafeSourceJavaExtensionsChineseConversionTest {
@@ -43,6 +45,34 @@ class RhinoSafeSourceJavaExtensionsChineseConversionTest {
             ),
             source.getSource(),
         )
+    }
+
+    @Test
+    fun readsDownloadedTextWithRequestedCharsetAndReportsDeleteResult() {
+        val fileStore = InMemorySourceScriptFileCacheStore
+        val extensions = RhinoSafeSourceJavaExtensions(
+            sourceId = "file-helper-test",
+            store = InMemorySourceScriptKeyValueStore,
+            fileStore = fileStore,
+            httpRequest = { _, url, _, _ ->
+                app.badcat.engine.SourceHttpResponse(
+                    statusCode = 200,
+                    finalUrl = url,
+                    body = "café",
+                )
+            },
+        )
+
+        val path = extensions.downloadFile("https://reader.example/café.txt")
+        val utf8 = extensions.readTxtFile(path)
+        assertEquals("café", utf8)
+        assertEquals(
+            String("café".toByteArray(Charsets.UTF_8), Charsets.ISO_8859_1),
+            extensions.readTxtFile(path, "ISO-8859-1"),
+        )
+        assertTrue(extensions.deleteFile(path))
+        assertEquals("", extensions.readTxtFile(path))
+        assertFalse(extensions.deleteFile(path))
     }
 
 }
