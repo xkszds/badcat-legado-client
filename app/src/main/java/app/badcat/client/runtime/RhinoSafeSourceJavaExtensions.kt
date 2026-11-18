@@ -6,6 +6,7 @@ import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 import java.util.Base64
 import java.net.URL
 import javax.crypto.Cipher
@@ -196,6 +197,22 @@ class RhinoSafeSourceJavaExtensions(
 
     /** Synchronous compatibility bridge; the host enforces transport bounds. */
     fun ajax(urlAndOptions: String): String = ajaxRequest(urlAndOptions)
+
+    /** Upstream accepts either a URL string or a list whose first item is the URL. */
+    fun ajax(url: Any?): String {
+        val value = when (url) {
+            is List<*> -> url.firstOrNull()?.toString().orEmpty()
+            is Scriptable -> {
+                val length = (ScriptableObject.getProperty(url, "length") as? Number)?.toInt() ?: 0
+                if (length > 0) ScriptableObject.getProperty(url, "0")?.toString().orEmpty() else ""
+            }
+            else -> url?.toString().orEmpty()
+        }
+        require(value.isNotBlank()) { "java.ajax URL must not be blank" }
+        return ajaxRequest(value)
+    }
+
+    fun randomUUID(): String = UUID.randomUUID().toString()
 
     /** Fetch a source-owned helper script; callers decide whether/how to evaluate its text. */
     fun importScript(url: String): String = ajaxRequest(url)
