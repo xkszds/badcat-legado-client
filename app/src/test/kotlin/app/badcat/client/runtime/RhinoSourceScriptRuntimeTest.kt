@@ -1139,4 +1139,30 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(source.id)
     }
 
+
+    @Test
+    fun mapsLegadoPersistentCacheAndMemoryCacheToSeparateStores() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val source = BookSource(
+            id = "https://cache-compat.example/",
+            name = "Cache compatibility",
+            baseUrl = "https://cache-compat.example/",
+        )
+        val first = runtime.evaluate(
+            source,
+            "cache.put('durable','persisted',60); cache.putMemory('volatile','memory'); " +
+                "cache.get('durable') + '|' + cache.getFromMemory('volatile') + '|' + (cache.get('volatile') == null)",
+        )
+        assertTrue("Legado cache.put/get compatibility failed: $first", first is EngineResult.Success)
+        assertEquals("persisted|memory|true", (first as EngineResult.Success).value)
+
+        val second = runtime.evaluate(
+            source,
+            "cache.get('durable') + '|' + cache.getFromMemory('volatile')",
+        )
+        assertTrue(second is EngineResult.Success)
+        assertEquals("persisted|memory", (second as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
 }
