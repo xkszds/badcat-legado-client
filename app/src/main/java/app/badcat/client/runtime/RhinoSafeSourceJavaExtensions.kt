@@ -889,7 +889,8 @@ class RhinoSafeSourceJavaExtensions(
             headers.ids.forEach { id ->
                 val name = id.toString()
                 val value = headers.get(name, headers)
-                if (value != null) put(name, value.toString())
+                require(value != null) { "HTTP header names and values cannot be null" }
+                put(name, value.toString())
             }
         }
         is Map<*, *> -> headers.entries.associate { (key, value) ->
@@ -897,7 +898,8 @@ class RhinoSafeSourceJavaExtensions(
             key.toString() to value.toString()
         }
         is String -> {
-            val json = com.google.gson.JsonParser.parseString(headers)
+            val json = runCatching { com.google.gson.JsonParser.parseString(headers) }
+                .getOrElse { throw IllegalArgumentException("Invalid request header JSON", it) }
             require(json.isJsonObject) { "HTTP headers must be a JSON object" }
             json.asJsonObject.entrySet().associate { (key, value) ->
                 require(value.isJsonPrimitive) { "HTTP header values must be scalar" }
