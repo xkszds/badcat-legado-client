@@ -156,3 +156,12 @@
 5. 坏坏猫原版 PPRule 规则系统（小说/漫画/视频）。
 
 每轮开发须并行维护五类进度，不得用 Legado 引擎工作代替 UI、阅读器、AdBlock/AdMark 或 PPRule 的复刻。该总清单高于单个技术模块的局部迁移计划。
+
+## 2026-11-19 continued runtime compatibility increment
+
+- Improved chapter-cache bounded-reader forward progress and added zero-progress regression coverage.
+- Required byte-preserving cache adapter methods and added binary fidelity/defensive-copy/source-isolation tests.
+- Normalized repeated/trailing source-folder separators without accepting traversal; strengthened request-header parser validation.
+- Added GET/HEAD/POST optional timeout overloads, wired per-call timeouts into the Android host request client, and aligned the default timeout to 30 seconds.
+- Run [#44422285115](https://github.com/xkszds/badcat-legado-client/actions/runs/44422285115) passed contract tests, bounded Rhino tests and Debug APK assembly for commit `36e62023f4006db47876c69bff1b550b776730b8`; live best-effort probes remained in progress at last inspection. This run predates the newest timeout overloads.
+- Latest commit `beda18696217ec9c2c65af6a6c8bcc3b5f06f2f9` has run [#44422727859](https://github.com/xkszds/badcat-legado-client/actions/runs/44422727859) pending. No physical-device verification or full Legado parity is claimed.

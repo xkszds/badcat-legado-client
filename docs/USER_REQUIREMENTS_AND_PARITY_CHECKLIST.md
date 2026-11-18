@@ -122,3 +122,14 @@
 5. 不允许以大段 TODO、空壳 API、固定假数据或“兼容层返回空值”标记为完成。
 6. 不允许只写聊天总结；所有长期要求、决策、差异、失败和下一步都要写回 GitHub。
 7. 不擅自合并到 main；在迁移分支完成并验收前持续在 `integration/legado-upstream-runtime` 开发。
+
+## 2026-11-19 continued runtime compatibility increment
+
+- Hardened the bounded chapter-cache reader against streams that return zero from a bulk read; it now falls back to a single-byte read to guarantee forward progress. Added exact-limit, over-limit, empty-input and zero-progress regression tests.
+- Made `SourceScriptFileCacheStore.getBytes/putBytes` mandatory adapter operations instead of lossy UTF-8 defaults. Added tests for arbitrary binary payload preservation, defensive copies and source isolation; updated the injected test adapter accordingly.
+- Normalized harmless repeated/trailing source-file separators while continuing to reject dot-segments and traversal. The folder symlink regression now exercises a repeated trailing separator.
+- Matched pinned `JsExtensions.parseJsRequestHeaders` behavior for malformed JSON and null header values; added alias/parser regression coverage.
+- Added optional timeout overloads for `java.get/head/post`, wired per-call timeouts through the Android request factory, and matched the upstream 30-second default for those helpers.
+- CI run [#44422285115](https://github.com/xkszds/badcat-legado-client/actions/runs/44422285115), commit `36e62023f4006db47876c69bff1b550b776730b8`: contract tests, bounded Rhino tests and Debug APK assembly passed; best-effort live source probes were still running at last inspection. This run predates the HTTP timeout overload/factory changes.
+- Latest implementation commit at this update: `beda18696217ec9c2c65af6a6c8bcc3b5f06f2f9`. Its CI run [#44422727859](https://github.com/xkszds/badcat-legado-client/actions/runs/44422727859) was pending at last inspection.
+- These are compatibility/security increments only. They do not complete the full upstream `JsExtensions` host API, WebView/browser/verification UI, batch content context, font APIs, refresh events, or any of the original Badcat UI, reader, AdBlock/AdMark and PPRule work.

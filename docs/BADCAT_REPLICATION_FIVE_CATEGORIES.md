@@ -101,3 +101,10 @@
 3. 每次代码提交都更新本文件与 `docs/project-completion-checklist.md`，写清本次改动、测试、CI、未完成事项。
 4. 不要依赖聊天记录；仓库文档是持续任务清单的唯一长期事实来源。
 5. 不擅自合并到 main，不发布未经真机验收的 APK。
+
+## 2026-11-19 continued Legado engine increment
+
+- The Legado engine track gained bounded cache-stream progress handling, mandatory binary cache adapter methods, source-folder separator normalization, stricter request-header parsing, and GET/HEAD/POST per-call timeout overloads with Android host transport wiring.
+- Run [#44422285115](https://github.com/xkszds/badcat-legado-client/actions/runs/44422285115) passed contract tests, bounded Rhino tests and Debug APK assembly for commit `36e62023f4006db47876c69bff1b550b776730b8`; best-effort live source probes were still running at last inspection. That run does not include the newest timeout-overload changes.
+- Latest engine commit: `beda18696217ec9c2c65af6a6c8bcc3b5f06f2f9`; verification run [#44422727859](https://github.com/xkszds/badcat-legado-client/actions/runs/44422727859) was pending.
+- This is a narrow increment within category 3 only. Categories 1, 2, 4 and 5 remain incomplete; the client is not a finished Badcat replica.

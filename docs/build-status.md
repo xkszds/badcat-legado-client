@@ -363,3 +363,13 @@ Last updated: 2026-11-15
 - Android debug APK assembly: passed.
 - Artifact upload: passed; `badcat-legado-debug`, 4,714,869 bytes (artifact expires 2026-11-29).
 - Physical-device installation, live source compatibility, original Badcat UI parity, original purification parity and release signing: not verified/completed.
+
+## 2026-11-19 continued runtime compatibility increment
+
+- `FileChapterContentCache` bounded reads now guarantee progress if an input stream returns zero bytes from a bulk read; regression tests cover zero-progress, exact-limit, over-limit and empty streams.
+- `SourceScriptFileCacheStore` now requires binary-preserving `getBytes/putBytes` implementations instead of silently converting arbitrary bytes through UTF-8. Added tests for byte fidelity, defensive copies and source isolation; the injected test adapter was updated.
+- Source-folder path normalization now accepts redundant/trailing separators while still rejecting dot-segment traversal. The folder symlink test exercises a repeated trailing separator.
+- The request-header parser now matches pinned upstream failure semantics for malformed JSON and null values.
+- Added GET/HEAD/POST per-call timeout overloads, wired the Android factory to pass timeout values through to OkHttp, and aligned the default helper timeout with upstream's 30 seconds.
+- Run [#44422285115](https://github.com/xkszds/badcat-legado-client/actions/runs/44422285115) passed contract tests, bounded Rhino host tests and Debug APK assembly for commit `36e62023f4006db47876c69bff1b550b776730b8`; best-effort live-source probes were still running at last inspection. This run predates the timeout overload/factory changes.
+- Latest implementation commit `beda18696217ec9c2c65af6a6c8bcc3b5f06f2f9` has CI run [#44422727859](https://github.com/xkszds/badcat-legado-client/actions/runs/44422727859) pending. No real-device or full compatibility claim is made.
