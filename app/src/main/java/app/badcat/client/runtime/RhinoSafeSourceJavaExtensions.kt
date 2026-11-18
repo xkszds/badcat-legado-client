@@ -313,11 +313,9 @@ class RhinoSafeSourceJavaExtensions(
     private fun invokeSourceFunction(action: Function) {
         val context = Context.getCurrentContext()
             ?: throw IllegalStateException("Legado concurrency callbacks require an active Rhino context")
-        val parent = action.parentScope
-        val top = parent?.let { ScriptableObject.getTopLevelScope(it) }
-        val thisObject = top
-            ?: throw IllegalStateException("Legado concurrency callback has no Rhino global scope")
-        action.call(context, parent, thisObject, emptyArray())
+        val functionScope = action as Scriptable
+        val topScope = ScriptableObject.getTopLevelScope(functionScope) as Scriptable
+        action.call(context, topScope, topScope, emptyArray())
     }
 
     fun put(key: String, value: String): String = putString(key, value)
