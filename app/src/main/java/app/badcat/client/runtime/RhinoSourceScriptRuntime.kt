@@ -8,6 +8,7 @@ import app.badcat.engine.LegadoRuleExpressionDispatcher
 import app.badcat.engine.LegadoSourceElement
 import app.badcat.engine.LegadoSourceElementList
 import app.badcat.engine.SourceDocument
+import app.badcat.engine.SourceHttpResponse
 import com.script.ScriptBindings
 import com.script.rhino.RhinoScriptEngine
 import kotlinx.coroutines.TimeoutCancellationException
@@ -32,6 +33,7 @@ class RhinoSourceScriptRuntime(
     private val sourceCookieReader: (sourceId: String, url: String) -> String = { _, _ -> "" },
     private val sourceCookieRemover: (sourceId: String, url: String) -> Unit = { _, _ -> },
     private val sourceAjax: (source: BookSource, baseUrl: String, urlAndOptions: String) -> String = { _, _, _ -> throw UnsupportedOperationException("java.ajax is not connected to the source HTTP transport") },
+    private val sourceGet: (source: BookSource, baseUrl: String, url: String, headers: Map<String, String>) -> SourceHttpResponse = { _, _, _, _ -> throw UnsupportedOperationException("java.get is not connected to the source HTTP transport") },
 ) : SourceScriptRuntime {
     private val javaExtensions = ConcurrentHashMap<String, RhinoSafeSourceJavaExtensions>()
     private val sourceExtensions = ConcurrentHashMap<String, RhinoSourceLoginExtensions>()
@@ -108,6 +110,14 @@ class RhinoSourceScriptRuntime(
                             source,
                             bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
                             raw,
+                        )
+                    },
+                    httpGet = { url, headers ->
+                        sourceGet(
+                            source,
+                            bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                            url,
+                            headers,
                         )
                     },
                     ruleStringReader = { rule ->
