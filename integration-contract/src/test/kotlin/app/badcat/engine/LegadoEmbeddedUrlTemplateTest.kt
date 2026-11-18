@@ -6,6 +6,40 @@ import kotlin.test.assertIs
 
 class LegadoEmbeddedUrlTemplateTest {
 
+
+    @Test
+    fun routesEmbeddedLegacyAtSelectorToLegadoRuleEvaluatorInsteadOfRhino() = kotlinx.coroutines.runBlocking {
+        val evaluator = object : LegadoEmbeddedScriptEvaluator {
+            override suspend fun evaluate(script: String, key: String, page: Int): EngineResult<Any?> =
+                error("legacy selector must not be executed as JavaScript: $script")
+
+            override suspend fun evaluateRule(rule: String, key: String, page: Int): EngineResult<Any?> {
+                val document = SourceDocument(
+                    url = "https://reader.example/book",
+                    body = """<div class="w"><txt><li>zero</li><li>one</li><li>two</li><li>three</li><li>Fifth chapter</li></txt></div>""",
+                    page = page,
+                    key = key,
+                )
+                return when (val result = LegadoRuleExpressionDispatcher.evaluate(document, rule)) {
+                    is EngineResult.Failure -> result
+                    is EngineResult.Success -> EngineResult.Success(
+                        LegadoRuleExpressionDispatcher.firstScalarValue(rule, result.value).orEmpty(),
+                    )
+                }
+            }
+        }
+
+        val result = LegadoEmbeddedUrlTemplate.resolve(
+            template = "{{@.w txt li.4@textNodes}}",
+            key = "",
+            evaluator = evaluator,
+        )
+        assertEquals(
+            "Fifth chapter",
+            assertIs<EngineResult.Success<String>>(result).value,
+        )
+    }
+
     @Test
     fun evaluatesMultipleEmbeddedExpressionsInOrder() = kotlinx.coroutines.runBlocking {
         val result = LegadoEmbeddedUrlTemplate.resolve(
