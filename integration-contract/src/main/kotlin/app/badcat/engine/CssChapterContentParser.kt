@@ -23,7 +23,7 @@ class CssChapterContentParser {
         }
         val contentRule = rules["content"]?.takeIf(String::isNotBlank)
             ?: return unsupported(source, "missing content rule")
-        val unsupportedWebFields = listOf("webJs", "sourceRegex", "imageDecode", "payAction", "callBackJs", "contentBatch")
+        val unsupportedWebFields = listOf("webJs", "sourceRegex", "subContent", "imageDecode", "payAction", "callBackJs", "contentBatch")
             .filter { !rules[it].isNullOrBlank() }
         if (unsupportedWebFields.isNotEmpty()) {
             return unsupported(
@@ -207,6 +207,12 @@ class CssChapterContentParser {
         val contentRule = rules["content"]?.takeIf(String::isNotBlank)
             ?: return unsupported(source, "missing content rule")
 
+        val unsupportedFields = listOf(
+            "webJs", "sourceRegex", "replaceRegex", "subContent", "imageDecode", "payAction", "callBackJs", "contentBatch",
+        ).filter { !rules[it].isNullOrBlank() }
+        if (unsupportedFields.isNotEmpty()) {
+            return unsupported(source, "content rule fields are not supported by the synchronous parser: ${unsupportedFields.joinToString()}")
+        }
         val expressions = listOf(
             contentRule,
             rules["title"],
