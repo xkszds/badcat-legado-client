@@ -10,7 +10,7 @@ import urllib.parse
 import urllib.request
 
 COLLECTION_URL = "https://shuyuan.nyasama.cc/shuyuan/12f348d3510bac0e5f1b164274f0b136.json"
-KEYWORD = "斗破苍穹"
+KEYWORDS = ("斗破苍穹", "凡人修仙传", "道君")
 MAX_BYTES = 2 * 1024 * 1024
 TIMEOUT = 10
 
@@ -70,19 +70,39 @@ def main():
     headers.setdefault("User-Agent", "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36")
     headers.setdefault("Accept", "application/json, text/plain, */*")
 
-    search_path = source["searchUrl"].replace("{{key}}", urllib.parse.quote(KEYWORD, safe="")).replace("{{page}}", "1")
-    search_url = urllib.parse.urljoin(base, search_path)
-    search_payload = request_json(search_url, headers)
-    search_rows = require_list(search_payload.get("data"), "search")
-    candidate = next(
-        (row for row in search_rows
-         if isinstance(row, dict) and row.get("book_id") and row.get("title")),
-        None,
-    )
+    candidate = None
+    search_rows = []
+    keyword_used = None
+    last_search_payload = None
+    for keyword in KEYWORDS:
+        search_path = source["searchUrl"].replace("{{key}}", urllib.parse.quote(keyword, safe="")).replace("{{page}}", "1")
+        search_url = urllib.parse.urljoin(base, search_path)
+        search_payload = request_json(search_url, headers)
+        last_search_payload = search_payload
+        raw_data = search_payload.get("data")
+        if isinstance(raw_data, dict):
+            search_rows = [raw_data]
+        elif isinstance(raw_data, list):
+            search_rows = raw_data
+        else:
+            search_rows = []
+        candidate = next(
+            (row for row in search_rows
+             if isinstance(row, dict) and row.get("book_id") and row.get("title")),
+            None,
+        )
+        print(
+            f"LIVE_E2E_SEARCH_ATTEMPT: keyword={keyword!r}, code={search_payload.get('code')!r}, "
+            f"message={search_payload.get('message')!r}, data_type={type(raw_data).__name__}, rows={len(search_rows)}"
+        )
+        if candidate is not None:
+            keyword_used = keyword
+            break
     if candidate is None:
-        raise RuntimeError(f"search: {len(search_rows)} rows but none has book_id/title")
+        preview = json.dumps(last_search_payload, ensure_ascii=False)[:1200] if last_search_payload is not None else "null"
+        raise RuntimeError(f"search: no usable book_id/title for keywords={KEYWORDS!r}; payload={preview}")
     book_id = str(candidate["book_id"])
-    print(f"LIVE_E2E_SEARCH_OK: keyword={KEYWORD!r}, rows={len(search_rows)}, title={candidate['title']!r}, book_id={book_id}")
+    print(f"LIVE_E2E_SEARCH_OK: keyword={keyword_used!r}, rows={len(search_rows)}, title={candidate['title']!r}, book_id={book_id}")
 
     detail_path = source["ruleSearch"]["bookUrl"].replace("{{$.book_id}}", urllib.parse.quote(book_id, safe=""))
     detail_url = urllib.parse.urljoin(base, detail_path)
