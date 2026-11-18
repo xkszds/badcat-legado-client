@@ -271,6 +271,7 @@ class RhinoSourceHttpResponse(private val response: SourceHttpResponse) {
     fun headers(name: String): String =
         response.headers.entries.firstOrNull { it.key.equals(name, ignoreCase = true) }
             ?.value?.firstOrNull().orEmpty()
+    fun header(name: String): String = headers(name)
 }
 
 /** Narrow URL metadata view for source rules; no connection or stream methods. */
