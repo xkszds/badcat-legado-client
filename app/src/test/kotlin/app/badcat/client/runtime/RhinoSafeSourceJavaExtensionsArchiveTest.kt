@@ -138,6 +138,31 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
     }
 
     @Test
+    fun automaticCharsetDetectionUsesPinnedIcuForBig5Downloads() {
+        val big5 = "繁體中文測試".toByteArray(java.nio.charset.Charset.forName("Big5"))
+        val detected = io.legado.app.lib.icu4j.CharsetDetector()
+            .setText(big5)
+            .detect()
+            ?.name
+        assertEquals("Big5", detected)
+
+        val extensions = RhinoSafeSourceJavaExtensions(
+            sourceId = "https://big5-file.example/",
+            store = InMemorySourceScriptKeyValueStore,
+            httpRequest = { _, url, _, _ ->
+                SourceHttpResponse(
+                    statusCode = 200,
+                    finalUrl = url,
+                    body = "",
+                    bodyBytes = big5,
+                )
+            },
+        )
+        val path = extensions.downloadFile("https://big5-file.example/book.txt")
+        assertEquals("繁體中文測試", extensions.readTxtFile(path))
+    }
+
+    @Test
     fun cacheFileReusesSourceScopedDownloadAndImportScriptUsesCache() {
         var requests = 0
         val extensions = RhinoSafeSourceJavaExtensions(
