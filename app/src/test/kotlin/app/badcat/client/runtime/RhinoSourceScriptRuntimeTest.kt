@@ -1559,6 +1559,37 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(source.id)
     }
 
+
+    @Test
+    fun javaAjaxSupportsSearchFormRegexCaptureUsedByImportedSources() = runBlocking {
+        val source = BookSource(
+            id = "https://regex-search.example/",
+            name = "Search regex compatibility",
+            baseUrl = "https://regex-search.example/",
+        )
+        val requested = AtomicInteger()
+        val runtime = RhinoSourceScriptRuntime(
+            sourceAjax = { _, _, url ->
+                requested.incrementAndGet()
+                assertEquals("https://regex-search.example/search?q=%E5%89%91%E6%9D%A5", url)
+                """<form id="search" action="/search.php"><input name="q"></form>"""
+            },
+        )
+
+        val result = runtime.evaluate(
+            source,
+            """
+                var url = 'https://regex-search.example/search?q=%E5%89%91%E6%9D%A5';
+                java.ajax(url).match(/search.*action="(.+?)"/)[1];
+            """.trimIndent(),
+        )
+
+        assertTrue("java.ajax + String.match failed: $result", result is EngineResult.Success)
+        assertEquals("/search.php", (result as EngineResult.Success).value)
+        assertEquals(1, requested.get())
+        runtime.clearSourceState(source.id)
+    }
+
 }
 
 
