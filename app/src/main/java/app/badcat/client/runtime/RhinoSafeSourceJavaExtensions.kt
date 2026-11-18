@@ -243,6 +243,56 @@ class RhinoSafeSourceJavaExtensions(
         return null
     }
 
+    /** Read a regular-file entry from a RAR archive (URL or hexadecimal bytes). */
+    fun getRarByteArrayContent(url: String, path: String): ByteArray? =
+        readLibArchiveEntry(url, path)
+
+    /** Read a regular-file entry from a 7z archive (URL or hexadecimal bytes). */
+    fun get7zByteArrayContent(url: String, path: String): ByteArray? =
+        readLibArchiveEntry(url, path)
+
+    fun getRarStringContent(url: String, path: String): String {
+        val bytes = getRarByteArrayContent(url, path) ?: return ""
+        return String(bytes, detectTextCharset(bytes))
+    }
+
+    fun getRarStringContent(url: String, path: String, charsetName: String): String {
+        val bytes = getRarByteArrayContent(url, path) ?: return ""
+        return String(bytes, java.nio.charset.Charset.forName(charsetName))
+    }
+
+    fun get7zStringContent(url: String, path: String): String {
+        val bytes = get7zByteArrayContent(url, path) ?: return ""
+        return String(bytes, detectTextCharset(bytes))
+    }
+
+    fun get7zStringContent(url: String, path: String, charsetName: String): String {
+        val bytes = get7zByteArrayContent(url, path) ?: return ""
+        return String(bytes, java.nio.charset.Charset.forName(charsetName))
+    }
+
+    private fun readLibArchiveEntry(url: String, path: String): ByteArray? {
+        require(path.isNotBlank()) { "Archive entry path must not be blank" }
+        val archiveBytes = if (
+            url.startsWith("http://", true) || url.startsWith("https://", true)
+        ) {
+            rateLimit(false)
+            val response = httpRequest("GET", url, null, emptyMap())
+            require(response.statusCode in 200..299) {
+                "Archive download returned HTTP ${response.statusCode} ${response.statusMessage}".trim()
+            }
+            response.bodyBytes ?: response.body.toByteArray(Charsets.UTF_8)
+        } else {
+            decodeHex(url)
+        }
+        require(archiveBytes.size <= MAX_DOWNLOAD_BYTES) {
+            "Archive exceeds the 8 MiB compressed limit"
+        }
+        return archiveBytes.inputStream().use {
+            SourceLibArchiveReader.readEntry(it, path, MAX_ARCHIVE_ENTRY_BYTES)
+        }
+    }
+
     fun getZipStringContent(url: String, path: String): String {
         val bytes = getZipByteArrayContent(url, path) ?: return ""
         return String(bytes, detectTextCharset(bytes))
