@@ -319,10 +319,13 @@ class RhinoSafeSourceJavaExtensions(
         val directory = normalizeVirtualPath(path)
         val children = fileStore.get(sourceId, VIRTUAL_DIR_PREFIX + directory)
             ?.split("\n")?.filter(String::isNotEmpty).orEmpty()
-        return children.mapNotNull { child ->
+        val content = children.mapNotNull { child ->
             val bytes = fileStore.getBytes(sourceId, virtualFileKey("$directory/$child"))
             bytes?.let { String(it, detectTextCharset(it)) }
         }.joinToString("\n")
+        // Pinned Legado deletes the temporary folder after collecting its text files.
+        deleteVirtualTree(directory)
+        return content
     }
 
     private fun digestFileName(name: String): String =
