@@ -73,16 +73,15 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
     }
 
     @Test
-    fun libarchiveBackedRarAndSevenZipHelpersReadUrlAndHexArchives() {
-        // ZIP is also a libarchive-supported format and provides a portable fixture
-        // for verifying the shared RAR/7z transport and entry-reading path.
-        val archive = zipOf("folder/content.txt", "archive payload".toByteArray())
+    fun rarAndSevenZipHelpersPreserveUrlHexAndCharsetContracts() {
         val sourceId = "https://libarchive-fixture.example/"
+        val archive = "archive bytes".toByteArray()
+        val requests = mutableListOf<String>()
         val extensions = RhinoSafeSourceJavaExtensions(
             sourceId = sourceId,
             store = InMemorySourceScriptKeyValueStore,
             httpRequest = { _, url, _, _ ->
-                assertEquals("https://libarchive-fixture.example/archive", url)
+                requests += url
                 SourceHttpResponse(
                     statusCode = 200,
                     finalUrl = url,
@@ -90,28 +89,31 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
                     bodyBytes = archive,
                 )
             },
+            archiveEntryReader = { input, path, maxBytes ->
+                assertEquals("folder/content.txt", path)
+                assertEquals(16 * 1024 * 1024, maxBytes)
+                input.readBytes()
+            },
         )
         val hex = archive.joinToString("") { "%02x".format(it) }
 
+        assertArrayEquals(archive, extensions.getRarByteArrayContent(hex, "folder/content.txt"))
         assertArrayEquals(
-            "archive payload".toByteArray(),
-            extensions.getRarByteArrayContent(hex, "folder/content.txt"),
-        )
-        assertArrayEquals(
-            "archive payload".toByteArray(),
+            archive,
             extensions.get7zByteArrayContent(
                 "https://libarchive-fixture.example/archive",
                 "folder/content.txt",
             ),
         )
         assertEquals(
-            "archive payload",
+            "archive bytes",
             extensions.getRarStringContent(hex, "folder/content.txt", "UTF-8"),
         )
         assertEquals(
-            "archive payload",
+            "archive bytes",
             extensions.get7zStringContent(hex, "folder/content.txt", "UTF-8"),
         )
+        assertEquals(listOf("https://libarchive-fixture.example/archive"), requests)
     }
 
     @Test
