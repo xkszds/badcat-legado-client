@@ -52,6 +52,10 @@ class RhinoSourceScriptRuntime(
         if (method.equals("GET", true) && body == null) sourceGet(source, baseUrl, url, headers)
         else throw UnsupportedOperationException("java.$method is not connected to the source HTTP transport")
     },
+    private val sourceHttpRequestWithTimeout: (source: BookSource, baseUrl: String, method: String, url: String, body: String?, headers: Map<String, String>, callTimeoutMillis: Long) -> SourceHttpResponse = { source, baseUrl, method, url, body, headers, timeout ->
+        require(timeout > 0) { "connect callTimeout must be positive" }
+        throw UnsupportedOperationException("Per-call timeout transport is not connected (requested ${timeout}ms)")
+    },
     private val webViewUserAgent: String = RhinoSafeSourceJavaExtensions.DEFAULT_WEBVIEW_USER_AGENT,
 ) : SourceScriptRuntime {
     private val javaExtensions = ConcurrentHashMap<String, RhinoSafeSourceJavaExtensions>()
@@ -154,6 +158,13 @@ class RhinoSourceScriptRuntime(
                             body,
                             headers,
                         )
+                    },
+                    httpRequestWithTimeout = { method, url, body, headers, timeout ->
+                        if (timeout == null) {
+                            sourceHttpRequest(source, currentRuleBaseUrl, method, url, body, headers)
+                        } else {
+                            sourceHttpRequestWithTimeout(source, currentRuleBaseUrl, method, url, body, headers, timeout)
+                        }
                     },
                     ruleStringReader = { rule ->
                         runCatching {
