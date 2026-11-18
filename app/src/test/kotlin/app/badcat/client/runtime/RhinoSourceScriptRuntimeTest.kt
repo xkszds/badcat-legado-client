@@ -98,6 +98,32 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun supportsLegacyRegexLiteralsContainingUnescapedClosingBraces() = runBlocking {
+        val source = BookSource(
+            id = "https://legacy-regex.example/",
+            name = "Legacy regex compatibility",
+            baseUrl = "https://legacy-regex.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val script = """'abc..}}'.match(/\\.*?}}/) ? 'matched' : 'not matched'"""
+        val result = runtime.evaluate(source, script)
+
+        assertEquals("matched", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
+    fun regexCompatibilityDoesNotRewriteStringsCommentsOrValidQuantifiers() {
+        val script = """var text = '}}'; // }}
+var re = /a{2,3}}/;
+text + re.test('aa}}')"""
+        val normalized = RhinoRegexCompatibility.normalize(script)
+
+        assertTrue(normalized.contains("var text = '}}'; // }}"))
+        assertTrue(normalized.contains("/a{2,3}\\}/"))
+    }
+
+    @Test
     fun urlScriptsCannotAccessJavaRuntime() = runBlocking {
         val source = BookSource(
             id = "https://restricted.example/",
