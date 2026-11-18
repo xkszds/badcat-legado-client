@@ -56,7 +56,7 @@ class SourceChapterContentService(
                     "Chapter content pagination contains a URL cycle for source '${source.id}'",
                 )
             }
-            val response = when (val result = http.execute(source, currentUrl)) {
+            val response = when (val result = http.execute(source, currentUrl, page = pageCount + 1, key = bookName)) {
                 is EngineResult.Failure -> return cached?.let { EngineResult.Success(it.content) } ?: result
                 is EngineResult.Success -> result.value
             }
