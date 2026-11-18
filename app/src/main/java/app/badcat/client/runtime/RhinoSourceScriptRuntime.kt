@@ -116,7 +116,11 @@ class RhinoSourceScriptRuntime(
                         )
                     }
                 }
-                bindings.forEach { (name, value) -> scope[name] = value }
+                bindings.forEach { (name, value) ->
+                    // Legado AnalyzeUrl binds page as an integer, not a string.
+                    // Keep arithmetic such as page + 1 numeric in embedded URL scripts.
+                    scope[name] = if (name == "page") value.toIntOrNull() ?: value else value
+                }
                 // Common, low-risk Legado helpers are exposed through a narrow
                 // source-scoped bridge. This shadows Rhino's package namespace;
                 // untrusted rules still cannot reach java.lang or Android APIs.
