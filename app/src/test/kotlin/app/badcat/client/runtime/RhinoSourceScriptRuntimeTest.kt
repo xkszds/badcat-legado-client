@@ -1254,7 +1254,7 @@ text + re.test('aa}}')"""
     @Test
     fun supportsSourceScopedCacheAndCommonStringHelpers() = runBlocking {
         val runtime = RhinoSourceScriptRuntime(
-            sourceHttpRequest = { _, _, _, url, _, _ ->
+            sourceGet = { _, _, url, _ ->
                 if (url == "https://cache-one.example/helper.js") {
                     SourceHttpResponse(
                         statusCode = 200,
@@ -1460,7 +1460,7 @@ text + re.test('aa}}')"""
     @Test
     fun exposesLegadoResponseMessageHeadersAndSafeRawRequestMetadata() = runBlocking {
         val runtime = RhinoSourceScriptRuntime(
-            sourceHttpRequest = { _, _, _, url, _, _ ->
+            sourceGet = { _, _, url, _ ->
                 app.badcat.engine.SourceHttpResponse(
                     statusCode = 206,
                     finalUrl = "https://response.example/final",
@@ -1817,10 +1817,9 @@ text + re.test('aa}}')"""
         )
         val runtime = RhinoSourceScriptRuntime(
             sourceFileCacheStore = store,
-            sourceHttpRequest = { requestedSource, baseUrl, method, url, _, _ ->
+            sourceGet = { requestedSource, baseUrl, url, _ ->
                 assertEquals(source.id, requestedSource.id)
                 assertEquals(source.baseUrl, baseUrl)
-                assertEquals("GET", method)
                 assertEquals("/chapter.txt", url)
                 app.badcat.engine.SourceHttpResponse(
                     200,
@@ -1895,7 +1894,7 @@ text + re.test('aa}}')"""
         )
         val runtime = RhinoSourceScriptRuntime(
             sourceFileCacheStore = store,
-            sourceHttpRequest = { _, _, _, url, _, _ ->
+            sourceGet = { _, _, url, _ ->
                 assertEquals("/text.txt", url)
                 app.badcat.engine.SourceHttpResponse(200, "https://injected-file-store.example/text.txt", body = "from injected store")
             },
@@ -1923,8 +1922,8 @@ text + re.test('aa}}')"""
         )
         val seen = mutableListOf<Pair<String, String>>()
         val runtime = RhinoSourceScriptRuntime(
-            sourceHttpRequest = { _, baseUrl, method, url, _, _ ->
-                seen += baseUrl to "$method $url"
+            sourceGet = { _, baseUrl, url, _ ->
+                seen += baseUrl to "GET $url"
                 app.badcat.engine.SourceHttpResponse(200, "https://reader.example/chapter", body = "chapter response")
             },
         )
