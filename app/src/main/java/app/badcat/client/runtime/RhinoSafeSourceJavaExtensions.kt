@@ -17,6 +17,7 @@ import com.github.liuyueyi.quick.transfer.ChineseUtils as QuickChineseUtils
 import com.github.liuyueyi.quick.transfer.constants.TransType
 import app.badcat.engine.LegadoSourceElement
 import app.badcat.engine.LegadoSourceElementList
+import org.jsoup.Jsoup
 import app.badcat.engine.SourceHttpResponse
 import org.htmlunit.corejs.javascript.Scriptable
 import org.htmlunit.corejs.javascript.ScriptableObject
@@ -218,6 +219,49 @@ class RhinoSafeSourceJavaExtensions(
         value.toByteArray(Charsets.UTF_8).joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
 
     fun logType(value: Any?): String = value?.javaClass?.name ?: "null"
+
+    fun htmlFormat(value: String?): String = formatKeepImages(value.orEmpty(), null)
+
+    fun htmlFormat(value: String?, redirectUrl: String?): String =
+        formatKeepImages(value.orEmpty(), redirectUrl?.takeIf(String::isNotBlank))
+
+    private fun formatKeepImages(html: String, redirectUrl: String?): String {
+        var imageIndex = 0
+        val images = linkedMapOf<String, String>()
+        var text = html
+            .replace("\\r\\n", "\\n")
+            .replace("\\n", "\n")
+            .replace("\\r", "\n")
+            .replace(Regex("(&nbsp;)+", RegexOption.IGNORE_CASE), " ")
+            .replace(Regex("&(?:ensp|emsp);", RegexOption.IGNORE_CASE), " ")
+            .replace(Regex("(&thinsp;|&zwnj;|&zwj;|\\u2009|\\u200C|\\u200D)", RegexOption.IGNORE_CASE), "")
+
+        text = Regex("<img\\b[^>]*>", setOf(RegexOption.IGNORE_CASE)).replace(text) { match ->
+            val image = Jsoup.parseBodyFragment(match.value).selectFirst("img")
+            val rawUrl = image?.let {
+                listOf("src", "data-src", "data-original", "data-lazy-src")
+                    .firstNotNullOfOrNull { key -> it.attr(key).takeIf(String::isNotBlank) }
+            }.orEmpty()
+            if (rawUrl.isBlank()) return@replace ""
+            val absoluteUrl = if (redirectUrl == null) rawUrl else {
+                runCatching { app.badcat.engine.WebUrlResolver.resolve(redirectUrl, rawUrl) }.getOrDefault(rawUrl)
+            }
+            val token = "__BADCAT_IMAGE_${imageIndex++}__"
+            images[token] = "<img src=\"${absoluteUrl.replace("&", "&amp;").replace("\"", "&quot;")}\">"
+            token
+        }
+
+        text = text
+            .replace(Regex("<!--.*?-->", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)), "")
+            .replace(Regex("</?(?:div|p|br|hr|h[1-6]|article|dd|dl|li|tr|section|header|footer|blockquote)[^>]*>", RegexOption.IGNORE_CASE), "\n")
+            .replace(Regex("</?(?!img\\b)[a-zA-Z][^<>]*>", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("[ \\t]*\\n+[ \\t]*"), "\n　　")
+            .replace(Regex("^[\\n\\s]+"), "")
+            .replace(Regex("[\\n\\s]+$"), "")
+
+        images.forEach { (token, image) -> text = text.replace(token, image) }
+        return text
+    }
 
     /** Synchronous compatibility bridge; the host enforces transport bounds. */
     fun ajax(urlAndOptions: String): String = ajaxRequest(urlAndOptions)
