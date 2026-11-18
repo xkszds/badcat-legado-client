@@ -75,6 +75,32 @@ class SourceHttpGatewayTest {
     }
 
     @Test
+    fun searchUrlDollarTemplateIsEvaluatedAsJavaScriptNotJsonPath() {
+        val client = RecordingClient()
+        val seenScripts = mutableListOf<String>()
+        val evaluator = object : LegadoEmbeddedScriptEvaluator {
+            override suspend fun evaluate(script: String, key: String, page: Int): EngineResult<Any?> {
+                seenScripts += script
+                return EngineResult.Success("javascript-value")
+            }
+        }
+        val result = kotlinx.coroutines.runBlocking {
+            SourceHttpGateway(client, evaluator).execute(
+                source(),
+                "/search?filter={{$.filter}}",
+                resolveJsonPathUrlTemplates = false,
+            )
+        }
+
+        assertIs<EngineResult.Success<SourceHttpResponse>>(result)
+        assertEquals(listOf("$.filter"), seenScripts)
+        assertEquals(
+            "https://reader.example/search?filter=javascript-value",
+            requireNotNull(client.captured).url,
+        )
+    }
+
+    @Test
     fun evaluatorProviderUsesTheCurrentSourceForEveryRequest() {
         val client = RecordingClient()
         val seenContexts = mutableListOf<String>()
