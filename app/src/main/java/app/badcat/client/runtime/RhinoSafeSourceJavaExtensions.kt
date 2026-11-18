@@ -50,6 +50,7 @@ class RhinoSafeSourceJavaExtensions(
     private val ruleElementsReader: (String) -> LegadoSourceElementList = { LegadoSourceElementList(emptyList()) },
     private val ruleElementsReaderWithContent: (String, String) -> LegadoSourceElementList = { rule, _ -> ruleElementsReader(rule) },
     private val contentWriter: (String) -> Unit = {},
+    private val baseUrlWriter: (String?) -> Unit = {},
     private val webViewUserAgent: String = DEFAULT_WEBVIEW_USER_AGENT,
 ) {
 
@@ -59,11 +60,27 @@ class RhinoSafeSourceJavaExtensions(
     /** Legado overload evaluates a selector against an explicitly supplied result fragment. */
     fun getString(rule: String, content: String): String = ruleStringReaderWithContent(rule, content)
 
+    /** Legado AnalyzeRule overload: optionally fetch mContent as a URL before applying the selector. */
+    fun getString(rule: String, content: Any?, isUrl: Boolean): String {
+        if (content == null) return ruleStringReader(rule)
+        val value = content.toString()
+        val actualContent = if (isUrl) httpRequest("GET", value, null, emptyMap()).body else value
+        return ruleStringReaderWithContent(rule, actualContent)
+    }
+
     /** Legado's list selector helper, returned as a Java-compatible mutable list. */
     fun getStringList(rule: String): Array<String> = ruleStringListReader(rule).toTypedArray()
 
     fun getStringList(rule: String, content: String): Array<String> =
         ruleStringListReaderWithContent(rule, content).toTypedArray()
+
+    /** List equivalent of the three-argument AnalyzeRule overload. */
+    fun getStringList(rule: String, content: Any?, isUrl: Boolean): Array<String> {
+        if (content == null) return ruleStringListReader(rule).toTypedArray()
+        val value = content.toString()
+        val actualContent = if (isUrl) httpRequest("GET", value, null, emptyMap()).body else value
+        return ruleStringListReaderWithContent(rule, actualContent).toTypedArray()
+    }
 
     /** Legado's element selector helper, exposing only safe text/HTML/attribute methods. */
     fun getElement(rule: String): LegadoSourceElement =
@@ -91,6 +108,18 @@ class RhinoSafeSourceJavaExtensions(
         require(content.length <= MAX_VALUE_CHARS * 512) { "Legado content exceeds the size limit" }
         contentWriter(content)
         return content
+    }
+
+    /** Legado overload also changes the base URL used for subsequent relative-link resolution. */
+    fun setContent(content: Any?, baseUrl: String?): String {
+        val value = content?.toString().orEmpty()
+        require(value.length <= MAX_VALUE_CHARS * 512) { "Legado content exceeds the size limit" }
+        contentWriter(value)
+        if (!baseUrl.isNullOrBlank()) {
+            app.badcat.engine.WebUrlResolver.resolve(baseUrl, baseUrl)
+            baseUrlWriter(baseUrl)
+        }
+        return value
     }
 
     fun putString(key: String, value: String): String {

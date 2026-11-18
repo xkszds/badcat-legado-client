@@ -114,6 +114,7 @@ class RhinoSourceScriptRuntime(
                 // source-scoped bridge. This shadows Rhino's package namespace;
                 // untrusted rules still cannot reach java.lang or Android APIs.
                 var currentRuleContent = bindings["result"].orEmpty()
+                var currentRuleBaseUrl = bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl
                 val javaBridge = RhinoSafeSourceJavaExtensions(
                     sourceId = source.id,
                     store = sourceKeyValueStore,
@@ -146,7 +147,7 @@ class RhinoSourceScriptRuntime(
                     ruleStringReader = { rule ->
                         runCatching {
                             val document = SourceDocument(
-                                url = bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                                url = currentRuleBaseUrl,
                                 body = currentRuleContent,
                             )
                             when (val parsed = LegadoRuleExpressionDispatcher.evaluate(document, rule)) {
@@ -158,7 +159,7 @@ class RhinoSourceScriptRuntime(
                     ruleStringReaderWithContent = { rule, content ->
                         runCatching {
                             val document = SourceDocument(
-                                url = bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                                url = currentRuleBaseUrl,
                                 body = content,
                             )
                             when (val parsed = LegadoRuleExpressionDispatcher.evaluate(document, rule)) {
@@ -170,7 +171,7 @@ class RhinoSourceScriptRuntime(
                     ruleStringListReader = { rule ->
                         runCatching {
                             val document = SourceDocument(
-                                url = bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                                url = currentRuleBaseUrl,
                                 body = currentRuleContent,
                             )
                             when (val parsed = LegadoRuleExpressionDispatcher.evaluate(document, rule)) {
@@ -182,7 +183,7 @@ class RhinoSourceScriptRuntime(
                     ruleStringListReaderWithContent = { rule, content ->
                         runCatching {
                             val document = SourceDocument(
-                                url = bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                                url = currentRuleBaseUrl,
                                 body = content,
                             )
                             when (val parsed = LegadoRuleExpressionDispatcher.evaluate(document, rule)) {
@@ -194,7 +195,7 @@ class RhinoSourceScriptRuntime(
                     ruleElementReader = { rule ->
                         runCatching {
                             val document = SourceDocument(
-                                url = bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                                url = currentRuleBaseUrl,
                                 body = currentRuleContent,
                             )
                             when (val parsed = LegadoRuleExpressionDispatcher.evaluateElements(document, rule)) {
@@ -206,7 +207,7 @@ class RhinoSourceScriptRuntime(
                     ruleElementReaderWithContent = { rule, content ->
                         runCatching {
                             val document = SourceDocument(
-                                url = bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                                url = currentRuleBaseUrl,
                                 body = content,
                             )
                             when (val parsed = LegadoRuleExpressionDispatcher.evaluateElements(document, rule)) {
@@ -218,7 +219,7 @@ class RhinoSourceScriptRuntime(
                     ruleElementsReader = { rule ->
                         runCatching {
                             val document = SourceDocument(
-                                url = bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                                url = currentRuleBaseUrl,
                                 body = currentRuleContent,
                             )
                             when (val parsed = LegadoRuleExpressionDispatcher.evaluateElements(document, rule)) {
@@ -230,7 +231,7 @@ class RhinoSourceScriptRuntime(
                     ruleElementsReaderWithContent = { rule, content ->
                         runCatching {
                             val document = SourceDocument(
-                                url = bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                                url = currentRuleBaseUrl,
                                 body = content,
                             )
                             when (val parsed = LegadoRuleExpressionDispatcher.evaluateElements(document, rule)) {
@@ -240,6 +241,7 @@ class RhinoSourceScriptRuntime(
                         }.getOrDefault(LegadoSourceElementList(emptyList()))
                     },
                     contentWriter = { content -> currentRuleContent = content },
+                    baseUrlWriter = { baseUrl -> if (!baseUrl.isNullOrBlank()) currentRuleBaseUrl = baseUrl },
                     webViewUserAgent = webViewUserAgent,
                 )
                 javaExtensions[source.id] = javaBridge

@@ -1208,4 +1208,48 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(source.id)
     }
 
+
+    @Test
+    fun supportsLegadoGetStringThreeArgumentUrlOverload() = runBlocking {
+        val source = BookSource(
+            id = "https://get-string-url.example/",
+            name = "getString URL overload",
+            baseUrl = "https://get-string-url.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime(
+            sourceHttpRequest = { _, baseUrl, method, url, _, _ ->
+                assertEquals(source.baseUrl, baseUrl)
+                assertEquals("GET", method)
+                assertEquals("/fragment", url)
+                app.badcat.engine.SourceHttpResponse(200, "https://get-string-url.example/fragment", body = "<h1>Fetched title</h1><p>Body</p>")
+            },
+        )
+        val result = runtime.evaluate(
+            source,
+            "java.getString('h1@text', '/fragment', true) + '|' + java.getStringList('p@text', '/fragment', true).join('|')",
+            mapOf("baseUrl" to source.baseUrl),
+        )
+        assertTrue("Legado three-argument getString overload failed: $result", result is EngineResult.Success)
+        assertEquals("Fetched title|Body", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
+    fun setContentBaseUrlUpdatesRelativeElementResolution() = runBlocking {
+        val source = BookSource(
+            id = "https://set-content-base.example/",
+            name = "setContent base URL",
+            baseUrl = "https://set-content-base.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val result = runtime.evaluate(
+            source,
+            "java.setContent('<a href=\\\"../chapter/2\\\">chapter</a>', 'https://reader.example/book/1'); java.getElement('a').absUrl('href')",
+            mapOf("baseUrl" to source.baseUrl),
+        )
+        assertTrue("Legado setContent(content, baseUrl) failed: $result", result is EngineResult.Success)
+        assertEquals("https://reader.example/chapter/2", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
 }
