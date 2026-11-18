@@ -27,7 +27,7 @@ def fetch(url, headers, method="GET", body=None, charset="utf-8"):
         content_type = response.headers.get("Content-Type", "")
     if status < 200 or status >= 300:
         raise RuntimeError(f"HTTP {status}: {url}")
-    declared = re.search(r"charset=([\\w-]+)", content_type, re.I)
+    declared = re.search(r"charset=([\w-]+)", content_type, re.I)
     encodings = [declared.group(1)] if declared else []
     encodings += [charset, "utf-8", "gbk"]
     text = None
@@ -44,7 +44,7 @@ def fetch(url, headers, method="GET", body=None, charset="utf-8"):
 
 def main():
     _, source_text = fetch(SOURCE_URL, {"User-Agent": "Mozilla/5.0"})
-    source_data = json.loads(source_text.lstrip("\\ufeff"))
+    source_data = json.loads(source_text.lstrip("\ufeff"))
     if not isinstance(source_data, list) or not source_data:
         raise RuntimeError("Bixiange source descriptor is not a non-empty JSON array")
     source = source_data[0]
@@ -58,7 +58,7 @@ def main():
     headers.setdefault("Referer", base)
 
     descriptor = source["searchUrl"]
-    separator = re.search(r",\\s*(?=\\{)", descriptor)
+    separator = re.search(r",\s*(?=\{)", descriptor)
     if not separator:
         raise RuntimeError("Bixiange searchUrl has no static request options")
     search_endpoint = descriptor[:separator.start()].strip()
@@ -107,7 +107,7 @@ def main():
     root = final_detail_url.rstrip("/")
     toc_first_url = root + "/index/1.html"
     final_toc_url, toc_html = fetch(toc_first_url, headers)
-    total_match = re.search(r"(?:^|[^0-9])1/(\\d+)(?:<|[^0-9])", toc_html)
+    total_match = re.search(r"(?:^|[^0-9])1/(\d+)(?:<|[^0-9])", toc_html)
     total_pages = int(total_match.group(1)) if total_match else 0
     if total_pages < 1:
         raise RuntimeError(f"TOC first page did not expose the source's 1/N pagination marker: {final_toc_url}")
@@ -115,7 +115,7 @@ def main():
 
     content_soup = BeautifulSoup(toc_html, "html.parser")
     paragraphs = content_soup.select("#mycontent p")
-    content = "\\n".join(node.get_text(" ", strip=True) for node in paragraphs).strip()
+    content = "\n".join(node.get_text(" ", strip=True) for node in paragraphs).strip()
     if not content:
         raise RuntimeError(f"chapter content rule #mycontent p returned empty text: {final_toc_url}")
     print(f"LIVE_BIXIANGE_CONTENT_OK: chars={len(content)}, preview={content[:100]!r}")
