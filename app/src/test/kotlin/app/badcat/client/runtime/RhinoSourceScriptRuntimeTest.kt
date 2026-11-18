@@ -1756,8 +1756,7 @@ class BadcatSourceHttpGatewayFactoryAjaxTest {
                     '<ul><li id="one">First</li><li id="two">Second</li></ul>',
                     'https://reader.example/catalog'
                 );
-                var imported = new JavaImporter();
-                imported.importPackage(Packages.org.jsoup);
+                var imported = new JavaImporter(Packages.org.jsoup);
                 var viaPackages = Packages.org.jsoup.Jsoup.parse('<p>Packages</p>');
                 var viaImporter = imported.Jsoup.parse('<p>Importer</p>');
                 var items = doc.select('li');
