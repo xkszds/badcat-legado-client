@@ -34,6 +34,8 @@ data class SourceHttpResponse(
     val statusMessage: String = "",
     /** Elapsed request time in milliseconds, matching Legado StrResponse.callTime(). */
     val callTime: Int = 0,
+    /** Original response octets, retained for file/archive helpers that need byte fidelity. */
+    val bodyBytes: ByteArray? = null,
 )
 
 /** The five rule stages are kept distinct to prevent accidental rule cross-use. */
