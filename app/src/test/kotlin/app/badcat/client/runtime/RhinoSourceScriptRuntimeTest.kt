@@ -881,6 +881,19 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(source.id)
     }
     @Test
+    fun exposesTheConfiguredDeviceWebViewUserAgent() = runBlocking {
+        val source = BookSource(
+            id = "https://webview-ua.example/",
+            name = "WebView UA",
+            baseUrl = "https://webview-ua.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime(webViewUserAgent = "Badcat-WebView-UA")
+        val result = runtime.evaluate(source, "java.getWebViewUA()")
+        assertEquals("Badcat-WebView-UA", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun allowsNormalSourceAjaxLatencyWithinTheBoundedScriptTimeout() = runBlocking {
         val runtime = RhinoSourceScriptRuntime(
             sourceAjax = { _, _, _ ->
