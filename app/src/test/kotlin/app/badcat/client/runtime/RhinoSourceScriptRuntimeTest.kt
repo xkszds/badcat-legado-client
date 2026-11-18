@@ -1546,15 +1546,15 @@ class RhinoSourceScriptRuntimeTest {
             body = "<html><body>Book detail</body></html>",
         )
 
-        val parsed = assertIs<EngineResult.Success<app.badcat.engine.ParsedTocPage>>(
-            CssTocParser().parseWithScripts(source, response, bookUrl, runtime),
-        )
+        val parsed = CssTocParser().parseWithScripts(source, response, bookUrl, runtime)
+        assertTrue("Bixiange JavaScript TOC must parse: $parsed", parsed is EngineResult.Success)
+        val page = (parsed as EngineResult.Success).value
 
         assertEquals("$bookUrl/index/1.html", requestedAjaxUrl)
-        assertEquals(listOf("第1节", "第2节"), parsed.value.chapters.map { it.title })
+        assertEquals(listOf("第1节", "第2节"), page.chapters.map { it.title })
         assertEquals(
             listOf("$bookUrl/index/1.html", "$bookUrl/index/2.html"),
-            parsed.value.chapters.map { it.url },
+            page.chapters.map { it.url },
         )
         runtime.clearSourceState(source.id)
     }
