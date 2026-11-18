@@ -52,7 +52,7 @@ def main():
         raw = response.read(8 * 1024 * 1024 + 1)
     if len(raw) > 8 * 1024 * 1024:
         raise RuntimeError("source collection exceeded 8 MiB limit")
-    if raw.startswith(b"\\x1f\\x8b"):
+    if raw[:2] == bytes((31, 139)):
         raw = gzip.decompress(raw)
     sources = json.loads(raw.decode("utf-8-sig"))
     source = next(
