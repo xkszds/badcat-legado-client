@@ -1012,7 +1012,7 @@ text + re.test('aa}}')"""
         )
 
         assertTrue("Legado toNumChapter failed: $result", result is EngineResult.Success)
-        assertEquals("第12章|第12章|第1025章|第230章|第12章|第123章|-1|序章|", (result as EngineResult.Success).value)
+        assertEquals("第12章|第12章|第1025章|第230章|第12章|第123章|第-1章|序章|", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
 
