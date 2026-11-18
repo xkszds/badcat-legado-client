@@ -65,7 +65,7 @@ object LegadoEmbeddedUrlTemplate {
             val start = template.indexOf("{{", searchFrom)
             if (start < 0) break
             val expressionStart = start + 2
-            val end = template.indexOf("}}", expressionStart)
+            val end = findExpressionEnd(template, expressionStart)
             if (end < 0) break
             expressionCount++
             val expression = template.substring(expressionStart, end)
@@ -119,5 +119,138 @@ object LegadoEmbeddedUrlTemplate {
                 EngineResult.Success(output.toString())
             }
         }
+
+    /**
+     * Finds the closing template marker without treating braces inside JavaScript
+     * strings, comments, regular-expression literals or object literals as the
+     * end of the expression.
+     */
+    private fun findExpressionEnd(source: String, start: Int): Int {
+        var index = start
+        var braceDepth = 0
+        var quote: Char? = null
+        var escaped = false
+        var lineComment = false
+        var blockComment = false
+        var regex = false
+        var regexCharacterClass = false
+        var canStartRegex = true
+        val expressionPrefixKeywords = setOf(
+            "await", "case", "delete", "do", "else", "in", "instanceof",
+            "new", "of", "return", "throw", "typeof", "void", "yield",
+        )
+
+        while (index < source.length) {
+            val char = source[index]
+            if (quote != null) {
+                when {
+                    escaped -> escaped = false
+                    char == '\\' -> escaped = true
+                    char == quote -> quote = null
+                }
+                index++
+                continue
+            }
+            if (lineComment) {
+                if (char == '\n' || char == '\r') lineComment = false
+                index++
+                continue
+            }
+            if (blockComment) {
+                if (char == '*' && source.getOrNull(index + 1) == '/') {
+                    blockComment = false
+                    index += 2
+                } else index++
+                continue
+            }
+            if (regex) {
+                when {
+                    escaped -> escaped = false
+                    char == '\\' -> escaped = true
+                    char == '[' -> regexCharacterClass = true
+                    char == ']' -> regexCharacterClass = false
+                    char == '/' && !regexCharacterClass -> {
+                        regex = false
+                        index++
+                        while (index < source.length && source[index].isLetter()) index++
+                        canStartRegex = false
+                        continue
+                    }
+                    char == '\n' || char == '\r' -> {
+                        regex = false
+                        canStartRegex = true
+                    }
+                }
+                index++
+                continue
+            }
+
+            if (char == '/' && source.getOrNull(index + 1) == '/') {
+                lineComment = true
+                index += 2
+                continue
+            }
+            if (char == '/' && source.getOrNull(index + 1) == '*') {
+                blockComment = true
+                index += 2
+                continue
+            }
+            if (char == '/' && canStartRegex) {
+                regex = true
+                regexCharacterClass = false
+                escaped = false
+                index++
+                continue
+            }
+            if (char == '\'' || char == '"' || char == '`') {
+                quote = char
+                escaped = false
+                canStartRegex = false
+                index++
+                continue
+            }
+            if (char == '}' && braceDepth == 0 && source.getOrNull(index + 1) == '}') {
+                return index
+            }
+            when {
+                char.isLetter() || char == '_' || char == '$' -> {
+                    val wordStart = index++
+                    while (index < source.length &&
+                        (source[index].isLetterOrDigit() || source[index] == '_' || source[index] == '$')
+                    ) index++
+                    canStartRegex = source.substring(wordStart, index) in expressionPrefixKeywords
+                    continue
+                }
+                char.isDigit() -> {
+                    index++
+                    while (index < source.length &&
+                        (source[index].isLetterOrDigit() || source[index] == '.' || source[index] == '_')
+                    ) index++
+                    canStartRegex = false
+                    continue
+                }
+                char == '{' -> {
+                    braceDepth++
+                    canStartRegex = true
+                }
+                char == '}' -> {
+                    if (braceDepth > 0) braceDepth--
+                    canStartRegex = false
+                }
+                char == ')' || char == ']' || char == '.' -> canStartRegex = false
+                char == '+' || char == '-' -> {
+                    val doubled = source.getOrNull(index + 1) == char
+                    if (doubled) {
+                        index++
+                        canStartRegex = false
+                    } else canStartRegex = true
+                }
+                char.isWhitespace() -> Unit
+                else -> canStartRegex = char in "([{,:;?=!*%&|^~<>"
+            }
+            index++
+        }
+        return -1
+    }
     }
 }
