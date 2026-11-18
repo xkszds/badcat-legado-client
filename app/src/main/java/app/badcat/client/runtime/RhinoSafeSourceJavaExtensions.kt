@@ -89,18 +89,34 @@ class RhinoSafeSourceJavaExtensions(
     /** Legado's general key/value aliases use the same source-isolated persistent store. */
     fun get(key: String): String = getStoredString(key)
 
-    /** Legado HTTP GET overload: java.get(url, headers).body()/headers(name). */
+    /** Legado HTTP GET overloads. Headers may be a JS object or JSON string. */
     fun get(url: String): RhinoSourceHttpResponse = RhinoSourceHttpResponse(httpGet(url, emptyMap()))
 
-    fun get(url: String, headers: Scriptable): RhinoSourceHttpResponse {
-        val values = buildMap {
+    fun get(url: String, headers: Any?): RhinoSourceHttpResponse =
+        RhinoSourceHttpResponse(httpGet(url, parseRequestHeaders(headers)))
+
+    private fun parseRequestHeaders(headers: Any?): Map<String, String> = when (headers) {
+        null -> emptyMap()
+        is Scriptable -> buildMap {
             headers.ids.forEach { id ->
                 val name = id.toString()
                 val value = headers.get(name, headers)
-                put(name, value?.toString().orEmpty())
+                if (value != null) put(name, value.toString())
             }
         }
-        return RhinoSourceHttpResponse(httpGet(url, values))
+        is Map<*, *> -> headers.entries.associate { (key, value) ->
+            require(key != null && value != null) { "HTTP header names and values cannot be null" }
+            key.toString() to value.toString()
+        }
+        is String -> {
+            val json = com.google.gson.JsonParser.parseString(headers)
+            require(json.isJsonObject) { "HTTP headers must be a JSON object" }
+            json.asJsonObject.entrySet().associate { (key, value) ->
+                require(value.isJsonPrimitive) { "HTTP header values must be scalar" }
+                key to value.asString
+            }
+        }
+        else -> throw IllegalArgumentException("HTTP headers must be an object or JSON string")
     }
 
     fun put(key: String, value: String): String = putString(key, value)
@@ -305,11 +321,15 @@ class RhinoSafeSourceJavaExtensions(
 class RhinoSourceHttpResponse(private val response: SourceHttpResponse) {
     fun body(): String = response.body
     fun code(): Int = response.statusCode
+    fun statusCode(): Int = response.statusCode
     fun url(): String = response.finalUrl
-    fun headers(name: String): String =
+    fun header(name: String): String =
         response.headers.entries.firstOrNull { it.key.equals(name, ignoreCase = true) }
             ?.value?.firstOrNull().orEmpty()
-    fun header(name: String): String = headers(name)
+    fun headers(name: String): String = header(name)
+    fun parse(): LegadoSourceElement = LegadoSourceElement(response.body)
+    fun select(selector: String): LegadoSourceElement = parse().select(selector)
+    fun charset(): String = response.contentType.substringAfter("charset=", "UTF-8").trim().trim('"')
 }
 
 /** Narrow URL metadata view for source rules; no connection or stream methods. */
