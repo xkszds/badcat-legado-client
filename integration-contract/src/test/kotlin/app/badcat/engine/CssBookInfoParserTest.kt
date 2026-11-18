@@ -362,7 +362,7 @@ class CssBookInfoParserTest {
         }
 
         val detail = assertIs<EngineResult.Success<BookDetail>>(
-            CssBookInfoParser().parseWithScripts(source, response, response.finalUrl, runtime),
+            CssBookInfoParser().parseWithScripts(source, response, response.finalUrl, runtime), "Book-info @put result: $result",
         ).value
 
         assertEquals("Stored Novel", detail.name)
