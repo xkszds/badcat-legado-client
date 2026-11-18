@@ -39,10 +39,18 @@ internal object LegadoElementIndex {
         val delimiter = rule.indexOfLast { it == '.' || it == '!' }
         if (delimiter <= 0) return null
         val suffix = rule.substring(delimiter + 1).trim()
-        val terms = parseTerms(suffix) ?: return null
+        val exclude = rule[delimiter] == '!'
+        // Upstream ElementsSingle's legacy form uses ':' as a list separator,
+        // not as a range operator: tag.div!0:1:2 excludes indexes 0, 1 and 2.
+        // Ranges are expressed by the newer bracket form, e.g. tag.div[0:8:2].
+        val terms = suffix.split(':').map { token ->
+            val index = token.trim().toIntOrNull() ?: return null
+            IndexTerm.Single(index)
+        }
+        if (terms.isEmpty()) return null
         return ParsedRule(
             selector = rule.substring(0, delimiter).trim(),
-            exclude = rule[delimiter] == '!',
+            exclude = exclude,
             terms = terms,
         ).takeIf { it.selector.isNotEmpty() }
     }
