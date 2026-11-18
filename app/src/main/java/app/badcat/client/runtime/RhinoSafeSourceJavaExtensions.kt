@@ -281,6 +281,70 @@ class RhinoSafeSourceJavaExtensions(
         }
     }
 
+    /**
+     * Legado ajaxTestAll: concurrent requests with a per-call timeout. In test mode,
+     * transport failures are represented as StrResponse-compatible values whose
+     * callTime carries the upstream negative error code.
+     */
+    @JvmOverloads
+    fun ajaxTestAll(urls: Any?, timeout: Int, skipRateLimit: Boolean = false): Array<RhinoSourceHttpResponse> {
+        require(timeout > 0) { "ajaxTestAll timeout must be positive" }
+        val values = when (urls) {
+            is Scriptable -> {
+                val length = (ScriptableObject.getProperty(urls, "length") as? Number)?.toInt()
+                    ?: throw IllegalArgumentException("java.ajaxTestAll expects an array of URLs")
+                require(length in 0..MAX_AJAX_ALL_URLS) { "java.ajaxTestAll accepts at most $MAX_AJAX_ALL_URLS URLs" }
+                (0 until length).map { index -> ScriptableObject.getProperty(urls, index) }
+            }
+            is Iterable<*> -> urls.toList()
+            is Array<*> -> urls.toList()
+            is String -> {
+                val json = com.google.gson.JsonParser.parseString(urls)
+                require(json.isJsonArray) { "java.ajaxTestAll string input must be a JSON array" }
+                json.asJsonArray.map { it.asString }
+            }
+            else -> throw IllegalArgumentException("java.ajaxTestAll expects an array of URLs")
+        }
+        require(values.size <= MAX_AJAX_ALL_URLS) { "java.ajaxTestAll accepts at most $MAX_AJAX_ALL_URLS URLs" }
+        val normalizedUrls = values.map { value ->
+            value?.toString()?.trim().orEmpty().also { url ->
+                require(url.isNotEmpty()) { "java.ajaxTestAll URL must not be blank" }
+            }
+        }
+        if (normalizedUrls.isEmpty()) return emptyArray()
+        val executor = Executors.newFixedThreadPool(minOf(MAX_AJAX_ALL_CONCURRENCY, normalizedUrls.size))
+        return try {
+            normalizedUrls.map { url ->
+                Callable {
+                    val response = try {
+                        httpRequestWithTimeout("GET", url, null, emptyMap(), timeout.toLong())
+                    } catch (error: Exception) {
+                        val code = when (error) {
+                            is java.net.SocketTimeoutException -> -2
+                            is java.net.UnknownHostException -> -3
+                            is java.net.ConnectException -> -4
+                            is java.net.SocketException -> -5
+                            is javax.net.ssl.SSLException -> -6
+                            is java.io.InterruptedIOException ->
+                                if (error.message?.contains("timeout", ignoreCase = true) == true) -1 else -7
+                            else -> -7
+                        }
+                        SourceHttpResponse(
+                            statusCode = 200,
+                            finalUrl = runCatching { URL(url).toString() }.getOrDefault("http://localhost/"),
+                            body = error.message ?: error.javaClass.simpleName,
+                            statusMessage = "OK",
+                            callTime = code,
+                        )
+                    }
+                    RhinoSourceHttpResponse(response)
+                }
+            }.let { tasks -> executor.invokeAll(tasks).map { it.get() }.toTypedArray() }
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
     private fun parseRequestHeaders(headers: Any?): Map<String, String> = when (headers) {
         null -> emptyMap()
         is Scriptable -> buildMap {
