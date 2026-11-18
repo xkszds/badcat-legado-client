@@ -400,6 +400,30 @@ text + re.test('aa}}')"""
     }
 
     @Test
+    fun supportsLegadoSourceConcurrencyHelpers() = runBlocking {
+        val source = BookSource(
+            id = "https://source-lock.example/",
+            name = "Source lock",
+            baseUrl = "https://source-lock.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val result = runtime.evaluate(
+            source,
+            """
+                var calls = 0;
+                java.singleFlight('once', function() { calls++; });
+                java.singleFlight('once', function() { calls++; });
+                java.lock('mutex', function() { calls += 10; });
+                java.lock('mutex', function() { calls += 10; });
+                [calls, java.tick('counter'), java.tick('counter'), java.tick('counter')].join('|');
+            """.trimIndent(),
+        )
+        assertTrue("Legado source concurrency helpers failed: $result", result is EngineResult.Success)
+        assertEquals("21|0|1|2", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun supportsLegadoStringByteAndHexOverloads() = runBlocking {
         val source = BookSource(
             id = "https://encoding-overloads.example/",

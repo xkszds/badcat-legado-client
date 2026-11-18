@@ -23,6 +23,8 @@ import app.badcat.engine.LegadoSourceElementList
 import app.badcat.engine.SourceHttpResponse
 import org.htmlunit.corejs.javascript.Scriptable
 import org.htmlunit.corejs.javascript.ScriptableObject
+import org.htmlunit.corejs.javascript.Context
+import org.htmlunit.corejs.javascript.Function
 
 /**
  * Explicitly allow-listed subset of Legado's `java` helper for source scripts.
@@ -277,6 +279,46 @@ class RhinoSafeSourceJavaExtensions(
             }
         }
         else -> throw IllegalArgumentException("HTTP headers must be an object or JSON string")
+    }
+
+    /** Legado source-scoped single-flight execution; successful work is coalesced by key. */
+    fun singleFlight(name: String, action: Function) = singleFlight(name, action, 15_000L)
+
+    fun singleFlight(name: String, action: Function, timeoutMs: Long) {
+        val key = sourceConcurrencyKey(name)
+        LegadoSourceLock.singleFlight(key, timeoutMs) { invokeSourceFunction(action) }
+    }
+
+    /** Legado source-scoped mutual-exclusion execution. */
+    fun lock(name: String, action: Function) = lock(name, action, 15_000L)
+
+    fun lock(name: String, action: Function, timeoutMs: Long) {
+        val key = sourceConcurrencyKey(name)
+        LegadoSourceLock.lock(key, timeoutMs) { invokeSourceFunction(action) }
+    }
+
+    /** Returns the previous counter value, matching the upstream tick contract. */
+    fun tick(name: String): Int = LegadoSourceLock.tick(sourceConcurrencyKey(name))
+
+    private fun sourceConcurrencyKey(name: String): String {
+        require(name.isNotBlank() && name.length <= 256) {
+            "name 不能为空且长度不能超过 256"
+        }
+        require(sourceId.isNotBlank()) {
+            "并发工具只能在书源、订阅源或朗读源中使用"
+        }
+        return "$sourceId@$name"
+    }
+
+    private fun invokeSourceFunction(action: Function) {
+        val context = Context.getCurrentContext()
+            ?: throw IllegalStateException("Legado concurrency callbacks require an active Rhino context")
+        val parent = action.parentScope
+        val top = parent?.let { ScriptableObject.getTopLevelScope(it) }
+        val thisObject = top?.let { ScriptableObject.getProperty(it, "globalThis") as? Scriptable }
+            ?: top
+            ?: throw IllegalStateException("Legado concurrency callback has no Rhino global scope")
+        action.call(context, parent, thisObject, emptyArray())
     }
 
     fun put(key: String, value: String): String = putString(key, value)
