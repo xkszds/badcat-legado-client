@@ -453,6 +453,39 @@ class CssSearchResultsParserTest {
     }
 
     @Test
+    fun parsesImportedMkzhanHtmlSearchRulesFromTheSameCollection() {
+        // Exact CSS rule expressions from the collection's alternate 漫客栈 source.
+        val source = source(
+            """{"bookList":"class.search-comic-list@class.common-comic-item","bookUrl":"class.cover@href","coverUrl":"img@data-src","intro":".comic-feature@text","lastChapter":"class.comic-update@text##更至：","name":"class.comic__title@tag.a.0@text"}""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://www.mkzhan.com/search/?keyword=%E6%96%97%E7%BD%97%E5%A4%A7%E9%99%86",
+            contentType = "text/html",
+            body = """
+                <div class="search-comic-list">
+                  <div class="common-comic-item">
+                    <a class="cover" href="/comic/123/"><img data-src="https://img.example/123.jpg"></a>
+                    <div class="comic__title"><a href="/comic/123/">斗罗大陆</a></div>
+                    <div class="comic-feature">少年热血漫画</div>
+                    <div class="comic-update">更至：第100话</div>
+                  </div>
+                </div>
+            """.trimIndent(),
+        )
+
+        val books = assertIs<EngineResult.Success<List<BookCandidate>>>(
+            CssSearchResultsParser().parse(source, response),
+        ).value
+        assertEquals(1, books.size)
+        assertEquals("斗罗大陆", books.single().name)
+        assertEquals("https://www.mkzhan.com/comic/123/", books.single().bookUrl)
+        assertEquals("https://img.example/123.jpg", books.single().coverUrl)
+        assertEquals("少年热血漫画", books.single().intro)
+        assertEquals("第100话", books.single().latestChapter)
+    }
+
+    @Test
     fun fallsBackFromInvalidRegexBranchesToCssSearchRules() {
         val source = source(
             """{"bookList":"@regex:a{2,1}||div.secondary","name":"@regex:a{2,1}||h2@text","bookUrl":"a@href"}""",
