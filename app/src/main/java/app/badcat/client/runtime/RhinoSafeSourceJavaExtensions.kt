@@ -32,6 +32,7 @@ class RhinoSafeSourceJavaExtensions(
     private val ajaxRequest: (String) -> String = { throw UnsupportedOperationException("java.ajax is not connected to the source HTTP transport") },
     private val httpGet: (String, Map<String, String>) -> SourceHttpResponse = { _, _ -> throw UnsupportedOperationException("java.get HTTP transport is unavailable") },
     private val ruleStringReader: (String) -> String = { "" },
+    private val ruleStringReaderWithContent: (String, String) -> String = { rule, _ -> ruleStringReader(rule) },
     private val ruleStringListReader: (String) -> List<String> = { emptyList() },
     private val ruleElementReader: (String) -> LegadoSourceElement? = { null },
     private val ruleElementsReader: (String) -> LegadoSourceElementList = { LegadoSourceElementList(emptyList()) },
@@ -40,6 +41,9 @@ class RhinoSafeSourceJavaExtensions(
 
     /** Evaluate a Legado selector against the current AnalyzeRule content. */
     fun getString(rule: String): String = ruleStringReader(rule)
+
+    /** Legado overload evaluates a selector against an explicitly supplied result fragment. */
+    fun getString(rule: String, content: String): String = ruleStringReaderWithContent(rule, content)
 
     /** Legado's list selector helper, returned as a Java-compatible mutable list. */
     fun getStringList(rule: String): java.util.ArrayList<String> = java.util.ArrayList(ruleStringListReader(rule))
