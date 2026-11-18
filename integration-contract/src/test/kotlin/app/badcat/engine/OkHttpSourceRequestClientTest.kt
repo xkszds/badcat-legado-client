@@ -25,7 +25,7 @@ class OkHttpSourceRequestClientTest {
                     Thread.sleep(25)
                     val payload = "ok".toByteArray(StandardCharsets.UTF_8)
                     socket.getOutputStream().apply {
-                        write("HTTP/1.1 200 OK\r\nContent-Length: ${payload.size}\\r\\nConnection: close\\r\\n\\r\\n".toByteArray(StandardCharsets.US_ASCII))
+                        write("HTTP/1.1 200 OK\r\nContent-Length: ${payload.size}\r\nConnection: close\r\n\r\n".toByteArray(StandardCharsets.US_ASCII))
                         write(payload)
                         flush()
                     }
