@@ -11,7 +11,9 @@ import app.badcat.engine.SourceDocument
 import app.badcat.engine.SourceHttpResponse
 import com.script.ScriptBindings
 import com.script.rhino.RhinoScriptEngine
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -59,8 +61,8 @@ class RhinoSourceScriptRuntime(
         source: BookSource,
         script: String,
         bindings: Map<String, String>,
-    ): EngineResult<String> {
-        return sourceLocks.computeIfAbsent(source.id) { Mutex() }.withLock {
+    ): EngineResult<String> = withContext(Dispatchers.IO) {
+        sourceLocks.computeIfAbsent(source.id) { Mutex() }.withLock {
             try {
                 require(script.isNotBlank()) { "Source JavaScript must not be blank" }
                 require(script.length <= MAX_SCRIPT_CHARS) { "Source JavaScript exceeds the size limit" }
