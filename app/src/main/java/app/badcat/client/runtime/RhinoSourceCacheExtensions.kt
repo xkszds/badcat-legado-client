@@ -82,28 +82,28 @@ class RhinoSourceCacheExtensions(
         val seconds = saveTime.toLong()
         require(seconds >= 0L && seconds <= MAX_TTL_SECONDS) { "cache file saveTime is outside the supported range" }
         val expiresAt = if (seconds == 0L) 0L else nowMillis() + seconds * 1_000L
-        val entry = JsonObject().apply {
-            addProperty("value", value)
-            addProperty("expiresAt", expiresAt)
-        }
-        fileStore.put(sourceId, storageKey(key), entry.toString())
+        fileStore.put(sourceId, storageKey(key), "$expiresAt\\n$value")
         return value
     }
 
     fun getFile(key: String): String? {
         requireValidKey(key)
         val raw = fileStore.get(sourceId, storageKey(key)) ?: return null
-        val entry = runCatching { JsonParser.parseString(raw).asJsonObject }.getOrNull()
-            ?: run {
-                fileStore.remove(sourceId, storageKey(key))
-                return null
-            }
-        val expiresAt = entry.get("expiresAt")?.asLong ?: 0L
+        val separator = raw.indexOf('\\n')
+        if (separator <= 0) {
+            fileStore.remove(sourceId, storageKey(key))
+            return null
+        }
+        val expiresAt = raw.substring(0, separator).toLongOrNull()
+        if (expiresAt == null) {
+            fileStore.remove(sourceId, storageKey(key))
+            return null
+        }
         if (expiresAt > 0L && nowMillis() >= expiresAt) {
             fileStore.remove(sourceId, storageKey(key))
             return null
         }
-        return entry.get("value")?.takeIf { it.isJsonPrimitive }?.asString
+        return raw.substring(separator + 1)
     }
 
     /** Kept as a compatibility alias for callers that used the old in-memory API. */
@@ -124,7 +124,7 @@ class RhinoSourceCacheExtensions(
         const val STORAGE_PREFIX = "__legado_cache__:"
         const val MAX_KEY_CHARS = 256
         const val MAX_VALUE_CHARS = 64 * 1024
-        const val MAX_FILE_VALUE_BYTES = 50 * 1024 * 1024
+        const val MAX_FILE_VALUE_BYTES = 50 * 1024 * 1024 - 32
         const val MAX_TTL_SECONDS = 365L * 24L * 60L * 60L
     }
 }
