@@ -60,6 +60,36 @@ class LegadoRuleExpressionDispatcherTest {
 
 
 
+
+    @Test
+    fun matchesUpstreamColonSeparatedLegacyIndexListsAndExclusions() {
+        val document = SourceDocument(
+            url = "https://reader.example/catalog",
+            body = """
+                <div id="list"><dl>
+                  <dd>zero</dd><dd>one</dd><dd>two</dd><dd>three</dd><dd>four</dd>
+                  <dd>five</dd><dd>six</dd><dd>seven</dd><dd>eight</dd><dd>nine</dd>
+                </dl></div>
+            """.trimIndent(),
+        )
+        val selected = LegadoRuleExpressionDispatcher.evaluateElements(
+            document,
+            "id.list@tag.dl@tag.dd.0:2:4",
+        )
+        assertEquals(
+            listOf("<dd>zero</dd>", "<dd>two</dd>", "<dd>four</dd>"),
+            assertIs<EngineResult.Success<List<String>>>(selected).value,
+        )
+        val excluded = LegadoRuleExpressionDispatcher.evaluateElements(
+            document,
+            "id.list@tag.dl@tag.dd!0:1:2:3:4:5:6:7:8",
+        )
+        assertEquals(
+            listOf("<dd>nine</dd>"),
+            assertIs<EngineResult.Success<List<String>>>(excluded).value,
+        )
+    }
+
     @Test
     fun evaluatesRealWorldLegadoChainedCollectionRoots() {
         val document = SourceDocument(
