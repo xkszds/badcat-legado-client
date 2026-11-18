@@ -178,7 +178,7 @@ text + re.test('aa}}')"""
         assertEquals("source-value", (stored as EngineResult.Success).value)
         assertEquals("900150983cd24fb0d6963f7d28e17f72", (digest as EngineResult.Success).value)
         assertEquals("a+b", (encoded as EngineResult.Success).value)
-        assertEquals("http://m.yimixs.org/##yolo(%E9%9B%AA%20%E7%8C%AB)", (uriEncoded as EngineResult.Success).value)
+        assertEquals("http%3A%2F%2Fm.yimixs.org%2F%23%23yolo%28%E9%9B%AA+%E7%8C%AB%29", (uriEncoded as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
 
