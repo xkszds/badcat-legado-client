@@ -35,6 +35,7 @@ import org.htmlunit.corejs.javascript.Function
  */
 class RhinoSafeSourceJavaExtensions(
     private val sourceId: String,
+    private val rateLimit: (Boolean) -> Unit = {},
     private val store: SourceScriptKeyValueStore,
     private val cookieReader: (String) -> String = { "" },
     private val ajaxRequest: (String) -> String = { throw UnsupportedOperationException("java.ajax is not connected to the source HTTP transport") },
@@ -190,6 +191,7 @@ class RhinoSafeSourceJavaExtensions(
      */
     fun get(urlOrKey: String): Any =
         if (isHttpTarget(urlOrKey)) {
+            rateLimit(false)
             RhinoSourceHttpResponse(httpRequest("GET", urlOrKey, null, emptyMap()))
         } else {
             getStoredString(urlOrKey)
@@ -217,7 +219,7 @@ class RhinoSafeSourceJavaExtensions(
         RhinoSourceHttpResponse(httpRequest("HEAD", url, null, parseRequestHeaders(headers)))
 
     fun post(url: String, body: String, headers: Any?): RhinoSourceHttpResponse =
-        RhinoSourceHttpResponse(httpRequest("POST", url, body, parseRequestHeaders(headers)))
+        rateLimit(false).let { RhinoSourceHttpResponse(httpRequest("POST", url, body, parseRequestHeaders(headers))) }
 
     /**
      * Legado connect() always returns a StrResponse-shaped value. Transport
@@ -230,6 +232,7 @@ class RhinoSafeSourceJavaExtensions(
 
     fun connect(url: String, headers: Any?, callTimeout: Long?): RhinoSourceHttpResponse = try {
         require(callTimeout == null || callTimeout > 0) { "connect callTimeout must be positive" }
+        rateLimit(false)
         RhinoSourceHttpResponse(httpRequestWithTimeout("GET", url, null, parseRequestHeaders(headers), callTimeout))
     } catch (error: Exception) {
         if (error is java.util.concurrent.CancellationException) throw error
@@ -244,7 +247,8 @@ class RhinoSafeSourceJavaExtensions(
     }
 
     /** Bounded Legado batch GET helper with capped parallelism and input-order results. */
-    fun ajaxAll(urls: Any?): Array<RhinoSourceHttpResponse> {
+    @JvmOverloads
+    fun ajaxAll(urls: Any?, skipRateLimit: Boolean = false): Array<RhinoSourceHttpResponse> {
         val values = when (urls) {
             is Scriptable -> {
                 val length = (ScriptableObject.getProperty(urls, "length") as? Number)?.toInt()
@@ -273,7 +277,7 @@ class RhinoSafeSourceJavaExtensions(
         )
         return try {
             val tasks = normalizedUrls.map { url ->
-                Callable { RhinoSourceHttpResponse(httpRequest("GET", url, null, emptyMap())) }
+                Callable { rateLimit(skipRateLimit); RhinoSourceHttpResponse(httpRequest("GET", url, null, emptyMap())) }
             }
             executor.invokeAll(tasks).map { future -> future.get() }.toTypedArray()
         } finally {
@@ -531,6 +535,7 @@ class RhinoSafeSourceJavaExtensions(
 
     /** Upstream accepts either a URL string or a list whose first item is the URL. */
     fun ajax(url: Any?): String = runCatching {
+        rateLimit(false)
         val value = when (url) {
             is List<*> -> url.firstOrNull()?.toString().orEmpty()
             is Scriptable -> {
