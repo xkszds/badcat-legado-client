@@ -36,8 +36,11 @@ class RhinoSafeSourceJavaExtensionsCompatTest {
         assertThrows(IllegalArgumentException::class.java) {
             extensions.parseJsRequestHeaders("[1,2]")
         }
-        assertThrows(RuntimeException::class.java) {
+        assertThrows(IllegalArgumentException::class.java) {
             extensions.parseJsRequestHeaders("{invalid")
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            extensions.parseJsRequestHeaders("""{"X-Test":null}""")
         }
         assertThrows(IllegalArgumentException::class.java) {
             extensions.parseJsRequestHeaders(42)
