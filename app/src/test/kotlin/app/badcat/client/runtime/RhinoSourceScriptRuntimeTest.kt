@@ -680,4 +680,29 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(source.id)
     }
 
+
+    @Test
+    fun supportsLegadoDesCbcDecryptionHelper() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val source = BookSource(
+            id = "https://des-crypto.example/",
+            name = "DES compatibility",
+            baseUrl = "https://des-crypto.example/",
+        )
+        val key = "12345678".toByteArray(Charsets.UTF_8)
+        val iv = "abcdefgh".toByteArray(Charsets.UTF_8)
+        val plaintext = "DES encrypted chapter".toByteArray(Charsets.UTF_8)
+        val cipher = Cipher.getInstance("DES/CBC/PKCS5Padding")
+        cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(key, "DES"), IvParameterSpec(iv))
+        val encrypted = Base64.getEncoder().encodeToString(cipher.doFinal(plaintext))
+        val result = runtime.evaluate(
+            source,
+            "java.createSymmetricCrypto('DES/CBC/PKCS5Padding','12345678','abcdefgh').decryptStr(java.base64DecodeToByteArray('$encrypted'))",
+        )
+
+        assertTrue("Legado DES helper failed: $result", result is EngineResult.Success)
+        assertEquals("DES encrypted chapter", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
 }
