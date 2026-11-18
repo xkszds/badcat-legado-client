@@ -80,7 +80,7 @@ class RhinoSourceScriptRuntimeTest {
                 sourceId = "https://download-temp-link.example/",
                 store = InMemorySourceScriptKeyValueStore,
                 fileRoot = root,
-                httpRequest = { _, requestUrl, _, _ ->
+                httpGet = { requestUrl, _ ->
                     SourceHttpResponse(
                         statusCode = 200,
                         finalUrl = requestUrl,
@@ -658,8 +658,7 @@ text + re.test('aa}}')"""
             baseUrl = "https://ajax-all.example/",
         )
         val runtime = RhinoSourceScriptRuntime(
-            sourceHttpRequest = { _, _, method, url, _, _ ->
-                assertEquals("GET", method)
+            sourceGet = { _, _, url, _ ->
                 app.badcat.engine.SourceHttpResponse(200, "https://ajax-all.example$url", body = "body:$url")
             },
         )
@@ -1554,7 +1553,7 @@ text + re.test('aa}}')"""
         )
         val skipFlags = java.util.Collections.synchronizedList(mutableListOf<Boolean>())
         val runtime = RhinoSourceScriptRuntime(
-            sourceHttpRequest = { _, _, _, url, _, _ ->
+            sourceGet = { _, _, url, _ ->
                 app.badcat.engine.SourceHttpResponse(200, url, body = "ok")
             },
             sourceRateLimit = { _, skip -> skipFlags += skip },
@@ -1640,7 +1639,7 @@ text + re.test('aa}}')"""
         val active = AtomicInteger(0)
         val peak = AtomicInteger(0)
         val runtime = RhinoSourceScriptRuntime(
-            sourceHttpRequest = { _, _, _, url, _, _ ->
+            sourceGet = { _, _, url, _ ->
                 val now = active.incrementAndGet()
                 peak.updateAndGet { previous -> maxOf(previous, now) }
                 try {
@@ -1850,7 +1849,7 @@ text + re.test('aa}}')"""
         val extensions = RhinoSafeSourceJavaExtensions(
             sourceId = sourceId,
             store = InMemorySourceScriptKeyValueStore,
-            httpRequest = { _, _, _, _ ->
+            httpGet = { _, _ ->
                 SourceHttpResponse(
                     statusCode = 200,
                     finalUrl = "https://binary-download.example/legacy.txt",
