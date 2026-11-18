@@ -12,6 +12,7 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 import com.github.liuyueyi.quick.transfer.ChineseUtils as QuickChineseUtils
 import com.github.liuyueyi.quick.transfer.constants.TransType
+import app.badcat.engine.LegadoSourceElement
 
 /**
  * Explicitly allow-listed subset of Legado's `java` helper for source scripts.
@@ -26,11 +27,20 @@ class RhinoSafeSourceJavaExtensions(
     private val cookieReader: (String) -> String = { "" },
     private val ajaxRequest: (String) -> String = { throw UnsupportedOperationException("java.ajax is not connected to the source HTTP transport") },
     private val ruleStringReader: (String) -> String = { "" },
+    private val ruleStringListReader: (String) -> List<String> = { emptyList() },
+    private val ruleElementReader: (String) -> LegadoSourceElement? = { null },
     private val contentWriter: (String) -> Unit = {},
 ) {
 
     /** Evaluate a Legado selector against the current AnalyzeRule content. */
     fun getString(rule: String): String = ruleStringReader(rule)
+
+    /** Legado's list selector helper, returned as a Java-compatible mutable list. */
+    fun getStringList(rule: String): java.util.ArrayList<String> = java.util.ArrayList(ruleStringListReader(rule))
+
+    /** Legado's element selector helper, exposing only safe text/HTML/attribute methods. */
+    fun getElement(rule: String): LegadoSourceElement =
+        ruleElementReader(rule) ?: LegadoSourceElement("")
 
     /** Explicit stored-string accessor for host integrations. */
     fun getStoredString(key: String): String {
