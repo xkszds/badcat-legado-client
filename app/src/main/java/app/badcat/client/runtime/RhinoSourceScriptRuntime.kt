@@ -58,6 +58,10 @@ class RhinoSourceScriptRuntime(
         require(timeout > 0) { "connect callTimeout must be positive" }
         throw UnsupportedOperationException("Per-call timeout transport is not connected (requested ${timeout}ms)")
     },
+    private val sourceHttpRequestNoRedirectWithTimeout: (source: BookSource, baseUrl: String, method: String, url: String, body: String?, headers: Map<String, String>, callTimeoutMillis: Long) -> SourceHttpResponse = { source, baseUrl, method, url, body, headers, timeout ->
+        require(timeout > 0) { "HTTP timeout must be positive" }
+        throw UnsupportedOperationException("Per-call no-redirect timeout transport is not connected (requested ${timeout}ms)")
+    },
     private val webViewUserAgent: String = RhinoSafeSourceJavaExtensions.DEFAULT_WEBVIEW_USER_AGENT,
     private val androidIdProvider: () -> String = { throw UnsupportedOperationException("Android ID provider is not connected") },
     private val toastPresenter: (String, Boolean) -> Unit = { _, _ -> throw UnsupportedOperationException("Toast presenter is not connected") },
@@ -191,6 +195,15 @@ class RhinoSourceScriptRuntime(
                             sourceHttpRequest(source, currentRuleBaseUrl, method, url, body, headers)
                         } else {
                             sourceHttpRequestWithTimeout(source, currentRuleBaseUrl, method, url, body, headers, timeout)
+                        }
+                    },
+                    httpRequestNoRedirectWithTimeout = { method, url, body, headers, timeout ->
+                        if (timeout == null) {
+                            sourceHttpRequest(source, currentRuleBaseUrl, method, url, body, headers)
+                        } else {
+                            sourceHttpRequestNoRedirectWithTimeout(
+                                source, currentRuleBaseUrl, method, url, body, headers, timeout
+                            )
                         }
                     },
                     ruleStringReader = { rule ->
