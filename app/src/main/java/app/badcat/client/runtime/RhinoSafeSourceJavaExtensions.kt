@@ -322,7 +322,7 @@ class RhinoSafeSourceJavaExtensions(
         return children.mapNotNull { child ->
             val bytes = fileStore.getBytes(sourceId, virtualFileKey("$directory/$child"))
             bytes?.let { String(it, detectTextCharset(it)) }
-        }.joinToString("\\n")
+        }.joinToString("\n")
     }
 
     private fun digestFileName(name: String): String =
