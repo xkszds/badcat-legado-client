@@ -577,7 +577,18 @@ jobs:
       - name: Live end-to-end imported Kuwo source reading (best effort)
         timeout-minutes: 3
         continue-on-error: true
-        run: python3 .github/scripts/live-kuwo-reading-smoke.py
+        run: |
+          set -o pipefail
+          python3 .github/scripts/live-kuwo-reading-smoke.py 2>&1 | tee live-kuwo-reading-smoke.log
+
+      - name: Upload live source smoke report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: badcat-live-source-smoke-report
+          path: live-kuwo-reading-smoke.log
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Run contract unit tests
         run: gradle --no-daemon :integration-contract:test
