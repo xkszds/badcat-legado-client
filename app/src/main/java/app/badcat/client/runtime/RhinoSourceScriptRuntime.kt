@@ -38,6 +38,7 @@ class RhinoSourceScriptRuntime(
         if (method.equals("GET", true) && body == null) sourceGet(source, baseUrl, url, headers)
         else throw UnsupportedOperationException("java.$method is not connected to the source HTTP transport")
     },
+    private val webViewUserAgent: String = RhinoSafeSourceJavaExtensions.DEFAULT_WEBVIEW_USER_AGENT,
 ) : SourceScriptRuntime {
     private val javaExtensions = ConcurrentHashMap<String, RhinoSafeSourceJavaExtensions>()
     private val sourceExtensions = ConcurrentHashMap<String, RhinoSourceLoginExtensions>()
@@ -232,6 +233,7 @@ class RhinoSourceScriptRuntime(
                         }.getOrDefault(LegadoSourceElementList(emptyList()))
                     },
                     contentWriter = { content -> currentRuleContent = content },
+                    webViewUserAgent = webViewUserAgent,
                 )
                 javaExtensions[source.id] = javaBridge
                 scope["java"] = javaBridge
