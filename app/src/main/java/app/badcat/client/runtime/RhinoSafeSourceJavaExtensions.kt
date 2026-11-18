@@ -16,7 +16,6 @@ import com.github.liuyueyi.quick.transfer.constants.TransType
 import app.badcat.engine.LegadoSourceElement
 import app.badcat.engine.LegadoSourceElementList
 import app.badcat.engine.SourceHttpResponse
-import org.mozilla.javascript.Scriptable
 
 /**
  * Explicitly allow-listed subset of Legado's `java` helper for source scripts.
@@ -78,12 +77,22 @@ class RhinoSafeSourceJavaExtensions(
     fun get(key: String): String = getStoredString(key)
 
     /** Legado HTTP GET overload: java.get(url, headers).body()/headers(name). */
-    fun get(url: String, headers: Scriptable): RhinoSourceHttpResponse {
-        val values = buildMap {
-            headers.ids.forEach { id ->
-                val name = id.toString()
-                val value = headers.get(name, headers)
-                put(name, value?.toString().orEmpty())
+    fun get(url: String, headers: Any?): RhinoSourceHttpResponse {
+        val values = when (headers) {
+            is Map<*, *> -> headers.entries.associate { (key, value) ->
+                key.toString() to value.toString()
+            }
+            null -> emptyMap()
+            else -> {
+                // Rhino NativeObject is intentionally not imported into the app
+                // compile classpath. Its stable object rendering is parsed as
+                // simple key/value pairs; values containing separators are
+                // supported when quoted.
+                val rendered = headers.toString().trim().removePrefix("{").removeSuffix("}")
+                val pairPattern = Regex("""([^=,]+)=((?:\"[^\"]*\")|(?:'[^']*')|[^,]*)(?:,\\s*|$)""")
+                pairPattern.findAll(rendered).associate { match ->
+                    match.groupValues[1].trim() to match.groupValues[2].trim().trim('"', '\'')
+                }
             }
         }
         return RhinoSourceHttpResponse(httpGet(url, values))
