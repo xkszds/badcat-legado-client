@@ -1605,7 +1605,7 @@ text + re.test('aa}}')"""
             baseUrl = "https://connect-error.example/",
         )
         val runtime = RhinoSourceScriptRuntime(
-            sourceHttpRequest = { _, _, _, _, _, _ -> throw IllegalStateException("connect network failed") },
+            sourceGet = { _, _, _, _ -> throw IllegalStateException("connect network failed") },
         )
         val result = runtime.evaluate(
             source,
