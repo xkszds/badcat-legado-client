@@ -167,9 +167,9 @@ class RhinoSafeSourceJavaExtensions(
         require(bytes.size <= MAX_DOWNLOAD_BYTES) {
             "downloadFile response exceeds the 8 MiB limit"
         }
-        val token = UUID.randomUUID().toString()
+        val token = downloadTokenForUrl(url)
         fileStore.putBytes(sourceId, DOWNLOAD_FILE_PREFIX + token, bytes)
-        return "downloads/$token.txt"
+        return "downloads/$token.${downloadExtension(url)}"
     }
 
     /** Legacy hexadecimal-data overload retained for older imported sources. */
@@ -184,7 +184,7 @@ class RhinoSafeSourceJavaExtensions(
         require(bytes.size <= MAX_DOWNLOAD_BYTES) {
             "downloadFile response exceeds the 8 MiB limit"
         }
-        val token = UUID.randomUUID().toString()
+        val token = downloadTokenForUrl(url)
         fileStore.putBytes(sourceId, DOWNLOAD_FILE_PREFIX + token, bytes)
         return "downloads/$token.$extension"
     }
@@ -497,6 +497,20 @@ class RhinoSafeSourceJavaExtensions(
         }
         if (children.isNotEmpty()) fileStore.remove(sourceId, manifestKey)
         return removed
+    }
+
+    private fun downloadTokenForUrl(url: String): String =
+        UUID.nameUUIDFromBytes(("$sourceId\\n$url").toByteArray(Charsets.UTF_8)).toString()
+
+    private fun downloadExtension(url: String): String {
+        val parsed = runCatching { URL(url) }.getOrNull()
+        val typeParameter = parsed?.query?.split('&')?.firstNotNullOfOrNull { part ->
+            val pair = part.split('=', limit = 2)
+            if (pair.size == 2 && pair[0].equals("type", true)) pair[1] else null
+        }
+        val suffix = typeParameter ?: parsed?.path?.substringAfterLast('/', "")
+            ?.substringAfterLast('.', "").orEmpty()
+        return suffix.takeIf { it.matches(Regex("^[A-Za-z0-9]{1,10}$")) } ?: "txt"
     }
 
     private fun downloadToken(path: String): String {
