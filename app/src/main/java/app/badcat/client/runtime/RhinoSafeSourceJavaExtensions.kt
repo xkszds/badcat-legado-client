@@ -284,11 +284,19 @@ class RhinoSafeSourceJavaExtensions(
             safeEntries[name] = content.copyOf()
         }
         require(safeEntries.isNotEmpty()) { "Archive contains no safe regular files" }
-        safeEntries.forEach { (name, content) ->
-            fileStore.putBytes(sourceId, virtualFileKey("$folder/$name"), content)
+        try {
+            safeEntries.forEach { (name, content) ->
+                val relativePath = "$folder/$name"
+                fileStore.putBytes(sourceId, virtualFileKey(relativePath), content)
+                writePhysicalFile(relativePath, content)
+            }
+            writeDirectoryManifest(folder, safeEntries.keys)
+            return folder
+        } catch (error: Throwable) {
+            deleteVirtualTree(folder)
+            fileRoot?.let { runCatching { getFile(folder).deleteRecursively() } }
+            throw error
         }
-        writeDirectoryManifest(folder, safeEntries.keys)
-        return folder
     }
 
     private fun extractZipEntries(bytes: ByteArray): Map<String, ByteArray> {
