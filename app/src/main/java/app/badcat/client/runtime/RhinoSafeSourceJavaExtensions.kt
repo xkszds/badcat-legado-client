@@ -58,6 +58,7 @@ class RhinoSafeSourceJavaExtensions(
     private val contentWriter: (String) -> Unit = {},
     private val baseUrlWriter: (String?) -> Unit = {},
     private val fileStore: SourceScriptFileCacheStore = InMemorySourceScriptFileCacheStore,
+    private val fileRoot: java.io.File? = null,
     private val webViewUserAgent: String = DEFAULT_WEBVIEW_USER_AGENT,
     private val functionInvoker: (Function) -> Unit = { throw UnsupportedOperationException("source callback invoker is not connected") },
     private val rateLimit: (Boolean) -> Unit = {},
@@ -169,7 +170,9 @@ class RhinoSafeSourceJavaExtensions(
         }
         val token = downloadTokenForUrl(url)
         fileStore.putBytes(sourceId, DOWNLOAD_FILE_PREFIX + token, bytes)
-        return "downloads/$token.${downloadExtension(url)}"
+        val relativePath = "$token.${downloadExtension(url)}"
+        writePhysicalFile(relativePath, bytes)
+        return relativePath
     }
 
     /** Legacy hexadecimal-data overload retained for older imported sources. */
@@ -186,7 +189,9 @@ class RhinoSafeSourceJavaExtensions(
         }
         val token = downloadTokenForUrl(url)
         fileStore.putBytes(sourceId, DOWNLOAD_FILE_PREFIX + token, bytes)
-        return "downloads/$token.$extension"
+        val relativePath = "$token.$extension"
+        writePhysicalFile(relativePath, bytes)
+        return relativePath
     }
 
     /** Read only opaque tokens returned by this source's downloadFile call. */
@@ -204,8 +209,49 @@ class RhinoSafeSourceJavaExtensions(
     /** Return the original downloaded bytes; null mirrors Legado's missing-file result. */
     fun readFile(path: String): ByteArray? {
         val token = runCatching { downloadToken(path) }.getOrNull()
-        if (token != null) return fileStore.getBytes(sourceId, DOWNLOAD_FILE_PREFIX + token)
-        return fileStore.getBytes(sourceId, virtualFileKey(normalizeVirtualPath(path)))
+        if (token != null) {
+            fileStore.getBytes(sourceId, DOWNLOAD_FILE_PREFIX + token)?.let { return it }
+        }
+        fileStore.getBytes(sourceId, virtualFileKey(normalizeVirtualPath(path)))?.let { return it }
+        val physical = fileRoot?.let { runCatching { getFile(path) }.getOrNull() }
+        return physical?.takeIf { it.isFile }?.let { runCatching { it.readBytes() }.getOrNull() }
+    }
+
+    /**
+     * Resolve a source-relative path beneath the app cache directory.
+     * Canonical-path validation also blocks traversal through existing symlinks.
+     */
+    fun getFile(path: String): java.io.File {
+        val root = fileRoot ?: throw UnsupportedOperationException("Source file root is not configured")
+        require(path.isNotBlank()) { "Source file path must not be blank" }
+        val candidate = if (path.startsWith(java.io.File.separator)) {
+            java.io.File(root.absolutePath + path)
+        } else {
+            java.io.File(root, path)
+        }
+        val safeRoot = (root.parentFile ?: root).canonicalFile
+        val resolved = candidate.canonicalFile
+        val safePrefix = safeRoot.path + java.io.File.separator
+        if (resolved.path != safeRoot.path && !resolved.path.startsWith(safePrefix)) {
+            throw SecurityException("Illegal source file path")
+        }
+        return candidate
+    }
+
+    private fun writePhysicalFile(path: String, bytes: ByteArray) {
+        val root = fileRoot ?: return
+        val target = getFile(path)
+        val parent = target.parentFile ?: root
+        require(parent.isDirectory || parent.mkdirs()) { "Unable to create source file directory" }
+        val temporary = java.io.File(parent, target.name + ".tmp")
+        try {
+            temporary.outputStream().buffered().use { it.write(bytes) }
+            if (target.exists() && !target.delete()) throw IllegalStateException("Unable to replace source file")
+            if (!temporary.renameTo(target)) throw IllegalStateException("Unable to commit source file")
+        } catch (error: Throwable) {
+            temporary.delete()
+            throw error
+        }
     }
 
     /** Extract an archive into source-private virtual files and return its relative folder. */
@@ -321,13 +367,22 @@ class RhinoSafeSourceJavaExtensions(
     fun getTxtInFolder(path: String): String {
         if (path.isEmpty()) return ""
         val directory = normalizeVirtualPath(path)
+        val physical = fileRoot?.let { runCatching { getFile(path) }.getOrNull() }
+        if (physical?.isDirectory == true) {
+            val content = physical.listFiles()?.filter { it.isFile }?.joinToString("\n") { file ->
+                val bytes = file.readBytes()
+                String(bytes, detectTextCharset(bytes))
+            }.orEmpty()
+            physical.deleteRecursively()
+            deleteVirtualTree(directory)
+            return content
+        }
         val children = fileStore.get(sourceId, VIRTUAL_DIR_PREFIX + directory)
             ?.split("\n")?.filter(String::isNotEmpty).orEmpty()
         val content = children.mapNotNull { child ->
             val bytes = fileStore.getBytes(sourceId, virtualFileKey("$directory/$child"))
             bytes?.let { String(it, detectTextCharset(it)) }
         }.joinToString("\n")
-        // Pinned Legado deletes the temporary folder after collecting its text files.
         deleteVirtualTree(directory)
         return content
     }
@@ -475,12 +530,18 @@ class RhinoSafeSourceJavaExtensions(
         val token = runCatching { downloadToken(path) }.getOrNull()
         if (token != null) {
             val key = DOWNLOAD_FILE_PREFIX + token
-            val existed = fileStore.getBytes(sourceId, key) != null
-            if (existed) fileStore.remove(sourceId, key)
-            return existed
+            val existedInStore = fileStore.getBytes(sourceId, key) != null
+            if (existedInStore) fileStore.remove(sourceId, key)
+            val physical = fileRoot?.let { runCatching { getFile(path) }.getOrNull() }
+            val existedOnDisk = physical?.exists() == true
+            if (existedOnDisk) physical?.deleteRecursively()
+            return existedInStore || existedOnDisk
         }
         val safePath = normalizeVirtualPath(path)
-        return deleteVirtualTree(safePath)
+        val removedVirtual = deleteVirtualTree(safePath)
+        val physical = fileRoot?.let { runCatching { getFile(path) }.getOrNull() }
+        val removedPhysical = physical?.exists() == true && physical.deleteRecursively()
+        return removedVirtual || removedPhysical
     }
 
     private fun deleteVirtualTree(path: String): Boolean {
@@ -518,10 +579,10 @@ class RhinoSafeSourceJavaExtensions(
 
     private fun downloadToken(path: String): String {
         val relative = path.removePrefix("/")
-        require(relative.matches(Regex("^downloads/[0-9a-fA-F]{16}(?:\\.[A-Za-z0-9]{1,10})?$"))) {
+        require(relative.matches(Regex("^(?:downloads/)?[0-9a-fA-F]{16}(?:\\.[A-Za-z0-9]{1,10})?$"))) {
             "Invalid or unsafe Legado download path"
         }
-        return relative.removePrefix("downloads/").substringBeforeLast(".")
+        return relative.substringAfterLast('/').substringBeforeLast(".")
     }
 
     fun putString(key: String, value: String): String {
