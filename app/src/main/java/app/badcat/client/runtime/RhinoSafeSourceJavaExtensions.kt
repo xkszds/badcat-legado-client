@@ -93,8 +93,32 @@ class RhinoSafeSourceJavaExtensions(
         return value
     }
 
-    /** Legado HTTP GET overloads. Headers may be a JS object or JSON string. */
-    fun get(url: String): RhinoSourceHttpResponse = RhinoSourceHttpResponse(httpRequest("GET", url, null, emptyMap()))
+    /**
+     * Legado overload: URL-like values perform HTTP GET; simple names read the
+     * source-scoped variable written by java.put(). This mirrors AnalyzeRule's
+     * historical java.get(key) / java.get(url) dual use.
+     */
+    fun get(urlOrKey: String): Any =
+        if (isHttpTarget(urlOrKey)) {
+            RhinoSourceHttpResponse(httpRequest("GET", urlOrKey, null, emptyMap()))
+        } else {
+            getStoredString(urlOrKey)
+        }
+
+    private fun isHttpTarget(value: String): Boolean {
+        val candidate = value.trim()
+        if (candidate.isEmpty()) return false
+        return candidate.startsWith("http://", true) ||
+            candidate.startsWith("https://", true) ||
+            candidate.startsWith("//") ||
+            candidate.startsWith("/") ||
+            candidate.startsWith("./") ||
+            candidate.startsWith("../") ||
+            candidate.startsWith("?") ||
+            candidate.startsWith("#") ||
+            candidate.startsWith("www.", true) ||
+            candidate.contains('/')
+    }
 
     fun get(url: String, headers: Any?): RhinoSourceHttpResponse =
         RhinoSourceHttpResponse(httpRequest("GET", url, null, parseRequestHeaders(headers)))
@@ -105,7 +129,8 @@ class RhinoSafeSourceJavaExtensions(
     fun post(url: String, body: String, headers: Any?): RhinoSourceHttpResponse =
         RhinoSourceHttpResponse(httpRequest("POST", url, body, parseRequestHeaders(headers)))
 
-    fun connect(url: String): RhinoSourceHttpResponse = get(url)
+    fun connect(url: String): RhinoSourceHttpResponse =
+        RhinoSourceHttpResponse(httpRequest("GET", url, null, emptyMap()))
 
     fun connect(url: String, headers: Any?): RhinoSourceHttpResponse = get(url, headers)
 
