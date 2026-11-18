@@ -257,7 +257,11 @@ class CssChapterContentParser {
         }
         val nextRule = rules["nextContentUrl"]?.trim().orEmpty()
         val nextUrl = if (nextRule.isEmpty()) null else {
-            val rawLink = when (val result = evaluateField("nextContentUrl", nextRule)) {
+            val rawLink = when (val result = evaluateOptional(
+                document,
+                normalizeLinkExpression(nextRule),
+                response.finalUrl,
+            )) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
             }
