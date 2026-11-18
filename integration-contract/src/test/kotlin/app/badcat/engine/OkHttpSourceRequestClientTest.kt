@@ -14,6 +14,38 @@ import kotlin.concurrent.thread
 class OkHttpSourceRequestClientTest {
 
     @Test
+    fun successfulResponseIncludesElapsedCallTime() = runBlocking {
+        ServerSocket(0).use { server ->
+            server.soTimeout = 5_000
+            val worker = thread {
+                server.accept().use { socket ->
+                    socket.soTimeout = 5_000
+                    val reader = socket.getInputStream().bufferedReader(StandardCharsets.UTF_8)
+                    while (reader.readLine()?.isNotEmpty() == true) Unit
+                    val payload = "ok".toByteArray(StandardCharsets.UTF_8)
+                    socket.getOutputStream().apply {
+                        write("HTTP/1.1 200 OK\\r\\nContent-Length: ${payload.size}\\r\\nConnection: close\\r\\n\\r\\n".toByteArray(StandardCharsets.US_ASCII))
+                        write(payload)
+                        flush()
+                    }
+                }
+            }
+            val result = OkHttpSourceRequestClient().execute(
+                SourceHttpRequest(
+                    sourceId = "call-time-fixture",
+                    url = "http://127.0.0.1:${server.localPort}/",
+                    useCookieJar = false,
+                ),
+            )
+            worker.join(5_000)
+            assertTrue(!worker.isAlive, "HTTP fixture server should finish")
+            val response = (result as EngineResult.Success).value
+            assertEquals("ok", response.body)
+            assertTrue(response.callTime >= 0)
+        }
+    }
+
+    @Test
     fun cookieJarStoresAndReturnsMatchingCookies() {
         val jar = MemorySourceCookieJar()
         val url = "https://reader.example/path/page".toHttpUrl()
