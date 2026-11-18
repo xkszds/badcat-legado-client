@@ -240,4 +240,48 @@ class CssChapterContentParserTest {
         assertEquals("https://reader.example/chapter/2", content.nextPageUrl)
     }
 
+    @Test
+    fun executesJavaScriptContentReplaceRegexAfterHtmlCleanup() = runBlocking {
+        val source = BookSource(
+            id = "https://replace-content.example/",
+            name = "Replace content",
+            baseUrl = "https://replace-content.example/",
+            ruleContentJson = """{"content":"article","replaceRegex":"@js:result.replace(/AD_PLACEHOLDER/g, '').trim()"}""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://replace-content.example/chapter/1",
+            body = "<article>Readable AD_PLACEHOLDER chapter.</article>",
+        )
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(source: BookSource, script: String, bindings: Map<String, String>): EngineResult<String> =
+                if (script == "result.replace(/AD_PLACEHOLDER/g, '').trim()") {
+                    EngineResult.Success(bindings.getValue("result").replace("AD_PLACEHOLDER", "").trim())
+                } else EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Unexpected script")
+        }
+        val result = assertIs<EngineResult.Success<ChapterContent>>(
+            CssChapterContentParser().parseWithScripts(source, response, BookChapter(0, "One", response.finalUrl), runtime),
+        ).value
+        assertEquals("Readable  chapter.", result.text)
+    }
+
+    @Test
+    fun rejectsContentRulesThatRequireUnavailableWebViewOrBatchRuntime() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleContentJson = """{"content":"article","webJs":"document.body.innerText"}""",
+        )
+        val response = SourceHttpResponse(200, "https://reader.example/chapter", body = "<article>Body</article>")
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(source: BookSource, script: String, bindings: Map<String, String>): EngineResult<String> =
+                EngineResult.Success(script)
+        }
+        val failure = assertIs<EngineResult.Failure>(
+            CssChapterContentParser().parseWithScripts(source, response, BookChapter(0, "One", response.finalUrl), runtime),
+        )
+        assertEquals(EngineErrorCode.UNSUPPORTED_RULE, failure.code)
+        kotlin.test.assertTrue(failure.message.contains("webJs"))
+    }
 }
