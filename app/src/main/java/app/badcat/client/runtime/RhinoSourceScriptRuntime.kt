@@ -527,21 +527,23 @@ class RhinoSourceScriptRuntime(
                     }
                   }
                 }
-            };
-            // Narrow compatibility surface for public Legado sources that call
-            // org.jsoup.Jsoup.parse(result). Parsing is delegated to the pinned
-            // JSoup dependency; arbitrary Java package access remains blocked.
-            org = {
-              jsoup: {
-                Jsoup: {
-                  parse: function(html, baseUri) {
-                    return arguments.length > 1
-                      ? java.parseHtml(String(html), String(baseUri))
-                      : java.parseHtml(String(html));
+              ,
+              org: {
+                jsoup: {
+                  Jsoup: {
+                    parse: function(html, baseUri) {
+                      return arguments.length > 1
+                        ? java.parseHtml(String(html), String(baseUri))
+                        : java.parseHtml(String(html));
+                    }
                   }
                 }
               }
             };
+            // Narrow compatibility surface for public Legado sources that call
+            // org.jsoup.Jsoup.parse(result). Parsing is delegated to the pinned
+            // JSoup dependency; arbitrary Java package access remains blocked.
+            org = Packages.org;
             JavaImporter = function() {
               this.importPackage = function() {
                 for (var i = 0; i < arguments.length; i++) {
