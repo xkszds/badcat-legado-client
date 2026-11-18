@@ -57,6 +57,7 @@ class BadcatReadingEngineFactory(
             webViewUserAgent = android.webkit.WebSettings.getDefaultUserAgent(context.applicationContext),
             sourceKeyValueStore = SharedPreferencesSourceScriptKeyValueStore(context.applicationContext),
             sourceFileCacheStore = FileSourceScriptCacheStore(context.applicationContext),
+            sourceFileRoot = context.externalCacheDir ?: context.cacheDir,
             sourceLoginSessionStore = loginSessionStore,
             sourceCookieReader = { sourceId, url ->
                 SharedPreferencesSourceCookieJar(context.applicationContext, sourceId).getCookie(url)
