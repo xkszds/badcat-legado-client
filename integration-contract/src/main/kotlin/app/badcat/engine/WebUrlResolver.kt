@@ -15,7 +15,7 @@ object WebUrlResolver {
         // Keep Legado's {{key}}/{{page}} placeholders intact until the
         // request stage has the book name and page context needed to expand them.
         val templates = linkedMapOf<String, String>()
-        val templateSafeReference = Regex("""\{\{.*?}}""").replace(referenceText) { match ->
+        val templateSafeReference = Regex("""\{\{.*?\}\}""").replace(referenceText) { match ->
             var token: String
             do {
                 token = "__BADCAT_LEGADO_TEMPLATE_" + templates.size + "__"
