@@ -293,6 +293,26 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun formatsLegadoHtmlWhileKeepingAbsoluteImageLinks() = runBlocking {
+        val source = BookSource(
+            id = "https://html-format.example/",
+            name = "HTML format",
+            baseUrl = "https://html-format.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val result = runtime.evaluate(
+            source,
+            "java.htmlFormat('<div>Hello&nbsp;<b>world</b></div><p>Second</p><img data-src=\'/cover.jpg\'>', 'https://reader.example/book/1')",
+        )
+        val formatted = (result as EngineResult.Success).value
+        assertTrue(formatted.contains("Hello world"))
+        assertTrue(formatted.contains("Second"))
+        assertTrue(formatted.contains("<img src=\"https://reader.example/cover.jpg\">"))
+        assertTrue(!formatted.contains("<div") && !formatted.contains("<b"))
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun supportsLegadoHexAndUtcTimeHelpers() = runBlocking {
         val source = BookSource(
             id = "https://utility-helpers.example/",
