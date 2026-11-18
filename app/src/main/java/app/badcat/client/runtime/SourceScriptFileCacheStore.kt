@@ -12,14 +12,24 @@ interface SourceScriptFileCacheStore {
     fun put(sourceId: String, key: String, value: String)
     fun remove(sourceId: String, key: String)
     fun clearSource(sourceId: String)
+    fun getBytes(sourceId: String, key: String): ByteArray? =
+        get(sourceId, key)?.toByteArray(Charsets.UTF_8)
+    fun putBytes(sourceId: String, key: String, value: ByteArray) =
+        put(sourceId, key, String(value, Charsets.UTF_8))
 }
 
 /** JVM fallback for tests; production uses the app-private disk implementation. */
 object InMemorySourceScriptFileCacheStore : SourceScriptFileCacheStore {
-    private val values = ConcurrentHashMap<String, String>()
-    override fun get(sourceId: String, key: String): String? = values[storageKey(sourceId, key)]
+    private val values = ConcurrentHashMap<String, ByteArray>()
+    override fun get(sourceId: String, key: String): String? =
+        getBytes(sourceId, key)?.let { String(it, Charsets.UTF_8) }
+    override fun getBytes(sourceId: String, key: String): ByteArray? =
+        values[storageKey(sourceId, key)]?.copyOf()
     override fun put(sourceId: String, key: String, value: String) {
-        values[storageKey(sourceId, key)] = value
+        putBytes(sourceId, key, value.toByteArray(Charsets.UTF_8))
+    }
+    override fun putBytes(sourceId: String, key: String, value: ByteArray) {
+        values[storageKey(sourceId, key)] = value.copyOf()
     }
     override fun remove(sourceId: String, key: String) {
         values.remove(storageKey(sourceId, key))
@@ -42,14 +52,23 @@ class FileSourceScriptCacheStore(context: Context) : SourceScriptFileCacheStore 
     override fun get(sourceId: String, key: String): String? {
         val target = AtomicFile(cacheFile(sourceId, key))
         if (!target.baseFile.isFile || target.baseFile.length() > MAX_CACHE_BYTES) return null
-        return runCatching {
-            target.openRead().bufferedReader(Charsets.UTF_8).use { it.readText() }
-        }.getOrNull()
+        return getBytes(sourceId, key)?.let { String(it, Charsets.UTF_8) }
     }
 
     @Synchronized
-    override fun put(sourceId: String, key: String, value: String) {
-        val encoded = value.toByteArray(Charsets.UTF_8)
+    override fun getBytes(sourceId: String, key: String): ByteArray? {
+        val target = AtomicFile(cacheFile(sourceId, key))
+        if (!target.baseFile.isFile || target.baseFile.length() > MAX_CACHE_BYTES) return null
+        return runCatching { target.openRead().use { it.readBytes() } }.getOrNull()
+    }
+
+    @Synchronized
+    override fun put(sourceId: String, key: String, value: String) =
+        putBytes(sourceId, key, value.toByteArray(Charsets.UTF_8))
+
+    @Synchronized
+    override fun putBytes(sourceId: String, key: String, value: ByteArray) {
+        val encoded = value
         require(encoded.size <= MAX_CACHE_BYTES) { "cache file value exceeds the 50 MiB limit" }
         val target = AtomicFile(cacheFile(sourceId, key))
         val output = target.startWrite()
