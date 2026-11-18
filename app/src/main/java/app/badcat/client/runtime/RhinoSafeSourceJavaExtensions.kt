@@ -764,12 +764,33 @@ class RhinoLegadoSymmetricCrypto(
     fun encryptHex(data: String): String =
         encrypt(data).joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
 
-    fun decryptStr(data: ByteArray): String {
+    fun decrypt(data: ByteArray): ByteArray {
         require(data.size <= 2 * 1024 * 1024) { "Symmetric crypto input exceeds the size limit" }
         validateKeyAndIv()
         val cipher = Cipher.getInstance(transformation)
         cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(keyBytes, algorithm), IvParameterSpec(ivBytes))
-        return String(cipher.doFinal(data), Charsets.UTF_8)
+        return cipher.doFinal(data)
+    }
+
+    fun decrypt(data: String): ByteArray = decrypt(decodeHutoolCipherText(data))
+
+    fun decryptStr(data: ByteArray): String = String(decrypt(data), Charsets.UTF_8)
+
+    /** Hutool accepts either a hexadecimal or Base64 encoded ciphertext string. */
+    fun decryptStr(data: String): String = String(decrypt(data), Charsets.UTF_8)
+
+    private fun decodeHutoolCipherText(value: String): ByteArray {
+        require(value.length <= 4 * 1024 * 1024) { "Encoded symmetric crypto input exceeds the size limit" }
+        val text = value.trim()
+        require(text.isNotEmpty()) { "Encoded symmetric crypto input must not be empty" }
+        if (text.length % 2 == 0 && text.all { it.digitToIntOrNull(16) != null }) {
+            return ByteArray(text.length / 2) { index ->
+                text.substring(index * 2, index * 2 + 2).toInt(16).toByte()
+            }
+        }
+        return Base64.getDecoder().decode(text).also {
+            require(it.size <= 2 * 1024 * 1024) { "Symmetric crypto input exceeds the size limit" }
+        }
     }
 
     private fun validateKeyAndIv() {

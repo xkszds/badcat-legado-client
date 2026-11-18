@@ -950,9 +950,10 @@ text + re.test('aa}}')"""
                 );
                 var base64Cipher = crypto.encryptBase64('Legado crypto roundtrip');
                 var hexCipher = crypto.encryptHex('Legado crypto roundtrip');
-                crypto.decryptStr(java.base64DecodeToByteArray(base64Cipher)) + '|' +
-                    crypto.decryptStr(java.hexDecodeToByteArray(hexCipher)) + '|' +
-                    (base64Cipher.length > 0) + '|' + (hexCipher.length > 0);
+                crypto.decryptStr(base64Cipher) + '|' +
+                    crypto.decryptStr(hexCipher) + '|' +
+                    (crypto.decrypt(base64Cipher).length > 0) + '|' +
+                    (crypto.decrypt(hexCipher).length > 0);
             """.trimIndent(),
         )
 
