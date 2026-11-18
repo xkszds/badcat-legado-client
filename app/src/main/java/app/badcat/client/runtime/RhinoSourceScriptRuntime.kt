@@ -274,10 +274,11 @@ class RhinoSourceScriptRuntime(
                     is String -> EngineResult.Success(result)
                     is CharSequence -> EngineResult.Success(result.toString())
                     is Number, is Boolean -> EngineResult.Success(result.toString())
-                    else -> EngineResult.Failure(
-                        EngineErrorCode.UNSUPPORTED_RULE,
-                        "Source JavaScript result must be a primitive value",
-                    )
+                    else -> arrayResultToHtml(result)?.let(EngineResult::Success)
+                        ?: EngineResult.Failure(
+                            EngineErrorCode.UNSUPPORTED_RULE,
+                            "Source JavaScript result must be a primitive value or a bounded array",
+                        )
                 }
             } catch (error: TimeoutCancellationException) {
                 EngineResult.Failure(
@@ -345,6 +346,35 @@ class RhinoSourceScriptRuntime(
     }
 
     private companion object {
+        fun arrayResultToHtml(value: Any?): String? {
+            val values = when (value) {
+                is Iterable<*> -> value.toList()
+                is Array<*> -> value.toList()
+                is org.htmlunit.corejs.javascript.Scriptable -> {
+                    val length = (org.htmlunit.corejs.javascript.ScriptableObject.getProperty(value, "length") as? Number)
+                        ?.toInt() ?: return null
+                    require(length in 0..MAX_SCRIPT_RESULT_ITEMS) {
+                        "Source JavaScript array result exceeds the item limit"
+                    }
+                    (0 until length).map { index ->
+                        org.htmlunit.corejs.javascript.ScriptableObject.getProperty(value, index.toString())
+                    }
+                }
+                else -> return null
+            }
+            require(values.size <= MAX_SCRIPT_RESULT_ITEMS) {
+                "Source JavaScript array result exceeds the item limit"
+            }
+            return values.joinToString("\n") { item ->
+                when (item) {
+                    null -> ""
+                    is String, is CharSequence, is Number, is Boolean -> item.toString()
+                    else -> item.toString()
+                }
+            }
+        }
+
+        const val MAX_SCRIPT_RESULT_ITEMS = 1_000
         const val DEFAULT_TIMEOUT_MILLIS = 15_000L
         const val MAX_TIMEOUT_MILLIS = 30_000L
         const val MAX_SCRIPT_CHARS = 128 * 1024
