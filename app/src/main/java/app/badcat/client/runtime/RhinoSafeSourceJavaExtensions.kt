@@ -480,7 +480,7 @@ class RhinoSafeSourceJavaExtensions(
         val fileExists = fileStore.getBytes(sourceId, fileKey) != null
         if (fileExists) fileStore.remove(sourceId, fileKey)
         val manifestKey = VIRTUAL_DIR_PREFIX + path
-        val children = fileStore.get(sourceId, manifestKey)?.split("\\n")
+        val children = fileStore.get(sourceId, manifestKey)?.split("\n")
             ?.filter(String::isNotEmpty).orEmpty()
         var removed = fileExists || children.isNotEmpty()
         children.forEach { child ->
