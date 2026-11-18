@@ -661,4 +661,23 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(source.id)
     }
 
+
+    @Test
+    fun supportsLegadoGetStringWithExplicitContent() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val source = BookSource(
+            id = "https://explicit-content.example/",
+            name = "Explicit content selector",
+            baseUrl = "https://explicit-content.example/",
+        )
+        val result = runtime.evaluate(
+            source,
+            "java.getString('a@text', '<a>Explicit fragment</a>')",
+        )
+
+        assertTrue("Explicit-content getString failed: $result", result is EngineResult.Success)
+        assertEquals("Explicit fragment", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
 }
