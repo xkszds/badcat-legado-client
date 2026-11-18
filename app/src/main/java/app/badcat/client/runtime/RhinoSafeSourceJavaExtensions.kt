@@ -319,7 +319,7 @@ class RhinoSafeSourceJavaExtensions(
 
     /** Legado timestamp formatter used by imported source rules. */
     fun timeFormat(timestamp: Number): String =
-        SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(timestamp.toLong()))
+        SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault()).format(Date(timestamp.toLong()))
 
     fun timeFormat(timestamp: String): String =
         timestamp.toLongOrNull()?.let { timeFormat(it) }.orEmpty()
