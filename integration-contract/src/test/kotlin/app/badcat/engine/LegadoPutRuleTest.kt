@@ -59,7 +59,7 @@ class LegadoPutRuleTest {
             runtime,
         )
 
-        assertEquals(" <h1>Novel</h1>:3", (result as EngineResult.Success).value)
+        assertEquals("<h1>Novel</h1>:3", (result as EngineResult.Success).value)
         assertEquals("<h1>Novel</h1>:3", values["payload"])
     }
 }
