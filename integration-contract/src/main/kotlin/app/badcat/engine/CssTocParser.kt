@@ -92,7 +92,11 @@ class CssTocParser {
         suspend fun extract(itemHtml: String, key: String): EngineResult<String?> {
             val expression = rules[key]?.takeIf(String::isNotBlank)
                 ?: return EngineResult.Success(null)
-            var trimmed = expression.trim()
+            val itemDocument = SourceDocument(response.finalUrl, itemHtml, response.contentType, page = page)
+            var trimmed = when (val put = LegadoPutRule.resolve(source, expression.trim(), itemDocument, scriptRuntime)) {
+                is EngineResult.Failure -> return put
+                is EngineResult.Success -> put.value
+            }
             trimmed = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
                     source = source,
                     template = trimmed,
