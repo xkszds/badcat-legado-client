@@ -40,6 +40,42 @@ class LegadoEmbeddedUrlTemplateTest {
         )
     }
 
+
+    @Test
+    fun productionRuleTemplateTreatsWhitespacePrefixedAtSelectorAsAnalyzeRuleNotRhino() =
+        kotlinx.coroutines.runBlocking {
+            val source = BookSource(
+                id = "https://reader.example/",
+                name = "Public corpus fixture",
+                baseUrl = "https://reader.example/",
+            )
+            val runtime = object : SourceScriptRuntime {
+                override suspend fun evaluate(
+                    source: BookSource,
+                    script: String,
+                    bindings: Map<String, String>,
+                ): EngineResult<String> = error("selector template must not be sent to Rhino: $script")
+            }
+            val html = """
+                <div class="w_txt">
+                  <li>zero</li><li>one</li><li>two</li><li>three</li>
+                  <li>Novel title</li>
+                </div>
+            """.trimIndent()
+            val result = LegadoEmbeddedRuleTemplate.resolve(
+                source = source,
+                template = "{{  @.w_txt li.4@textNodes }}",
+                result = html,
+                baseUrl = "https://reader.example/book/7",
+                ruleName = "intro",
+                scriptRuntime = runtime,
+            )
+            assertEquals(
+                "Novel title",
+                assertIs<EngineResult.Success<String>>(result).value,
+            )
+        }
+
     @Test
     fun evaluatesMultipleEmbeddedExpressionsInOrder() = kotlinx.coroutines.runBlocking {
         val result = LegadoEmbeddedUrlTemplate.resolve(
