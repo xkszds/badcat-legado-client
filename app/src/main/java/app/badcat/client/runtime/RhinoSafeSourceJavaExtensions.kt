@@ -1057,8 +1057,42 @@ class RhinoSafeSourceJavaExtensions(
 
     fun randomUUID(): String = UUID.randomUUID().toString()
 
-    /** Fetch a source-owned helper script; callers decide whether/how to evaluate its text. */
-    fun importScript(url: String): String = ajaxRequest(url)
+    /**
+     * Cache text resources with the same seconds-based lifetime contract as
+     * Legado CacheManager. The metadata is source-scoped and points at the
+     * binary-safe download cache, so an expired/missing file is fetched again.
+     */
+    fun cacheFile(url: String): String = cacheFile(url, 0)
+
+    fun cacheFile(url: String, saveTime: Int): String {
+        require(url.isNotBlank()) { "cacheFile URL must not be blank" }
+        require(saveTime >= 0) { "cacheFile saveTime must not be negative" }
+        val key = "cacheFile_" + md5Encode16(url)
+        val now = System.currentTimeMillis()
+        val cached = store.get(sourceId, key)?.split('|', limit = 2)
+        if (cached?.size == 2) {
+            val deadline = cached[0].toLongOrNull()
+            val cachedPath = cached[1]
+            if ((deadline == 0L || (deadline != null && deadline > now)) &&
+                cachedPath.isNotBlank() && readFile(cachedPath) != null
+            ) {
+                return readTxtFile(cachedPath)
+            }
+        }
+        store.remove(sourceId, key)
+        val downloadedPath = downloadFile(url)
+        val deadline = if (saveTime == 0) 0L else
+            System.currentTimeMillis() + saveTime.toLong() * 1_000L
+        store.put(sourceId, key, "$deadline|$downloadedPath")
+        return readTxtFile(downloadedPath)
+    }
+
+    /** Match the upstream importScript URL/local-file dispatch and cache semantics. */
+    fun importScript(path: String): String {
+        val result = if (path.startsWith("http")) cacheFile(path) else readTxtFile(path)
+        require(result.isNotBlank()) { "$path 内容获取失败或者为空" }
+        return result
+    }
 
     /** Stable mobile WebView-compatible UA for rules that request the host UA. */
     fun getWebViewUA(): String = webViewUserAgent

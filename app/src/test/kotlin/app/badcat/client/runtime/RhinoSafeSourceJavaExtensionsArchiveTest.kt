@@ -118,6 +118,29 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
     }
 
     @Test
+    fun cacheFileReusesSourceScopedDownloadAndImportScriptUsesCache() {
+        var requests = 0
+        val extensions = RhinoSafeSourceJavaExtensions(
+            sourceId = "https://cache-file.example/",
+            store = InMemorySourceScriptKeyValueStore,
+            httpRequest = { _, url, _, _ ->
+                requests++
+                SourceHttpResponse(
+                    statusCode = 200,
+                    finalUrl = url,
+                    body = "decoded helper",
+                    bodyBytes = "decoded helper".toByteArray(Charsets.UTF_8),
+                )
+            },
+        )
+
+        assertEquals("decoded helper", extensions.cacheFile("https://cache-file.example/helper.js"))
+        assertEquals("decoded helper", extensions.cacheFile("https://cache-file.example/helper.js"))
+        assertEquals("decoded helper", extensions.importScript("https://cache-file.example/helper.js"))
+        assertEquals(1, requests)
+    }
+
+    @Test
     fun rarAndSevenZipHelpersPreserveUrlHexAndCharsetContracts() {
         val sourceId = "https://libarchive-fixture.example/"
         val archive = "archive bytes".toByteArray()
