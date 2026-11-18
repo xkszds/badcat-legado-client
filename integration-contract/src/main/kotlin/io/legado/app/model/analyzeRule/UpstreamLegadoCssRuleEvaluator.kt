@@ -13,6 +13,7 @@ object UpstreamLegadoCssRuleEvaluator {
             setOf("text", "textnodes", "owntext", "html", "all", "href", "src", "tag")) {
             rule.substringBeforeLast("@")
         } else rule
-        return getStringList(html, baseUrl, "${extractionRule}@html")
+        val analyzer = AnalyzeByJSoup(parseSourceHtml(html).also { it.setBaseUri(baseUrl) })
+        return analyzer.getElements(extractionRule).map { it.outerHtml() }
     }
 }
