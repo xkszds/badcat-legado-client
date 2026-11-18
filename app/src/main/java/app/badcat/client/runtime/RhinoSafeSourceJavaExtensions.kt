@@ -184,10 +184,9 @@ class RhinoSafeSourceJavaExtensions(
     @Deprecated("Use downloadFile(url)", ReplaceWith("downloadFile(url)"))
     fun downloadFile(content: String, url: String): String {
         require(url.isNotBlank()) { "downloadFile URL must not be blank" }
-        val extension = runCatching {
-            URL(url).path.substringAfterLast('/', "").substringAfterLast('.', "")
-        }.getOrDefault("")
-        if (extension.isBlank() || !extension.matches(Regex("^[A-Za-z0-9]{1,10}$"))) return ""
+        val extension = urlOptionType(url)
+            ?.takeIf { it.matches(Regex("^[A-Za-z0-9]{1,5}$")) }
+            ?: return ""
         val bytes = decodeHex(content)
         require(bytes.size <= MAX_DOWNLOAD_BYTES) {
             "downloadFile response exceeds the 8 MiB limit"
@@ -593,15 +592,29 @@ class RhinoSafeSourceJavaExtensions(
             .substring(8, 24)
 
     private fun downloadExtension(url: String): String {
-        val parsed = runCatching { URL(url) }.getOrNull()
-        val typeParameter = parsed?.query?.split('&')?.firstNotNullOfOrNull { part ->
-            val pair = part.split('=', limit = 2)
-            if (pair.size == 2 && pair[0].equals("type", true)) pair[1] else null
+        val optionType = urlOptionType(url)
+        if (!optionType.isNullOrBlank() && optionType.matches(Regex("^[A-Za-z0-9]{1,5}$"))) {
+            return optionType
         }
-        val suffix = typeParameter ?: parsed?.path?.substringAfterLast('/', "")
-            ?.substringAfterLast('.', "").orEmpty()
-        return suffix.takeIf { it.matches(Regex("^[A-Za-z0-9]{1,10}$")) } ?: "txt"
+        val cleanUrl = urlOptionStart(url)?.let { url.substring(0, it) } ?: url
+        val suffix = runCatching {
+            URL(cleanUrl).path.substringAfterLast('/', "").substringAfterLast('.', "")
+        }.getOrDefault("")
+        return suffix.takeIf { it.matches(Regex("^[A-Za-z0-9]{1,5}$")) } ?: "ext"
     }
+
+    /** Parse the AnalyzeUrl comma-separated JSON option suffix. */
+    private fun urlOptionType(url: String): String? {
+        val start = urlOptionStart(url) ?: return null
+        val json = url.substring(start).trim()
+        return runCatching {
+            com.google.gson.JsonParser.parseString(json).asJsonObject
+                .get("type")?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isString }?.asString
+        }.getOrNull()?.takeIf(String::isNotBlank)
+    }
+
+    private fun urlOptionStart(url: String): Int? =
+        Regex("\\s*,\\s*(?=\\{)").find(url)?.range?.first
 
     private fun downloadToken(path: String): String {
         val relative = path.removePrefix("/")
