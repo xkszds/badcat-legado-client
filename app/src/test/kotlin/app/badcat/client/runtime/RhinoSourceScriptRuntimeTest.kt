@@ -755,4 +755,30 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(source.id)
     }
 
+    @Test
+    fun supportsLegadoJsoupGetResponseSelectionAndParsing() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime(
+            sourceGet = { _, _, url, headers ->
+                assertEquals("X-Test", headers.keys.single())
+                app.badcat.engine.SourceHttpResponse(
+                    statusCode = 200,
+                    finalUrl = url,
+                    body = "<div class='page-search' data-id='book-42'><span>Found</span></div>",
+                )
+            },
+        )
+        val source = BookSource(
+            id = "https://jsoup-get.example/",
+            name = "Jsoup GET response",
+            baseUrl = "https://jsoup-get.example/",
+        )
+        val result = runtime.evaluate(
+            source,
+            "var res = java.get('/search', {'X-Test':'yes'}); res.select('.page-search').attr('data-id') + '|' + res.parse().select('.page-search').text() + '|' + res.statusCode() + '|' + res.header('Content-Type')",
+            mapOf("baseUrl" to source.baseUrl),
+        )
+        assertTrue("Legado Jsoup response helpers failed: $result", result is EngineResult.Success)
+        assertEquals("book-42|Found|200|", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
 }
