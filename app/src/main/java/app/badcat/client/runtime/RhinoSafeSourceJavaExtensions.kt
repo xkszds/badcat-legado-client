@@ -238,7 +238,7 @@ class RhinoSafeSourceJavaExtensions(
             .replace(Regex("(&thinsp;|&zwnj;|&zwj;|\\u2009|\\u200C|\\u200D)", RegexOption.IGNORE_CASE), "")
 
         text = Regex("<img\\b[^>]*>", setOf(RegexOption.IGNORE_CASE)).replace(text) { match ->
-            val rawUrl = Regex("""(?i)\\b(?:src|data-src|data-original|data-lazy-src)\\s*=\\s*["']([^"']+)["']""")
+            val rawUrl = Regex("""(?i)\b(?:src|data-src|data-original|data-lazy-src)\s*=\s*["']([^"']+)["']""")
                 .find(match.value)?.groupValues?.getOrNull(1).orEmpty()
             if (rawUrl.isBlank()) return@replace ""
             val absoluteUrl = if (redirectUrl == null) rawUrl else {
