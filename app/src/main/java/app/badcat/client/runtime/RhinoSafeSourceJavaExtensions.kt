@@ -403,7 +403,7 @@ class RhinoSafeSourceJavaExtensions(
         while (matcher.find()) {
             var param = ""
             val imagePath = matcher.group(1)?.let { candidate ->
-                val urlMatcher = LEGADO_URL_PARAM_PATTERN.matcher(candidate)
+                val urlMatcher = legadoUrlParamPattern.matcher(candidate)
                 if (urlMatcher.find()) {
                     param = "," + candidate.substring(urlMatcher.end())
                     candidate.substring(0, urlMatcher.start())
@@ -432,9 +432,8 @@ class RhinoSafeSourceJavaExtensions(
         return runCatching { URL(baseUrl, rawPath).toString() }.getOrDefault(path)
     }
 
-    private companion object {
-        val LEGADO_URL_PARAM_PATTERN = java.util.regex.Pattern.compile("\\s*,\\s*(?=\\{)")
-    }
+    private val legadoUrlParamPattern =
+        java.util.regex.Pattern.compile("\\s*,\\s*(?=\\{)")
 
     /** Synchronous compatibility bridge; the host enforces transport bounds. */
     fun ajax(urlAndOptions: String): String = ajaxRequest(urlAndOptions)
