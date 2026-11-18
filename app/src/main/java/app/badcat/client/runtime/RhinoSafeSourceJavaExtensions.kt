@@ -15,6 +15,8 @@ import com.github.liuyueyi.quick.transfer.ChineseUtils as QuickChineseUtils
 import com.github.liuyueyi.quick.transfer.constants.TransType
 import app.badcat.engine.LegadoSourceElement
 import app.badcat.engine.LegadoSourceElementList
+import app.badcat.engine.SourceHttpResponse
+import org.mozilla.javascript.Scriptable
 
 /**
  * Explicitly allow-listed subset of Legado's `java` helper for source scripts.
@@ -28,6 +30,7 @@ class RhinoSafeSourceJavaExtensions(
     private val store: SourceScriptKeyValueStore,
     private val cookieReader: (String) -> String = { "" },
     private val ajaxRequest: (String) -> String = { throw UnsupportedOperationException("java.ajax is not connected to the source HTTP transport") },
+    private val httpGet: (String, Map<String, String>) -> SourceHttpResponse = { _, _ -> throw UnsupportedOperationException("java.get HTTP transport is unavailable") },
     private val ruleStringReader: (String) -> String = { "" },
     private val ruleStringListReader: (String) -> List<String> = { emptyList() },
     private val ruleElementReader: (String) -> LegadoSourceElement? = { null },
@@ -69,6 +72,18 @@ class RhinoSafeSourceJavaExtensions(
 
     /** Legado's general key/value aliases use the same source-isolated persistent store. */
     fun get(key: String): String = getStoredString(key)
+
+    /** Legado HTTP GET overload: java.get(url, headers).body()/headers(name). */
+    fun get(url: String, headers: Scriptable): RhinoSourceHttpResponse {
+        val values = buildMap {
+            headers.ids.forEach { id ->
+                val name = id.toString()
+                val value = headers.get(name, headers)
+                put(name, value?.toString().orEmpty())
+            }
+        }
+        return RhinoSourceHttpResponse(httpGet(url, values))
+    }
 
     fun put(key: String, value: String): String = putString(key, value)
 
@@ -242,6 +257,16 @@ class RhinoSafeSourceJavaExtensions(
         private const val MAX_VALUE_CHARS = 16 * 1024
         private const val MAX_AES_INPUT_BYTES = 2 * 1024 * 1024
     }
+}
+
+/** Read-only response facade returned by the Legado java.get(url, headers) helper. */
+class RhinoSourceHttpResponse(private val response: SourceHttpResponse) {
+    fun body(): String = response.body
+    fun code(): Int = response.statusCode
+    fun url(): String = response.finalUrl
+    fun headers(name: String): String =
+        response.headers.entries.firstOrNull { it.key.equals(name, ignoreCase = true) }
+            ?.value?.firstOrNull().orEmpty()
 }
 
 /** Narrow URL metadata view for source rules; no connection or stream methods. */
