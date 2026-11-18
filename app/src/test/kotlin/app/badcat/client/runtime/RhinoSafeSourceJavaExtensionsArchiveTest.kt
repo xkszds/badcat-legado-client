@@ -142,7 +142,7 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
         assertEquals("第一章", extensions.readTxtFile("$directory/chapter.txt"))
         assertEquals("nested", extensions.readTxtFile("$directory/nested/part.txt"))
         assertEquals("第一章", extensions.getTxtInFolder(directory))
-        assertNull(extensions.readFile("$directory/../outside.txt"))
+        assertTrue(runCatching { extensions.readFile("$directory/../outside.txt") }.exceptionOrNull() is IllegalArgumentException)
         assertTrue(extensions.deleteFile("$directory/chapter.txt"))
         assertNull(extensions.readFile("$directory/chapter.txt"))
     }
