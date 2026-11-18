@@ -54,6 +54,25 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
     }
 
     @Test
+    fun legacyHexDownloadAndAutomaticCharsetDetectionPreserveFileSemantics() {
+        val extensions = RhinoSafeSourceJavaExtensions(
+            sourceId = "https://legacy-file.example/",
+            store = InMemorySourceScriptKeyValueStore,
+        )
+        val gbk = "中文内容".toByteArray(java.nio.charset.Charset.forName("GBK"))
+        val hex = gbk.joinToString("") { "%02x".format(it) }
+
+        @Suppress("DEPRECATION")
+        val path = extensions.downloadFile(hex, "https://legacy-file.example/font.dat")
+
+        assertTrue(path.endsWith(".dat"))
+        assertArrayEquals(gbk, extensions.readFile(path))
+        assertEquals("中文内容", extensions.readTxtFile(path))
+        assertTrue(extensions.deleteFile(path))
+        assertNull(extensions.readFile(path))
+    }
+
+    @Test
     fun zipEntryExpansionIsBounded() {
         val archive = zipOf("large.bin", ByteArray(16 * 1024 * 1024 + 1))
         val extensions = RhinoSafeSourceJavaExtensions(
