@@ -25,6 +25,29 @@ class FileChapterContentCacheTest {
     }
 
     @Test
+    fun boundedReaderMakesProgressWhenBulkReadReturnsZero() {
+        val bytes = "stream".toByteArray(Charsets.UTF_8)
+        val delegate = ByteArrayInputStream(bytes)
+        val stalledOnce = object : java.io.InputStream() {
+            private var firstBulkRead = true
+
+            override fun read(): Int = delegate.read()
+
+            override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+                if (firstBulkRead) {
+                    firstBulkRead = false
+                    return 0
+                }
+                return delegate.read(buffer, offset, length)
+            }
+        }
+
+        val result = readBoundedChapterCacheEntry(stalledOnce, bytes.size.toLong())
+
+        assertArrayEquals(bytes, result)
+    }
+
+    @Test
     fun boundedReaderAcceptsEmptyEntryWithZeroLimit() {
         val result = readBoundedChapterCacheEntry(ByteArrayInputStream(byteArrayOf()), 0)
 
