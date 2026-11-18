@@ -37,6 +37,7 @@ class RhinoSourceScriptRuntime(
 ) : SourceScriptRuntime {
     private val javaExtensions = ConcurrentHashMap<String, RhinoSafeSourceJavaExtensions>()
     private val sourceExtensions = ConcurrentHashMap<String, RhinoSourceLoginExtensions>()
+    private val cacheExtensions = ConcurrentHashMap<String, RhinoSourceCacheExtensions>()
 
     init {
         require(timeoutMillis in 1L..MAX_TIMEOUT_MILLIS)
@@ -191,6 +192,7 @@ class RhinoSourceScriptRuntime(
                 scope["source"] = sourceExtensions.computeIfAbsent(source.id) {
                     RhinoSourceLoginExtensions(source.id, sourceLoginSessionStore, sourceKeyValueStore, source.id)
                 }
+                scope["cache"] = cacheExtensions.computeIfAbsent(source.id) { RhinoSourceCacheExtensions() }
                 val result = try {
                     withTimeout(timeoutMillis) {
                         // A tightly scoped compatibility shim exposes only the crypto classes
@@ -284,6 +286,7 @@ class RhinoSourceScriptRuntime(
             ScriptBindings.removeSharedGlobalStates(GLOBAL_KEY_PREFIX + sourceId)
             javaExtensions.remove(sourceId)
             sourceExtensions.remove(sourceId)
+            cacheExtensions.remove(sourceId)?.clear()
             sourceKeyValueStore.clearSource(sourceId)
             sourceLoginSessionStore.clearSource(sourceId)
         }
