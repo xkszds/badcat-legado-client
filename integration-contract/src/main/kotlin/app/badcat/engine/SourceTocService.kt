@@ -11,6 +11,7 @@ class SourceTocService(
         source: BookSource,
         bookUrl: String,
         tocUrl: String? = null,
+        key: String = "",
         onChapters: suspend (List<BookChapter>) -> Unit = {},
     ): EngineResult<List<BookChapter>> {
         MainJsSourceGuard.failure(source, "table of contents", scriptRuntimeAvailable = scriptRuntime != null)?.let { return it }
@@ -27,7 +28,7 @@ class SourceTocService(
             val url = pending.removeFirst()
             val requestedIdentity = paginationUrlIdentity(url)
             if (!visited.add(requestedIdentity)) continue
-            val response = when (val result = http.execute(source, url)) {
+            val response = when (val result = http.execute(source, url, page = pageCount + 1, key = key)) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
             }
