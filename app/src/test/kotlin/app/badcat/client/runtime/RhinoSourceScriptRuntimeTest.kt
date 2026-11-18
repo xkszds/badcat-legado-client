@@ -36,6 +36,32 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun exposesConfinedFileHandleWithoutExposingJavaIoFile() = runBlocking {
+        val root = java.nio.file.Files.createTempDirectory("rhino-source-file").toFile()
+        try {
+            val runtime = RhinoSourceScriptRuntime(sourceFileRoot = root)
+            val source = BookSource(
+                id = "https://file-handle.example/",
+                name = "File handle source",
+                baseUrl = "https://file-handle.example/",
+            )
+            val result = runtime.evaluate(
+                source,
+                "var f = java.getFile('fixture.txt'); f.writeText('source file'); f.readText()",
+            )
+            assertTrue("Safe file facade should be visible to Rhino: $result", result is EngineResult.Success)
+            assertEquals("source file", (result as EngineResult.Success).value)
+            assertTrue(java.io.File(root, "fixture.txt").isFile)
+
+            val traversal = runtime.evaluate(source, "java.getFile('../../outside.txt').exists()")
+            assertTrue("File facade must reject paths outside cache boundary", traversal is EngineResult.Failure)
+            runtime.clearSourceState(source.id)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun doesNotLeakJsLibFunctionsBetweenSources() = runBlocking {
         val runtime = RhinoSourceScriptRuntime()
         val first = BookSource(
