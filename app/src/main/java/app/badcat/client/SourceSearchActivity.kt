@@ -301,7 +301,7 @@ class SourceSearchActivity : Activity() {
                     is EngineResult.Success -> {
                         sourcesLoaded = true
                         allEnabledSources = result.value.filter { it.enabled }
-                        enabledSources = allEnabledSources.filter { !it.searchUrl.isNullOrBlank() }
+                        enabledSources = allEnabledSources.filter { it.sourceType == 0 && !it.searchUrl.isNullOrBlank() }
                         renderSourceTabs()
                         renderSourceSetupHint()
                         BadcatTheme.applyTree(this@SourceSearchActivity, rootView)
