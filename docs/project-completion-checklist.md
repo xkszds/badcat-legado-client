@@ -165,3 +165,9 @@
 - Added GET/HEAD/POST optional timeout overloads, wired per-call timeouts into the Android host request client, and aligned the default timeout to 30 seconds.
 - Run [#44422285115](https://github.com/xkszds/badcat-legado-client/actions/runs/44422285115) passed contract tests, bounded Rhino tests and Debug APK assembly for commit `36e62023f4006db47876c69bff1b550b776730b8`; live best-effort probes remained in progress at last inspection. This run predates the newest timeout overloads.
 - Latest commit `beda18696217ec9c2c65af6a6c8bcc3b5f06f2f9` has run [#44422727859](https://github.com/xkszds/badcat-legado-client/actions/runs/44422727859) pending. No physical-device verification or full Legado parity is claimed.
+
+## 2026-11-19 HTTP redirect/timeout compatibility correction
+
+- Kept JsExtensions `get/head/post` on the no-auto-redirect path and `connect` / URL selector fetches on the redirect-aware path, with explicit per-call timeout forwarding.
+- Corrected the connect failure test fixture after the first CI attempt reported one stale callback expectation.
+- Run [#44423657512](https://github.com/xkszds/badcat-legado-client/actions/runs/44423657512) passed contract tests, bounded Rhino host tests and Debug APK assembly; live smoke probes were still running at last inspection.

@@ -133,3 +133,9 @@
 - CI run [#44422285115](https://github.com/xkszds/badcat-legado-client/actions/runs/44422285115), commit `36e62023f4006db47876c69bff1b550b776730b8`: contract tests, bounded Rhino tests and Debug APK assembly passed; best-effort live source probes were still running at last inspection. This run predates the HTTP timeout overload/factory changes.
 - Latest implementation commit at this update: `beda18696217ec9c2c65af6a6c8bcc3b5f06f2f9`. Its CI run [#44422727859](https://github.com/xkszds/badcat-legado-client/actions/runs/44422727859) was pending at last inspection.
 - These are compatibility/security increments only. They do not complete the full upstream `JsExtensions` host API, WebView/browser/verification UI, batch content context, font APIs, refresh events, or any of the original Badcat UI, reader, AdBlock/AdMark and PPRule work.
+
+## 2026-11-19 HTTP redirect/timeout compatibility correction
+
+- Split the pinned Legado HTTP helper request paths: `get/head/post` use a no-auto-redirect transport (including explicit timeout overloads), while `connect` and selector URL fetches use the redirect-aware transport. This preserves source rules that inspect 3xx responses and their `Location` headers.
+- The first CI attempt after this split exposed one stale test fixture: the no-timeout `connect` failure test injected the old no-redirect callback. Updated it to inject the redirect-aware GET callback. This was a test-fixture mismatch, not a production regression.
+- Run [#44423657512](https://github.com/xkszds/badcat-legado-client/actions/runs/44423657512), commit `adc6434cfa1166dc2b78a38e3a3ff5ccadc84fae`: contract tests and bounded Rhino tests passed; Debug APK assembly completed successfully. Best-effort live probes were still running at last inspection.

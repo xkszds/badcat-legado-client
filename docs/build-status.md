@@ -373,3 +373,9 @@ Last updated: 2026-11-15
 - Added GET/HEAD/POST per-call timeout overloads, wired the Android factory to pass timeout values through to OkHttp, and aligned the default helper timeout with upstream's 30 seconds.
 - Run [#44422285115](https://github.com/xkszds/badcat-legado-client/actions/runs/44422285115) passed contract tests, bounded Rhino host tests and Debug APK assembly for commit `36e62023f4006db47876c69bff1b550b776730b8`; best-effort live-source probes were still running at last inspection. This run predates the timeout overload/factory changes.
 - Latest implementation commit `beda18696217ec9c2c65af6a6c8bcc3b5f06f2f9` has CI run [#44422727859](https://github.com/xkszds/badcat-legado-client/actions/runs/44422727859) pending. No real-device or full compatibility claim is made.
+
+## 2026-11-19 redirect-aware and no-redirect HTTP transport split
+
+- Pinned Legado `JsExtensions.get/head/post` are implemented on a no-auto-redirect transport, including optional timeout overloads. `connect` uses the redirect-aware GET path, and selector URL fetches also follow redirects.
+- CI run [#44423358541](https://github.com/xkszds/badcat-legado-client/actions/runs/44423358541) initially failed one Rhino test because the no-timeout connect-error fixture still injected `sourceHttpRequest`; it was updated to inject `sourceGet` in commit `adc6434cfa1166dc2b78a38e3a3ff5ccadc84fae`.
+- Run [#44423657512](https://github.com/xkszds/badcat-legado-client/actions/runs/44423657512) passed contract and Rhino tests and completed Debug APK assembly; best-effort live source probes were in progress at last inspection.

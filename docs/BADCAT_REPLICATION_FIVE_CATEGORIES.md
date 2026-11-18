@@ -108,3 +108,8 @@
 - Run [#44422285115](https://github.com/xkszds/badcat-legado-client/actions/runs/44422285115) passed contract tests, bounded Rhino tests and Debug APK assembly for commit `36e62023f4006db47876c69bff1b550b776730b8`; best-effort live source probes were still running at last inspection. That run does not include the newest timeout-overload changes.
 - Latest engine commit: `beda18696217ec9c2c65af6a6c8bcc3b5f06f2f9`; verification run [#44422727859](https://github.com/xkszds/badcat-legado-client/actions/runs/44422727859) was pending.
 - This is a narrow increment within category 3 only. Categories 1, 2, 4 and 5 remain incomplete; the client is not a finished Badcat replica.
+
+## 2026-11-19 HTTP redirect semantics correction
+
+- Legado category 3 now keeps distinct request semantics: JsExtensions `get/head/post` do not auto-follow redirects; `connect` and URL-based selector fetches use redirect-aware GET. Explicit timeout overloads preserve the no-redirect behavior.
+- A CI test initially failed because the connect-error fixture still injected the old callback. The fixture was corrected. Run [#44423657512](https://github.com/xkszds/badcat-legado-client/actions/runs/44423657512) passed contract tests, Rhino host tests and Debug APK assembly; live probes remained in progress at last inspection.
