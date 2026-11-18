@@ -608,7 +608,7 @@ class RhinoSafeSourceJavaExtensions(
             // The JVM unit-test environment has no android.icu implementation;
             // retain GBK as a deterministic fallback there.
             val detectedName = runCatching {
-                android.icu.text.CharsetDetector()
+                io.legado.app.lib.icu4j.CharsetDetector()
                     .setText(bytes)
                     .detect()
                     ?.name
