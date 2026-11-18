@@ -364,7 +364,7 @@ class RhinoSafeSourceJavaExtensions(
     private val indent2Regex = "^[\\n\\s]+".toRegex()
     private val lastRegex = "[\\n\\s]+$".toRegex()
     private val formatImagePattern = java.util.regex.Pattern.compile(
-        """<img[^>]*\\ssrc\\s*=\\s*['"]([^'"{>]*\\{(?:[^{}]|\\{[^}>]+\\})+\\})['"][^>]*>|<img[^>]*\\sdata-(?:src|original|srcset)\\s*=\\s*['"]([^'">]+)['"][^>]*>|<img[^>]*\\ssrc\\s*=\\s*"([^">]+)"[^>]*>|<img[^>]*\\s(?:data-[^=>]*|src)=\\s*['"]([^'">]*)['"][^>]*>""",
+        """<img[^>]*\ssrc\s*=\s*['"]([^'"{>]*\{(?:[^{}]|\{[^}>]+\})+\})['"][^>]*>|<img[^>]*\sdata-(?:src|original|srcset)\s*=\s*['"]([^'">]+)['"][^>]*>|<img[^>]*\ssrc\s*=\s*"([^">]+)"[^>]*>|<img[^>]*\s(?:data-[^=>]*|src)=\s*['"]([^'">]*)['"][^>]*>""",
         java.util.regex.Pattern.CASE_INSENSITIVE,
     )
 
