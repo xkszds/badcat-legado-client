@@ -175,7 +175,7 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
         val downloaded = extensions.downloadFile("https://virtual-archive.example/book.rar")
         val rarFolder = extensions.unrarFile(downloaded)
         assertEquals("RAR/7z chapter", extensions.readTxtFile("$rarFolder/chapter.txt"))
-        assertNull(extensions.readFile("$rarFolder/../escape.txt"))
+        assertTrue(runCatching { extensions.readFile("$rarFolder/../escape.txt") }.exceptionOrNull() is IllegalArgumentException)
 
         val sevenZipFolder = extensions.un7zFile(downloaded)
         assertEquals("RAR/7z chapter", extensions.readTxtFile("$sevenZipFolder/chapter.txt"))
