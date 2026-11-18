@@ -298,7 +298,14 @@ class RhinoSafeSourceJavaExtensions(
         val target = resolveFile(path)
         val parent = target.parentFile ?: root
         require(parent.isDirectory || parent.mkdirs()) { "Unable to create source file directory" }
-        val temporary = java.io.File(parent, target.name + ".tmp")
+        // Never use a predictable temporary filename: a source script could
+        // pre-create it as a symlink and make outputStream() overwrite a file
+        // outside the confined cache root.
+        val temporary = java.nio.file.Files.createTempFile(
+            parent.toPath(),
+            target.name + ".",
+            ".tmp",
+        ).toFile()
         val backup = java.io.File(parent, target.name + ".bak")
         try {
             temporary.outputStream().buffered().use { it.write(bytes) }
