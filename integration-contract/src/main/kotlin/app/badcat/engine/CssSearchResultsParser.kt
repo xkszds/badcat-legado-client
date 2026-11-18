@@ -115,7 +115,15 @@ class CssSearchResultsParser {
         }
         val listRule = rules["bookList"]?.takeIf(String::isNotBlank)
             ?: return unsupported(source, "missing bookList rule")
-        var rootExpression = listRule.trim()
+        var rootExpression = when (val put = LegadoPutRule.resolve(
+            source,
+            listRule.trim(),
+            SourceDocument(response.finalUrl, response.body, response.contentType, key, page),
+            scriptRuntime,
+        )) {
+            is EngineResult.Failure -> return put
+            is EngineResult.Success -> put.value
+        }
         rootExpression = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
                 source = source,
                 template = rootExpression,
