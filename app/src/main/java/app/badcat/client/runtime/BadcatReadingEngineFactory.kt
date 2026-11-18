@@ -96,7 +96,7 @@ class BadcatReadingEngineFactory(
                     is EngineResult.Failure -> throw IllegalArgumentException(created.message)
                     is EngineResult.Success -> created.value.copy(
                         timeoutMillis = 15_000L,
-                        retryCount = maxOf(created.value.retryCount, if (method.equals("GET", true) || method.equals("HEAD", true)) 1 else 0),
+                        retryCount = maxOf(created.value.retryCount, 1),
                     )
                 }
                 when (val result = runBlocking(Dispatchers.IO) { durableRequestClient.execute(request) }) {
@@ -113,7 +113,10 @@ class BadcatReadingEngineFactory(
                     body = body,
                 )) {
                     is EngineResult.Failure -> throw IllegalArgumentException(created.message)
-                    is EngineResult.Success -> created.value.copy(timeoutMillis = 8_000L)
+                    is EngineResult.Success -> created.value.copy(
+                        timeoutMillis = 15_000L,
+                        retryCount = maxOf(created.value.retryCount, if (method.equals("GET", true) || method.equals("HEAD", true)) 1 else 0),
+                    )
                 }
                 when (val result = runBlocking(Dispatchers.IO) { durableRequestClient.execute(request) }) {
                     is EngineResult.Failure -> throw IllegalStateException(result.message)
