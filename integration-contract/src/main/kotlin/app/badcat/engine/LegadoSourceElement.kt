@@ -42,7 +42,6 @@ class LegadoSourceElement(private val fragments: List<String>) {
     fun children(): LegadoSourceElementList = LegadoSourceElementList(
         elements().flatMap { it.children().map { child -> LegadoSourceElement(child.outerHtml()) } },
     )
-    fun parent(): LegadoSourceElement? = elements().firstOrNull()?.parent()?.let { LegadoSourceElement(it.outerHtml()) }
     override fun toString(): String = elements().joinToString("") { it.outerHtml() }
 }
 
