@@ -234,6 +234,19 @@ jobs:
           import json
           import urllib.parse
           import urllib.request
+          from bs4 import BeautifulSoup
+
+          def simple_css(rule):
+              rule = (rule or "").strip()
+              if not rule or "<js>" in rule.lower() or "@js:" in rule.lower():
+                  return None
+              rule = rule.split("||", 1)[0].strip()
+              rule = rule.replace("@", " ").replace("tag.", "")
+              if rule.startswith("class."):
+                  rule = "." + ".".join(rule[len("class."):].split())
+              if any(token in rule for token in ("{{", "!", "##", "&&")):
+                  return None
+              return rule
 
           collections = [
               ("liufuyou-yck", "https://raw.githubusercontent.com/liufuyou/read/main/sources/yck-novel.json"),
