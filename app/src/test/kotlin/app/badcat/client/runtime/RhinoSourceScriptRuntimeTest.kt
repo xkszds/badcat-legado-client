@@ -748,7 +748,7 @@ class RhinoSourceScriptRuntimeTest {
             sourceGet = { _, _, url, headers ->
                 captured["url"] = url
                 captured.putAll(headers)
-                app.badcat.engine.app.badcat.engine.SourceHttpResponse(
+                app.badcat.engine.SourceHttpResponse(
                     statusCode = 200,
                     finalUrl = url,
                     headers = mapOf("Location" to listOf("/redirected")),
@@ -850,7 +850,7 @@ class RhinoSourceScriptRuntimeTest {
     fun supportsLegadoSelectorHelpersWithExplicitContentAndOneArgumentHttpGet() = runBlocking {
         val runtime = RhinoSourceScriptRuntime(
             sourceGet = { _, _, url, _ ->
-                app.badcat.engine.app.badcat.engine.SourceHttpResponse(200, url, body = "one argument GET")
+                app.badcat.engine.SourceHttpResponse(200, url, body = "one argument GET")
             },
         )
         val source = BookSource(
@@ -874,7 +874,7 @@ class RhinoSourceScriptRuntimeTest {
         val runtime = RhinoSourceScriptRuntime(
             sourceGet = { _, _, url, headers ->
                 assertEquals("X-Test", headers.keys.single())
-                app.badcat.engine.app.badcat.engine.SourceHttpResponse(
+                app.badcat.engine.SourceHttpResponse(
                     statusCode = 200,
                     finalUrl = url,
                     body = "<div class='page-search' data-id='book-42'><span>Found</span></div>",
@@ -901,7 +901,7 @@ class RhinoSourceScriptRuntimeTest {
         val runtime = RhinoSourceScriptRuntime(
             sourceHttpRequest = { _, _, method, url, body, headers ->
                 seen += "$method|$url|${body.orEmpty()}|${headers["X-Token"].orEmpty()}"
-                app.badcat.engine.app.badcat.engine.SourceHttpResponse(200, url, body = if (method == "HEAD") "" else "${method} response")
+                app.badcat.engine.SourceHttpResponse(200, url, body = if (method == "HEAD") "" else "${method} response")
             },
         )
         val source = BookSource(
