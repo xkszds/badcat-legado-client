@@ -638,13 +638,16 @@ class RhinoSafeSourceJavaExtensions(
         val fileExists = fileStore.getBytes(sourceId, fileKey) != null
         if (fileExists) fileStore.remove(sourceId, fileKey)
         val manifestKey = VIRTUAL_DIR_PREFIX + path
-        val children = fileStore.get(sourceId, manifestKey)?.split("\n")
+        val manifest = fileStore.get(sourceId, manifestKey)
+        val children = manifest?.split("\n")
             ?.filter(String::isNotEmpty).orEmpty()
-        var removed = fileExists || children.isNotEmpty()
+        // An empty manifest is still a real virtual directory entry. Remove it
+        // as well, otherwise repeated cleanup leaves stale directory metadata.
+        var removed = fileExists || manifest != null
         children.forEach { child ->
             removed = deleteVirtualTree("$path/$child") || removed
         }
-        if (children.isNotEmpty()) fileStore.remove(sourceId, manifestKey)
+        if (manifest != null) fileStore.remove(sourceId, manifestKey)
         return removed
     }
 
