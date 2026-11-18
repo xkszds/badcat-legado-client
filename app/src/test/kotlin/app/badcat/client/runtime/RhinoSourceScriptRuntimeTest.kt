@@ -1507,3 +1507,71 @@ class RhinoSourceScriptRuntimeTest {
     }
 
 }
+
+
+class BadcatSourceHttpGatewayFactoryAjaxTest {
+    @org.junit.Test
+    fun javaAjaxUsesTheSameBoundedSourceHttpTransport() = kotlinx.coroutines.runBlocking {
+        val requests = mutableListOf<app.badcat.engine.SourceHttpRequest>()
+        val client = object : app.badcat.engine.SourceRequestClient {
+            override suspend fun execute(
+                request: app.badcat.engine.SourceHttpRequest,
+            ): app.badcat.engine.EngineResult<app.badcat.engine.SourceHttpResponse> {
+                requests += request
+                val body = if (request.url.endsWith("/toc")) "toc body" else "result body"
+                return app.badcat.engine.EngineResult.Success(
+                    app.badcat.engine.SourceHttpResponse(200, request.url, body = body),
+                )
+            }
+        }
+        val source = app.badcat.engine.BookSource(
+            id = "https://reader.example/source.json",
+            name = "Ajax transport fixture",
+            baseUrl = "https://reader.example/",
+        )
+        val gateway = BadcatSourceHttpGatewayFactory(client).create()
+
+        val result = gateway.execute(
+            source,
+            "@js:java.ajax('/toc'); 'https://reader.example/result'",
+        )
+
+        val response = (result as app.badcat.engine.EngineResult.Success).value
+        assertEquals("result body", response.body)
+        assertEquals(
+            listOf("https://reader.example/toc", "https://reader.example/result"),
+            requests.map { it.url },
+        )
+    }
+
+    @org.junit.Test
+    fun javaAjaxHonorsStaticPostRequestOptions() = kotlinx.coroutines.runBlocking {
+        val requests = mutableListOf<app.badcat.engine.SourceHttpRequest>()
+        val client = object : app.badcat.engine.SourceRequestClient {
+            override suspend fun execute(
+                request: app.badcat.engine.SourceHttpRequest,
+            ): app.badcat.engine.EngineResult<app.badcat.engine.SourceHttpResponse> {
+                requests += request
+                return app.badcat.engine.EngineResult.Success(
+                    app.badcat.engine.SourceHttpResponse(200, request.url, body = "ok"),
+                )
+            }
+        }
+        val source = app.badcat.engine.BookSource(
+            id = "https://reader.example/source.json",
+            name = "Ajax POST fixture",
+            baseUrl = "https://reader.example/",
+        )
+        val gateway = BadcatSourceHttpGatewayFactory(client).create()
+
+        val result = gateway.execute(
+            source,
+            """@js:java.ajax('/lookup,{"method":"POST","body":"q=cat","retry":0}'); 'https://reader.example/result'""",
+        )
+
+        assertTrue(result is app.badcat.engine.EngineResult.Success)
+        assertEquals("POST", requests.first().method)
+        assertEquals("q=cat", requests.first().body)
+        assertEquals("https://reader.example/lookup", requests.first().url)
+    }
+}
