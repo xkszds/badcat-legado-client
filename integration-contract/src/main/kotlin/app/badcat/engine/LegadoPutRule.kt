@@ -28,11 +28,10 @@ object LegadoPutRule {
                 if (separator <= 0) null else {
                     val key = unquote(entry.substring(0, separator).trim())
                     val rawRule = entry.substring(separator + 1).trim()
-                    val literal = rawRule.length >= 2 &&
-                        (rawRule.first() == '"' || rawRule.first() == '\'') &&
-                        rawRule.last() == rawRule.first()
+                    // Quotes delimit a rule value; they do not make it a literal.
+                    // Upstream AnalyzeRule evaluates quoted selectors through getString too.
                     val rule = unquote(rawRule)
-                    if (key.isBlank() || rule.isBlank()) null else Assignment(key, rule, literal)
+                    if (key.isBlank() || rule.isBlank()) null else Assignment(key, rule, literal = false)
                 }
             }
             if (parsedEntries.isEmpty() || parsedEntries.size != entries.size) {
