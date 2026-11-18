@@ -256,7 +256,7 @@ class RhinoSourceScriptRuntimeTest {
         )
         val result = runtime.evaluate(
             source,
-            "java.put('headers', '{\\\"headers\\\":{}}'); java.getVariable('headers') + '|' + java.ajax('https://java-compat.example/api')",
+            "java.put('headers', '{\\\"headers\\\":{}}'); java.get('headers') + '|' + java.ajax('https://java-compat.example/api')",
         )
         assertEquals(
             "{\"headers\":{}}|ajax:https://java-compat.example/api",
