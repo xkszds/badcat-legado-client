@@ -35,12 +35,21 @@ class LegadoSourceElement(
     fun selectFirst(selector: String): LegadoSourceElement? = select(selector).first()
     fun first(): LegadoSourceElement? = elements().firstOrNull()?.let { LegadoSourceElement(it.outerHtml(), baseUri) }
     fun last(): LegadoSourceElement? = elements().lastOrNull()?.let { LegadoSourceElement(it.outerHtml(), baseUri) }
-    fun parent(): LegadoSourceElement? = elements().firstOrNull()?.parent()?.let { LegadoSourceElement(it.outerHtml(), baseUri) }
+    fun parent(): LegadoSourceElement? = elements().firstOrNull()?.parents()?.firstOrNull()
+        ?.let { LegadoSourceElement(it.outerHtml(), baseUri) }
     fun parents(): LegadoSourceElementList = LegadoSourceElementList(
         elements().firstOrNull()?.parents()?.map { LegadoSourceElement(it.outerHtml(), baseUri) }.orEmpty(),
     )
-    fun next(): LegadoSourceElement? = elements().firstOrNull()?.nextElementSibling()?.let { LegadoSourceElement(it.outerHtml(), baseUri) }
-    fun prev(): LegadoSourceElement? = elements().firstOrNull()?.previousElementSibling()?.let { LegadoSourceElement(it.outerHtml(), baseUri) }
+    fun next(): LegadoSourceElement? = elements().firstOrNull()?.let { current ->
+        val siblings = current.parents().firstOrNull()?.children() ?: return@let null
+        siblings.getOrNull(current.elementSiblingIndex() + 1)
+            ?.let { LegadoSourceElement(it.outerHtml(), baseUri) }
+    }
+    fun prev(): LegadoSourceElement? = elements().firstOrNull()?.let { current ->
+        val siblings = current.parents().firstOrNull()?.children() ?: return@let null
+        siblings.getOrNull(current.elementSiblingIndex() - 1)
+            ?.let { LegadoSourceElement(it.outerHtml(), baseUri) }
+    }
     fun siblings(): LegadoSourceElementList = LegadoSourceElementList(
         elements().firstOrNull()?.siblingElements()?.map { LegadoSourceElement(it.outerHtml(), baseUri) }.orEmpty(),
     )
