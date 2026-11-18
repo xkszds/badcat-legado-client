@@ -53,10 +53,10 @@ class RhinoSafeSourceJavaExtensions(
     fun getString(rule: String, content: String): String = ruleStringReaderWithContent(rule, content)
 
     /** Legado's list selector helper, returned as a Java-compatible mutable list. */
-    fun getStringList(rule: String): RhinoLegadoStringList = RhinoLegadoStringList(ruleStringListReader(rule))
+    fun getStringList(rule: String): Array<String> = ruleStringListReader(rule).toTypedArray()
 
-    fun getStringList(rule: String, content: String): RhinoLegadoStringList =
-        RhinoLegadoStringList(ruleStringListReaderWithContent(rule, content))
+    fun getStringList(rule: String, content: String): Array<String> =
+        ruleStringListReaderWithContent(rule, content).toTypedArray()
 
     /** Legado's element selector helper, exposing only safe text/HTML/attribute methods. */
     fun getElement(rule: String): LegadoSourceElement =
@@ -329,15 +329,6 @@ class RhinoSafeSourceJavaExtensions(
         private const val MAX_VALUE_CHARS = 16 * 1024
         private const val MAX_AES_INPUT_BYTES = 2 * 1024 * 1024
     }
-}
-
-/** Java-list-compatible string collection with the common JavaScript join helper. */
-class RhinoLegadoStringList(private val values: List<String>) : java.util.AbstractList<String>() {
-    override val size: Int
-        get() = values.size
-    override fun get(index: Int): String = values[index]
-    fun join(separator: String): String = values.joinToString(separator)
-    fun getLength(): Int = size
 }
 
 /** Read-only response facade returned by the Legado java.get(url, headers) helper. */
