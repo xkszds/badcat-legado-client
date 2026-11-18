@@ -230,7 +230,7 @@ class OkHttpSourceRequestClient(
     }
 }
 
-/** Retry transient connection/read failures, but never TLS validation or DNS failures. */
+/** Retry transient connection, read and DNS failures for idempotent reads, but never TLS validation failures. */
 internal fun shouldRetryIOException(method: String, error: IOException): Boolean {
     if (!method.equals("GET", ignoreCase = true) && !method.equals("HEAD", ignoreCase = true)) return false
     if (error is SSLException) return false
