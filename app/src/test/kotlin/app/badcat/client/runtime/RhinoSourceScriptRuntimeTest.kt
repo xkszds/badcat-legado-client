@@ -1115,4 +1115,28 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(source.id)
     }
 
+
+    @Test
+    fun supportsLegadoDigestAndHmacHelpersWithKnownVectors() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val source = BookSource(
+            id = "https://digest-helpers.example/",
+            name = "Digest helpers",
+            baseUrl = "https://digest-helpers.example/",
+        )
+        val result = runtime.evaluate(
+            source,
+            "java.digestHex('abc','SHA-256') + '|' + java.digestBase64Str('abc','SHA-256') + '|' + java.HMacHex('The quick brown fox jumps over the lazy dog','HmacSHA256','key') + '|' + java.HMacBase64('The quick brown fox jumps over the lazy dog','HmacSHA256','key')",
+        )
+        assertTrue("Legado digest/HMAC helpers failed: $result", result is EngineResult.Success)
+        assertEquals(
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad|" +
+                "ungWv48Bz+pBQUDeXa4iI7ADYaOWF3qctBD/YfIAFa0=|" +
+                "f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8|" +
+                "97vD9DBThCSxMpjmqm+xQ+T0WaFJRhdZl0edvC0aPNg=",
+            (result as EngineResult.Success).value,
+        )
+        runtime.clearSourceState(source.id)
+    }
+
 }
