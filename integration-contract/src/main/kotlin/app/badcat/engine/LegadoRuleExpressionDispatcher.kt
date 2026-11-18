@@ -59,15 +59,24 @@ object LegadoRuleExpressionDispatcher {
             if (leaf.startsWith(":")) {
                 return LegadoRegexElementEvaluator.evaluate(document.body, leaf.substring(1))
             }
+            if (allowUnprefixedRegexFallback && leaf.startsWith("<")) {
+                return EngineResult.Success(listOf(leaf))
+            }
             val selectorResult = when (val resolved = resolve(leaf)) {
                 is EngineResult.Failure -> resolved
                 is EngineResult.Success -> when (resolved.value.type) {
                     // Always pass the normalized expression. In particular, a
                     // single leading '@' is Legado's CSS mode marker, not part
                     // of the selector text.
-                    SelectorRuleType.CSS -> EngineResult.Success(
-                        UpstreamLegadoCssRuleEvaluator.getElementHtmlList(document.body, document.url, toUpstreamCssRule(leaf)),
-                    )
+                    SelectorRuleType.CSS -> if (isUpstreamLegacyCss(leaf)) {
+                        EngineResult.Success(
+                            UpstreamLegadoCssRuleEvaluator.getElementHtmlList(
+                                document.body, document.url, toUpstreamCssRule(stripExtractionSuffix(leaf)),
+                            ),
+                        )
+                    } else {
+                        CssRuleEvaluator.evaluateElements(document, resolved.value.expression)
+                    }
                     SelectorRuleType.XPATH -> XPathRuleEvaluator.evaluateElements(document, resolved.value.expression)
                     SelectorRuleType.JSON_PATH -> JsonPathRuleEvaluator.evaluateElements(document, resolved.value.expression)
                 }
@@ -132,7 +141,7 @@ object LegadoRuleExpressionDispatcher {
                 when (val resolved = resolve(branch)) {
                     is EngineResult.Failure -> resolved
                     is EngineResult.Success ->
-                        if (resolved.value.type == SelectorRuleType.CSS) {
+                        if (resolved.value.type == SelectorRuleType.CSS && isUpstreamLegacyCss(branch)) {
                             EngineResult.Success(
                                 UpstreamLegadoCssRuleEvaluator.getStringList(document.body, document.url, toUpstreamCssRule(branch)),
                             )
@@ -201,6 +210,19 @@ object LegadoRuleExpressionDispatcher {
             branches.flatten()
         }
         return EngineResult.Success(combined)
+    }
+
+    private fun isUpstreamLegacyCss(expression: String): Boolean {
+        val raw = expression.trim()
+        return raw.startsWith("@.") || raw.startsWith("@class.", ignoreCase = true) ||
+            raw.startsWith("@tag.", ignoreCase = true) || raw.contains("@tag.", ignoreCase = true) ||
+            Regex("""[.!]-?\\d+(?=@|$)""").containsMatchIn(raw)
+    }
+
+    private fun stripExtractionSuffix(expression: String): String {
+        val suffix = expression.substringAfterLast("@", "").lowercase()
+        return if (suffix in setOf("text", "textnodes", "owntext", "html", "all", "href", "src", "tag") ||
+            suffix.startsWith("attr(")) expression.substringBeforeLast("@") else expression
     }
 
     private fun toUpstreamCssRule(expression: String): String {
