@@ -343,8 +343,8 @@ class RhinoSourceScriptRuntime(
     }
 
     private companion object {
-        const val DEFAULT_TIMEOUT_MILLIS = 1_500L
-        const val MAX_TIMEOUT_MILLIS = 10_000L
+        const val DEFAULT_TIMEOUT_MILLIS = 15_000L
+        const val MAX_TIMEOUT_MILLIS = 30_000L
         const val MAX_SCRIPT_CHARS = 128 * 1024
         const val MAX_BINDINGS = 32
         const val MAX_BINDING_VALUE_CHARS = 64 * 1024
