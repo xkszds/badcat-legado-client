@@ -213,6 +213,10 @@ class CssSearchResultsParser {
                 is EngineResult.Failure -> return expanded
                 is EngineResult.Success -> expanded.value
             }
+            if ((fieldName == "bookUrl" || fieldName == "coverUrl") && isLiteralUrlRule(trimmed)) {
+                return runCatching { EngineResult.Success(WebUrlResolver.resolve(response.finalUrl, trimmed)) }
+                    .getOrElse { unsupported(source, "$fieldName literal must resolve to a credential-free HTTP(S) URL") }
+            }
             if (trimmed.startsWith("@js:", true) || trimmed.startsWith("javascript:", true)) {
                 val script = trimmed.substringAfter(':').trim()
                 if (script.isBlank()) return unsupported(source, "empty JavaScript rule for '$fieldName'")
@@ -374,6 +378,10 @@ class CssSearchResultsParser {
         return jsonPath?.let { JsonPathRuleEvaluator.evaluate(document, it) }
             ?: LegadoRuleExpressionDispatcher.evaluate(document, trimmed)
     }
+
+    private fun isLiteralUrlRule(value: String): Boolean =
+        value.startsWith("http://", true) || value.startsWith("https://", true) ||
+            value.startsWith("/") || value.startsWith("./") || value.startsWith("../")
 
     private fun normalizeJsonRule(body: String, rule: String): String {
         val trimmed = rule.trim()
