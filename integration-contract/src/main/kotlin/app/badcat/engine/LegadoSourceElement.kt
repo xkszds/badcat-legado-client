@@ -28,7 +28,7 @@ class LegadoSourceElement(
     fun html(): String = elements().html()
     fun attr(name: String): String = elements().firstOrNull()?.attr(name).orEmpty()
     fun hasAttr(name: String): Boolean = elements().firstOrNull()?.hasAttr(name) ?: false
-    fun val(): String = elements().firstOrNull()?.`val`().orEmpty()
+    fun `val`(): String = elements().firstOrNull()?.`val`().orEmpty()
     fun data(): String = elements().firstOrNull()?.data().orEmpty()
     fun select(selector: String): LegadoSourceElement =
         LegadoSourceElement(elements().select(selector).map { it.outerHtml() }, baseUri)
