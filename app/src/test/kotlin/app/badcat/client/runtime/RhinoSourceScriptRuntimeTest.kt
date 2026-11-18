@@ -933,6 +933,35 @@ text + re.test('aa}}')"""
 
 
     @Test
+    fun supportsLegadoSymmetricCryptoBase64AndHexEncryptionHelpers() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val source = BookSource(
+            id = "https://symmetric-encrypt.example/",
+            name = "Symmetric encryption compatibility",
+            baseUrl = "https://symmetric-encrypt.example/",
+        )
+        val result = runtime.evaluate(
+            source,
+            """
+                var crypto = java.createSymmetricCrypto(
+                    'AES/CBC/PKCS5Padding',
+                    '0123456789abcdef',
+                    'abcdef0123456789'
+                );
+                var base64Cipher = crypto.encryptBase64('Legado crypto roundtrip');
+                var hexCipher = crypto.encryptHex('Legado crypto roundtrip');
+                crypto.decryptStr(java.base64DecodeToByteArray(base64Cipher)) + '|' +
+                    crypto.decryptStr(java.hexDecodeToByteArray(hexCipher)) + '|' +
+                    (base64Cipher.length > 0) + '|' + (hexCipher.length > 0);
+            """.trimIndent(),
+        )
+
+        assertTrue("Legado symmetric encrypt helpers failed: $result", result is EngineResult.Success)
+        assertEquals("Legado crypto roundtrip|Legado crypto roundtrip|true|true", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun supportsLegadoDesCbcDecryptionHelper() = runBlocking {
         val runtime = RhinoSourceScriptRuntime()
         val source = BookSource(

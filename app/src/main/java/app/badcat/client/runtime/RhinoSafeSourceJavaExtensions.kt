@@ -680,8 +680,32 @@ class RhinoLegadoSymmetricCrypto(
     private val keyBytes = key.copyOf()
     private val ivBytes = iv.copyOf()
 
+    fun encrypt(data: String): ByteArray {
+        val input = data.toByteArray(Charsets.UTF_8)
+        require(input.size <= 2 * 1024 * 1024) { "Symmetric crypto input exceeds the size limit" }
+        validateKeyAndIv()
+        val cipher = Cipher.getInstance(transformation)
+        cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(keyBytes, algorithm), IvParameterSpec(ivBytes))
+        return cipher.doFinal(input)
+    }
+
+    /** Hutool-compatible Base64 ciphertext helper used by Legado source rules. */
+    fun encryptBase64(data: String): String =
+        Base64.getEncoder().encodeToString(encrypt(data))
+
+    /** Hutool-compatible lowercase hexadecimal ciphertext helper. */
+    fun encryptHex(data: String): String =
+        encrypt(data).joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
+
     fun decryptStr(data: ByteArray): String {
         require(data.size <= 2 * 1024 * 1024) { "Symmetric crypto input exceeds the size limit" }
+        validateKeyAndIv()
+        val cipher = Cipher.getInstance(transformation)
+        cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(keyBytes, algorithm), IvParameterSpec(ivBytes))
+        return String(cipher.doFinal(data), Charsets.UTF_8)
+    }
+
+    private fun validateKeyAndIv() {
         when (algorithm) {
             "AES" -> {
                 require(keyBytes.size == 16 || keyBytes.size == 24 || keyBytes.size == 32) { "Invalid AES key length" }
@@ -692,9 +716,6 @@ class RhinoLegadoSymmetricCrypto(
                 require(ivBytes.size == 8) { "Invalid DES-CBC IV length" }
             }
         }
-        val cipher = Cipher.getInstance(transformation)
-        cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(keyBytes, algorithm), IvParameterSpec(ivBytes))
-        return String(cipher.doFinal(data), Charsets.UTF_8)
     }
 }
 
