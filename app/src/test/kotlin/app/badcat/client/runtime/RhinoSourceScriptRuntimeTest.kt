@@ -1471,4 +1471,39 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(source.id)
     }
 
+
+    @Test
+    fun supportsRegexLiteralsUsedByImportedComicAndKuwoSearchSources() = runBlocking {
+        val source = BookSource(
+            id = "https://imported-regex-fixtures.example/",
+            name = "Imported regex fixtures",
+            baseUrl = "https://imported-regex-fixtures.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val result = runtime.evaluate(
+            source,
+            """
+                var mkzhanCover = 'https://img.example/cover.jpg?size=large'
+                    .replace(/\\.(jpg|JPG).*/g, '.$1!cover-400');
+                var kuwoStatus = '30 50'
+                    .replace(/30/, '连载')
+                    .replace(/50/, '完结');
+                var qqPayload = "data: 'payload-123'"
+                    .match(/data:\\s*'(.*?)'/)[1];
+                var kanmanKind = 'action|fantasy'
+                    .replace(/[a-zA-Z]|\\|/g, '');
+                var legacyPattern = '[M comic title}'
+                    .match(/\\[M.*?}/)[0];
+                [mkzhanCover, kuwoStatus, qqPayload, kanmanKind, legacyPattern].join('|');
+            """.trimIndent(),
+        )
+
+        assertTrue("Imported source regex literals must execute in Rhino: $result", result is EngineResult.Success)
+        assertEquals(
+            "https://img.example/cover.jpg!cover-400|连载 完结|payload-123||[M comic title}",
+            (result as EngineResult.Success).value,
+        )
+        runtime.clearSourceState(source.id)
+    }
+
 }
