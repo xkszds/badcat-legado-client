@@ -125,6 +125,16 @@ internal fun readBoundedChapterCacheEntry(
         val allowed = (maxBytes - total + 1).coerceAtMost(buffer.size.toLong()).toInt()
         val count = input.read(buffer, 0, allowed)
         if (count < 0) break
+        if (count == 0) {
+            // A non-conforming or non-blocking stream may make no progress on
+            // a bulk read. Fall back to one byte so this bounded loop cannot spin.
+            val next = input.read()
+            if (next < 0) break
+            total++
+            if (total > maxBytes) return null
+            output.write(next)
+            continue
+        }
         total += count
         if (total > maxBytes) return null
         output.write(buffer, 0, count)
