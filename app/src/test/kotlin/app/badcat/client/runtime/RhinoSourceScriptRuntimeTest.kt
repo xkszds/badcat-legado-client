@@ -1346,6 +1346,36 @@ text + re.test('aa}}')"""
     }
 
     @Test
+    fun ajaxTestAllMatchesPinnedLegadoNetworkErrorCodes() = runBlocking {
+        val source = BookSource(
+            id = "ajax-test-error-codes",
+            name = "AJAX error codes",
+            baseUrl = "https://ajax-test-codes.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime(
+            sourceHttpRequestWithTimeout = { _, _, _, url, _, _, _ ->
+                when (url.substringAfterLast('/')) {
+                    "socket-timeout" -> throw java.net.SocketTimeoutException("read timed out")
+                    "dns" -> throw java.net.UnknownHostException("unknown host")
+                    "connect" -> throw java.net.ConnectException("connection refused")
+                    "socket" -> throw java.net.SocketException("connection reset")
+                    "ssl" -> throw javax.net.ssl.SSLHandshakeException("handshake failed")
+                    "interrupted-timeout" -> throw java.io.InterruptedIOException("timeout")
+                    "interrupted-other" -> throw java.io.InterruptedIOException("interrupted")
+                    else -> throw IllegalStateException("other")
+                }
+            },
+        )
+        val result = runtime.evaluate(
+            source,
+            "java.ajaxTestAll(['/socket-timeout','/dns','/connect','/socket','/ssl','/interrupted-timeout','/interrupted-other','/other'], 900).map(function(r){return r.callTime()}).join(',')",
+            mapOf("baseUrl" to source.baseUrl),
+        )
+        assertEquals("-2,-3,-4,-5,-6,-1,-7,-7", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun connectCallTimeoutIsForwardedToTheTransport() = runBlocking {
         val source = BookSource(
             id = "connect-timeout-source",
