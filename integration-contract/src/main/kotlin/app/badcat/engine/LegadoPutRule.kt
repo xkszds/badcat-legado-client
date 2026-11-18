@@ -10,38 +10,45 @@ object LegadoPutRule {
     data class Parsed(val expression: String, val assignments: List<Assignment>)
 
     fun parse(expression: String): EngineResult<Parsed> {
-        val marker = expression.indexOf("@put:", ignoreCase = true)
-        if (marker < 0) return EngineResult.Success(Parsed(expression, emptyList()))
-        val start = marker + 5
-        if (start >= expression.length || expression[start] != '{') {
-            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Malformed Legado @put directive")
-        }
-        val end = findClosingBrace(expression, start)
-            ?: return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Unclosed Legado @put directive")
-        val entries = splitTopLevel(expression.substring(start + 1, end), ',')
-        val assignments = entries.mapNotNull { entry ->
-            val separator = findTopLevelColon(entry)
-            if (separator <= 0) null else {
-                val key = unquote(entry.substring(0, separator).trim())
-                val rawRule = entry.substring(separator + 1).trim()
-                val literal = rawRule.length >= 2 &&
-                    (rawRule.first() == '"' || rawRule.first() == '\'') &&
-                    rawRule.last() == rawRule.first()
-                val rule = unquote(rawRule)
-                if (key.isBlank() || rule.isBlank()) null else Assignment(key, rule, literal)
+        val assignments = mutableListOf<Assignment>()
+        val ranges = mutableListOf<IntRange>()
+        var searchFrom = 0
+        while (searchFrom < expression.length) {
+            val marker = expression.indexOf("@put:", searchFrom, ignoreCase = true)
+            if (marker < 0) break
+            val start = marker + 5
+            if (start >= expression.length || expression[start] != '{') {
+                return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Malformed Legado @put directive")
+            }
+            val end = findClosingBrace(expression, start)
+                ?: return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Unclosed Legado @put directive")
+            val entries = splitTopLevel(expression.substring(start + 1, end), ',')
+            val parsedEntries = entries.mapNotNull { entry ->
+                val separator = findTopLevelColon(entry)
+                if (separator <= 0) null else {
+                    val key = unquote(entry.substring(0, separator).trim())
+                    val rawRule = entry.substring(separator + 1).trim()
+                    val literal = rawRule.length >= 2 &&
+                        (rawRule.first() == '"' || rawRule.first() == '\'') &&
+                        rawRule.last() == rawRule.first()
+                    val rule = unquote(rawRule)
+                    if (key.isBlank() || rule.isBlank()) null else Assignment(key, rule, literal)
+                }
+            }
+            if (parsedEntries.isEmpty() || parsedEntries.size != entries.size) {
+                return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Invalid Legado @put assignments")
+            }
+            assignments += parsedEntries
+            ranges += marker..end
+            searchFrom = end + 1
+            if (assignments.size > MAX_VARIABLE_OPERATIONS) {
+                return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Too many Legado @put assignments in one rule")
             }
         }
-        if (assignments.isEmpty() || assignments.size != entries.size) {
-            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Invalid Legado @put assignments")
-        }
-        return EngineResult.Success(
-            Parsed(
-                expression.removeRange(marker, end + 1).trim(),
-                assignments,
-            ),
-        )
+        var cleaned = expression
+        ranges.asReversed().forEach { cleaned = cleaned.removeRange(it) }
+        return EngineResult.Success(Parsed(cleaned.trim(), assignments))
     }
-
     suspend fun resolve(
         source: BookSource,
         expression: String,
