@@ -70,8 +70,9 @@ jobs:
 
           checks = [
               ("漫客栈", ["斗罗大陆", "一人之下", "海贼王"], lambda s: s.get("bookSourceUrl", "").startswith("http://comic.mkzhan.com") and "search/keyword/" in s.get("searchUrl", "")),
+              ("漫客栈网页", ["斗罗大陆", "一人之下", "海贼王"], lambda s: s.get("bookSourceName") == "漫客栈" and "www.mkzhan.com/search/" in s.get("searchUrl", "")),
               ("酷我小说", ["斗破苍穹", "凡人修仙传", "道君"], lambda s: s.get("bookSourceName") == "酷我小说"),
-              ("看漫画", ["海贼王"], lambda s: s.get("bookSourceName") == "看漫画"),
+              ("看漫画", ["海贼王", "某天成为王的女儿"], lambda s: s.get("bookSourceName") == "看漫画"),
               ("腾讯漫画", ["海贼王"], lambda s: s.get("bookSourceName") == "腾讯漫画"),
           ]
 
@@ -121,6 +122,9 @@ jobs:
                               if rows and isinstance(rows[0], dict):
                                   sample = {k: rows[0].get(k) for k in ("book_id", "title", "comic_id", "comic_name", "comic_author", "author_name") if k in rows[0]}
                                   print(f"LIVE_SAMPLE {name}: {sample!r}")
+                              if name == "看漫画":
+                                  names = [row.get("comic_name", "") for row in rows if isinstance(row, dict)]
+                                  print(f"LIVE_NAMES {name}: {names[:14]!r}")
                           except (UnicodeDecodeError, json.JSONDecodeError, AttributeError):
                               pass
 
@@ -128,6 +132,19 @@ jobs:
                               found = ("航海王" in text_body or "海贼王" in text_body) and "<html" in text_body.lower()
                               if found:
                                   print(f"LIVE_OK {name}: keyword={keyword}, HTML result confirmed, {len(body)} bytes")
+                          elif name == "漫客栈网页":
+                              found = "<html" in text_body.lower() and keyword in text_body
+                              if found:
+                                  print(f"LIVE_OK {name}: keyword={keyword}, HTML keyword result confirmed, {len(body)} bytes")
+                              else:
+                                  print(f"LIVE_EMPTY {name}: keyword={keyword}, HTML={ '<html' in text_body.lower() }, {len(body)} bytes")
+                          elif name == "看漫画":
+                              names = [row.get("comic_name", "") for row in rows if isinstance(row, dict)]
+                              found = any(keyword in title for title in names)
+                              if found:
+                                  print(f"LIVE_OK {name}: keyword={keyword}, matching title found, rows={len(rows)}")
+                              else:
+                                  print(f"LIVE_EMPTY {name}: keyword={keyword}, rows={len(rows)} but no title match")
                           elif rows:
                               found = True
                               print(f"LIVE_OK {name}: keyword={keyword}, rows={len(rows)}, HTTP {response.status}, {len(body)} bytes")
