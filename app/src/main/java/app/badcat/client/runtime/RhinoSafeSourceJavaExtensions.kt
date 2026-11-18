@@ -288,14 +288,15 @@ class RhinoSafeSourceJavaExtensions(
     fun timeFormat(timestamp: String): String =
         timestamp.toLongOrNull()?.let { timeFormat(it) }.orEmpty()
 
-    fun timeFormatUTC(timestamp: Number, format: String, offsetMillis: Int): String =
+    /** Upstream JsExtensions.timeFormatUTC takes a timezone offset in hours. */
+    fun timeFormatUTC(timestamp: Number, format: String, sh: Int): String =
         SimpleDateFormat(format, Locale.getDefault()).run {
-            timeZone = SimpleTimeZone(offsetMillis, "UTC")
+            timeZone = SimpleTimeZone(Math.multiplyExact(sh, 60 * 60 * 1000), "UTC")
             format(Date(timestamp.toLong()))
         }
 
-    fun timeFormatUTC(timestamp: String, format: String, offsetMillis: Int): String =
-        timestamp.toLongOrNull()?.let { timeFormatUTC(it, format, offsetMillis) }.orEmpty()
+    fun timeFormatUTC(timestamp: String, format: String, sh: Int): String =
+        timestamp.toLongOrNull()?.let { timeFormatUTC(it, format, sh) }.orEmpty()
 
     /** Mirrors Hutool HexUtil.decodeHex: malformed and whitespace-padded input throws. */
     fun hexDecodeToByteArray(hex: String): ByteArray? {
@@ -560,6 +561,11 @@ class RhinoSafeSourceJavaExtensions(
     }
 
     fun urlEncode(value: String): String = URLEncoder.encode(value, Charsets.UTF_8.name())
+
+    /** Original Legado JsExtensions overload; this is form-style URL encoding. */
+    fun encodeURI(value: String, charset: String): String = runCatching {
+        URLEncoder.encode(value, charset)
+    }.getOrDefault("")
 
     /** JavaScript encodeURI: retain URI syntax delimiters, encode all other UTF-8 bytes. */
     fun encodeURI(value: String): String =
