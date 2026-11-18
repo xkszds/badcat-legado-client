@@ -226,6 +226,7 @@ class OkHttpSourceRequestClient(
             body = String(bytes, charset),
             contentType = responseBody?.contentType()?.toString(),
             statusMessage = response.message,
+            bodyBytes = bytes,
         )
     }
 
