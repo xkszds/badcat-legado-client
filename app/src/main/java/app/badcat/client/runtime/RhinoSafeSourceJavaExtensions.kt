@@ -215,10 +215,25 @@ class RhinoSafeSourceJavaExtensions(
     fun post(url: String, body: String, headers: Any?): RhinoSourceHttpResponse =
         RhinoSourceHttpResponse(httpRequest("POST", url, body, parseRequestHeaders(headers)))
 
-    fun connect(url: String): RhinoSourceHttpResponse =
-        RhinoSourceHttpResponse(httpRequest("GET", url, null, emptyMap()))
+    /**
+     * Legado connect() always returns a StrResponse-shaped value. Transport
+     * failures become a synthetic response carrying the exception stack trace;
+     * they must not abort the surrounding Rhino rule.
+     */
+    fun connect(url: String): RhinoSourceHttpResponse = connect(url, null)
 
-    fun connect(url: String, headers: Any?): RhinoSourceHttpResponse = get(url, headers)
+    fun connect(url: String, headers: Any?): RhinoSourceHttpResponse = try {
+        RhinoSourceHttpResponse(httpRequest("GET", url, null, parseRequestHeaders(headers)))
+    } catch (error: Exception) {
+        RhinoSourceHttpResponse(
+            SourceHttpResponse(
+                statusCode = 200,
+                finalUrl = runCatching { URL(URL("https://localhost/"), url).toString() }.getOrDefault("https://localhost/"),
+                body = error.stackTraceToString().ifEmpty { error.localizedMessage ?: "noErrorMsg" },
+                statusMessage = "OK",
+            ),
+        )
+    }
 
     /** Bounded Legado batch GET helper with capped parallelism and input-order results. */
     fun ajaxAll(urls: Any?): Array<RhinoSourceHttpResponse> {
@@ -752,6 +767,7 @@ class RhinoSourceHttpResponse(private val response: SourceHttpResponse) {
     fun body(): String = response.body
     fun code(): Int = response.statusCode
     fun statusCode(): Int = response.statusCode
+    fun isSuccessful(): Boolean = response.statusCode in 200..299
     fun message(): String = response.statusMessage
     fun url(): String = response.finalUrl
     fun header(name: String): String =
