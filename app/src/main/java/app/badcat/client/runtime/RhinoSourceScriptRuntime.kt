@@ -192,7 +192,10 @@ class RhinoSourceScriptRuntime(
                     },
                     httpRequestWithTimeout = { method, url, body, headers, timeout ->
                         if (timeout == null) {
-                            sourceHttpRequest(source, currentRuleBaseUrl, method, url, body, headers)
+                            require(method.equals("GET", true) && body == null) {
+                                "connect without an explicit timeout supports GET only"
+                            }
+                            sourceGet(source, currentRuleBaseUrl, url, headers)
                         } else {
                             sourceHttpRequestWithTimeout(source, currentRuleBaseUrl, method, url, body, headers, timeout)
                         }
