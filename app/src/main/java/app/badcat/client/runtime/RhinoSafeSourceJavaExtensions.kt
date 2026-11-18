@@ -53,10 +53,10 @@ class RhinoSafeSourceJavaExtensions(
     fun getString(rule: String, content: String): String = ruleStringReaderWithContent(rule, content)
 
     /** Legado's list selector helper, returned as a Java-compatible mutable list. */
-    fun getStringList(rule: String): java.util.ArrayList<String> = java.util.ArrayList(ruleStringListReader(rule))
+    fun getStringList(rule: String): RhinoLegadoStringList = RhinoLegadoStringList(ruleStringListReader(rule))
 
-    fun getStringList(rule: String, content: String): java.util.ArrayList<String> =
-        java.util.ArrayList(ruleStringListReaderWithContent(rule, content))
+    fun getStringList(rule: String, content: String): RhinoLegadoStringList =
+        RhinoLegadoStringList(ruleStringListReaderWithContent(rule, content))
 
     /** Legado's element selector helper, exposing only safe text/HTML/attribute methods. */
     fun getElement(rule: String): LegadoSourceElement =
@@ -91,7 +91,7 @@ class RhinoSafeSourceJavaExtensions(
     }
 
     /** Legado HTTP GET overloads. Headers may be a JS object or JSON string. */
-    fun get(url: String): RhinoSourceHttpResponse = RhinoSourceHttpResponse(httpGet(url, emptyMap()))
+    fun get(url: String): RhinoSourceHttpResponse = RhinoSourceHttpResponse(httpRequest("GET", url, null, emptyMap()))
 
     fun get(url: String, headers: Any?): RhinoSourceHttpResponse =
         RhinoSourceHttpResponse(httpRequest("GET", url, null, parseRequestHeaders(headers)))
@@ -328,6 +328,15 @@ class RhinoSafeSourceJavaExtensions(
     }
 }
 
+/** Java-list-compatible string collection with the common JavaScript join helper. */
+class RhinoLegadoStringList(private val values: List<String>) : java.util.AbstractList<String>() {
+    override val size: Int
+        get() = values.size
+    override fun get(index: Int): String = values[index]
+    fun join(separator: String): String = values.joinToString(separator)
+    fun getLength(): Int = size
+}
+
 /** Read-only response facade returned by the Legado java.get(url, headers) helper. */
 class RhinoSourceHttpResponse(private val response: SourceHttpResponse) {
     fun body(): String = response.body
@@ -338,7 +347,7 @@ class RhinoSourceHttpResponse(private val response: SourceHttpResponse) {
         response.headers.entries.firstOrNull { it.key.equals(name, ignoreCase = true) }
             ?.value?.firstOrNull().orEmpty()
     fun headers(name: String): String = header(name)
-    fun parse(): LegadoSourceElement = LegadoSourceElement(response.body)
+    fun parse(): LegadoSourceElement = LegadoSourceElement(response.body, response.finalUrl)
     fun select(selector: String): LegadoSourceElement = parse().select(selector)
     fun charset(): String = response.contentType.orEmpty().substringAfter("charset=", "UTF-8").trim().trim('"')
 }
