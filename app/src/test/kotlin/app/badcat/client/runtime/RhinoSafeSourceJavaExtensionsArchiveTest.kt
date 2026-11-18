@@ -119,7 +119,10 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
             sourceId = "https://legacy-file.example/",
             store = InMemorySourceScriptKeyValueStore,
         )
-        val gbk = "中文内容".toByteArray(java.nio.charset.Charset.forName("GBK"))
+        // ICU charset detection is statistical; use enough natural-language
+        // bytes to exercise the detector rather than asserting on a tiny sample.
+        val gbkText = "这是用于验证旧版书源文件编码检测的中文内容。".repeat(40)
+        val gbk = gbkText.toByteArray(java.nio.charset.Charset.forName("GBK"))
         val hex = gbk.joinToString("") { "%02x".format(it) }
 
         @Suppress("DEPRECATION")
@@ -133,14 +136,15 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
         assertEquals("$expectedName.dat", path)
         assertArrayEquals(gbk, extensions.readFile(path))
         assertArrayEquals(gbk, extensions.readFile("/$path"))
-        assertEquals("中文内容", extensions.readTxtFile(path))
+        assertEquals(gbkText, extensions.readTxtFile(path))
         assertTrue(extensions.deleteFile(path))
         assertNull(extensions.readFile(path))
     }
 
     @Test
     fun automaticCharsetDetectionUsesPinnedIcuForBig5Downloads() {
-        val big5 = "繁體中文測試".toByteArray(java.nio.charset.Charset.forName("Big5"))
+        val big5Text = "這是一段用來驗證舊版書源檔案編碼偵測的繁體中文內容。".repeat(40)
+        val big5 = big5Text.toByteArray(java.nio.charset.Charset.forName("Big5"))
         val detected = io.legado.app.lib.icu4j.CharsetDetector()
             .setText(big5)
             .detect()
@@ -160,7 +164,7 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
             },
         )
         val path = extensions.downloadFile("https://big5-file.example/book.txt")
-        assertEquals("繁體中文測試", extensions.readTxtFile(path))
+        assertEquals(big5Text, extensions.readTxtFile(path))
     }
 
     @Test
@@ -236,9 +240,11 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
         val root = java.io.File(parent, "cache").apply { mkdirs() }
         val folder = java.io.File(root, "mixed").apply { mkdirs() }
         try {
-            java.io.File(folder, "utf8.txt").writeBytes("UTF-8 文本".toByteArray(Charsets.UTF_8))
+            val utf8Text = "UTF-8 文本内容用于验证混合编码目录读取。".repeat(40)
+            val gbkText = "GBK 中文内容用于验证混合编码目录读取。".repeat(40)
+            java.io.File(folder, "utf8.txt").writeBytes(utf8Text.toByteArray(Charsets.UTF_8))
             java.io.File(folder, "gbk.txt").writeBytes(
-                "GBK 中文".toByteArray(java.nio.charset.Charset.forName("GBK")),
+                gbkText.toByteArray(java.nio.charset.Charset.forName("GBK")),
             )
             val outside = java.io.File("/etc/hostname")
             if (outside.isFile) {
@@ -255,8 +261,8 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
             )
             val result = extensions.getTxtInFolder("mixed")
 
-            assertTrue(result.contains("UTF-8 文本"))
-            assertTrue(result.contains("GBK 中文"))
+            assertTrue(result.contains(utf8Text))
+            assertTrue(result.contains(gbkText))
             if (outside.isFile) {
                 assertFalse(result.contains(outside.readText()))
             }
