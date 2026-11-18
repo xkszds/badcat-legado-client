@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -144,9 +145,14 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
         assertEquals("nested", extensions.readTxtFile("$directory/nested/part.txt"))
         assertEquals("第一章\n目录说明", extensions.getTxtInFolder(directory))
         assertTrue(runCatching { extensions.readFile("$directory/../outside.txt") }.exceptionOrNull() is IllegalArgumentException)
-        assertTrue(extensions.deleteFile(directory))
         assertNull(extensions.readFile("$directory/chapter.txt"))
         assertNull(extensions.readFile("$directory/nested/part.txt"))
+
+        val secondDownload = extensions.downloadFile("https://extract-fixture.example/book.zip")
+        val secondDirectory = extensions.unzipFile(secondDownload)
+        assertTrue(extensions.deleteFile(secondDirectory))
+        assertFalse(extensions.deleteFile(secondDirectory))
+        assertNull(extensions.readFile("$secondDirectory/nested/part.txt"))
     }
 
     @Test
