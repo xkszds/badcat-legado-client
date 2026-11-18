@@ -399,7 +399,7 @@ class CssSearchResultsParserTest {
         ).value
         assertEquals(1, books.size)
         assertEquals("某天成为王的女儿", books.single().name)
-        assertEquals("http://m.kanman.com/107477/", books.single().bookUrl)
+        assertEquals("https://m.kanman.com/107477/", books.single().bookUrl)
         assertEquals("https://image.yqmh.com/mh/107477.jpg-300x400.webp", books.single().coverUrl)
         assertEquals("童亦白", books.single().author)
         assertEquals("第613话", books.single().latestChapter)
@@ -425,7 +425,7 @@ class CssSearchResultsParserTest {
                 script: String,
                 bindings: Map<String, String>,
             ): EngineResult<String> {
-                assertEquals("""result.replace(/\\.(jpg|JPG).*/g,".$1!cover-400")""", script)
+                assertEquals("""result.replace(/\.(jpg|JPG).*/g,".$1!cover-400")""", script)
                 assertEquals("https://cdn.example/987.jpg?x=1", bindings["result"])
                 return EngineResult.Success("https://cdn.example/987.jpg!cover-400")
             }
