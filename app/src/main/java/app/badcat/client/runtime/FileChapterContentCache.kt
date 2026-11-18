@@ -122,7 +122,8 @@ internal fun readBoundedChapterCacheEntry(
     val buffer = ByteArray(8 * 1024)
     var total = 0L
     while (true) {
-        val count = input.read(buffer)
+        val allowed = (maxBytes - total + 1).coerceAtMost(buffer.size.toLong()).toInt()
+        val count = input.read(buffer, 0, allowed)
         if (count < 0) break
         total += count
         if (total > maxBytes) return null
