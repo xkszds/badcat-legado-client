@@ -328,4 +328,47 @@ class CssBookInfoParserTest {
         assertEquals("Embedded novel", detail.name)
     }
 
+
+    @Test
+    fun executesLegacyUnquotedPutInitAndReadsStoredBookInfoFields() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleBookInfoJson = """{
+                "init":"@put:{n:\"meta[property='book_name']@content\",a:\"meta[property='author']@content\"}",
+                "name":"@get:{n}",
+                "author":"@get:{a}"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/book/1",
+            body = """<meta property="book_name" content="Stored Novel"><meta property="author" content="Stored Writer">""",
+        )
+        val values = mutableMapOf<String, String>()
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> = EngineResult.Success(script)
+            override suspend fun putString(source: BookSource, key: String, value: String): EngineResult<Unit> {
+                values[key] = value
+                return EngineResult.Success(Unit)
+            }
+            override suspend fun getString(source: BookSource, key: String): EngineResult<String?> =
+                EngineResult.Success(values[key])
+        }
+
+        val detail = assertIs<EngineResult.Success<BookDetail>>(
+            CssBookInfoParser().parseWithScripts(source, response, response.finalUrl, runtime),
+        ).value
+
+        assertEquals("Stored Novel", detail.name)
+        assertEquals("Stored Writer", detail.author)
+        assertEquals("Stored Novel", values["n"])
+        assertEquals("Stored Writer", values["a"])
+    }
+
 }
