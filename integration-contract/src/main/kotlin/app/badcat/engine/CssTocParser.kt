@@ -100,6 +100,7 @@ class CssTocParser {
         suspend fun extract(itemHtml: String, key: String): EngineResult<String?> {
             val expression = rules[key]?.takeIf(String::isNotBlank)
                 ?: return EngineResult.Success(null)
+            val directGet = LegadoPutRule.isDirectGet(expression)
             val itemDocument = SourceDocument(response.finalUrl, itemHtml, response.contentType, page = page)
             var trimmed = when (val put = LegadoPutRule.resolve(source, expression.trim(), itemDocument, scriptRuntime)) {
                 is EngineResult.Failure -> return put
@@ -117,6 +118,7 @@ class CssTocParser {
                     is EngineResult.Failure -> return expanded
                     is EngineResult.Success -> expanded.value
                 }
+            if (directGet) return EngineResult.Success(trimmed.trim().takeIf(String::isNotEmpty))
             if (!trimmed.startsWith("@js:", true) && !trimmed.startsWith("javascript:", true)) {
                 trimmed = normalizeJsonRule(itemHtml, trimmed)
             }
