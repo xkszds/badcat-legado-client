@@ -371,4 +371,42 @@ class CssRuleEvaluatorTest {
     }
 
 
+
+    @Test
+    fun legacyClassSelectorMatchesEveryWhitespaceSeparatedClassToken() {
+        val source = SourceDocument(
+            url = "https://reader.example/search",
+            body = """
+                <div class="pure-u-1-1 pure-u-xl-1-3 pure-u-lg-1-3 novel_cell">
+                  <h3>Multi-class Novel</h3>
+                </div>
+                <div class="pure-u-1-1 pure-u-xl-1-3 novel_cell">
+                  <h3>Other Novel</h3>
+                </div>
+                <div class="pure-u-1-1 pure-u-xl-1-3">
+                  <h3>Not a result card</h3>
+                </div>
+            """.trimIndent(),
+        )
+
+        val scalar = CssRuleEvaluator.evaluate(
+            source,
+            "class.pure-u-1-1 pure-u-xl-1-3 pure-u-lg-1-3 novel_cell",
+        )
+        assertEquals(
+            listOf("Multi-class Novel"),
+            assertIs<EngineResult.Success<List<String>>>(scalar).value.map {
+                org.jsoup.Jsoup.parse(it).text()
+            },
+        )
+
+        val collection = CssRuleEvaluator.evaluateElements(
+            source,
+            "class.pure-u-1-1 pure-u-xl-1-3 pure-u-lg-1-3 novel_cell",
+        )
+        val fragments = assertIs<EngineResult.Success<List<String>>>(collection).value
+        assertEquals(1, fragments.size)
+        kotlin.test.assertTrue(fragments.single().contains("Multi-class Novel"))
+    }
+
 }
