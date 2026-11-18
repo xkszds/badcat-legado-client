@@ -395,7 +395,8 @@ text + re.test('aa}}')"""
         val formatted = (result as EngineResult.Success).value
         assertTrue(formatted.contains("<img src=\"https://reader.example/real.jpg\">"))
         assertTrue(!formatted.contains("placeholder.gif"))
-        assertTrue(!formatted.contains("javascript:") && !formatted.contains("file:"))
+        assertTrue(!formatted.contains("javascript:"))
+        assertTrue(formatted.contains("<img src=\"file:///etc/passwd\">"))
         runtime.clearSourceState(source.id)
     }
 

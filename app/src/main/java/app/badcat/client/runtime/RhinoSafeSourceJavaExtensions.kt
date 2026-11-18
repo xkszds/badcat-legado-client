@@ -353,64 +353,87 @@ class RhinoSafeSourceJavaExtensions(
 
     fun logType(value: Any?): String = value?.javaClass?.name ?: "null"
 
-    fun htmlFormat(value: String?): String = formatKeepImages(value.orEmpty(), null)
+    private val nbspRegex = "(&nbsp;)+".toRegex()
+    private val espRegex = "(&ensp;|&emsp;)".toRegex()
+    private val noPrintRegex = "(&thinsp;|&zwnj;|&zwj;|\\u2009|\\u200C|\\u200D)".toRegex()
+    private val wrapHtmlRegex = "</?(?:div|p|br|hr|h\\d|article|dd|dl)[^>]*>".toRegex()
+    private val commentRegex = "<!--[^>]*-->".toRegex()
+    private val notImgHtmlRegex = "</?(?!img)[a-zA-Z]+(?=[ >])[^<>]*>".toRegex()
+    private val otherHtmlRegex = "</?[a-zA-Z]+(?=[ >])[^<>]*>".toRegex()
+    private val indent1Regex = "\\s*\\n+\\s*".toRegex()
+    private val indent2Regex = "^[\\n\\s]+".toRegex()
+    private val lastRegex = "[\\n\\s]+$".toRegex()
+    private val formatImagePattern = java.util.regex.Pattern.compile(
+        """<img[^>]*\\ssrc\\s*=\\s*['"]([^'"{>]*\\{(?:[^{}]|\\{[^}>]+\\})+\\})['"][^>]*>|<img[^>]*\\sdata-(?:src|original|srcset)\\s*=\\s*['"]([^'">]+)['"][^>]*>|<img[^>]*\\ssrc\\s*=\\s*"([^">]+)"[^>]*>|<img[^>]*\\s(?:data-[^=>]*|src)=\\s*['"]([^'">]*)['"][^>]*>""",
+        java.util.regex.Pattern.CASE_INSENSITIVE,
+    )
 
-    fun htmlFormat(value: String?, redirectUrl: String?): String =
-        formatKeepImages(value.orEmpty(), redirectUrl?.takeIf(String::isNotBlank))
+    fun htmlFormat(value: String?): String = formatKeepImages(value, null)
 
-    private fun formatKeepImages(html: String, redirectUrl: String?): String {
-        var imageIndex = 0
-        val images = linkedMapOf<String, String>()
-        var text = html
-            .replace("\r\n", "\n")
-            .replace("\r", "\n")
-            .replace("\\r\\n", "\\n")
-            .replace("\\n", "\n")
-            .replace("\\r", "\n")
-            .replace(Regex("(&nbsp;)+", RegexOption.IGNORE_CASE), " ")
-            .replace(Regex("&(?:ensp|emsp);", RegexOption.IGNORE_CASE), " ")
-            .replace(Regex("(&thinsp;|&zwnj;|&zwj;|\\u2009|\\u200C|\\u200D)", RegexOption.IGNORE_CASE), "")
+    fun htmlFormat(value: String?, redirectUrl: String?): String {
+        val base = redirectUrl?.let { runCatching { URL(it) }.getOrNull() }
+        return formatKeepImages(value, base)
+    }
 
-        text = Regex("<img\\b[^>]*>", setOf(RegexOption.IGNORE_CASE)).replace(text) { match ->
-            // Prefer lazy-load attributes over placeholder src values. Attribute
-            // matching must not let the "src" alternative steal the tail of
-            // "data-src" or "data-original".
-            val rawUrl = listOf("data-original", "data-src", "data-lazy-src", "src")
-                .firstNotNullOfOrNull { attribute ->
-                    Regex("""(?i)(?:^|\s)${Regex.escape(attribute)}\s*=\s*["']([^"']+)["']""")
-                        .find(match.value)?.groupValues?.getOrNull(1)?.trim()
-                        ?.takeIf(String::isNotBlank)
-                }.orEmpty()
-            if (rawUrl.isBlank()) return@replace ""
-            val absoluteUrl = runCatching {
-                if (redirectUrl != null) {
-                    app.badcat.engine.WebUrlResolver.resolve(redirectUrl, rawUrl)
-                } else {
-                    val candidate = java.net.URI(rawUrl)
-                    require(candidate.scheme.equals("http", true) || candidate.scheme.equals("https", true)) {
-                        "Relative image URL requires a base URL"
-                    }
-                    require(candidate.userInfo == null && !candidate.host.isNullOrBlank()) {
-                        "Unsafe image URL"
-                    }
-                    candidate.toASCIIString()
-                }
-            }.getOrNull() ?: return@replace ""
-            val token = "__BADCAT_IMAGE_${imageIndex++}__"
-            images[token] = "<img src=\"${absoluteUrl.replace("&", "&amp;").replace("\"", "&quot;")}\">"
-            token
+    private fun normalizeEscapedLineBreaks(text: String): String =
+        text.replace("\\\\r\\\\n", "\\n")
+            .replace("\\\\n", "\\n")
+            .replace("\\\\r", "\\n")
+
+    private fun formatHtmlText(html: String?, otherRegex: Regex = otherHtmlRegex): String {
+        html ?: return ""
+        return normalizeEscapedLineBreaks(html)
+            .replace(nbspRegex, " ")
+            .replace(espRegex, " ")
+            .replace(noPrintRegex, "")
+            .replace(wrapHtmlRegex, "\\n")
+            .replace(commentRegex, "")
+            .replace(otherRegex, "")
+            .replace(indent1Regex, "\\n　　")
+            .replace(indent2Regex, "　　")
+            .replace(lastRegex, "")
+    }
+
+    private fun formatKeepImages(html: String?, redirectUrl: URL?): String {
+        html ?: return ""
+        val keepImgHtml = formatHtmlText(html, notImgHtmlRegex)
+        val matcher = formatImagePattern.matcher(keepImgHtml)
+        var appendPos = 0
+        val result = StringBuilder()
+        while (matcher.find()) {
+            var param = ""
+            val imagePath = matcher.group(1)?.let { candidate ->
+                val urlMatcher = LEGADO_URL_PARAM_PATTERN.matcher(candidate)
+                if (urlMatcher.find()) {
+                    param = "," + candidate.substring(urlMatcher.end())
+                    candidate.substring(0, urlMatcher.start())
+                } else candidate
+            } ?: matcher.group(2) ?: matcher.group(3) ?: matcher.group(4)!!
+            result.append(
+                keepImgHtml.substring(appendPos, matcher.start()),
+                "<img src=\"",
+                resolveLegadoAbsoluteUrl(redirectUrl, imagePath) + param,
+                "\">",
+            )
+            appendPos = matcher.end()
         }
+        if (appendPos < keepImgHtml.length) {
+            result.append(keepImgHtml.substring(appendPos))
+        }
+        return result.toString()
+    }
 
-        text = text
-            .replace(Regex("<!--.*?-->", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)), "")
-            .replace(Regex("</?(?:div|p|br|hr|h[1-6]|article|dd|dl|li|tr|section|header|footer|blockquote)[^>]*>", RegexOption.IGNORE_CASE), "\n")
-            .replace(Regex("</?(?!img\\b)[a-zA-Z][^<>]*>", RegexOption.IGNORE_CASE), "")
-            .replace(Regex("[ \\t]*\\n+[ \\t]*"), "\n　　")
-            .replace(Regex("^[\\n\\s]+"), "")
-            .replace(Regex("[\\n\\s]+$"), "")
+    private fun resolveLegadoAbsoluteUrl(baseUrl: URL?, rawPath: String): String {
+        val path = rawPath.trim()
+        if (baseUrl == null) return path
+        if (path.startsWith("data:", ignoreCase = true)) return path
+        if (path.startsWith("javascript")) return ""
+        if (runCatching { URL(path) }.isSuccess) return path
+        return runCatching { URL(baseUrl, rawPath).toString() }.getOrDefault(path)
+    }
 
-        images.forEach { (token, image) -> text = text.replace(token, image) }
-        return text
+    private companion object {
+        val LEGADO_URL_PARAM_PATTERN = java.util.regex.Pattern.compile("\\s*,\\s*(?=\\{)")
     }
 
     /** Synchronous compatibility bridge; the host enforces transport bounds. */
