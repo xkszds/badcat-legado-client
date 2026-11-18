@@ -21,6 +21,20 @@ object LegadoEmbeddedRuleTemplate {
             override suspend fun evaluate(script: String, key: String, page: Int): EngineResult<Any?> =
                 evaluateWithResult(script, key, page, result)
 
+            override suspend fun evaluateRule(
+                rule: String,
+                key: String,
+                page: Int,
+            ): EngineResult<Any?> {
+                val document = SourceDocument(url = baseUrl, body = result, page = page, key = key)
+                return when (val evaluated = LegadoRuleExpressionDispatcher.evaluate(document, rule)) {
+                    is EngineResult.Failure -> evaluated
+                    is EngineResult.Success -> EngineResult.Success(
+                        LegadoRuleExpressionDispatcher.firstScalarValue(rule, evaluated.value).orEmpty(),
+                    )
+                }
+            }
+
             override suspend fun evaluateWithResult(
                 script: String,
                 key: String,
