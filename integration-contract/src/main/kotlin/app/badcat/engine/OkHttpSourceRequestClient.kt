@@ -56,6 +56,7 @@ class OkHttpSourceRequestClient(
                 "Source identity and request URL must not be blank",
             )
         }
+        val requestStartNanos = System.nanoTime()
         return try {
             val client = clientFor(request)
             val builder = Request.Builder().url(request.url)
@@ -98,7 +99,11 @@ class OkHttpSourceRequestClient(
                         delay((250L shl (attempt - 1).coerceAtMost(3)).coerceAtMost(2_000L))
                         continue
                     }
-                    return EngineResult.Success(parsed)
+                    val elapsedMillis = ((System.nanoTime() - requestStartNanos) / 1_000_000L)
+                        .coerceAtLeast(0L)
+                        .coerceAtMost(Int.MAX_VALUE.toLong())
+                        .toInt()
+                    return EngineResult.Success(parsed.copy(callTime = elapsedMillis))
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (io: IOException) {
