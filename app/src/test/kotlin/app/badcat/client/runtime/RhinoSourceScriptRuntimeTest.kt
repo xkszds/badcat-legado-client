@@ -416,13 +416,14 @@ text + re.test('aa}}')"""
                     u.origin,
                     u.pathname,
                     u.searchParams.get('id'),
-                    u.searchParams.get('name')
+                    u.searchParams.get('name'),
+                    java.toURL('https://plain.example/a', null).origin
                 ].join('|');
             """.trimIndent(),
         )
         assertTrue("Legado JsURL compatibility failed: $result", result is EngineResult.Success)
         assertEquals(
-            "reader.example|https://reader.example|/chapter|42|你好",
+            "reader.example|https://reader.example|/chapter|42|你好|https://plain.example",
             (result as EngineResult.Success).value,
         )
         runtime.clearSourceState(source.id)

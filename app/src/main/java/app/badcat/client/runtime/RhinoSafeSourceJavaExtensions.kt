@@ -495,7 +495,7 @@ class RhinoSafeSourceJavaExtensions(
     fun toURL(value: String): RhinoLegadoUrl = RhinoLegadoUrl(value)
 
     /** Resolve a relative URL against an explicit HTTP(S) base, matching Legado's two-argument helper. */
-    fun toURL(value: String, baseUrl: String): RhinoLegadoUrl =
+    fun toURL(value: String, baseUrl: String?): RhinoLegadoUrl =
         RhinoLegadoUrl(value, baseUrl)
 
     /** Narrow byte helpers used only by the reviewed JavaImporter AES compatibility shim. */
