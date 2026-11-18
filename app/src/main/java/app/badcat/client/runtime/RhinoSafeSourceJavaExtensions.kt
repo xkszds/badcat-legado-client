@@ -588,7 +588,20 @@ class RhinoSafeSourceJavaExtensions(
             utf8.decode(java.nio.ByteBuffer.wrap(bytes))
             Charsets.UTF_8
         } catch (_: java.nio.charset.CharacterCodingException) {
-            java.nio.charset.Charset.forName("GBK")
+            // The pinned Legado EncodingDetect delegates non-UTF8 detection to
+            // ICU4J. Android ships the same ICU charset detector on our minSdk,
+            // so prefer it for Big5/GB18030/Shift-JIS and other legacy encodings.
+            // The JVM unit-test environment has no android.icu implementation;
+            // retain GBK as a deterministic fallback there.
+            val detectedName = runCatching {
+                android.icu.text.CharsetDetector()
+                    .setText(bytes)
+                    .detect()
+                    ?.name
+            }.getOrNull()
+            detectedName
+                ?.let { runCatching { java.nio.charset.Charset.forName(it) }.getOrNull() }
+                ?: java.nio.charset.Charset.forName("GBK")
         }
     }
 
