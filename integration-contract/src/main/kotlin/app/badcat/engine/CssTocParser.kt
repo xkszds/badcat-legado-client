@@ -212,6 +212,7 @@ class CssTocParser {
             )
         }
         var nextRule = rules["nextTocUrl"]?.trim().orEmpty()
+        val directNextGet = LegadoPutRule.isDirectGet(nextRule)
         nextRule = when (val put = LegadoPutRule.resolve(
             source,
             nextRule,
@@ -233,11 +234,13 @@ class CssTocParser {
             is EngineResult.Failure -> return expanded
             is EngineResult.Success -> expanded.value
         }
-        if (nextRule.isNotBlank() && !nextRule.startsWith("@js:", true) && !nextRule.startsWith("javascript:", true)) {
+        if (!directNextGet && nextRule.isNotBlank() && !nextRule.startsWith("@js:", true) && !nextRule.startsWith("javascript:", true)) {
             nextRule = normalizeJsonRule(response.body, nextRule)
         }
         val nextUrls = if (nextRule.isBlank()) emptyList() else {
-            val raw = if (nextRule.startsWith("@js:", true) || nextRule.startsWith("javascript:", true)) {
+            val raw = if (directNextGet) {
+                nextRule
+            } else if (nextRule.startsWith("@js:", true) || nextRule.startsWith("javascript:", true)) {
                 val script = nextRule.substringAfter(':').trim()
                 when (val result = scriptRuntime.evaluate(
                     source,
