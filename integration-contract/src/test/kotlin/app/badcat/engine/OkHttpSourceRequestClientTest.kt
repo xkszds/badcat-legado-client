@@ -108,6 +108,17 @@ class OkHttpSourceRequestClientTest {
     }
 
     @Test
+    fun defaultTimeoutsBoundConnectReadAndWholeCall() {
+        val client = OkHttpSourceRequestClient().clientFor(
+            SourceHttpRequest(sourceId = "default-timeout-fixture", url = "https://reader.example/"),
+        )
+        assertEquals(20_000, client.connectTimeoutMillis)
+        assertEquals(45_000, client.readTimeoutMillis)
+        assertEquals(30_000, client.writeTimeoutMillis)
+        assertEquals(60_000, client.callTimeoutMillis)
+    }
+
+    @Test
     fun perRequestTimeoutAppliesToConnectReadWriteAndWholeCall() {
         val timeoutMillis = 4_000L
         val client = OkHttpSourceRequestClient().clientFor(
@@ -159,11 +170,10 @@ class OkHttpSourceRequestClientTest {
         assertTrue(isSafeRedirectTarget(from, "https://reader.example/book/1"))
     }
     @Test
-    fun retriesTransientReadIoFailuresButNeverTlsDnsOrWrites() {
+    fun retriesTransientReadAndDnsFailuresButNeverTlsOrWrites() {
         assertTrue(shouldRetryIOException("GET", java.net.SocketTimeoutException("read timed out")))
         assertTrue(shouldRetryIOException("HEAD", java.io.EOFException("unexpected end of stream")))
         assertTrue(shouldRetryIOException("GET", java.net.ProtocolException("unexpected end of stream")))
-        assertTrue(!shouldRetryIOException("GET", javax.net.ssl.SSLHandshakeException("certificate verify failed")))
         assertTrue(shouldRetryIOException("GET", java.net.UnknownHostException("temporary DNS failure")))
         assertTrue(!shouldRetryIOException("GET", javax.net.ssl.SSLHandshakeException("certificate verify failed")))
         assertTrue(!shouldRetryIOException("POST", java.net.SocketTimeoutException("write timed out")))
