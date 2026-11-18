@@ -15,6 +15,7 @@ class SourceHttpGateway(
         ruleUrl: String,
         page: Int? = null,
         key: String = "",
+        resolveJsonPathUrlTemplates: Boolean = true,
     ): EngineResult<SourceHttpResponse> {
         if (!source.enabled) {
             return EngineResult.Failure(
@@ -50,6 +51,7 @@ class SourceHttpGateway(
                 page = page ?: 1,
                 result = expandedRuleUrl,
                 evaluator = templateEvaluator,
+                resolveJsonPathUrlTemplates = resolveJsonPathUrlTemplates,
             )) {
                 is EngineResult.Success -> result.value
                 is EngineResult.Failure -> return result
