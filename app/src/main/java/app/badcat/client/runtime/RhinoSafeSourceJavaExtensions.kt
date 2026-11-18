@@ -172,10 +172,23 @@ class RhinoSafeSourceJavaExtensions(
         return fileStore.get(sourceId, DOWNLOAD_FILE_PREFIX + token).orEmpty()
     }
 
-    /** Delete only a source-owned downloaded text file token. */
-    fun deleteFile(path: String) {
+    /**
+     * Legado charset overload. Downloaded text is retained as UTF-8 in the
+     * bounded source cache; decode its stored bytes with the requested charset.
+     */
+    fun readTxtFile(path: String, charsetName: String): String {
         val token = downloadToken(path)
-        fileStore.remove(sourceId, DOWNLOAD_FILE_PREFIX + token)
+        val value = fileStore.get(sourceId, DOWNLOAD_FILE_PREFIX + token) ?: return ""
+        return String(value.toByteArray(Charsets.UTF_8), java.nio.charset.Charset.forName(charsetName))
+    }
+
+    /** Delete only a source-owned downloaded text file token. */
+    fun deleteFile(path: String): Boolean {
+        val token = downloadToken(path)
+        val key = DOWNLOAD_FILE_PREFIX + token
+        val existed = fileStore.get(sourceId, key) != null
+        if (existed) fileStore.remove(sourceId, key)
+        return existed
     }
 
     private fun downloadToken(path: String): String {
