@@ -613,8 +613,10 @@ class RhinoSafeSourceJavaExtensions(
 
     /** Parse the AnalyzeUrl comma-separated JSON option suffix. */
     private fun urlOptionType(url: String): String? {
-        val start = urlOptionStart(url) ?: return null
-        val json = url.substring(start).trim()
+        val option = Regex("\\s*,\\s*(?=\\{)").find(url) ?: return null
+        // urlOptionStart is the comma index used to strip the suffix from the
+        // request URL; JSON parsing must begin after the matched comma.
+        val json = url.substring(option.range.last + 1).trim()
         return runCatching {
             com.google.gson.JsonParser.parseString(json).asJsonObject
                 .get("type")?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isString }?.asString
