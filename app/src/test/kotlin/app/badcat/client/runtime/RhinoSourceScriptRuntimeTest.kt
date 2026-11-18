@@ -1335,15 +1335,15 @@ text + re.test('aa}}')"""
                 assertEquals("https://connect-timeout.example/slow", url)
                 assertEquals(null, body)
                 assertTrue(headers.isEmpty())
-                app.badcat.engine.SourceHttpResponse(200, url, body = "ok")
+                app.badcat.engine.SourceHttpResponse(200, url, body = "ok", callTime = 77)
             },
         )
         val result = runtime.evaluate(
             source,
-            "java.connect('/slow', null, 1234).body()",
+            "java.connect('/slow', null, 1234).body() + '|' + java.connect('/slow', null, 1234).callTime()",
             mapOf("baseUrl" to source.baseUrl),
         )
-        assertEquals("ok", (result as EngineResult.Success).value)
+        assertEquals("ok|77", (result as EngineResult.Success).value)
         assertEquals(1234L, receivedTimeout)
         runtime.clearSourceState(source.id)
     }
