@@ -75,7 +75,10 @@ class CssChapterContentParser {
             }
         }
 
-        var resolvedContentRule = contentRule.trim()
+        var resolvedContentRule = when (val put = LegadoPutRule.resolve(source, contentRule.trim(), document, scriptRuntime)) {
+            is EngineResult.Failure -> return put
+            is EngineResult.Success -> put.value
+        }
         resolvedContentRule = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
                 source = source,
                 template = resolvedContentRule,
