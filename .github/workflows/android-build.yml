@@ -64,7 +64,7 @@ jobs:
           )
           with urllib.request.urlopen(collection_request, timeout=20) as response:
               collection_body = response.read()
-          if collection_body.startswith(b"\\x1f\\x8b"):
+          if collection_body.startswith(b"\x1f\x8b"):
               collection_body = gzip.decompress(collection_body)
           sources = json.loads(collection_body.decode("utf-8-sig"))
 
