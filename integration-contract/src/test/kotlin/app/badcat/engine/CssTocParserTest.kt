@@ -587,9 +587,8 @@ class CssTocParserTest {
                 EngineResult.Success(values[key])
         }
 
-        val page = assertIs<EngineResult.Success<ParsedTocPage>>(
-            CssTocParser().parseWithScripts(source, response, "https://reader.example/book", runtime), "TOC @put result: $result",
-        ).value
+        val parseResult = CssTocParser().parseWithScripts(source, response, "https://reader.example/book", runtime)
+        val page = assertIs<EngineResult.Success<ParsedTocPage>>(parseResult, "TOC @put result: $parseResult").value
 
         assertEquals("c-19", values["cid"])
         assertEquals(listOf("Stored Chapter"), page.chapters.map { it.title })
