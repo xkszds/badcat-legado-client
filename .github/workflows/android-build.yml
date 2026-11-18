@@ -574,7 +574,7 @@ jobs:
           print("NOTE: GET/POST smoke checks validate bounded search-list extraction only, not the complete Legado JS/rule pipeline.")
           PY
 
-      - name: Live end-to-end imported Kuwo source reading (best effort)
+      - name: Live end-to-end imported Feisuzhong source reading (best effort)
         timeout-minutes: 3
         continue-on-error: true
         run: |
