@@ -58,7 +58,9 @@ object LegadoUrlResolver {
             ) { "Base URL must be an absolute HTTP(S) URL" }
             require(base.rawUserInfo == null) { "Base URL must not contain embedded credentials" }
 
-            val resolvedUri = base.resolve(expanded)
+            // Apply the shared fragment sanitizer as well as URI resolution. Source URLs
+            // frequently contain raw Unicode or a second '#' inside a hash-router fragment.
+            val resolvedUri = URI(WebUrlResolver.resolve(baseUrl, expanded))
             require(
                 (resolvedUri.scheme.equals("http", true) ||
                     resolvedUri.scheme.equals("https", true)) &&
