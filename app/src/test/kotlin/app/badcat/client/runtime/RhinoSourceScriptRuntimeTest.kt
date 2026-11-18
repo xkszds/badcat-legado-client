@@ -395,6 +395,56 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun exposesLegadoCookieGetKeySetReplaceAndRemoveHelpers() = runBlocking {
+        val source = BookSource(
+            id = "https://cookie-mutation.example/",
+            name = "Cookie mutation",
+            baseUrl = "https://cookie-mutation.example/",
+        )
+        val writes = mutableListOf<String>()
+        val replacements = mutableListOf<String>()
+        val removals = mutableListOf<String>()
+        var cookieHeader = "sid=old; token=x=y"
+        val runtime = RhinoSourceScriptRuntime(
+            sourceCookieReader = { sourceId, url ->
+                assertEquals(source.id, sourceId)
+                assertEquals("https://cookie-mutation.example/book", url)
+                cookieHeader
+            },
+            sourceCookieWriter = { sourceId, url, value ->
+                assertEquals(source.id, sourceId)
+                writes += "$url|$value"
+                cookieHeader = value
+            },
+            sourceCookieReplacer = { sourceId, url, value ->
+                assertEquals(source.id, sourceId)
+                replacements += "$url|$value"
+                cookieHeader = value
+            },
+            sourceCookieRemover = { sourceId, url ->
+                assertEquals(source.id, sourceId)
+                removals += url
+                cookieHeader = ""
+            },
+        )
+        val result = runtime.evaluate(
+            source,
+            """cookie.setCookie('https://cookie-mutation.example/book', 'sid=new'); cookie.getKey('https://cookie-mutation.example/book', 'sid')""",
+        )
+        assertEquals("new", (result as EngineResult.Success).value)
+        val replaced = runtime.evaluate(
+            source,
+            """cookie.replaceCookie('https://cookie-mutation.example/book', 'sid=replaced'); cookie.getCookie('https://cookie-mutation.example/book')""",
+        )
+        assertEquals("sid=replaced", (replaced as EngineResult.Success).value)
+        runtime.evaluate(source, """cookie.removeCookie('https://cookie-mutation.example/book')""")
+        assertEquals(listOf("https://cookie-mutation.example/book|sid=new"), writes)
+        assertEquals(listOf("https://cookie-mutation.example/book|sid=replaced"), replacements)
+        assertEquals(listOf("https://cookie-mutation.example/book"), removals)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun exposesSourceScopedLegadoCookieLookupHelpers() = runBlocking {
         val sourceId = "https://cookie-helper.example/"
         val runtime = RhinoSourceScriptRuntime(
