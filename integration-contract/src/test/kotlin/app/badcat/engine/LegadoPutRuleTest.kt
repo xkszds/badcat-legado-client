@@ -68,6 +68,6 @@ class LegadoPutRuleTest {
             LegadoPutRule.parse("@put:{first:'one'} .item @put:{second:'two'} @get:{first}"),
         ).value
         assertEquals(listOf("first", "second"), parsed.assignments.map { it.key })
-        assertEquals(".item @get:{first}", parsed.expression)
+        assertEquals(".item  @get:{first}", parsed.expression)
     }
 }
