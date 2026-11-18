@@ -4,7 +4,7 @@ on:
   # Build once when code is pushed. The PR event duplicated every push build
   # for this long-running feature branch without adding a different artifact.
   push:
-    branches: [ main, fix/favorites-search-ui ]
+    branches: [ main, fix/favorites-search-ui, integration/legado-upstream-runtime ]
   workflow_dispatch:
 
 # Cancel superseded builds so rapid source updates do not queue redundant jobs.
@@ -24,6 +24,15 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Verify pinned upstream Legado source
+        run: |
+          expected="330e606c4d57e08adc056ff8ab7a4132c784da9a"
+          actual="$(git -C upstream/legado rev-parse HEAD)"
+          echo "Pinned Legado revision: $actual"
+          test "$actual" = "$expected"
+          test -f upstream/legado/LICENSE
+          grep -q "GNU GENERAL PUBLIC LICENSE" upstream/legado/LICENSE
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
