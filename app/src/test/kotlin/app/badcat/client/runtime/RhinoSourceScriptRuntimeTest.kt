@@ -626,4 +626,39 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(source.id)
     }
 
+
+    @Test
+    fun supportsLegadoJavaGetHttpOverloadWithHeadersAndResponseAccessors() = runBlocking {
+        val captured = mutableMapOf<String, String>()
+        val runtime = RhinoSourceScriptRuntime(
+            sourceGet = { _, _, url, headers ->
+                captured["url"] = url
+                captured.putAll(headers)
+                app.badcat.engine.SourceHttpResponse(
+                    statusCode = 200,
+                    finalUrl = url,
+                    headers = mapOf("Location" to listOf("/redirected")),
+                    body = "GET response body",
+                )
+            },
+        )
+        val source = BookSource(
+            id = "https://http-get.example/",
+            name = "HTTP GET helper",
+            baseUrl = "https://http-get.example/",
+        )
+
+        val result = runtime.evaluate(
+            source,
+            "var response = java.get('/resource', {'User-Agent':'Legado fixture'}); response.body() + '|' + response.code() + '|' + response.headers('Location')",
+            mapOf("baseUrl" to source.baseUrl),
+        )
+
+        assertTrue("Legado java.get overload failed: $result", result is EngineResult.Success)
+        assertEquals("GET response body|200|/redirected", (result as EngineResult.Success).value)
+        assertEquals("/resource", captured["url"])
+        assertEquals("Legado fixture", captured["User-Agent"])
+        runtime.clearSourceState(source.id)
+    }
+
 }
