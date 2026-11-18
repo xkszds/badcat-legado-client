@@ -34,8 +34,11 @@ class RhinoSafeSourceJavaExtensions(
     private val ruleStringReader: (String) -> String = { "" },
     private val ruleStringReaderWithContent: (String, String) -> String = { rule, _ -> ruleStringReader(rule) },
     private val ruleStringListReader: (String) -> List<String> = { emptyList() },
+    private val ruleStringListReaderWithContent: (String, String) -> List<String> = { rule, _ -> ruleStringListReader(rule) },
     private val ruleElementReader: (String) -> LegadoSourceElement? = { null },
+    private val ruleElementReaderWithContent: (String, String) -> LegadoSourceElement? = { rule, _ -> ruleElementReader(rule) },
     private val ruleElementsReader: (String) -> LegadoSourceElementList = { LegadoSourceElementList(emptyList()) },
+    private val ruleElementsReaderWithContent: (String, String) -> LegadoSourceElementList = { rule, _ -> ruleElementsReader(rule) },
     private val contentWriter: (String) -> Unit = {},
 ) {
 
@@ -48,12 +51,21 @@ class RhinoSafeSourceJavaExtensions(
     /** Legado's list selector helper, returned as a Java-compatible mutable list. */
     fun getStringList(rule: String): java.util.ArrayList<String> = java.util.ArrayList(ruleStringListReader(rule))
 
+    fun getStringList(rule: String, content: String): java.util.ArrayList<String> =
+        java.util.ArrayList(ruleStringListReaderWithContent(rule, content))
+
     /** Legado's element selector helper, exposing only safe text/HTML/attribute methods. */
     fun getElement(rule: String): LegadoSourceElement =
         ruleElementReader(rule) ?: LegadoSourceElement("")
 
+    fun getElement(rule: String, content: String): LegadoSourceElement =
+        ruleElementReaderWithContent(rule, content) ?: LegadoSourceElement("")
+
     /** Legado's multi-element selector helper, supporting size/get/toArray and index access. */
     fun getElements(rule: String): LegadoSourceElementList = ruleElementsReader(rule)
+
+    fun getElements(rule: String, content: String): LegadoSourceElementList =
+        ruleElementsReaderWithContent(rule, content)
 
     /** Explicit stored-string accessor for host integrations. */
     fun getStoredString(key: String): String {
@@ -78,6 +90,8 @@ class RhinoSafeSourceJavaExtensions(
     fun get(key: String): String = getStoredString(key)
 
     /** Legado HTTP GET overload: java.get(url, headers).body()/headers(name). */
+    fun get(url: String): RhinoSourceHttpResponse = RhinoSourceHttpResponse(httpGet(url, emptyMap()))
+
     fun get(url: String, headers: Scriptable): RhinoSourceHttpResponse {
         val values = buildMap {
             headers.ids.forEach { id ->
