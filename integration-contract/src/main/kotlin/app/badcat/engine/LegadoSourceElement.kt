@@ -31,11 +31,12 @@ class LegadoSourceElement(private val fragments: List<String>) {
     override fun toString(): String = elements().joinToString("") { it.outerHtml() }
 }
 
-/** Java-list-compatible collection with both .size() and .length/index access. */
-class LegadoSourceElementList(private val items: List<LegadoSourceElement>) : Iterable<LegadoSourceElement> {
-    fun size(): Int = items.size
-    fun getLength(): Int = items.size
-    fun get(index: Int): LegadoSourceElement = items[index]
-    fun toArray(): Array<LegadoSourceElement> = items.toTypedArray()
-    override fun iterator(): Iterator<LegadoSourceElement> = items.iterator()
+/** Java-list-compatible collection with .size(), .get(), .toArray() and indexed access. */
+class LegadoSourceElementList(private val items: List<LegadoSourceElement>) :
+    java.util.AbstractList<LegadoSourceElement>() {
+    override val size: Int
+        get() = items.size
+
+    override fun get(index: Int): LegadoSourceElement = items[index]
+    fun getLength(): Int = size
 }
