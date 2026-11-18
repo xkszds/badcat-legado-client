@@ -12,12 +12,25 @@ object WebUrlResolver {
         val optionsSeparator = Regex(",\\s*(?=\\{)").findAll(trimmedValue).lastOrNull()
         val referenceText = optionsSeparator?.let { trimmedValue.substring(0, it.range.first).trim() } ?: trimmedValue
         val optionsSuffix = optionsSeparator?.let { trimmedValue.substring(it.range.first) }.orEmpty()
-        val reference = URI(encodeInvalidFragmentCharacters(referenceText))
+        // Keep Legado's {{key}}/{{page}} placeholders intact until the
+        // request stage has the book name and page context needed to expand them.
+        val templates = linkedMapOf<String, String>()
+        val templateSafeReference = Regex("""\{\{.*?}}""").replace(referenceText) { match ->
+            var token: String
+            do {
+                token = "__BADCAT_LEGADO_TEMPLATE_" + templates.size + "__"
+            } while (referenceText.contains(token))
+            templates[token] = match.value
+            token
+        }
+        val reference = URI(encodeInvalidFragmentCharacters(templateSafeReference))
         val resolved = resolveReference(base, reference).normalize()
         require(isWebUri(resolved) && resolved.userInfo == null) {
             "Resolved URL must be credential-free HTTP(S)"
         }
-        return resolved.toASCIIString() + optionsSuffix
+        var resolvedText = resolved.toASCIIString()
+        templates.forEach { (token, template) -> resolvedText = resolvedText.replace(token, template) }
+        return resolvedText + optionsSuffix
     }
 
     /**
