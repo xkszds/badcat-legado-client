@@ -34,6 +34,10 @@ class RhinoSourceScriptRuntime(
     private val sourceCookieRemover: (sourceId: String, url: String) -> Unit = { _, _ -> },
     private val sourceAjax: (source: BookSource, baseUrl: String, urlAndOptions: String) -> String = { _, _, _ -> throw UnsupportedOperationException("java.ajax is not connected to the source HTTP transport") },
     private val sourceGet: (source: BookSource, baseUrl: String, url: String, headers: Map<String, String>) -> SourceHttpResponse = { _, _, _, _ -> throw UnsupportedOperationException("java.get is not connected to the source HTTP transport") },
+    private val sourceHttpRequest: (source: BookSource, baseUrl: String, method: String, url: String, body: String?, headers: Map<String, String>) -> SourceHttpResponse = { source, baseUrl, method, url, body, headers ->
+        if (method.equals("GET", true) && body == null) sourceGet(source, baseUrl, url, headers)
+        else throw UnsupportedOperationException("java.$method is not connected to the source HTTP transport")
+    },
 ) : SourceScriptRuntime {
     private val javaExtensions = ConcurrentHashMap<String, RhinoSafeSourceJavaExtensions>()
     private val sourceExtensions = ConcurrentHashMap<String, RhinoSourceLoginExtensions>()
@@ -118,6 +122,16 @@ class RhinoSourceScriptRuntime(
                             source,
                             bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
                             url,
+                            headers,
+                        )
+                    },
+                    httpRequest = { method, url, body, headers ->
+                        sourceHttpRequest(
+                            source,
+                            bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                            method,
+                            url,
+                            body,
                             headers,
                         )
                     },
