@@ -85,6 +85,7 @@ class CssChapterContentParser {
             }
         }
 
+        val directContentGet = LegadoPutRule.isDirectGet(contentRule)
         var resolvedContentRule = when (val put = LegadoPutRule.resolve(source, contentRule.trim(), document, scriptRuntime)) {
             is EngineResult.Failure -> return put
             is EngineResult.Success -> put.value
@@ -102,6 +103,7 @@ class CssChapterContentParser {
                 is EngineResult.Success -> expanded.value
             }
         val contentValue = when {
+            directContentGet -> resolvedContentRule
             resolvedContentRule.startsWith("@js:", true) ||
                 resolvedContentRule.startsWith("javascript:", true) -> when (val result = evaluateField("content", resolvedContentRule)) {
                     is EngineResult.Failure -> return result
