@@ -233,6 +233,7 @@ jobs:
         run: |
           python3 - <<'PY'
           import json
+          import re
           import urllib.parse
           import urllib.request
           from bs4 import BeautifulSoup
