@@ -322,7 +322,9 @@ object CssRuleEvaluator {
             suffix.equals("src", true) || suffix.equals("tag", true)
         ) return true
         if (suffix.startsWith("attr(", true) && suffix.endsWith(")")) return true
-        return suffix.matches(Regex("[A-Za-z_:][A-Za-z0-9_:-]*"))
+        // Do not classify bare selector steps like "a", "li" or "title" as
+        // arbitrary attributes here. Collection roots are element selectors;
+        // only explicit extraction modes are stripped at this boundary.
     }
 
     private fun parseValueMode(suffix: String): Pair<ValueMode, String?>? {
