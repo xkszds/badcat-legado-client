@@ -543,7 +543,7 @@ class CssSearchResultsParserTest {
             CssSearchResultsParser().parseWithScripts(source, response, scriptRuntime),
         ).value
 
-        assertEquals("h2@text", values["selector"])
+        assertEquals("Variable title", values["selector"])
         assertEquals("Variable title", books.single().name)
         assertEquals("https://reader.example/variable", books.single().bookUrl)
     }
