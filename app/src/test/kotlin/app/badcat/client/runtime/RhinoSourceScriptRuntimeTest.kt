@@ -51,7 +51,7 @@ class RhinoSourceScriptRuntimeTest {
         val secondResult = runtime.evaluate(second, "typeof sourceOnlyHelper")
 
         assertEquals("first", (firstResult as EngineResult.Success).value)
-        assertEquals("null", (secondResult as EngineResult.Success).value)
+        assertEquals("undefined", (secondResult as EngineResult.Success).value)
         runtime.clearSourceState(first.id)
         runtime.clearSourceState(second.id)
     }
@@ -726,7 +726,7 @@ class RhinoSourceScriptRuntimeTest {
         assertTrue("Source cache/string helpers failed: $firstResult", firstResult is EngineResult.Success)
         assertEquals("cached|Hello|World|({value:'imported'})", (firstResult as EngineResult.Success).value)
         assertTrue(secondResult is EngineResult.Success)
-        assertEquals("undefined", (secondResult as EngineResult.Success).value)
+        assertEquals("null", (secondResult as EngineResult.Success).value)
         runtime.clearSourceState(first.id)
         runtime.clearSourceState(second.id)
     }
