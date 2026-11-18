@@ -96,6 +96,13 @@ class RhinoSafeSourceJavaExtensions(
     fun getElements(rule: String, content: String): LegadoSourceElementList =
         ruleElementsReaderWithContent(rule, content)
 
+    /** Parse HTML for legacy source scripts using the pinned JSoup implementation. */
+    fun parseHtml(content: String): org.jsoup.nodes.Document = org.jsoup.Jsoup.parse(content)
+
+    /** Parse HTML with an explicit base URI for JSoup absUrl()/relative-link semantics. */
+    fun parseHtml(content: String, baseUri: String): org.jsoup.nodes.Document =
+        org.jsoup.Jsoup.parse(content, baseUri)
+
     /** Explicit stored-string accessor for host integrations. */
     fun getStoredString(key: String): String {
         requireValidKey(key)
