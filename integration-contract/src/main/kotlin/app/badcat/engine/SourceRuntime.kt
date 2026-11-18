@@ -32,6 +32,8 @@ data class SourceHttpResponse(
     val contentType: String? = null,
     /** Actual HTTP reason phrase returned by the server (never synthesized). */
     val statusMessage: String = "",
+    /** Elapsed request time in milliseconds, matching Legado StrResponse.callTime(). */
+    val callTime: Int = 0,
 )
 
 /** The five rule stages are kept distinct to prevent accidental rule cross-use. */
