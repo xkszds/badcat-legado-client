@@ -37,6 +37,7 @@ class RhinoSourceScriptRuntime(
     private val timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS,
     private val sourceKeyValueStore: SourceScriptKeyValueStore = InMemorySourceScriptKeyValueStore,
     private val sourceFileCacheStore: SourceScriptFileCacheStore = InMemorySourceScriptFileCacheStore,
+    private val sourceFileRoot: java.io.File? = null,
     private val sourceLoginSessionStore: SourceLoginSessionStore = InMemorySourceLoginSessionStore,
     private val sourceCookieReader: (sourceId: String, url: String) -> String = { _, _ -> "" },
     private val sourceCookieRemover: (sourceId: String, url: String) -> Unit = { _, _ -> },
@@ -286,6 +287,7 @@ class RhinoSourceScriptRuntime(
                     contentWriter = { content -> currentRuleContent = content },
                     baseUrlWriter = { baseUrl -> if (!baseUrl.isNullOrBlank()) currentRuleBaseUrl = baseUrl },
                     fileStore = sourceFileCacheStore,
+                    fileRoot = sourceFileRoot,
                     webViewUserAgent = webViewUserAgent,
                     functionInvoker = { action -> RhinoScriptEngine.callSourceFunction(action, scope) },
                 )
