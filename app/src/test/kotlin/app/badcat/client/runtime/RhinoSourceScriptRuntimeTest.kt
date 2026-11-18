@@ -10,6 +10,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Base64
+import java.util.concurrent.atomic.AtomicInteger
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
@@ -1046,4 +1047,72 @@ class RhinoSourceScriptRuntimeTest {
         assertEquals("slow but successful response", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
+
+    @Test
+    fun exposesLegadoResponseMessageHeadersAndSafeRawRequestMetadata() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime(
+            sourceHttpRequest = { _, _, _, url, _, _ ->
+                app.badcat.engine.SourceHttpResponse(
+                    statusCode = 206,
+                    finalUrl = "https://response.example/final",
+                    headers = mapOf("X-Fixture" to listOf("one", "two")),
+                    body = "partial",
+                    statusMessage = "Partial Content",
+                )
+            },
+        )
+        val source = BookSource(
+            id = "https://response.example/",
+            name = "Response facade",
+            baseUrl = "https://response.example/",
+        )
+        val result = runtime.evaluate(
+            source,
+            "var r = java.get('/start'); r.message() + '|' + r.headers().get('X-Fixture')[0] + '|' + r.headers('X-Fixture') + '|' + r.raw().request().url() + '|' + r.raw().code()",
+            mapOf("baseUrl" to source.baseUrl),
+        )
+        assertTrue("Legado response metadata failed: $result", result is EngineResult.Success)
+        assertEquals(
+            "Partial Content|one|one|https://response.example/final|206",
+            (result as EngineResult.Success).value,
+        )
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
+    fun ajaxAllUsesBoundedParallelRequestsAndPreservesInputOrder() = runBlocking {
+        val active = AtomicInteger(0)
+        val peak = AtomicInteger(0)
+        val runtime = RhinoSourceScriptRuntime(
+            sourceHttpRequest = { _, _, _, url, _, _ ->
+                val now = active.incrementAndGet()
+                peak.updateAndGet { previous -> maxOf(previous, now) }
+                try {
+                    Thread.sleep(120)
+                    app.badcat.engine.SourceHttpResponse(
+                        statusCode = 200,
+                        finalUrl = url,
+                        body = url,
+                    )
+                } finally {
+                    active.decrementAndGet()
+                }
+            },
+        )
+        val source = BookSource(
+            id = "https://ajax-all.example/",
+            name = "Ajax all",
+            baseUrl = "https://ajax-all.example/",
+        )
+        val result = runtime.evaluate(
+            source,
+            "java.ajaxAll(['/one','/two','/three','/four']).map(function(r) { return r.body(); }).join('|')",
+            mapOf("baseUrl" to source.baseUrl),
+        )
+        assertTrue("Legado ajaxAll failed: $result", result is EngineResult.Success)
+        assertEquals("/one|/two|/three|/four", (result as EngineResult.Success).value)
+        assertTrue("ajaxAll should issue requests concurrently; peak=${peak.get()}", peak.get() in 2..4)
+        runtime.clearSourceState(source.id)
+    }
+
 }
