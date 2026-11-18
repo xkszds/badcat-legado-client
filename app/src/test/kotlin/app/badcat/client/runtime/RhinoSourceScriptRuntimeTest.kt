@@ -323,11 +323,11 @@ class RhinoSourceScriptRuntimeTest {
         val runtime = RhinoSourceScriptRuntime()
         val result = runtime.evaluate(
             source,
-            "java.htmlFormat('<img src=\\"/placeholder.gif\\" data-src=\\"../real.jpg\\"><img src=\\"javascript:alert(1)\\"><img src=\\"file:///etc/passwd\\">', 'https://reader.example/book/1')",
+            """java.htmlFormat('<img src="/placeholder.gif" data-src="../real.jpg"><img src="javascript:alert(1)"><img src="file:///etc/passwd">', 'https://reader.example/book/1')""",
         )
         assertTrue("Legado htmlFormat image handling failed: $result", result is EngineResult.Success)
         val formatted = (result as EngineResult.Success).value
-        assertTrue(formatted.contains("<img src=\\"https://reader.example/real.jpg\\">"))
+        assertTrue(formatted.contains("<img src=\"https://reader.example/real.jpg\">"))
         assertTrue(!formatted.contains("placeholder.gif"))
         assertTrue(!formatted.contains("javascript:") && !formatted.contains("file:"))
         runtime.clearSourceState(source.id)
