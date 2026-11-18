@@ -118,7 +118,14 @@ jobs:
                                   rows = list(rows.values())
                               if not isinstance(rows, list):
                                   rows = []
-                              print(f"LIVE_JSON {name}: code={payload.get('code')!r}, rows={len(rows)}, keys={list(payload)[:20]}")
+                              print(
+                                  f"LIVE_JSON {name}: code={payload.get('code')!r}, "
+                                  f"message={payload.get('message')!r}, rows={len(rows)}, "
+                                  f"paging={payload.get('paging')!r}, st={payload.get('st')!r}, "
+                                  f"keys={list(payload)[:20]}"
+                              )
+                              if not rows:
+                                  print(f"LIVE_EMPTY_BODY {name}: {text_body[:600]!r}")
                               if rows and isinstance(rows[0], dict):
                                   sample = {k: rows[0].get(k) for k in ("book_id", "title", "comic_id", "comic_name", "comic_author", "author_name") if k in rows[0]}
                                   print(f"LIVE_SAMPLE {name}: {sample!r}")
