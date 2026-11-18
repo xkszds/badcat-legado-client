@@ -158,10 +158,10 @@ object LegadoEmbeddedRuleTemplate {
     }
 
     /**
-     * Legado source collections use both {{$.field}} and {$.field} in URL
-     * templates. These are AnalyzeRule JSONPath references, not JavaScript
-     * expressions; resolve them against the current result before passing
-     * remaining {{key}} / {{page}} expressions to the bounded JS evaluator.
+     * Non-search AnalyzeRule URL fields may use {{$.field}} and {$.field}
+     * JSONPath references. Search and explore URLs follow AnalyzeUrl semantics
+     * instead: their double-brace expressions are JavaScript only, so callers
+     * disable this expansion for those two URL contexts.
      */
     private fun resolveJsonPathPlaceholders(
         template: String,
