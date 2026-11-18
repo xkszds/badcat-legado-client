@@ -20,12 +20,14 @@ data class SourceSearchOperation(
  * comic/video sources as book sources.
  */
 object SourceSearchPlanner {
+    /** Only novel sources are currently supported by the book search/parser pipeline. */
+    const val NOVEL_SOURCE_TYPE = 0
     fun plan(
         sources: List<BookSource>,
         includeExplore: Boolean = false,
     ): List<SourceSearchOperation> = buildList {
         sources.asSequence()
-            .filter { it.enabled }
+            .filter { it.enabled && it.sourceType == NOVEL_SOURCE_TYPE }
             .distinctBy { it.id }
             .forEach { source ->
                 if (!source.searchUrl.isNullOrBlank()) {
