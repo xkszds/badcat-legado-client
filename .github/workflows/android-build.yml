@@ -4,7 +4,7 @@ on:
   # Build once when code is pushed. The PR event duplicated every push build
   # for this long-running feature branch without adding a different artifact.
   push:
-    branches: [ main, fix/favorites-search-ui ]
+    branches: [ main, fix/favorites-search-ui, integration/legado-upstream-runtime ]
   workflow_dispatch:
 
 # Cancel superseded builds so rapid source updates do not queue redundant jobs.
