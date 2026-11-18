@@ -13,6 +13,7 @@ import javax.crypto.spec.SecretKeySpec
 import com.github.liuyueyi.quick.transfer.ChineseUtils as QuickChineseUtils
 import com.github.liuyueyi.quick.transfer.constants.TransType
 import app.badcat.engine.LegadoSourceElement
+import app.badcat.engine.LegadoSourceElementList
 
 /**
  * Explicitly allow-listed subset of Legado's `java` helper for source scripts.
@@ -29,6 +30,7 @@ class RhinoSafeSourceJavaExtensions(
     private val ruleStringReader: (String) -> String = { "" },
     private val ruleStringListReader: (String) -> List<String> = { emptyList() },
     private val ruleElementReader: (String) -> LegadoSourceElement? = { null },
+    private val ruleElementsReader: (String) -> LegadoSourceElementList = { LegadoSourceElementList(emptyList()) },
     private val contentWriter: (String) -> Unit = {},
 ) {
 
@@ -41,6 +43,9 @@ class RhinoSafeSourceJavaExtensions(
     /** Legado's element selector helper, exposing only safe text/HTML/attribute methods. */
     fun getElement(rule: String): LegadoSourceElement =
         ruleElementReader(rule) ?: LegadoSourceElement("")
+
+    /** Legado's multi-element selector helper, supporting size/get/toArray and index access. */
+    fun getElements(rule: String): LegadoSourceElementList = ruleElementsReader(rule)
 
     /** Explicit stored-string accessor for host integrations. */
     fun getStoredString(key: String): String {
