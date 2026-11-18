@@ -52,13 +52,21 @@ jobs:
         continue-on-error: true
         run: |
           python3 - <<'PY'
+          import gzip
           import json
           import urllib.parse
           import urllib.request
 
           collection_url = "https://shuyuan.nyasama.cc/shuyuan/12f348d3510bac0e5f1b164274f0b136.json"
-          with urllib.request.urlopen(collection_url, timeout=20) as response:
-              sources = json.loads(response.read().decode("utf-8"))
+          collection_request = urllib.request.Request(
+              collection_url,
+              headers={"Accept-Encoding": "identity", "User-Agent": "Mozilla/5.0"},
+          )
+          with urllib.request.urlopen(collection_request, timeout=20) as response:
+              collection_body = response.read()
+          if collection_body.startswith(b"\\x1f\\x8b"):
+              collection_body = gzip.decompress(collection_body)
+          sources = json.loads(collection_body.decode("utf-8-sig"))
 
           checks = [
               ("漫客栈", "海贼王", lambda s: s.get("bookSourceUrl", "").startswith("http://comic.mkzhan.com") and "search/keyword/" in s.get("searchUrl", "")),
