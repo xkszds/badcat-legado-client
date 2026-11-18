@@ -302,7 +302,7 @@ class RhinoSourceScriptRuntimeTest {
         val runtime = RhinoSourceScriptRuntime()
         val result = runtime.evaluate(
             source,
-            "java.htmlFormat('<div>Hello&nbsp;<b>world</b></div><p>Second</p><img data-src=\'/cover.jpg\'>', 'https://reader.example/book/1')",
+            "java.htmlFormat('<div>Hello&nbsp;<b>world</b></div><p>Second</p><img data-src=\\\"/cover.jpg\\\">', 'https://reader.example/book/1')",
         )
         assertTrue(result is EngineResult.Success, "Legado htmlFormat failed: $result")
         val formatted = (result as EngineResult.Success).value
