@@ -8,6 +8,8 @@ import app.badcat.engine.SourceHttpGateway
 import app.badcat.engine.SourceRequestClient
 import app.badcat.engine.SourceRequestFactory
 import app.badcat.engine.SourceScriptRuntime
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 
 /**
  * Creates gateways whose bounded URL-template evaluator is selected per request.
@@ -31,7 +33,7 @@ class BadcatSourceHttpGatewayFactory(
                 is EngineResult.Success -> result.value
                 is EngineResult.Failure -> throw IllegalArgumentException(result.message, result.cause)
             }
-            when (val response = client.execute(request)) {
+            when (val response = runBlocking(Dispatchers.IO) { client.execute(request) }) {
                 is EngineResult.Success -> response.value.body
                 is EngineResult.Failure -> throw IllegalStateException(response.message, response.cause)
             }
