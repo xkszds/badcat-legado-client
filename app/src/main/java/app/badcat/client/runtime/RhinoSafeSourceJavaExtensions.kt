@@ -17,6 +17,7 @@ import app.badcat.engine.LegadoSourceElement
 import app.badcat.engine.LegadoSourceElementList
 import app.badcat.engine.SourceHttpResponse
 import org.htmlunit.corejs.javascript.Scriptable
+import org.htmlunit.corejs.javascript.ScriptableObject
 
 /**
  * Explicitly allow-listed subset of Legado's `java` helper for source scripts.
@@ -133,6 +134,32 @@ class RhinoSafeSourceJavaExtensions(
         RhinoSourceHttpResponse(httpRequest("GET", url, null, emptyMap()))
 
     fun connect(url: String, headers: Any?): RhinoSourceHttpResponse = get(url, headers)
+
+    /** Bounded Legado batch GET helper; requests are deliberately sequential. */
+    fun ajaxAll(urls: Any?): Array<RhinoSourceHttpResponse> {
+        val values = when (urls) {
+            is Scriptable -> {
+                val length = (ScriptableObject.getProperty(urls, "length") as? Number)?.toInt()
+                    ?: throw IllegalArgumentException("java.ajaxAll expects an array of URLs")
+                require(length in 0..MAX_AJAX_ALL_URLS) { "java.ajaxAll accepts at most $MAX_AJAX_ALL_URLS URLs" }
+                (0 until length).map { index -> ScriptableObject.getProperty(urls, index.toString()) }
+            }
+            is Iterable<*> -> urls.toList()
+            is Array<*> -> urls.toList()
+            is String -> {
+                val json = com.google.gson.JsonParser.parseString(urls)
+                require(json.isJsonArray) { "java.ajaxAll string input must be a JSON array" }
+                json.asJsonArray.map { it.asString }
+            }
+            else -> throw IllegalArgumentException("java.ajaxAll expects an array of URLs")
+        }
+        require(values.size <= MAX_AJAX_ALL_URLS) { "java.ajaxAll accepts at most $MAX_AJAX_ALL_URLS URLs" }
+        return values.map { value ->
+            val url = value?.toString()?.trim().orEmpty()
+            require(url.isNotEmpty()) { "java.ajaxAll URL must not be blank" }
+            RhinoSourceHttpResponse(httpRequest("GET", url, null, emptyMap()))
+        }.toTypedArray()
+    }
 
     private fun parseRequestHeaders(headers: Any?): Map<String, String> = when (headers) {
         null -> emptyMap()
@@ -350,7 +377,8 @@ class RhinoSafeSourceJavaExtensions(
     }
 
     companion object {
-        private const val MAX_KEY_CHARS = 256
+        private const val MAX_AJAX_ALL_URLS = 20
+    private const val MAX_KEY_CHARS = 256
         private const val MAX_VALUE_CHARS = 16 * 1024
         private const val MAX_AES_INPUT_BYTES = 2 * 1024 * 1024
     }
