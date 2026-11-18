@@ -13,6 +13,25 @@ import org.junit.Test
 
 class RhinoSafeSourceJavaExtensionsArchiveTest {
     @Test
+    fun binaryFileCacheCopiesBytesAndKeepsSourcesIsolated() {
+        val sourceA = "binary-cache-source-a"
+        val sourceB = "binary-cache-source-b"
+        val key = "binary-fixture"
+        val original = byteArrayOf(0, 0xff.toByte(), 0x41, 0x00)
+        InMemorySourceScriptFileCacheStore.putBytes(sourceA, key, original)
+
+        original[1] = 0
+        val firstRead = InMemorySourceScriptFileCacheStore.getBytes(sourceA, key)!!
+        assertArrayEquals(byteArrayOf(0, 0xff.toByte(), 0x41, 0x00), firstRead)
+        firstRead[2] = 0
+        assertArrayEquals(byteArrayOf(0, 0xff.toByte(), 0x41, 0x00),
+            InMemorySourceScriptFileCacheStore.getBytes(sourceA, key))
+        assertNull(InMemorySourceScriptFileCacheStore.getBytes(sourceB, key))
+        InMemorySourceScriptFileCacheStore.clearSource(sourceA)
+        assertNull(InMemorySourceScriptFileCacheStore.getBytes(sourceA, key))
+    }
+
+    @Test
     fun readsZipEntryFromOriginalDownloadedBytesAndSupportsHexInput() {
         val archive = zipOf("folder/chapter.txt", "章节内容".toByteArray(Charsets.UTF_8))
         val extensions = RhinoSafeSourceJavaExtensions(
