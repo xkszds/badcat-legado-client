@@ -1289,6 +1289,74 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun downloadFileUsesTheRuntimeInjectedSourceFileStore() = runBlocking {
+        val values = mutableMapOf<Pair<String, String>, String>()
+        val writes = mutableListOf<Pair<String, String>>()
+        val store = object : SourceScriptFileCacheStore {
+            override fun get(sourceId: String, key: String): String? = values[sourceId to key]
+            override fun put(sourceId: String, key: String, value: String) {
+                writes += sourceId to key
+                values[sourceId to key] = value
+            }
+            override fun remove(sourceId: String, key: String) {
+                values.remove(sourceId to key)
+            }
+            override fun clearSource(sourceId: String) {
+                values.keys.removeAll { it.first == sourceId }
+            }
+        }
+        val source = BookSource(
+            id = "https://injected-file-store.example/",
+            name = "Injected file store",
+            baseUrl = "https://injected-file-store.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime(
+            sourceFileCacheStore = store,
+            sourceHttpRequest = { _, _, _, url, _, _ ->
+                assertEquals("/text.txt", url)
+                app.badcat.engine.SourceHttpResponse(200, "https://injected-file-store.example/text.txt", body = "from injected store")
+            },
+        )
+        val result = runtime.evaluate(
+            source,
+            "var p = java.downloadFile('/text.txt'); java.readTxtFile(p)",
+            mapOf("baseUrl" to source.baseUrl),
+        )
+        assertTrue("Download should use the injected file store: $result", result is EngineResult.Success)
+        assertEquals("from injected store", (result as EngineResult.Success).value)
+        assertEquals(1, writes.size)
+        assertEquals(source.id, writes.single().first)
+        assertTrue(writes.single().second.startsWith("__legado_download__:"))
+        runtime.clearSourceState(source.id)
+        assertTrue(values.isEmpty())
+    }
+
+    @Test
+    fun setContentBaseUrlIsUsedBySubsequentRelativeHttpRequests() = runBlocking {
+        val source = BookSource(
+            id = "https://set-content-http-base.example/",
+            name = "setContent HTTP base URL",
+            baseUrl = "https://set-content-http-base.example/",
+        )
+        val seen = mutableListOf<Pair<String, String>>()
+        val runtime = RhinoSourceScriptRuntime(
+            sourceHttpRequest = { _, baseUrl, method, url, _, _ ->
+                seen += baseUrl to "$method $url"
+                app.badcat.engine.SourceHttpResponse(200, "https://reader.example/chapter", body = "chapter response")
+            },
+        )
+        val result = runtime.evaluate(
+            source,
+            "java.setContent(\"<a href='../chapter'>chapter</a>\", 'https://reader.example/book/1'); java.get('/chapter').body()",
+            mapOf("baseUrl" to source.baseUrl),
+        )
+        assertTrue("Relative HTTP request should use updated base URL: $result", result is EngineResult.Success)
+        assertEquals("chapter response", (result as EngineResult.Success).value)
+        assertEquals(listOf("https://reader.example/book/1" to "GET /chapter"), seen)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun rejectsTraversalAndNonIssuedLegadoDownloadPaths() = runBlocking {
         val source = BookSource(
             id = "https://download-path-safety.example/",

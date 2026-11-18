@@ -122,14 +122,14 @@ class RhinoSourceScriptRuntime(
                     ajaxRequest = { raw ->
                         sourceAjax(
                             source,
-                            bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                            currentRuleBaseUrl,
                             raw,
                         )
                     },
                     httpGet = { url, headers ->
                         sourceGet(
                             source,
-                            bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                            currentRuleBaseUrl,
                             url,
                             headers,
                         )
@@ -137,7 +137,7 @@ class RhinoSourceScriptRuntime(
                     httpRequest = { method, url, body, headers ->
                         sourceHttpRequest(
                             source,
-                            bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                            currentRuleBaseUrl,
                             method,
                             url,
                             body,
@@ -242,6 +242,7 @@ class RhinoSourceScriptRuntime(
                     },
                     contentWriter = { content -> currentRuleContent = content },
                     baseUrlWriter = { baseUrl -> if (!baseUrl.isNullOrBlank()) currentRuleBaseUrl = baseUrl },
+                    fileStore = sourceFileCacheStore,
                     webViewUserAgent = webViewUserAgent,
                 )
                 javaExtensions[source.id] = javaBridge
