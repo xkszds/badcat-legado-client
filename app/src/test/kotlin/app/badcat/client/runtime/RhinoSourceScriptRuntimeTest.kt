@@ -1252,4 +1252,55 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(source.id)
     }
 
+
+    @Test
+    fun supportsSourceScopedLegadoTextDownloadReadAndDelete() = runBlocking {
+        val store = InMemorySourceScriptFileCacheStore
+        val source = BookSource(
+            id = "https://download-file.example/",
+            name = "Download file compatibility",
+            baseUrl = "https://download-file.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime(
+            sourceFileCacheStore = store,
+            sourceHttpRequest = { requestedSource, baseUrl, method, url, _, _ ->
+                assertEquals(source.id, requestedSource.id)
+                assertEquals(source.baseUrl, baseUrl)
+                assertEquals("GET", method)
+                assertEquals("/chapter.txt", url)
+                app.badcat.engine.SourceHttpResponse(
+                    200,
+                    "https://download-file.example/chapter.txt",
+                    body = "downloaded chapter text",
+                )
+            },
+        )
+        val result = runtime.evaluate(
+            source,
+            "var downloadedPath = java.downloadFile('/chapter.txt'); " +
+                "var downloadedText = java.readTxtFile(downloadedPath); " +
+                "java.deleteFile(downloadedPath); " +
+                "downloadedText + '|' + java.readTxtFile(downloadedPath)",
+            mapOf("baseUrl" to source.baseUrl),
+        )
+        assertTrue("Legado text download/read/delete failed: $result", result is EngineResult.Success)
+        assertEquals("downloaded chapter text|", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
+    fun rejectsTraversalAndNonIssuedLegadoDownloadPaths() = runBlocking {
+        val source = BookSource(
+            id = "https://download-path-safety.example/",
+            name = "Download path safety",
+            baseUrl = "https://download-path-safety.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val traversal = runtime.evaluate(source, "java.readTxtFile('../private.txt')")
+        val absolute = runtime.evaluate(source, "java.deleteFile('/data/private.txt')")
+        assertTrue("Traversal path must be rejected", traversal is EngineResult.Failure)
+        assertTrue("Absolute path must be rejected", absolute is EngineResult.Failure)
+        runtime.clearSourceState(source.id)
+    }
+
 }

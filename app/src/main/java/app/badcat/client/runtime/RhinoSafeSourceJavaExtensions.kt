@@ -51,6 +51,7 @@ class RhinoSafeSourceJavaExtensions(
     private val ruleElementsReaderWithContent: (String, String) -> LegadoSourceElementList = { rule, _ -> ruleElementsReader(rule) },
     private val contentWriter: (String) -> Unit = {},
     private val baseUrlWriter: (String?) -> Unit = {},
+    private val fileStore: SourceScriptFileCacheStore = InMemorySourceScriptFileCacheStore,
     private val webViewUserAgent: String = DEFAULT_WEBVIEW_USER_AGENT,
 ) {
 
@@ -120,6 +121,45 @@ class RhinoSafeSourceJavaExtensions(
             baseUrlWriter(baseUrl)
         }
         return value
+    }
+
+    /**
+     * Download a text response into the source-private cache and return an opaque
+     * relative token. The current HTTP facade exposes decoded text, not raw bytes;
+     * binary/archive download APIs are intentionally not claimed as supported.
+     */
+    fun downloadFile(url: String): String {
+        require(url.isNotBlank()) { "downloadFile URL must not be blank" }
+        val response = httpRequest("GET", url, null, emptyMap())
+        require(response.statusCode in 200..299) {
+            "downloadFile returned HTTP ${response.statusCode} ${response.statusMessage}".trim()
+        }
+        val body = response.body
+        require(body.toByteArray(Charsets.UTF_8).size <= MAX_DOWNLOAD_BYTES) {
+            "downloadFile response exceeds the 8 MiB text limit"
+        }
+        val token = UUID.randomUUID().toString()
+        fileStore.put(sourceId, DOWNLOAD_FILE_PREFIX + token, body)
+        return "downloads/$token.txt"
+    }
+
+    /** Read only opaque tokens returned by this source's downloadFile call. */
+    fun readTxtFile(path: String): String {
+        val token = downloadToken(path)
+        return fileStore.get(sourceId, DOWNLOAD_FILE_PREFIX + token).orEmpty()
+    }
+
+    /** Delete only a source-owned downloaded text file token. */
+    fun deleteFile(path: String) {
+        val token = downloadToken(path)
+        fileStore.remove(sourceId, DOWNLOAD_FILE_PREFIX + token)
+    }
+
+    private fun downloadToken(path: String): String {
+        require(path.matches(Regex("^downloads/[0-9a-fA-F-]{36}\\.txt$"))) {
+            "Invalid or unsafe Legado download path"
+        }
+        return path.removePrefix("downloads/").removeSuffix(".txt")
     }
 
     fun putString(key: String, value: String): String {
@@ -574,6 +614,8 @@ class RhinoSafeSourceJavaExtensions(
         private const val MAX_KEY_CHARS = 256
         private const val MAX_VALUE_CHARS = 16 * 1024
         private const val MAX_AES_INPUT_BYTES = 2 * 1024 * 1024
+        private const val MAX_DOWNLOAD_BYTES = 8 * 1024 * 1024
+        private const val DOWNLOAD_FILE_PREFIX = "__legado_download__:"
     }
 }
 
