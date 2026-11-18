@@ -9,8 +9,8 @@ import java.util.concurrent.ConcurrentHashMap
 internal object LegadoConcurrentRateLimiter {
     private data class Record(
         var timeMillis: Long,
-        val accessLimit: Int,
-        val intervalMillis: Int,
+        var accessLimit: Int,
+        var intervalMillis: Int,
         var frequency: Int,
     )
 
@@ -22,6 +22,12 @@ internal object LegadoConcurrentRateLimiter {
         val (accessLimit, interval) = parsed
         val record = records.computeIfAbsent(sourceId) {
             Record(System.currentTimeMillis(), accessLimit, interval, 1)
+        }
+        synchronized(record) {
+            // Legado's updateConcurrentRate preserves the current window/frequency
+            // while applying newly imported source settings.
+            record.accessLimit = accessLimit
+            record.intervalMillis = interval
         }
         while (true) {
             val waitMillis = synchronized(record) {
