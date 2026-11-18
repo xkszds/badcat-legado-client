@@ -22,6 +22,7 @@ class OkHttpSourceRequestClientTest {
                     socket.soTimeout = 5_000
                     val reader = socket.getInputStream().bufferedReader(StandardCharsets.UTF_8)
                     while (reader.readLine()?.isNotEmpty() == true) Unit
+                    Thread.sleep(25)
                     val payload = "ok".toByteArray(StandardCharsets.UTF_8)
                     socket.getOutputStream().apply {
                         write("HTTP/1.1 200 OK\r\nContent-Length: ${payload.size}\\r\\nConnection: close\\r\\n\\r\\n".toByteArray(StandardCharsets.US_ASCII))
@@ -41,7 +42,7 @@ class OkHttpSourceRequestClientTest {
             assertTrue(!worker.isAlive, "HTTP fixture server should finish")
             val response = (result as EngineResult.Success).value
             assertEquals("ok", response.body)
-            assertTrue(response.callTime >= 0)
+            assertTrue(response.callTime >= 10, "callTime should include the delayed server response")
         }
     }
 
