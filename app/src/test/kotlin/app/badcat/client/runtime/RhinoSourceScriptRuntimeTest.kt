@@ -1740,4 +1740,40 @@ class BadcatSourceHttpGatewayFactoryAjaxTest {
         assertEquals("q=cat", requests.first().body)
         assertEquals("https://reader.example/lookup", requests.first().url)
     }
+
+    @Test
+    fun supportsLegadoOrgJsoupParseSelectSiblingAndRemoveFacade() = runBlocking {
+        val source = BookSource(
+            id = "https://org-jsoup-facade.example/",
+            name = "org.jsoup facade",
+            baseUrl = "https://org-jsoup-facade.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val result = runtime.evaluate(
+            source,
+            """
+                var doc = org.jsoup.Jsoup.parse(
+                    '<ul><li id="one">First</li><li id="two">Second</li></ul>',
+                    'https://reader.example/catalog'
+                );
+                var items = doc.select('li');
+                var first = items.get(0);
+                var second = first.nextElementSibling();
+                var before = items.size();
+                first.remove();
+                [
+                    before,
+                    second.text(),
+                    second.attr('id'),
+                    doc.select('li').size(),
+                    second.absUrl('href')
+                ].join('|');
+            """.trimIndent(),
+        )
+
+        assertTrue("Legado org.jsoup.Jsoup.parse facade failed: $result", result is EngineResult.Success)
+        assertEquals("2|Second|two|1|", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
 }
