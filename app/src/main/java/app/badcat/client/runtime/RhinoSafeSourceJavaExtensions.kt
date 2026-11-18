@@ -297,16 +297,19 @@ class RhinoSafeSourceJavaExtensions(
     fun timeFormatUTC(timestamp: String, format: String, offsetMillis: Int): String =
         timestamp.toLongOrNull()?.let { timeFormatUTC(it, format, offsetMillis) }.orEmpty()
 
-    /** Mirrors Hutool HexUtil.decodeHex: whitespace is not silently trimmed. */
+    /** Mirrors Hutool HexUtil.decodeHex: malformed and whitespace-padded input throws. */
     fun hexDecodeToByteArray(hex: String): ByteArray? {
-        if (hex.length % 2 != 0 || hex.any { it.digitToIntOrNull(16) == null }) return null
+        require(hex.length <= MAX_AES_INPUT_BYTES * 2) { "Hex input exceeds the size limit" }
+        require(hex.length % 2 == 0 && hex.all { it.digitToIntOrNull(16) != null }) {
+            "Invalid hexadecimal input"
+        }
         return ByteArray(hex.length / 2) { index ->
             ((hex[index * 2].digitToInt(16) shl 4) or hex[index * 2 + 1].digitToInt(16)).toByte()
         }
     }
 
     fun hexDecodeToString(hex: String): String? =
-        hexDecodeToByteArray(hex)?.let { String(it, Charsets.UTF_8) }
+        String(hexDecodeToByteArray(hex)!!, Charsets.UTF_8)
 
     fun hexEncodeToString(value: String): String =
         value.toByteArray(Charsets.UTF_8).joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }

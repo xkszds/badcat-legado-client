@@ -414,14 +414,14 @@ text + re.test('aa}}')"""
                     java.bytesToStr(java.strToBytes('你好', 'UTF-8'), 'UTF-8'),
                     java.hexEncodeToString('Legado'),
                     java.hexDecodeToString('4c656761646f'),
-                    java.hexDecodeToString('4c 65'),
+                    (function(){ try { java.hexDecodeToString('4c 65'); return 'no-error'; } catch(e) { return 'throws'; } })(),
                     java.base64DecodeToByteArray(null) === null ? 'null' : 'not-null',
                     java.base64DecodeToByteArray('SGVsbG8=')[0]
                 ].join('|');
             """.trimIndent(),
         )
         assertTrue("Legado encoding overloads failed: $result", result is EngineResult.Success)
-        assertEquals("你好|4c656761646f|Legado|null|72", (result as EngineResult.Success).value)
+        assertEquals("你好|4c656761646f|Legado|throws|null|72", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
 
