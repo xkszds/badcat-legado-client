@@ -21,7 +21,7 @@ class UpstreamLegadoCssRuleAdapterTest {
         """.trimIndent()
 
         assertEquals(
-            listOf("第一段\n尾部", "第二段", "第三段", "第四段", "第五段"),
+            listOf("第五段"),
             parser.getStringList(html, "https://example.com/book", "@.w_txt li.4@textNodes"),
         )
     }
