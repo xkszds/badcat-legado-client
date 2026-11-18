@@ -66,6 +66,16 @@ class LegadoUrlResolverTest {
     }
 
     @Test
+    fun preservesBackslashEscapesInsideLegacySingleQuotedOptions() {
+        val result = LegadoUrlResolver.resolve(
+            "https://example.com/",
+            """search, {'method':'POST','body':'pattern=\\d+'}""",
+        )
+        val value = assertIs<EngineResult.Success<LegadoResolvedUrl>>(result).value
+        assertEquals("pattern=\\d+", value.body)
+    }
+
+    @Test
     fun acceptsBodyMethodsImplementedByTheHttpTransport() {
         listOf("PUT", "PATCH", "PROPPATCH", "REPORT").forEach { method ->
             val result = LegadoUrlResolver.resolve(
