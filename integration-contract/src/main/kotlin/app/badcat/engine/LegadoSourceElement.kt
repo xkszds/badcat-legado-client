@@ -87,13 +87,23 @@ class LegadoSourceElement(
 
     companion object {
         /** Preserve list order so JavaScript .first().next() and .last().prev() work. */
-        fun fromSelection(items: List<String>, baseUri: String): List<LegadoSourceElement> =
+        fun fromSelection(
+            items: List<String>,
+            baseUri: String,
+            parentHtml: String? = null,
+            ancestors: List<String> = emptyList(),
+        ): List<LegadoSourceElement> =
             items.mapIndexed { index, html ->
                 LegadoSourceElement(
                     fragments = listOf(html),
                     baseUri = baseUri,
                     selectionContext = items,
                     selectionIndex = index,
+                    selectionParents = parentHtml?.let { List(items.size) { it } },
+                    selectionAncestors = parentHtml?.let { parent ->
+                        val chain = listOf(parent) + ancestors
+                        List(items.size) { chain }
+                    },
                 )
             }
     }
@@ -117,7 +127,15 @@ class LegadoSourceElement(
     fun hasClass(name: String): Boolean = elements().firstOrNull()?.hasClass(name) ?: false
     fun absUrl(attribute: String): String = elements().firstOrNull()?.absUrl(attribute).orEmpty()
     fun children(): LegadoSourceElementList = LegadoSourceElementList(
-        elements().flatMap { element -> element.children().map { child -> LegadoSourceElement(child.outerHtml(), baseUri) } },
+        elements().flatMap { element ->
+            val childHtml = element.children().map { it.outerHtml() }
+            fromSelection(
+                items = childHtml,
+                baseUri = baseUri,
+                parentHtml = element.outerHtml(),
+                ancestors = element.parents().map { it.outerHtml() },
+            )
+        },
     )
     override fun toString(): String = elements().joinToString("") { it.outerHtml() }
 }
