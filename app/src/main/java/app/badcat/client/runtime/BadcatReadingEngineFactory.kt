@@ -143,8 +143,34 @@ class BadcatReadingEngineFactory(
                     is EngineResult.Success -> created.value.copy(
                         // Pinned JsExtensions get/head/post default to 30 seconds.
                         timeoutMillis = 30_000L,
-                        followRedirects = true,
+                        followRedirects = false,
                         retryCount = maxOf(created.value.retryCount, if (method.equals("GET", true) || method.equals("HEAD", true)) 1 else 0),
+                    )
+                }
+                when (val result = runBlocking(Dispatchers.IO) { durableRequestClient.execute(request) }) {
+                    is EngineResult.Failure -> throw IllegalStateException(result.message)
+                    is EngineResult.Success -> result.value
+                }
+            },
+            sourceHttpRequestNoRedirectWithTimeout = { source, baseUrl, method, url, body, headers, callTimeoutMillis ->
+                require(callTimeoutMillis in 1L..Int.MAX_VALUE.toLong()) {
+                    "HTTP timeout must be between 1ms and ${Int.MAX_VALUE}ms"
+                }
+                val request = when (val created = SourceRequestFactory.create(
+                    source = source,
+                    url = WebUrlResolver.resolve(baseUrl, url),
+                    method = method,
+                    headers = headers,
+                    body = body,
+                )) {
+                    is EngineResult.Failure -> throw IllegalArgumentException(created.message)
+                    is EngineResult.Success -> created.value.copy(
+                        timeoutMillis = callTimeoutMillis,
+                        followRedirects = false,
+                        retryCount = maxOf(
+                            created.value.retryCount,
+                            if (method.equals("GET", true) || method.equals("HEAD", true)) 1 else 0,
+                        ),
                     )
                 }
                 when (val result = runBlocking(Dispatchers.IO) { durableRequestClient.execute(request) }) {
