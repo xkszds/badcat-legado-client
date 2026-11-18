@@ -89,7 +89,7 @@ class RhinoSafeSourceJavaExtensions(
                 // simple key/value pairs; values containing separators are
                 // supported when quoted.
                 val rendered = headers.toString().trim().removePrefix("{").removeSuffix("}")
-                val pairPattern = Regex("""([^=,]+)=((?:\"[^\"]*\")|(?:'[^']*')|[^,]*)(?:,\\s*|$)""")
+                val pairPattern = Regex("""([^=,]+)=((?:\"[^\"]*\")|(?:'[^']*')|[^,]*)(?:,\s*|$)""")
                 pairPattern.findAll(rendered).associate { match ->
                     match.groupValues[1].trim() to match.groupValues[2].trim().trim('"', '\'')
                 }
