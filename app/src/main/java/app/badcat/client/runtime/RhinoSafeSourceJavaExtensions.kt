@@ -222,7 +222,7 @@ class RhinoSafeSourceJavaExtensions(
             fileStore.getBytes(sourceId, DOWNLOAD_FILE_PREFIX + token)?.let { return it }
         }
         fileStore.getBytes(sourceId, virtualFileKey(normalizeVirtualPath(path)))?.let { return it }
-        val physical = fileRoot?.let { runCatching { getFile(path) }.getOrNull() }
+        val physical = fileRoot?.let { runCatching { resolveFile(path) }.getOrNull() }
         return physical?.takeIf { it.isFile }?.let { runCatching { it.readBytes() }.getOrNull() }
     }
 
@@ -230,7 +230,15 @@ class RhinoSafeSourceJavaExtensions(
      * Resolve a source-relative path beneath the app cache directory.
      * Canonical-path validation also blocks traversal through existing symlinks.
      */
-    fun getFile(path: String): java.io.File {
+    fun getFile(path: String): RhinoSourceFileHandle =
+        RhinoSourceFileHandle(resolveFile(path), safeFileRoot())
+
+    private fun safeFileRoot(): java.io.File {
+        val root = fileRoot ?: throw UnsupportedOperationException("Source file root is not configured")
+        return (root.parentFile ?: root).canonicalFile
+    }
+
+    private fun resolveFile(path: String): java.io.File {
         val root = fileRoot ?: throw UnsupportedOperationException("Source file root is not configured")
         require(path.isNotBlank()) { "Source file path must not be blank" }
         val candidate = if (path.startsWith(java.io.File.separator)) {
@@ -238,7 +246,7 @@ class RhinoSafeSourceJavaExtensions(
         } else {
             java.io.File(root, path)
         }
-        val safeRoot = (root.parentFile ?: root).canonicalFile
+        val safeRoot = safeFileRoot()
         val resolved = candidate.canonicalFile
         val safePrefix = safeRoot.path + java.io.File.separator
         if (resolved.path != safeRoot.path && !resolved.path.startsWith(safePrefix)) {
@@ -249,7 +257,7 @@ class RhinoSafeSourceJavaExtensions(
 
     private fun writePhysicalFile(path: String, bytes: ByteArray) {
         val root = fileRoot ?: return
-        val target = getFile(path)
+        val target = resolveFile(path)
         val parent = target.parentFile ?: root
         require(parent.isDirectory || parent.mkdirs()) { "Unable to create source file directory" }
         val temporary = java.io.File(parent, target.name + ".tmp")
@@ -311,7 +319,7 @@ class RhinoSafeSourceJavaExtensions(
             return folder
         } catch (error: Throwable) {
             deleteVirtualTree(folder)
-            fileRoot?.let { runCatching { getFile(folder).deleteRecursively() } }
+            fileRoot?.let { runCatching { resolveFile(folder).deleteRecursively() } }
             throw error
         }
     }
