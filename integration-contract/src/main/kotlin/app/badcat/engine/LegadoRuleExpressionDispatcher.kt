@@ -1,5 +1,7 @@
 package app.badcat.engine
 
+import io.legado.app.model.analyzeRule.UpstreamLegadoCssRuleEvaluator
+
 /**
  * Resolves explicit parser prefixes and unambiguous path syntax used by imported
  * Legado rule fields. Unprefixed selectors default to CSS, matching the common
