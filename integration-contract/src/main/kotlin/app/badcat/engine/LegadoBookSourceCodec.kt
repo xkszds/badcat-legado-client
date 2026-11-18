@@ -33,6 +33,7 @@ data class LegadoBookSource(
     val ruleTocJson: String?,
     val ruleContentJson: String?,
     val rawJson: String,
+    val concurrentRate: String? = null,
 ) {
     fun toEngineSource(): BookSource = BookSource(
         id = sourceId,
@@ -57,6 +58,7 @@ data class LegadoBookSource(
         ruleTocJson = ruleTocJson,
         ruleContentJson = ruleContentJson,
         rawJson = rawJson,
+        concurrentRate = concurrentRate,
     )
 }
 
@@ -195,6 +197,7 @@ object LegadoBookSourceCodec {
             exploreUrl = source.stringOrNull("exploreUrl"),
             searchUrl = source.stringOrNull("searchUrl"),
             mainJs = source.stringOrNull("mainJs"),
+            concurrentRate = source.stringOrNull("concurrentRate"),
             ruleExploreJson = source.objectOrNull("ruleExplore"),
             ruleSearchJson = source.objectOrNull("ruleSearch"),
             ruleBookInfoJson = source.objectOrNull("ruleBookInfo"),
