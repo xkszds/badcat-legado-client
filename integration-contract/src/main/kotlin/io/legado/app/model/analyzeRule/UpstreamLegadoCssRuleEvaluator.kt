@@ -13,7 +13,17 @@ object UpstreamLegadoCssRuleEvaluator {
             setOf("text", "textnodes", "owntext", "html", "all", "href", "src", "tag")) {
             rule.substringBeforeLast("@")
         } else rule
+        // A single leading '@' is the Legado default-CSS mode marker in
+        // source rules such as @.w_txt li.4@textNodes. getElements() expects
+        // the selector/index expression itself here; unlike getStringList(),
+        // it does not route that marker through SourceRule's @CSS: handling.
+        val normalizedRule = if (extractionRule.startsWith("@.") ||
+            extractionRule.startsWith("@class.", ignoreCase = true) ||
+            extractionRule.startsWith("@tag.", ignoreCase = true) ||
+            extractionRule.startsWith("@id.", ignoreCase = true)) {
+            extractionRule.substring(1)
+        } else extractionRule
         val analyzer = AnalyzeByJSoup(parseSourceHtml(html).also { it.setBaseUri(baseUrl) })
-        return analyzer.getElements(extractionRule).map { it.outerHtml() }
+        return analyzer.getElements(normalizedRule).map { it.outerHtml() }
     }
 }
