@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.Base64
+import java.net.URL
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
@@ -106,6 +107,19 @@ class RhinoSafeSourceJavaExtensions(
 
     fun base64Decode(value: String): String =
         String(Base64.getDecoder().decode(value), Charsets.UTF_8)
+
+    fun base64DecodeToByteArray(value: String): ByteArray = base64DecodeBytes(value)
+
+    fun strToBytes(value: String): ByteArray = utf8Encode(value)
+
+    fun aesBase64DecodeToString(value: String, key: String, transformation: String, iv: String): String =
+        createSymmetricCrypto(transformation, utf8Encode(key), utf8Encode(iv))
+            .decryptStr(base64DecodeBytes(value))
+
+    fun createSymmetricCrypto(transformation: String, key: ByteArray, iv: ByteArray): RhinoLegadoSymmetricCrypto =
+        RhinoLegadoSymmetricCrypto(transformation, key, iv)
+
+    fun toURL(value: String): RhinoLegadoUrl = RhinoLegadoUrl(value)
 
     /** Narrow byte helpers used only by the reviewed JavaImporter AES compatibility shim. */
     fun utf8Encode(value: String): ByteArray {
@@ -227,6 +241,38 @@ class RhinoSafeSourceJavaExtensions(
         private const val MAX_KEY_CHARS = 256
         private const val MAX_VALUE_CHARS = 16 * 1024
         private const val MAX_AES_INPUT_BYTES = 2 * 1024 * 1024
+    }
+}
+
+/** Narrow URL metadata view for source rules; no connection or stream methods. */
+class RhinoLegadoUrl(value: String) {
+    private val parsed = URL(value)
+    fun getHost(): String = parsed.host
+    fun getPath(): String = parsed.path
+    fun getProtocol(): String = parsed.protocol
+    fun getQuery(): String? = parsed.query
+}
+
+/** Allow-listed AES-CBC helper matching the common Legado crypto extension. */
+class RhinoLegadoSymmetricCrypto(
+    transformation: String,
+    key: ByteArray,
+    iv: ByteArray,
+) {
+    private val transformation = when (transformation.uppercase()) {
+        "AES/CBC/PKCS5PADDING", "AES/CBC/PKCS7PADDING" -> "AES/CBC/PKCS5Padding"
+        else -> throw UnsupportedOperationException("Only AES/CBC/PKCS5Padding is supported")
+    }
+    private val keyBytes = key.copyOf()
+    private val ivBytes = iv.copyOf()
+
+    fun decryptStr(data: ByteArray): String {
+        require(data.size <= 2 * 1024 * 1024) { "AES input exceeds the size limit" }
+        require(keyBytes.size == 16 || keyBytes.size == 24 || keyBytes.size == 32) { "Invalid AES key length" }
+        require(ivBytes.size == 16) { "Invalid AES-CBC IV length" }
+        val cipher = Cipher.getInstance(transformation)
+        cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(keyBytes, "AES"), IvParameterSpec(ivBytes))
+        return String(cipher.doFinal(data), Charsets.UTF_8)
     }
 }
 
