@@ -284,4 +284,26 @@ class CssChapterContentParserTest {
         assertEquals(EngineErrorCode.UNSUPPORTED_RULE, failure.code)
         kotlin.test.assertTrue(failure.message.contains("webJs"))
     }
+    @Test
+    fun appliesWholeTextReplaceRegexWithoutASelector() = runBlocking {
+        val source = BookSource(
+            id = "https://whole-text-replace.example/",
+            name = "Whole text replace",
+            baseUrl = "https://whole-text-replace.example/",
+            ruleContentJson = """{"content":"article","replaceRegex":"##AD_PLACEHOLDER##"}""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://whole-text-replace.example/chapter/1",
+            body = "<article>Readable AD_PLACEHOLDER chapter.</article>",
+        )
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(source: BookSource, script: String, bindings: Map<String, String>): EngineResult<String> =
+                EngineResult.Success(script)
+        }
+        val result = assertIs<EngineResult.Success<ChapterContent>>(
+            CssChapterContentParser().parseWithScripts(source, response, BookChapter(0, "One", response.finalUrl), runtime),
+        ).value
+        assertEquals("Readable  chapter.", result.text)
+    }
 }
