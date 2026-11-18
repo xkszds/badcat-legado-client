@@ -400,6 +400,30 @@ text + re.test('aa}}')"""
     }
 
     @Test
+    fun supportsLegadoBase64FlagsAndCharsetOverloads() = runBlocking {
+        val source = BookSource(
+            id = "https://base64-flags.example/",
+            name = "Base64 flags",
+            baseUrl = "https://base64-flags.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val result = runtime.evaluate(
+            source,
+            """
+                [
+                    java.base64Encode('你好', 10),
+                    java.base64Decode('5L2g5aW9', 'UTF-8'),
+                    java.base64Decode('V29y\n bGQ=', 0),
+                    java.bytesToStr(java.base64DecodeToByteArray('SGVsbG8=', 0))
+                ].join('|');
+            """.trimIndent(),
+        )
+        assertTrue("Legado Base64 overloads failed: $result", result is EngineResult.Success)
+        assertEquals("5L2g5aW9|你好|World|Hello", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun supportsLegadoHexAndUtcTimeHelpers() = runBlocking {
         val source = BookSource(
             id = "https://utility-helpers.example/",

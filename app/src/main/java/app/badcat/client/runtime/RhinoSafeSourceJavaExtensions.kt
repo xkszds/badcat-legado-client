@@ -434,15 +434,26 @@ class RhinoSafeSourceJavaExtensions(
 
     fun md5Encode16(value: String): String = md5Encode(value).substring(8, 24)
 
-    fun base64Encode(value: String): String =
-        Base64.getEncoder().encodeToString(value.toByteArray(Charsets.UTF_8))
+    /** Legado EncoderUtils defaults to Android Base64.NO_WRAP for string encoding. */
+    fun base64Encode(value: String): String = base64Encode(value, BASE64_NO_WRAP)
 
-    fun base64Decode(value: String): String =
-        String(Base64.getDecoder().decode(value), Charsets.UTF_8)
+    fun base64Encode(value: String, flags: Int): String =
+        encodeBase64(value.toByteArray(Charsets.UTF_8), flags)
+
+    fun base64Decode(value: String): String = base64Decode(value, Charsets.UTF_8.name())
+
+    fun base64Decode(value: String, charset: String): String =
+        String(decodeBase64(value, BASE64_DEFAULT), java.nio.charset.Charset.forName(charset))
+
+    fun base64Decode(value: String, flags: Int): String =
+        String(decodeBase64(value, flags), Charsets.UTF_8)
 
     fun base64DecodeToString(value: String): String = base64Decode(value)
 
     fun base64DecodeToByteArray(value: String): ByteArray = base64DecodeBytes(value)
+
+    fun base64DecodeToByteArray(value: String?, flags: Int): ByteArray? =
+        value?.takeIf(String::isNotBlank)?.let { decodeBase64(it, flags) }
 
     fun bytesToStr(value: ByteArray): String = utf8Decode(value)
 
@@ -496,6 +507,23 @@ class RhinoSafeSourceJavaExtensions(
     fun utf8Decode(value: ByteArray): String {
         require(value.size <= MAX_AES_INPUT_BYTES) { "AES output exceeds the size limit" }
         return String(value, Charsets.UTF_8)
+    }
+
+    private fun encodeBase64(value: ByteArray, flags: Int): String {
+        require(value.size <= MAX_AES_INPUT_BYTES) { "Base64 input exceeds the size limit" }
+        val urlSafe = flags and BASE64_URL_SAFE != 0
+        var encoder = if (urlSafe) Base64.getUrlEncoder() else Base64.getEncoder()
+        if (flags and BASE64_NO_PADDING != 0) encoder = encoder.withoutPadding()
+        return encoder.encodeToString(value)
+    }
+
+    private fun decodeBase64(value: String, flags: Int): ByteArray {
+        require(value.length <= MAX_AES_INPUT_BYTES * 2) { "Base64 input exceeds the size limit" }
+        val normalized = value.filterNot { it == '\\r' || it == '\\n' || it == ' ' || it == '\\t' }
+        val decoder = if (flags and BASE64_URL_SAFE != 0) Base64.getUrlDecoder() else Base64.getDecoder()
+        return decoder.decode(normalized).also {
+            require(it.size <= MAX_AES_INPUT_BYTES) { "Decoded Base64 input exceeds the size limit" }
+        }
     }
 
     fun base64DecodeBytes(value: String): ByteArray {
@@ -627,6 +655,11 @@ class RhinoSafeSourceJavaExtensions(
     }
 
     companion object {
+        private const val BASE64_DEFAULT = 0
+        private const val BASE64_NO_PADDING = 1
+        private const val BASE64_NO_WRAP = 2
+        private const val BASE64_URL_SAFE = 8
+
         const val DEFAULT_WEBVIEW_USER_AGENT = "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.0.0 Mobile Safari/537.36"
         private const val MAX_AJAX_ALL_URLS = 20
         private const val MAX_AJAX_ALL_CONCURRENCY = 4
