@@ -112,6 +112,27 @@ class SourceSearchServiceTest {
     }
 
     @Test
+    fun evaluatesDollarExpressionsInSearchUrlAsJavaScript() = runBlocking {
+        val client = FixtureClient()
+        val seenScripts = mutableListOf<String>()
+        val evaluator = LegadoEmbeddedScriptEvaluator { script, _, _ ->
+            seenScripts += script
+            EngineResult.Success("javascript-filter")
+        }
+
+        val result = SourceSearchService(
+            SourceHttpGateway(client, embeddedScriptEvaluator = evaluator),
+        ).search(
+            source(),
+            "/search?filter={{$.filter}}",
+        )
+
+        assertIs<EngineResult.Success<List<BookCandidate>>>(result)
+        assertEquals(listOf("$.filter"), seenScripts)
+        assertEquals(1, client.requestCount)
+    }
+
+    @Test
     fun parsesEnabledSourceSearchResults() = runBlocking {
         val client = FixtureClient()
         val result = assertIs<EngineResult.Success<List<BookCandidate>>>(
