@@ -225,6 +225,7 @@ class RhinoSafeSourceJavaExtensions(
     fun connect(url: String, headers: Any?): RhinoSourceHttpResponse = try {
         RhinoSourceHttpResponse(httpRequest("GET", url, null, parseRequestHeaders(headers)))
     } catch (error: Exception) {
+        if (error is java.util.concurrent.CancellationException) throw error
         RhinoSourceHttpResponse(
             SourceHttpResponse(
                 statusCode = 200,
