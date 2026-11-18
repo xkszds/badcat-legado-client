@@ -29,6 +29,7 @@ import kotlin.coroutines.cancellation.CancellationException
 class RhinoSourceScriptRuntime(
     private val timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS,
     private val sourceKeyValueStore: SourceScriptKeyValueStore = InMemorySourceScriptKeyValueStore,
+    private val sourceFileCacheStore: SourceScriptFileCacheStore = InMemorySourceScriptFileCacheStore,
     private val sourceLoginSessionStore: SourceLoginSessionStore = InMemorySourceLoginSessionStore,
     private val sourceCookieReader: (sourceId: String, url: String) -> String = { _, _ -> "" },
     private val sourceCookieRemover: (sourceId: String, url: String) -> Unit = { _, _ -> },
@@ -252,7 +253,7 @@ class RhinoSourceScriptRuntime(
                 scope["source"] = sourceExtensions.computeIfAbsent(source.id) {
                     RhinoSourceLoginExtensions(source.id, sourceLoginSessionStore, sourceKeyValueStore, source.id)
                 }
-                scope["cache"] = cacheExtensions.computeIfAbsent(source.id) { RhinoSourceCacheExtensions(source.id, sourceKeyValueStore) }
+                scope["cache"] = cacheExtensions.computeIfAbsent(source.id) { RhinoSourceCacheExtensions(source.id, sourceKeyValueStore, sourceFileCacheStore) }
                 val result = try {
                     withTimeout(timeoutMillis) {
                         // A tightly scoped compatibility shim exposes only the crypto classes
