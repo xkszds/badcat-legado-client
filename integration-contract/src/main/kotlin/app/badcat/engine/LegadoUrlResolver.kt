@@ -79,7 +79,8 @@ object LegadoUrlResolver {
             val body = options?.get("body")?.let(::bodyValue)
             val timeout = options?.get("timeout")?.let(::positiveLong)
             val redirects = options?.get("followRedirects")?.let(::booleanValue)
-            // One safe retry by default for transient GET/HEAD failures; explicit retry:0 disables it.\n            val retry = options?.get("retry")?.let(::nonNegativeInt) ?: 1
+            // One safe retry by default for transient GET/HEAD failures; explicit retry:0 disables it.
+            val retry = options?.get("retry")?.let(::nonNegativeInt) ?: 1
             require(retry <= 5) { "URL option retry must be between 0 and 5" }
             val charset = options?.string("charset")
             if (options?.has("dnsIp") == true || options?.has("resolveIp") == true ||
