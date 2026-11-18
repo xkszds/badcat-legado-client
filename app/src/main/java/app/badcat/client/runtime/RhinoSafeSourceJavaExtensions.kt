@@ -61,7 +61,14 @@ class RhinoSafeSourceJavaExtensions(
     private val webViewUserAgent: String = DEFAULT_WEBVIEW_USER_AGENT,
     private val functionInvoker: (Function) -> Unit = { throw UnsupportedOperationException("source callback invoker is not connected") },
     private val rateLimit: (Boolean) -> Unit = {},
+    private val sourceTag: String = sourceId,
+    private val sourceDescriptor: Map<String, Any?> = emptyMap(),
 ) {
+
+    /** Legado source metadata helpers; expose a read-only map rather than the Android entity. */
+    fun getTag(): String = sourceTag
+
+    fun getSource(): Map<String, Any?> = sourceDescriptor.toMap()
 
     /** Evaluate a Legado selector against the current AnalyzeRule content. */
     fun getString(rule: String): String = ruleStringReader(rule)
