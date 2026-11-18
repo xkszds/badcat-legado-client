@@ -267,12 +267,13 @@ class RhinoSafeSourceJavaExtensions(
         return root.canonicalFile
     }
 
-    private fun isWithinSafeFileRoot(file: java.io.File): Boolean = runCatching {
+    private fun canonicalFileWithinSafeRoot(file: java.io.File): java.io.File? = runCatching {
         val safeRoot = safeFileRoot()
         val resolved = file.canonicalFile
-        resolved.path == safeRoot.path ||
+        val withinRoot = resolved.path == safeRoot.path ||
             resolved.path.startsWith(safeRoot.path + java.io.File.separator)
-    }.getOrDefault(false)
+        resolved.takeIf { withinRoot }
+    }.getOrNull()
 
     private fun resolveFile(path: String): java.io.File {
         val root = fileRoot ?: throw UnsupportedOperationException("Source file root is not configured")
@@ -467,8 +468,8 @@ class RhinoSafeSourceJavaExtensions(
             // validate each canonical child before reading it.
             val content = physical.listFiles()
                 ?.asSequence()
-                ?.filter { file ->
-                    file.isFile && isWithinSafeFileRoot(file)
+                ?.mapNotNull { file ->
+                    canonicalFileWithinSafeRoot(file)?.takeIf { it.isFile }
                 }
                 ?.map { file ->
                     val bytes = file.readBytes()
