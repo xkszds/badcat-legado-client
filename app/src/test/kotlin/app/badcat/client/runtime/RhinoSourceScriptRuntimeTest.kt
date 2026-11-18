@@ -1389,15 +1389,14 @@ class RhinoSourceScriptRuntimeTest {
             source,
             "Packages.java.lang.Runtime.getRuntime().availableProcessors()",
         )
-        val arbitraryPackage = runtime.evaluate(
+        val unlistedPackage = runtime.evaluate(
             source,
-            "new JavaImporter(Packages.java.io)",
+            "typeof Packages.java.io.File",
         )
 
         assertTrue("Only AES/CBC/PKCS5Padding may be requested", unsupportedCipher is EngineResult.Failure)
         assertTrue("General Java classes must remain unavailable", arbitraryJavaClass is EngineResult.Failure)
-        assertTrue("Unlisted Java packages must remain unavailable", arbitraryPackage is EngineResult.Success)
-        assertEquals("undefined", (runtime.evaluate(source, "typeof Packages.java.io.File") as EngineResult.Success).value)
+        assertEquals("undefined", (unlistedPackage as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
 
@@ -1415,9 +1414,11 @@ class RhinoSourceScriptRuntimeTest {
                 var importer = new JavaImporter();
                 importer.importPackage(Packages.javax.crypto.spec, Packages.javax.crypto);
                 with (importer) {
-                    var key = new SecretKeySpec('short'.getBytes(), 'AES');
-                    var iv = new IvParameterSpec(new Array(16));
-                    Cipher.getInstance('AES/CBC/PKCS5Padding').init(2, key, iv);
+                    var key = new SecretKeySpec(java.utf8Encode('short'), 'AES');
+                    var iv = new IvParameterSpec(java.utf8Encode('0123456789abcdef'));
+                    var cipher = Cipher.getInstance('AES/CBC/PKCS5Padding');
+                    cipher.init(2, key, iv);
+                    cipher.doFinal(java.utf8Encode('data'));
                 }
             """.trimIndent(),
         )
@@ -1427,10 +1428,11 @@ class RhinoSourceScriptRuntimeTest {
                 var importer = new JavaImporter();
                 importer.importPackage(Packages.javax.crypto.spec, Packages.javax.crypto);
                 with (importer) {
-                    var key = new SecretKeySpec('0123456789abcdef'.getBytes(), 'AES');
-                    var iv = new IvParameterSpec(new Array(8));
+                    var key = new SecretKeySpec(java.utf8Encode('0123456789abcdef'), 'AES');
+                    var iv = new IvParameterSpec(java.utf8Encode('12345678'));
                     var cipher = Cipher.getInstance('AES/CBC/PKCS5Padding');
                     cipher.init(2, key, iv);
+                    cipher.doFinal(java.utf8Encode('data'));
                 }
             """.trimIndent(),
         )
