@@ -103,7 +103,7 @@ class RhinoSourceScriptRuntimeTest {
         )
         val stored = runtime.evaluate(
             source,
-            "java.put('token', 'source-value'); java.get('token')",
+            "java.put('token', 'source-value'); java.getString('token')",
         )
         val digest = runtime.evaluate(source, "java.md5Encode('abc')")
         val encoded = runtime.evaluate(source, "java.urlEncode('a b')")
@@ -150,7 +150,7 @@ class RhinoSourceScriptRuntimeTest {
         val secondRuntime = RhinoSourceScriptRuntime(sourceKeyValueStore = store)
 
         val written = firstRuntime.evaluate(source, "java.putString('refreshToken', 'persisted')")
-        val read = secondRuntime.evaluate(source, "java.get('refreshToken')")
+        val read = secondRuntime.evaluate(source, "java.getString('refreshToken')")
 
         assertEquals("persisted", (written as EngineResult.Success).value)
         assertEquals("persisted", (read as EngineResult.Success).value)
@@ -163,7 +163,7 @@ class RhinoSourceScriptRuntimeTest {
         val first = BookSource("https://safe-first.example/", "First", "https://safe-first.example/")
         val second = BookSource("https://safe-second.example/", "Second", "https://safe-second.example/")
         runtime.evaluate(first, "java.putString('session', 'first')")
-        val result = runtime.evaluate(second, "java.get('session')")
+        val result = runtime.evaluate(second, "java.getString('session')")
         assertEquals("", (result as EngineResult.Success).value)
         runtime.clearSourceState(first.id)
         runtime.clearSourceState(second.id)
@@ -256,7 +256,7 @@ class RhinoSourceScriptRuntimeTest {
         )
         val result = runtime.evaluate(
             source,
-            "java.put('headers', '{\\\"headers\\\":{}}'); java.get('headers') + '|' + java.ajax('https://java-compat.example/api')",
+            "java.put('headers', '{\\\"headers\\\":{}}'); java.getString('headers') + '|' + java.ajax('https://java-compat.example/api')",
         )
         assertEquals(
             "{\"headers\":{}}|ajax:https://java-compat.example/api",
