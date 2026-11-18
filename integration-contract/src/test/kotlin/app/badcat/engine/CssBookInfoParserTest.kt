@@ -370,4 +370,36 @@ class CssBookInfoParserTest {
         assertEquals("meta[property='author']@content", values["a"])
     }
 
+    @Test
+    fun executesJavaScriptInsideBookInfoPutAssignments() = runBlocking {
+        val source = BookSource(
+            id = "https://detail-put.example/",
+            name = "Detail put",
+            baseUrl = "https://detail-put.example/",
+            ruleBookInfoJson = """{
+                "name":"@put:{n:@js:result.trim()} @get:{n}",
+                "author":"@put:{a:@js:'Author ' + page} @get:{a}"
+            }""",
+        )
+        val response = SourceHttpResponse(200, "https://detail-put.example/book/1", body = "<h1>Script Novel</h1>")
+        val values = mutableMapOf<String, String>()
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(source: BookSource, script: String, bindings: Map<String, String>): EngineResult<String> =
+                EngineResult.Success(when (script) {
+                    "result.trim()" -> bindings.getValue("result").trim()
+                    "'Author ' + page" -> "Author " + bindings.getValue("page")
+                    else -> script
+                })
+            override suspend fun getString(source: BookSource, key: String): EngineResult<String?> = EngineResult.Success(values[key])
+            override suspend fun putString(source: BookSource, key: String, value: String): EngineResult<Unit> {
+                values[key] = value
+                return EngineResult.Success(Unit)
+            }
+        }
+        val detail = assertIs<EngineResult.Success<BookDetail>>(
+            CssBookInfoParser().parseWithScripts(source, response, response.finalUrl, runtime),
+        ).value
+        assertEquals("<h1>Script Novel</h1>", detail.name)
+        assertEquals("Author 1", detail.author)
+    }
 }
