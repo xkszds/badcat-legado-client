@@ -424,11 +424,15 @@ class RhinoSafeSourceJavaExtensions(
         require(!path.startsWith("/") || fileRoot != null) {
             "Absolute source paths require the configured cache root"
         }
-        val normalized = path.replace('\\', '/').trimStart('/')
-        require(normalized.split('/').none { it.isBlank() || it == "." || it == ".." }) {
+        // java.io.File accepts redundant separators and trailing slashes.
+        // Normalize those harmless forms while still rejecting traversal.
+        val segments = path.replace('\\', '/').trimStart('/')
+            .split('/')
+            .filter(String::isNotEmpty)
+        require(segments.isNotEmpty() && segments.none { it == "." || it == ".." }) {
             "Invalid source file path"
         }
-        return normalized
+        return segments.joinToString("/")
     }
 
     private fun virtualFileKey(path: String) = VIRTUAL_FILE_PREFIX + path
