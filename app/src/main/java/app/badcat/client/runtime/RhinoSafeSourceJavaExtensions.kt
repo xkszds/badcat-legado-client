@@ -319,20 +319,22 @@ class RhinoSafeSourceJavaExtensions(
                     val response = try {
                         httpRequestWithTimeout("GET", url, null, emptyMap(), timeout.toLong())
                     } catch (error: Exception) {
-                        val code = when (error) {
-                            is java.net.SocketTimeoutException -> -2
-                            is java.net.UnknownHostException -> -3
-                            is java.net.ConnectException -> -4
+                        if (error is kotlin.coroutines.cancellation.CancellationException) throw error
+                        // Gateway adapters may wrap the original transport exception.
+                        val cause = generateSequence(error as Throwable?) { it.cause }.last()
+                        val code = when (cause) {
+                            is java.net.UnknownHostException -> -1
+                            is java.net.ConnectException -> -2
+                            is java.net.SocketTimeoutException -> -3
+                            is javax.net.ssl.SSLException -> -4
                             is java.net.SocketException -> -5
-                            is javax.net.ssl.SSLException -> -6
-                            is java.io.InterruptedIOException ->
-                                if (error.message?.contains("timeout", ignoreCase = true) == true) -1 else -7
+                            is java.io.IOException -> -6
                             else -> -7
                         }
                         SourceHttpResponse(
                             statusCode = 200,
                             finalUrl = runCatching { URL(url).toString() }.getOrDefault("http://localhost/"),
-                            body = error.message ?: error.javaClass.simpleName,
+                            body = error.stackTraceToString().ifEmpty { error.localizedMessage ?: "noErrorMsg" },
                             statusMessage = "OK",
                             callTime = code,
                         )
