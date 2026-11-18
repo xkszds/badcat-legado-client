@@ -65,6 +65,10 @@ class RhinoSafeSourceJavaExtensions(
     private val sourceDescriptor: Map<String, Any?> = emptyMap(),
     private val archiveEntryReader: (java.io.InputStream, String, Int) -> ByteArray? =
         { input, path, maxBytes -> SourceLibArchiveReader.readEntry(input, path, maxBytes) },
+    private val archiveExtractor: (ByteArray, Int, Int, Int) -> Map<String, ByteArray> =
+        { bytes, maxEntry, maxTotal, maxEntries ->
+            SourceLibArchiveReader.extractEntries(bytes.inputStream(), maxEntry, maxTotal, maxEntries)
+        },
 ) {
 
     /** Legado source metadata helpers; expose a read-only map rather than the Android entity. */
@@ -187,23 +191,140 @@ class RhinoSafeSourceJavaExtensions(
 
     /** Read only opaque tokens returned by this source's downloadFile call. */
     fun readTxtFile(path: String): String {
-        val token = downloadToken(path)
-        val bytes = fileStore.getBytes(sourceId, DOWNLOAD_FILE_PREFIX + token) ?: return ""
+        val bytes = readFile(path) ?: return ""
         return String(bytes, detectTextCharset(bytes))
     }
 
     /** Decode the original downloaded bytes using the requested source charset. */
     fun readTxtFile(path: String, charsetName: String): String {
-        val token = downloadToken(path)
-        val bytes = fileStore.getBytes(sourceId, DOWNLOAD_FILE_PREFIX + token) ?: return ""
+        val bytes = readFile(path) ?: return ""
         return String(bytes, java.nio.charset.Charset.forName(charsetName))
     }
 
     /** Return the original downloaded bytes; null mirrors Legado's missing-file result. */
     fun readFile(path: String): ByteArray? {
-        val token = downloadToken(path)
-        return fileStore.getBytes(sourceId, DOWNLOAD_FILE_PREFIX + token)
+        val token = runCatching { downloadToken(path) }.getOrNull()
+        if (token != null) return fileStore.getBytes(sourceId, DOWNLOAD_FILE_PREFIX + token)
+        return fileStore.getBytes(sourceId, virtualFileKey(normalizeVirtualPath(path)))
     }
+
+    /** Extract an archive into source-private virtual files and return its relative folder. */
+    fun unzipFile(zipPath: String): String = extractArchive(zipPath, false)
+    fun un7zFile(zipPath: String): String = extractArchive(zipPath, true)
+    fun unrarFile(zipPath: String): String = extractArchive(zipPath, true)
+    fun unArchiveFile(zipPath: String): String =
+        runCatching { extractArchive(zipPath, false) }.getOrElse { extractArchive(zipPath, true) }
+
+    private fun extractArchive(archivePath: String, useLibArchive: Boolean): String {
+        if (archivePath.isEmpty()) return ""
+        val bytes = readFile(archivePath)
+            ?: throw IllegalArgumentException("Archive file does not exist: $archivePath")
+        require(bytes.size <= MAX_DOWNLOAD_BYTES) { "Archive exceeds the 8 MiB compressed limit" }
+        val archiveName = archivePath.substringAfterLast('/').ifBlank { "archive" }
+        val folder = "ArchiveTemp/" + digestFileName(archiveName)
+        val entries = if (useLibArchive) {
+            archiveExtractor(bytes, MAX_ARCHIVE_ENTRY_BYTES, MAX_ARCHIVE_TOTAL_BYTES.toInt(), MAX_ARCHIVE_FILES)
+        } else {
+            extractZipEntries(bytes)
+        }
+        require(entries.size <= MAX_ARCHIVE_FILES) { "Archive contains too many files" }
+        var total = 0L
+        val safeEntries = linkedMapOf<String, ByteArray>()
+        entries.forEach { (rawName, content) ->
+            val name = normalizeArchiveEntryPath(rawName) ?: return@forEach
+            require(content.size <= MAX_ARCHIVE_ENTRY_BYTES) { "Archive entry exceeds the 16 MiB expanded limit" }
+            total += content.size
+            require(total <= MAX_ARCHIVE_TOTAL_BYTES) { "Archive exceeds the 64 MiB total expanded limit" }
+            safeEntries[name] = content.copyOf()
+        }
+        require(safeEntries.isNotEmpty()) { "Archive contains no safe regular files" }
+        safeEntries.forEach { (name, content) ->
+            fileStore.putBytes(sourceId, virtualFileKey("$folder/$name"), content)
+        }
+        writeDirectoryManifest(folder, safeEntries.keys)
+        return folder
+    }
+
+    private fun extractZipEntries(bytes: ByteArray): Map<String, ByteArray> {
+        val result = linkedMapOf<String, ByteArray>()
+        java.util.zip.ZipInputStream(bytes.inputStream()).use { zip ->
+            while (true) {
+                val entry = zip.nextEntry ?: break
+                if (!entry.isDirectory) {
+                    require(result.size < MAX_ARCHIVE_FILES) { "Archive contains too many files" }
+                    val output = java.io.ByteArrayOutputStream()
+                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                    var countTotal = 0
+                    while (true) {
+                        val count = zip.read(buffer)
+                        if (count < 0) break
+                        countTotal += count
+                        require(countTotal <= MAX_ARCHIVE_ENTRY_BYTES) {
+                            "Archive entry exceeds the 16 MiB expanded limit"
+                        }
+                        output.write(buffer, 0, count)
+                    }
+                    result[entry.name] = output.toByteArray()
+                }
+                zip.closeEntry()
+            }
+        }
+        return result
+    }
+
+    private fun normalizeArchiveEntryPath(path: String): String? {
+        if (path.isBlank() || path.length > MAX_ARCHIVE_PATH_CHARS) return null
+        if (path.startsWith("/") || path.startsWith("\\\\") ||
+            Regex("^[A-Za-z]:").containsMatchIn(path)
+        ) return null
+        val parts = path.replace('\\\\', '/').split('/')
+        if (parts.any { it.isBlank() || it == "." || it == ".." }) return null
+        if (parts.any { part -> part.any { it.code < 0x20 || it == '\\u0000' } }) return null
+        return parts.joinToString("/")
+    }
+
+    private fun normalizeVirtualPath(path: String): String {
+        require(path.isNotBlank() && path.length <= MAX_ARCHIVE_PATH_CHARS)
+        val normalized = path.replace('\\\\', '/').trimStart('/')
+        require(normalized.split('/').none { it.isBlank() || it == "." || it == ".." }) {
+            "Invalid source file path"
+        }
+        return normalized
+    }
+
+    private fun virtualFileKey(path: String) = VIRTUAL_FILE_PREFIX + path
+
+    private fun writeDirectoryManifest(root: String, paths: Set<String>) {
+        paths.forEach { path ->
+            val parts = path.split('/')
+            val first = parts.first()
+            appendDirectoryChild(root, first)
+            for (index in 1 until parts.size) {
+                appendDirectoryChild(root + "/" + parts.take(index).joinToString("/"), parts[index])
+            }
+        }
+    }
+
+    private fun appendDirectoryChild(directory: String, child: String) {
+        val key = VIRTUAL_DIR_PREFIX + directory
+        val existing = fileStore.get(sourceId, key)?.split('\\n')?.filter(String::isNotEmpty).orEmpty()
+        if (child !in existing) fileStore.put(sourceId, key, (existing + child).joinToString("\\n"))
+    }
+
+    fun getTxtInFolder(path: String): String {
+        if (path.isEmpty()) return ""
+        val directory = normalizeVirtualPath(path)
+        val children = fileStore.get(sourceId, VIRTUAL_DIR_PREFIX + directory)
+            ?.split('\\n')?.filter(String::isNotEmpty).orEmpty()
+        return children.mapNotNull { child ->
+            val bytes = fileStore.getBytes(sourceId, virtualFileKey("$directory/$child"))
+            bytes?.let { String(it, detectTextCharset(it)) }
+        }.joinToString("\\n")
+    }
+
+    private fun digestFileName(name: String): String =
+        MessageDigest.getInstance("MD5").digest(name.toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it.toInt() and 0xff) }
 
     /**
      * Read one entry from a ZIP supplied by URL or hexadecimal archive data.
@@ -340,8 +461,15 @@ class RhinoSafeSourceJavaExtensions(
 
     /** Delete only a source-owned downloaded text file token. */
     fun deleteFile(path: String): Boolean {
-        val token = downloadToken(path)
-        val key = DOWNLOAD_FILE_PREFIX + token
+        val token = runCatching { downloadToken(path) }.getOrNull()
+        if (token != null) {
+            val key = DOWNLOAD_FILE_PREFIX + token
+            val existed = fileStore.getBytes(sourceId, key) != null
+            if (existed) fileStore.remove(sourceId, key)
+            return existed
+        }
+        val safePath = normalizeVirtualPath(path)
+        val key = virtualFileKey(safePath)
         val existed = fileStore.getBytes(sourceId, key) != null
         if (existed) fileStore.remove(sourceId, key)
         return existed
@@ -1018,6 +1146,11 @@ class RhinoSafeSourceJavaExtensions(
         private const val MAX_DOWNLOAD_BYTES = 8 * 1024 * 1024
         const val MAX_ARCHIVE_ENTRY_BYTES = 16 * 1024 * 1024
         private const val DOWNLOAD_FILE_PREFIX = "__legado_download__:"
+        private const val VIRTUAL_FILE_PREFIX = "__legado_virtual_file__:"
+        private const val VIRTUAL_DIR_PREFIX = "__legado_virtual_dir__:"
+        private const val MAX_ARCHIVE_TOTAL_BYTES = 64L * 1024L * 1024L
+        private const val MAX_ARCHIVE_FILES = 1000
+        private const val MAX_ARCHIVE_PATH_CHARS = 512
     }
 }
 
