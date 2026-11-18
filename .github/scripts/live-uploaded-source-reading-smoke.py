@@ -8,6 +8,7 @@ private headers, cookies, login tokens, or JS signing secrets are included.
 import re
 import urllib.parse
 import urllib.request
+import time
 
 from bs4 import BeautifulSoup
 
@@ -50,20 +51,44 @@ SOURCES = [
     },
 ]
 
-def fetch(url):
+def fetch(url, attempts=3, timeout=25):
     request = urllib.request.Request(url, headers=HEADERS)
-    with urllib.request.urlopen(request, timeout=10) as response:
-        body = response.read(MAX_BYTES + 1)
-        if len(body) > MAX_BYTES:
-            raise RuntimeError(f"response exceeds {MAX_BYTES} bytes")
-        if response.status < 200 or response.status >= 300:
-            raise RuntimeError(f"HTTP {response.status}")
-        charset = response.headers.get_content_charset() or "utf-8"
+    last_error = None
+    for attempt in range(attempts):
+        started = time.monotonic()
         try:
-            html = body.decode(charset)
-        except (LookupError, UnicodeDecodeError):
-            html = body.decode("utf-8", errors="replace")
-        return response.geturl(), html
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                headers_at = time.monotonic()
+                body = response.read(MAX_BYTES + 1)
+                finished = time.monotonic()
+                if len(body) > MAX_BYTES:
+                    raise RuntimeError(f"response exceeds {MAX_BYTES} bytes")
+                if response.status < 200 or response.status >= 300:
+                    raise RuntimeError(f"HTTP {response.status}")
+                charset = response.headers.get_content_charset() or "utf-8"
+                try:
+                    html = body.decode(charset)
+                except (LookupError, UnicodeDecodeError):
+                    html = body.decode("utf-8", errors="replace")
+                print(
+                    f"HTTP_TIMING host={urllib.parse.urlsplit(url).hostname} "
+                    f"attempt={attempt + 1}/{attempts} "
+                    f"headers={headers_at - started:.2f}s "
+                    f"body={finished - headers_at:.2f}s total={finished - started:.2f}s "
+                    f"status={response.status} bytes={len(body)}"
+                )
+                return response.geturl(), html
+        except Exception as exc:
+            last_error = exc
+            elapsed = time.monotonic() - started
+            print(
+                f"HTTP_ATTEMPT_FAIL host={urllib.parse.urlsplit(url).hostname} "
+                f"attempt={attempt + 1}/{attempts} elapsed={elapsed:.2f}s "
+                f"error={type(exc).__name__}: {exc}"
+            )
+            if attempt + 1 < attempts:
+                time.sleep(min(1.0 * (2 ** attempt), 4.0))
+    raise last_error
 
 def selector_part(part):
     part = part.strip()
