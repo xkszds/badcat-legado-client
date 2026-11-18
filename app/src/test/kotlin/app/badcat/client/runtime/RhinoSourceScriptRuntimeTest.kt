@@ -118,7 +118,7 @@ class RhinoSourceScriptRuntimeTest {
                 baseUrl = "https://folder-symlink.example/",
             )
 
-            val result = runtime.evaluate(source, "java.getTxtInFolder('archive')")
+            val result = runtime.evaluate(source, "java.getTxtInFolder('archive//')")
 
             assertTrue("Folder collection should succeed: $result", result is EngineResult.Success)
             assertEquals("inside", (result as EngineResult.Success).value)
