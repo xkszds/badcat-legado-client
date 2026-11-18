@@ -1337,10 +1337,10 @@ text + re.test('aa}}')"""
         )
         val result = runtime.evaluate(
             source,
-            "var r = java.ajaxTestAll(['/ok', '/dns'], 1500, true); r.length + '|' + r[0].body() + '|' + r[0].callTime() + '|' + r[1].callTime()",
+            "var r = java.ajaxTestAll(['/ok', '/dns'], 1500, true); r.length + '|' + r[0].body() + '|' + r[0].callTime() + '|' + r[1].body() + '|' + r[1].callTime()",
             mapOf("baseUrl" to source.baseUrl),
         )
-        assertEquals("2|ok|12|-3", (result as EngineResult.Success).value)
+        assertEquals("2|ok|12|missing host|-3", (result as EngineResult.Success).value)
         assertEquals(listOf(1500L, 1500L), receivedTimeouts.sorted())
         runtime.clearSourceState(source.id)
     }
