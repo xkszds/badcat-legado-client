@@ -27,7 +27,15 @@ class CssTocParser {
         }
         val listRule = rules["chapterList"]?.takeIf(String::isNotBlank)
             ?: return unsupported(source, "missing chapterList rule")
-        var resolvedListRule = listRule.trim()
+        var resolvedListRule = when (val put = LegadoPutRule.resolve(
+            source,
+            listRule.trim(),
+            SourceDocument(response.finalUrl, response.body, response.contentType, page = page),
+            scriptRuntime,
+        )) {
+            is EngineResult.Failure -> return put
+            is EngineResult.Success -> put.value
+        }
         resolvedListRule = when (val expanded = LegadoEmbeddedRuleTemplate.resolve(
                 source = source,
                 template = resolvedListRule,
