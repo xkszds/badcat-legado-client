@@ -517,13 +517,13 @@ class RhinoSafeSourceJavaExtensions(
         if (flags and BASE64_NO_WRAP != 0) return encoder.encodeToString(value)
         val encoded = encoder.encodeToString(value)
         if (encoded.isEmpty()) return encoded
-        val lineSeparator = if (flags and BASE64_CRLF != 0) "\\r\\n" else "\\n"
+        val lineSeparator = if (flags and BASE64_CRLF != 0) "\r\n" else "\n"
         return encoded.chunked(76).joinToString(lineSeparator) + lineSeparator
     }
 
     private fun decodeBase64(value: String, flags: Int): ByteArray {
         require(value.length <= MAX_AES_INPUT_BYTES * 2) { "Base64 input exceeds the size limit" }
-        val normalized = value.filterNot { it == '\\r' || it == '\\n' || it == ' ' || it == '\\t' }
+        val normalized = value.filterNot { it == '\r' || it == '\n' || it == ' ' || it == '\t' }
         val decoder = if (flags and BASE64_URL_SAFE != 0) Base64.getUrlDecoder() else Base64.getDecoder()
         return decoder.decode(normalized).also {
             require(it.size <= MAX_AES_INPUT_BYTES) { "Decoded Base64 input exceeds the size limit" }
