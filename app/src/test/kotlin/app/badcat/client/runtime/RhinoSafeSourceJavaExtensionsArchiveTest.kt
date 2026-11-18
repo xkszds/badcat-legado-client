@@ -272,7 +272,12 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
 
         val sevenZipFolder = extensions.un7zFile(downloaded)
         assertEquals("RAR/7z chapter", extensions.readTxtFile("$sevenZipFolder/chapter.txt"))
-        assertEquals(2, extractorCalls)
+
+        // The pinned API sends unzipFile/un7zFile/unrarFile through the same
+        // generic decompressor; the extension name must not narrow the format.
+        val genericFallbackFolder = extensions.unzipFile(downloaded)
+        assertEquals("RAR/7z chapter", extensions.readTxtFile("$genericFallbackFolder/chapter.txt"))
+        assertEquals(3, extractorCalls)
     }
 
     @Test
