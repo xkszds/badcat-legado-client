@@ -83,10 +83,11 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
         val hex = gbk.joinToString("") { "%02x".format(it) }
 
         @Suppress("DEPRECATION")
-        val path = extensions.downloadFile(hex, "https://legacy-file.example/font.dat")
+        val legacyUrl = "https://legacy-file.example/font.dat,{\"type\":\"dat\"}"
+        val path = extensions.downloadFile(hex, legacyUrl)
 
         val expectedName = java.security.MessageDigest.getInstance("MD5")
-            .digest("https://legacy-file.example/font.dat".toByteArray(Charsets.UTF_8))
+            .digest(legacyUrl.toByteArray(Charsets.UTF_8))
             .joinToString("") { "%02x".format(it.toInt() and 0xff) }
             .substring(8, 24)
         assertEquals("$expectedName.dat", path)
