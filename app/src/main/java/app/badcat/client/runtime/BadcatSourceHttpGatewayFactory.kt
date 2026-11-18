@@ -50,7 +50,7 @@ class BadcatSourceHttpGatewayFactory(
             val request = baseRequest.copy(
                 method = method,
                 body = body,
-                headers = baseRequest.headers + headers,
+                headers = mergeHeadersCaseInsensitive(baseRequest.headers, headers),
                 timeoutMillis = timeout,
             )
             when (val response = runBlocking(Dispatchers.IO) { client.execute(request) }) {
@@ -78,4 +78,22 @@ class BadcatSourceHttpGatewayFactory(
                 runtime = scriptRuntime,
             ),
         )
+}
+
+
+/**
+ * HTTP header names are case-insensitive. A script-level connect()/ajax()
+ * override must replace a source header even when the spelling differs;
+ * otherwise OkHttp can emit duplicate logical fields with conflicting values.
+ */
+private fun mergeHeadersCaseInsensitive(
+    sourceHeaders: Map<String, String>,
+    requestHeaders: Map<String, String>,
+): Map<String, String> = LinkedHashMap<String, String>().apply {
+    fun put(name: String, value: String) {
+        keys.firstOrNull { it.equals(name, ignoreCase = true) }?.let(::remove)
+        this[name] = value
+    }
+    sourceHeaders.forEach { (name, value) -> put(name, value) }
+    requestHeaders.forEach { (name, value) -> put(name, value) }
 }
