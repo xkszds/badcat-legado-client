@@ -96,6 +96,7 @@ class BadcatReadingEngineFactory(
                     is EngineResult.Failure -> throw IllegalArgumentException(created.message)
                     is EngineResult.Success -> created.value.copy(
                         timeoutMillis = 15_000L,
+                        followRedirects = false,
                         retryCount = maxOf(created.value.retryCount, 1),
                     )
                 }
@@ -115,6 +116,7 @@ class BadcatReadingEngineFactory(
                     is EngineResult.Failure -> throw IllegalArgumentException(created.message)
                     is EngineResult.Success -> created.value.copy(
                         timeoutMillis = 15_000L,
+                        followRedirects = false,
                         retryCount = maxOf(created.value.retryCount, if (method.equals("GET", true) || method.equals("HEAD", true)) 1 else 0),
                     )
                 }
