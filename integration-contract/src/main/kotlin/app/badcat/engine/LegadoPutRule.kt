@@ -68,7 +68,23 @@ object LegadoPutRule {
                 is EngineResult.Success -> Unit
             }
         }
-        return EngineResult.Success(parsed.expression)
+        var expanded = parsed.expression
+        val getMatches = GET_PATTERN.findAll(expanded).toList()
+        if (getMatches.size > MAX_VARIABLE_OPERATIONS) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Too many Legado @get operations in one rule")
+        }
+        for (match in getMatches.asReversed()) {
+            val key = match.groupValues[1].trim()
+            if (key.isBlank() || key.length > MAX_VARIABLE_KEY_CHARS) {
+                return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Invalid Legado @get variable name")
+            }
+            val value = when (val loaded = runtime.getString(source, key)) {
+                is EngineResult.Failure -> return loaded
+                is EngineResult.Success -> loaded.value.orEmpty()
+            }
+            expanded = expanded.replaceRange(match.range, value)
+        }
+        return EngineResult.Success(expanded)
     }
 
     private fun normalizeJsonRule(body: String, rule: String): String {
@@ -143,6 +159,10 @@ object LegadoPutRule {
         }
         return -1
     }
+
+    private const val MAX_VARIABLE_OPERATIONS = 32
+    private const val MAX_VARIABLE_KEY_CHARS = 256
+    private val GET_PATTERN = Regex("""@get:\{([^}]+?)\}""", RegexOption.IGNORE_CASE)
 
     private fun unquote(value: String): String =
         if (value.length >= 2 && (value.first() == '"' || value.first() == '\'') && value.last() == value.first()) {
