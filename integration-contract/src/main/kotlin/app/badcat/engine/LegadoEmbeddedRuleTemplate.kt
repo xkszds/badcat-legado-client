@@ -139,6 +139,9 @@ object LegadoEmbeddedRuleTemplate {
             override suspend fun evaluate(script: String, key: String, page: Int): EngineResult<Any?> =
                 evaluator.evaluateWithResult(script, key, page, result)
 
+            override suspend fun evaluateRule(rule: String, key: String, page: Int): EngineResult<Any?> =
+                evaluator.evaluateRule(rule, key, page)
+
             override suspend fun evaluateWithResult(
                 script: String,
                 key: String,
