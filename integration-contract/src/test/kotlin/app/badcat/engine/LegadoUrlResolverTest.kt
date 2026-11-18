@@ -214,4 +214,13 @@ class LegadoUrlResolverTest {
         assertEquals("return result.trim()", resolved.bodyJs)
     }
 
+    @Test
+    fun encodesUnicodeAndRepeatedHashCharactersInsideSourceUrlFragments() {
+        val result = LegadoUrlResolver.resolve(
+            "https://example.com/",
+            "/search#♤#Qyc",
+        )
+        val value = assertIs<EngineResult.Success<LegadoResolvedUrl>>(result).value
+        assertEquals("https://example.com/search#%E2%99%A4%23Qyc", value.url)
+    }
 }
