@@ -34,6 +34,7 @@ class CssChapterContentParser {
         val document = SourceDocument(response.finalUrl, response.body, response.contentType, page = page)
 
         suspend fun evaluateField(key: String, expression: String): EngineResult<String?> {
+            val directGet = LegadoPutRule.isDirectGet(expression)
             var trimmed = when (val put = LegadoPutRule.resolve(source, expression.trim(), document, scriptRuntime)) {
                 is EngineResult.Failure -> return put
                 is EngineResult.Success -> put.value
@@ -50,6 +51,7 @@ class CssChapterContentParser {
                     is EngineResult.Failure -> return expanded
                     is EngineResult.Success -> expanded.value
                 }
+            if (directGet) return EngineResult.Success(trimmed.trim().takeIf(String::isNotEmpty))
             if (trimmed.startsWith("@js:", true) || trimmed.startsWith("javascript:", true)) {
                 val script = trimmed.substringAfter(':').trim()
                 if (script.isBlank()) return unsupported(source, "empty JavaScript rule for '$key'")
