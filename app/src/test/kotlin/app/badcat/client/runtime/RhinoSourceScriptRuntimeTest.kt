@@ -400,6 +400,35 @@ text + re.test('aa}}')"""
     }
 
     @Test
+    fun supportsLegadoJsUrlPropertiesAndRelativeResolution() = runBlocking {
+        val source = BookSource(
+            id = "https://js-url.example/",
+            name = "JsURL compatibility",
+            baseUrl = "https://js-url.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val result = runtime.evaluate(
+            source,
+            """
+                var u = java.toURL('../chapter?id=42&name=%E4%BD%A0%E5%A5%BD', 'https://reader.example/book/index');
+                [
+                    u.host,
+                    u.origin,
+                    u.pathname,
+                    u.searchParams.get('id'),
+                    u.searchParams.get('name')
+                ].join('|');
+            """.trimIndent(),
+        )
+        assertTrue("Legado JsURL compatibility failed: $result", result is EngineResult.Success)
+        assertEquals(
+            "reader.example|https://reader.example|/chapter|42|你好",
+            (result as EngineResult.Success).value,
+        )
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun supportsLegadoBase64FlagsAndCharsetOverloads() = runBlocking {
         val source = BookSource(
             id = "https://base64-flags.example/",

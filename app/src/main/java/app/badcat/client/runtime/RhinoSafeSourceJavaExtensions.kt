@@ -496,7 +496,7 @@ class RhinoSafeSourceJavaExtensions(
 
     /** Resolve a relative URL against an explicit HTTP(S) base, matching Legado's two-argument helper. */
     fun toURL(value: String, baseUrl: String): RhinoLegadoUrl =
-        RhinoLegadoUrl(app.badcat.engine.WebUrlResolver.resolve(baseUrl, value))
+        RhinoLegadoUrl(value, baseUrl)
 
     /** Narrow byte helpers used only by the reviewed JavaImporter AES compatibility shim. */
     fun utf8Encode(value: String): ByteArray {
@@ -701,10 +701,33 @@ class RhinoSourceRawRequest(private val requestUrl: String) {
     fun url(): String = requestUrl
 }
 
-/** Narrow URL metadata view for source rules; no connection or stream methods. */
-class RhinoLegadoUrl(value: String) {
-    private val parsed = URL(value)
+/** Legado JsURL metadata surface; deliberately excludes connection and stream methods. */
+class RhinoLegadoUrl(value: String, baseUrl: String? = null) {
+    private val parsed = if (baseUrl.isNullOrEmpty()) {
+        URL(value)
+    } else {
+        URL(URL(baseUrl), value)
+    }
+
+    private val queryParameters: Map<String, String>? = parsed.query?.let { query ->
+        linkedMapOf<String, String>().apply {
+            query.split("&").forEach { part ->
+                val pair = part.split("=", limit = 2)
+                if (pair.size == 2) put(pair[0], URLDecoder.decode(pair[1], Charsets.UTF_8.name()))
+            }
+        }
+    }
+
     fun getHost(): String = parsed.host
+    fun getOrigin(): String = if (parsed.port > 0) {
+        "${parsed.protocol}://${parsed.host}:${parsed.port}"
+    } else {
+        "${parsed.protocol}://${parsed.host}"
+    }
+    fun getPathname(): String = parsed.path
+    fun getSearchParams(): Map<String, String>? = queryParameters
+
+    // Retain the earlier narrow metadata aliases for already imported scripts.
     fun getPath(): String = parsed.path
     fun getProtocol(): String = parsed.protocol
     fun getQuery(): String? = parsed.query
