@@ -1321,6 +1321,34 @@ text + re.test('aa}}')"""
     }
 
     @Test
+    fun connectCallTimeoutIsForwardedToTheTransport() = runBlocking {
+        val source = BookSource(
+            id = "connect-timeout-source",
+            name = "Connect timeout source",
+            baseUrl = "https://connect-timeout.example/",
+        )
+        var receivedTimeout = 0L
+        val runtime = RhinoSourceScriptRuntime(
+            sourceHttpRequestWithTimeout = { _, _, method, url, body, headers, timeout ->
+                receivedTimeout = timeout
+                assertEquals("GET", method)
+                assertEquals("https://connect-timeout.example/slow", url)
+                assertEquals(null, body)
+                assertTrue(headers.isEmpty())
+                app.badcat.engine.SourceHttpResponse(200, url, body = "ok")
+            },
+        )
+        val result = runtime.evaluate(
+            source,
+            "java.connect('/slow', null, 1234).body()",
+            mapOf("baseUrl" to source.baseUrl),
+        )
+        assertEquals("ok", (result as EngineResult.Success).value)
+        assertEquals(1234L, receivedTimeout)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun connectReturnsErrorResponseInsteadOfThrowingWhenTransportFails() = runBlocking {
         val source = BookSource(
             id = "connect-error-source",
