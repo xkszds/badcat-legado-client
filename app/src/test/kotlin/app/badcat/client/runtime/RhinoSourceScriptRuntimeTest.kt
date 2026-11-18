@@ -62,6 +62,32 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun sourceFileHandlesRejectSymlinksThatEscapeTheCacheRoot() = runBlocking {
+        val parent = java.nio.file.Files.createTempDirectory("rhino-source-symlink").toFile()
+        val root = java.io.File(parent, "cache").apply { mkdirs() }
+        val outside = java.io.File(parent, "outside.txt").apply { writeText("private host data") }
+        try {
+            java.nio.file.Files.createSymbolicLink(
+                java.io.File(root, "linked.txt").toPath(),
+                outside.toPath(),
+            )
+            val runtime = RhinoSourceScriptRuntime(sourceFileRoot = root)
+            val source = BookSource(
+                id = "https://file-symlink.example/",
+                name = "File symlink boundary",
+                baseUrl = "https://file-symlink.example/",
+            )
+
+            val result = runtime.evaluate(source, "java.getFile('linked.txt').readText()")
+
+            assertTrue("A source script must not read through an escaping symlink: $result", result is EngineResult.Failure)
+            runtime.clearSourceState(source.id)
+        } finally {
+            parent.deleteRecursively()
+        }
+    }
+
+    @Test
     fun doesNotLeakJsLibFunctionsBetweenSources() = runBlocking {
         val runtime = RhinoSourceScriptRuntime()
         val first = BookSource(
