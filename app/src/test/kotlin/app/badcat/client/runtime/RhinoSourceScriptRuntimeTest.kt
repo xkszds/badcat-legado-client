@@ -731,4 +731,28 @@ class RhinoSourceScriptRuntimeTest {
         runtime.clearSourceState(second.id)
     }
 
+
+    @Test
+    fun supportsLegadoSelectorHelpersWithExplicitContentAndOneArgumentHttpGet() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime(
+            sourceGet = { _, _, url, _ ->
+                app.badcat.engine.SourceHttpResponse(200, url, body = "one argument GET")
+            },
+        )
+        val source = BookSource(
+            id = "https://helper-overloads.example/",
+            name = "Helper overloads",
+            baseUrl = "https://helper-overloads.example/",
+        )
+        val result = runtime.evaluate(
+            source,
+            "java.getStringList('li@text', '<ul><li>A</li><li>B</li></ul>').join('|') + '|' + java.getElement('li.1', '<ul><li>A</li><li>B</li></ul>').text() + '|' + java.getElements('li', '<ul><li>A</li><li>B</li></ul>').get(0).text() + '|' + java.get('/plain').body()",
+            mapOf("baseUrl" to source.baseUrl),
+        )
+
+        assertTrue("Legado helper overloads failed: $result", result is EngineResult.Success)
+        assertEquals("A|B|B|A|one argument GET", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
 }
