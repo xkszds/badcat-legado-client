@@ -249,6 +249,9 @@ class RhinoSafeSourceJavaExtensions(
             if (fileRoot != null) return null
             fileStore.getBytes(sourceId, DOWNLOAD_FILE_PREFIX + token)?.let { return it }
         }
+        // Archive entries are mirrored to disk when a physical root is configured.
+        // Do not resurrect a script-deleted extracted file from the virtual mirror.
+        if (fileRoot != null) return null
         return fileStore.getBytes(sourceId, virtualFileKey(normalizeVirtualPath(path)))
     }
 
