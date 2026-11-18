@@ -592,4 +592,61 @@ class SourceReadingEngineTest {
         assertEquals("https://reader.example/book/9", books.single().bookUrl)
     }
 
+    @Test
+    fun completesSearchDetailTocAndChapterFlowWhenBookInfoOmitsName() = runBlocking {
+        val source = BookSource(
+            id = "fallback-fixture",
+            name = "Fallback fixture",
+            baseUrl = "https://reader.example/",
+            searchUrl = "/search?q={{key}}",
+            ruleSearchJson = """{"bookList":"div.result","name":"h2@text","bookUrl":"a@href"}""",
+            ruleBookInfoJson = """{"intro":"p.intro@text","tocUrl":"a.toc@href"}""",
+            ruleTocJson = """{"chapterList":"ul.chapters li","chapterName":"a@text","chapterUrl":"a@href"}""",
+            ruleContentJson = """{"content":"div#content"}""",
+        )
+        val requests = mutableListOf<String>()
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                requests += request.url
+                val body = when {
+                    request.url.contains("/search?") -> "<div class='result'><h2>Search Result Novel</h2><a href='/book/1'>Open</a></div>"
+                    request.url.endsWith("/book/1") -> "<p class='intro'>A fixture introduction</p><a class='toc' href='/toc'>Catalog</a>"
+                    request.url.endsWith("/toc") -> "<ul class='chapters'><li><a href='/chapter/1'>First Chapter</a></li></ul>"
+                    request.url.endsWith("/chapter/1") -> "<div id='content'><p>Fixture chapter body.</p></div>"
+                    else -> error("Unexpected request: ${request.url}")
+                }
+                return EngineResult.Success(SourceHttpResponse(200, request.url, body = body))
+            }
+        }
+        val gateway = SourceHttpGateway(
+            client,
+            embeddedScriptEvaluator = LegadoEmbeddedScriptEvaluator { script, key, _ ->
+                if (script == "key") EngineResult.Success(key)
+                else EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Unexpected template")
+            },
+        )
+        val engine = SourceReadingEngine(
+            catalog = BookSourceCatalog { EngineResult.Success(listOf(source)) },
+            searchUrlResolver = BookSourceSearchUrlResolver(),
+            searchService = SourceSearchService(gateway),
+            detailService = SourceBookDetailService(gateway),
+            tocService = SourceTocService(gateway),
+            contentService = SourceChapterContentService(gateway),
+        )
+        val candidate = assertIs<EngineResult.Success<List<BookCandidate>>>(engine.search("fallback-fixture", "Search Result Novel")).value.single()
+        val detail = assertIs<EngineResult.Success<BookDetail>>(
+            engine.bookDetailWithFallback("fallback-fixture", candidate.bookUrl, candidate.name),
+        ).value
+        assertEquals("Search Result Novel", detail.name)
+        assertEquals("A fixture introduction", detail.intro)
+        val chapters = assertIs<EngineResult.Success<List<BookChapter>>>(
+            engine.chaptersIncrementalWithFallback("fallback-fixture", candidate.bookUrl, candidate.name) { },
+        ).value
+        assertEquals("First Chapter", chapters.single().title)
+        val content = assertIs<EngineResult.Success<ChapterContent>>(
+            engine.chapterContent("fallback-fixture", candidate.bookUrl, chapters.single().url, detail.name),
+        ).value
+        assertEquals("Fixture chapter body.", content.text)
+        assertEquals(5, requests.size)
+    }
 }
