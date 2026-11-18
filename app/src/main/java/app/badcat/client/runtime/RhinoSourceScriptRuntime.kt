@@ -552,6 +552,9 @@ class RhinoSourceScriptRuntime(
                   }
                 }
               };
+              // Match JavaImporter(Packages.foo) constructor semantics as well
+              // as its later importPackage(...) method.
+              this.importPackage.apply(this, arguments);
             };
             String.prototype.getBytes = function() { return java.utf8Encode(String(this)); };
         """.trimIndent()
