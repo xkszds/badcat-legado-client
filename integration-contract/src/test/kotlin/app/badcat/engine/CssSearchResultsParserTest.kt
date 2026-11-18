@@ -360,7 +360,7 @@ class CssSearchResultsParserTest {
         ).value
         assertEquals(1, books.size)
         assertEquals("道君", books.single().name)
-        assertEquals("https://reader.example/novels/api/book/321", books.single().bookUrl)
+        assertEquals("http://appi.kuwo.cn/novels/api/book/321", books.single().bookUrl)
         assertEquals("跃千愁", books.single().author)
         assertEquals("https://cdn.example/321.jpg", books.single().coverUrl)
     }
