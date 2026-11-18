@@ -5,6 +5,7 @@ import app.badcat.engine.EngineErrorCode
 import app.badcat.engine.EngineResult
 import app.badcat.engine.SourceScriptRuntime
 import app.badcat.engine.LegadoRuleExpressionDispatcher
+import app.badcat.engine.LegadoSourceElement
 import app.badcat.engine.SourceDocument
 import com.script.ScriptBindings
 import com.script.rhino.RhinoScriptEngine
@@ -119,6 +120,31 @@ class RhinoSourceScriptRuntime(
                                 is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(rule, parsed.value).orEmpty()
                             }
                         }.getOrDefault("")
+                    },
+                    ruleStringListReader = { rule ->
+                        runCatching {
+                            val document = SourceDocument(
+                                url = bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                                body = currentRuleContent,
+                            )
+                            when (val parsed = LegadoRuleExpressionDispatcher.evaluate(document, rule)) {
+                                is EngineResult.Failure -> emptyList()
+                                is EngineResult.Success -> parsed.value
+                            }
+                        }.getOrDefault(emptyList())
+                    },
+                    ruleElementReader = { rule ->
+                        runCatching {
+                            val document = SourceDocument(
+                                url = bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl,
+                                body = currentRuleContent,
+                            )
+                            val htmlRule = if (rule.trim().endsWith("@html", true)) rule else "$rule@html"
+                            when (val parsed = LegadoRuleExpressionDispatcher.evaluate(document, htmlRule)) {
+                                is EngineResult.Failure -> null
+                                is EngineResult.Success -> parsed.value.firstOrNull()?.let(::LegadoSourceElement)
+                            }
+                        }.getOrNull()
                     },
                     contentWriter = { content -> currentRuleContent = content },
                 )
