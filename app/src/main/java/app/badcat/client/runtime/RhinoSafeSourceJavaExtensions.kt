@@ -777,6 +777,8 @@ class RhinoSourceHttpResponse(private val response: SourceHttpResponse) {
     fun statusCode(): Int = response.statusCode
     fun isSuccessful(): Boolean = response.statusCode in 200..299
     fun message(): String = response.statusMessage
+    /** Elapsed HTTP request time in milliseconds, as on Legado StrResponse. */
+    fun callTime(): Int = response.callTime
     fun url(): String = response.finalUrl
     fun header(name: String): String =
         response.headers.entries.firstOrNull { it.key.equals(name, ignoreCase = true) }
@@ -795,6 +797,8 @@ class RhinoSourceRawResponse(private val response: SourceHttpResponse) {
     fun request(): RhinoSourceRawRequest = RhinoSourceRawRequest(response.finalUrl)
     fun code(): Int = response.statusCode
     fun message(): String = response.statusMessage
+    fun headers(): Map<String, List<String>> = response.headers
+    fun isSuccessful(): Boolean = response.statusCode in 200..299
 }
 
 class RhinoSourceRawRequest(private val requestUrl: String) {
