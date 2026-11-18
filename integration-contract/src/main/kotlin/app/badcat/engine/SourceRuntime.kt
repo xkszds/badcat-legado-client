@@ -30,6 +30,8 @@ data class SourceHttpResponse(
     val headers: Map<String, List<String>> = emptyMap(),
     val body: String,
     val contentType: String? = null,
+    /** Actual HTTP reason phrase returned by the server (never synthesized). */
+    val statusMessage: String = "",
 )
 
 /** The five rule stages are kept distinct to prevent accidental rule cross-use. */
