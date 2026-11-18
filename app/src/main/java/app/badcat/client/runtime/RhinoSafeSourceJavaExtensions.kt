@@ -90,9 +90,6 @@ class RhinoSafeSourceJavaExtensions(
         return value
     }
 
-    /** Legado's general key/value aliases use the same source-isolated persistent store. */
-    fun get(key: String): String = getStoredString(key)
-
     /** Legado HTTP GET overloads. Headers may be a JS object or JSON string. */
     fun get(url: String): RhinoSourceHttpResponse = RhinoSourceHttpResponse(httpGet(url, emptyMap()))
 
