@@ -323,12 +323,13 @@ class RhinoSafeSourceJavaExtensions(
                         // Gateway adapters may wrap the original transport exception.
                         val cause = generateSequence(error as Throwable?) { it.cause }.last()
                         val code = when (cause) {
-                            is java.net.UnknownHostException -> -1
-                            is java.net.ConnectException -> -2
-                            is java.net.SocketTimeoutException -> -3
-                            is javax.net.ssl.SSLException -> -4
+                            is java.net.SocketTimeoutException -> -2
+                            is java.net.UnknownHostException -> -3
+                            is java.net.ConnectException -> -4
                             is java.net.SocketException -> -5
-                            is java.io.IOException -> -6
+                            is javax.net.ssl.SSLException -> -6
+                            is java.io.InterruptedIOException ->
+                                if (cause.message?.contains("timeout") == true) -1 else -7
                             else -> -7
                         }
                         SourceHttpResponse(
