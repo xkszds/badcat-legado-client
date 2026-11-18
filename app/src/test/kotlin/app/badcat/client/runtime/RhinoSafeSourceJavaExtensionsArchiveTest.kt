@@ -89,7 +89,7 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
             .digest("https://legacy-file.example/font.dat".toByteArray(Charsets.UTF_8))
             .joinToString("") { "%02x".format(it.toInt() and 0xff) }
             .substring(8, 24)
-        assertEquals("downloads/$expectedName.dat", path)
+        assertEquals("$expectedName.dat", path)
         assertArrayEquals(gbk, extensions.readFile(path))
         assertArrayEquals(gbk, extensions.readFile("/$path"))
         assertEquals("中文内容", extensions.readTxtFile(path))
@@ -179,6 +179,37 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
         assertTrue(extensions.deleteFile(secondDirectory))
         assertFalse(extensions.deleteFile(secondDirectory))
         assertNull(extensions.readFile("$secondDirectory/nested/part.txt"))
+    }
+
+    @Test
+    fun physicalFileApiUsesConfinedCacheRootAndCleansExtractedFolder() {
+        val root = java.nio.file.Files.createTempDirectory("legado-source-files").toFile()
+        try {
+            val extensions = RhinoSafeSourceJavaExtensions(
+                sourceId = "physical-file-source",
+                store = InMemorySourceScriptKeyValueStore,
+                fileRoot = root,
+                httpRequest = { _, url, _, _ ->
+                    SourceHttpResponse(statusCode = 200, finalUrl = url, body = "physical bytes")
+                },
+            )
+            val path = extensions.downloadFile("https://physical-file.example/book.txt")
+            val file = extensions.getFile(path)
+            assertTrue(file.isFile)
+            assertEquals("physical bytes", String(extensions.readFile(path)!!, Charsets.UTF_8))
+            assertEquals("physical bytes", extensions.readTxtFile(path))
+            assertTrue(runCatching { extensions.getFile("../../outside.txt") }.exceptionOrNull() is SecurityException)
+
+            val folder = java.io.File(root, "ArchiveTemp/fixture")
+            assertTrue(folder.mkdirs())
+            java.io.File(folder, "chapter.txt").writeText("真实文件目录")
+            assertEquals("真实文件目录", extensions.getTxtInFolder("ArchiveTemp/fixture"))
+            assertFalse(folder.exists())
+            assertTrue(extensions.deleteFile(path))
+            assertFalse(file.exists())
+        } finally {
+            root.deleteRecursively()
+        }
     }
 
     @Test
