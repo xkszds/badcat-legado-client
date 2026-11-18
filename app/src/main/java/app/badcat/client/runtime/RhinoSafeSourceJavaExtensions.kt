@@ -343,7 +343,7 @@ class RhinoSourceHttpResponse(private val response: SourceHttpResponse) {
     fun headers(name: String): String = header(name)
     fun parse(): LegadoSourceElement = LegadoSourceElement(response.body)
     fun select(selector: String): LegadoSourceElement = parse().select(selector)
-    fun charset(): String = response.contentType.substringAfter("charset=", "UTF-8").trim().trim('"')
+    fun charset(): String = response.contentType.orEmpty().substringAfter("charset=", "UTF-8").trim().trim('"')
 }
 
 /** Narrow URL metadata view for source rules; no connection or stream methods. */
