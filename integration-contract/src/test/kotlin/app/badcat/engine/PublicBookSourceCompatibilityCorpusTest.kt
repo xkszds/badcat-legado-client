@@ -116,7 +116,7 @@ class PublicBookSourceCompatibilityCorpusTest {
     }
 
     @Test
-    fun shuhaigePublicJsonPathTocRulesResolveChapterFields() {
+    fun shuhaigePublicJsonPathTocRulesResolveRealInterpolatedChapterUrls() = kotlinx.coroutines.runBlocking {
         // Public source rule: $.data.list + bare JSON object fields.
         val bookSource = source(
             id = "https://book.feius.live",
@@ -124,7 +124,7 @@ class PublicBookSourceCompatibilityCorpusTest {
             toc = """{
                 "chapterList":"$.data.list",
                 "chapterName":"indexName",
-                "chapterUrl":"$.id"
+                "chapterUrl":"https://book.feius.live/book/queryReadPage?bookId={{$.bookId}}&bookIndexId={{$.id}}"
             }""",
         )
         val response = SourceHttpResponse(
@@ -132,17 +132,32 @@ class PublicBookSourceCompatibilityCorpusTest {
             finalUrl = "https://book.feius.live/book/queryIndexList",
             contentType = "application/json",
             body = """{"data":{"list":[
-                {"id":"101","indexName":"第一章"},
-                {"id":"102","indexName":"第二章"}
+                {"id":"101","bookId":"7","indexName":"第一章"},
+                {"id":"102","bookId":"7","indexName":"第二章"}
             ]}}""",
         )
 
+        val noJs = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> = error("JSONPath template must not invoke JavaScript")
+        }
         val page = assertIs<EngineResult.Success<ParsedTocPage>>(
-            CssTocParser().parse(bookSource, response, "https://book.feius.live/book/7"),
+            CssTocParser().parseWithScripts(
+                bookSource,
+                response,
+                "https://book.feius.live/book/7",
+                noJs,
+            ),
         ).value
         assertEquals(listOf("第一章", "第二章"), page.chapters.map { it.title })
         assertEquals(
-            listOf("https://book.feius.live/101", "https://book.feius.live/102"),
+            listOf(
+                "https://book.feius.live/book/queryReadPage?bookId=7&bookIndexId=101",
+                "https://book.feius.live/book/queryReadPage?bookId=7&bookIndexId=102",
+            ),
             page.chapters.map { it.url },
         )
     }
