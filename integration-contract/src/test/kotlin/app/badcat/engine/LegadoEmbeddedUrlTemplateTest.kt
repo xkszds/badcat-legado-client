@@ -23,6 +23,23 @@ class LegadoEmbeddedUrlTemplateTest {
     }
 
     @Test
+    fun keepsClosingBracesInsideJavaScriptRegexLiteralUntilTemplateEnd() = kotlinx.coroutines.runBlocking {
+        val result = LegadoEmbeddedUrlTemplate.resolve(
+            template = """https://example.test/search?matched={{/\\.*?}}/.test(key)}}""",
+            key = "abc..}}",
+            evaluator = LegadoEmbeddedScriptEvaluator { script, _, _ ->
+                assertEquals("""/\\.*?}}/.test(key)""", script)
+                EngineResult.Success(true)
+            },
+        )
+
+        assertEquals(
+            "https://example.test/search?matched=true",
+            assertIs<EngineResult.Success<String>>(result).value,
+        )
+    }
+
+    @Test
     fun convertsNullAndIntegralDoubleLikePinnedUpstream() = kotlinx.coroutines.runBlocking {
         val nullResult = LegadoEmbeddedUrlTemplate.resolve(
             "a{{empty}}b",
