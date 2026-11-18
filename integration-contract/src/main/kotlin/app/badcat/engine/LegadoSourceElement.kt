@@ -24,10 +24,25 @@ class LegadoSourceElement(private val fragments: List<String>) {
     fun attr(name: String): String = elements().firstOrNull()?.attr(name).orEmpty()
     fun select(selector: String): LegadoSourceElement =
         LegadoSourceElement(elements().select(selector).map { it.outerHtml() })
+    fun selectFirst(selector: String): LegadoSourceElement? =
+        elements().selectFirst(selector)?.let { LegadoSourceElement(it.outerHtml()) }
+    fun first(): LegadoSourceElement? = elements().firstOrNull()?.let { LegadoSourceElement(it.outerHtml()) }
+    fun last(): LegadoSourceElement? = elements().lastOrNull()?.let { LegadoSourceElement(it.outerHtml()) }
     fun size(): Int = elements().size
     fun getLength(): Int = size()
     fun get(index: Int): LegadoSourceElement = LegadoSourceElement(elements().get(index).outerHtml())
     fun toArray(): Array<LegadoSourceElement> = elements().map { LegadoSourceElement(it.outerHtml()) }.toTypedArray()
+    fun ownText(): String = elements().firstOrNull()?.ownText().orEmpty()
+    fun tagName(): String = elements().firstOrNull()?.tagName().orEmpty()
+    fun className(): String = elements().firstOrNull()?.className().orEmpty()
+    fun id(): String = elements().firstOrNull()?.id().orEmpty()
+    fun hasClass(name: String): Boolean = elements().firstOrNull()?.hasClass(name) ?: false
+    fun value(): String = elements().firstOrNull()?.`val`().orEmpty()
+    fun absUrl(attribute: String): String = elements().firstOrNull()?.absUrl(attribute).orEmpty()
+    fun children(): LegadoSourceElementList = LegadoSourceElementList(
+        elements().flatMap { it.children().map { child -> LegadoSourceElement(child.outerHtml()) } },
+    )
+    fun parent(): LegadoSourceElement? = elements().firstOrNull()?.parent()?.let { LegadoSourceElement(it.outerHtml()) }
     override fun toString(): String = elements().joinToString("") { it.outerHtml() }
 }
 
