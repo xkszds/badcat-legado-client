@@ -9,6 +9,7 @@ import kotlinx.coroutines.withContext
 import org.htmlunit.corejs.javascript.Callable
 import org.htmlunit.corejs.javascript.ConsString
 import org.htmlunit.corejs.javascript.Context
+import org.htmlunit.corejs.javascript.Function
 import org.htmlunit.corejs.javascript.ContextFactory
 import org.htmlunit.corejs.javascript.ContinuationPending
 import org.htmlunit.corejs.javascript.JavaScriptException
@@ -280,6 +281,13 @@ object RhinoScriptEngine {
 
     internal fun topLevelThis(scope: VarScope): Scriptable {
         return ScriptableObject.getTopLevelScope(scope).globalThis
+    }
+
+    /** Invoke a source-provided callback inside the active isolated Rhino scope. */
+    fun callSourceFunction(action: Function, scope: VarScope): Any? {
+        val context = Context.getCurrentContext() as? RhinoContext
+            ?: throw IllegalStateException("Source callback requires an active Rhino context")
+        return action.call(context, scope, topLevelThis(scope), emptyArray())
     }
 
     init {

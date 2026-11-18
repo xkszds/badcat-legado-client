@@ -255,6 +255,7 @@ class RhinoSourceScriptRuntime(
                     baseUrlWriter = { baseUrl -> if (!baseUrl.isNullOrBlank()) currentRuleBaseUrl = baseUrl },
                     fileStore = sourceFileCacheStore,
                     webViewUserAgent = webViewUserAgent,
+                    functionInvoker = { action -> RhinoScriptEngine.callSourceFunction(action, scope) },
                 )
                 javaExtensions[source.id] = javaBridge
                 scope["java"] = javaBridge

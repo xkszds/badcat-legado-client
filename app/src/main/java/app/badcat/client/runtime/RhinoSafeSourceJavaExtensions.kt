@@ -55,6 +55,7 @@ class RhinoSafeSourceJavaExtensions(
     private val baseUrlWriter: (String?) -> Unit = {},
     private val fileStore: SourceScriptFileCacheStore = InMemorySourceScriptFileCacheStore,
     private val webViewUserAgent: String = DEFAULT_WEBVIEW_USER_AGENT,
+    private val functionInvoker: (Function) -> Unit = { throw UnsupportedOperationException("source callback invoker is not connected") },
 ) {
 
     /** Evaluate a Legado selector against the current AnalyzeRule content. */
@@ -311,11 +312,7 @@ class RhinoSafeSourceJavaExtensions(
     }
 
     private fun invokeSourceFunction(action: Function) {
-        val context = Context.getCurrentContext()
-            ?: throw IllegalStateException("Legado concurrency callbacks require an active Rhino context")
-        val functionScope = action as Scriptable
-        val topScope = ScriptableObject.getTopLevelScope(functionScope) as Scriptable
-        action.call(context, topScope, topScope, emptyArray())
+        functionInvoker(action)
     }
 
     fun put(key: String, value: String): String = putString(key, value)
