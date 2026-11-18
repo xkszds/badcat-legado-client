@@ -45,8 +45,14 @@ class RhinoSafeSourceJavaExtensions(
         if (method.equals("GET", true) && body == null) httpGet(url, headers)
         else throw UnsupportedOperationException("java.$method HTTP transport is unavailable")
     },
+    /** Redirect-following AnalyzeUrl-style request path used by connect(). */
     private val httpRequestWithTimeout: (String, String, String?, Map<String, String>, Long?) -> SourceHttpResponse = { method, url, body, headers, timeout ->
         require(timeout == null) { "Per-call timeout is not connected to the source HTTP transport" }
+        httpRequest(method, url, body, headers)
+    },
+    /** JsExtensions get/head/post deliberately disable automatic redirects. */
+    private val httpRequestNoRedirectWithTimeout: (String, String, String?, Map<String, String>, Long?) -> SourceHttpResponse = { method, url, body, headers, timeout ->
+        require(timeout == null) { "Per-call no-redirect timeout is not connected to the source HTTP transport" }
         httpRequest(method, url, body, headers)
     },
     private val ruleStringReader: (String) -> String = { "" },
@@ -768,7 +774,7 @@ class RhinoSafeSourceJavaExtensions(
         require(timeout == null || timeout > 0) { "HTTP timeout must be positive" }
         rateLimit(false)
         return RhinoSourceHttpResponse(
-            httpRequestWithTimeout(method, url, body, parseRequestHeaders(headers), timeout?.toLong()),
+            httpRequestNoRedirectWithTimeout(method, url, body, parseRequestHeaders(headers), timeout?.toLong()),
         )
     }
 
