@@ -150,6 +150,39 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
     }
 
     @Test
+    fun rarAndSevenZipExtractionUseBoundedVirtualFileAdapter() {
+        val archive = "compressed archive".toByteArray()
+        val extracted = linkedMapOf(
+            "chapter.txt" to "RAR/7z chapter".toByteArray(),
+            "../escape.txt" to "blocked".toByteArray(),
+        )
+        var extractorCalls = 0
+        val extensions = RhinoSafeSourceJavaExtensions(
+            sourceId = "https://virtual-archive.example/",
+            store = InMemorySourceScriptKeyValueStore,
+            httpRequest = { _, url, _, _ ->
+                SourceHttpResponse(statusCode = 200, finalUrl = url, body = "", bodyBytes = archive)
+            },
+            archiveExtractor = { bytes, maxEntry, maxTotal, maxEntries ->
+                extractorCalls++
+                assertArrayEquals(archive, bytes)
+                assertEquals(16 * 1024 * 1024, maxEntry)
+                assertEquals(64 * 1024 * 1024, maxTotal)
+                assertEquals(1000, maxEntries)
+                extracted
+            },
+        )
+        val downloaded = extensions.downloadFile("https://virtual-archive.example/book.rar")
+        val rarFolder = extensions.unrarFile(downloaded)
+        assertEquals("RAR/7z chapter", extensions.readTxtFile("$rarFolder/chapter.txt"))
+        assertNull(extensions.readFile("$rarFolder/../escape.txt"))
+
+        val sevenZipFolder = extensions.un7zFile(downloaded)
+        assertEquals("RAR/7z chapter", extensions.readTxtFile("$sevenZipFolder/chapter.txt"))
+        assertEquals(2, extractorCalls)
+    }
+
+    @Test
     fun zipEntryExpansionIsBounded() {
         val archive = zipOf("large.bin", ByteArray(16 * 1024 * 1024 + 1))
         val extensions = RhinoSafeSourceJavaExtensions(
