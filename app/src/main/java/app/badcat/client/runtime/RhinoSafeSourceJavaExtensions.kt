@@ -145,7 +145,7 @@ class RhinoSafeSourceJavaExtensions(
                 val length = (ScriptableObject.getProperty(urls, "length") as? Number)?.toInt()
                     ?: throw IllegalArgumentException("java.ajaxAll expects an array of URLs")
                 require(length in 0..MAX_AJAX_ALL_URLS) { "java.ajaxAll accepts at most $MAX_AJAX_ALL_URLS URLs" }
-                (0 until length).map { index -> ScriptableObject.getProperty(urls, index.toString()) }
+                (0 until length).map { index -> ScriptableObject.getProperty(urls, index) }
             }
             is Iterable<*> -> urls.toList()
             is Array<*> -> urls.toList()
@@ -270,7 +270,7 @@ class RhinoSafeSourceJavaExtensions(
             is List<*> -> url.firstOrNull()?.toString().orEmpty()
             is Scriptable -> {
                 val length = (ScriptableObject.getProperty(url, "length") as? Number)?.toInt() ?: 0
-                if (length > 0) ScriptableObject.getProperty(url, "0")?.toString().orEmpty() else ""
+                if (length > 0) ScriptableObject.getProperty(url, 0)?.toString().orEmpty() else ""
             }
             else -> url?.toString().orEmpty()
         }
