@@ -19,7 +19,9 @@ class RhinoSourceFileHandle internal constructor(
         if (resolved.path != safeRoot.path && !resolved.path.startsWith(prefix)) {
             throw SecurityException("Illegal source file path")
         }
-        return file
+        // Use the canonical target for the operation as well as validation.
+        // Returning the original path would re-follow a symlink after the check.
+        return resolved
     }
 
     val name: String get() = checked().name
