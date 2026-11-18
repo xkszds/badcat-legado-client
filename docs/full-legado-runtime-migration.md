@@ -46,7 +46,8 @@ The upstream `App` initialization and global services must be adapted explicitly
 ### Gate 1 — upstream model and runtime build
 - [ ] Integrate upstream `BookSource`, rule entities, `BaseSource`, `BaseBook`, `Book`, `BookChapter`, and serialization converters without dropping fields.
 - [ ] Integrate the exact upstream Rhino module and initialization.
-- [ ] Integrate Jsoup, XPath, JSONPath, regex and all rule parser implementations at the upstream versions.
+- [x] Port the pinned upstream `RuleAnalyzer`, `AnalyzeByJSoup`, and `SourceHtmlParser` verbatim; add a production adapter and regression tests for the reported `@.w_txt li.4@textNodes` expression, legacy index ordering/exclusion, selector chains, and rule combination.
+- [ ] Integrate the remaining XPath, JSONPath, regex and all other rule parser implementations at the upstream versions.
 - [ ] Run original upstream unit tests relevant to the source engine.
 
 ### Gate 2 — request and host services
@@ -69,4 +70,4 @@ The upstream `App` initialization and global services must be adapted explicitly
 
 ## Current status
 
-This branch establishes the immutable upstream source baseline and CI checkout only. It does **not** yet integrate the runtime or claim compatibility. The existing bounded engine remains in place until each upstream-backed stage passes its tests; it must not silently fall back on unsupported rules and report false success.
+This branch now includes the immutable upstream source baseline, exact pinned Rhino core, and a first verbatim port of the upstream JSoup rule parser with an app adapter. This parser adapter is not yet wired into the four production reading services; those services still use the bounded contract parsers. It does **not** yet integrate the complete runtime or claim compatibility. The existing bounded engine remains in place until each upstream-backed stage passes its tests; it must not silently fall back on unsupported rules and report false success.
