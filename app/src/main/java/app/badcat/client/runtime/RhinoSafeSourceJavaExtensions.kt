@@ -77,6 +77,9 @@ class RhinoSafeSourceJavaExtensions(
         return store.get(sourceId, key).orEmpty()
     }
 
+    /** Explicit variable API for values written by java.put/putString. */
+    fun getVariable(key: String): String = getStoredString(key)
+
     fun setContent(content: String): String {
         require(content.length <= MAX_VALUE_CHARS * 512) { "Legado content exceeds the size limit" }
         contentWriter(content)
