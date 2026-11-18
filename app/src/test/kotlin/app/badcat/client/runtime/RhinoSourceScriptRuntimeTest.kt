@@ -1,7 +1,9 @@
 package app.badcat.client.runtime
 
 import app.badcat.engine.BookSource
+import app.badcat.engine.CssTocParser
 import app.badcat.engine.EngineResult
+import app.badcat.engine.SourceHttpResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -1502,6 +1504,57 @@ class RhinoSourceScriptRuntimeTest {
         assertEquals(
             "https://img.example/cover.jpg!cover-400|连载 完结|payload-123||[M comic title}",
             (result as EngineResult.Success).value,
+        )
+        runtime.clearSourceState(source.id)
+    }
+
+
+    @Test
+    fun parsesLegadoTocScriptObjectArrayAndAjaxIntoChapters() = runBlocking {
+        val bookUrl = "https://www.bixiange.top/trxs/19494"
+        val source = BookSource(
+            id = "https://www.bixiange.top/",
+            name = "笔仙阁",
+            baseUrl = "https://www.bixiange.top/",
+            ruleTocJson = """{
+                "chapterList":"@js:
+                    var root = String(baseUrl).replace(/\\/$/, '');
+                    var firstPage = String(java.ajax(root + '/index/1.html'));
+                    var totalMatch = firstPage.match(/(?:^|[^0-9])1\\/(\\d+)(?:<|[^0-9])/);
+                    var total = totalMatch ? Number(totalMatch[1]) : 0;
+                    var chapters = [];
+                    for (var i = 1; i <= total; i++) {
+                      chapters.push({ title: '第' + i + '节', url: root + '/index/' + i + '.html' });
+                    }
+                    chapters;",
+                "chapterName":"title",
+                "chapterUrl":"url"
+            }""",
+        )
+        var requestedAjaxUrl = ""
+        val runtime = RhinoSourceScriptRuntime(
+            sourceAjax = { requestedSource, baseUrl, raw ->
+                assertEquals(source.id, requestedSource.id)
+                assertEquals(bookUrl, baseUrl)
+                requestedAjaxUrl = raw
+                "<div>1/2</div>"
+            },
+        )
+        val response = SourceHttpResponse(
+            statusCode = 200,
+            finalUrl = bookUrl,
+            body = "<html><body>Book detail</body></html>",
+        )
+
+        val parsed = assertIs<EngineResult.Success<app.badcat.engine.ParsedTocPage>>(
+            CssTocParser().parseWithScripts(source, response, bookUrl, runtime),
+        )
+
+        assertEquals("$bookUrl/index/1.html", requestedAjaxUrl)
+        assertEquals(listOf("第1节", "第2节"), parsed.value.chapters.map { it.title })
+        assertEquals(
+            listOf("$bookUrl/index/1.html", "$bookUrl/index/2.html"),
+            parsed.value.chapters.map { it.url },
         )
         runtime.clearSourceState(source.id)
     }
