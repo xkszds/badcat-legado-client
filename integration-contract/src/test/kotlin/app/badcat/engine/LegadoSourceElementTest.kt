@@ -29,5 +29,7 @@ class LegadoSourceElementTest {
         assertEquals("Chapter A", second.prev()?.text())
         assertEquals(1, first.siblings().size)
         assertEquals("section", first.parents().first()?.tagName())
+        assertEquals("div", first.children().first()?.parent()?.tagName())
+        assertEquals("script", first.children().first()?.next()?.tagName())
     }
 }
