@@ -526,8 +526,7 @@ class RhinoSourceScriptRuntime(
                       }
                     }
                   }
-                }
-              ,
+                },
               org: {
                 jsoup: {
                   Jsoup: {
