@@ -191,11 +191,16 @@ def run_source(source):
 
 def main():
     passed = 0
+    failed = 0
     for source in SOURCES:
         if run_source(source):
             passed += 1
-            break
-    print(f"UPLOADED_CORPUS_FULL_READING: {passed}/{len(SOURCES)} source candidates completed end-to-end")
+        else:
+            failed += 1
+    print(
+        f"UPLOADED_CORPUS_FULL_READING: {passed}/{len(SOURCES)} source candidates "
+        f"completed end-to-end; failed={failed}"
+    )
     if passed == 0:
         raise SystemExit(1)
 
