@@ -623,8 +623,8 @@ class RhinoSafeSourceJavaExtensions(
             if (existedInStore) fileStore.remove(sourceId, key)
             val physical = fileRoot?.let { runCatching { resolveFile(path) }.getOrNull() }
             val existedOnDisk = physical?.exists() == true
-            if (existedOnDisk) physical?.deleteRecursively()
-            return existedInStore || existedOnDisk
+            val removedFromDisk = existedOnDisk && physical?.deleteRecursively() == true
+            return existedInStore || removedFromDisk
         }
         val safePath = normalizeVirtualPath(path)
         val removedVirtual = deleteVirtualTree(safePath)
