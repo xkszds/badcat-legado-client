@@ -184,6 +184,6 @@ internal object RhinoRegexCompatibility {
             index++
             while (index < pattern.length && pattern[index].isDigit()) index++
         }
-        return index.takeIf { pattern.getOrNull(it) == '}' } ?: -1
+        return if (pattern.getOrNull(index) == '}') index else -1 ?: -1
     }
 }
