@@ -123,8 +123,8 @@ class RhinoSourceScriptRuntimeTest {
         val result = runtime.evaluate(
             source,
             """
-                var japaneseWord = 'いくabc}'.match(/\\いく.*?}/)[0];
-                var repeatedWord = 'く}}'.match(/\\く*?}}/)[0];
+                var japaneseWord = 'いくabc}'.match(/\いく.*?}/)[0];
+                var repeatedWord = 'く}}'.match(/\く*?}}/)[0];
                 japaneseWord + '|' + repeatedWord;
             """.trimIndent(),
         )
