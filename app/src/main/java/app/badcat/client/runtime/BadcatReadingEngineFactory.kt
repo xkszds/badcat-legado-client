@@ -141,7 +141,8 @@ class BadcatReadingEngineFactory(
                 )) {
                     is EngineResult.Failure -> throw IllegalArgumentException(created.message)
                     is EngineResult.Success -> created.value.copy(
-                        timeoutMillis = 15_000L,
+                        // Pinned JsExtensions get/head/post default to 30 seconds.
+                        timeoutMillis = 30_000L,
                         followRedirects = true,
                         retryCount = maxOf(created.value.retryCount, if (method.equals("GET", true) || method.equals("HEAD", true)) 1 else 0),
                     )
