@@ -290,7 +290,7 @@ class RhinoSafeSourceJavaExtensions(
     fun deleteFile(path: String): Boolean {
         val token = downloadToken(path)
         val key = DOWNLOAD_FILE_PREFIX + token
-        val existed = fileStore.get(sourceId, key) != null
+        val existed = fileStore.getBytes(sourceId, key) != null
         if (existed) fileStore.remove(sourceId, key)
         return existed
     }
