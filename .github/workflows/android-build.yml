@@ -581,6 +581,22 @@ jobs:
           set -o pipefail
           python3 .github/scripts/live-kuwo-reading-smoke.py 2>&1 | tee live-kuwo-reading-smoke.log
 
+      - name: Live end-to-end maintained Pinshuzhai source reading (best effort)
+        timeout-minutes: 3
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python3 .github/scripts/live-pinshuzhai-reading-smoke.py 2>&1 | tee live-pinshuzhai-reading-smoke.log
+
+      - name: Upload Pinshuzhai live source smoke report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: badcat-pinshuzhai-live-source-smoke-report
+          path: live-pinshuzhai-reading-smoke.log
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Upload live source smoke report
         if: always()
         uses: actions/upload-artifact@v4
