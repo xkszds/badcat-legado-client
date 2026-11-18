@@ -586,35 +586,18 @@ class RhinoSafeSourceJavaExtensions(
     }
 
     private fun detectTextCharset(bytes: ByteArray): java.nio.charset.Charset {
-        if (bytes.size >= 3 && bytes[0] == 0xEF.toByte() &&
-            bytes[1] == 0xBB.toByte() && bytes[2] == 0xBF.toByte()
-        ) return Charsets.UTF_8
-        if (bytes.size >= 2 && bytes[0] == 0xFF.toByte() && bytes[1] == 0xFE.toByte()) {
-            return Charsets.UTF_16LE
-        }
-        if (bytes.size >= 2 && bytes[0] == 0xFE.toByte() && bytes[1] == 0xFF.toByte()) {
-            return Charsets.UTF_16BE
-        }
-        val utf8 = Charsets.UTF_8.newDecoder()
-            .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
-            .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
-        return try {
-            utf8.decode(java.nio.ByteBuffer.wrap(bytes))
-            Charsets.UTF_8
-        } catch (_: java.nio.charset.CharacterCodingException) {
-            // The pinned Legado EncodingDetect delegates non-UTF8 detection to
-            // ICU4J. Use the exact compact detector vendored by the pinned
-            // upstream revision so Android and JVM host tests share behavior.
-            val detectedName = runCatching {
-                io.legado.app.lib.icu4j.CharsetDetector()
-                    .setText(bytes)
-                    .detect()
-                    ?.name
-            }.getOrNull()
-            detectedName
-                ?.let { runCatching { java.nio.charset.Charset.forName(it) }.getOrNull() }
-                ?: java.nio.charset.Charset.forName("GBK")
-        }
+        // Match the pinned Legado EncodingDetect.getEncode(ByteArray) contract:
+        // ICU is authoritative for all byte sequences (including valid UTF-8),
+        // and only a missing/unsupported detector result falls back to UTF-8.
+        val detectedName = runCatching {
+            io.legado.app.lib.icu4j.CharsetDetector()
+                .setText(bytes)
+                .detect()
+                ?.name
+        }.getOrNull()
+        return detectedName
+            ?.let { runCatching { java.nio.charset.Charset.forName(it) }.getOrNull() }
+            ?: Charsets.UTF_8
     }
 
     /** Delete only a source-owned downloaded text file token. */
