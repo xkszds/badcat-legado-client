@@ -166,6 +166,49 @@ jobs:
                   print(f"LIVE_FAIL {name}: no result rows for tested keywords {keywords}")
 
           print(f"Nyasama live source search: {len(checks) - failures}/{len(checks)} returned usable results")
+
+          # Expand coverage beyond the four named regression sources. Probe a
+          # bounded sample of other enabled HTTP sources without assuming that
+          # a non-empty HTTP body means parsed book results.
+          excluded = {"漫客栈", "酷我小说", "看漫画", "腾讯漫画"}
+          sampled = 0
+          for source in sources:
+              name = source.get("bookSourceName", "未命名书源")
+              search_url = source.get("searchUrl", "")
+              base_url = source.get("bookSourceUrl", "").split("#", 1)[0]
+              if name in excluded or not search_url or not search_url.startswith(("http://", "https://", "/")):
+                  continue
+              if source.get("enabled") is False:
+                  continue
+              url = search_url.replace("{{key}}", urllib.parse.quote("斗罗大陆", safe=""))
+              url = url.replace("{{page}}", "1")
+              if url.startswith("/"):
+                  url = urllib.parse.urljoin(base_url.rstrip("/") + "/", url.lstrip("/"))
+              if not url.startswith(("http://", "https://")):
+                  continue
+              sampled += 1
+              if sampled > 20:
+                  break
+              headers = {}
+              try:
+                  raw_headers = json.loads(source.get("header") or "{}")
+                  if isinstance(raw_headers, dict):
+                      headers.update(raw_headers)
+              except Exception:
+                  pass
+              headers.setdefault("User-Agent", "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36")
+              try:
+                  request = urllib.request.Request(url, headers=headers)
+                  with urllib.request.urlopen(request, timeout=15) as response:
+                      body = response.read(512 * 1024 + 1)
+                      preview = body[:180].decode("utf-8", errors="replace").replace("\\n", " ")
+                      if response.status == 200 and len(body) > 0:
+                          print(f"EXTRA_HTTP {sampled:02d} {name}: HTTP {response.status}, {len(body)} bytes, preview={preview!r}")
+                      else:
+                          print(f"EXTRA_EMPTY {sampled:02d} {name}: HTTP {response.status}, {len(body)} bytes")
+              except Exception as error:
+                  print(f"EXTRA_FAIL {sampled:02d} {name}: {type(error).__name__}: {error}")
+          print(f"Additional enabled source endpoints probed: {min(sampled, 20)}")
           raise SystemExit(1 if failures else 0)
           PY
 
