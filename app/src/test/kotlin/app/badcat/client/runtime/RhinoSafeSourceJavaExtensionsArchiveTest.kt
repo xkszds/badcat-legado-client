@@ -426,6 +426,18 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
                     }
                 },
             )
+            val sibling = java.io.File(root.parentFile, "${root.name}-sibling.txt").apply {
+                writeText("outside source cache")
+            }
+            try {
+                assertTrue(
+                    runCatching { extensions.getFile("../${sibling.name}") }.exceptionOrNull() is SecurityException,
+                )
+                assertEquals(null, extensions.getFile(".").parentFile)
+            } finally {
+                sibling.delete()
+            }
+
             val path = extensions.downloadFile("https://physical-file.example/book.txt")
             val file = extensions.getFile(path)
             assertTrue(file.isFile)
