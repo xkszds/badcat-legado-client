@@ -5,10 +5,14 @@ Each candidate is tried independently. A network timeout is reported as a source
 connectivity failure and does not prevent testing the next corpus source. No
 private headers, cookies, login tokens, or JS signing secrets are included.
 """
+import http.client
 import re
+import socket
+import ssl
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
-import time
 
 from bs4 import BeautifulSoup
 
@@ -51,9 +55,24 @@ SOURCES = [
     },
 ]
 
+def retryable(exc):
+    # Do not waste two more 25-second attempts on permanent 4xx responses.
+    if isinstance(exc, urllib.error.HTTPError):
+        return exc.code in (408, 425, 429) or 500 <= exc.code <= 599
+    if isinstance(exc, urllib.error.URLError):
+        reason = exc.reason
+        if isinstance(reason, ssl.SSLError):
+            return "timed out" in str(reason).lower() or "want_read" in str(reason).lower()
+        return isinstance(reason, (TimeoutError, socket.timeout, socket.gaierror,
+                                   ConnectionResetError, ConnectionAbortedError,
+                                   ConnectionRefusedError, http.client.RemoteDisconnected))
+    if isinstance(exc, ssl.SSLError):
+        return "timed out" in str(exc).lower() or "want_read" in str(exc).lower()
+    return isinstance(exc, (TimeoutError, socket.timeout, ConnectionResetError,
+                            ConnectionAbortedError, http.client.RemoteDisconnected))
+
 def fetch(url, attempts=3, timeout=25):
     request = urllib.request.Request(url, headers=HEADERS)
-    last_error = None
     for attempt in range(attempts):
         started = time.monotonic()
         try:
@@ -73,22 +92,24 @@ def fetch(url, attempts=3, timeout=25):
                 print(
                     f"HTTP_TIMING host={urllib.parse.urlsplit(url).hostname} "
                     f"attempt={attempt + 1}/{attempts} "
-                    f"headers={headers_at - started:.2f}s "
+                    f"request_to_headers={headers_at - started:.2f}s "
                     f"body={finished - headers_at:.2f}s total={finished - started:.2f}s "
-                    f"status={response.status} bytes={len(body)}"
+                    f"status={response.status} bytes={len(body)}",
+                    flush=True,
                 )
                 return response.geturl(), html
         except Exception as exc:
-            last_error = exc
             elapsed = time.monotonic() - started
+            again = attempt + 1 < attempts and retryable(exc)
             print(
                 f"HTTP_ATTEMPT_FAIL host={urllib.parse.urlsplit(url).hostname} "
                 f"attempt={attempt + 1}/{attempts} elapsed={elapsed:.2f}s "
-                f"error={type(exc).__name__}: {exc}"
+                f"retry={again} error={type(exc).__name__}: {exc}",
+                flush=True,
             )
-            if attempt + 1 < attempts:
-                time.sleep(min(1.0 * (2 ** attempt), 4.0))
-    raise last_error
+            if not again:
+                raise
+            time.sleep(min(1.0 * (2 ** attempt), 4.0))
 
 def selector_part(part):
     part = part.strip()
@@ -161,6 +182,7 @@ def run_source(source):
     name = source["name"]
     search_url = source["base"].rstrip("/") + source["search"].replace("{{key}}", urllib.parse.quote("剑来", safe=""))
     print(f"SOURCE_START {name}: {search_url}")
+    stage = "search"
     try:
         search_final, search_html = fetch(search_url)
         search_doc = BeautifulSoup(search_html, "html.parser")
@@ -177,6 +199,7 @@ def run_source(source):
         title, book_url = found
         print(f"SEARCH_OK {name}: title={title!r} url={book_url}")
 
+        stage = "detail"
         detail_url, detail_html = fetch(book_url)
         detail_doc = BeautifulSoup(detail_html, "html.parser")
         detail_title = valid_text(extract(detail_doc, source["detail_name"]))
@@ -184,6 +207,7 @@ def run_source(source):
             raise RuntimeError(f"detail title rule returned invalid value {detail_title!r}")
         print(f"DETAIL_OK {name}: title={detail_title!r}")
 
+        stage = "toc"
         toc_nodes = select_rule(detail_doc, source["toc_list"])
         chapters = []
         for node in toc_nodes[:300]:
@@ -196,6 +220,7 @@ def run_source(source):
         chapter_name, chapter_url = chapters[0]
         print(f"TOC_OK {name}: chapters={len(chapters)} first={chapter_name!r}")
 
+        stage = "content"
         content_url, content_html = fetch(chapter_url)
         content_doc = BeautifulSoup(content_html, "html.parser")
         content_nodes = select_rule(content_doc, source["content"])
@@ -211,7 +236,7 @@ def run_source(source):
         print(f"UPLOADED_CORPUS_SOURCE_PASS: {name} search -> detail -> {len(chapters)} TOC entries -> chapter content")
         return True
     except Exception as exc:
-        print(f"UPLOADED_CORPUS_SOURCE_FAIL: {name}: {type(exc).__name__}: {exc}")
+        print(f"UPLOADED_CORPUS_SOURCE_FAIL: {name}: stage={stage}: {type(exc).__name__}: {exc}")
         return False
 
 def main():
