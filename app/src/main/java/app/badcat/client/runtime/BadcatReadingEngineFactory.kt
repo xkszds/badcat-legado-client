@@ -151,6 +151,32 @@ class BadcatReadingEngineFactory(
                     is EngineResult.Success -> result.value
                 }
             },
+            sourceHttpRequestWithTimeout = { source, baseUrl, method, url, body, headers, callTimeoutMillis ->
+                require(callTimeoutMillis in 1L..Int.MAX_VALUE.toLong()) {
+                    "connect callTimeout must be between 1ms and ${Int.MAX_VALUE}ms"
+                }
+                val request = when (val created = SourceRequestFactory.create(
+                    source = source,
+                    url = WebUrlResolver.resolve(baseUrl, url),
+                    method = method,
+                    headers = headers,
+                    body = body,
+                )) {
+                    is EngineResult.Failure -> throw IllegalArgumentException(created.message)
+                    is EngineResult.Success -> created.value.copy(
+                        timeoutMillis = callTimeoutMillis,
+                        followRedirects = true,
+                        retryCount = maxOf(
+                            created.value.retryCount,
+                            if (method.equals("GET", true) || method.equals("HEAD", true)) 1 else 0,
+                        ),
+                    )
+                }
+                when (val result = runBlocking(Dispatchers.IO) { durableRequestClient.execute(request) }) {
+                    is EngineResult.Failure -> throw IllegalStateException(result.message)
+                    is EngineResult.Success -> result.value
+                }
+            },
         )
         val gateway = BadcatSourceHttpGatewayFactory(
             client = durableRequestClient,
