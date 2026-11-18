@@ -117,6 +117,37 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
     }
 
     @Test
+    fun unzipCreatesSourcePrivateFilesAndRejectsTraversalEntries() {
+        val archive = zipOf(
+            "chapter.txt" to "第一章".toByteArray(Charsets.UTF_8),
+            "../outside.txt" to "must not escape".toByteArray(),
+            "nested/part.txt" to "nested".toByteArray(),
+        )
+        val extensions = RhinoSafeSourceJavaExtensions(
+            sourceId = "https://extract-fixture.example/",
+            store = InMemorySourceScriptKeyValueStore,
+            httpRequest = { _, url, _, _ ->
+                SourceHttpResponse(
+                    statusCode = 200,
+                    finalUrl = url,
+                    body = "",
+                    bodyBytes = archive,
+                )
+            },
+        )
+        val downloaded = extensions.downloadFile("https://extract-fixture.example/book.zip")
+        val directory = extensions.unzipFile(downloaded)
+
+        assertTrue(directory.startsWith("ArchiveTemp/"))
+        assertEquals("第一章", extensions.readTxtFile("$directory/chapter.txt"))
+        assertEquals("nested", extensions.readTxtFile("$directory/nested/part.txt"))
+        assertEquals("第一章", extensions.getTxtInFolder(directory))
+        assertNull(extensions.readFile("$directory/../outside.txt"))
+        assertTrue(extensions.deleteFile("$directory/chapter.txt"))
+        assertNull(extensions.readFile("$directory/chapter.txt"))
+    }
+
+    @Test
     fun zipEntryExpansionIsBounded() {
         val archive = zipOf("large.bin", ByteArray(16 * 1024 * 1024 + 1))
         val extensions = RhinoSafeSourceJavaExtensions(
@@ -133,12 +164,17 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
         assertTrue(error is IllegalArgumentException)
     }
 
-    private fun zipOf(name: String, content: ByteArray): ByteArray {
+    private fun zipOf(name: String, content: ByteArray): ByteArray =
+        zipOf(name to content)
+
+    private fun zipOf(vararg entries: Pair<String, ByteArray>): ByteArray {
         val output = ByteArrayOutputStream()
         ZipOutputStream(output).use { zip ->
-            zip.putNextEntry(ZipEntry(name))
-            zip.write(content)
-            zip.closeEntry()
+            entries.forEach { (name, content) ->
+                zip.putNextEntry(ZipEntry(name))
+                zip.write(content)
+                zip.closeEntry()
+            }
         }
         return output.toByteArray()
     }
