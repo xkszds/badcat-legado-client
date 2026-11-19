@@ -62,6 +62,11 @@ class SourceLoginSessionTest {
         assertEquals("example.co.uk", legadoSourceDomain(sourceKey))
         assertEquals("example.co.uk", legadoSourceDomain("https://cdn.example.co.uk/cover.jpg"))
         assertEquals("third-party-cdn.net", legadoSourceDomain("https://third-party-cdn.net/cover.jpg"))
+        assertEquals("127.0.0.1", legadoSourceDomain("http://127.0.0.1:8080/source.json"))
+        assertEquals("[2001:db8::1]", legadoSourceDomain("https://[2001:db8::1]/source.json"))
+        assertEquals(null, legadoSourceDomain("not-a-url"))
+        assertEquals(null, legadoSourceDomain("file:///tmp/source.json"))
+        assertTrue(shouldAttachSourceLoginHeader(sourceKey, "not-a-url"))
 
         client.execute(SourceHttpRequest(sourceKey, "https://cdn.example.co.uk/cover.jpg"))
         assertEquals("Bearer secret", delegate.lastRequest?.headers?.get("Authorization"))

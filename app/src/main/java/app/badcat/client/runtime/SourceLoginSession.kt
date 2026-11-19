@@ -9,14 +9,50 @@ import app.badcat.engine.EngineResult
 import app.badcat.engine.SourceHttpRequest
 import app.badcat.engine.SourceHttpResponse
 import app.badcat.engine.SourceRequestClient
-import io.legado.app.utils.NetworkUtils
+import cn.hutool.core.lang.Validator
+import okhttp3.internal.publicsuffix.PublicSuffixDatabase
+import java.net.URL
 
 /**
- * Mirrors pinned NetworkUtils.getSubDomainOrNull: compare effective-TLD+1,
- * preserve IP literals and fail open when either URL cannot be parsed.
+ * Host-side adapter for the exact pinned NetworkUtils.getSubDomainOrNull contract.
+ *
+ * NetworkUtils itself is part of the full upstream app and is intentionally not
+ * compiled into this host module. Keep this narrow copy aligned with its
+ * getBaseUrl, isIPAddress and public-suffix behavior.
  */
-internal fun legadoSourceDomain(url: String): String? =
-    NetworkUtils.getSubDomainOrNull(url)
+private fun legadoBaseUrl(url: String?): String? {
+    url ?: return null
+    val jsIndex = url.indexOf("@js:", ignoreCase = true)
+    val urlToParse = if (jsIndex >= 0) url.substring(0, jsIndex) else url
+    if (!urlToParse.startsWith("http://", true) &&
+        !urlToParse.startsWith("https://", true)
+    ) return null
+    val parsed = runCatching { URL(urlToParse) }.getOrNull() ?: return null
+    if (parsed.host.isEmpty()) return null
+    return "${urlToParse.substringBefore("://")}://${parsed.authority}"
+}
+
+private fun legadoIsIPv4Address(input: String?): Boolean =
+    input != null && input.isNotEmpty() &&
+        input[0] in '1'..'9' &&
+        input.count { it == '.' } == 3 &&
+        Validator.isIpv4(input)
+
+private fun legadoIsIPv6Address(input: String?): Boolean =
+    input != null && input.contains(":") && Validator.isIpv6(input)
+
+private fun legadoIsIPAddress(input: String?): Boolean =
+    legadoIsIPv4Address(input) || legadoIsIPv6Address(input)
+
+internal fun legadoSourceDomain(url: String): String? {
+    val baseUrl = legadoBaseUrl(url) ?: return null
+    return runCatching {
+        val parsed = URL(baseUrl)
+        val host = parsed.host
+        if (legadoIsIPAddress(host)) return host
+        PublicSuffixDatabase.get().getEffectiveTldPlusOne(host) ?: host
+    }.getOrNull()
+}
 
 internal fun shouldAttachSourceLoginHeader(sourceKey: String, targetUrl: String): Boolean {
     val sourceDomain = legadoSourceDomain(sourceKey) ?: return true
