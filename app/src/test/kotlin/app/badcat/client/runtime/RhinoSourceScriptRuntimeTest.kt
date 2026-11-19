@@ -24,6 +24,16 @@ import javax.crypto.spec.SecretKeySpec
 
 class RhinoSourceScriptRuntimeTest {
     @Test
+    fun clearingSourceRuntimeStateAlsoClearsOnlyThatSourcesCookieJar() = runBlocking {
+        val cleared = mutableListOf<String>()
+        val runtime = RhinoSourceScriptRuntime(
+            sourceCookieClearer = { sourceId -> cleared += sourceId },
+        )
+        runtime.clearSourceState("source-A")
+        assertEquals(listOf("source-A"), cleared)
+    }
+
+    @Test
     fun sourceRuleDocumentPreservesAnalyzeRuleKeywordAndPage() {
         val document = sourceRuleDocument(
             url = "https://reader.example/chapter",
