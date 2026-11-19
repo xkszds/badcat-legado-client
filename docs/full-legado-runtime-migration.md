@@ -73,3 +73,12 @@ The upstream `App` initialization and global services must be adapted explicitly
 ## Current status
 
 This branch includes the immutable upstream source baseline and an attempted integration of upstream JSoup rule evaluation into the shared dispatcher. The latest CI run `44385813513` is **failed** at `:integration-contract:test`: chained collection root extraction, legacy colon-separated index/exclusion semantics, and the Bixiange public source search fixture all fail. Fix these before extending parser coverage. This branch does **not** integrate the complete runtime and does not claim compatibility. The full five-category user scope and per-session requirements are tracked in `USER_REQUIREMENTS_AND_PARITY_CHECKLIST.md`.
+
+
+## 2026-11-19 dependency audit update
+
+The detailed source-level dependency audit is now recorded in [upstream-analyzer-integration-audit.md](upstream-analyzer-integration-audit.md). It confirms that the pinned `AnalyzeRule` and `AnalyzeUrl` classes are app-layer lifecycle components, not standalone parsers: they depend on upstream entities, source-scoped Rhino state, `JsExtensions`, HTTP/cookie/cache/WebView services, coroutine context and batch persistence. The current JVM module compiles selected parser files only, while the app's per-stage CSS services and JSON staging model remain separate.
+
+CI run [44550830295](https://github.com/xkszds/badcat-legado-client/actions/runs/44550830295) for head `6e1ffd1e513cc2e77581c889822e28e54f63558a` completed successfully, including tests/build and best-effort live source probes. This does not change the incomplete runtime status or satisfy device validation.
+
+**Next gate:** integrate the upstream model/rule entity graph and serialization first. Do not copy `AnalyzeRule.kt`/ `AnalyzeUrl.kt` into the host until their real dependencies and service contracts are integrated.

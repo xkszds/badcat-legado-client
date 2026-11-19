@@ -172,3 +172,15 @@
 - Found that the host adapter walked `Throwable.cause` with an unbounded sequence. A cyclic cause graph supplied by a gateway wrapper could keep an `ajaxTestAll` worker stuck indefinitely. Cause traversal is now capped at 16 links; nested SocketTimeoutException and cyclic-cause regressions were added.
 - Previous head `cacf216c3b65e11695260b8a73e138be74b22296` CI run [#44485135456](https://github.com/xkszds/badcat-legado-client/actions/runs/44485135456): contract tests passed; Android/Rhino test task was blocked before test execution because Maven Central returned HTTP 429 resolving `me.zhanghai.android.libarchive:library:1.1.6`. This is an external dependency-rate-limit failure, not a test assertion failure. Re-run verification after this increment.
 - This is a defensive correction in Legado category 3 only. Full `JsExtensions`, `AnalyzeUrl`, WebView/DNS, upstream model/pipeline integration and Badcat categories 1, 2, 4 and 5 remain incomplete.
+
+
+## 2026-11-19 analyzer dependency audit and CI completion
+
+- Re-read the root `AGENTS.md`, this checklist and `docs/full-legado-runtime-migration.md` before continuing. Confirmed the active branch is `integration/legado-upstream-runtime`; upstream submodule gitlink remains exactly `330e606c4d57e08adc056ff8ab7a4132c784da9`.
+- Workflow [#44550830295](https://github.com/xkszds/badcat-legado-client/actions/runs/44550830295), commit `6e1ffd1e513cc2e77581c889822e28e54f63558a`, completed with conclusion `success`. Contract tests, bounded Rhino host tests, Debug APK build/upload and best-effort live source checks for Nyasama, Feisuzhong, Pinshuzhai and four uploaded-corpus samples all completed successfully. The live checks are not device validation or full upstream parity.
+- Unit-test report artifact `14542741454`: 253 tests, 0 skipped, 0 failures, 0 errors (parsed from the uploaded XML report in the preceding verification).
+- Debug APK artifact `14543241920` is an intermediate debug build only. It is not labeled or delivered as the requested complete Legado APK.
+- Added `docs/upstream-analyzer-integration-audit.md` after reviewing pinned `AnalyzeRule.kt`, `AnalyzeUrl.kt`, `JsExtensions.kt`, `BatchContentContext.kt`, upstream source models and the current host service graph. It records the real dependency families, exact lifecycle surface, host API gaps, pre-change risks and staged integration order.
+- Confirmed the existing `:integration-contract` JVM source set compiles selected parser files only; current per-stage CSS services and the staging `BookSource` model are not the upstream lifecycle/models. Do not pass them to upstream analyzer classes or add fake application globals.
+- Current incomplete areas remain: full upstream models/converters; real `AnalyzeUrl` transport semantics; `AnalyzeRule` lifecycle; all `JsExtensions` host API families; search/detail/TOC/content operation migration; batch save context and durable persistence; full upstream parity fixtures; Android device installation/reading validation.
+- Next gate: model/serialization foundation and rule-entity graph inventory, followed by real host service contracts. No UI redesign.
