@@ -11,7 +11,7 @@ object UpstreamLegadoJsonPathRuleEvaluator {
         val analyzer = AnalyzeByJSonPath(json, onError)
         val normalizedRule = stripModePrefix(rule)
         val list = analyzer.getList(normalizedRule)
-        if (!list.isNullOrEmpty()) return list.map(::toElementString)
+        if (list != null) return list.map(::toElementString)
 
         // Legado's init rule can select a single JSON object (for example
         // "data.book"), not only a JSONPath array. getList() intentionally

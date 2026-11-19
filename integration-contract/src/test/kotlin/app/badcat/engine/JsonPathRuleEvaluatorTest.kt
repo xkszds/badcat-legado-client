@@ -67,6 +67,16 @@ class JsonPathRuleEvaluatorTest {
     }
 
     @Test
+    fun emptyJsonPathCollectionsRemainEmpty() {
+        val empty = document.copy(body = """{"books":[]}""")
+        val result = JsonPathRuleEvaluator.evaluateElements(empty, "$.books[*]")
+        assertEquals(
+            emptyList(),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
+    @Test
     fun selectsJsonCollectionEntriesAsIndependentFragments() {
         val result = JsonPathRuleEvaluator.evaluateElements(document, "$.books[*]")
         assertEquals(
