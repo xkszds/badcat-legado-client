@@ -93,6 +93,24 @@ class JsonPathRuleEvaluatorTest {
         )
     }
 
+
+    @Test
+    fun doesNotStripModeMarkersInsideQuotedJsonPathLiterals() {
+        val item = SourceDocument(
+            url = "https://example.test/markers.json",
+            body = """{"books":[{"name":"@json:foo"},{"name":"bar"}]}""",
+            contentType = "application/json",
+        )
+        val result = JsonPathRuleEvaluator.evaluate(
+            item,
+            "$.books[?(@.name == '@json:foo')].name",
+        )
+        assertEquals(
+            listOf("@json:foo"),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
     @Test
     fun reportsMalformedJsonDocument() {
         val malformed = document.copy(body = """{"books":[""")
