@@ -692,7 +692,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Live full reading from uploaded 235-source corpus (best effort)
+      - name: Live end-to-end sample of four uploaded-corpus sources (best effort)
         timeout-minutes: 4
         continue-on-error: true
         run: |

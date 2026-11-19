@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Live full-reading probes against several sanitized sources from the user's uploaded corpus.
+"""Live full-reading sample against four sanitized source descriptors selected from the uploaded corpus.
 
 Each candidate is tried independently. A network timeout is reported as a source
 connectivity failure and does not prevent testing the next corpus source. No
@@ -248,7 +248,7 @@ def main():
         else:
             failed += 1
     print(
-        f"UPLOADED_CORPUS_FULL_READING: {passed}/{len(SOURCES)} source candidates "
+        f"UPLOADED_CORPUS_SAMPLE_FULL_READING: {passed}/{len(SOURCES)} source candidates "
         f"completed end-to-end; failed={failed}"
     )
     if passed == 0:
