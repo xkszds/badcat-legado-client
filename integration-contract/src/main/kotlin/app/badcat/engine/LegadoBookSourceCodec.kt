@@ -210,8 +210,9 @@ object LegadoBookSourceCodec {
     private fun validateKnownFieldTypes(source: JsonObject, index: Int) {
         val stringFields = listOf(
             "bookSourceUrl", "bookSourceName", "bookSourceGroup", "bookUrlPattern",
-            "header", "jsLib", "loginUrl", "loginUi", "loginCheckJs", "concurrentRate",
-            "bookSourceComment", "exploreUrl", "searchUrl", "mainJs",
+            "header", "jsLib", "loginUrl", "loginUi", "loginCheckJs", "coverDecodeJs",
+            "concurrentRate", "bookSourceComment", "variableComment", "exploreUrl",
+            "exploreScreen", "searchUrl", "mainJs",
         )
         stringFields.forEach { key ->
             val value = source.get(key) ?: return@forEach
@@ -219,7 +220,10 @@ object LegadoBookSourceCodec {
                 "Book source at index $index has a non-string '$key' field"
             }
         }
-        listOf("enabled", "enabledExplore", "enabledCookieJar", "enabledReview").forEach { key ->
+        listOf(
+            "enabled", "enabledExplore", "enabledCookieJar", "enabledReview",
+            "eventListener", "customButton",
+        ).forEach { key ->
             val value = source.get(key) ?: return@forEach
             require(value.isJsonNull || (value.isJsonPrimitive && value.asJsonPrimitive.isBoolean)) {
                 "Book source at index $index has a non-boolean '$key' field"
@@ -252,7 +256,9 @@ object LegadoBookSourceCodec {
                 }
             }
         }
-        listOf("ruleExplore", "ruleSearch", "ruleBookInfo", "ruleToc", "ruleContent").forEach { key ->
+        listOf(
+            "ruleExplore", "ruleSearch", "ruleBookInfo", "ruleToc", "ruleContent", "ruleReview",
+        ).forEach { key ->
             val value = source.get(key) ?: return@forEach
             require(value.isJsonNull || value.isJsonObject || (
                 value.isJsonPrimitive && value.asJsonPrimitive.isString &&

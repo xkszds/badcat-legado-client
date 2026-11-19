@@ -160,6 +160,38 @@ class LegadoBookSourceCodecTest {
     }
 
     @Test
+    fun validatesAllPinnedBookSourceMetadataFields() {
+        val accepted = """{
+            "bookSourceUrl":"https://full.example",
+            "bookSourceName":"Full metadata",
+            "coverDecodeJs":"function decode(x) { return x; }",
+            "variableComment":"token: access token",
+            "exploreScreen":"category",
+            "eventListener":true,
+            "customButton":false,
+            "ruleReview":{"reviewList":"div.review","reviewContent":"p@text"}
+        }""".trimIndent()
+        assertEquals(
+            "Full metadata",
+            LegadoBookSourceCodec.decode(accepted).single().name,
+        )
+
+        val malformed = listOf(
+            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad cover JS","coverDecodeJs":7}""",
+            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad variable comment","variableComment":false}""",
+            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad explore screen","exploreScreen":[]}""",
+            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad event listener","eventListener":"true"}""",
+            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad custom button","customButton":1}""",
+            """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad review rule","ruleReview":"div.review"}"""
+        )
+        malformed.forEach { json ->
+            assertFailsWith<IllegalArgumentException> {
+                LegadoBookSourceCodec.decode(json)
+            }
+        }
+    }
+
+    @Test
     fun rejectsMalformedRuleObjectsInsteadOfSilentlyDroppingThem() {
         val malformedSources = listOf(
             """{"bookSourceUrl":"https://bad.example","bookSourceName":"Bad search","ruleSearch":"div.book"}""",
