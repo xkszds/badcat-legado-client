@@ -1,6 +1,8 @@
 package app.badcat.engine
 
 import io.legado.app.model.analyzeRule.UpstreamLegadoCssRuleEvaluator
+import io.legado.app.model.analyzeRule.UpstreamLegadoJsonPathRuleEvaluator
+import io.legado.app.model.analyzeRule.UpstreamLegadoXPathRuleEvaluator
 
 /**
  * Resolves explicit parser prefixes and unambiguous path syntax used by imported
@@ -83,8 +85,16 @@ object LegadoRuleExpressionDispatcher {
                             error,
                         )
                     }
-                    SelectorRuleType.XPATH -> XPathRuleEvaluator.evaluateElements(document, resolved.value.expression)
-                    SelectorRuleType.JSON_PATH -> JsonPathRuleEvaluator.evaluateElements(document, resolved.value.expression)
+                    SelectorRuleType.XPATH -> runCatching {
+                        EngineResult.Success(UpstreamLegadoXPathRuleEvaluator.getElementList(document.body, document.url, resolved.value.expression))
+                    }.getOrElse { error ->
+                        EngineResult.Failure(EngineErrorCode.PARSE, "Pinned Legado XPath collection evaluation failed: " + (error.message ?: error::class.java.simpleName), error)
+                    }
+                    SelectorRuleType.JSON_PATH -> runCatching {
+                        EngineResult.Success(UpstreamLegadoJsonPathRuleEvaluator.getElementList(document.body, resolved.value.expression) { })
+                    }.getOrElse { error ->
+                        EngineResult.Failure(EngineErrorCode.PARSE, "Pinned Legado JSONPath collection evaluation failed: " + (error.message ?: error::class.java.simpleName), error)
+                    }
                 }
             }
             // In a mixed rule whose root explicitly opts into regex, later branches
@@ -171,7 +181,16 @@ object LegadoRuleExpressionDispatcher {
                                 )
                             }
                         } else {
-                            SelectorRuleEvaluator.evaluate(document, resolved.value.type, resolved.value.expression)
+                            runCatching {
+                                val values = when (resolved.value.type) {
+                                    SelectorRuleType.XPATH -> UpstreamLegadoXPathRuleEvaluator.getStringList(document.body, document.url, resolved.value.expression)
+                                    SelectorRuleType.JSON_PATH -> UpstreamLegadoJsonPathRuleEvaluator.getStringList(document.body, resolved.value.expression) { }
+                                    SelectorRuleType.CSS -> emptyList()
+                                }
+                                EngineResult.Success(values)
+                            }.getOrElse { error ->
+                                EngineResult.Failure(EngineErrorCode.PARSE, "Pinned Legado " + resolved.value.type.name + " evaluation failed: " + (error.message ?: error::class.java.simpleName), error)
+                            }
                         }
                 }
             }
