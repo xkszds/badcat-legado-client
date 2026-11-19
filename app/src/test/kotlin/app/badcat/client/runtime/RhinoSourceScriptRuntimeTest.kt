@@ -57,6 +57,26 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun sourceCacheDirectoryRejectsPrecreatedSymlinks() {
+        val parent = java.nio.file.Files.createTempDirectory("rhino-source-cache-link").toFile()
+        val root = java.io.File(parent, "cache").apply { mkdirs() }
+        val outside = java.io.File(parent, "outside").apply { mkdirs() }
+        val sourceId = "https://source-cache-link.example/"
+        try {
+            val candidate = sourcePhysicalCacheDirectory(root, sourceId)
+            java.nio.file.Files.createSymbolicLink(candidate.toPath(), outside.toPath())
+
+            org.junit.Assert.assertThrows(SecurityException::class.java) {
+                ensureSourcePhysicalCacheDirectory(root, sourceId)
+            }
+            assertTrue(outside.isDirectory)
+            assertTrue(java.nio.file.Files.isSymbolicLink(candidate.toPath()))
+        } finally {
+            parent.deleteRecursively()
+        }
+    }
+
+    @Test
     fun physicalSourceFilesAreIsolatedAndClearedPerSource() = runBlocking {
         val root = java.nio.file.Files.createTempDirectory("rhino-source-isolation").toFile()
         try {
