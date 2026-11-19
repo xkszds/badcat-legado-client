@@ -114,3 +114,8 @@ CI run [44550830295](https://github.com/xkszds/badcat-legado-client/actions/runs
 ## 2026-11-19 JsExtensions declaration audit
 
 A method-name comparison against the pinned upstream `JsExtensions.kt` is recorded in [upstream-js-extensions-compatibility-audit.md](upstream-js-extensions-compatibility-audit.md). It identifies 18 upstream method names absent from the current host bridge and a blocking `getSource()` return-type collision, plus the incomplete batch-context contract. Same-name methods are not yet considered behaviorally compatible. The next task is to complete the overload/semantic matrix and migrate the existing bridge around real host services before implementing upstream BaseSource/BookSource.
+
+
+## 2026-11-19 complete JsExtensions inheritance audit
+
+The declaration-level audit now includes all 122 pinned `JsExtensions` methods and all 30 inherited `JsEncodeUtils` methods. The current host bridge has 18 missing direct method names plus 19 missing inherited crypto method names. It also has incompatible return types for `getSource()`, batch context, Jsoup response wrappers and file handles. See [upstream-js-extensions-compatibility-audit.md](upstream-js-extensions-compatibility-audit.md). These differences are recorded as blockers, not accepted compatibility exceptions. The next code change must address a bounded, testable slice of this matrix and re-audit old callers; do not integrate BookSource on top of the current incompatible bridge.
