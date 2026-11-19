@@ -16,6 +16,7 @@ class SourceRuleResolverTest {
         ruleBookInfoJson = """{"name":"h1@text"}""",
         ruleTocJson = """{"chapterList":"a.chapter"}""",
         ruleContentJson = """{"content":"#content"}""",
+        ruleReviewJson = """{"reviewList":"div.review"}""",
     )
 
     @Test
@@ -26,6 +27,7 @@ class SourceRuleResolverTest {
             SourceRuleStage.BOOK_INFO to "h1@text",
             SourceRuleStage.TOC to "a.chapter",
             SourceRuleStage.CONTENT to "#content",
+            SourceRuleStage.REVIEW to "div.review",
         )
 
         expected.forEach { (stage, selector) ->

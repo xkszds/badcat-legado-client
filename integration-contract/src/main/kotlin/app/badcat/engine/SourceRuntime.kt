@@ -45,6 +45,7 @@ enum class SourceRuleStage {
     BOOK_INFO,
     TOC,
     CONTENT,
+    REVIEW,
 }
 
 /**

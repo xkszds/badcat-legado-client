@@ -98,6 +98,7 @@ object SourceRuleResolver {
             SourceRuleStage.BOOK_INFO -> source.ruleBookInfoJson
             SourceRuleStage.TOC -> source.ruleTocJson
             SourceRuleStage.CONTENT -> source.ruleContentJson
+            SourceRuleStage.REVIEW -> source.ruleReviewJson
         }?.takeIf(String::isNotBlank)
 
     private fun missing(source: BookSource, stage: SourceRuleStage) =
