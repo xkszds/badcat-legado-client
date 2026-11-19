@@ -52,7 +52,7 @@ class LegadoRuleReplacementTest {
         assertEquals("h1@text", parsed.expression)
         assertEquals("h1@text##old##new", parsed.toRuleString())
         assertEquals(
-            listOf("new"),
+            listOf("new title"),
             assertIs<EngineResult.Success<List<String>>>(
                 parsed.apply(listOf("old title")),
             ).value,
@@ -75,7 +75,7 @@ class LegadoRuleReplacementTest {
         assertEquals("new", parsed.replacement)
         assertEquals(true, parsed.replaceFirst)
         assertEquals(
-            listOf("new title"),
+            listOf("new"),
             assertIs<EngineResult.Success<List<String>>>(
                 parsed.apply(listOf("old title")),
             ).value,
