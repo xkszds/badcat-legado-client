@@ -6,7 +6,16 @@ kotlin {
     jvmToolchain(21)
 }
 
+val pinnedLegado by sourceSets.creating {
+    java.srcDir("$rootDir/upstream/legado/app/src/main/java")
+    // Compile the exact upstream regex primitive as an independent source set.
+    // AnalyzeRule itself remains app-coupled; this is a real upstream source
+    // dependency, not a copied compatibility implementation.
+    java.include("io/legado/app/model/analyzeRule/AnalyzeByRegex.kt")
+}
+
 dependencies {
+    implementation(pinnedLegado.output)
     implementation("com.google.code.gson:gson:2.14.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
     // Match the pinned Legado network client baseline.
