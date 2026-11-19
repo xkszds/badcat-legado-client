@@ -88,6 +88,19 @@ class OkHttpSourceRequestClientTest {
     }
 
     @Test
+    fun rejectsUnsupportedMethodsWhenTransportIsCalledDirectly() = runBlocking {
+        val result = OkHttpSourceRequestClient().execute(
+            SourceHttpRequest(
+                sourceId = "unsupported-method-fixture",
+                url = "https://example.com/",
+                method = "DELETE",
+                useCookieJar = false,
+            ),
+        )
+        assertEquals(EngineErrorCode.UNSUPPORTED_RULE, (result as EngineResult.Failure).code)
+    }
+
+    @Test
     fun rejectsRequestBodiesThatExceedTheConfiguredByteLimit() = runBlocking {
         val result = OkHttpSourceRequestClient(maxRequestBytes = 4).execute(
             SourceHttpRequest(

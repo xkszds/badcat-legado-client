@@ -65,6 +65,13 @@ class OkHttpSourceRequestClient(
                 "Source identity and request URL must not be blank",
             )
         }
+        val method = request.method.uppercase()
+        if (method !in SUPPORTED_METHODS) {
+            return EngineResult.Failure(
+                EngineErrorCode.UNSUPPORTED_RULE,
+                "HTTP method '$method' is not supported by the source transport",
+            )
+        }
         val parsedUrl = request.url.toHttpUrlOrNull()
         val rawUserInfo = runCatching { URI(request.url).rawUserInfo }.getOrNull()
         if (parsedUrl == null ||
@@ -90,7 +97,6 @@ class OkHttpSourceRequestClient(
             val builder = Request.Builder().url(request.url)
             request.headers.forEach { (name, value) -> builder.header(name, value) }
 
-            val method = request.method.uppercase()
             if (method !in BODY_FORBIDDEN_METHODS &&
                 request.body?.length?.toLong()?.let { it > maxRequestBytes } == true
             ) {
@@ -273,6 +279,7 @@ class OkHttpSourceRequestClient(
     }
 
     companion object {
+        private val SUPPORTED_METHODS = setOf("GET", "HEAD", "POST", "PUT", "PATCH", "PROPPATCH", "REPORT")
         private val BODY_REQUIRED_METHODS = setOf("POST", "PUT", "PATCH", "PROPPATCH", "REPORT")
         private val BODY_FORBIDDEN_METHODS = setOf("GET", "HEAD")
     }
