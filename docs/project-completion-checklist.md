@@ -699,3 +699,8 @@ A related production wiring review found SharedPreferencesSourceLoginSessionStor
 - Physical Android device behavior, full Legado runtime and Badcat five-category parity remain separate open gates.
 
 Self-review: this task corrects the three observed CI failures plus the directly related Android ID setting lookup. It does not broaden the previously registered login/session feature scope and does not authorize marking the full login/session or Legado runtime complete.
+
+
+## 2026-11-20 checklist correction — Android ID setting namespace review
+
+Correction to the pre-registered CI-failure note above: pinned AppConst.kt at revision 330e606c4d57e08adc056ff8ab7a4132c784da9a explicitly reads Android ID with Settings.System.getString(appCtx.contentResolver, Settings.Secure.ANDROID_ID) ?: "null". The host SharedPreferencesSourceLoginSessionStore uses the same Settings.System API and fallback, so this is not a production mismatch and must not be changed to Settings.Secure.getString. The separate BadcatReadingEngineFactory provider is not the loginInfo persistence provider and is not evidence to alter the pinned BaseSource contract. Remove the proposed Settings API correction from scope; preserve the pinned AppConst behavior exactly. This correction was made before any runtime code edit.
