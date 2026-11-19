@@ -62,8 +62,7 @@ class RhinoSourceCacheExtensions(
     fun put(key: String, value: String, saveTime: Number): String {
         requireValidKey(key)
         require(value.length <= MAX_VALUE_CHARS) { "cache value exceeds the size limit" }
-        val seconds = saveTime.toLong()
-        require(seconds >= 0L && seconds <= MAX_TTL_SECONDS) { "cache saveTime is outside the supported range" }
+        val seconds = checkedTtlSeconds(saveTime)
         val expiresAt = if (seconds == 0L) 0L else nowMillis() + seconds * 1_000L
         val entry = JsonObject().apply {
             addProperty("value", value)
@@ -122,6 +121,15 @@ class RhinoSourceCacheExtensions(
     }
 
     private fun storageKey(key: String) = STORAGE_PREFIX + key
+
+    private fun checkedTtlSeconds(saveTime: Number): Long {
+        require(saveTime.toDouble().isFinite()) { "cache saveTime must be finite" }
+        val seconds = saveTime.toLong()
+        require(seconds >= 0L && seconds <= MAX_TTL_SECONDS) {
+            "cache saveTime is outside the supported range"
+        }
+        return seconds
+    }
 
     private fun requireValidKey(key: String) {
         require(key.isNotBlank() && key.length <= MAX_KEY_CHARS) { "cache key is blank or too long" }

@@ -5,6 +5,23 @@ import org.junit.Test
 
 class RhinoSourceCacheExtensionsTest {
     @Test
+    fun nonFiniteTtlsAreRejectedForDatabaseAndFileCache() {
+        val cache = RhinoSourceCacheExtensions(
+            "cache-nonfinite-ttl-fixture",
+            InMemorySourceScriptKeyValueStore,
+            InMemorySourceScriptFileCacheStore,
+        )
+        listOf(Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).forEach { ttl ->
+            org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+                cache.put("db-$ttl", "value", ttl)
+            }
+            org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+                cache.putFile("file-$ttl", "value", ttl)
+            }
+        }
+    }
+
+    @Test
     fun malformedExpiryMetadataIsDiscardedWithoutThrowing() {
         val sourceId = "cache-corrupt-expiry-fixture"
         val key = "__legado_cache__:entry"
