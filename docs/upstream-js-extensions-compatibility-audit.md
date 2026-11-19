@@ -267,3 +267,11 @@ The host's current `RhinoLegadoSymmetricCrypto` is an allow-listed AES/DES CBC h
 - The bridge's `createSymmetricCrypto` still instantiates `SymmetricCryptoAndroid`; the bounded wrapper is not yet wired. Correct the factory and key/IV checks.
 - The bounded test insertion corrupted the preceding overload test assertion. Rebuild that test section cleanly.
 - This is a review finding, not a passing test. The next code edit must correct both defects before relying on CI.
+
+
+### Bridge/test wiring correction applied
+
+- `createSymmetricCrypto` now instantiates the bounded upstream-compatible subclass after validating key and IV sizes.
+- The damaged overload test source was repaired and the bounded crypto test is now a separate method.
+- Asymmetric string ciphertext is decoded through `SecureUtil.decode` and bounded before decryption.
+- CI is still pending; these corrections are not a test pass.

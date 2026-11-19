@@ -396,3 +396,11 @@
 - [ ] Rebuild the complete affected test section so each test method is syntactically separate and the original overload test remains intact.
 - [ ] Inspect exact diff around factory and test insertion, then rerun CI; do not count the earlier pending/cancelled run as verification.
 - [x] This correction is recorded before the next code edit; the previous implementation remains unverified.
+
+
+## 2026-11-19 crypto bridge/test wiring correction applied (verification pending)
+
+- [x] `createSymmetricCrypto` now checks key/IV sizes and constructs `RhinoBoundedSymmetricCryptoAndroid`; the unbounded class is no longer used by the source bridge.
+- [x] Repaired the malformed test insertion. The overload test is restored as a complete method and the 2 MiB/InputStream regression test is a separate complete method.
+- [x] Asymmetric Base64/Hex string decrypt now decodes with the pinned Hutool `SecureUtil.decode` path and checks decoded byte length before crypto processing.
+- [ ] CI and full test suite remain pending; inspect current run logs and confirm no compile/runtime regressions before marking the crypto slice verified.

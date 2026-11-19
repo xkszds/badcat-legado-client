@@ -212,3 +212,9 @@
 ## 2026-11-19 category 3 crypto review correction
 
 - Review found the bounded wrapper was not yet wired into the source bridge and a test insertion damaged adjacent Kotlin syntax. Correct both before marking crypto integration verified.
+
+
+## 2026-11-19 category 3 crypto wiring correction
+
+- The source bridge now uses the bounded symmetric subclass, and the damaged test source has been repaired. Asymmetric encoded ciphertext is decoded and bounded before processing.
+- Await CI before marking the crypto slice complete.

@@ -2,6 +2,7 @@ package io.legado.app.help.crypto
 
 import androidx.annotation.Keep
 import cn.hutool.crypto.KeyUtil
+import cn.hutool.crypto.SecureUtil
 import cn.hutool.crypto.asymmetric.KeyType
 import cn.hutool.crypto.asymmetric.AsymmetricCrypto as HutoolAsymmetricCrypto
 import io.legado.app.utils.EncoderUtils
@@ -49,8 +50,8 @@ class AsymmetricCrypto(algorithm: String) : HutoolAsymmetricCrypto(algorithm) {
             data
         }
         is String -> {
-            require(data.length <= MAX_RHINO_CRYPTO_BYTES * 2) { "Asymmetric encoded input exceeds the 2 MiB decoded bound" }
-            data
+            require(data.length <= MAX_RHINO_CRYPTO_BYTES * 2) { "Asymmetric encoded input exceeds the 4 MiB character limit" }
+            SecureUtil.decode(data).also { requireRhinoCryptoSize(it.size, "asymmetric decoded input") }
         }
         is InputStream -> readRhinoCryptoInput(data)
         else -> throw IllegalArgumentException("Unexpected input type")

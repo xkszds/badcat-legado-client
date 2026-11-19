@@ -177,3 +177,8 @@ Tests cover exact-limit AES/NoPadding, over-limit input, padding-induced output 
 ## 2026-11-19 post-commit bridge/test audit correction gate
 
 Diff review after the bounded-wrapper increment found two wiring defects before verification: `createSymmetricCrypto` still constructed the unbounded upstream class instead of the registered bounded subclass, and the bounded regression test had been inserted into the preceding overload test assertion, corrupting the Kotlin source. The next edit must correct the bridge factory to validate key/IV and instantiate `RhinoBoundedSymmetricCryptoAndroid`, then replace the malformed test section with two separate complete test methods. Re-inspect the exact diff and run CI; the current crypto increment is not verified.
+
+
+## 2026-11-19 crypto bridge/test wiring correction applied
+
+The bridge now checks key/IV sizes and constructs `RhinoBoundedSymmetricCryptoAndroid`, so the old 2 MiB limit is active through the actual source-scoped Rhino `java.createSymmetricCrypto` path. The corrupted adjacent test insertion was repaired into two independent test methods. Asymmetric string ciphertext is decoded through pinned Hutool `SecureUtil.decode` and checked against the decoded-byte limit before processing. Verification remains pending CI.

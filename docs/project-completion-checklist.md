@@ -287,3 +287,10 @@
 
 - Post-commit review found the factory still returning an unbounded crypto object and a malformed adjacent Kotlin test insertion. Both are registered for correction before any verification claim.
 - Crypto implementation remains pending; no successful CI for the current crypto code is claimed.
+
+
+## 2026-11-19 crypto wiring correction applied (pending CI)
+
+- Corrected the source bridge to instantiate the bounded Hutool-compatible symmetric subclass and validate key/IV size.
+- Repaired the malformed test insertion and added the bounded stream/limit regression as a separate test.
+- Added a decoded-byte check for asymmetric Base64/Hex ciphertext before decryption. CI remains pending.
