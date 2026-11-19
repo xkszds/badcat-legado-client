@@ -72,6 +72,24 @@ class RhinoSafeSourceJavaExtensionsCompatTest {
     }
 
     @Test
+    fun selectorUrlOverloadsRejectOversizedUrlBeforeCallingTransport() {
+        var calls = 0
+        val guarded = RhinoSafeSourceJavaExtensions(
+            sourceId = "selector-url-limit-fixture",
+            store = InMemorySourceScriptKeyValueStore,
+            httpGet = { _, _ -> calls++; throw AssertionError("must not call transport") },
+        )
+        val oversized = "https://example.com/" + "a".repeat(16 * 1024)
+        assertThrows(IllegalArgumentException::class.java) {
+            guarded.getString("title", oversized, true)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            guarded.getStringList("title", oversized, true)
+        }
+        assertEquals(0, calls)
+    }
+
+    @Test
     fun connectRejectsOversizedUrlBeforeCallingTransport() {
         var called = false
         val guarded = RhinoSafeSourceJavaExtensions(
