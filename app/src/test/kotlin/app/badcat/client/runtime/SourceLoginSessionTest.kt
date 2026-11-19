@@ -5,6 +5,7 @@ import app.badcat.engine.SourceHttpRequest
 import app.badcat.engine.SourceHttpResponse
 import app.badcat.engine.SourceRequestClient
 import okhttp3.OkHttp
+import okhttp3.internal.platform.Platform
 import org.junit.Before
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -20,6 +21,9 @@ import org.robolectric.annotation.Config
 class SourceLoginSessionTest {
     @Before
     fun initializeOkHttpAndroidAssets() {
+        // Robolectric may load OkHttp's platform or PSL singleton before this test's context exists.
+        // Reset both, then initialize the Android application context before the first PSL lookup.
+        Platform.resetForTests()
         OkHttp.initialize(RuntimeEnvironment.getApplication())
     }
 
