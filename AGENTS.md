@@ -63,3 +63,57 @@ For every work session and every new implementation task:
 5. Never mark a task complete based on a plan, documentation-only commit, compilation alone, pending CI, or unverified APK.
 
 This process is mandatory; do not begin a code change while its task and regression/acceptance requirements are absent from the checklist.
+
+
+## Mandatory complete-Legado migration order (user-confirmed 2026-11-20)
+
+Execute the remaining work in this dependency order; do not skip ahead or treat a later layer as complete while an earlier contract is still lossy:
+
+1. **Official data models and lossless serialization** — pinned BookSource, Book, BookChapter, nested rule models, and related source/book/chapter state; preserve all official fields and unknown JSON fields through import, persistence, mutation, and export.
+2. **Complete rule engine** — pinned AnalyzeRule / AnalyzeUrl lifecycle and CSS, XPath, JSONPath, regex, JS, variables, replacement, request and response semantics.
+3. **Rhino extension compatibility** — close the audited JsExtensions declaration/overload gaps and reconcile host ABI differences such as java.getSource() without breaking existing callers.
+4. **One unified reading lifecycle** — route search, discovery, detail, TOC, and chapter content through the same upstream-compatible model, rule, URL, script, HTTP, cookie and source-state lifecycle.
+5. **Batch context and durable content cache** — implement upstream-compatible batch chapter context, deduplication, persistence, invalidation and resume behavior; an empty context or throwing cache method is not support.
+6. **Badcat product parity and final acceptance** — preserve the original five product categories and existing UI/navigation/gestures; verify real sources, Android install/device behavior, and release packaging.
+
+Each stage requires a separate pre-registration, full caller/adapter/test audit, focused and broad regression suite, exact-head CI/artifact inspection, and an honest remaining-gap report. The pinned upstream SHA remains 330e606c4d57e08adc056ff8ab7a4132c784da9a. Never claim complete Legado or deliver a final release APK before all gates pass.
+
+
+## 2026-11-20 pre-registered implementation scope — Stage 1 official models and lossless serialization (NO RUNTIME CODE EDITS YET)
+
+### Current branch and evidence baseline
+- Active branch: integration/legado-upstream-runtime; inspected branch head: 2b2bf91afca2dce8c07642eae4ae95f1a228937c. Do not modify main.
+- Pinned upstream Legado revision: 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Latest exact-code-head Actions run: 44630795195, head 2b2bf91afca2dce8c07642eae4ae95f1a228937c; all reported job steps completed successfully, including contract tests, app unit tests, Rhino verification, Debug APK assembly and live source sampling. JUnit/APK/live-source artifacts still require inspection before recording detailed counts or source outcomes.
+- Existing host boundary: integration-contract/.../ReadingEngine.kt defines simplified BookSource, BookCandidate, BookDetail, and BookChapter; LegadoBookSourceCodec parses selected source fields and stores rawJson, while the engine consumes selected fields. FileBookSourceCatalog persists descriptors and mutates enabled state through the codec. The rule entities currently present under app/src/main/java/io/legado/app/data/entities/rule/ are only a partial set of pinned models.
+- Pinned upstream model sources identified: app/src/main/java/io/legado/app/data/entities/BookSource.kt, Book.kt, BookChapter.kt, and data/entities/rule/{ExploreRule,SearchRule,BookListRule,BookInfoRule,TocRule,ContentRule,ReviewRule}.kt. These models include Android/Room/Parcelable and runtime-facing contracts; they cannot be copied blindly into the platform-neutral module.
+
+### Exact implementation target
+Build a deliberate model/serialization compatibility boundary for Stage 1:
+- Compare the exact pinned upstream declarations, nested types, default values, annotations/converters and serialization behavior for BookSource, Book, BookChapter and all source rule models.
+- Inventory all current host model declarations, JSON codecs, catalog persistence/mutation/export paths, runtime constructors, UI adapters, tests and callers before changing any type or signature.
+- Define and implement a lossless representation/adapter strategy that retains every official known field plus unknown/future fields across import -> in-memory representation -> persistence -> edit/toggle -> export. Preserve source identity semantics (bookSourceUrl) and book/chapter identity and ordering semantics.
+- Map nested rule models using the pinned upstream contract; do not leave rule objects as opaque strings where runtime behavior needs typed models, and do not invent defaults that differ from upstream.
+- Keep Android/Room/Parcelable concerns at the Android boundary; do not introduce an incompatible dependency or break the platform-neutral contract merely to copy upstream annotations.
+- Keep existing UI and all current ReadingEngine callers source-compatible during the migration, or add explicit, tested adapters and migrate every caller in the same change.
+
+### Compatibility/security risks to audit before edits
+- Room annotations, Parcelable, ignored/transient properties, converters, lazy variables, BaseSource identity, and upstream helper dependencies may not compile or behave in the current host module.
+- Gson/Kotlin serialization differences: missing vs null vs default values, numeric coercion, enum/unknown values, nested rule objects encoded as object or string, ordering, escaping, and unknown-field preservation.
+- Existing code relies on BookSource.id/baseUrl for source identity and login/session scoping; do not change this identity path accidentally.
+- Existing raw JSON preservation and import bounds/validation must not regress; mutations must alter only the intended fields and retain all other JSON members.
+- Book/chapter key collisions, chapter indices, duplicate URLs, and runtime call sites must be audited before mapping to upstream Book / BookChapter.
+
+### Required tests and acceptance
+- Add pinned-upstream model contract tests for required/optional/default fields, nested rule types, unknown fields, null/missing values, enum/type edge cases, and identity/equality behavior where relevant.
+- Add import/export round-trip fixtures from official upstream JSON, including future unknown keys and every rule family; verify semantic equality and field preservation.
+- Add persistence round-trip and targeted mutation tests: import -> reload -> enable/disable or edit one field -> export; assert all unrelated fields remain byte/semantically intact.
+- Add regression tests for every existing BookSource, BookChapter, LegadoBookSourceCodec, FileBookSourceCatalog, source-login identity, and ReadingEngine caller touched by the change.
+- Run focused model/codec/catalog tests, :integration-contract:test, full :app:testDebugUnitTest, and :app:assembleDebug on the exact final code head; inspect XML reports and APK artifact. Verify all five rule models and all audited callers are represented in the adapter map.
+- Acceptance is this Stage 1 slice only; it does not establish complete AnalyzeRule/AnalyzeUrl, full Rhino, unified runtime, batch support, UI parity, physical-device validation or release readiness.
+
+### Explicit exclusions
+No UI redesign; no changes to main; no selector/rule-engine rewrite; no Rhino extension expansion; no java.getSource() ABI change; no batch API/cache implementation; no unsupported stubs/no-op shims; no release APK claim.
+
+### Required self-review before code
+Re-read all five mandatory files and this registration; verify branch head again; inspect full pinned upstream model declarations and every affected host caller/adapter/test; list compatibility risks and test cases before editing. If inspection shows this registered scope is incomplete, amend this ledger first. After implementation, record exact changed paths, test results, CI run/head, artifact inspection, remaining gaps and a checklist self-review.
