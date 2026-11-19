@@ -66,6 +66,27 @@ class SharedPreferencesSourceCookieJarTest {
     }
 
     @Test
+    fun loginCookieRequestHeaderParsesPairsAsHostOnlyCookies() {
+        val parsed = parseLoginCookieHeader(
+            "https://www.reader.example/login".toHttpUrl(),
+            "sid=abc==; theme=dark",
+        )
+        assertEquals(2, parsed.size)
+        assertEquals("abc==", parsed[0].value)
+        assertEquals("www.reader.example", parsed[0].domain)
+        assertEquals("/", parsed[0].path)
+        assertEquals(true, parsed[0].hostOnly)
+    }
+
+    @Test
+    fun emptyLoginCookieHeaderClearsTheSourceDomainCookieSet() {
+        assertEquals(
+            emptyList<Cookie>(),
+            parseLoginCookieHeader("https://reader.example/source.json".toHttpUrl(), ""),
+        )
+    }
+
+    @Test
     fun hostOnlyAndDomainCookiesWithSameNameHaveDifferentStorageKeys() {
         val hostOnly = cookie("session", "host", hostOnly = true)
         val domain = cookie("session", "domain", hostOnly = false)
