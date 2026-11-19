@@ -614,3 +614,14 @@ CI run 44610074419 passed on the earlier documentation-registration head 32e0537
 The CI run 44610074419 passed on the earlier documentation-registration head 32e0537048b1c82714e982c56fe6998ce6117703; it is not the final status of later documentation-only commits. The later audit-document commits have their own workflow runs.
 
 Additional lifecycle gap: clearSourceState currently clears the script stores, file cache and login-session store but does not clear SharedPreferencesSourceCookieJar. The next auth/session implementation must add per-source cookie cleanup for source removal/reset as well as removeLoginHeader, without affecting other sources.
+
+
+## 2026-11-20 registered implementation gate — login/session credential safety
+
+- [ ] Restrict source login-header propagation to pinned AnalyzeUrl same-site semantics; test same host, subdomain, cross-origin and CDN targets, including redirects.
+- [ ] Synchronize Cookie values from putLoginHeader with the source-scoped cookie jar; clear the corresponding cookie state on removeLoginHeader and source reset.
+- [ ] Encrypt persisted loginInfo using the pinned androidId-derived AES-compatible format; test legacy plaintext migration, encrypted round-trip, corrupt ciphertext and unavailable key handling without data loss.
+- [ ] Prove two-source cookie/login isolation and secret redaction; preserve cancellation and existing JS scripts.
+- [ ] Re-audit all callers/adapters and run focused tests plus full CI; record commit/run/artifacts before marking this gate complete.
+
+Scope is limited to login/session security and lifecycle wiring. It does not close the upstream BaseSource model, batch persistence, AnalyzeUrl parity, WebView/UI callbacks, complete reading flow or physical-device validation. No runtime changes have been made as part of this registration.
