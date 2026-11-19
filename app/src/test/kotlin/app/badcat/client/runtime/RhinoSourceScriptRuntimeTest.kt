@@ -1506,20 +1506,32 @@ text + re.test('aa}}')"""
     @Test
     fun supportsPinnedSymmetricCryptoOverloadsAndRandomKeySemantics() = runBlocking {
         val runtime = RhinoSourceScriptRuntime()
-        val source = BookSource(id = "https://pinned-crypto-overloads.example/", name = "Pinned overloads", baseUrl = "https://pinned-crypto-overloads.example/")
-        val result = runtime.evaluate(source, """
-            var randomCrypto = java.createSymmetricCrypto('AES/ECB/PKCS5Padding', null, null);
-            var randomCipher = randomCrypto.encryptBase64('random key fixture');
-            var randomPlain = randomCrypto.decryptStr(randomCipher);
-            var stringCrypto = java.createSymmetricCrypto('AES/ECB/PKCS5Padding', '0123456789abcdef');
-            var stringCipher = stringCrypto.encryptBase64('string key fixture');
-            var stringPlain = stringCrypto.decryptStr(stringCipher);
-            var byteCrypto = java.createSymmetricCrypto('AES/ECB/PKCS5Padding', java.utf8Encode('0123456789abcdef'));
-            var byteCipher = byteCrypto.encryptBase64('byte key fixture');
-            var bytePlain = byteCrypto.decryptStr(byteCipher);
-            randomPlain + '|' + stringPlain + '|' + bytePlain;
-        """.trimIndent())
-        assertTrue("Pinned symmetric overloads f    @Test
+        val source = BookSource(
+            id = "https://pinned-crypto-overloads.example/",
+            name = "Pinned overloads",
+            baseUrl = "https://pinned-crypto-overloads.example/",
+        )
+        val result = runtime.evaluate(
+            source,
+            """
+                var randomCrypto = java.createSymmetricCrypto('AES/ECB/PKCS5Padding', null, null);
+                var randomCipher = randomCrypto.encryptBase64('random key fixture');
+                var randomPlain = randomCrypto.decryptStr(randomCipher);
+                var stringCrypto = java.createSymmetricCrypto('AES/ECB/PKCS5Padding', '0123456789abcdef');
+                var stringCipher = stringCrypto.encryptBase64('string key fixture');
+                var stringPlain = stringCrypto.decryptStr(stringCipher);
+                var byteCrypto = java.createSymmetricCrypto('AES/ECB/PKCS5Padding', java.utf8Encode('0123456789abcdef'));
+                var byteCipher = byteCrypto.encryptBase64('byte key fixture');
+                var bytePlain = byteCrypto.decryptStr(byteCipher);
+                randomPlain + '|' + stringPlain + '|' + bytePlain;
+            """.trimIndent(),
+        )
+        assertTrue("Pinned symmetric overloads failed: $result", result is EngineResult.Success)
+        assertEquals("random key fixture|string key fixture|byte key fixture", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun preservesCryptoTwoMibibyteBoundsAndInputStreamProgress() {
         val key = "0123456789abcdef".toByteArray(Charsets.UTF_8)
         val crypto = RhinoBoundedSymmetricCryptoAndroid("AES/ECB/NoPadding", key)
@@ -1541,6 +1553,7 @@ text + re.test('aa}}')"""
         }
 
         val sourceBytes = "stream-progress!".toByteArray(Charsets.UTF_8)
+        var streamClosed = false
         val zeroProgressStream = object : InputStream() {
             private val delegate = ByteArrayInputStream(sourceBytes)
             private var firstBulkRead = true
@@ -1552,9 +1565,14 @@ text + re.test('aa}}')"""
                 }
                 return delegate.read(buffer, offset, length)
             }
+            override fun close() {
+                streamClosed = true
+                delegate.close()
+            }
         }
         val streamEncrypted = crypto.encrypt(zeroProgressStream)
         org.junit.Assert.assertArrayEquals(sourceBytes, crypto.decrypt(ByteArrayInputStream(streamEncrypted)))
+        assertTrue("Caller-owned InputStream must remain open", !streamClosed)
 
         val asymmetric = AsymmetricCrypto("RSA")
         org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
@@ -1564,11 +1582,6 @@ text + re.test('aa}}')"""
         org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
             signer.sign(ByteArray(2 * 1024 * 1024 + 1))
         }
-    }
-
-ailed: $result", result is EngineResult.Success)
-        assertEquals("random key fixture|string key fixture|byte key fixture", (result as EngineResult.Success).value)
-        runtime.clearSourceState(source.id)
     }
 
     @Test

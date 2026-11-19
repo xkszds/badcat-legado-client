@@ -5,6 +5,8 @@ import android.util.Base64 as AndroidBase64
 import cn.hutool.crypto.symmetric.SymmetricCrypto
 import io.legado.app.help.crypto.AsymmetricCrypto
 import io.legado.app.help.crypto.Sign
+import io.legado.app.help.crypto.RhinoBoundedSymmetricCryptoAndroid
+import io.legado.app.help.crypto.requireRhinoCryptoSize
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.security.MessageDigest
@@ -1385,7 +1387,9 @@ class RhinoSafeSourceJavaExtensions(
         key: ByteArray?,
         iv: ByteArray?
     ): SymmetricCrypto {
-        val symmetricCrypto = SymmetricCryptoAndroid(transformation, key)
+        requireRhinoCryptoSize(key?.size ?: 0, "crypto key")
+        requireRhinoCryptoSize(iv?.size ?: 0, "crypto IV")
+        val symmetricCrypto = RhinoBoundedSymmetricCryptoAndroid(transformation, key)
         return if (iv != null && iv.isNotEmpty()) symmetricCrypto.setIv(iv) else symmetricCrypto
     }
 
