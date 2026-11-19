@@ -11,6 +11,29 @@ class RhinoSafeSourceJavaExtensionsCompatTest {
     )
 
     @Test
+    fun ajaxUrlCollectionMaterializationStopsAtConfiguredLimit() {
+        var consumed = 0
+        val unbounded = Iterable {
+            generateSequence { consumed++; "https://example/$consumed" }.iterator()
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            boundedAjaxUrlValues(unbounded, maxUrls = 20, maxJsonChars = 1024)
+        }
+        assertEquals(21, consumed)
+    }
+
+    @Test
+    fun ajaxUrlJsonInputIsBoundedBeforeParsing() {
+        assertThrows(IllegalArgumentException::class.java) {
+            boundedAjaxUrlValues(" ".repeat(1025), maxUrls = 20, maxJsonChars = 1024)
+        }
+        assertEquals(
+            listOf("https://one.example/", "https://two.example/"),
+            boundedAjaxUrlValues("""["https://one.example/","https://two.example/"]""", 20, 1024),
+        )
+    }
+
+    @Test
     fun parseJsRequestHeadersAcceptsNullAndReturnsEmptyMap() {
         assertEquals(emptyMap<String, String>(), extensions.parseJsRequestHeaders(null))
     }

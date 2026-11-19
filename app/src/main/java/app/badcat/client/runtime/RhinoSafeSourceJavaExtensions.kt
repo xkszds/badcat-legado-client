@@ -806,23 +806,8 @@ class RhinoSafeSourceJavaExtensions(
     /** Bounded Legado batch GET helper with capped parallelism and input-order results. */
     @JvmOverloads
     fun ajaxAll(urls: Any?, skipRateLimit: Boolean = false): Array<RhinoSourceHttpResponse> {
-        val values = when (urls) {
-            is Scriptable -> {
-                val length = (ScriptableObject.getProperty(urls, "length") as? Number)?.toInt()
-                    ?: throw IllegalArgumentException("java.ajaxAll expects an array of URLs")
-                require(length in 0..MAX_AJAX_ALL_URLS) { "java.ajaxAll accepts at most $MAX_AJAX_ALL_URLS URLs" }
-                (0 until length).map { index -> ScriptableObject.getProperty(urls, index) }
-            }
-            is Iterable<*> -> urls.toList()
-            is Array<*> -> urls.toList()
-            is String -> {
-                val json = com.google.gson.JsonParser.parseString(urls)
-                require(json.isJsonArray) { "java.ajaxAll string input must be a JSON array" }
-                json.asJsonArray.map { it.asString }
-            }
-            else -> throw IllegalArgumentException("java.ajaxAll expects an array of URLs")
-        }
-        require(values.size <= MAX_AJAX_ALL_URLS) { "java.ajaxAll accepts at most $MAX_AJAX_ALL_URLS URLs" }
+        val values = boundedAjaxUrlValues(urls, MAX_AJAX_ALL_URLS, MAX_AJAX_ALL_INPUT_CHARS)
+
         val normalizedUrls = values.map { value ->
             value?.toString()?.trim().orEmpty().also { url ->
                 require(url.isNotEmpty()) { "java.ajaxAll URL must not be blank" }
@@ -850,23 +835,8 @@ class RhinoSafeSourceJavaExtensions(
     @JvmOverloads
     fun ajaxTestAll(urls: Any?, timeout: Int, skipRateLimit: Boolean = false): Array<RhinoSourceHttpResponse> {
         require(timeout > 0) { "ajaxTestAll timeout must be positive" }
-        val values = when (urls) {
-            is Scriptable -> {
-                val length = (ScriptableObject.getProperty(urls, "length") as? Number)?.toInt()
-                    ?: throw IllegalArgumentException("java.ajaxTestAll expects an array of URLs")
-                require(length in 0..MAX_AJAX_ALL_URLS) { "java.ajaxTestAll accepts at most $MAX_AJAX_ALL_URLS URLs" }
-                (0 until length).map { index -> ScriptableObject.getProperty(urls, index) }
-            }
-            is Iterable<*> -> urls.toList()
-            is Array<*> -> urls.toList()
-            is String -> {
-                val json = com.google.gson.JsonParser.parseString(urls)
-                require(json.isJsonArray) { "java.ajaxTestAll string input must be a JSON array" }
-                json.asJsonArray.map { it.asString }
-            }
-            else -> throw IllegalArgumentException("java.ajaxTestAll expects an array of URLs")
-        }
-        require(values.size <= MAX_AJAX_ALL_URLS) { "java.ajaxTestAll accepts at most $MAX_AJAX_ALL_URLS URLs" }
+        val values = boundedAjaxUrlValues(urls, MAX_AJAX_ALL_URLS, MAX_AJAX_ALL_INPUT_CHARS)
+
         val normalizedUrls = values.map { value ->
             value?.toString()?.trim().orEmpty().also { url ->
                 require(url.isNotEmpty()) { "java.ajaxTestAll URL must not be blank" }
@@ -1430,6 +1400,7 @@ class RhinoSafeSourceJavaExtensions(
 
         const val DEFAULT_WEBVIEW_USER_AGENT = "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.0.0 Mobile Safari/537.36"
         private const val MAX_AJAX_ALL_URLS = 20
+        private const val MAX_AJAX_ALL_INPUT_CHARS = 64 * 1024
         private const val MAX_AJAX_ALL_CONCURRENCY = 4
         private const val MAX_KEY_CHARS = 256
         private const val MAX_VALUE_CHARS = 16 * 1024
@@ -1443,6 +1414,39 @@ class RhinoSafeSourceJavaExtensions(
         private const val MAX_ARCHIVE_FILES = 1000
         private const val MAX_ARCHIVE_PATH_CHARS = 512
     }
+}
+
+
+/** Materialize only a bounded prefix of caller-provided URL collections before validation. */
+internal fun boundedAjaxUrlValues(
+    urls: Any?,
+    maxUrls: Int,
+    maxJsonChars: Int,
+): List<Any?> {
+    require(maxUrls >= 0 && maxJsonChars >= 0)
+    val values = when (urls) {
+        is Scriptable -> {
+            val length = (ScriptableObject.getProperty(urls, "length") as? Number)?.toInt()
+                ?: throw IllegalArgumentException("java.ajaxAll expects an array of URLs")
+            require(length in 0..maxUrls) { "java.ajaxAll accepts at most $maxUrls URLs" }
+            (0 until length).map { index -> ScriptableObject.getProperty(urls, index) }
+        }
+        is Iterable<*> -> urls.take(maxUrls + 1).toList()
+        is Array<*> -> {
+            require(urls.size <= maxUrls) { "java.ajaxAll accepts at most $maxUrls URLs" }
+            urls.asList()
+        }
+        is String -> {
+            require(urls.length <= maxJsonChars) { "java.ajaxAll URL JSON exceeds the input size limit" }
+            val json = com.google.gson.JsonParser.parseString(urls)
+            require(json.isJsonArray) { "java.ajaxAll string input must be a JSON array" }
+            require(json.asJsonArray.size() <= maxUrls) { "java.ajaxAll accepts at most $maxUrls URLs" }
+            json.asJsonArray.map { it.asString }
+        }
+        else -> throw IllegalArgumentException("java.ajaxAll expects an array of URLs")
+    }
+    require(values.size <= maxUrls) { "java.ajaxAll accepts at most $maxUrls URLs" }
+    return values
 }
 
 /** Read-only response facade returned by the Legado java.get(url, headers) helper. */
