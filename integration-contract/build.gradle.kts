@@ -39,6 +39,12 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
 }
 
+// The app consumes this module as a project dependency. Package the separately
+// compiled pinned Legado classes into the published module JAR as well.
+tasks.named("jar") {
+    from(pinnedLegado.output)
+}
+
 tasks.test {
     useJUnit()
     testLogging {
