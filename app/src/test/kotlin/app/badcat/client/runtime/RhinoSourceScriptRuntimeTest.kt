@@ -80,6 +80,23 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun functionThisObjReturnsTheSourceGlobalThisForCallbacks() = runBlocking {
+        val source = BookSource(
+            id = "https://function-this.example/",
+            name = "Function this receiver",
+            baseUrl = "https://function-this.example/",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val result = runtime.evaluate(
+            source,
+            "(function () { var callback = function () { return this === globalThis; }; return java.functionThisObj(callback) === globalThis; })()",
+        )
+        assertTrue("functionThisObj should return the source globalThis: $result", result is EngineResult.Success)
+        assertEquals("true", (result as EngineResult.Success).value)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun evaluatesSourceJsLibBeforeRuleScript() = runBlocking {
         val runtime = RhinoSourceScriptRuntime()
         val source = BookSource(

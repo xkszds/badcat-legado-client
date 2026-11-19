@@ -1100,6 +1100,18 @@ class RhinoSafeSourceJavaExtensions(
         return "${sourceId.length}:$sourceId:${name.length}:$name"
     }
 
+    /**
+     * Return the source scope's globalThis as the JavaScript callback receiver.
+     * Matches the pinned Legado helper without exposing Rhino internals beyond
+     * the already supplied Function object.
+     */
+    fun functionThisObj(action: Function): Scriptable {
+        val top = action.parentScope?.let { ScriptableObject.getTopLevelScope(it) }
+        return top?.let { ScriptableObject.getProperty(it, "globalThis") as? Scriptable }
+            ?: top
+            ?: org.htmlunit.corejs.javascript.Undefined.SCRIPTABLE_UNDEFINED
+    }
+
     private fun invokeSourceFunction(action: Function) {
         functionInvoker(action)
     }
