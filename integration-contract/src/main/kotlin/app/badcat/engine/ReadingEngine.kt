@@ -102,6 +102,9 @@ data class BookSource(
     val variableComment: String? = null,
     val exploreUrl: String? = null,
     val exploreScreen: String? = null,
+    val lastUpdateTime: Long = 0L,
+    val respondTime: Long = 180000L,
+    val weight: Int = 0,
     val searchUrl: String? = null,
     val mainJs: String? = null,
     /** Raw JSON objects for upstream nested rule models; not executable by this contract. */

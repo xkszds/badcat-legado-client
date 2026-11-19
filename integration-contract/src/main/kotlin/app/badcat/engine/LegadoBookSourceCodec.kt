@@ -30,6 +30,9 @@ data class LegadoBookSource(
     val variableComment: String?,
     val exploreUrl: String?,
     val exploreScreen: String?,
+    val lastUpdateTime: Long,
+    val respondTime: Long,
+    val weight: Int,
     val searchUrl: String?,
     val mainJs: String?,
     val ruleExploreJson: String?,
@@ -60,6 +63,9 @@ data class LegadoBookSource(
         variableComment = variableComment,
         exploreUrl = exploreUrl,
         exploreScreen = exploreScreen,
+        lastUpdateTime = lastUpdateTime,
+        respondTime = respondTime,
+        weight = weight,
         searchUrl = searchUrl,
         mainJs = mainJs,
         ruleExploreJson = ruleExploreJson,
@@ -213,6 +219,9 @@ object LegadoBookSourceCodec {
             variableComment = source.stringOrNull("variableComment"),
             exploreUrl = source.stringOrNull("exploreUrl"),
             exploreScreen = source.stringOrNull("exploreScreen"),
+            lastUpdateTime = source.longOrDefault("lastUpdateTime", 0L),
+            respondTime = source.longOrDefault("respondTime", 180000L),
+            weight = source.intOrDefault("weight", 0),
             searchUrl = source.stringOrNull("searchUrl"),
             mainJs = source.stringOrNull("mainJs"),
             concurrentRate = source.stringOrNull("concurrentRate"),
@@ -318,6 +327,11 @@ object LegadoBookSourceCodec {
     private fun JsonObject.intOrDefault(key: String, default: Int): Int {
         val value: JsonElement = get(key) ?: return default
         return runCatching { value.asInt }.getOrDefault(default)
+    }
+
+    private fun JsonObject.longOrDefault(key: String, default: Long): Long {
+        val value: JsonElement = get(key) ?: return default
+        return runCatching { value.asLong }.getOrDefault(default)
     }
 
     private fun JsonObject.booleanOrDefault(key: String, default: Boolean): Boolean {

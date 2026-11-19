@@ -64,6 +64,9 @@ class LegadoBookSourceCodecTest {
               "bookSourceComment": "source note",
               "variableComment": "token: access token",
               "exploreScreen": "category",
+              "lastUpdateTime": 1760000000000,
+              "respondTime": 2400,
+              "weight": 3,
               "eventListener": true,
               "customButton": false,
               "ruleReview": {"reviewList":"div.review"},
@@ -98,6 +101,9 @@ class LegadoBookSourceCodecTest {
         assertEquals("source note", engineSource.bookSourceComment)
         assertEquals("token: access token", engineSource.variableComment)
         assertEquals("category", engineSource.exploreScreen)
+        assertEquals(1760000000000L, engineSource.lastUpdateTime)
+        assertEquals(2400L, engineSource.respondTime)
+        assertEquals(3, engineSource.weight)
         assertTrue(engineSource.eventListener)
         assertEquals(false, engineSource.customButton)
         assertTrue(engineSource.ruleReviewJson!!.contains("reviewList"))
