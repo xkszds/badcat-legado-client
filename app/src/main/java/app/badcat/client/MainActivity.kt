@@ -10,6 +10,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
+import org.json.JSONArray
+import org.json.JSONObject
 
 /** Compact search landing page; the same search bar is reused on results. */
 class MainActivity : Activity() {
@@ -19,6 +21,7 @@ class MainActivity : Activity() {
     private var appliedSearchBarTopSpacing = 24
     private var darkMode = false
     private lateinit var homeSearchBar: BadcatSearchBarView
+    private lateinit var recentReadingPanel: LinearLayout
     private val blue = Color.rgb(55, 137, 222)
     private val ink get() = if (darkMode) Color.rgb(235, 237, 240) else Color.rgb(48, 55, 66)
     private val muted get() = if (darkMode) Color.rgb(165, 172, 182) else Color.rgb(135, 145, 158)
@@ -36,13 +39,20 @@ class MainActivity : Activity() {
         @Suppress("DEPRECATION")
         window.decorView.systemUiVisibility = if (darkMode) 0 else View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
         setContentView(buildHome())
+        refreshRecentReadingPanel()
     }
 
     private fun buildHome(): View = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
         setBackgroundColor(page)
         addView(buildHeader())
-        // Clean home canvas: no fabricated server-error, ranking, draw or cash-promotion content.
+        recentReadingPanel = LinearLayout(this@MainActivity).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(16), dp(18), dp(8))
+            visibility = View.GONE
+        }
+        addView(recentReadingPanel)
+        // Keep the remaining home canvas calm; only real saved reading records are shown.
         addView(View(this@MainActivity), LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
         ))
@@ -135,6 +145,97 @@ class MainActivity : Activity() {
         })
     }
 
+    private fun refreshRecentReadingPanel() {
+        if (!::recentReadingPanel.isInitialized) return
+        recentReadingPanel.removeAllViews()
+        val raw = getSharedPreferences(ReadingHistoryActivity.PREFS, MODE_PRIVATE)
+            .getString(ReadingHistoryActivity.KEY, "[]").orEmpty()
+        val records = runCatching {
+            val json = JSONArray(raw)
+            (0 until json.length()).mapNotNull { index ->
+                json.optJSONObject(index)?.takeIf { item ->
+                    item.optString("sourceId").isNotBlank() &&
+                        item.optString("bookUrl").isNotBlank() &&
+                        item.optString("chapterUrl").isNotBlank()
+                }
+            }.sortedByDescending { it.optLong("updatedAt") }.take(3)
+        }.getOrDefault(emptyList())
+
+        if (records.isEmpty()) {
+            recentReadingPanel.visibility = View.GONE
+            return
+        }
+        recentReadingPanel.visibility = View.VISIBLE
+        val heading = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(TextView(this@MainActivity).apply {
+                text = "最近阅读"
+                textSize = 17f
+                setTextColor(ink)
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+            }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            addView(TextView(this@MainActivity).apply {
+                text = "全部"
+                textSize = 13f
+                setTextColor(blue)
+                isClickable = true
+                isFocusable = true
+                setOnClickListener {
+                    startActivity(Intent(this@MainActivity, ReadingHistoryActivity::class.java))
+                }
+            })
+        }
+        recentReadingPanel.addView(heading, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply { bottomMargin = dp(10) })
+
+        records.forEach { item ->
+            val bookName = item.optString("bookName").ifBlank { "未命名书籍" }
+            val chapterTitle = item.optString("chapterTitle").ifBlank { "继续阅读" }
+            val sourceId = item.optString("sourceId")
+            val bookUrl = item.optString("bookUrl")
+            val chapterUrl = item.optString("chapterUrl")
+            recentReadingPanel.addView(LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(14), dp(12), dp(14), dp(12))
+                background = rounded(
+                    if (darkMode) Color.rgb(38, 43, 51) else Color.rgb(247, 249, 252),
+                    12,
+                )
+                isClickable = true
+                isFocusable = true
+                setOnClickListener {
+                    startActivity(Intent(this@MainActivity, SourceChapterActivity::class.java).apply {
+                        putExtra(SourceChapterActivity.EXTRA_SOURCE_ID, sourceId)
+                        putExtra(SourceChapterActivity.EXTRA_BOOK_URL, bookUrl)
+                        putExtra(SourceChapterActivity.EXTRA_BOOK_NAME, bookName)
+                        putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, chapterUrl)
+                        putExtra(SourceChapterActivity.EXTRA_CHAPTER_TITLE, chapterTitle)
+                    })
+                }
+                addView(TextView(this@MainActivity).apply {
+                    text = bookName
+                    textSize = 15f
+                    setTextColor(ink)
+                    typeface = android.graphics.Typeface.DEFAULT_BOLD
+                    maxLines = 1
+                    ellipsize = android.text.TextUtils.TruncateAt.END
+                })
+                addView(TextView(this@MainActivity).apply {
+                    text = chapterTitle
+                    textSize = 12f
+                    setTextColor(muted)
+                    maxLines = 1
+                    ellipsize = android.text.TextUtils.TruncateAt.END
+                    setPadding(0, dp(4), 0, 0)
+                })
+            }, LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = dp(8) })
+        }
+    }
+
     private fun openSearch(query: String) {
         if (query.isBlank()) {
             android.widget.Toast.makeText(this, "请输入书名或作者", android.widget.Toast.LENGTH_SHORT).show()
@@ -181,6 +282,7 @@ class MainActivity : Activity() {
             recreate()
             return
         }
+        refreshRecentReadingPanel()
         if (selected != appliedSearchBarMode) {
             appliedSearchBarMode = selected
             appliedSearchBarTopSpacing = selectedSpacing
