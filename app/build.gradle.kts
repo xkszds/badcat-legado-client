@@ -20,6 +20,8 @@ android {
         resources {
             // Hutool crypto and core both ship this non-runtime JAR index metadata.
             excludes += "/META-INF/INDEX.LIST"
+            // Bouncy Castle modules embed the identical root LICENSE.md in every JAR.
+            pickFirsts += "/META-INF/LICENSE.md"
         }
     }
 
