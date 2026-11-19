@@ -12,6 +12,23 @@ import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap
 
 
+internal fun parseLoginCookieHeader(url: HttpUrl, raw: String): List<Cookie> {
+    if (raw.isBlank()) return emptyList()
+    require(raw.length <= 8 * 1024) { "Login Cookie header exceeds the size limit" }
+    return raw.split(';').mapNotNull { part ->
+        val pair = part.trim()
+        if (pair.isEmpty()) return@mapNotNull null
+        val separator = pair.indexOf('=')
+        require(separator > 0) { "Login Cookie header contains an invalid pair" }
+        val name = pair.substring(0, separator).trim()
+        val value = pair.substring(separator + 1).trim()
+        require(name.length <= 256 && value.length <= 4096) {
+            "Login Cookie entry exceeds the size limit"
+        }
+        Cookie.Builder().name(name).value(value).path("/").hostOnlyDomain(url.host).build()
+    }
+}
+
 internal fun sourceCookieStorageKey(cookie: Cookie): String =
     "${cookie.domain}|${cookie.path}|${cookie.name}|${cookie.hostOnly}"
 
@@ -128,6 +145,44 @@ class SharedPreferencesSourceCookieJar(
             }
             removeExpiredLocked(now)
             trimToCookieLimitLocked()
+            persistLocked()
+        }
+    }
+
+    /**
+     * Imports the raw Cookie request header saved by Legado's BaseSource.putLoginHeader.
+     * The source's own registrable domain is replaced; cookies for unrelated CDN domains
+     * remain intact. Imported pairs are host-only cookies scoped to the source host.
+     */
+    fun replaceLoginCookieHeader(url: String, cookieHeader: String) {
+        val httpUrl = url.toHttpUrlOrNull()
+            ?: throw IllegalArgumentException("Login cookie URL must be a valid HTTP(S) URL")
+        require(cookieHeader.length <= MAX_COOKIE_HEADER_CHARS) {
+            "Login Cookie header exceeds the size limit"
+        }
+        val parsed = parseLoginCookieHeader(httpUrl, cookieHeader)
+        val sourceDomain = legadoSourceDomain(url) ?: httpUrl.host
+        synchronized(lock) {
+            reloadLocked()
+            cookies.entries.removeAll { (_, cookie) ->
+                cookie.domain == sourceDomain || cookie.domain.endsWith(".$sourceDomain")
+            }
+            parsed.forEach { cookie -> cookies[cookieKey(cookie)] = cookie }
+            removeExpiredLocked(System.currentTimeMillis())
+            trimToCookieLimitLocked()
+            persistLocked()
+        }
+    }
+
+    /** Mirrors CookieStore.removeCookie(sourceKey) without touching other sources or CDN domains. */
+    fun removeForSourceDomain(url: String) {
+        val httpUrl = url.toHttpUrlOrNull() ?: return
+        val sourceDomain = legadoSourceDomain(url) ?: httpUrl.host
+        synchronized(lock) {
+            reloadLocked()
+            cookies.entries.removeAll { (_, cookie) ->
+                cookie.domain == sourceDomain || cookie.domain.endsWith(".$sourceDomain")
+            }
             persistLocked()
         }
     }
