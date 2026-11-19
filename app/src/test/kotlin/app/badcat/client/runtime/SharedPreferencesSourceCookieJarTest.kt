@@ -87,6 +87,16 @@ class SharedPreferencesSourceCookieJarTest {
     }
 
     @Test
+    fun sourceDomainRemovalMatchesItsSubdomainsButNotThirdPartyCdn() {
+        val sourceCookie = cookie("sid", "a", domain = "reader.example", hostOnly = false)
+        val subdomainCookie = cookie("sid", "b", domain = "cdn.reader.example", hostOnly = true)
+        val cdnCookie = cookie("sid", "c", domain = "assets.other-cdn.net", hostOnly = true)
+        assertEquals(true, sourceCookieBelongsToDomain(sourceCookie, "reader.example"))
+        assertEquals(true, sourceCookieBelongsToDomain(subdomainCookie, "reader.example"))
+        assertEquals(false, sourceCookieBelongsToDomain(cdnCookie, "reader.example"))
+    }
+
+    @Test
     fun hostOnlyAndDomainCookiesWithSameNameHaveDifferentStorageKeys() {
         val hostOnly = cookie("session", "host", hostOnly = true)
         val domain = cookie("session", "domain", hostOnly = false)
