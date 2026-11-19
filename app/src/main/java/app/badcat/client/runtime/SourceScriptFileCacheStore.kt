@@ -59,22 +59,22 @@ class FileSourceScriptCacheStore(context: Context) : SourceScriptFileCacheStore 
         synchronized(sourceScriptFileCacheLock) {
             val target = AtomicFile(cacheFile(sourceId, key))
             val bytes = runCatching {
-            // openRead performs AtomicFile backup recovery; checking baseFile first
-            // would incorrectly hide a valid .bak after an interrupted write.
-            target.openRead().use { input ->
-                val output = java.io.ByteArrayOutputStream()
-                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                var total = 0
-                while (true) {
-                    val count = input.read(buffer)
-                    if (count < 0) break
-                    total += count
-                    if (total > MAX_CACHE_BYTES) return null
-                    output.write(buffer, 0, count)
+                // openRead performs AtomicFile backup recovery; checking baseFile first
+                // would incorrectly hide a valid .bak after an interrupted write.
+                target.openRead().use { input ->
+                    val output = java.io.ByteArrayOutputStream()
+                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                    var total = 0
+                    while (true) {
+                        val count = input.read(buffer)
+                        if (count < 0) break
+                        total += count
+                        if (total > MAX_CACHE_BYTES) return null
+                        output.write(buffer, 0, count)
+                    }
+                    output.toByteArray()
                 }
-                output.toByteArray()
-            }
-        }.getOrNull()
+            }.getOrNull()
             if (bytes != null) target.baseFile.setLastModified(System.currentTimeMillis())
             bytes
         }
