@@ -68,6 +68,18 @@ internal object SourceLoginInfoCipher {
     }
 
     fun isLegacyPlainText(value: String): Boolean = value.trimStart().startsWith("{")
+
+    fun readStored(
+        value: String,
+        androidId: String,
+        onMigrated: (encryptedValue: String) -> Unit,
+    ): String? {
+        if (isLegacyPlainText(value)) {
+            runCatching { encrypt(value, androidId) }.getOrNull()?.let(onMigrated)
+            return value
+        }
+        return runCatching { decrypt(value, androidId) }.getOrNull()
+    }
 }
 
 /** App-private storage. Login info follows pinned BaseSource's Android-ID AES format. */
@@ -90,15 +102,9 @@ class SharedPreferencesSourceLoginSessionStore(
     override fun getLoginInfo(sourceId: String): String? {
         val storageKey = key("info", sourceId)
         val stored = preferences.getString(storageKey, null) ?: return null
-        if (SourceLoginInfoCipher.isLegacyPlainText(stored)) {
-            // Non-destructive migration: if the device key is temporarily unavailable,
-            // keep and return the legacy value rather than replacing it with garbage.
-            val encrypted = runCatching { SourceLoginInfoCipher.encrypt(stored, androidIdProvider()) }
-                .getOrNull()
-            if (encrypted != null) preferences.edit().putString(storageKey, encrypted).apply()
-            return stored
+        return SourceLoginInfoCipher.readStored(stored, androidIdProvider()) { encrypted ->
+            preferences.edit().putString(storageKey, encrypted).apply()
         }
-        return runCatching { SourceLoginInfoCipher.decrypt(stored, androidIdProvider()) }.getOrNull()
     }
     override fun putLoginInfo(sourceId: String, infoJson: String) {
         val encrypted = SourceLoginInfoCipher.encrypt(infoJson, androidIdProvider())
