@@ -16,6 +16,13 @@ android {
         versionName = "0.1.0-integration"
     }
 
+    packaging {
+        resources {
+            // Hutool crypto and core both ship this non-runtime JAR index metadata.
+            excludes += "/META-INF/INDEX.LIST"
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
