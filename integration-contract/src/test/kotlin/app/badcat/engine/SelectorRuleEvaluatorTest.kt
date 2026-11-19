@@ -31,6 +31,34 @@ class SelectorRuleEvaluatorTest {
     }
 
     @Test
+    fun explicitCssTypeAcceptsLegadoForcedCssMarker() {
+        val document = SourceDocument(
+            "https://example.test/",
+            """<div class="book">Alpha</div><div class="book">Beta</div>""",
+        )
+        val result = SelectorRuleEvaluator.evaluate(
+            document,
+            SelectorRuleType.CSS,
+            "@@.book@text",
+        )
+        assertEquals(listOf("Alpha", "Beta"), assertIs<EngineResult.Success<List<String>>>(result).value)
+    }
+
+    @Test
+    fun explicitCssTypeAcceptsLegadoDefaultCssMarker() {
+        val document = SourceDocument(
+            "https://example.test/",
+            """<div class="book">Alpha</div><div class="book">Beta</div>""",
+        )
+        val result = SelectorRuleEvaluator.evaluate(
+            document,
+            SelectorRuleType.CSS,
+            "@.book@text",
+        )
+        assertEquals(listOf("Alpha", "Beta"), assertIs<EngineResult.Success<List<String>>>(result).value)
+    }
+
+    @Test
     fun dispatchesXPathRules() {
         val document = SourceDocument("https://example.test/", "<p>Alpha</p>")
         val result = SelectorRuleEvaluator.evaluate(document, SelectorRuleType.XPATH, "//p/text()")
