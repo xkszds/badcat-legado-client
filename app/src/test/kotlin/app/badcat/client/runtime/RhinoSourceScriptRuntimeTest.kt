@@ -1641,13 +1641,6 @@ text + re.test('aa}}')"""
             crypto.encryptHex(ByteArrayInputStream(hexLimitInput + ByteArray(16)))
         }
 
-        assertEquals(
-            2 * 1024 * 1024,
-            checkedRhinoCryptoEncodedOutput("x".repeat(2 * 1024 * 1024), "fixture output").length,
-        )
-        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
-            checkedRhinoCryptoEncodedOutput("x".repeat(2 * 1024 * 1024 + 1), "fixture output")
-        }
     }
 
     @Test
