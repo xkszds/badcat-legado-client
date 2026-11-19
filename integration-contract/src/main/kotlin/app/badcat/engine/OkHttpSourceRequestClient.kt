@@ -78,6 +78,12 @@ class OkHttpSourceRequestClient(
                 "Request URL must be an absolute HTTP(S) URL without embedded credentials",
             )
         }
+        if (!sourceRequestHeadersAreSafe(request.headers)) {
+            return EngineResult.Failure(
+                EngineErrorCode.INVALID_SOURCE,
+                "Request headers exceed the configured count, character or size limits",
+            )
+        }
         val requestStartNanos = System.nanoTime()
         return try {
             val client = clientFor(request)
@@ -270,6 +276,23 @@ class OkHttpSourceRequestClient(
         private val BODY_REQUIRED_METHODS = setOf("POST", "PUT", "PATCH", "PROPPATCH", "REPORT")
         private val BODY_FORBIDDEN_METHODS = setOf("GET", "HEAD")
     }
+}
+
+
+/** Defense in depth for callers that bypass SourceRequestFactory or merge login headers. */
+internal fun sourceRequestHeadersAreSafe(headers: Map<String, String>): Boolean {
+    if (headers.size > 100) return false
+    var totalChars = 0
+    headers.forEach { (name, value) ->
+        if (name.isBlank() || name.length > 256 ||
+            name.any { it !in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#$%&'*+-.^_`|~" } ||
+            value.length > 8 * 1024 ||
+            value.any { it == '\r' || it == '\n' || (it.code < 0x20 && it != '\t') || it.code == 0x7f }
+        ) return false
+        totalChars += name.length + value.length
+        if (totalChars > 32 * 1024) return false
+    }
+    return true
 }
 
 /** Retry transient connection, read and DNS failures for idempotent reads, but never TLS validation failures. */

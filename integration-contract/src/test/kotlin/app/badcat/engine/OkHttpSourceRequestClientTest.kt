@@ -67,6 +67,27 @@ class OkHttpSourceRequestClientTest {
     }
 
     @Test
+    fun rejectsDirectTransportHeadersOutsideConfiguredLimits() = runBlocking {
+        val client = OkHttpSourceRequestClient()
+        val invalidHeaders = listOf(
+            (0..100).associate { "X-$it" to "v" },
+            mapOf("X-Large" to "v".repeat(8 * 1024 + 1)),
+            mapOf("X-Test" to "safe\r\nInjected: yes"),
+        )
+        invalidHeaders.forEach { headers ->
+            val result = client.execute(
+                SourceHttpRequest(
+                    sourceId = "direct-header-fixture",
+                    url = "http://127.0.0.1:1/",
+                    headers = headers,
+                    useCookieJar = false,
+                ),
+            )
+            assertEquals(EngineErrorCode.INVALID_SOURCE, (result as EngineResult.Failure).code)
+        }
+    }
+
+    @Test
     fun rejectsRequestBodiesThatExceedTheConfiguredByteLimit() = runBlocking {
         val result = OkHttpSourceRequestClient(maxRequestBytes = 4).execute(
             SourceHttpRequest(

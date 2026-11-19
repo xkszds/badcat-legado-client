@@ -85,6 +85,13 @@ object SourceRequestFactory {
             )
         }
 
+        if (headers.size > MAX_HEADER_COUNT) {
+            return EngineResult.Failure(
+                EngineErrorCode.INVALID_SOURCE,
+                "Request headers exceed the configured count limit",
+            )
+        }
+
         val sourceHeaders = parseHeaders(source.header)
             ?: return EngineResult.Failure(
                 EngineErrorCode.INVALID_SOURCE,
