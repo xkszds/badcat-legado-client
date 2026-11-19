@@ -7,6 +7,26 @@ import app.badcat.engine.EngineResult
 import app.badcat.engine.SourceHttpRequest
 import app.badcat.engine.SourceHttpResponse
 import app.badcat.engine.SourceRequestClient
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import okhttp3.internal.publicsuffix.PublicSuffixDatabase
+
+/**
+ * Mirrors pinned NetworkUtils.getSubDomainOrNull: compare effective-TLD+1,
+ * preserve IP literals and fail open when either URL cannot be parsed.
+ */
+internal fun legadoSourceDomain(url: String): String? {
+    val parsed = url.toHttpUrlOrNull() ?: return null
+    val host = parsed.host
+    if (':' in host || host.matches(Regex("""\d{1,3}(\.\d{1,3}){3}"""))) return host
+    return runCatching { PublicSuffixDatabase.get().getEffectiveTldPlusOne(host) ?: host }
+        .getOrNull()
+}
+
+internal fun shouldAttachSourceLoginHeader(sourceKey: String, targetUrl: String): Boolean {
+    val sourceDomain = legadoSourceDomain(sourceKey) ?: return true
+    val targetDomain = legadoSourceDomain(targetUrl) ?: return true
+    return sourceDomain.equals(targetDomain, ignoreCase = true)
+}
 
 /** Per-source persistent authentication state used by Legado's source.* helpers. */
 interface SourceLoginSessionStore {
@@ -146,6 +166,7 @@ class SourceLoginSessionRequestClient(
     override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
         val raw = sessions.getLoginHeader(request.sourceId)
         if (raw.isNullOrBlank()) return delegate.execute(request)
+        if (!shouldAttachSourceLoginHeader(request.sourceId, request.url)) return delegate.execute(request)
         val loginHeaders = runCatching {
             RhinoSourceLoginExtensions(request.sourceId, sessions).getLoginHeaderMap()
         }.getOrDefault(hashMapOf())

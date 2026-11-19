@@ -722,3 +722,9 @@ Acceptance: no credential is sent cross-origin; cookie state and login-header st
 ### Authentication lifecycle clarification
 
 The targeted host lifecycle audit also found that RhinoSourceScriptRuntime.clearSourceState clears source scopes, script key/value state, file cache and login-session state, but it has no source-cookie clear callback. SharedPreferencesSourceCookieJar has a clear operation, yet it is not invoked by this lifecycle path. The next login/session implementation must cover source removal/reset as well as removeLoginHeader, and prove that clearing one source cannot clear another source's cookies.
+
+## 2026-11-20 implementation progress — login-header same-site boundary
+
+Implemented the first bounded sub-slice in `SourceLoginSession.kt`: saved source login headers are attached only when the source key and initial request URL resolve to the same effective-TLD+1 domain, matching pinned `NetworkUtils.getSubDomainOrNull` and `AnalyzeUrl.isLoginHeaderSite`. IP literals are compared directly. As upstream does, malformed/unresolvable URLs fail open. Automatic redirect-chain stripping is not claimed; pinned AnalyzeUrl evaluates the initial URL.
+
+Regression coverage added for a same-site subdomain, an unrelated CDN host, and invalid-source-key fallback. This does not complete the registered task: Cookie synchronization/cleanup and AES loginInfo encryption plus legacy migration remain open. No release or full Legado parity claim.

@@ -642,3 +642,9 @@ Pinned-source targets to inspect before editing: `BaseSource.kt` loginHeader/put
 Compatibility/security risks: same-site domain matching and public suffixes; redirects changing origin; Cookie header precedence and cookie attributes; per-source state leakage; key derivation/platform identifier availability; plaintext-to-ciphertext migration and rollback; malformed/legacy records; reset lifecycle and cancellation. No widening of Rhino Java access and no fake BaseSource/service.
 
 Required regression matrix: same origin, valid subdomain, unrelated origin, CDN, cross-origin redirect; Cookie import/merge/removal; source reset removes only that source's cookies; independent source IDs; encrypted persistence and decryption; plaintext migration idempotence; malformed ciphertext/missing key; secret redaction; existing login scripts and cancellation. This is a bounded implementation task, not proof of full BaseSource/JsExtensions parity.
+
+## 2026-11-20 implementation progress — login-header same-site boundary
+
+Implemented the first bounded sub-slice in `SourceLoginSession.kt`: saved source login headers are attached only when the source key and initial request URL resolve to the same effective-TLD+1 domain, matching pinned `NetworkUtils.getSubDomainOrNull` and `AnalyzeUrl.isLoginHeaderSite`. IP literals are compared directly. As upstream does, malformed/unresolvable URLs fail open. Automatic redirect-chain stripping is not claimed; pinned AnalyzeUrl evaluates the initial URL.
+
+Regression coverage added for a same-site subdomain, an unrelated CDN host, and invalid-source-key fallback. This does not complete the registered task: Cookie synchronization/cleanup and AES loginInfo encryption plus legacy migration remain open. No release or full Legado parity claim.

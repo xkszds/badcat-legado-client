@@ -47,6 +47,32 @@ class SourceLoginSessionTest {
     }
 
     @Test
+    fun loginHeadersAreOnlyAttachedToThePinnedEffectiveTldPlusOneSite() = runBlocking {
+        val sourceKey = "https://www.example.co.uk/booksource.json"
+        val store = InMemorySourceLoginSessionStore
+        store.putLoginHeader(sourceKey, """{"Authorization":"Bearer secret"}""")
+        val delegate = RecordingClient()
+        val client = SourceLoginSessionRequestClient(delegate, store)
+
+        client.execute(SourceHttpRequest(sourceKey, "https://cdn.example.co.uk/cover.jpg"))
+        assertEquals("Bearer secret", delegate.lastRequest?.headers?.get("Authorization"))
+
+        client.execute(SourceHttpRequest(sourceKey, "https://third-party-cdn.net/cover.jpg"))
+        assertTrue(delegate.lastRequest?.headers?.isEmpty() == true)
+    }
+
+    @Test
+    fun invalidSourceKeyPreservesPinnedUpstreamFailOpenBehavior() = runBlocking {
+        val sourceKey = "not-a-url"
+        val store = InMemorySourceLoginSessionStore
+        store.putLoginHeader(sourceKey, """{"Authorization":"Bearer secret"}""")
+        val delegate = RecordingClient()
+        SourceLoginSessionRequestClient(delegate, store)
+            .execute(SourceHttpRequest(sourceKey, "https://cdn.example.net/image"))
+        assertEquals("Bearer secret", delegate.lastRequest?.headers?.get("Authorization"))
+    }
+
+    @Test
     fun loginInfoAndHeaderCanBeReadBySeparateRhinoBridgeInstances() {
         val store = InMemorySourceLoginSessionStore
         RhinoSourceLoginExtensions("source-A", store).apply {

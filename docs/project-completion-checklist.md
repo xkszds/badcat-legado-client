@@ -625,3 +625,9 @@ Additional lifecycle gap: clearSourceState currently clears the script stores, f
 - [ ] Re-audit all callers/adapters and run focused tests plus full CI; record commit/run/artifacts before marking this gate complete.
 
 Scope is limited to login/session security and lifecycle wiring. It does not close the upstream BaseSource model, batch persistence, AnalyzeUrl parity, WebView/UI callbacks, complete reading flow or physical-device validation. No runtime changes have been made as part of this registration.
+
+## 2026-11-20 implementation progress — login-header same-site boundary
+
+Implemented the first bounded sub-slice in `SourceLoginSession.kt`: saved source login headers are attached only when the source key and initial request URL resolve to the same effective-TLD+1 domain, matching pinned `NetworkUtils.getSubDomainOrNull` and `AnalyzeUrl.isLoginHeaderSite`. IP literals are compared directly. As upstream does, malformed/unresolvable URLs fail open. Automatic redirect-chain stripping is not claimed; pinned AnalyzeUrl evaluates the initial URL.
+
+Regression coverage added for a same-site subdomain, an unrelated CDN host, and invalid-source-key fallback. This does not complete the registered task: Cookie synchronization/cleanup and AES loginInfo encryption plus legacy migration remain open. No release or full Legado parity claim.
