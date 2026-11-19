@@ -4,6 +4,7 @@ import androidx.annotation.Keep
 import cn.hutool.crypto.KeyUtil
 import cn.hutool.crypto.asymmetric.KeyType
 import cn.hutool.crypto.asymmetric.AsymmetricCrypto as HutoolAsymmetricCrypto
+import io.legado.app.utils.EncoderUtils
 import java.io.InputStream
 
 @Keep
