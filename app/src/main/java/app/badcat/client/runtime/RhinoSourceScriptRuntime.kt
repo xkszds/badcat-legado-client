@@ -36,6 +36,10 @@ import kotlin.coroutines.cancellation.CancellationException
  * Android Context, WebView and process APIs remain unavailable.
  */
 
+/** Preserve the current AnalyzeRule keyword/page when Java selector helpers re-enter the rule parser. */
+internal fun sourceRuleDocument(url: String, body: String, key: String, page: Int): SourceDocument =
+    SourceDocument(url = url, body = body, key = key, page = page)
+
 /** Bound iterable and array materialization before converting script results to HTML/JSON. */
 internal fun boundedScriptResultValues(value: Any?, maxItems: Int): List<Any?>? {
     require(maxItems >= 0)
@@ -195,6 +199,8 @@ class RhinoSourceScriptRuntime(
                 // untrusted rules still cannot reach java.lang or Android APIs.
                 var currentRuleContent = bindings["result"].orEmpty()
                 var currentRuleBaseUrl = bindings["baseUrl"]?.takeIf(String::isNotBlank) ?: source.baseUrl
+                val currentRuleKey = bindings["key"].orEmpty()
+                val currentRulePage = bindings["page"]?.toIntOrNull() ?: 1
                 val javaBridge = RhinoSafeSourceJavaExtensions(
                     sourceId = source.id,
                     sourceTag = source.name,
@@ -267,9 +273,11 @@ class RhinoSourceScriptRuntime(
                     },
                     ruleStringReader = { rule ->
                         runCatching {
-                            val document = SourceDocument(
+                            val document = sourceRuleDocument(
                                 url = currentRuleBaseUrl,
                                 body = currentRuleContent,
+                                key = currentRuleKey,
+                                page = currentRulePage,
                             )
                             when (val parsed = LegadoRuleExpressionDispatcher.evaluate(document, rule)) {
                                 is EngineResult.Failure -> ""
@@ -279,9 +287,11 @@ class RhinoSourceScriptRuntime(
                     },
                     ruleStringReaderWithContent = { rule, content ->
                         runCatching {
-                            val document = SourceDocument(
+                            val document = sourceRuleDocument(
                                 url = currentRuleBaseUrl,
                                 body = content,
+                                key = currentRuleKey,
+                                page = currentRulePage,
                             )
                             when (val parsed = LegadoRuleExpressionDispatcher.evaluate(document, rule)) {
                                 is EngineResult.Failure -> ""
@@ -291,9 +301,11 @@ class RhinoSourceScriptRuntime(
                     },
                     ruleStringListReader = { rule ->
                         runCatching {
-                            val document = SourceDocument(
+                            val document = sourceRuleDocument(
                                 url = currentRuleBaseUrl,
                                 body = currentRuleContent,
+                                key = currentRuleKey,
+                                page = currentRulePage,
                             )
                             when (val parsed = LegadoRuleExpressionDispatcher.evaluate(document, rule)) {
                                 is EngineResult.Failure -> emptyList()
@@ -303,9 +315,11 @@ class RhinoSourceScriptRuntime(
                     },
                     ruleStringListReaderWithContent = { rule, content ->
                         runCatching {
-                            val document = SourceDocument(
+                            val document = sourceRuleDocument(
                                 url = currentRuleBaseUrl,
                                 body = content,
+                                key = currentRuleKey,
+                                page = currentRulePage,
                             )
                             when (val parsed = LegadoRuleExpressionDispatcher.evaluate(document, rule)) {
                                 is EngineResult.Failure -> emptyList()
@@ -315,9 +329,11 @@ class RhinoSourceScriptRuntime(
                     },
                     ruleElementReader = { rule ->
                         runCatching {
-                            val document = SourceDocument(
+                            val document = sourceRuleDocument(
                                 url = currentRuleBaseUrl,
                                 body = currentRuleContent,
+                                key = currentRuleKey,
+                                page = currentRulePage,
                             )
                             when (val parsed = LegadoRuleExpressionDispatcher.evaluateElements(document, rule)) {
                                 is EngineResult.Failure -> null
@@ -327,9 +343,11 @@ class RhinoSourceScriptRuntime(
                     },
                     ruleElementReaderWithContent = { rule, content ->
                         runCatching {
-                            val document = SourceDocument(
+                            val document = sourceRuleDocument(
                                 url = currentRuleBaseUrl,
                                 body = content,
+                                key = currentRuleKey,
+                                page = currentRulePage,
                             )
                             when (val parsed = LegadoRuleExpressionDispatcher.evaluateElements(document, rule)) {
                                 is EngineResult.Failure -> null
@@ -339,9 +357,11 @@ class RhinoSourceScriptRuntime(
                     },
                     ruleElementsReader = { rule ->
                         runCatching {
-                            val document = SourceDocument(
+                            val document = sourceRuleDocument(
                                 url = currentRuleBaseUrl,
                                 body = currentRuleContent,
+                                key = currentRuleKey,
+                                page = currentRulePage,
                             )
                             when (val parsed = LegadoRuleExpressionDispatcher.evaluateElements(document, rule)) {
                                 is EngineResult.Failure -> LegadoSourceElementList(emptyList())
@@ -351,9 +371,11 @@ class RhinoSourceScriptRuntime(
                     },
                     ruleElementsReaderWithContent = { rule, content ->
                         runCatching {
-                            val document = SourceDocument(
+                            val document = sourceRuleDocument(
                                 url = currentRuleBaseUrl,
                                 body = content,
+                                key = currentRuleKey,
+                                page = currentRulePage,
                             )
                             when (val parsed = LegadoRuleExpressionDispatcher.evaluateElements(document, rule)) {
                                 is EngineResult.Failure -> LegadoSourceElementList(emptyList())

@@ -158,3 +158,9 @@ modes remain outside this increment.
 ### CI test-source correction (2026-11-19)
 
 - Fixed test compilation call sites for JUnit `assertThrows` and the Java `SourceHttpResponse.body()` method. This does not change the partial compatibility status of the runtime; rerun the bounded Rhino tests and Debug APK build before verification is complete.
+
+
+### AnalyzeRule selector context propagation (2026-11-19)
+
+- The Rhino host now preserves the active AnalyzeRule `key` and one-based `page` bindings when Java selector helpers re-enter the shared Legado rule dispatcher. The same context is retained for overloads that supply an explicit content fragment.
+- A focused contract test verifies that the selector document adapter retains URL, body, keyword and page. This is context propagation only; it does not claim complete upstream AnalyzeRule stage semantics or close the separately tracked Java/Android API gaps.

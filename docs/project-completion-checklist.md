@@ -209,3 +209,9 @@
 
 - The first verification of the bounded `ajaxTestAll` cause-chain change reached app unit-test compilation and exposed two test-source API mistakes: the archive test omitted the JUnit `assertThrows` import, and the connect-error assertion treated the Java `body()` accessor as a Kotlin property.
 - Corrected only those test call sites; production behavior is unchanged. Contract tests passed on the previous run, but the Rhino test task and APK assembly did not run because Kotlin test compilation stopped first. Re-run CI is required before treating this increment as verified.
+
+
+### AnalyzeRule selector context propagation (2026-11-19)
+
+- The Rhino host now preserves the active AnalyzeRule `key` and one-based `page` bindings when Java selector helpers re-enter the shared Legado rule dispatcher. The same context is retained for overloads that supply an explicit content fragment.
+- A focused contract test verifies that the selector document adapter retains URL, body, keyword and page. This is context propagation only; it does not claim complete upstream AnalyzeRule stage semantics or close the separately tracked Java/Android API gaps.

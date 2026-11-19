@@ -19,6 +19,21 @@ import javax.crypto.spec.SecretKeySpec
 
 class RhinoSourceScriptRuntimeTest {
     @Test
+    fun sourceRuleDocumentPreservesAnalyzeRuleKeywordAndPage() {
+        val document = sourceRuleDocument(
+            url = "https://reader.example/chapter",
+            body = "<article>chapter</article>",
+            key = "fantasy",
+            page = 4,
+        )
+
+        assertEquals("https://reader.example/chapter", document.url)
+        assertEquals("<article>chapter</article>", document.body)
+        assertEquals("fantasy", document.key)
+        assertEquals(4, document.page)
+    }
+
+    @Test
     fun scriptResultIterableIsMaterializedOnlyUpToLimitPlusOne() {
         var consumed = 0
         val unbounded = Iterable {
