@@ -54,7 +54,7 @@ class FileSourceScriptCacheStore(context: Context) : SourceScriptFileCacheStore 
     @Synchronized
     override fun getBytes(sourceId: String, key: String): ByteArray? {
         val target = AtomicFile(cacheFile(sourceId, key))
-        return runCatching {
+        val bytes = runCatching {
             // openRead performs AtomicFile backup recovery; checking baseFile first
             // would incorrectly hide a valid .bak after an interrupted write.
             target.openRead().use { input ->
@@ -71,6 +71,8 @@ class FileSourceScriptCacheStore(context: Context) : SourceScriptFileCacheStore 
                 output.toByteArray()
             }
         }.getOrNull()
+        if (bytes != null) target.baseFile.setLastModified(System.currentTimeMillis())
+        return bytes
     }
 
     @Synchronized
