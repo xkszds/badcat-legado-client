@@ -39,15 +39,15 @@ class SourceScriptFileCacheStoreTest {
     @Test
     fun inMemoryStoreSeparatesSourceAndKeyValuesContainingNewlines() {
         val store = InMemorySourceScriptFileCacheStore
-        store.put("source", "key\\nother", "first")
-        store.put("source\\nkey", "other", "second")
+        store.put("source", "key\nother", "first")
+        store.put("source\nkey", "other", "second")
 
-        assertEquals("first", store.get("source", "key\\nother"))
-        assertEquals("second", store.get("source\\nkey", "other"))
+        assertEquals("first", store.get("source", "key\nother"))
+        assertEquals("second", store.get("source\nkey", "other"))
 
         store.clearSource("source")
-        assertNull(store.get("source", "key\\nother"))
-        assertEquals("second", store.get("source\\nkey", "other"))
+        assertNull(store.get("source", "key\nother"))
+        assertEquals("second", store.get("source\nkey", "other"))
     }
 
 }
