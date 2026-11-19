@@ -194,3 +194,9 @@
 - Implemented the pinned Legado crypto API slice: Hutool 5.8.22 / Bouncy Castle 1.86, upstream symmetric/asymmetric/signature classes, source-scoped bridge factories and missing legacy AES/DES/3DES helpers, with focused Rhino tests.
 - Preserved the separate JavaImporter sandbox and replacement-rule digest/HMAC path. CI/Android provider validation is pending.
 - Categories 1, 2, 4 and 5 remain incomplete and unchanged; this increment is not full Legado or product parity.
+
+
+## 2026-11-19 category 3 crypto safety review
+
+- Diff review found the removed AES/DES host facade's 2 MiB data bound was not yet preserved around the newly exposed Hutool objects. A bounded wrapper for symmetric/asymmetric/signature operations is now registered before further code edits.
+- Category 3 crypto migration remains pending CI and safety-boundary correction. Other categories remain unchanged.

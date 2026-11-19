@@ -358,3 +358,21 @@
 - [x] Kept source-scoped `java` injection, the JavaImporter allow-list and the independent replacement-evaluator digest/HMAC path unchanged.
 - [ ] Android unit tests, Hutool provider behavior, D8/R8 packaging, Debug APK assembly and CI are pending. Do not call this increment verified until logs and artifacts are inspected.
 - [ ] Re-audit the full diff and affected callers after CI; resolve any overload, Android provider or Rhino reflection issue before proceeding to BaseSource.
+
+
+## 2026-11-19 crypto security-boundary correction gate
+
+### Diff-review finding
+- [x] The first Hutool bridge increment restores the upstream API surface, but review found that the new Hutool object can process arbitrarily large byte arrays/streams. The removed `RhinoLegadoSymmetricCrypto` previously enforced a 2 MiB input/output bound. This is a host resource boundary and must not be silently lost.
+- [x] Existing JavaImporter `aesCrypt` still has its own bounded AES-CBC path; that does not bound the new Hutool object returned by `createSymmetricCrypto`.
+
+### Corrective task registered before further runtime edits
+- [ ] Preserve the full upstream crypto method/object shape while adding a host-owned bounded subclass/wrapper: maximum 2 MiB input and output for symmetric/asymmetric/signature operations, including byte arrays, strings and InputStreams; InputStreams must be read with forward-progress checks and without closing caller-owned streams.
+- [ ] Keep all valid upstream algorithms, transformations, key formats, IV behavior, Base64/Hex semantics and overloads within the bound. Do not revert to the AES/DES-only allow-list.
+- [ ] Apply key-material bounds and output bounds to the asymmetric and Sign wrappers; preserve upstream exception behavior for invalid algorithms/keys as far as possible.
+- [ ] Add regression tests for exactly-at-limit and over-limit inputs/outputs, InputStream bounds, existing AES/DES/3DES/RSA/signature behavior, and unchanged JavaImporter class/package restrictions.
+- [ ] Re-run the full relevant unit tests and Android build/CI. Inspect provider/D8/R8 logs and test reports before marking the crypto slice verified.
+
+### Self-review correction
+- [x] The prior implementation checklist did not explicitly carry forward the old facade's 2 MiB crypto data limit. This omission is corrected here before any further runtime code change.
+- [ ] Do not proceed to BaseSource/BookSource until this bounded-wrapper gate and the current crypto CI are resolved.

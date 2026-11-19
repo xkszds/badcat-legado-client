@@ -268,3 +268,9 @@
 - Expanded the source-scoped Rhino `java` bridge to the upstream crypto factories and legacy AES/DES/3DES methods; removed the obsolete narrow symmetric facade while preserving the JavaImporter AES sandbox.
 - Added focused Rhino tests for AES, DES, 3DES, RSA, signing and factory overloads. CI and Android runtime/provider verification are pending.
 - This is a category-3 Legado crypto slice only. It does not complete full `JsExtensions`, `BaseSource`, `BookSource`, `AnalyzeRule/AnalyzeUrl`, the reading pipeline or any other Badcat category.
+
+
+## 2026-11-19 Legado crypto safety correction (pending)
+
+- Review of the new Hutool crypto object identified that the prior 2 MiB host crypto input/output bound must be retained around the full upstream object surface. The separate JavaImporter AES cap does not cover Hutool factory objects.
+- The corrective bounded-wrapper task is registered in the Legado checklist before further code edits. The crypto increment remains unverified and is not complete.

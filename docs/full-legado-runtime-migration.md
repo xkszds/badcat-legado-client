@@ -158,3 +158,10 @@ This gate was recorded before runtime code edits. No runtime crypto implementati
 Implemented the registered crypto slice: app dependencies now include pinned Hutool Crypto 5.8.22 and Bouncy Castle 1.86 provider/PKIX; the Android app contains the pinned upstream `SymmetricCryptoAndroid`, `AsymmetricCrypto`, `Sign`, `EncoderUtils`, and exact `String.isHex()` helper. `RhinoSafeSourceJavaExtensions` now exposes the upstream symmetric factory overloads, asymmetric/signature factories, and the 19 missing legacy AES/DES/3DES crypto method names through the existing per-source `java` bridge. The old AES/DES-CBC-only facade was removed, while the separately bounded `aesCrypt`/JavaImporter path remains.
 
 Regression tests were added for AES legacy helpers and historical quirks, DES/3DES, random key and factory overloads, RSA encrypt/decrypt, and SHA256withRSA sign/verify. The independent replacement evaluator digest/HMAC methods and JavaImporter sandbox were not changed. All verification is pending CI; no Android runtime/provider success is claimed.
+
+
+## 2026-11-19 crypto resource-boundary correction gate
+
+Post-implementation diff review found a security/resource regression risk: the removed host-only symmetric facade enforced a 2 MiB input/output cap, while a raw Hutool object is unbounded. The separate JavaImporter AES helper remains bounded but does not protect `createSymmetricCrypto` return objects.
+
+Before any further runtime code edit, add a host-owned bounded wrapper/subclass around the pinned Hutool crypto objects. Preserve the upstream algorithm and method surface, but cap byte/string/InputStream input and output at the prior 2 MiB boundary; read caller-owned streams without closing them and guarantee forward progress. Apply equivalent bounds to asymmetric encryption and signing/verification. Add exact-limit/over-limit, stream, old crypto behavior and sandbox regression tests. This is a corrective host safety layer, not a return to the former AES/DES-only algorithm restriction.

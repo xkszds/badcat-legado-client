@@ -243,3 +243,12 @@ The host's current `RhinoLegadoSymmetricCrypto` is an allow-listed AES/DES CBC h
 - Removed the obsolete host-only `RhinoLegadoSymmetricCrypto` implementation. The separate restricted `aesCrypt` method and `LEGADO_CRYPTO_COMPAT_JS` allow-list are retained.
 - Added Rhino tests for AES/legacy quirks, DES/3DES, random-key and overload semantics, RSA and signing. The independent replacement evaluator digest/HMAC path is unchanged.
 - Pending: compile/test/CI and actual Android crypto provider/runtime verification. Same-name methods and Rhino reflection are not marked compatible until those checks pass.
+
+
+### Crypto host resource-boundary correction (must precede further code changes)
+
+- The previous host `RhinoLegadoSymmetricCrypto` capped input and output at 2 MiB. The first upstream Hutool migration removed that facade, so the new returned object is not yet bounded.
+- The separate `aesCrypt` method used by the JavaImporter shim remains capped, but it does not bound `createSymmetricCrypto` objects.
+- Before proceeding, add a bounded subclass/wrapper for the upstream `SymmetricCryptoAndroid`, `AsymmetricCrypto` and `Sign` surfaces. Preserve algorithms, overloads and upstream transformations; cap data/key material and results at 2 MiB, including InputStreams, without closing caller-owned streams.
+- Add exact-limit/over-limit and stream forward-progress tests while retaining AES/DES/3DES/RSA/signature tests and the JavaImporter sandbox.
+- This omission was not captured in the first implementation checklist; the checklist is corrected here before the next runtime edit.
