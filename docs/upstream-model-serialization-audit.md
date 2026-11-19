@@ -200,3 +200,47 @@ Before runtime edits, separately pre-register the first concrete module slice wi
 - [ ] No complete caller inventory for future Book/Chapter persistence because no persistence path currently exists.
 
 No runtime code changed during this follow-up. The source catalog's existing JSON preservation is retained and must not be regressed.
+
+## 2026-11-20 pinned runtime dependency closure and database migration audit
+
+### Exact source declarations inspected
+
+Pinned upstream files inspected at `330e606c4d57e08adc056ff8ab7a4132c784da9a`:
+- `app/src/main/java/io/legado/app/help/JsExtensions.kt` (42,899 source characters)
+- `app/src/main/java/io/legado/app/data/entities/BaseSource.kt` (12,726 characters)
+- `app/src/main/java/io/legado/app/data/AppDatabase.kt` (14,061 characters)
+- `app/src/main/java/io/legado/app/data/DatabaseMigrations.kt` (28,881 characters)
+- `app/src/main/java/io/legado/app/help/http/CookieStore.kt`
+- `app/src/main/java/io/legado/app/help/CacheManager.kt`
+- `app/src/main/java/io/legado/app/model/SharedJsScope.kt`
+- `app/src/main/java/io/legado/app/model/BatchContentContext.kt`
+- `app/src/main/java/io/legado/app/model/analyzeRule/RuleDataInterface.kt`
+- `app/src/main/java/io/legado/app/help/book/BookHelp.kt`, `ContentProcessor.kt`, `model/ReadBook.kt`, `AnalyzeRule.kt`, and `AnalyzeUrl.kt`.
+
+### Dependency closure — not just model files
+
+- `JsExtensions` is a large Android-facing interface extending `JsEncodeUtils`. Its API surface directly references Android WebView, activities/dialogs, UI events, verification/browser flows, `AnalyzeUrl`, HTTP response/Jsoup types, archive/file/encoding helpers, font/TTF query, book/reader configuration, video playback, and `BatchContentContext`. It also carries overload/default behavior for networking, file/archive access, cookies, browser, URL helpers, locking/single-flight, theme/read configuration and JS lifecycle. Copying this interface without its real implementations would leave compile-time or behavioral gaps.
+- `BaseSource` adds source identity and mutable source settings plus login UI v2, login headers, AES-encrypted loginInfo, source-scoped variables, persistent key/value access, JS evaluation, jsLib refresh and explore cache invalidation. It calls `ScriptBindings`, `RhinoScriptEngine`, `SharedJsScope`, `CacheManager`, `CookieStore`, `AppConfig`, source helpers and Android crypto.
+- `CookieStore` is not just an OkHttp CookieJar: it uses the upstream database CookieDao, domain extraction, memory cache, session cookies, WebView cookie manager and cleanup semantics.
+- `CacheManager` is not just a file cache: it provides persistent database string/int/long/float/double values, expiry, in-memory LRU, binary/file cache and source-variable cleanup. `SharedJsScope` adds shared compiled jsLib scopes, CryptoJS installation, per-scope global state, source lifecycle and synchronization.
+- `BookHelp` / `ContentProcessor` own chapter content persistence and replacement, cache version tokens, file naming, local book behavior, and book/chapter DB interactions. `BatchContentContext` resolves chapter objects/URLs against the current batch, rejects ambiguous duplicate URLs, applies the real content replacement rule, and persists with a per-chapter save token. These are not replaceable with a generic cache write.
+- `AnalyzeRule` and `AnalyzeUrl` depend on this service graph and source model. They cannot be ported before the real source and persistence boundary is in place.
+
+### Database/schema facts
+
+- Pinned upstream `AppDatabase` is Room schema version **113**, with 26 entity classes and a `book_sources_part` view. It contains Book, BookSource, BookChapter plus many other product tables (cookie/cache, search, reading records, bookmarks, rules, highlights, memos, RSS and more).
+- Its schema history includes a long migration chain: explicit migrations from 10→43 and 100→101→…→113, auto migrations from 43→100 (with custom specs), 101→104 and 110→112, plus custom 112→113. Versions 1–9 are destructive-migration fallbacks in the upstream app. This is not a small isolated schema that can be safely copied as a few entity annotations.
+- The current Badcat app has no Room database/dependency/DAO. Its AtomicFile source catalog is a separate, private JSON store. Importing the entire upstream AppDatabase migration chain would also import a broad unrelated product data model and is not authorized by the current Stage 1 scope.
+- Therefore the implementation boundary must choose and document one of two deliberate approaches before code: (A) port the complete upstream Room DB/entity/DAO/migration closure needed for the requested behavior, with verified upstream schemas and migration tests; or (B) keep a new, explicitly Badcat-owned Room schema and implement exact upstream model/serialization semantics through adapters, with a proven migration from the current AtomicFile source catalog and equivalent book/chapter identity/persistence behavior. It must not falsely claim to be upstream AppDatabase if choosing B.
+
+### Decision and next registration requirement
+
+The runtime service closure is larger than the model audit initially assumed. No code should be copied into the app until the project explicitly selects A or B, inventories every imported upstream file/license and every host caller, and specifies migration/rollback tests. The safest likely incremental route is B (host-owned database schema with exact upstream model behavior at the Android boundary), but this is a design recommendation, not an implementation decision or completion claim. The next pre-registration must include:
+1. schema choice and rationale;
+2. exact field mapping and converter/default behavior for BookSource, Book, BookChapter and six rule entities;
+3. real adapters for source login/cookie/cache/shared JS state and chapter persistence, with no null/no-op implementations;
+4. migration from current AtomicFile catalog preserving raw JSON and IDs;
+5. caller inventory and tests for import/export/edit/toggle/reload, book/chapter identity, content save tokens and restart persistence;
+6. explicit exclusions for unrelated upstream product tables unless their callers are part of the required feature.
+
+No runtime code changed in this audit. This is a dependency/design gate, not Stage 1 model completion.
