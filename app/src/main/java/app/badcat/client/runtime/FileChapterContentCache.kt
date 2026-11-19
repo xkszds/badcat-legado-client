@@ -84,6 +84,7 @@ class FileChapterContentCache(context: Context) : ChapterContentCache {
             }
             // Pruning is best-effort and must never roll back a committed chapter.
             runCatching { prune(target.baseFile) }
+            Unit
         }
     }
 
