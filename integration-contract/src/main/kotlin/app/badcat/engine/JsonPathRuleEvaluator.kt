@@ -17,7 +17,7 @@ object JsonPathRuleEvaluator {
             )
         }
         val failure = parseError
-        if (failure != null && failure !is PathNotFoundException) {
+        if (values.isEmpty() && failure != null && failure !is PathNotFoundException) {
             return EngineResult.Failure(
                 EngineErrorCode.PARSE,
                 "JSONPath collection evaluation failed: ${failure.message ?: failure::class.java.simpleName}",
@@ -39,7 +39,7 @@ object JsonPathRuleEvaluator {
             )
         }
         val failure = parseError
-        if (failure != null && failure !is PathNotFoundException) {
+        if (values.isEmpty() && failure != null && failure !is PathNotFoundException) {
             return EngineResult.Failure(
                 EngineErrorCode.PARSE,
                 "JSONPath evaluation failed: ${failure.message ?: failure::class.java.simpleName}",

@@ -94,8 +94,9 @@ class JsonPathRuleEvaluatorTest {
     }
 
     @Test
-    fun reportsMalformedJsonPath() {
-        val result = JsonPathRuleEvaluator.evaluate(document, "$.books[")
+    fun reportsMalformedJsonDocument() {
+        val malformed = document.copy(body = """{"books":[""")
+        val result = JsonPathRuleEvaluator.evaluate(malformed, "$.books[*].name")
         assertIs<EngineResult.Failure>(result)
     }
 }
