@@ -40,6 +40,13 @@ import kotlin.coroutines.cancellation.CancellationException
 internal fun boundedScriptResultValues(value: Any?, maxItems: Int): List<Any?>? {
     require(maxItems >= 0)
     val values = when (value) {
+        // Some pinned Rhino collection facades implement both Scriptable and
+        // Iterable. Preserve Legado's iterable semantics before generic JS arrays.
+        is Iterable<*> -> value.take(maxItems + 1).toList()
+        is Array<*> -> {
+            require(value.size <= maxItems) { "Source JavaScript array result exceeds the item limit" }
+            value.asList()
+        }
         is org.htmlunit.corejs.javascript.Scriptable -> {
             val length = (org.htmlunit.corejs.javascript.ScriptableObject.getProperty(value, "length") as? Number)
                 ?.toInt() ?: return null
@@ -48,11 +55,6 @@ internal fun boundedScriptResultValues(value: Any?, maxItems: Int): List<Any?>? 
                 org.htmlunit.corejs.javascript.ScriptableObject.getProperty(value, index.toString())
             }
         }
-        is Array<*> -> {
-            require(value.size <= maxItems) { "Source JavaScript array result exceeds the item limit" }
-            value.asList()
-        }
-        is Iterable<*> -> value.take(maxItems + 1).toList()
         else -> return null
     }
     require(values.size <= maxItems) { "Source JavaScript array result exceeds the item limit" }
@@ -67,8 +69,8 @@ internal fun ensureSourcePhysicalCacheDirectory(root: java.io.File, sourceId: St
         "Unable to create the app source cache root"
     }
     val candidate = sourcePhysicalCacheDirectory(canonicalRoot, sourceId)
-    require(!java.nio.file.Files.isSymbolicLink(candidate.toPath())) {
-        "Source cache directory must not be a symbolic link"
+    if (java.nio.file.Files.isSymbolicLink(candidate.toPath())) {
+        throw SecurityException("Source cache directory must not be a symbolic link")
     }
     require(candidate.isDirectory || candidate.mkdir()) {
         "Unable to create the source cache directory"

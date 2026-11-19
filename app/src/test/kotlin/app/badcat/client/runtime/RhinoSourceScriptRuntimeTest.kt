@@ -181,7 +181,13 @@ class RhinoSourceScriptRuntimeTest {
     fun getTxtInFolderSkipsChildrenThatResolveOutsideTheCacheRoot() = runBlocking {
         val parent = java.nio.file.Files.createTempDirectory("rhino-folder-symlink").toFile()
         val root = java.io.File(parent, "cache").apply { mkdirs() }
-        val folder = java.io.File(root, "archive").apply { mkdirs() }
+        val source = BookSource(
+            id = "https://folder-symlink.example/",
+            name = "Folder symlink boundary",
+            baseUrl = "https://folder-symlink.example/",
+        )
+        val sourceRoot = ensureSourcePhysicalCacheDirectory(root, source.id)
+        val folder = java.io.File(sourceRoot, "archive").apply { mkdirs() }
         java.io.File(folder, "inside.txt").writeText("inside")
         val outside = java.io.File(parent, "outside.txt").apply { writeText("outside secret") }
         try {
@@ -190,11 +196,6 @@ class RhinoSourceScriptRuntimeTest {
                 outside.toPath(),
             )
             val runtime = RhinoSourceScriptRuntime(sourceFileRoot = root)
-            val source = BookSource(
-                id = "https://folder-symlink.example/",
-                name = "Folder symlink boundary",
-                baseUrl = "https://folder-symlink.example/",
-            )
 
             val result = runtime.evaluate(source, "java.getTxtInFolder('archive//')")
 
