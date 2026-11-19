@@ -1,7 +1,10 @@
 package io.legado.app.help.crypto
 
+import cn.hutool.core.util.HexUtil
 import cn.hutool.crypto.symmetric.SymmetricCrypto
+import io.legado.app.utils.EncoderUtils
 import java.io.InputStream
+import java.nio.charset.Charset
 
 /** Host resource boundary around the pinned upstream Hutool-backed crypto API. */
 class RhinoBoundedSymmetricCryptoAndroid(
@@ -31,6 +34,38 @@ class RhinoBoundedSymmetricCryptoAndroid(
         }
         return checkedRhinoCryptoOutput(super.decrypt(data), "symmetric output")
     }
+
+    private fun boundedBase64(bytes: ByteArray): String {
+        requireRhinoCryptoEncodedSize(((bytes.size.toLong() + 2L) / 3L) * 4L, "symmetric Base64 output")
+        return checkedRhinoCryptoEncodedOutput(EncoderUtils.base64Encode(bytes), "symmetric Base64 output")
+    }
+
+    private fun boundedHex(bytes: ByteArray): String {
+        requireRhinoCryptoEncodedSize(bytes.size.toLong() * 2L, "symmetric Hex output")
+        return checkedRhinoCryptoEncodedOutput(HexUtil.encodeHexStr(bytes), "symmetric Hex output")
+    }
+
+    override fun encryptBase64(data: ByteArray): String = boundedBase64(encrypt(data))
+
+    override fun encryptBase64(data: String, charset: String?): String =
+        boundedBase64(encrypt(data, charset))
+
+    override fun encryptBase64(data: String, charset: Charset?): String =
+        boundedBase64(encrypt(data, charset))
+
+    override fun encryptBase64(data: String): String = boundedBase64(encrypt(data))
+
+    override fun encryptBase64(data: InputStream): String = boundedBase64(encrypt(data))
+
+    override fun encryptHex(data: ByteArray): String = boundedHex(encrypt(data))
+
+    override fun encryptHex(data: String, charset: String?): String = boundedHex(encrypt(data, charset))
+
+    override fun encryptHex(data: String, charset: Charset?): String = boundedHex(encrypt(data, charset))
+
+    override fun encryptHex(data: String): String = boundedHex(encrypt(data))
+
+    override fun encryptHex(data: InputStream): String = boundedHex(encrypt(data))
 
     override fun setIv(iv: ByteArray): SymmetricCrypto {
         requireRhinoCryptoSize(iv.size, "crypto IV")

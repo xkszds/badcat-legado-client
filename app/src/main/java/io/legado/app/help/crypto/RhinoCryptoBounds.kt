@@ -14,6 +14,17 @@ internal fun checkedRhinoCryptoOutput(bytes: ByteArray, label: String): ByteArra
     return bytes
 }
 
+internal fun requireRhinoCryptoEncodedSize(size: Long, label: String) {
+    require(size in 0L..MAX_RHINO_CRYPTO_BYTES.toLong()) {
+        "$label exceeds the 2 MiB encoded-output limit"
+    }
+}
+
+internal fun checkedRhinoCryptoEncodedOutput(value: String, label: String): String {
+    requireRhinoCryptoEncodedSize(value.length.toLong(), label)
+    return value
+}
+
 /** Reads at most 2 MiB, handles zero-progress bulk reads, and never closes the caller's stream. */
 internal fun readRhinoCryptoInput(input: InputStream): ByteArray {
     val output = ByteArrayOutputStream(8 * 1024)

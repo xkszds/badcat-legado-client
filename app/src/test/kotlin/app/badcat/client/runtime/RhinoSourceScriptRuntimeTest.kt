@@ -1585,6 +1585,41 @@ text + re.test('aa}}')"""
     }
 
     @Test
+    fun boundsSymmetricBase64AndHexEncodedOutputsAcrossOverloads() {
+        val key = "0123456789abcdef".toByteArray(Charsets.UTF_8)
+        val crypto = RhinoBoundedSymmetricCryptoAndroid("AES/ECB/NoPadding", key)
+        val base64LimitInput = ByteArray(1_572_864) { (it % 251).toByte() }
+        val hexLimitInput = ByteArray(1_048_576) { (it % 251).toByte() }
+
+        assertEquals(2 * 1024 * 1024, crypto.encryptBase64(base64LimitInput).length)
+        assertEquals(2 * 1024 * 1024, crypto.encryptHex(hexLimitInput).length)
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            crypto.encryptBase64(ByteArrayInputStream(base64LimitInput + ByteArray(16)))
+        }
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            crypto.encryptHex("a".repeat(1_048_592))
+        }
+
+        val small = "encoded overload fixture"
+        assertTrue(crypto.encryptBase64(small).isNotEmpty())
+        assertTrue(crypto.encryptBase64(small, "UTF-8").isNotEmpty())
+        assertTrue(crypto.encryptBase64(small, Charsets.UTF_8).isNotEmpty())
+        assertTrue(crypto.encryptBase64(ByteArrayInputStream(small.toByteArray())).isNotEmpty())
+        assertTrue(crypto.encryptHex(small).isNotEmpty())
+        assertTrue(crypto.encryptHex(small, "UTF-8").isNotEmpty())
+        assertTrue(crypto.encryptHex(small, Charsets.UTF_8).isNotEmpty())
+        assertTrue(crypto.encryptHex(ByteArrayInputStream(small.toByteArray())).isNotEmpty())
+
+        assertEquals(
+            2 * 1024 * 1024,
+            checkedRhinoCryptoEncodedOutput("x".repeat(2 * 1024 * 1024), "fixture output").length,
+        )
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            checkedRhinoCryptoEncodedOutput("x".repeat(2 * 1024 * 1024 + 1), "fixture output")
+        }
+    }
+
+    @Test
     fun supportsSourceScopedCacheAndCommonStringHelpers() = runBlocking {
         val runtime = RhinoSourceScriptRuntime(
             sourceGet = { _, _, url, _ ->

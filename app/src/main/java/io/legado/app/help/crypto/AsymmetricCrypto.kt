@@ -84,11 +84,17 @@ class AsymmetricCrypto(algorithm: String) : HutoolAsymmetricCrypto(algorithm) {
     }
 
     @JvmOverloads
-    fun encryptHex(data: Any, usePublicKey: Boolean? = true): String =
-        HexUtil.encodeHexStr(encrypt(data, usePublicKey))
+    fun encryptHex(data: Any, usePublicKey: Boolean? = true): String {
+        val bytes = encrypt(data, usePublicKey)
+        requireRhinoCryptoEncodedSize(bytes.size.toLong() * 2L, "asymmetric Hex output")
+        return checkedRhinoCryptoEncodedOutput(HexUtil.encodeHexStr(bytes), "asymmetric Hex output")
+    }
 
     @JvmOverloads
-    fun encryptBase64(data: Any, usePublicKey: Boolean? = true): String =
-        EncoderUtils.base64Encode(encrypt(data, usePublicKey))
+    fun encryptBase64(data: Any, usePublicKey: Boolean? = true): String {
+        val bytes = encrypt(data, usePublicKey)
+        requireRhinoCryptoEncodedSize(((bytes.size.toLong() + 2L) / 3L) * 4L, "asymmetric Base64 output")
+        return checkedRhinoCryptoEncodedOutput(EncoderUtils.base64Encode(bytes), "asymmetric Base64 output")
+    }
 
 }
