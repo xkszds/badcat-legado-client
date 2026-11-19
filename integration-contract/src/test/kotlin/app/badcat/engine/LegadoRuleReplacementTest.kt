@@ -67,4 +67,19 @@ class LegadoRuleReplacementTest {
         )
     }
 
+
+    @Test
+    fun ignoresReplacementSegmentsAfterTheThirdLikeUpstreamSourceRule() {
+        val parsed = LegadoRuleReplacement.parse("h1@text##old##new##ignored##also-ignored")
+        assertEquals("old", parsed.replaceRegex)
+        assertEquals("new", parsed.replacement)
+        assertEquals(true, parsed.replaceFirst)
+        assertEquals(
+            listOf("new title"),
+            assertIs<EngineResult.Success<List<String>>>(
+                parsed.apply(listOf("old title")),
+            ).value,
+        )
+    }
+
 }

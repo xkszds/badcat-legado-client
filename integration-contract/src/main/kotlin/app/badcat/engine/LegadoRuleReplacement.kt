@@ -39,7 +39,7 @@ object LegadoRuleReplacement {
     }
 
     fun parse(expression: String): ParsedLegadoRule {
-        val parts = expression.split("##", limit = 4)
+        val parts = expression.split("##")
         if (parts.size == 1) return ParsedLegadoRule(expression = expression.trim())
         return ParsedLegadoRule(
             expression = parts[0].trim(),
