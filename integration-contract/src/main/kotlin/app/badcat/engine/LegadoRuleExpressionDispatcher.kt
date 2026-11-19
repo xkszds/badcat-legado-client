@@ -216,12 +216,12 @@ object LegadoRuleExpressionDispatcher {
                 error,
             )
         }
-        if (split.operator == null) return evaluateBranch(split.rules.single())
+        if (split.operator == null) return evaluateBranch(split.rules.single().trim())
 
         if (split.operator == "||") {
             var firstFailure: EngineResult.Failure? = null
             for (part in split.rules) {
-                when (val result = evaluateCombined(part, evaluateBranch)) {
+                when (val result = evaluateCombined(part.trim(), evaluateBranch)) {
                     is EngineResult.Failure -> if (firstFailure == null) firstFailure = result
                     is EngineResult.Success -> if (result.value.isNotEmpty()) return result
                 }
