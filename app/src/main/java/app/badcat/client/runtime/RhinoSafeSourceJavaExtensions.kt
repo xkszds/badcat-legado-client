@@ -525,6 +525,7 @@ class RhinoSafeSourceJavaExtensions(
     fun getZipByteArrayContent(url: String, path: String): ByteArray? {
         require(path.isNotBlank()) { "ZIP entry path must not be blank" }
         val archive = if (url.startsWith("http://", true) || url.startsWith("https://", true)) {
+            requireHttpUrlLength(url)
             rateLimit(false)
             val response = httpGet(url, emptyMap())
             require(response.statusCode in 200..299) { "ZIP download returned HTTP ${response.statusCode}" }
@@ -590,6 +591,7 @@ class RhinoSafeSourceJavaExtensions(
         val archiveBytes = if (
             url.startsWith("http://", true) || url.startsWith("https://", true)
         ) {
+            requireHttpUrlLength(url)
             rateLimit(false)
             val response = httpGet(url, emptyMap())
             require(response.statusCode in 200..299) {

@@ -95,6 +95,27 @@ class RhinoSafeSourceJavaExtensionsArchiveTest {
     }
 
     @Test
+    fun archiveUrlHelpersRejectOversizedUrlsBeforeCallingTransport() {
+        var calls = 0
+        val extensions = RhinoSafeSourceJavaExtensions(
+            sourceId = "archive-url-limit-fixture",
+            store = InMemorySourceScriptKeyValueStore,
+            httpGet = { _, _ -> calls++; throw AssertionError("must not call transport") },
+        )
+        val oversized = "https://archive.example/" + "a".repeat(16 * 1024)
+        assertThrows(IllegalArgumentException::class.java) {
+            extensions.getZipByteArrayContent(oversized, "entry.txt")
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            extensions.getRarByteArrayContent(oversized, "entry.txt")
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            extensions.get7zByteArrayContent(oversized, "entry.txt")
+        }
+        assertEquals(0, calls)
+    }
+
+    @Test
     fun downloadFileParsesAnalyzeUrlTypeAndStripsOptionBeforeRequest() {
         val requested = mutableListOf<String>()
         val extensions = RhinoSafeSourceJavaExtensions(
