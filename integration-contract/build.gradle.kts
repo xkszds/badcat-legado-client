@@ -11,16 +11,10 @@ val pinnedLegado by sourceSets.creating {
     // source root. Adding the whole upstream tree here caused duplicate FQCNs
     // whenever a pinned file had a platform adaptation.
     java.srcDir("$projectDir/src/pinnedLegado/kotlin")
-    // Compile only the untouched upstream primitives needed by the host.
+    // The pinned source directory contains the selected upstream files,
+    // including the narrowly platform-adapted XPath/JSONPath copies. Do not
+    // also register the upstream app source root: it duplicates those FQCNs.
     // AnalyzeRule's app-coupled lifecycle remains a separate integration task.
-    java.srcDir(fileTree("$rootDir/upstream/legado/app/src/main/java") {
-        include(
-            "io/legado/app/model/analyzeRule/AnalyzeByJSoup.kt",
-            "io/legado/app/model/analyzeRule/AnalyzeByRegex.kt",
-            "io/legado/app/model/analyzeRule/RuleAnalyzer.kt",
-            "io/legado/app/model/analyzeRule/SourceHtmlParser.kt",
-        )
-    })
 }
 
 dependencies {
