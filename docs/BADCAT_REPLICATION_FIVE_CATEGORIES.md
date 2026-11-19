@@ -187,3 +187,10 @@
 - Completed the previously missing repository-wide caller scan: all 231 Kotlin and 21 Java files were checked for the pinned crypto factory/helper identifiers. No extra runtime callers were found outside the recorded source-scoped bridge, Rhino runtime tests and the independent replacement evaluator.
 - The next category-3-only implementation gate is registered in the Legado checklist: exact pinned Hutool/BC dependencies and crypto classes, complete inherited crypto API surface, source-scoped Rhino exposure, old-behavior regression and unchanged JavaImporter sandbox.
 - Categories 1, 2, 4 and 5 remain incomplete and unchanged. This audit is not a feature-completion claim.
+
+
+## 2026-11-19 category 3 crypto runtime slice (verification pending)
+
+- Implemented the pinned Legado crypto API slice: Hutool 5.8.22 / Bouncy Castle 1.86, upstream symmetric/asymmetric/signature classes, source-scoped bridge factories and missing legacy AES/DES/3DES helpers, with focused Rhino tests.
+- Preserved the separate JavaImporter sandbox and replacement-rule digest/HMAC path. CI/Android provider validation is pending.
+- Categories 1, 2, 4 and 5 remain incomplete and unchanged; this increment is not full Legado or product parity.

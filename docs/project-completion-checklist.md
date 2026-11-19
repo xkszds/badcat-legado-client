@@ -260,3 +260,11 @@
 - [ ] 当前 HEAD CI run `44560647609` 正在执行 `:app:testDebugUnitTest`（bounded Rhino host tests）；未结束前不标记通过。
 - [x] 旧代码 run `44557806917`（head `28cff4a`）为 success；它不覆盖当前 HEAD。run `44559292311`（head `73ade446`）也已 success；均不能替代当前 HEAD 验证。
 - [ ] 复审结论：原 checklist 的“剩余目录未扫描”已关闭；当前 crypto API 语义、Android provider 和 Rhino regression 仍是实施/验收门槛。
+
+
+## 2026-11-19 Legado crypto implementation increment (pending verification)
+
+- Added pinned upstream Hutool 5.8.22 / Bouncy Castle 1.86 dependencies and the upstream symmetric, asymmetric and signature helper classes plus Base64/Hex helpers.
+- Expanded the source-scoped Rhino `java` bridge to the upstream crypto factories and legacy AES/DES/3DES methods; removed the obsolete narrow symmetric facade while preserving the JavaImporter AES sandbox.
+- Added focused Rhino tests for AES, DES, 3DES, RSA, signing and factory overloads. CI and Android runtime/provider verification are pending.
+- This is a category-3 Legado crypto slice only. It does not complete full `JsExtensions`, `BaseSource`, `BookSource`, `AnalyzeRule/AnalyzeUrl`, the reading pipeline or any other Badcat category.

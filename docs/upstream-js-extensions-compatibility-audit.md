@@ -233,3 +233,13 @@ The host's current `RhinoLegadoSymmetricCrypto` is an allow-listed AES/DES CBC h
 - `RhinoLegadoJsReplacementEvaluator` owns an independent digest/HMAC implementation. Preserve and regression-test it independently.
 - `LEGADO_CRYPTO_COMPAT_JS` is a separate narrow JavaImporter shim. Keep its class/package allow-list unchanged; adding Hutool must not grant arbitrary Java class access.
 - This closes the previously open caller-scan scope for Kotlin/Java sources. Documentation references are not runtime call sites.
+
+
+### 2026-11-19 crypto runtime implementation delta (verification pending)
+
+- Added pinned upstream crypto classes and helper semantics under `io.legado.app.help.crypto` / `io.legado.app.utils`.
+- Added Hutool 5.8.22 and Bouncy Castle 1.86 provider/PKIX dependencies to `app/build.gradle.kts`.
+- The source bridge now returns Hutool `SymmetricCrypto` backed by `SymmetricCryptoAndroid`, and exposes upstream `AsymmetricCrypto`, `Sign`, and the missing legacy AES/DES/3DES methods.
+- Removed the obsolete host-only `RhinoLegadoSymmetricCrypto` implementation. The separate restricted `aesCrypt` method and `LEGADO_CRYPTO_COMPAT_JS` allow-list are retained.
+- Added Rhino tests for AES/legacy quirks, DES/3DES, random-key and overload semantics, RSA and signing. The independent replacement evaluator digest/HMAC path is unchanged.
+- Pending: compile/test/CI and actual Android crypto provider/runtime verification. Same-name methods and Rhino reflection are not marked compatible until those checks pass.

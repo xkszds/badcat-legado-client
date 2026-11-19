@@ -42,3 +42,11 @@ The upstream Legado source files also contain original Oracle/Rhino file-level n
   - `app/src/main/java/io/legado/app/utils/GsonExtensions.kt`
 
 These files are copied from the exact pinned revision. They retain their upstream package names and implementation. This is the initial rule-model/serialization slice only; `BookSource`, `BaseSource`, Room persistence and the complete analyzer/runtime are not thereby integrated.
+
+## Pinned Legado crypto helpers and dependencies
+
+- Project: Legado; repository: https://github.com/LegadoTeam/legado
+- Revision: `330e606c4d57e08adc056ff8ab7a4132c784da9`; license: GPL-3.0 (see `third_party/legado/LICENSE`)
+- Vendored: `SymmetricCryptoAndroid.kt`, `AsymmetricCrypto.kt`, `Sign.kt`, `EncoderUtils.kt`, and the exact `String.isHex()` helper under the upstream package names.
+- Dependencies verified from the pinned upstream version catalog: `cn.hutool:hutool-crypto:5.8.22`, `org.bouncycastle:bcprov-jdk18on:1.86`, `org.bouncycastle:bcpkix-jdk18on:1.86`.
+- Bridge exposure remains source-scoped; the separate JavaImporter allow-list is not widened.

@@ -151,3 +151,10 @@ The pre-change caller scan is now complete across all 231 Kotlin files and all 2
 The next code task is now explicitly registered in the mandatory checklist: add the exact pinned Hutool Crypto 5.8.22 and Bouncy Castle 1.86 dependencies, port the pinned `SymmetricCryptoAndroid`, `AsymmetricCrypto`, and `Sign` classes plus only their exact Base64/hex helper semantics, and complete the missing `JsEncodeUtils` crypto methods through the source-scoped `java` bridge. Preserve the JavaImporter sandbox and the independent replacement evaluator. Add AES/DES/3DES/RSA/signature, overload, null/error, Hex/Base64 and old-behavior Rhino regression tests. Re-audit the complete repository after implementation and inspect Android build/CI/provider behavior before claiming compatibility.
 
 This gate was recorded before runtime code edits. No runtime crypto implementation is claimed complete by the scan.
+
+
+## 2026-11-19 pinned crypto runtime implementation (verification pending)
+
+Implemented the registered crypto slice: app dependencies now include pinned Hutool Crypto 5.8.22 and Bouncy Castle 1.86 provider/PKIX; the Android app contains the pinned upstream `SymmetricCryptoAndroid`, `AsymmetricCrypto`, `Sign`, `EncoderUtils`, and exact `String.isHex()` helper. `RhinoSafeSourceJavaExtensions` now exposes the upstream symmetric factory overloads, asymmetric/signature factories, and the 19 missing legacy AES/DES/3DES crypto method names through the existing per-source `java` bridge. The old AES/DES-CBC-only facade was removed, while the separately bounded `aesCrypt`/JavaImporter path remains.
+
+Regression tests were added for AES legacy helpers and historical quirks, DES/3DES, random key and factory overloads, RSA encrypt/decrypt, and SHA256withRSA sign/verify. The independent replacement evaluator digest/HMAC methods and JavaImporter sandbox were not changed. All verification is pending CI; no Android runtime/provider success is claimed.

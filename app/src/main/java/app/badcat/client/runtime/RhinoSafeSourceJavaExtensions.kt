@@ -1,5 +1,11 @@
 package app.badcat.client.runtime
 
+import android.webkit.JavascriptInterface
+import android.util.Base64 as AndroidBase64
+import cn.hutool.crypto.symmetric.SymmetricCrypto
+import io.legado.app.help.crypto.AsymmetricCrypto
+import io.legado.app.help.crypto.Sign
+import io.legado.app.help.crypto.SymmetricCryptoAndroid
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.security.MessageDigest
@@ -1374,16 +1380,407 @@ class RhinoSafeSourceJavaExtensions(
     fun strToBytes(value: String, charset: String): ByteArray =
         value.toByteArray(java.nio.charset.Charset.forName(charset))
 
-    fun aesBase64DecodeToString(value: String, key: String, transformation: String, iv: String): String =
-        createSymmetricCrypto(transformation, utf8Encode(key), utf8Encode(iv))
-            .decryptStr(base64DecodeBytes(value))
+    /* 调用SymmetricCrypto key为null时使用随机密钥*/
+    fun createSymmetricCrypto(
+        transformation: String,
+        key: ByteArray?,
+        iv: ByteArray?
+    ): SymmetricCrypto {
+        val symmetricCrypto = SymmetricCryptoAndroid(transformation, key)
+        return if (iv != null && iv.isNotEmpty()) symmetricCrypto.setIv(iv) else symmetricCrypto
+    }
 
-    fun createSymmetricCrypto(transformation: String, key: ByteArray, iv: ByteArray): RhinoLegadoSymmetricCrypto =
-        RhinoLegadoSymmetricCrypto(transformation, key, iv)
+    fun createSymmetricCrypto(
+        transformation: String,
+        key: ByteArray
+    ): SymmetricCrypto {
+        return createSymmetricCrypto(transformation, key, null)
+    }
 
-    /** Common source rules pass UTF-8 key/IV strings instead of byte arrays. */
-    fun createSymmetricCrypto(transformation: String, key: String, iv: String): RhinoLegadoSymmetricCrypto =
-        RhinoLegadoSymmetricCrypto(transformation, utf8Encode(key), utf8Encode(iv))
+    fun createSymmetricCrypto(
+        transformation: String,
+        key: String
+    ): SymmetricCrypto {
+        return createSymmetricCrypto(transformation, key, null)
+    }
+
+    fun createSymmetricCrypto(
+        transformation: String,
+        key: String,
+        iv: String?
+    ): SymmetricCrypto {
+        return createSymmetricCrypto(
+            transformation, key.encodeToByteArray(), iv?.encodeToByteArray()
+        )
+    }
+    //******************非对称加密解密************************//
+
+    /* keys都为null时使用随机密钥 */
+    fun createAsymmetricCrypto(
+        transformation: String
+    ): AsymmetricCrypto {
+        return AsymmetricCrypto(transformation)
+    }
+
+    //******************签名************************//
+    fun createSign(
+        algorithm: String
+    ): Sign {
+        return Sign(algorithm)
+    }
+    //******************对称加密解密old************************//
+
+    /////AES
+    /**
+     * AES 解码为 ByteArray
+     * @param str 传入的AES加密的数据
+     * @param key AES 解密的key
+     * @param transformation AES加密的方式
+     * @param iv ECB模式的偏移向量
+     */
+    @Deprecated(
+        "过于繁琐弃用",
+        ReplaceWith("createSymmetricCrypto(transformation, key, iv).decrypt(str)")
+    )
+    fun aesDecodeToByteArray(
+        str: String, key: String, transformation: String, iv: String
+    ): ByteArray? {
+        return createSymmetricCrypto(transformation, key, iv).decrypt(str)
+    }
+
+    /**
+     * AES 解码为 String
+     * @param str 传入的AES加密的数据
+     * @param key AES 解密的key
+     * @param transformation AES加密的方式
+     * @param iv ECB模式的偏移向量
+     */
+    @Deprecated(
+        "过于繁琐弃用,但是web需要调用",
+        ReplaceWith("createSymmetricCrypto(transformation, key, iv).decryptStr(str)")
+    )
+    @JavascriptInterface
+    fun aesDecodeToString(
+        str: String, key: String, transformation: String, iv: String
+    ): String? {
+        return createSymmetricCrypto(transformation, key, iv).decryptStr(str)
+    }
+
+    /**
+     * AES解码为String，算法参数经过Base64加密
+     *
+     * @param data 加密的字符串
+     * @param key Base64后的密钥
+     * @param mode 模式
+     * @param padding 补码方式
+     * @param iv Base64后的加盐
+     * @return 解密后的字符串
+     */
+    @Deprecated(
+        "过于繁琐弃用,但是web需要调用",
+        ReplaceWith("createSymmetricCrypto(transformation, key, iv).decryptStr(data)")
+    )
+    @JavascriptInterface
+    fun aesDecodeArgsBase64Str(
+        data: String,
+        key: String,
+        mode: String,
+        padding: String,
+        iv: String
+    ): String? {
+        return createSymmetricCrypto(
+            "AES/${mode}/${padding}",
+            AndroidBase64.decode(key, AndroidBase64.NO_WRAP),
+            AndroidBase64.decode(iv, AndroidBase64.NO_WRAP)
+        ).decryptStr(data)
+    }
+
+    /**
+     * 已经base64的AES 解码为 ByteArray
+     * @param str 传入的AES Base64加密的数据
+     * @param key AES 解密的key
+     * @param transformation AES加密的方式
+     * @param iv ECB模式的偏移向量
+     */
+    @Deprecated(
+        "过于繁琐弃用",
+        ReplaceWith("createSymmetricCrypto(transformation, key, iv).decrypt(str)")
+    )
+    fun aesBase64DecodeToByteArray(
+        str: String, key: String, transformation: String, iv: String
+    ): ByteArray? {
+        return createSymmetricCrypto(transformation, key, iv).decrypt(str)
+    }
+
+    /**
+     * 已经base64的AES 解码为 String
+     * @param str 传入的AES Base64加密的数据
+     * @param key AES 解密的key
+     * @param transformation AES加密的方式
+     * @param iv ECB模式的偏移向量
+     */
+    @Deprecated(
+        "过于繁琐弃用,但是web需要调用",
+        ReplaceWith("createSymmetricCrypto(transformation, key, iv).decryptStr(str)")
+    )
+    @JavascriptInterface
+    fun aesBase64DecodeToString(
+        str: String, key: String, transformation: String, iv: String
+    ): String? {
+        return createSymmetricCrypto(transformation, key, iv).decryptStr(str)
+    }
+
+    /**
+     * 加密aes为ByteArray
+     * @param data 传入的原始数据
+     * @param key AES加密的key
+     * @param transformation AES加密的方式
+     * @param iv ECB模式的偏移向量
+     */
+    @Deprecated(
+        "过于繁琐弃用",
+        ReplaceWith("createSymmetricCrypto(transformation, key, iv).decrypt(data)")
+    )
+    fun aesEncodeToByteArray(
+        data: String, key: String, transformation: String, iv: String
+    ): ByteArray? {
+        return createSymmetricCrypto(transformation, key, iv).encrypt(data)
+    }
+
+    /**
+     * 加密aes为String
+     * @param data 传入的原始数据
+     * @param key AES加密的key
+     * @param transformation AES加密的方式
+     * @param iv ECB模式的偏移向量
+     */
+    @Deprecated(
+        "过于繁琐弃用,但是web需要调用",
+        ReplaceWith("createSymmetricCrypto(transformation, key, iv).decryptStr(data)")
+    )
+    @JavascriptInterface
+    fun aesEncodeToString(
+        data: String, key: String, transformation: String, iv: String
+    ): String? {
+        return createSymmetricCrypto(transformation, key, iv).decryptStr(data)
+    }
+
+    /**
+     * 加密aes后Base64化的ByteArray
+     * @param data 传入的原始数据
+     * @param key AES加密的key
+     * @param transformation AES加密的方式
+     * @param iv ECB模式的偏移向量
+     */
+    @Deprecated(
+        "过于繁琐弃用",
+        ReplaceWith("createSymmetricCrypto(transformation, key, iv).encryptBase64(data).toByteArray()")
+    )
+    fun aesEncodeToBase64ByteArray(
+        data: String, key: String, transformation: String, iv: String
+    ): ByteArray? {
+        return createSymmetricCrypto(transformation, key, iv).encryptBase64(data).toByteArray()
+    }
+
+    /**
+     * 加密aes后Base64化的String
+     * @param data 传入的原始数据
+     * @param key AES加密的key
+     * @param transformation AES加密的方式
+     * @param iv ECB模式的偏移向量
+     */
+    @Deprecated(
+        "过于繁琐弃用,但是web需要调用",
+        ReplaceWith("createSymmetricCrypto(transformation, key, iv).encryptBase64(data)")
+    )
+    @JavascriptInterface
+    fun aesEncodeToBase64String(
+        data: String, key: String, transformation: String, iv: String
+    ): String? {
+        return createSymmetricCrypto(transformation, key, iv).encryptBase64(data)
+    }
+
+
+    /**
+     * AES加密并转为Base64，算法参数经过Base64加密
+     *
+     * @param data 被加密的字符串
+     * @param key Base64后的密钥
+     * @param mode 模式
+     * @param padding 补码方式
+     * @param iv Base64后的加盐
+     * @return 加密后的Base64
+     */
+    @Deprecated(
+        "过于繁琐弃用,但是web需要调用",
+        ReplaceWith("createSymmetricCrypto(transformation, key, iv).encryptBase64(data)")
+    )
+    @JavascriptInterface
+    fun aesEncodeArgsBase64Str(
+        data: String,
+        key: String,
+        mode: String,
+        padding: String,
+        iv: String
+    ): String? {
+        return createSymmetricCrypto("AES/${mode}/${padding}", key, iv).encryptBase64(data)
+    }
+
+    /////DES
+    @Deprecated(
+        "过于繁琐弃用,但是web需要调用",
+        ReplaceWith("createSymmetricCrypto(transformation, key, iv).decryptStr(data)")
+    )
+    @JavascriptInterface
+    fun desDecodeToString(
+        data: String, key: String, transformation: String, iv: String
+    ): String? {
+        return createSymmetricCrypto(transformation, key, iv).decryptStr(data)
+    }
+
+    @Deprecated(
+        "过于繁琐弃用,但是web需要调用",
+        ReplaceWith("createSymmetricCrypto(transformation, key, iv).decryptStr(data)")
+    )
+    @JavascriptInterface
+    fun desBase64DecodeToString(
+        data: String, key: String, transformation: String, iv: String
+    ): String? {
+        return createSymmetricCrypto(transformation, key, iv).decryptStr(data)
+    }
+
+    @Deprecated(
+        "过于繁琐弃用,但是web需要调用",
+        ReplaceWith("createSymmetricCrypto(transformation, key, iv).encrypt(data)")
+    )
+    @JavascriptInterface
+    fun desEncodeToString(
+        data: String, key: String, transformation: String, iv: String
+    ): String? {
+        return String(createSymmetricCrypto(transformation, key, iv).encrypt(data))
+    }
+
+    @Deprecated(
+        "过于繁琐弃用,但是web需要调用",
+        ReplaceWith("createSymmetricCrypto(transformation, key, iv).encryptBase64(data)")
+    )
+    @JavascriptInterface
+    fun desEncodeToBase64String(
+        data: String, key: String, transformation: String, iv: String
+    ): String? {
+        return createSymmetricCrypto(transformation, key, iv).encryptBase64(data)
+    }
+
+    //////3DES
+    /**
+     * 3DES解密
+     *
+     * @param data 加密的字符串
+     * @param key 密钥
+     * @param mode 模式
+     * @param padding 补码方式
+     * @param iv 加盐
+     * @return 解密后的字符串
+     */
+    @Deprecated(
+        "过于繁琐弃用,但是web需要调用",
+        ReplaceWith("createSymmetricCrypto(transformation, key, iv).decryptStr(data)")
+    )
+    @JavascriptInterface
+    fun tripleDESDecodeStr(
+        data: String,
+        key: String,
+        mode: String,
+        padding: String,
+        iv: String
+    ): String? {
+        return createSymmetricCrypto("DESede/${mode}/${padding}", key, iv).decryptStr(data)
+    }
+
+    /**
+     * 3DES解密，算法参数经过Base64加密
+     *
+     * @param data 加密的字符串
+     * @param key Base64后的密钥
+     * @param mode 模式
+     * @param padding 补码方式
+     * @param iv Base64后的加盐
+     * @return 解密后的字符串
+     */
+    @Deprecated(
+        "过于繁琐弃用,但是web需要调用",
+        ReplaceWith("createSymmetricCrypto(transformation, key, iv).decryptStr(data)")
+    )
+    @JavascriptInterface
+    fun tripleDESDecodeArgsBase64Str(
+        data: String,
+        key: String,
+        mode: String,
+        padding: String,
+        iv: String
+    ): String? {
+        return createSymmetricCrypto(
+            "DESede/${mode}/${padding}",
+            AndroidBase64.decode(key, AndroidBase64.NO_WRAP),
+            iv.encodeToByteArray()
+        ).decryptStr(data)
+    }
+
+
+    /**
+     * 3DES加密并转为Base64
+     *
+     * @param data 被加密的字符串
+     * @param key 密钥
+     * @param mode 模式
+     * @param padding 补码方式
+     * @param iv 加盐
+     * @return 加密后的Base64
+     */
+    @Deprecated(
+        "过于繁琐弃用,但是web需要调用",
+        ReplaceWith("createSymmetricCrypto(transformation, key, iv).encryptBase64(data)")
+    )
+    @JavascriptInterface
+    fun tripleDESEncodeBase64Str(
+        data: String,
+        key: String,
+        mode: String,
+        padding: String,
+        iv: String
+    ): String? {
+        return createSymmetricCrypto("DESede/${mode}/${padding}", key, iv)
+            .encryptBase64(data)
+    }
+
+    /**
+     * 3DES加密并转为Base64，算法参数经过Base64加密
+     *
+     * @param data 被加密的字符串
+     * @param key Base64后的密钥
+     * @param mode 模式
+     * @param padding 补码方式
+     * @param iv Base64后的加盐
+     * @return 加密后的Base64
+     */
+    @Deprecated(
+        "过于繁琐弃用,但是web需要调用",
+        ReplaceWith("createSymmetricCrypto(transformation, key, iv).encryptBase64(data)")
+    )
+    @JavascriptInterface
+    fun tripleDESEncodeArgsBase64Str(
+        data: String,
+        key: String,
+        mode: String,
+        padding: String,
+        iv: String
+    ): String? {
+        return createSymmetricCrypto(
+            "DESede/${mode}/${padding}",
+            AndroidBase64.decode(key, AndroidBase64.NO_WRAP),
+            iv.encodeToByteArray()
+        ).encryptBase64(data)
+    }
 
     /** Legado's chapter-title number normalization, matching StringUtils.stringToInt. */
     fun toNumChapter(source: String?): String? {
@@ -1777,113 +2174,4 @@ private fun legadoChineseNumberToInt(value: String): Int {
         }
         result + temporary + billion
     }.getOrDefault(-1)
-}
-
-/** Allow-listed AES-CBC helper matching the common Legado crypto extension. */
-class RhinoLegadoSymmetricCrypto(
-    transformation: String,
-    key: ByteArray,
-    iv: ByteArray,
-) {
-    private val algorithm = transformation.substringBefore('/').uppercase()
-    private val transformation = when (transformation.uppercase()) {
-        "AES/CBC/PKCS5PADDING", "AES/CBC/PKCS7PADDING" -> "AES/CBC/PKCS5Padding"
-        "DES/CBC/PKCS5PADDING" -> "DES/CBC/PKCS5Padding"
-        else -> throw UnsupportedOperationException("Only AES/DES CBC with PKCS5/PKCS7 padding is supported")
-    }
-    private val keyBytes = key.copyOf()
-    private val ivBytes = iv.copyOf()
-
-    fun encrypt(data: String): ByteArray {
-        val input = data.toByteArray(Charsets.UTF_8)
-        require(input.size <= 2 * 1024 * 1024) { "Symmetric crypto input exceeds the size limit" }
-        validateKeyAndIv()
-        val cipher = Cipher.getInstance(transformation)
-        cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(keyBytes, algorithm), IvParameterSpec(ivBytes))
-        return cipher.doFinal(input)
-    }
-
-    /** Hutool-compatible Base64 ciphertext helper used by Legado source rules. */
-    fun encryptBase64(data: String): String =
-        Base64.getEncoder().encodeToString(encrypt(data))
-
-    /** Hutool-compatible lowercase hexadecimal ciphertext helper. */
-    fun encryptHex(data: String): String =
-        encrypt(data).joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
-
-    fun decrypt(data: ByteArray): ByteArray {
-        require(data.size <= 2 * 1024 * 1024) { "Symmetric crypto input exceeds the size limit" }
-        validateKeyAndIv()
-        val cipher = Cipher.getInstance(transformation)
-        cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(keyBytes, algorithm), IvParameterSpec(ivBytes))
-        return cipher.doFinal(data)
-    }
-
-    fun decrypt(data: String): ByteArray = decrypt(decodeHutoolCipherText(data))
-
-    fun decryptStr(data: ByteArray): String = String(decrypt(data), Charsets.UTF_8)
-
-    /** Hutool accepts either a hexadecimal or Base64 encoded ciphertext string. */
-    fun decryptStr(data: String): String = String(decrypt(data), Charsets.UTF_8)
-
-    private fun decodeHutoolCipherText(value: String): ByteArray {
-        require(value.length <= 4 * 1024 * 1024) { "Encoded symmetric crypto input exceeds the size limit" }
-        // Legado's String.isHex() checks every character without trimming and
-        // does not pre-classify odd-length hexadecimal strings as Base64.
-        val isHex = value.all { it in '0'..'9' || it in 'A'..'F' || it in 'a'..'f' }
-        if (isHex) {
-            require(value.length % 2 == 0) { "Hexadecimal symmetric crypto input must have an even length" }
-            return ByteArray(value.length / 2) { index ->
-                value.substring(index * 2, index * 2 + 2).toInt(16).toByte()
-            }
-        }
-        return Base64.getDecoder().decode(value).also {
-            require(it.size <= 2 * 1024 * 1024) { "Symmetric crypto input exceeds the size limit" }
-        }
-    }
-
-    private fun validateKeyAndIv() {
-        when (algorithm) {
-            "AES" -> {
-                require(keyBytes.size == 16 || keyBytes.size == 24 || keyBytes.size == 32) { "Invalid AES key length" }
-                require(ivBytes.size == 16) { "Invalid AES-CBC IV length" }
-            }
-            "DES" -> {
-                require(keyBytes.size == 8) { "Invalid DES key length" }
-                require(ivBytes.size == 8) { "Invalid DES-CBC IV length" }
-            }
-        }
-    }
-}
-
-/** Keeps the pinned Legado conversion exclusions across per-source helper instances. */
-private object LegadoChineseConversion {
-    @Volatile private var initialized = false
-
-    @Synchronized
-    fun traditionalToSimple(value: String): String {
-        if (!initialized) {
-            QuickChineseUtils.loadExcludeDict(
-                TransType.TRADITIONAL_TO_SIMPLE,
-                listOf(
-                    "槃", "划槳", "列根", "雪梨", "雪糕", "多士", "起司", "芝士", "沙芬", "母音",
-                    "华乐", "民乐", "晶元", "晶片", "映像", "明覆", "明瞭", "新力", "新喻",
-                    "零錢", "零钱", "離線", "碟片", "模組", "桌球", "案頭", "機車", "電漿",
-                    "鳳梨", "魔戒", "載入", "菲林", "整合", "變數", "解碼", "散钱", "插水",
-                    "房屋", "房价", "快取", "德士", "建立", "常式", "席丹", "布殊", "布希",
-                    "巴哈", "巨集", "夜学", "向量", "半形", "加彭", "列印", "函式", "全形",
-                    "光碟", "介面", "乳酪", "沈船", "永珍", "演化", "牛油", "相容", "磁碟",
-                    "菲林", "規則", "酵素", "雷根", "饭盒", "路易斯", "非同步", "出租车", "周杰倫",
-                    "马铃薯", "馬鈴薯", "機械人", "電單車", "電扶梯", "音效卡", "飆車族", "點陣圖",
-                    "個入球", "顆進球", "沃尓沃", "晶片集", "斯瓦巴", "斜角巷", "战列舰", "快速面",
-                    "希特拉", "太空梭", "吐瓦魯", "吉布堤", "吉布地", "史太林", "南冰洋", "区域网",
-                    "波札那", "解析度", "酷洛米", "金夏沙", "魔獸紀元", "高空彈跳", "铁达尼号",
-                    "太空战士", "埃及妖后", "吉里巴斯", "附加元件", "魔鬼終結者", "純文字檔案",
-                    "奇幻魔法Melody", "列支敦斯登",
-                ),
-            )
-            initialized = true
-        }
-        return QuickChineseUtils.t2s(value)
-    }
 }

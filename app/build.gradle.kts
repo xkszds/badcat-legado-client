@@ -36,6 +36,10 @@ dependencies {
     implementation("com.google.code.gson:gson:2.14.0")
     // Pinned Legado rule models use the upstream Flexbox style contract.
     implementation("com.google.android.flexbox:flexbox:3.0.0")
+    // Pinned Legado crypto runtime dependencies (Hutool 5.8.22 / Bouncy Castle 1.86).
+    implementation("cn.hutool:hutool-crypto:5.8.22")
+    implementation("org.bouncycastle:bcprov-jdk18on:1.86")
+    implementation("org.bouncycastle:bcpkix-jdk18on:1.86")
     // Parser dependencies match the pinned upstream Legado source revision.
     implementation("org.jsoup:jsoup:1.23.2")
     implementation("cn.wanghaomiao:JsoupXpath:2.5.3")

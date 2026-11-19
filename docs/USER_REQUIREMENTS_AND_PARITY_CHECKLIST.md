@@ -345,3 +345,16 @@
 - [x] 明确区分 source `java` bridge、JavaImporter sandbox 和替换规则 evaluator 三条路径。
 - [x] 已将下一次 runtime code change 的目标文件族、上游来源、调用方、风险、回归和验收门槛写在代码编辑之前。
 - [ ] 若依赖检查或实现时发现新的调用者/ABI 风险，必须先修订本节再继续。
+
+
+## 2026-11-19 Legado crypto implementation increment (verification pending)
+
+- [x] Added pinned Hutool Crypto 5.8.22, Bouncy Castle provider 1.86 and PKIX 1.86 dependencies to the Android app module.
+- [x] Vendored pinned upstream `SymmetricCryptoAndroid`, `AsymmetricCrypto`, `Sign`, `EncoderUtils` and exact `String.isHex()` semantics.
+- [x] Replaced the host AES/DES-CBC-only `createSymmetricCrypto` facade with upstream factory overloads; added `createAsymmetricCrypto`, `createSign` and all 19 missing inherited crypto method names.
+- [x] Preserved upstream historical quirks in AES/DES/3DES legacy methods.
+- [x] Removed the obsolete `RhinoLegadoSymmetricCrypto` facade while retaining the separately bounded `aesCrypt` helper used by the JavaImporter shim.
+- [x] Added Rhino regression tests for AES helpers/quirks, DES/3DES, random-key and factory overloads, RSA encrypt/decrypt and SHA256withRSA sign/verify.
+- [x] Kept source-scoped `java` injection, the JavaImporter allow-list and the independent replacement-evaluator digest/HMAC path unchanged.
+- [ ] Android unit tests, Hutool provider behavior, D8/R8 packaging, Debug APK assembly and CI are pending. Do not call this increment verified until logs and artifacts are inspected.
+- [ ] Re-audit the full diff and affected callers after CI; resolve any overload, Android provider or Rhino reflection issue before proceeding to BaseSource.
