@@ -77,6 +77,8 @@ class RhinoSourceLoginExtensions(
     private val store: SourceLoginSessionStore,
     private val sourceKeyValueStore: SourceScriptKeyValueStore = InMemorySourceScriptKeyValueStore,
     private val sourceKey: String = sourceId,
+    private val loginCookieWriter: ((sourceId: String, sourceKey: String, cookieHeader: String) -> Unit)? = null,
+    private val loginCookieRemover: ((sourceId: String, sourceKey: String) -> Unit)? = null,
 ) {
     /** Legado source key is the imported book-source URL, represented by this client's source id. */
     fun getKey(): String = sourceKey
@@ -103,10 +105,15 @@ class RhinoSourceLoginExtensions(
         }
         val normalized = JsonObject()
         parsed.forEach { (name, value) -> normalized.addProperty(name, value) }
+        val cookie = parsed.entries.firstOrNull { it.key.equals("Cookie", ignoreCase = true) }?.value
+        if (cookie != null) loginCookieWriter?.invoke(sourceId, sourceKey, cookie)
         store.putLoginHeader(sourceId, normalized.toString())
         return normalized.toString()
     }
-    fun removeLoginHeader() { store.removeLoginHeader(sourceId) }
+    fun removeLoginHeader() {
+        store.removeLoginHeader(sourceId)
+        loginCookieRemover?.invoke(sourceId, sourceKey)
+    }
     fun getLoginInfo(): String = store.getLoginInfo(sourceId).orEmpty()
     fun getLoginInfoMap(): HashMap<String, String> = parseStringMap(getLoginInfo(), "login info")
     fun putLoginInfo(info: String): String {
