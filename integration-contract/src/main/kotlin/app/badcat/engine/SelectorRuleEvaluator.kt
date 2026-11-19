@@ -17,13 +17,14 @@ object SelectorRuleEvaluator {
         expression: String,
     ): EngineResult<List<String>> = when (type) {
         SelectorRuleType.CSS -> runCatching {
-            EngineResult.Success(
-                UpstreamLegadoCssRuleEvaluator.getStringList(
-                    document.body,
-                    document.url,
-                    expression,
-                ),
-            )
+            val suffix = expression.substringAfterLast("@", "").lowercase()
+            val extractionSuffix = suffix in setOf("text", "textnodes", "owntext", "html", "all", "href", "src", "tag") || suffix.startsWith("attr(")
+            val values = if (extractionSuffix) {
+                UpstreamLegadoCssRuleEvaluator.getStringList(document.body, document.url, expression)
+            } else {
+                UpstreamLegadoCssRuleEvaluator.getElementTextList(document.body, document.url, expression)
+            }
+            EngineResult.Success(values)
         }.getOrElse { error ->
             EngineResult.Failure(
                 EngineErrorCode.PARSE,

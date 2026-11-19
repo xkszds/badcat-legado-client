@@ -8,6 +8,25 @@ object UpstreamLegadoCssRuleEvaluator {
     fun getString(html: String, baseUrl: String, rule: String): String? =
         AnalyzeByJSoup(parseSourceHtml(html).also { it.setBaseUri(baseUrl) }).getString(rule)
 
+    fun getElementTextList(html: String, baseUrl: String, rule: String): List<String> {
+        val normalizedRule = normalizeElementRule(rule)
+        val analyzer = AnalyzeByJSoup(parseSourceHtml(html).also { it.setBaseUri(baseUrl) })
+        return analyzer.getElements(normalizedRule).map { it.text() }
+    }
+
+    private fun normalizeElementRule(rule: String): String {
+        val extractionRule = if (rule.substringAfterLast("@", "").lowercase() in
+            setOf("text", "textnodes", "owntext", "html", "all", "href", "src", "tag")) {
+            rule.substringBeforeLast("@")
+        } else rule
+        return if (extractionRule.startsWith("@.") ||
+            extractionRule.startsWith("@class.", ignoreCase = true) ||
+            extractionRule.startsWith("@tag.", ignoreCase = true) ||
+            extractionRule.startsWith("@id.", ignoreCase = true)) {
+            extractionRule.substring(1)
+        } else extractionRule
+    }
+
     fun getElementHtmlList(html: String, baseUrl: String, rule: String): List<String> {
         val extractionRule = if (rule.substringAfterLast("@", "").lowercase() in
             setOf("text", "textnodes", "owntext", "html", "all", "href", "src", "tag")) {
