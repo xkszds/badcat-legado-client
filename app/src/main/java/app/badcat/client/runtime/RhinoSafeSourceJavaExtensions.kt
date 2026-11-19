@@ -1106,8 +1106,9 @@ class RhinoSafeSourceJavaExtensions(
      * the already supplied Function object.
      */
     fun functionThisObj(action: Function): Scriptable {
-        return action.parentScope?.let { ScriptableObject.getTopLevelScope(it) }
+        val parentScope: Scriptable = action.parentScope
             ?: throw IllegalArgumentException("JavaScript callback has no parent scope")
+        return ScriptableObject.getTopLevelScope(parentScope) as Scriptable
     }
 
     private fun invokeSourceFunction(action: Function) {
