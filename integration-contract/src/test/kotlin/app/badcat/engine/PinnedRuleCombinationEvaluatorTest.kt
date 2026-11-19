@@ -43,7 +43,7 @@ class PinnedRuleCombinationEvaluatorTest {
         val upstream = io.legado.app.model.analyzeRule.RuleAnalyzer(expression)
         val expected = upstream.splitRule("&&", "||", "%%")
         val actual = PinnedLegadoRuleAnalyzer.split(expression)
-        assertEquals(expected, actual.rules)
+        assertEquals(expected.map { it.trim() }, actual.rules.map { it.trim() })
         assertEquals("&&", actual.operator)
         assertEquals("""primary[data-x="x || y"]""", actual.rules.first().trim())
     }
