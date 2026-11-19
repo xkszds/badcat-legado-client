@@ -38,10 +38,12 @@ kotlin {
     }
 }
 
-configurations.named("debugUnitTestRuntimeClasspath") {
-    // Production and test compilation use the Android AAR; unit-test execution substitutes
-    // the same OkHttp release's JVM artifact so Robolectric can load its packaged PSL resource.
-    exclude(group = "com.squareup.okhttp3", module = "okhttp")
+configurations.configureEach {
+    if (name == "debugUnitTestRuntimeClasspath") {
+        // Production and test compilation use the Android AAR; unit-test execution substitutes
+        // the same OkHttp release's JVM artifact so Robolectric can load its packaged PSL resource.
+        exclude(group = "com.squareup.okhttp3", module = "okhttp")
+    }
 }
 
 dependencies {
