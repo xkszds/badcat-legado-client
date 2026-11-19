@@ -89,10 +89,7 @@ class FileChapterContentCache(context: Context) : ChapterContentCache {
     }
 
     private fun cacheFile(sourceId: String, bookUrl: String, chapterUrl: String): File {
-        val raw = "$sourceId\n$bookUrl\n$chapterUrl".toByteArray(Charsets.UTF_8)
-        val digest = MessageDigest.getInstance("SHA-256").digest(raw)
-            .joinToString("") { byte -> "%02x".format(byte) }
-        return File(directory, "$digest.json")
+        return File(directory, "${chapterCacheDigest(sourceId, bookUrl, chapterUrl)}.json")
     }
 
     /** Evict least-recently-read entries until the shared cache is within budget. */
@@ -106,6 +103,18 @@ class FileChapterContentCache(context: Context) : ChapterContentCache {
         const val MAX_ENTRY_BYTES = 4L * 1024 * 1024
         const val MAX_CACHE_BYTES = 64L * 1024 * 1024
     }
+}
+
+
+/** Length-prefix each identity field so embedded separators cannot alias another chapter key. */
+internal fun chapterCacheDigest(sourceId: String, bookUrl: String, chapterUrl: String): String {
+    val raw = buildString {
+        listOf(sourceId, bookUrl, chapterUrl).forEach { value ->
+            append(value.length).append(':').append(value)
+        }
+    }.toByteArray(Charsets.UTF_8)
+    return MessageDigest.getInstance("SHA-256").digest(raw)
+        .joinToString("") { byte -> "%02x".format(byte) }
 }
 
 /** Read at most one byte beyond the limit so corrupted entries stay bounded. */
