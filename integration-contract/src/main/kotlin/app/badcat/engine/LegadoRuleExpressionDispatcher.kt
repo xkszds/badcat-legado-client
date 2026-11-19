@@ -240,9 +240,12 @@ object LegadoRuleExpressionDispatcher {
 
     private fun withDefaultTextExtraction(expression: String): String {
         val raw = expression.trim()
+        val lastAt = raw.lastIndexOf("@")
+        val hasLeadingCssModeOnly = raw.startsWith("@") && raw.indexOf("@", 1) < 0
         val suffix = raw.substringAfterLast("@", "").lowercase()
-        if (suffix in setOf("text", "textnodes", "owntext", "html", "all", "href", "src", "tag") ||
-            suffix.startsWith("attr(") || suffix.matches(Regex("[a-z_:][a-z0-9_:-]*"))) {
+        if (!hasLeadingCssModeOnly && lastAt >= 0 &&
+            (suffix in setOf("text", "textnodes", "owntext", "html", "all", "href", "src", "tag") ||
+                suffix.startsWith("attr(") || suffix.matches(Regex("[a-z_:][a-z0-9_:-]*")))) {
             return raw
         }
         return "$raw@text"
