@@ -234,16 +234,18 @@ class SourceBookActivity : Activity() {
             return
         }
         pendingStartReading = false
-        val saved = getSharedPreferences("badcat_reading_progress", MODE_PRIVATE)
-            .getString(readingProgressKey(sourceId, bookUrl), null)
-        if (!saved.isNullOrBlank()) {
-            startActivity(Intent(this, SourceChapterActivity::class.java).apply {
-                putExtra(SourceChapterActivity.EXTRA_SOURCE_ID, sourceId)
-                putExtra(SourceChapterActivity.EXTRA_BOOK_URL, bookUrl)
-                putExtra(SourceChapterActivity.EXTRA_BOOK_NAME, bookName)
-                putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, saved)
-            })
+        val progressPreferences = getSharedPreferences("badcat_reading_progress", MODE_PRIVATE)
+        val progressKey = readingProgressKey(sourceId, bookUrl)
+        val saved = progressPreferences.getString(progressKey, null)
+        val resumeChapter = ChapterCatalogQuery.findByUrl(allChapters, saved)
+        if (resumeChapter != null) {
+            openChapter(resumeChapter)
         } else {
+            // A source may remove or rewrite a chapter URL. Do not send the reader
+            // to a stale URL; clear the invalid bookmark and start from the first chapter.
+            if (!saved.isNullOrBlank()) {
+                progressPreferences.edit().remove(progressKey).apply()
+            }
             openChapter(allChapters.first())
         }
     }
