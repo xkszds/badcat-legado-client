@@ -8,6 +8,7 @@ kotlin {
 
 val pinnedLegado by sourceSets.creating {
     java.srcDir("$rootDir/upstream/legado/app/src/main/java")
+    java.srcDir("$projectDir/src/pinnedLegado/kotlin")
     // Compile exact upstream selector/parser primitives used by this host.
     // AnalyzeRule's app-coupled lifecycle remains a separate integration task.
     java.include(
