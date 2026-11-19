@@ -30,7 +30,7 @@ internal fun parseLoginCookieHeader(url: HttpUrl, raw: String): List<Cookie> {
 }
 
 internal fun sourceCookieBelongsToDomain(cookie: Cookie, sourceDomain: String): Boolean =
-    cookie.domain == sourceDomain || cookie.domain.endsWith(".$sourceDomain")
+    sourceCookieBelongsToDomain(cookie, sourceDomain)
 
 internal fun sourceCookieStorageKey(cookie: Cookie): String =
     "${cookie.domain}|${cookie.path}|${cookie.name}|${cookie.hostOnly}"
@@ -168,7 +168,7 @@ class SharedPreferencesSourceCookieJar(
         synchronized(lock) {
             reloadLocked()
             cookies.entries.removeAll { (_, cookie) ->
-                cookie.domain == sourceDomain || cookie.domain.endsWith(".$sourceDomain")
+                sourceCookieBelongsToDomain(cookie, sourceDomain)
             }
             parsed.forEach { cookie -> cookies[cookieKey(cookie)] = cookie }
             removeExpiredLocked(System.currentTimeMillis())
@@ -184,7 +184,7 @@ class SharedPreferencesSourceCookieJar(
         synchronized(lock) {
             reloadLocked()
             cookies.entries.removeAll { (_, cookie) ->
-                cookie.domain == sourceDomain || cookie.domain.endsWith(".$sourceDomain")
+                sourceCookieBelongsToDomain(cookie, sourceDomain)
             }
             persistLocked()
         }
