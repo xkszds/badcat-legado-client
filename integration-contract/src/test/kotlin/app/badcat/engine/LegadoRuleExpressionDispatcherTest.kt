@@ -300,4 +300,53 @@ class LegadoRuleExpressionDispatcherTest {
         assertEquals(upstream, actual)
     }
 
+
+    @Test
+    fun xpathCollectionAndScalarUsePinnedAnalyzeByXPath() {
+        val document = SourceDocument(
+            url = "https://reader.example/catalog",
+            body = "<root><book><name>Alpha</name></book><book><name>Beta</name></book></root>",
+        )
+        val rule = "@xpath: //book/name"
+        val expected = io.legado.app.model.analyzeRule.UpstreamLegadoXPathRuleEvaluator.getElementList(
+            document.body, document.url, "//book/name",
+        )
+        val actual = assertIs<EngineResult.Success<List<String>>>(
+            LegadoRuleExpressionDispatcher.evaluateElements(document, rule),
+        ).value
+        assertEquals(expected, actual)
+        assertEquals(
+            io.legado.app.model.analyzeRule.UpstreamLegadoXPathRuleEvaluator.getStringList(
+                document.body, document.url, "//book/name",
+            ),
+            assertIs<EngineResult.Success<List<String>>>(
+                LegadoRuleExpressionDispatcher.evaluate(document, rule),
+            ).value,
+        )
+    }
+
+    @Test
+    fun jsonPathCollectionAndScalarUsePinnedAnalyzeByJSonPath() {
+        val document = SourceDocument(
+            url = "https://reader.example/api/books",
+            body = """{"books":[{"name":"Alpha"},{"name":"Beta"}]}""",
+        )
+        val rule = "@jsonpath: $.books[*].name"
+        val expected = io.legado.app.model.analyzeRule.UpstreamLegadoJsonPathRuleEvaluator.getElementList(
+            document.body, "$.books[*].name",
+        ) { }
+        val actual = assertIs<EngineResult.Success<List<String>>>(
+            LegadoRuleExpressionDispatcher.evaluateElements(document, rule),
+        ).value
+        assertEquals(expected, actual)
+        assertEquals(
+            io.legado.app.model.analyzeRule.UpstreamLegadoJsonPathRuleEvaluator.getStringList(
+                document.body, "$.books[*].name",
+            ) { },
+            assertIs<EngineResult.Success<List<String>>>(
+                LegadoRuleExpressionDispatcher.evaluate(document, rule),
+            ).value,
+        )
+    }
+
 }
