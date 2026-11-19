@@ -26,6 +26,14 @@ class ChapterCatalogQueryTest {
     }
 
     @Test
+    fun savedChapterUrlResolvesOnlyWhenItExistsInTheCurrentCatalog() {
+        assertEquals(chapters[1], ChapterCatalogQuery.findByUrl(chapters, chapters[1].url))
+        assertEquals(null, ChapterCatalogQuery.findByUrl(chapters, "https://example.test/deleted"))
+        assertEquals(null, ChapterCatalogQuery.findByUrl(chapters, "  "))
+        assertEquals(null, ChapterCatalogQuery.findByUrl(chapters, null))
+    }
+
+    @Test
     fun filteringAndReverseCanBeCombined() {
         assertEquals(
             listOf(chapters[2], chapters[0]),
