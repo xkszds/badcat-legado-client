@@ -56,7 +56,7 @@ object RuleCombinationEvaluator {
         evaluateRule: (String) -> EngineResult<List<T>>,
     ): EngineResult<List<T>> {
         val split = PinnedLegadoRuleAnalyzer.split(expression)
-        if (split.operator == null) return evaluateRule(split.rules.single())
+        if (split.operator == null) return evaluateRule(split.rules.single().trim())
 
         if (split.operator == "||") {
             var firstFailure: EngineResult.Failure? = null
@@ -95,7 +95,7 @@ object RuleCombinationEvaluator {
         evaluateRule: (String) -> List<T>,
     ): List<T> {
         val split = PinnedLegadoRuleAnalyzer.split(expression)
-        if (split.operator == null) return evaluateRule(split.rules.single())
+        if (split.operator == null) return evaluateRule(split.rules.single().trim())
 
         val results = mutableListOf<List<T>>()
         for (rule in split.rules) {
