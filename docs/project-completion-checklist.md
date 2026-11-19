@@ -251,3 +251,12 @@
 - [x] Added the pinned `INITIAL_GSON/GSON` implementation and custom rule deserializers from upstream `330e606c4d57e08adc056ff8ab7a4132c784da9`.
 - [x] Added Parcelize plugin/Flexbox dependency, source notices and focused tests for object/legacy-string decoding, null/default behavior and rule model semantics.
 - [ ] Current commit CI not yet complete. Full source entity graph, BaseSource, Room persistence and complete engine remain P0 blockers.
+
+## 2026-11-19 本轮清单复读与 crypto caller scan
+- [x] 本轮开始前重读根 `AGENTS.md` 全文、Legado 技术清单、五大类清单、项目完成清单、迁移计划、模型/AnalyzeRule/JsExtensions 审计、UI 重建图、PPRule 与原版净化证据。
+- [x] 确认分支 `integration/legado-upstream-runtime`，HEAD `41cb8083a04ef5c9524326ec374d0d0544a96c44`；固定上游 `330e606c4d57e08adc056ff8ab7a4132c784da9` 未变。
+- [x] 完成当前仓库 231 个 Kotlin 与 21 个 Java 文件的目标 crypto 调用方搜索；结果和下一任务范围已写入 Legado 清单与审计。
+- [ ] crypto 运行时代码尚未修改；下一项是已预登记的 Hutool/BC 与上游 crypto API 迁移。
+- [ ] 当前 HEAD CI run `44560647609` 正在执行 `:app:testDebugUnitTest`（bounded Rhino host tests）；未结束前不标记通过。
+- [x] 旧代码 run `44557806917`（head `28cff4a`）为 success；它不覆盖当前 HEAD。run `44559292311`（head `73ade446`）也已 success；均不能替代当前 HEAD 验证。
+- [ ] 复审结论：原 checklist 的“剩余目录未扫描”已关闭；当前 crypto API 语义、Android provider 和 Rhino regression 仍是实施/验收门槛。

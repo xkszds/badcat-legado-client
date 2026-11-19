@@ -316,3 +316,32 @@
 - run [44558528157](https://github.com/xkszds/badcat-legado-client/actions/runs/44558528157)，head 6fa843febb293e95a9a0da44acc9e38b64776b48：已结束为 cancelled，不计为通过。
 - run 44557806917 验证的是旧代码提交 28cff4a，不是当前文档 head；不能把它写成当前 HEAD 的验证结果。当前文档提交后的新 CI 尚未检查到完成结果。
 - 该 CI 成功只说明该提交上的测试/构建/所配置 live smoke 成功，不等于完整 Legado、真机安装或最终 APK 验收。
+
+## 2026-11-19 完整仓库 crypto 调用方搜索结果与下一任务预登记
+
+### 完整调用方搜索（代码编辑前）
+- [x] 已按当前分支 Git tree 枚举全部 231 个 Kotlin 源/测试文件，扫描目标 crypto API/helper 标识符；覆盖 app main、app tests、integration-contract main/tests、pinnedLegado sources 与 legado-rhino。
+- [x] 已枚举并扫描全部 21 个 Java 源文件。
+- [x] 除已记录的 `RhinoSafeSourceJavaExtensions.kt` 实现、`RhinoSourceScriptRuntimeTest.kt` 动态脚本测试，以及 `RhinoLegadoJsReplacementEvaluator.kt` 独立摘要/HMAC 逻辑外，其他 Kotlin/Java 文件没有发现目标 crypto API/helper 的额外引用。
+- [x] app UI、书源模型、integration-contract、pinnedLegado 与 legado-rhino 均已纳入本次搜索；此前“未扫描 UI/integration-contract/legado-rhino”的限制已关闭。
+- [x] 保留搜索边界说明：扫描覆盖当前 tree 中全部 Kotlin/Java 文件；不把文档提及视为运行时调用。既有 replacement evaluator 的 digest/HMAC 与 JavaImporter shim 属于不同路径，仍需单独回归。
+
+### 本轮搜索结论
+- 旧 `createSymmetricCrypto` 的已知实际运行时消费者为 source-scoped `java` bridge 的 Rhino 测试；未发现 app UI 或 integration-contract 对 `RhinoLegadoSymmetricCrypto` 类型的静态依赖。
+- `RhinoSourceScriptRuntime` 每个 source 创建并注入 bridge 到 `scope["java"]`；不得改为全局共享 crypto 实例。
+- `LEGADO_CRYPTO_COMPAT_JS` 中受限 JavaImporter 仍有独立 AES/Java class allow-list；不能为了支持 Hutool 而开放任意 Packages/reflection。
+- `RhinoLegadoJsReplacementEvaluator` 有独立 digest/HMAC 实现；本轮 crypto 工厂迁移不得改变它的作用域、算法、编码或超时行为。
+
+### 下一项代码任务（在本记录之后方可实施）
+- [ ] 依赖：在 Android app module 引入固定上游 Hutool Crypto 5.8.22、Bouncy Castle provider 1.86、PKIX 1.86；按上游依赖排除规则处理重复 BC 包，检查 Android D8/R8 与运行时 provider。
+- [ ] 上游移植：按 pinned commit 原样移植 `SymmetricCryptoAndroid`、`AsymmetricCrypto`、`Sign`，并只移植其真实依赖的 Base64 NO_WRAP 与 `String.isHex()` 精确语义；保留 GPL-3.0 来源/版权声明。
+- [ ] Bridge：将 `createSymmetricCrypto` 的两个现有宿主 overload 迁移到上游 Hutool-backed `SymmetricCryptoAndroid`；补齐 pinned `JsEncodeUtils` 的其余 overload 和 19 个缺失方法，按上游保留历史方法行为，不擅自修正源码 quirks。
+- [ ] 安全：crypto factory 仅经每源 `java` bridge 暴露；不扩展 JavaImporter、Packages、反射或任意类加载白名单；为 key/data 输入增加边界时不得改变合法上游输入语义。
+- [ ] 回归：保留现有 AES round-trip、DES decrypt、AES Base64、digest/HMAC、JavaImporter allow-list 测试；新增 3DES、RSA/非对称 encrypt/decrypt、Sign sign/verify、Hex/Base64 识别、key/IV overload、null/random key、错误算法/密钥和 Rhino 对象方法链测试。
+- [ ] 复审：实现后重新搜索全仓所有受影响方法/helper/类型，审查 Rhino 可见签名、空值、编码、异常、provider 与 Android API；运行 focused tests、`:app:testDebugUnitTest`、`:app:assembleDebug` 和当前 CI，查看完整失败日志与 APK artifact。
+
+### 清单自审
+- [x] 此前全仓搜索范围不完整；现已补齐全部 Kotlin/Java 文件并更正，不再把 incomplete GitHub code-search 当作无调用方证据。
+- [x] 明确区分 source `java` bridge、JavaImporter sandbox 和替换规则 evaluator 三条路径。
+- [x] 已将下一次 runtime code change 的目标文件族、上游来源、调用方、风险、回归和验收门槛写在代码编辑之前。
+- [ ] 若依赖检查或实现时发现新的调用者/ABI 风险，必须先修订本节再继续。

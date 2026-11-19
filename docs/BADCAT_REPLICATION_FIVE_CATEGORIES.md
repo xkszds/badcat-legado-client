@@ -181,3 +181,9 @@
 - [ ] Category 3 remains incomplete: official `BookSource/BaseSource`, `Book/BookChapter`, Room persistence, AnalyzeRule/AnalyzeUrl, full JsExtensions and end-to-end flow remain open.
 - [ ] Categories 1, 2, 4 and 5 remain incomplete and were not changed by this model slice.
 - CI for the code commit is pending; no new test/build success is claimed yet.
+
+## 2026-11-19 Legado crypto caller scan (category 3 only)
+
+- Completed the previously missing repository-wide caller scan: all 231 Kotlin and 21 Java files were checked for the pinned crypto factory/helper identifiers. No extra runtime callers were found outside the recorded source-scoped bridge, Rhino runtime tests and the independent replacement evaluator.
+- The next category-3-only implementation gate is registered in the Legado checklist: exact pinned Hutool/BC dependencies and crypto classes, complete inherited crypto API surface, source-scoped Rhino exposure, old-behavior regression and unchanged JavaImporter sandbox.
+- Categories 1, 2, 4 and 5 remain incomplete and unchanged. This audit is not a feature-completion claim.

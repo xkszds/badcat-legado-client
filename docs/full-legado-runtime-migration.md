@@ -143,3 +143,11 @@ This is not yet a full repository grep: app UI directories, integration-contract
 Run [44557806917](https://github.com/xkszds/badcat-legado-client/actions/runs/44557806917) for code head `28cff4a9771fdbd32b4a085386c3d435db610b82` has now completed successfully. Its contract tests, bounded Rhino host tests, Debug APK build/upload and configured live smoke steps (including the four-source uploaded-corpus step) all completed successfully. Artifacts include Debug APK `14546626986`, unit test reports `14546077767`, and live-source reports. This run does not cover the current documentation-only head.
 
 Run `44558528157` for head `6fa843febb293e95a9a0da44acc9e38b64776b48` ended as cancelled, not passed. No CI result for the current documentation head is claimed. The successful earlier run does not establish full Legado parity or physical-device acceptance.
+
+## 2026-11-19 full host crypto caller search and implementation gate
+
+The pre-change caller scan is now complete across all 231 Kotlin files and all 21 Java files in the current repository tree (app main/tests, integration-contract main/tests, pinnedLegado sources, and legado-rhino). No additional references to the affected crypto factory/helper identifiers were found outside the already documented source bridge, Rhino runtime tests, and the separate `RhinoLegadoJsReplacementEvaluator` digest/HMAC path.
+
+The next code task is now explicitly registered in the mandatory checklist: add the exact pinned Hutool Crypto 5.8.22 and Bouncy Castle 1.86 dependencies, port the pinned `SymmetricCryptoAndroid`, `AsymmetricCrypto`, and `Sign` classes plus only their exact Base64/hex helper semantics, and complete the missing `JsEncodeUtils` crypto methods through the source-scoped `java` bridge. Preserve the JavaImporter sandbox and the independent replacement evaluator. Add AES/DES/3DES/RSA/signature, overload, null/error, Hex/Base64 and old-behavior Rhino regression tests. Re-audit the complete repository after implementation and inspect Android build/CI/provider behavior before claiming compatibility.
+
+This gate was recorded before runtime code edits. No runtime crypto implementation is claimed complete by the scan.

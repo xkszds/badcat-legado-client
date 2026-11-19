@@ -224,3 +224,12 @@ The host's current `RhinoLegadoSymmetricCrypto` is an allow-listed AES/DES CBC h
 - `RhinoSourceScriptRuntime.kt` binds the per-source bridge instance as `scope["java"]`; separately, `LEGADO_CRYPTO_COMPAT_JS` installs a narrow Packages/JavaImporter shim. Keep the JavaImporter boundary intact when adding upstream crypto factories.
 - `RhinoLegadoJsReplacementEvaluator.kt` independently implements digest/HMAC helpers; these are separate replacement-script semantics and must be regression-tested rather than silently redirected to the new Hutool bridge.
 - Remaining caller-search limitation: app UI directories, integration-contract, and legado-rhino have not been scanned. GitHub code search was incomplete, so no claim of a full repository grep is made.
+
+### Complete repository caller scan (2026-11-19)
+
+- Scanned all 231 Kotlin files and all 21 Java files in the current repository tree, including app UI/models, app runtime/tests, integration-contract main/tests, pinnedLegado source bridges, and legado-rhino.
+- No additional static Kotlin/Java references to `createSymmetricCrypto`, `RhinoLegadoSymmetricCrypto`, the missing AES/DES/3DES helpers, `createAsymmetricCrypto`, `createSign`, or the corresponding crypto helper names were found outside the already recorded bridge and runtime test locations.
+- The source bridge is instantiated per source and bound as `scope["java"]`; this must remain source-scoped.
+- `RhinoLegadoJsReplacementEvaluator` owns an independent digest/HMAC implementation. Preserve and regression-test it independently.
+- `LEGADO_CRYPTO_COMPAT_JS` is a separate narrow JavaImporter shim. Keep its class/package allow-list unchanged; adding Hutool must not grant arbitrary Java class access.
+- This closes the previously open caller-scan scope for Kotlin/Java sources. Documentation references are not runtime call sites.
