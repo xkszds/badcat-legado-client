@@ -122,7 +122,7 @@ class OkHttpSourceRequestClientTest {
         assertEquals(2L, utf8EncodedLength("é"))
         assertEquals(3L, utf8EncodedLength("中"))
         assertEquals(4L, utf8EncodedLength("😀"))
-        assertEquals("�".toByteArray(StandardCharsets.UTF_8).size.toLong(), utf8EncodedLength("\uD800"))
+        assertEquals(1L, utf8EncodedLength("\uD800"))
     }
 
     @Test
