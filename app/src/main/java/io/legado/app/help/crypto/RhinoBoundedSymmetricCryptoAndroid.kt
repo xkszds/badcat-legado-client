@@ -44,24 +44,24 @@ class RhinoBoundedSymmetricCryptoAndroid(
     override fun encryptBase64(data: ByteArray): String = encodeBase64(encrypt(data))
 
     override fun encryptBase64(data: String, charset: String?): String =
-        boundedBase64(encrypt(data, charset))
+        encodeBase64(encrypt(data, charset))
 
     override fun encryptBase64(data: String, charset: Charset?): String =
-        boundedBase64(encrypt(data, charset))
+        encodeBase64(encrypt(data, charset))
 
-    override fun encryptBase64(data: String): String = boundedBase64(encrypt(data))
+    override fun encryptBase64(data: String): String = encodeBase64(encrypt(data))
 
-    override fun encryptBase64(data: InputStream): String = boundedBase64(encrypt(data))
+    override fun encryptBase64(data: InputStream): String = encodeBase64(encrypt(data))
 
     override fun encryptHex(data: ByteArray): String = encodeHex(encrypt(data))
 
-    override fun encryptHex(data: String, charset: String?): String = boundedHex(encrypt(data, charset))
+    override fun encryptHex(data: String, charset: String?): String = encodeHex(encrypt(data, charset))
 
-    override fun encryptHex(data: String, charset: Charset?): String = boundedHex(encrypt(data, charset))
+    override fun encryptHex(data: String, charset: Charset?): String = encodeHex(encrypt(data, charset))
 
-    override fun encryptHex(data: String): String = boundedHex(encrypt(data))
+    override fun encryptHex(data: String): String = encodeHex(encrypt(data))
 
-    override fun encryptHex(data: InputStream): String = boundedHex(encrypt(data))
+    override fun encryptHex(data: InputStream): String = encodeHex(encrypt(data))
 
     override fun setIv(iv: ByteArray): SymmetricCrypto {
         requireRhinoCryptoSize(iv.size, "crypto IV")
