@@ -6,6 +6,7 @@ package io.legado.app.model.analyzeRule
  * internal; this facade exposes only the operations needed by the host.
  */
 object PinnedLegadoJsoupBridge {
+    fun parseDocument(html: String): org.jsoup.nodes.Document = parseSourceHtml(html)
     fun getStringList(html: String, baseUrl: String, rule: String): List<String> {
         val document = parseSourceHtml(html).also { it.setBaseUri(baseUrl) }
         return AnalyzeByJSoup(document).getStringList(rule)

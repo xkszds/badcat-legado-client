@@ -36,7 +36,7 @@ class AnalyzeByXPath(doc: Any) {
                 return JXDocument.create(Jsoup.parse(html1, Parser.xmlParser()))
             }
         }
-        return JXDocument.create(parseSourceHtml(html1))
+        return JXDocument.create(PinnedLegadoJsoupBridge.parseDocument(html1))
     }
 
     private fun getResult(xPath: String): List<JXNode>? {
