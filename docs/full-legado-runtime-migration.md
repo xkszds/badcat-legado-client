@@ -745,3 +745,13 @@ Re-read all five mandatory files and this registration; verify branch head again
 ### Acceptance and exclusions
 - Audit report must identify every field and every runtime service dependency for the three entities and `BaseSource`, identify host mappings/callers, and specify a dependency-safe adapter plan.
 - This registration authorizes documentation/audit changes only. No runtime source changes, no UI changes, no main-branch writes, no fake or no-op APIs, no APK/release claims. Any code implementation requires a new pre-registration first.
+
+## 2026-11-20 Stage 1 pinned-model audit result
+
+- Audit result is recorded in `docs/upstream-model-serialization-audit.md`: exact pinned `BookSource`, `Book`, `BookChapter`, `BaseBook` and `BaseSource` contracts were inspected against the host `ReadingEngine`, `LegadoBookSourceCodec`, `FileBookSourceCatalog` and codec tests.
+- Confirmed current source descriptor maps most BookSource scalar fields and preserves raw JSON, but does not provide upstream typed mutable rule instances or the BaseSource runtime lifecycle. Host Book/BookChapter are UI projections; BookChapter drops volume/book/base URL, VIP/pay/resource, position/fragments, variable and image metadata.
+- Important identity correction: upstream BookChapter Room primary key is `(url, bookUrl)`, a unique index enforces `(bookUrl, index)`, while equals/hashCode compare URL only. Future cache/adapter work must preserve these distinct semantics.
+- BaseSource depends on actual JsExtensions, Rhino bindings/shared scope, CookieStore, CacheManager, Android ID/AES login state, concurrent-rate limiting, JS library and explore-cache lifecycle. No fake adapter is acceptable.
+- Audit-only task completed; no runtime source changed. Branch baseline at audit start: `eabbef43481e6c14b8bda6ea62f03c5213d1188d`; audit result commit: `e507eff16ae6c9e7de0241aa730e3f1739461317`.
+- CI: code baseline run [#44636057145](https://github.com/xkszds/badcat-legado-client/actions/runs/44636057145) passed for `eabbef4`. Docs update run [#44637466823](https://github.com/xkszds/badcat-legado-client/actions/runs/44637466823) was pending when checked; intermediate docs runs were cancelled after newer commits. Do not report current docs head as CI-verified until its run finishes.
+- Next gate: design and pre-register a real Android-side model/service adapter plus full caller inventory. Official Book/BookChapter persistence and round-trip fixtures, AnalyzeRule/AnalyzeUrl, full JsExtensions, unified reading, batch cache and Badcat categories 1/2/4/5 remain open.
