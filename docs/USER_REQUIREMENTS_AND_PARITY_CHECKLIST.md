@@ -234,3 +234,35 @@
 - [ ] CI verification for this code commit is pending; do not mark tests/build passed until the workflow and reports are inspected.
 - [ ] This does **not** integrate the upstream `BookSource`, `BaseSource`, `BaseBook`, `Book`, `BookChapter`, Room converters/database, source lifecycle, `AnalyzeRule`, `AnalyzeUrl`, or the complete reading engine. Raw JSON preservation remains the import/export boundary.
 - Next: verify the new source/model build and test results, then implement the typed `BookSource` runtime adapter only after its `BaseSource/JsExtensions` service dependencies are mapped.
+
+## 2026-11-19 本轮执行前记录：Legado 上游加密扩展依赖审查
+
+> 本节在本轮任何运行时代码修改之前写入。执行顺序：先审查本清单及 AGENTS，再按以下范围调查；若审查发现范围/风险不准确，必须先修订本节再改代码。
+
+### 本轮唯一工作流
+- [ ] 仅推进 Legado；不切换到坏坏猫 UI、阅读器、AdBlock/AdMark 或 PPRule 的实现任务。
+- [ ] 核对上一轮 JsExtensions/JsEncodeUtils 审计列出的 19 个缺失继承方法，优先检查上游 SymmetricCryptoAndroid、AsymmetricCrypto、Sign 的精确实现和 Hutool/相关依赖版本。
+- [ ] 从固定上游提交 330e606c4d57e08adc056ff8ab7a4132c784da9 的 Gradle/version catalog/锁定文件定位依赖来源；不得根据猜测添加版本或替代实现。
+- [ ] 搜索宿主当前加解密 helper、同名方法、所有调用方、测试、JS 可见对象和安全边界，形成逐项兼容矩阵。
+- [ ] 只有依赖、调用影响和测试边界确认后，才选择可独立验证的最小实现切片；不得把 AES/DES CBC helper 冒充完整上游 crypto API。
+- [ ] 对新增/迁移 API 同时补上游语义测试和旧宿主行为回归测试；覆盖错误输入、空值、字节/字符编码、密钥/IV、模式/填充及 JS 互操作（按上游真实契约选取）。
+- [ ] 运行聚焦测试、最广可行 Android 测试/构建和 CI；读取失败日志与产物信息。CI 未结束时明确标记待验证。
+
+### 本轮开始前事实与阻塞
+- 当前开发分支必须是 integration/legado-upstream-runtime；开始时 HEAD 为 6fa843febb293e95a9a0da44acc9e38b64776b48，禁止写入 main。
+- 固定上游仍为 330e606c4d57e08adc056ff8ab7a4132c784da9。
+- 上一轮审计记录：上游 JsExtensions.kt 有 122 个函数声明，宿主桥接有 214 个；另有上游 JsEncodeUtils.kt 的 30 个继承声明。宿主缺少 18 个直接方法名和 19 个继承 crypto 方法名；同名方法也未等同于语义兼容。
+- 当前宿主 RhinoLegadoSymmetricCrypto 是受限 AES/DES CBC helper，不覆盖任意 transformation、3DES、非对称加密或签名；不能直接映射上游工厂方法。
+- 主要风险：Hutool 版本/Android 适配不一致、上游参数解析及 Base64/Hex 语义差异、Rhino 返回对象方法形状、既有脚本依赖和输入安全边界。
+- 当前 HEAD 的 Actions run 44558528157 尚为 pending；不能据此宣称上一轮验证通过。
+
+### 本轮完成定义（仅限本轮范围）
+- [ ] 依赖坐标与版本由固定上游构建配置证实，并记录源文件位置。
+- [ ] crypto API 与宿主现有实现/调用者/测试的冲突审查完成，审计矩阵更新。
+- [ ] 若实施代码：新旧行为测试均通过，聚焦构建通过，完整 diff 复核通过。
+- [ ] 本轮 CI 结果、提交 SHA、未完成事项写回本清单和迁移计划。
+- [ ] 复审本节是否遗漏了上游行为、宿主调用方、安全边界或验证要求；若有遗漏，先更正清单再继续。
+
+### 当前状态
+- [x] 本轮范围、前置事实、主要风险和验收门槛已在开始代码工作前登记。
+- [ ] 依赖审查尚未执行；本节的计划项不能计为代码功能完成。
