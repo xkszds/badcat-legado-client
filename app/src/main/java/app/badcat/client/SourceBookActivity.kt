@@ -780,6 +780,7 @@ class SourceChapterActivity : Activity() {
                         url = currentChapterUrl,
                     )
                     mainHandler.post {
+                        if (isFinishing || isDestroyed) return@post
                         currentIndex = 0
                         renderChapter(
                             fallbackChapter,
@@ -793,6 +794,7 @@ class SourceChapterActivity : Activity() {
                     val chapterList = (toc as? EngineResult.Success)?.value.orEmpty()
                     val selected = chapterList.indexOfFirst { it.url == currentChapterUrl }
                     mainHandler.post {
+                        if (isFinishing || isDestroyed) return@post
                         chapters = chapterList
                         currentIndex = selected
                         previousButton.isEnabled = selected > 0
@@ -961,6 +963,7 @@ class SourceChapterActivity : Activity() {
         worker.execute {
             val result = runBlocking { safeEngineCall { engine.sources() } }
             mainHandler.post {
+                if (isFinishing || isDestroyed) return@post
                 when (result) {
                     is EngineResult.Success -> {
                         val sources = result.value.filter { it.enabled && !it.searchUrl.isNullOrBlank() && it.id != sourceId }
@@ -987,6 +990,7 @@ class SourceChapterActivity : Activity() {
         worker.execute {
             val result = runBlocking { safeEngineCall { engine.searchPage(source.id, bookName, 1) } }
             mainHandler.post {
+                if (isFinishing || isDestroyed) return@post
                 when (result) {
                     is EngineResult.Success -> {
                         val candidates = result.value.distinctBy { it.bookUrl }
@@ -1024,6 +1028,7 @@ class SourceChapterActivity : Activity() {
         worker.execute {
             val result = runBlocking { safeEngineCall { engine.chapterContent(sourceId, bookUrl, chapter.url, bookName) } }
             mainHandler.post {
+                if (isFinishing || isDestroyed) return@post
                 if (result is EngineResult.Success) currentIndex = target
                 renderChapter(chapter, result, EngineResult.Success(chapters))
             }
