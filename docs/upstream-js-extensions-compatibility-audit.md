@@ -189,3 +189,30 @@ The host's current `RhinoLegadoSymmetricCrypto` is an allow-listed AES/DES CBC h
 - [ ] Port and test exact upstream crypto classes and their dependencies, including legacy helper semantics, without weakening input bounds.
 - [ ] Build a stable upstream-compatible source runtime object with real host service injection.
 - [ ] Only after that integrate `BaseSource` / `BookSource` and continue to `AnalyzeUrl` / `AnalyzeRule`.
+
+## 2026-11-19 pinned crypto dependency and host call-path audit
+
+### Exact upstream dependencies
+- Pinned upstream `app/build.gradle` declares `implementation(libs.hutool.crypto)`, `implementation(libs.bouncycastle.provider)`, and `implementation(libs.bouncycastle.pkix)`.
+- Pinned `gradle/libs.versions.toml` resolves Hutool to `cn.hutool:hutool-crypto:5.8.22`, Bouncy Castle provider to `org.bouncycastle:bcprov-jdk18on:1.86`, and PKIX to `org.bouncycastle:bcpkix-jdk18on:1.86`.
+- These are source-verified dependency coordinates/versions; the Badcat host `app/build.gradle.kts` currently has none of these three dependencies.
+
+### Pinned source contracts inspected
+- `JsEncodeUtils.createSymmetricCrypto` returns Hutool `SymmetricCrypto`, instantiating the upstream `SymmetricCryptoAndroid` and applying non-empty IV bytes. Overloads accept nullable byte-array key/IV, byte-array key, string key, and string key plus nullable IV.
+- `SymmetricCryptoAndroid` extends Hutool `SymmetricCrypto`; it overrides Base64 output to use upstream `EncoderUtils.base64Encode` (Android `Base64.NO_WRAP`) and `decrypt(String)` to classify all-hex input with the exact `String.isHex()` predicate, otherwise decode Base64.
+- `AsymmetricCrypto` extends Hutool `AsymmetricCrypto`, adds byte/string public/private key setters, and accepts ByteArray/String/InputStream data for encrypt/decrypt plus Base64/hex output and a public/private key selector.
+- `Sign` extends Hutool `Sign` and adds byte/string public/private key setters.
+- Pinned legacy AES/DES/3DES methods contain source-specific quirks; preserve exact source behavior, including `aesEncodeToString` calling `decryptStr`, `desBase64DecodeToString` delegating to `decryptStr`, and the differing Base64 handling of legacy AES/3DES argument helpers. Do not silently normalize these.
+
+### Existing host behavior and callers inspected
+- Host app module currently depends on Gson, Flexbox, Jsoup/XPath/JSONPath, coroutines, OkHttp, archive and Chinese conversion libraries, but not Hutool or Bouncy Castle.
+- `RhinoSafeSourceJavaExtensions.createSymmetricCrypto` currently returns the host-only `RhinoLegadoSymmetricCrypto`; only two non-null key/IV overloads are present. That helper permits AES/DES CBC PKCS5/PKCS7 only. `aesCrypt` is a separate bounded AES-CBC primitive used by the JavaImporter compatibility shim.
+- `RhinoSourceScriptRuntime` constructs one bridge per source and binds it as `scope["java"]`; scripts therefore call these methods dynamically through Rhino.
+- Existing runtime tests cover `java.createSymmetricCrypto` AES round-trip, DES-CBC decryption, `java.aesBase64DecodeToString`, and JavaImporter AES key/IV restrictions. Preserve these tests and the JavaImporter package/class boundary.
+- GitHub code-search returned zero results with `incomplete_results=true`, so it is not evidence that no other callers exist. The known in-repository dynamic script call sites are in `RhinoSourceScriptRuntimeTest.kt`; a complete local/tree grep is still required before changing signatures.
+
+### Implementation risks / next registered task
+- Do not expose unrestricted `Packages.javax.crypto`, `java.lang`, or general reflection to scripts. Add the upstream crypto factories through the source-scoped `java` bridge only, and keep the existing restricted JavaImporter behavior.
+- Preserve existing AES/DES script behavior while changing factory return type to an upstream-compatible Hutool object; audit all host callers and Rhino method visibility.
+- Next task (not yet implemented): add only the pinned Hutool/BC dependencies, vendor the exact three upstream crypto classes with the minimal exact Base64/isHex helper semantics, implement the full pinned `JsEncodeUtils` crypto factory/legacy method surface, and add upstream-behavior plus old-host regression tests. Verify RSA/signing and transformation support against the pinned dependency behavior; do not claim complete JS host compatibility from this slice.
+- Before code edits, run a complete repository grep for all crypto method names and current helper types, then update this audit/checklist if new callers or behavior conflicts are found.

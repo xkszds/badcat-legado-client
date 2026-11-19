@@ -52,3 +52,14 @@ The user's explicit requirement is a **complete Legado implementation**, not a s
    - Update this checklist whenever the user adds a durable project requirement.
 
 If a task appears to conflict with this policy, follow this policy and the user's complete-Legado requirement; do not take the shortcut of implementing only the newly mentioned method.
+
+## Mandatory pre-work ledger discipline (user requirement, 2026-11-19)
+
+For every work session and every new implementation task:
+1. Re-read this file and the applicable required checklists before acting.
+2. Before changing runtime/product code, append the task scope, exact target, upstream source, known callers, compatibility/security risks, regression tests and acceptance criteria to the mandatory checklist and the relevant migration plan.
+3. Execute only the recorded scope. If inspection reveals that the checklist is inaccurate or incomplete, correct the checklist first, then continue.
+4. After the work, update the checklist with actual files/behavior changed, test commands/results, CI run and commit SHA, unresolved items, and an explicit review of whether the checklist itself was correct.
+5. Never mark a task complete based on a plan, documentation-only commit, compilation alone, pending CI, or unverified APK.
+
+This process is mandatory; do not begin a code change while its task and regression/acceptance requirements are absent from the checklist.

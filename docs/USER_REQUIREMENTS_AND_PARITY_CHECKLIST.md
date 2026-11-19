@@ -266,3 +266,35 @@
 ### 当前状态
 - [x] 本轮范围、前置事实、主要风险和验收门槛已在开始代码工作前登记。
 - [ ] 依赖审查尚未执行；本节的计划项不能计为代码功能完成。
+
+## 2026-11-19 本轮 Legado 加密依赖审计结果与下一项预登记
+
+### 已完成（仅限源码/依赖审计）
+- [x] 从固定上游 app/build.gradle 与 gradle/libs.versions.toml 核实依赖：Hutool Crypto 5.8.22、Bouncy Castle Provider 1.86、Bouncy Castle PKIX 1.86；Badcat 当前 app 模块尚未引入这些依赖。
+- [x] 检查固定上游 SymmetricCryptoAndroid、AsymmetricCrypto、Sign 和 JsEncodeUtils crypto 工厂/旧方法的实际源码。
+- [x] 确认当前宿主 createSymmetricCrypto 返回受限 RhinoLegadoSymmetricCrypto（仅 AES/DES CBC），与上游 Hutool SymmetricCrypto 对象契约不同。
+- [x] 检查 RhinoSourceScriptRuntime 的 java bridge 注入，以及现有 AES/DES、AES Base64、JavaImporter 安全边界测试。
+- [x] 发现并记录上游旧方法中的历史行为差异；实现时须按 pinned source 复现，不得自行修正成“更合理”的行为。
+
+### 审计发现与未完成
+- [ ] GitHub code-search 响应 incomplete_results=true，不能证明无其他调用方；修改签名之前仍须做完整源码 grep。
+- [ ] 尚未添加 Hutool/BC 依赖或上游 crypto 类；19 个缺失继承 API 仍未补齐。
+- [ ] 尚未验证 Hutool 在当前 Android/JVM 配置下的算法提供者、RSA/签名和非默认 transformation 行为。
+- [ ] 尚未完成 crypto 对象的 Rhino 暴露与方法可见性测试。
+
+### 下一任务（必须在代码编辑前执行完整调用方 grep）
+- [ ] 在当前分支完整搜索 createSymmetricCrypto、RhinoLegadoSymmetricCrypto、aesCrypt、所有 aes/des/tripleDES helpers、createAsymmetricCrypto、createSign、digest/HMac 的定义、调用方、测试和 JS 兼容 shim。
+- [ ] 仅在调用方影响审查完成后，按 pinned upstream 引入 Hutool 5.8.22、BC provider/PKIX 1.86 和三份 crypto 类；保留受限 JavaImporter，不开放通用 Packages 访问。
+- [ ] 逐个实现上游工厂 overload 与 19 个继承 API，按源码保留历史方法语义；对现有 AES/DES 用例补回归。
+- [ ] 增加 RSA/签名、3DES、Hex/Base64 分流、空/无密钥随机初始化、非法密钥/IV/算法、Rhino 方法链和包访问边界测试。
+- [ ] 聚焦测试、Android app unit tests、Debug APK build 和最新 CI 全部检查后再标记完成。
+
+### CI 状态复核
+- 当前 HEAD 6fa843f 对应 run 44558528157 已从 pending 变为 cancelled；不能算通过。
+- run 44557806917（head 28cff4a）仍为 in_progress；contract tests、bounded Rhino tests、Debug APK build/upload 和前面 live smoke 步骤已通过，最后四源语料步骤当时仍在运行。
+- 文档预登记提交为 73ade446aae4f37c46e742d43b76ecf3a1cfbe31；该提交后的 CI 尚未观察到结果。
+
+### 必读清单自审
+- [x] 清单已区分“依赖/源码审计完成”与“运行时代码完成”，没有将审计误标成 crypto 功能完成。
+- [x] 已将旧 helper、动态 Rhino 调用、JavaImporter 安全边界及上游历史 quirks 纳入风险。
+- [ ] 完整调用方 grep 和 Hutool Android 行为仍是代码实施前置条件；如后续发现清单遗漏，必须先改清单再编码。

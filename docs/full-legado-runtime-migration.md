@@ -123,3 +123,11 @@ The declaration-level audit now includes all 122 pinned `JsExtensions` methods a
 ## 2026-11-19 session gate — crypto dependency audit before implementation
 
 Before changing runtime code, the mandatory checklist now records a Legado-only task to resolve the pinned upstream crypto dependency graph and re-audit the host bridge. The next bounded investigation is to locate the exact Hutool/dependency declarations used by upstream revision 330e606c4d57e08adc056ff8ab7a4132c784da9, inspect the pinned SymmetricCryptoAndroid, AsymmetricCrypto, and Sign contracts, and search every existing host helper/caller/test. No crypto method may be mapped to the current AES/DES-CBC-only helper unless its complete upstream semantics match. The current-head CI run 44558528157 is pending and must be inspected before treating the prior documentation increment as verified. This entry is a pre-work gate, not a claim that dependency or runtime work is complete.
+
+## 2026-11-19 crypto dependency audit findings and next gate
+
+The pinned upstream dependency coordinates are now verified: Hutool Crypto 5.8.22, Bouncy Castle provider 1.86, and Bouncy Castle PKIX 1.86. The host app currently has none of these dependencies. The exact upstream `SymmetricCryptoAndroid`, `AsymmetricCrypto`, `Sign`, and `JsEncodeUtils` crypto factory/legacy method contracts have been inspected and recorded in `upstream-js-extensions-compatibility-audit.md`.
+
+The host's current `createSymmetricCrypto` returns an AES/DES-CBC-only host facade, while the upstream factory returns a Hutool `SymmetricCrypto` backed by `SymmetricCryptoAndroid`. Existing runtime tests exercise AES and DES helper paths; the runtime binds the source-scoped helper object as `java`. Existing JavaImporter tests also enforce that general `Packages.javax.crypto` and arbitrary Java classes remain unavailable. These are mandatory regression/security constraints.
+
+**Next gate:** perform a complete repository grep for the factory/helper and all crypto API names before changing signatures. Then add the exact pinned dependencies and crypto classes, expose the upstream factories through the source-scoped `java` bridge only, preserve upstream legacy method quirks, and add Rhino/API/security regression tests. No runtime crypto implementation is claimed complete by this audit.
