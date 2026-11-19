@@ -87,7 +87,7 @@ class FileSourceScriptCacheStore(context: Context) : SourceScriptFileCacheStore 
             output.write(encoded)
             output.flush()
             target.finishWrite(output)
-            prune()
+            prune(target.baseFile)
         } catch (error: Exception) {
             target.failWrite(output)
             throw error
@@ -108,15 +108,9 @@ class FileSourceScriptCacheStore(context: Context) : SourceScriptFileCacheStore 
     private fun cacheFile(sourceId: String, key: String): File =
         File(directory, digest(sourceId) + "_" + digest(key) + ".cache")
 
-    private fun prune() {
-        val files = directory.listFiles()?.filter { it.isFile && it.extension == "cache" } ?: return
-        var total = files.sumOf { it.length() }
-        if (total <= MAX_CACHE_BYTES) return
-        files.sortedBy { it.lastModified() }.forEach { file ->
-            if (total <= MAX_CACHE_BYTES) return
-            val size = file.length()
-            if (file.delete()) total -= size
-        }
+    private fun prune(protectedFile: File) {
+        val files = directory.listFiles()?.filter { it.extension == "cache" } ?: return
+        pruneCacheFiles(files, MAX_CACHE_BYTES, protectedFile)
     }
 
     private fun digest(value: String): String =
