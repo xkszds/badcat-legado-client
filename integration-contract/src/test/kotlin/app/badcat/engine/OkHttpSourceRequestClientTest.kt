@@ -47,6 +47,26 @@ class OkHttpSourceRequestClientTest {
     }
 
     @Test
+    fun rejectsDirectTransportUrlsOutsideCredentialFreeHttpAndHttps() = runBlocking {
+        val client = OkHttpSourceRequestClient()
+        listOf(
+            "file:///etc/passwd",
+            "javascript:alert(1)",
+            "http://user:pass@127.0.0.1/",
+            "https://@127.0.0.1/",
+        ).forEach { url ->
+            val result = client.execute(
+                SourceHttpRequest(
+                    sourceId = "unsafe-url-fixture",
+                    url = url,
+                    useCookieJar = false,
+                ),
+            )
+            assertEquals(EngineErrorCode.INVALID_SOURCE, (result as EngineResult.Failure).code, url)
+        }
+    }
+
+    @Test
     fun rejectsRequestBodiesThatExceedTheConfiguredByteLimit() = runBlocking {
         val result = OkHttpSourceRequestClient(maxRequestBytes = 4).execute(
             SourceHttpRequest(

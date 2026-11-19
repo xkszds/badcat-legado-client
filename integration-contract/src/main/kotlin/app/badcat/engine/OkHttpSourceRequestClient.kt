@@ -10,6 +10,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import java.net.URI
 import okhttp3.Response
 import okhttp3.Interceptor
 import java.io.ByteArrayOutputStream
@@ -61,6 +63,19 @@ class OkHttpSourceRequestClient(
             return EngineResult.Failure(
                 EngineErrorCode.INVALID_SOURCE,
                 "Source identity and request URL must not be blank",
+            )
+        }
+        val parsedUrl = request.url.toHttpUrlOrNull()
+        val rawUserInfo = runCatching { URI(request.url).rawUserInfo }.getOrNull()
+        if (parsedUrl == null ||
+            parsedUrl.scheme !in setOf("http", "https") ||
+            rawUserInfo != null ||
+            parsedUrl.username.isNotEmpty() ||
+            parsedUrl.password.isNotEmpty()
+        ) {
+            return EngineResult.Failure(
+                EngineErrorCode.INVALID_SOURCE,
+                "Request URL must be an absolute HTTP(S) URL without embedded credentials",
             )
         }
         val requestStartNanos = System.nanoTime()
