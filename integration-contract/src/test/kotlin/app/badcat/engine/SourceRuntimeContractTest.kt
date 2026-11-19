@@ -58,7 +58,7 @@ class SourceRuntimeContractTest {
     @Test
     fun ruleStagesRemainExplicitlySeparated() {
         assertEquals(
-            listOf("EXPLORE", "SEARCH", "BOOK_INFO", "TOC", "CONTENT"),
+            listOf("EXPLORE", "SEARCH", "BOOK_INFO", "TOC", "CONTENT", "REVIEW"),
             SourceRuleStage.entries.map { it.name },
         )
     }
