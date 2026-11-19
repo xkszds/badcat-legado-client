@@ -17,6 +17,9 @@ interface SourceScriptFileCacheStore {
     fun putBytes(sourceId: String, key: String, value: ByteArray)
 }
 
+/** Shared lock: multiple engine factories may create stores for the same app cache directory. */
+private val sourceScriptFileCacheLock = Any()
+
 /** JVM fallback for tests; production uses the app-private disk implementation. */
 object InMemorySourceScriptFileCacheStore : SourceScriptFileCacheStore {
     private val values = ConcurrentHashMap<String, ByteArray>()
@@ -47,14 +50,15 @@ object InMemorySourceScriptFileCacheStore : SourceScriptFileCacheStore {
 class FileSourceScriptCacheStore(context: Context) : SourceScriptFileCacheStore {
     private val directory = File(context.applicationContext.cacheDir, CACHE_DIRECTORY).apply { mkdirs() }
 
-    @Synchronized
     override fun get(sourceId: String, key: String): String? =
-        getBytes(sourceId, key)?.let { String(it, Charsets.UTF_8) }
+        synchronized(sourceScriptFileCacheLock) {
+            getBytes(sourceId, key)?.let { String(it, Charsets.UTF_8) }
+        }
 
-    @Synchronized
-    override fun getBytes(sourceId: String, key: String): ByteArray? {
-        val target = AtomicFile(cacheFile(sourceId, key))
-        val bytes = runCatching {
+    override fun getBytes(sourceId: String, key: String): ByteArray? =
+        synchronized(sourceScriptFileCacheLock) {
+            val target = AtomicFile(cacheFile(sourceId, key))
+            val bytes = runCatching {
             // openRead performs AtomicFile backup recovery; checking baseFile first
             // would incorrectly hide a valid .bak after an interrupted write.
             target.openRead().use { input ->
@@ -71,40 +75,44 @@ class FileSourceScriptCacheStore(context: Context) : SourceScriptFileCacheStore 
                 output.toByteArray()
             }
         }.getOrNull()
-        if (bytes != null) target.baseFile.setLastModified(System.currentTimeMillis())
-        return bytes
-    }
+            if (bytes != null) target.baseFile.setLastModified(System.currentTimeMillis())
+            bytes
+        }
 
-    @Synchronized
     override fun put(sourceId: String, key: String, value: String) =
-        putBytes(sourceId, key, value.toByteArray(Charsets.UTF_8))
+        synchronized(sourceScriptFileCacheLock) {
+            putBytes(sourceId, key, value.toByteArray(Charsets.UTF_8))
+        }
 
-    @Synchronized
     override fun putBytes(sourceId: String, key: String, value: ByteArray) {
-        val encoded = value
-        require(encoded.size <= MAX_CACHE_BYTES) { "cache file value exceeds the 50 MiB limit" }
-        val target = AtomicFile(cacheFile(sourceId, key))
-        val output = target.startWrite()
-        try {
-            output.write(encoded)
-            output.flush()
-            target.finishWrite(output)
-            prune(target.baseFile)
-        } catch (error: Exception) {
-            target.failWrite(output)
-            throw error
+        synchronized(sourceScriptFileCacheLock) {
+            val encoded = value
+            require(encoded.size <= MAX_CACHE_BYTES) { "cache file value exceeds the 50 MiB limit" }
+            val target = AtomicFile(cacheFile(sourceId, key))
+            val output = target.startWrite()
+            try {
+                output.write(encoded)
+                output.flush()
+                target.finishWrite(output)
+                prune(target.baseFile)
+            } catch (error: Exception) {
+                target.failWrite(output)
+                throw error
+            }
         }
     }
 
-    @Synchronized
     override fun remove(sourceId: String, key: String) {
-        AtomicFile(cacheFile(sourceId, key)).delete()
+        synchronized(sourceScriptFileCacheLock) {
+            AtomicFile(cacheFile(sourceId, key)).delete()
+        }
     }
 
-    @Synchronized
     override fun clearSource(sourceId: String) {
-        val prefix = digest(sourceId) + "_"
-        directory.listFiles()?.filter { it.isFile && it.name.startsWith(prefix) }?.forEach { it.delete() }
+        synchronized(sourceScriptFileCacheLock) {
+            val prefix = digest(sourceId) + "_"
+            directory.listFiles()?.filter { it.isFile && it.name.startsWith(prefix) }?.forEach { it.delete() }
+        }
     }
 
     private fun cacheFile(sourceId: String, key: String): File =
