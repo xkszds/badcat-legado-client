@@ -19,6 +19,27 @@ import javax.crypto.spec.SecretKeySpec
 
 class RhinoSourceScriptRuntimeTest {
     @Test
+    fun scriptResultIterableIsMaterializedOnlyUpToLimitPlusOne() {
+        var consumed = 0
+        val unbounded = Iterable {
+            generateSequence { consumed++; consumed }.iterator()
+        }
+
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            boundedScriptResultValues(unbounded, 10)
+        }
+        assertEquals(11, consumed)
+    }
+
+    @Test
+    fun oversizedScriptResultArrayIsRejectedBeforeCopying() {
+        val values = Array(11) { it }
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            boundedScriptResultValues(values, 10)
+        }
+    }
+
+    @Test
     fun evaluatesSourceJsLibBeforeRuleScript() = runBlocking {
         val runtime = RhinoSourceScriptRuntime()
         val source = BookSource(

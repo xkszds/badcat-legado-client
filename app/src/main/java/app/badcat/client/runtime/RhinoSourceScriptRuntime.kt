@@ -34,6 +34,30 @@ import kotlin.coroutines.cancellation.CancellationException
  * root and a restricted Rhino file-handle facade. Java package reflection,
  * Android Context, WebView and process APIs remain unavailable.
  */
+
+/** Bound iterable and array materialization before converting script results to HTML/JSON. */
+internal fun boundedScriptResultValues(value: Any?, maxItems: Int): List<Any?>? {
+    require(maxItems >= 0)
+    val values = when (value) {
+        is org.htmlunit.corejs.javascript.Scriptable -> {
+            val length = (org.htmlunit.corejs.javascript.ScriptableObject.getProperty(value, "length") as? Number)
+                ?.toInt() ?: return null
+            require(length in 0..maxItems) { "Source JavaScript array result exceeds the item limit" }
+            (0 until length).map { index ->
+                org.htmlunit.corejs.javascript.ScriptableObject.getProperty(value, index.toString())
+            }
+        }
+        is Array<*> -> {
+            require(value.size <= maxItems) { "Source JavaScript array result exceeds the item limit" }
+            value.asList()
+        }
+        is Iterable<*> -> value.take(maxItems + 1).toList()
+        else -> return null
+    }
+    require(values.size <= maxItems) { "Source JavaScript array result exceeds the item limit" }
+    return values
+}
+
 class RhinoSourceScriptRuntime(
     private val timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS,
     private val sourceKeyValueStore: SourceScriptKeyValueStore = InMemorySourceScriptKeyValueStore,
@@ -427,24 +451,7 @@ class RhinoSourceScriptRuntime(
 
     private companion object {
         fun arrayResultToHtml(value: Any?): String? {
-            val values = when (value) {
-                is Iterable<*> -> value.toList()
-                is Array<*> -> value.toList()
-                is org.htmlunit.corejs.javascript.Scriptable -> {
-                    val length = (org.htmlunit.corejs.javascript.ScriptableObject.getProperty(value, "length") as? Number)
-                        ?.toInt() ?: return null
-                    require(length in 0..MAX_SCRIPT_RESULT_ITEMS) {
-                        "Source JavaScript array result exceeds the item limit"
-                    }
-                    (0 until length).map { index ->
-                        org.htmlunit.corejs.javascript.ScriptableObject.getProperty(value, index.toString())
-                    }
-                }
-                else -> return null
-            }
-            require(values.size <= MAX_SCRIPT_RESULT_ITEMS) {
-                "Source JavaScript array result exceeds the item limit"
-            }
+            val values = boundedScriptResultValues(value, MAX_SCRIPT_RESULT_ITEMS) ?: return null
             // Legado TOC rules commonly return [{title, url}, ...] from
             // @js chapterList scripts. Preserve those objects as JSON so the
             // downstream JSONPath field rules can read title/url; calling
