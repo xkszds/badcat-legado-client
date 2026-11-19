@@ -1437,6 +1437,7 @@ class RhinoSafeSourceJavaExtensions(
         const val DEFAULT_WEBVIEW_USER_AGENT = "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.0.0 Mobile Safari/537.36"
         private const val MAX_AJAX_ALL_URLS = 20
         private const val MAX_AJAX_ALL_INPUT_CHARS = 64 * 1024
+        private const val MAX_AJAX_URL_CHARS = 16 * 1024
         private const val MAX_AJAX_ALL_CONCURRENCY = 4
         private const val MAX_HTTP_HEADER_COUNT = 100
         private const val MAX_HTTP_HEADER_NAME_CHARS = 256
@@ -1487,6 +1488,17 @@ internal fun boundedAjaxUrlValues(
         else -> throw IllegalArgumentException("java.ajaxAll expects an array of URLs")
     }
     require(values.size <= maxUrls) { "java.ajaxAll accepts at most $maxUrls URLs" }
+    var totalUrlChars = 0
+    values.forEach { value ->
+        val url = value?.toString().orEmpty()
+        require(url.length <= MAX_AJAX_URL_CHARS) {
+            "java.ajaxAll URL exceeds the per-URL character limit"
+        }
+        totalUrlChars += url.length
+        require(totalUrlChars <= maxJsonChars) {
+            "java.ajaxAll URL collection exceeds the total character limit"
+        }
+    }
     return values
 }
 

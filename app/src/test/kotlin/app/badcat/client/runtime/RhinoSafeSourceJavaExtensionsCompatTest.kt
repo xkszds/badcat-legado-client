@@ -23,6 +23,17 @@ class RhinoSafeSourceJavaExtensionsCompatTest {
     }
 
     @Test
+    fun ajaxUrlCollectionsBoundIndividualAndAggregateUrlLengths() {
+        assertThrows(IllegalArgumentException::class.java) {
+            boundedAjaxUrlValues(listOf("x".repeat(16 * 1024 + 1)), 20, 64 * 1024)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            boundedAjaxUrlValues(listOf("x".repeat(16 * 1024), "y".repeat(16 * 1024),
+                "z".repeat(16 * 1024), "w".repeat(16 * 1024), "v"), 20, 64 * 1024)
+        }
+    }
+
+    @Test
     fun ajaxUrlJsonInputIsBoundedBeforeParsing() {
         assertThrows(IllegalArgumentException::class.java) {
             boundedAjaxUrlValues(" ".repeat(1025), maxUrls = 20, maxJsonChars = 1024)
