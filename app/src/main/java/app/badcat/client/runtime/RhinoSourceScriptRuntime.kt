@@ -60,6 +60,26 @@ internal fun boundedScriptResultValues(value: Any?, maxItems: Int): List<Any?>? 
 }
 
 
+/** Create a non-symlink source directory directly beneath the canonical app cache root. */
+internal fun ensureSourcePhysicalCacheDirectory(root: java.io.File, sourceId: String): java.io.File {
+    val canonicalRoot = root.canonicalFile
+    require(canonicalRoot.isDirectory || canonicalRoot.mkdirs()) {
+        "Unable to create the app source cache root"
+    }
+    val candidate = sourcePhysicalCacheDirectory(canonicalRoot, sourceId)
+    require(!java.nio.file.Files.isSymbolicLink(candidate.toPath())) {
+        "Source cache directory must not be a symbolic link"
+    }
+    require(candidate.isDirectory || candidate.mkdir()) {
+        "Unable to create the source cache directory"
+    }
+    val canonicalCandidate = candidate.canonicalFile
+    require(canonicalCandidate.parentFile == canonicalRoot && canonicalCandidate.isDirectory) {
+        "Source cache directory escaped the app cache root"
+    }
+    return canonicalCandidate
+}
+
 /** Separate the physical source file namespace from the shared app cache directory. */
 internal fun sourcePhysicalCacheDirectory(root: java.io.File, sourceId: String): java.io.File {
     val digest = MessageDigest.getInstance("SHA-256")
@@ -342,7 +362,7 @@ class RhinoSourceScriptRuntime(
                     contentWriter = { content -> currentRuleContent = content },
                     baseUrlWriter = { baseUrl -> if (!baseUrl.isNullOrBlank()) currentRuleBaseUrl = baseUrl },
                     fileStore = sourceFileCacheStore,
-                    fileRoot = sourceFileRoot?.let { sourcePhysicalCacheDirectory(it, source.id) },
+                    fileRoot = sourceFileRoot?.let { ensureSourcePhysicalCacheDirectory(it, source.id) },
                     webViewUserAgent = webViewUserAgent,
                     functionInvoker = { action -> RhinoScriptEngine.callSourceFunction(action, scope) },
                 )
