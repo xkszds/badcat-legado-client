@@ -23,7 +23,14 @@ object PinnedLegadoRuleAnalyzer {
             "Rule expression exceeds the $MAX_NESTING_DEPTH nesting depth limit"
         }
         val analyzer = RuleAnalyzer(expression, code)
-        val rules = analyzer.splitRule("&&", "||", "%%")
+        val rules = try {
+            analyzer.splitRule("&&", "||", "%%")
+        } catch (error: Error) {
+            // The pinned RuleAnalyzer signals unbalanced selector groups with
+            // java.lang.Error rather than an Exception. Normalize that parser
+            // failure so the engine can return a typed PARSE/UNSUPPORTED result.
+            throw IllegalArgumentException("Malformed Legado rule expression", error)
+        }
         return RuleExpressionParts(
             operator = analyzer.elementsType.takeIf { it == "&&" || it == "||" || it == "%%" },
             rules = rules,
@@ -53,17 +60,22 @@ object PinnedLegadoRuleAnalyzer {
                 continue
             }
             when (char) {
-                '[', '(' , '{' -> {
+                '[', '(' -> {
                     depth++
                     if (depth > maxDepth) maxDepth = depth
                     if (maxDepth > MAX_NESTING_DEPTH) return false
                 }
-                ']', ')', '}' -> if (depth > 0) depth--
+                '{' -> if (code) {
+                    depth++
+                    if (depth > maxDepth) maxDepth = depth
+                    if (maxDepth > MAX_NESTING_DEPTH) return false
+                }
+                ']', ')' -> if (depth > 0) depth--
+                '}' -> if (code && depth > 0) depth--
             }
         }
-        // code mode is used for JSONPath/embedded script balancing. The guard
-        // intentionally permits unmatched braces in ordinary text but still
-        // bounds the maximum nesting encountered.
+        // Upstream's code-mode balancer also tracks curly braces; ordinary
+        // CSS/XPath text does not treat them as structural delimiters.
         return true
     }
 }

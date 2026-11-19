@@ -38,6 +38,16 @@ class PinnedLegadoRuleAnalyzerTest {
     }
 
     @Test
+    fun normalizesPinnedAnalyzerUnbalancedGroupErrors() {
+        assertFailsWith<IllegalArgumentException> {
+            PinnedLegadoRuleAnalyzer.split("div.book[")
+        }
+        assertFailsWith<IllegalArgumentException> {
+            PinnedLegadoRuleAnalyzer.split("""$.items[?(@.name == 'x')""", code = true)
+        }
+    }
+
+    @Test
     fun enforcesExpressionAndNestingBudgetsBeforeCallingUpstream() {
         assertFailsWith<IllegalArgumentException> {
             PinnedLegadoRuleAnalyzer.split("x".repeat(PinnedLegadoRuleAnalyzer.MAX_EXPRESSION_LENGTH + 1))
