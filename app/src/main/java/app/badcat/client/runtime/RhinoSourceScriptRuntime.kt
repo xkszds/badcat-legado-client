@@ -12,6 +12,8 @@ import app.badcat.engine.SourceHttpResponse
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonNull
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
 import com.script.ScriptBindings
@@ -92,6 +94,70 @@ internal fun sourcePhysicalCacheDirectory(root: java.io.File, sourceId: String):
         .digest(sourceId.toByteArray(Charsets.UTF_8))
         .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
     return java.io.File(root, "legado_source_$digest")
+}
+
+
+/** Materialize the complete imported BookSource JSON as a JS-friendly object graph. */
+private fun sourceDescriptor(source: BookSource): Map<String, Any?> {
+    val values = linkedMapOf<String, Any?>()
+    source.rawJson?.let { raw ->
+        runCatching {
+            com.google.gson.JsonParser.parseString(raw).asJsonObject.entrySet().forEach { (key, value) ->
+                values[key] = value.toSourceDescriptorValue()
+            }
+        }
+    }
+    values["bookSourceUrl"] = source.id
+    values["bookSourceName"] = source.name
+    values["bookSourceGroup"] = source.group
+    values["bookSourceType"] = source.sourceType
+    values["enabled"] = source.enabled
+    values["enabledExplore"] = source.enabledExplore
+    values["enabledCookieJar"] = source.enabledCookieJar
+    values["header"] = source.header
+    values["jsLib"] = source.jsLib
+    values["loginUrl"] = source.loginUrl
+    values["loginUi"] = source.loginUi
+    values["loginCheckJs"] = source.loginCheckJs
+    values["coverDecodeJs"] = source.coverDecodeJs
+    values["bookUrlPattern"] = source.bookUrlPattern
+    values["bookSourceComment"] = source.bookSourceComment
+    values["variableComment"] = source.variableComment
+    values["exploreUrl"] = source.exploreUrl
+    values["exploreScreen"] = source.exploreScreen
+    values["lastUpdateTime"] = source.lastUpdateTime
+    values["respondTime"] = source.respondTime
+    values["weight"] = source.weight
+    values["searchUrl"] = source.searchUrl
+    values["ruleExplore"] = source.ruleExploreJson?.let(::parseSourceRuleObject)
+    values["ruleSearch"] = source.ruleSearchJson?.let(::parseSourceRuleObject)
+    values["ruleBookInfo"] = source.ruleBookInfoJson?.let(::parseSourceRuleObject)
+    values["ruleToc"] = source.ruleTocJson?.let(::parseSourceRuleObject)
+    values["ruleContent"] = source.ruleContentJson?.let(::parseSourceRuleObject)
+    values["ruleReview"] = source.ruleReviewJson?.let(::parseSourceRuleObject)
+    values["eventListener"] = source.eventListener
+    values["customButton"] = source.customButton
+    values["mainJs"] = source.mainJs
+    values["concurrentRate"] = source.concurrentRate
+    return values
+}
+
+private fun parseSourceRuleObject(json: String): Any? =
+    runCatching {
+        com.google.gson.JsonParser.parseString(json).asJsonObject.toSourceDescriptorValue()
+    }.getOrNull()
+
+private fun JsonElement.toSourceDescriptorValue(): Any? = when {
+    isJsonNull || this is JsonNull -> null
+    isJsonObject -> asJsonObject.entrySet().associateTo(linkedMapOf()) { (key, value) ->
+        key to value.toSourceDescriptorValue()
+    }
+    isJsonArray -> asJsonArray.map { it.toSourceDescriptorValue() }
+    isJsonPrimitive && asJsonPrimitive.isBoolean -> asBoolean
+    isJsonPrimitive && asJsonPrimitive.isNumber -> asNumber.toString().toLongOrNull()
+        ?: asNumber.toString().toDouble()
+    isJsonPrimitive -> asString
+    else -> null
 }
 
 class RhinoSourceScriptRuntime(
@@ -204,40 +270,7 @@ class RhinoSourceScriptRuntime(
                 val javaBridge = RhinoSafeSourceJavaExtensions(
                     sourceId = source.id,
                     sourceTag = source.name,
-                    sourceDescriptor = linkedMapOf(
-                        "bookSourceUrl" to source.id,
-                        "bookSourceName" to source.name,
-                        "bookSourceGroup" to source.group,
-                        "bookSourceType" to source.sourceType,
-                        "enabled" to source.enabled,
-                        "enabledExplore" to source.enabledExplore,
-                        "enabledCookieJar" to source.enabledCookieJar,
-                        "header" to source.header,
-                        "jsLib" to source.jsLib,
-                        "loginUrl" to source.loginUrl,
-                        "loginUi" to source.loginUi,
-                        "loginCheckJs" to source.loginCheckJs,
-                        "coverDecodeJs" to source.coverDecodeJs,
-                        "bookUrlPattern" to source.bookUrlPattern,
-                        "bookSourceComment" to source.bookSourceComment,
-                        "variableComment" to source.variableComment,
-                        "exploreUrl" to source.exploreUrl,
-                        "exploreScreen" to source.exploreScreen,
-                        "lastUpdateTime" to source.lastUpdateTime,
-                        "respondTime" to source.respondTime,
-                        "weight" to source.weight,
-                        "searchUrl" to source.searchUrl,
-                        "ruleExplore" to source.ruleExploreJson,
-                        "ruleSearch" to source.ruleSearchJson,
-                        "ruleBookInfo" to source.ruleBookInfoJson,
-                        "ruleToc" to source.ruleTocJson,
-                        "ruleContent" to source.ruleContentJson,
-                        "ruleReview" to source.ruleReviewJson,
-                        "eventListener" to source.eventListener,
-                        "customButton" to source.customButton,
-                        "mainJs" to source.mainJs,
-                        "concurrentRate" to source.concurrentRate,
-                    ),
+                    sourceDescriptor = sourceDescriptor(source),
                     rateLimit = { skip -> sourceRateLimit(source, skip) },
                     store = sourceKeyValueStore,
                     androidIdProvider = androidIdProvider,

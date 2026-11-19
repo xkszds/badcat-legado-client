@@ -55,6 +55,31 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun getSourceExposesNestedRulesAndUnknownBookSourceMetadata() = runBlocking {
+        val source = BookSource(
+            id = "https://source-descriptor.example/",
+            name = "Descriptor source",
+            baseUrl = "https://source-descriptor.example/",
+            rawJson = """{
+                "bookSourceUrl":"https://source-descriptor.example/",
+                "bookSourceName":"Descriptor source",
+                "ruleSearch":{"bookList":"div.book","name":"h2@text"},
+                "ruleReview":{"reviewList":"div.review"},
+                "futureMetadata":{"enabled":true,"rank":7}
+            }""",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        val result = runtime.evaluate(source, "JSON.stringify(java.getSource())")
+        assertTrue(result is EngineResult.Success)
+        val json = com.google.gson.JsonParser.parseString((result as EngineResult.Success).value).asJsonObject
+        assertEquals("div.book", json.getAsJsonObject("ruleSearch").get("bookList").asString)
+        assertEquals("div.review", json.getAsJsonObject("ruleReview").get("reviewList").asString)
+        assertTrue(json.getAsJsonObject("futureMetadata").get("enabled").asBoolean)
+        assertEquals(7, json.getAsJsonObject("futureMetadata").get("rank").asInt)
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun evaluatesSourceJsLibBeforeRuleScript() = runBlocking {
         val runtime = RhinoSourceScriptRuntime()
         val source = BookSource(
