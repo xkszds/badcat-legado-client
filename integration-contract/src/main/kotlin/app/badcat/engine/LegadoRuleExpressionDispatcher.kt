@@ -41,10 +41,7 @@ object LegadoRuleExpressionDispatcher {
             )
         }
         val split = try {
-            RuleExpressionTokenizer.splitByFirstTopLevelOperator(
-                normalized,
-                allowLeadingColonRegex = true,
-            )
+            PinnedLegadoRuleAnalyzer.split(normalized)
         } catch (error: Exception) {
             return EngineResult.Failure(
                 EngineErrorCode.UNSUPPORTED_RULE,
@@ -211,10 +208,7 @@ object LegadoRuleExpressionDispatcher {
         evaluateBranch: (String) -> EngineResult<List<String>>,
     ): EngineResult<List<String>> {
         val split = try {
-            RuleExpressionTokenizer.splitByFirstTopLevelOperator(
-                expression,
-                allowLeadingColonRegex = true,
-            )
+            PinnedLegadoRuleAnalyzer.split(expression)
         } catch (error: Exception) {
             return EngineResult.Failure(
                 EngineErrorCode.UNSUPPORTED_RULE,
