@@ -113,3 +113,9 @@
 
 - Legado category 3 now keeps distinct request semantics: JsExtensions `get/head/post` do not auto-follow redirects; `connect` and URL-based selector fetches use redirect-aware GET. Explicit timeout overloads preserve the no-redirect behavior.
 - A CI test initially failed because the connect-error fixture still injected the old callback. The fixture was corrected. Run [#44423657512](https://github.com/xkszds/badcat-legado-client/actions/runs/44423657512) passed contract tests, Rhino host tests and Debug APK assembly; live probes remained in progress at last inspection.
+
+## 2026-11-19 redirect-aware downloads and ajaxAll
+
+- Redirect-following GET is now used for downloads, archive URL reads, `ajaxAll`, one-argument `get(url)`, and selector URL fetches. Pinned `get/head/post` overloads retain no-auto-redirect behavior.
+- Regression fixtures were migrated to the correct callback. Run [#44425052095](https://github.com/xkszds/badcat-legado-client/actions/runs/44425052095) passed contract/Rhino tests and Debug APK assembly; live probes remained in progress at last inspection.
+- This remains category 3 engine compatibility work; the full upstream host API and categories 1, 2, 4 and 5 remain incomplete.

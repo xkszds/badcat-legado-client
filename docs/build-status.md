@@ -379,3 +379,9 @@ Last updated: 2026-11-15
 - Pinned Legado `JsExtensions.get/head/post` are implemented on a no-auto-redirect transport, including optional timeout overloads. `connect` uses the redirect-aware GET path, and selector URL fetches also follow redirects.
 - CI run [#44423358541](https://github.com/xkszds/badcat-legado-client/actions/runs/44423358541) initially failed one Rhino test because the no-timeout connect-error fixture still injected `sourceHttpRequest`; it was updated to inject `sourceGet` in commit `adc6434cfa1166dc2b78a38e3a3ff5ccadc84fae`.
 - Run [#44423657512](https://github.com/xkszds/badcat-legado-client/actions/runs/44423657512) passed contract and Rhino tests and completed Debug APK assembly; best-effort live source probes were in progress at last inspection.
+
+## 2026-11-19 redirect-aware GET coverage
+
+- Redirect-following GET is used by `downloadFile`, URL-based ZIP/RAR/7z extraction, `ajaxAll`, one-argument `get(url)`, and URL-based selector helpers. The pinned two/three-argument Jsoup `get/head/post` methods use a separate no-auto-redirect path, including explicit timeout overloads.
+- CI runs #44424684356 and #44424846495 failed while the implementation and tests were being migrated in separate commits (22 and then 6 stale callback fixtures). The final fixture migration is included in commit `83e8c1f9f4f028d34d07d82c76f8b067b7ca8390`.
+- Run [#44425052095](https://github.com/xkszds/badcat-legado-client/actions/runs/44425052095) passed contract and Rhino tests and completed Debug APK assembly; best-effort live probes were still in progress at last inspection.

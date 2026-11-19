@@ -171,3 +171,9 @@
 - Kept JsExtensions `get/head/post` on the no-auto-redirect path and `connect` / URL selector fetches on the redirect-aware path, with explicit per-call timeout forwarding.
 - Corrected the connect failure test fixture after the first CI attempt reported one stale callback expectation.
 - Run [#44423657512](https://github.com/xkszds/badcat-legado-client/actions/runs/44423657512) passed contract tests, bounded Rhino host tests and Debug APK assembly; live smoke probes were still running at last inspection.
+
+## 2026-11-19 redirect-aware download and ajaxAll follow-up
+
+- Downloads, archive URL extraction, `ajaxAll`, one-argument `get(url)` and selector URL reads now follow redirects. Pinned Jsoup-style `get/head/post` overloads continue to expose redirect responses without auto-following.
+- Updated runtime/archive/binary/charset/cacheFile/ajaxAll test fixtures for the split transport.
+- Run [#44425052095](https://github.com/xkszds/badcat-legado-client/actions/runs/44425052095) passed contract tests, bounded Rhino tests and Debug APK assembly. Live smoke checks were still running at last inspection; no device acceptance or full Legado parity is claimed.
