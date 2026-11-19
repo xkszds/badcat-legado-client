@@ -155,3 +155,21 @@
 
 - Added the pinned upstream JsExtensions default `getSourceNavigationContext()` to the Rhino host bridge. Until the app supplies a source-navigation coroutine context, it returns Kotlin `EmptyCoroutineContext`, matching the upstream interface default rather than inventing cancellation or navigation state.
 - Added a compatibility test for the default. Batch-content context, UI refresh events, WebView/browser/video/verification flows, font APIs and reader/theme configuration remain unimplemented host integrations and are not represented by stubs.
+
+
+## 2026-11-19 必读清单复核与进度标注
+
+### 已完成（审计工作，不是产品功能验收）
+- [x] 本轮完整重读 AGENTS、Legado 技术清单、迁移计划、项目完成清单、UI 重建图、PPRule 证据、原版净化证据。
+- [x] 完成官方 Legado 模型/规则依赖审计并写入 `upstream-model-serialization-audit.md`。
+- [x] 明确五类不能互相替代；本轮只推进第三类的模型审计，不将第一、二、四、五类标记为完成。
+
+### 仍未完成
+- [ ] 第一类：原版 UI 逐页复刻和真机截图验收。
+- [ ] 第二类：原版阅读器/CSS DOM、数据格式和交互验收。
+- [ ] 第三类：官方模型、AnalyzeRule/AnalyzeUrl、JS 宿主、统一阅读流程及真机书源验收。
+- [ ] 第四类：原版 WebView 广告过滤、AdMark 页面回调/DOM 删除闭环。
+- [ ] 第五类：完整 PPRule 分派、分页、漫画和视频流程。
+- [ ] 正式 Release、签名、许可证交付和设备验收。
+
+本轮 CI 状态：run [#44554459580](https://github.com/xkszds/badcat-legado-client/actions/runs/44554459580) 对最新文档 head 仍为 pending；run [#44553806204](https://github.com/xkszds/badcat-legado-client/actions/runs/44553806204) 的 contract/Rhino tests、Debug APK 和前四个 live checks 已通过，上传语料的最后一项仍在执行。不得把 pending/in-progress 写成全绿。

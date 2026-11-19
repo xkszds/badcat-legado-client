@@ -221,3 +221,25 @@
 
 - Added the pinned upstream JsExtensions default `getSourceNavigationContext()` to the Rhino host bridge. Until the app supplies a source-navigation coroutine context, it returns Kotlin `EmptyCoroutineContext`, matching the upstream interface default rather than inventing cancellation or navigation state.
 - Added a compatibility test for the default. Batch-content context, UI refresh events, WebView/browser/video/verification flows, font APIs and reader/theme configuration remain unimplemented host integrations and are not represented by stubs.
+
+
+## 2026-11-19 本轮状态（必读清单复核后）
+
+### 已完成
+- [x] 完整重读 AGENTS 和所有必读技术/产品清单。
+- [x] 完成官方 Legado source/rule model graph 与当前 host model 的差异审计；详见 `docs/upstream-model-serialization-audit.md`。
+- [x] 完成 AnalyzeRule/AnalyzeUrl/JsExtensions 依赖图审计；详见 `docs/upstream-analyzer-integration-audit.md`。
+- [x] 将审计结果、风险和下次任务写回迁移清单。
+
+### 仍未完成
+- [ ] 真实官方模型和规则实体集成（不是 JSON staging DTO）。
+- [ ] 官方 Gson converters/deserializers 和 Room 持久化语义。
+- [ ] 完整 AnalyzeRule/AnalyzeUrl 与 JsExtensions。
+- [ ] 完整阅读流程和真实源/真机验收。
+- [ ] 原版 UI、阅读器、AdBlock/AdMark、PPRule 五类完整复刻。
+- [ ] 正式签名 Release APK。
+
+### CI 事实
+- 最新文档提交对应 run [#44554459580](https://github.com/xkszds/badcat-legado-client/actions/runs/44554459580) 仍为 pending。
+- run [#44553806204](https://github.com/xkszds/badcat-legado-client/actions/runs/44553806204) 的 contract tests、bounded Rhino tests、Debug APK build/upload 及已完成 live steps 均成功；最后一个四源语料 live reading 步骤仍在运行。
+- 以上不构成设备验收或完整 Legado 完成证明。

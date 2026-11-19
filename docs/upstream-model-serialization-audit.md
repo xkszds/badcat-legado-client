@@ -95,3 +95,12 @@ Do not change the public JVM `ReadingEngine` contract or Badcat UI until the mod
 ## 6. Status
 
 No runtime model code was changed in this audit. This is intentional: the dependency boundary is now explicit, and the next code change must not invent a JVM look-alike that pretends to be the Android upstream entity. The analyzer audit is in [upstream-analyzer-integration-audit.md](upstream-analyzer-integration-audit.md).
+
+
+## 2026-11-19 status labels
+
+- [x] **Source-level audit complete:** exact pinned source model/rule declarations, field defaults, Gson deserializer/converter families, Android/Room dependencies, host model mismatches and compatibility risks are documented.
+- [ ] **Runtime model integration not started:** this document is not evidence that official models are compiled or used by Badcat.
+- [ ] **Serialization parity not complete:** host codec retains raw JSON and extracts selected fields; official `INITIAL_GSON/GSON` and Room converter behavior are not yet wired.
+- [ ] **Fixture parity not complete:** still required for object-form, legacy string-encoded, null, missing/default fields, unknown nested fields, all six rule models, and round-trip semantics.
+- **Next task:** inspect the exact upstream `INITIAL_GSON/GSON` implementation and Android module compatibility, then implement the smallest real upstream-compatible rule-model/serialization slice. Re-audit all codec/catalog callers before changing their contracts.

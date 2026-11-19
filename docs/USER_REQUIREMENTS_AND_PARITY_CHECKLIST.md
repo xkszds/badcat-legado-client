@@ -192,3 +192,33 @@
 - Confirmed the host `ReadingEngine.BookSource` and `BookChapter` are staging/UI projections, not upstream runtime entities. The source codec preserves raw JSON but does not provide typed rule accessors, `BaseSource` lifecycle, `RuleDataInterface`, or full chapter metadata.
 - Recorded the module boundary risk: current `:integration-contract` is JVM-only, while upstream entities require Android Parcelable/Room and application services. Do not copy Android-bound entities into the JVM module or create fake `appCtx/appDb/BaseSource` implementations.
 - Next code gate is an Android-side upstream model/runtime adapter with lossless raw JSON retained alongside typed runtime models. Before changing any model, re-read `AGENTS.md`, search all field consumers/callers/tests, record ABI/serialization risks and add object/string/null/default/unknown-field round-trip fixtures.
+
+
+## 2026-11-19 session progress ledger (必读清单复核后更新)
+
+### 已完成（仅审计/文档，不等于运行时功能完成）
+
+- [x] 每次会话必读政策复核：完整重读根目录 `AGENTS.md`，并重读 Legado 技术清单、迁移总计划、分析器审计、模型序列化审计。
+- [x] 坏坏猫五大类范围复核：重读五大类总清单、项目完成清单、UI 重建图、PPRule 证据、原版净化证据；确认五类仍需分别推进。
+- [x] 固定上游模型依赖审计：核对 `BookSource`、`BaseSource`、`BaseBook`、`Book`、`BookChapter`、`SearchBook`、`RssArticle` 和六类嵌套规则及其 Gson/Room/Android 依赖。
+- [x] 宿主差异登记：确认现有 `ReadingEngine.BookSource/BookChapter` 是导入/展示阶段模型，不是官方运行时实体；现有 raw JSON 保留不能替代规则对象、BaseSource 生命周期和 RuleDataInterface。
+- [x] 下一阶段风险登记：JVM/Android 模块边界、Parcelable/Room、Gson 反序列化、ABI/defaults、未知字段保留、章节 index 身份和源级状态隔离已记录在 `upstream-model-serialization-audit.md`。
+
+### 进行中
+
+- [ ] 官方模型/规则实体的真实集成：当前只有依赖审计，尚未移植/接入完整实体图。
+- [ ] 官方序列化适配：当前 codec 保留原始 JSON 并提取有限字段，尚未接入官方 `INITIAL_GSON/GSON` 语义和 Room converters。
+- [ ] CI：run [#44554459580](https://github.com/xkszds/badcat-legado-client/actions/runs/44554459580)（head `913665c66af80ffdcfddd28fad9836e22210add5`）目前 pending，不能标记通过。较早 run [#44553806204](https://github.com/xkszds/badcat-legado-client/actions/runs/44553806204) 的 contract/Rhino 测试、Debug APK 组装/上传和前 4 个 live smoke 步骤已成功；4 个上传语料源的最后一个 live reading 步骤仍在运行。
+
+### 明确未完成（不要误勾）
+
+- [ ] 完整 `AnalyzeUrl` / `AnalyzeRule` 生命周期。
+- [ ] 全量 `JsExtensions` 宿主 API 和真实 Android 服务映射。
+- [ ] 搜索/发现/详情/目录/正文统一上游流程。
+- [ ] `BatchContentContext` 与真实章节持久化。
+- [ ] 五大类中的原版 UI、阅读器、AdBlock/AdMark、PPRule。
+- [ ] 真机安装、端到端阅读验收、正式签名 Release APK。
+
+### 下次唯一优先任务
+
+在改代码前重新执行 AGENTS 第 8 条检查：确认分支和 pin、读取精确上游声明、全仓搜索受影响字段/适配器/调用者/测试，并写兼容风险。随后从 Android 模块的官方规则模型与 Gson 兼容层开始；先建立 object-form / string-encoded / null / defaults / unknown-field fixtures，再接入源 catalog。不得把 DTO 或 raw JSON codec 说成官方运行时模型。
