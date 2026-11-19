@@ -47,6 +47,22 @@ class OkHttpSourceRequestClientTest {
     }
 
     @Test
+    fun rejectsRequestBodiesThatExceedTheConfiguredByteLimit() = runBlocking {
+        val result = OkHttpSourceRequestClient(maxRequestBytes = 4).execute(
+            SourceHttpRequest(
+                sourceId = "request-size-fixture",
+                url = "http://127.0.0.1:1/",
+                method = "POST",
+                body = "ééé",
+                useCookieJar = false,
+            ),
+        )
+
+        val failure = result as EngineResult.Failure
+        assertEquals(EngineErrorCode.INVALID_SOURCE, failure.code)
+    }
+
+    @Test
     fun cookieJarStoresAndReturnsMatchingCookies() {
         val jar = MemorySourceCookieJar()
         val url = "https://reader.example/path/page".toHttpUrl()

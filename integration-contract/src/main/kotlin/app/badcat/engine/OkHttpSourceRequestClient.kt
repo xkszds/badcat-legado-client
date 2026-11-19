@@ -41,7 +41,14 @@ class OkHttpSourceRequestClient(
     private val maxResponseBytes: Long = 8L * 1024 * 1024,
     /** Optional host-owned cookie persistence; jars remain isolated by source ID. */
     private val cookieJarProvider: ((String) -> CookieJar)? = null,
+    /** Bound source-generated request payloads before OkHttp buffers them. */
+    private val maxRequestBytes: Long = 8L * 1024 * 1024,
 ) : SourceRequestClient {
+
+    init {
+        require(maxResponseBytes >= 0) { "Response byte limit must not be negative" }
+        require(maxRequestBytes >= 0) { "Request byte limit must not be negative" }
+    }
 
     private val cookieJars = ConcurrentHashMap<String, MemorySourceCookieJar>()
     private val clients = ConcurrentHashMap<String, OkHttpClient>()
@@ -63,6 +70,14 @@ class OkHttpSourceRequestClient(
             request.headers.forEach { (name, value) -> builder.header(name, value) }
 
             val method = request.method.uppercase()
+            if (method !in BODY_FORBIDDEN_METHODS &&
+                request.body?.length?.toLong()?.let { it > maxRequestBytes } == true
+            ) {
+                return EngineResult.Failure(
+                    EngineErrorCode.INVALID_SOURCE,
+                    "Request body exceeds configured ${maxRequestBytes}-byte limit",
+                )
+            }
             val requestBody = request.body?.let { body ->
                 val explicitContentType = request.headers.entries
                     .firstOrNull { it.key.equals("Content-Type", ignoreCase = true) }
@@ -82,6 +97,12 @@ class OkHttpSourceRequestClient(
                     ?: ByteArray(0).toRequestBody(null)
                 method in BODY_FORBIDDEN_METHODS -> null
                 else -> requestBody
+            }
+            if (bodyForMethod?.contentLength()?.let { it > maxRequestBytes } == true) {
+                return EngineResult.Failure(
+                    EngineErrorCode.INVALID_SOURCE,
+                    "Request body exceeds configured ${maxRequestBytes}-byte limit",
+                )
             }
             builder.method(method, bodyForMethod)
 
