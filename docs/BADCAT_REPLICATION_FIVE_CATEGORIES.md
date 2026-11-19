@@ -218,3 +218,10 @@
 
 - The source bridge now uses the bounded symmetric subclass, and the damaged test source has been repaired. Asymmetric encoded ciphertext is decoded and bounded before processing.
 - Await CI before marking the crypto slice complete.
+
+
+
+## 2026-11-20 category 3 crypto output compatibility correction
+
+- The original host symmetric helper did not cap encryption output or Base64/Hex output strings; it capped raw input/ciphertext at 2 MiB and encoded ciphertext input at 4 MiB. The earlier 2 MiB encoded-output cap would regress valid source behavior and is superseded.
+- Next registered correction preserves AES padding/encoding expansion and retains input/resource limits. Other categories remain unchanged.

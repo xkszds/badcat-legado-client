@@ -387,3 +387,10 @@
 - CI run `44566457890` targets code commit `43baad71f6937f25baafc80541ec3e787d7731d6`; it was queued/in progress at the time of this entry. It must complete and its full job steps/logs/artifacts must be inspected before marking the test correction or crypto CI gate passed.
 - Current implementation status: compile-error source correction committed; focused test execution, full app unit tests, APK assembly/artifact verification and device/provider validation remain pending. No crypto completion or APK release claim is made.
 - Checklist self-review: this correction accurately captured the actual compile failure and removed only the undeclared test helper; existing direct boundary tests remain. No runtime behavior or algorithm was changed. Next review must inspect all tests/logs on the exact code-head CI.
+
+
+
+## 2026-11-20 crypto encoded-output policy correction (pending implementation)
+
+- Re-audit of the pre-crypto host helper shows no symmetric encryption-result or Base64/Hex output cap. The prior 2 MiB encoded-output requirement was inaccurate; preserving the original 2 MiB raw input and 4 MiB encoded ciphertext input limits is the compatibility requirement.
+- Next registered change removes the symmetric output cap and allows encoded expansion, while retaining bounded raw inputs and asymmetric/signature raw limits. CI and APK verification remain pending.

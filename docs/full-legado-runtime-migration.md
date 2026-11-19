@@ -279,3 +279,11 @@ Checklist self-review: older status entries used stale branch heads and mixed pe
 - CI run `44566457890` targets code commit `43baad71f6937f25baafc80541ec3e787d7731d6`; it was queued/in progress at the time of this entry. It must complete and its full job steps/logs/artifacts must be inspected before marking the test correction or crypto CI gate passed.
 - Current implementation status: compile-error source correction committed; focused test execution, full app unit tests, APK assembly/artifact verification and device/provider validation remain pending. No crypto completion or APK release claim is made.
 - Checklist self-review: this correction accurately captured the actual compile failure and removed only the undeclared test helper; existing direct boundary tests remain. No runtime behavior or algorithm was changed. Next review must inspect all tests/logs on the exact code-head CI.
+
+
+
+## 2026-11-20 correction: symmetric encoded-output cap was not in the original host contract
+
+Inspection of the complete pre-crypto `RhinoLegadoSymmetricCrypto` at commit `9d9b2ef47e801e3c5b6bff8d4173d8c9073b3c2c` proves the previous helper capped plaintext input at 2 MiB, raw ciphertext input at 2 MiB, encoded ciphertext input strings at 4 MiB, and decoded Base64 ciphertext at 2 MiB. It did **not** cap encryption result bytes or Base64/Hex output strings. Thus a 2 MiB AES/CBC/PKCS5Padding plaintext may produce a 2 MiB+16 ciphertext and a larger encoded string. The previous checklist's 2 MiB encoded-output requirement was incorrect and would break existing behavior.
+
+Next change must remove symmetric encryption-result/Base64/Hex output caps, preserve the proven raw/encoded input limits, and permit up to 4 MiB encoded output for newly exposed asymmetric Base64/Hex helpers while retaining 2 MiB raw/key/signature limits. Replace the output-bound tests with expansion-allowed and input-bound regression tests. This is a checklist correction before code changes; current CI remains pending/failing on earlier heads.

@@ -437,30 +437,36 @@
 - [ ] At task end, record actual CI status, inspected logs/artifacts, any code correction and the resulting commit/HEAD; re-evaluate whether this checklist omitted any test or compatibility risk.
 
 
-## 2026-11-20 encoded crypto output-bound correction — PRE-REGISTERED BEFORE CODE EDIT
+## 2026-11-20 correct crypto encoded-output policy from original host source — PRE-REGISTERED BEFORE CODE EDIT
 
-### Finding from current-head source review
-- The 2 MiB boundary checks raw byte-array outputs in `RhinoBoundedSymmetricCryptoAndroid.encrypt/decrypt` and `AsymmetricCrypto.encrypt/decrypt`, but inherited/explicit Base64 and Hex encoders can expand those bounded byte arrays into strings larger than 2 MiB.
-- Confirmed affected surfaces: Hutool `SymmetricCrypto` encoded helpers (`encryptBase64` / `encryptHex`, including ByteArray, String/Charset and InputStream overloads) and host `AsymmetricCrypto.encryptBase64/encryptHex`. The upstream Hutool API exposes these as separate string-returning helpers; bounding only the byte-returning primitive does not bound the returned string.
-- This is a confirmed resource-boundary omission, not a CI failure and not a claim that current CI has passed.
+### Source evidence and checklist correction
+- Re-read the pre-crypto host bridge at commit `9d9b2ef47e801e3c5b6bff8d4173d8c9073b3c2c`, including the complete original `RhinoLegadoSymmetricCrypto` class.
+- The original helper capped UTF-8 plaintext input at 2 MiB; capped raw ciphertext input at 2 MiB; capped encoded ciphertext input strings at 4 MiB; and checked decoded Base64 ciphertext bytes at 2 MiB.
+- The original `encryptBase64` and `encryptHex` simply encoded the result of `encrypt(data)` and did not cap the encoded output string. The original encrypt path also did not cap the ciphertext result. For example, a 2 MiB AES/CBC/PKCS5Padding plaintext legitimately produces 2 MiB + 16 ciphertext bytes; Base64/Hex output is correspondingly larger.
+- Therefore the prior checklist requirement to cap symmetric encoded output strings at 2 MiB was inaccurate and would regress existing behavior. This correction supersedes the previous 2 MiB encoded-output requirement.
 
-### Registered implementation scope
-- Keep all upstream algorithms, overloads, Base64 encoding semantics, Hex semantics, transformations, and source-scoped Rhino exposure unchanged.
-- Enforce a maximum of 2 MiB on encoded string results returned to Rhino, after encoding, for every supported symmetric and asymmetric Base64/Hex helper path.
-- Preserve raw byte-array 2 MiB bounds, decoded Base64/Hex input bounds, caller-owned InputStream ownership, zero-progress handling, key/IV bounds, and Sign behavior.
-- Audit inherited Hutool overloads and Rhino reflection visibility so no overload bypasses the output check. Do not narrow the algorithm allow-list or alter JavaImporter package/class allow-list.
+### Correct compatibility/resource policy
+- Symmetric: preserve 2 MiB raw plaintext input, 2 MiB raw ciphertext input, 4 MiB encoded ciphertext input and 2 MiB decoded ciphertext input. Do not impose a new cap on symmetric encrypt output, Base64 output or Hex output; preserve upstream encoding semantics and the prior host behavior.
+- Asymmetric and Sign are newly exposed host surfaces: retain 2 MiB raw data/key/signature/output bounds. Permit Base64/Hex string expansion up to 4 MiB (Hex can be 2x a 2 MiB raw result); do not cap encoded strings at 2 MiB.
+- Keep InputStream forward-progress and caller-ownership behavior, factory overloads, algorithm support, and the JavaImporter allow-list unchanged.
 
-### Required regression coverage / acceptance
-- For symmetric Base64 and Hex: test each applicable ByteArray, String and InputStream overload at/below the encoded-output limit and over the limit; include padding expansion and a deterministic large payload.
-- For asymmetric Base64 and Hex: test encoded output limit and over-limit behavior with a deterministic supported key fixture where feasible; retain RSA encrypt/decrypt tests.
-- Retain exact 2 MiB raw-output, raw-input, decoded ciphertext, key/IV, stream forward-progress/ownership, DES/3DES, signature, legacy-helper, JavaImporter sandbox and replacement-evaluator regression tests.
-- Run focused crypto/Rhino tests, full app unit tests, Debug APK assembly, and inspect current-HEAD CI job steps/logs/reports/artifacts. Do not mark passed while CI is pending or logs are unavailable.
-- Review full diff and confirm no bypass via inherited overloads; device/provider verification remains a separate open gate.
+### Next implementation task (registered before code edit)
+- [ ] Remove the symmetric encryption-result and Base64/Hex encoded-output caps from `RhinoBoundedSymmetricCryptoAndroid`; retain input and decrypt-ciphertext bounds exactly as above.
+- [ ] Change the shared encoded-result bound for new asymmetric methods to 4 MiB while retaining 2 MiB raw output/key/input bounds.
+- [ ] Correct `preservesCryptoTwoMibibyteBoundsAndInputStreamProgress` so padded encryption of a 2 MiB plaintext is allowed and returns the upstream ciphertext expansion; test Base64/Hex expansion is not truncated/rejected.
+- [ ] Replace `boundsSymmetricBase64AndHexEncodedOutputsAcrossOverloads` with regression coverage for every applicable ByteArray/String/Charset/InputStream overload: 2 MiB raw input accepted, 2 MiB + 1 raw input rejected, Base64/Hex output expansion allowed, raw/encoded ciphertext input limits preserved.
+- [ ] Keep RSA Base64/Hex round-trip tests and the asymmetric raw/key bounds; document that no artificial 2 MiB encoded-output fixture is claimed.
+- [ ] Re-run full app tests, contract tests and Debug APK CI on the final code head; inspect full logs/reports/artifact IDs.
 
-### Execution discipline
-- This task is registered before any runtime code edit. Only after this ledger commit may the bounded encoder overrides/wrappers and regression tests be changed.
-- After implementation, update all relevant checklists with exact files, test commands/results, CI run/head/artifacts, commit SHA, remaining device and full-Legado work, and a self-review of whether this registration captured all affected overloads.
+### CI/test-source status at registration
+- Run `44565856067` for head `e6bc27ad767160c9d84e15e9bfe90fe5215c4b92` failed at `:app:compileDebugUnitTestKotlin` because the intermediate test source referenced `checkedRhinoCryptoEncodedOutput` twice. The log was inspected; APK assembly/upload and live-source steps were skipped.
+- Commit `43baad71f6937f25baafc80541ec3e787d7731d6` removed those orphan test references. A full current test-file search found no remaining `checkedRhinoCryptoEncodedOutput` references.
+- Run `44566457890` targets code commit `43baad71f6937f25baafc80541ec3e787d7731d6` and was in progress at registration. Current documentation head `03fd349af49424703718cb843d5c5b3caf7f26f7` has a pending documentation-only run `44566732977`. Neither is a pass yet.
 
+### Self-review
+- [x] Corrected the previous checklist's mistaken assumption that the old host helper capped encoded output strings.
+- [x] Replaced the incomplete output-bound premise with exact source-proven raw/encoded input limits and compatibility behavior.
+- [ ] After implementation, re-audit every symmetric overload and the new asymmetric/sign encoders against pinned Hutool 5.8.22 signatures and test results.
 
 ## 2026-11-20 restore pinned Legado Chinese conversion runtime — PRE-REGISTERED AFTER CI FAILURE REVIEW
 
@@ -485,29 +491,13 @@
 - This missing-source correction is registered before its code edit. After implementation, record exact source/test files, test outcomes, CI head/run/artifacts, commit SHA, and self-review of any additional missing source restoration dependencies.
 
 
-## 2026-11-20 crypto encoded-output test compile correction — PRE-REGISTERED BEFORE TEST EDIT
+## 2026-11-20 crypto encoded-output test compile correction — historical failure and source fix
 
-### CI evidence / confirmed finding
-- Run `44565690133` targets intermediate head `75ae47aa3005418e01f47838ecc9e811b888538c` and completed with failure. Contract tests passed; the pinned Rhino artifact restore/verification steps passed; production `:app:compileDebugKotlin` passed.
-- The failing step was `Run bounded Rhino replacement host tests`; its log reports `RhinoSourceScriptRuntimeTest.kt:1644:13` and `:1647:13 Unresolved reference 'checkedRhinoCryptoEncodedOutput'`, causing `:app:compileDebugUnitTestKotlin` to fail. The test-report upload found no reports; APK assembly/upload and live-source steps were skipped.
-- Final branch head `e6bc27ad767160c9d84e15e9bfe90fe5215c4b92` still contains those two unresolved helper calls in the test file; the follow-up commit only adds RSA Hex coverage and does not remove the missing helper references.
-- The actual production output-bound implementation lives in `RhinoBoundedSymmetricCryptoAndroid` and `io.legado.app.help.crypto.AsymmetricCrypto`; the test must exercise those real methods, not refer to an undeclared helper.
-
-### Registered correction scope
-- Replace the two orphan helper assertions with direct assertions against the real bounded crypto API. Keep exact 2 MiB Base64/Hex boundary and over-limit checks across supported symmetric overloads.
-- Add/retain deterministic asymmetric RSA Base64 and Hex round-trip coverage through the Rhino bridge. Do not claim a >2 MiB asymmetric ciphertext case unless a practical supported fixture can exercise it; document that limitation instead of introducing a fake helper or weakening production limits.
-- Inspect the full test class for other unresolved symbols and re-audit the production encoded-output overrides against the exact Hutool 5.8.22 overload signatures before editing.
-- Keep this change limited to test correctness/coverage; do not change crypto algorithms, key parsing, encoded output behavior, Chinese conversion, JavaImporter sandbox or other runtime APIs unless a separately registered concrete defect is found.
-
-### Required acceptance
-- Focused crypto/Rhino unit tests compile and pass, including exact/over-limit symmetric Base64 and Hex overload tests, RSA Base64 and Hex decrypt round trips, DES/3DES, signatures, stream ownership/progress and JavaImporter restrictions.
-- Run `:integration-contract:test`, `:app:testDebugUnitTest` and `:app:assembleDebug`; inspect full job steps/logs, reports and artifacts for the exact final HEAD.
-- Poll run `44565856067` (head `e6bc27ad767160c9d84e15e9bfe90fe5215c4b92`) separately; its initial state was pending/no jobs and it does not validate a later correction.
-- Do not mark crypto complete or provide an APK until the final code-head CI is green and the APK artifact is verified. Physical-device crypto/provider validation remains open.
-
-### Execution / review
-- This corrective test task is registered before editing. Afterward record exact changed files, CI run/head, test results, artifact IDs and the checklist self-review. Ensure no helper reference remains unresolved.
-
+- Run `44565690133` (head `75ae47aa3005418e01f47838ecc9e811b888538c`) and run `44565856067` (head `e6bc27ad767160c9d84e15e9bfe90fe5215c4b92`) failed `:app:compileDebugUnitTestKotlin` because the intermediate test file referenced the nonexistent `checkedRhinoCryptoEncodedOutput` helper at two locations. Production `:app:compileDebugKotlin` passed; APK assembly/upload were skipped.
+- Commit `43baad71f6937f25baafc80541ec3e787d7731d6` removed the two orphan assertions and retained direct tests of the real production output methods. A full scan of the current test file found zero remaining references to `checkedRhinoCryptoEncodedOutput`.
+- Run `44566457890` targets code commit `43baad71f6937f25baafc80541ec3e787d7731d6` and was in progress when this record was written. It must be inspected before marking this compile correction verified.
+- The earlier statement that the current head `e6bc27a` still contained the orphan references is historical/stale and is superseded by the `43baad7` source correction.
+- No APK artifact or crypto completion claim is made until the current code-head CI passes and the artifact is inspected.
 
 ## 2026-11-20 crypto encoded-output test correction — implementation recorded, verification pending
 

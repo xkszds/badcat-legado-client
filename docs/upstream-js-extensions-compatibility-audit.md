@@ -368,3 +368,13 @@ The host's current `RhinoLegadoSymmetricCrypto` is an allow-listed AES/DES CBC h
 - CI run `44566457890` targets code commit `43baad71f6937f25baafc80541ec3e787d7731d6`; it was queued/in progress at the time of this entry. It must complete and its full job steps/logs/artifacts must be inspected before marking the test correction or crypto CI gate passed.
 - Current implementation status: compile-error source correction committed; focused test execution, full app unit tests, APK assembly/artifact verification and device/provider validation remain pending. No crypto completion or APK release claim is made.
 - Checklist self-review: this correction accurately captured the actual compile failure and removed only the undeclared test helper; existing direct boundary tests remain. No runtime behavior or algorithm was changed. Next review must inspect all tests/logs on the exact code-head CI.
+
+
+
+### 2026-11-20 source-proven encoded-output compatibility correction
+
+- Original host `RhinoLegadoSymmetricCrypto` (pre-crypto commit `9d9b2ef`) caps plaintext input at 2 MiB, raw ciphertext input at 2 MiB, encoded ciphertext input text at 4 MiB, and decoded Base64 ciphertext at 2 MiB.
+- It does not cap encrypt output bytes or Base64/Hex output strings. The newly added symmetric 2 MiB encoded-output cap is therefore a regression and must be removed.
+- Preserve AES/CBC padding expansion: 2 MiB plaintext can yield 2 MiB+16 ciphertext; Base64/Hex outputs may exceed 2 MiB. Keep input caps and the exact upstream NO_WRAP/Base64/Hex semantics.
+- For new asymmetric/signature bridge APIs, cap raw input/key/signature/output at 2 MiB but allow encoded Base64/Hex output expansion up to 4 MiB.
+- Correct the checklist and tests before further runtime edits; the current code-head CI must be inspected independently.
