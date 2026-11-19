@@ -50,6 +50,20 @@ class XPathRuleEvaluatorTest {
     }
 
     @Test
+    fun parsesXmlDocumentsUsingUpstreamXmlMode() {
+        val xml = SourceDocument(
+            url = "https://example.test/catalog.xml",
+            body = """<?xml version="1.0" encoding="UTF-8"?><catalog><book><title>Alpha</title></book><book><title>Beta</title></book></catalog>""",
+            contentType = "application/xml",
+        )
+        val result = XPathRuleEvaluator.evaluate(xml, "//book/title/text()")
+        assertEquals(
+            listOf("Alpha", "Beta"),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
+    @Test
     fun combinesXPathFallbackRules() {
         val result = XPathRuleEvaluator.evaluate(
             document,
