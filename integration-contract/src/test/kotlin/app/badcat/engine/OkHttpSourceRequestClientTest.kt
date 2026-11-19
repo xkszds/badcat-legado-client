@@ -117,6 +117,36 @@ class OkHttpSourceRequestClientTest {
     }
 
     @Test
+    fun rejectsUtf8RequestBodiesByEncodedByteSizeBeforeBuildingRequestBody() = runBlocking {
+        val result = OkHttpSourceRequestClient(maxRequestBytes = 4).execute(
+            SourceHttpRequest(
+                sourceId = "utf8-request-size-fixture",
+                url = "http://127.0.0.1:1/",
+                method = "POST",
+                body = "ééé",
+                useCookieJar = false,
+            ),
+        )
+        assertEquals(EngineErrorCode.INVALID_SOURCE, (result as EngineResult.Failure).code)
+    }
+
+    @Test
+    fun rejectsBodiesForMethodsThatDoNotSupportRequestBodies() = runBlocking {
+        listOf("GET", "HEAD").forEach { method ->
+            val result = OkHttpSourceRequestClient().execute(
+                SourceHttpRequest(
+                    sourceId = "body-forbidden-$method",
+                    url = "http://127.0.0.1:1/",
+                    method = method,
+                    body = "unexpected",
+                    useCookieJar = false,
+                ),
+            )
+            assertEquals(EngineErrorCode.INVALID_SOURCE, (result as EngineResult.Failure).code)
+        }
+    }
+
+    @Test
     fun cookieJarStoresAndReturnsMatchingCookies() {
         val jar = MemorySourceCookieJar()
         val url = "https://reader.example/path/page".toHttpUrl()

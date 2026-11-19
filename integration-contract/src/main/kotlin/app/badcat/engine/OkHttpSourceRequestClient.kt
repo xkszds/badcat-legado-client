@@ -98,11 +98,17 @@ class OkHttpSourceRequestClient(
             request.headers.forEach { (name, value) -> builder.header(name, value) }
 
             if (method !in BODY_FORBIDDEN_METHODS &&
-                request.body?.length?.toLong()?.let { it > maxRequestBytes } == true
+                request.body?.toByteArray(StandardCharsets.UTF_8)?.size?.toLong()?.let { it > maxRequestBytes } == true
             ) {
                 return EngineResult.Failure(
                     EngineErrorCode.INVALID_SOURCE,
                     "Request body exceeds configured ${maxRequestBytes}-byte limit",
+                )
+            }
+            if (method in BODY_FORBIDDEN_METHODS && !request.body.isNullOrEmpty()) {
+                return EngineResult.Failure(
+                    EngineErrorCode.INVALID_SOURCE,
+                    "HTTP method '$method' does not accept a request body",
                 )
             }
             val requestBody = request.body?.let { body ->
