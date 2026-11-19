@@ -40,9 +40,9 @@ object LegadoRuleReplacement {
 
     fun parse(expression: String): ParsedLegadoRule {
         val parts = expression.split("##", limit = 4)
-        if (parts.size == 1) return ParsedLegadoRule(expression = expression)
+        if (parts.size == 1) return ParsedLegadoRule(expression = expression.trim())
         return ParsedLegadoRule(
-            expression = parts[0],
+            expression = parts[0].trim(),
             replaceRegex = parts.getOrNull(1).orEmpty(),
             replacement = parts.getOrNull(2).orEmpty(),
             replaceFirst = parts.size > 3,
