@@ -102,6 +102,20 @@ class RhinoSafeSourceJavaExtensionsCompatTest {
     }
 
     @Test
+    fun cacheFileRejectsOversizedUrlBeforeCacheLookupOrTransport() {
+        var called = false
+        val guarded = RhinoSafeSourceJavaExtensions(
+            sourceId = "cache-limit-fixture",
+            store = InMemorySourceScriptKeyValueStore,
+            httpGet = { _, _ -> called = true; throw AssertionError("must not call transport") },
+        )
+        assertThrows(IllegalArgumentException::class.java) {
+            guarded.cacheFile("https://example.com/" + "a".repeat(16 * 1024))
+        }
+        assertEquals(false, called)
+    }
+
+    @Test
     fun sourceConcurrencyKeysDoNotAliasWhenIdsAndNamesContainAtSigns() {
         val first = RhinoSafeSourceJavaExtensions(
             sourceId = "a@b",

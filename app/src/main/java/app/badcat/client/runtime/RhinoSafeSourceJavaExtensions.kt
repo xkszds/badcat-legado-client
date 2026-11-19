@@ -1145,6 +1145,7 @@ class RhinoSafeSourceJavaExtensions(
     fun cacheFile(url: String, saveTime: Int): String {
         require(url.isNotBlank()) { "cacheFile URL must not be blank" }
         require(saveTime >= 0) { "cacheFile saveTime must not be negative" }
+        requireHttpUrlLength(url)
         val key = "cacheFile_" + md5Encode16(url)
         val now = System.currentTimeMillis()
         val cached = store.get(sourceId, key)?.split('|', limit = 2)
