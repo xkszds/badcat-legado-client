@@ -20,7 +20,7 @@ class CacheFilePrunerTest {
                 setLastModified(1_000L)
             }
 
-            pruneCacheFiles(listOf(older, justWritten), maxBytes = 8, protectedFile = justWritten)
+            pruneCacheFiles(listOf(justWritten, older), maxBytes = 8, protectedFile = justWritten)
 
             assertFalse("Old cache entry should be evicted", older.exists())
             assertTrue("Newly written cache entry must survive", justWritten.exists())
