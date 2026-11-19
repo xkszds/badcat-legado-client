@@ -248,13 +248,13 @@
 ## 2026-11-19 pinned upstream rule model increment
 
 - [x] Added exact pinned Legado source rule entities (`BookListRule`, `SearchRule`, `ExploreRule`, `BookInfoRule`, `TocRule`, `ContentRule`, `ReviewRule`, `ExploreKind`, `FlexChildStyle`, `RowUi`) to the Android app.
-- [x] Added the pinned `INITIAL_GSON/GSON` implementation and custom rule deserializers from upstream `330e606c4d57e08adc056ff8ab7a4132c784da9`.
+- [x] Added the pinned `INITIAL_GSON/GSON` implementation and custom rule deserializers from upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
 - [x] Added Parcelize plugin/Flexbox dependency, source notices and focused tests for object/legacy-string decoding, null/default behavior and rule model semantics.
 - [ ] Current commit CI not yet complete. Full source entity graph, BaseSource, Room persistence and complete engine remain P0 blockers.
 
 ## 2026-11-19 本轮清单复读与 crypto caller scan
 - [x] 本轮开始前重读根 `AGENTS.md` 全文、Legado 技术清单、五大类清单、项目完成清单、迁移计划、模型/AnalyzeRule/JsExtensions 审计、UI 重建图、PPRule 与原版净化证据。
-- [x] 确认分支 `integration/legado-upstream-runtime`，HEAD `41cb8083a04ef5c9524326ec374d0d0544a96c44`；固定上游 `330e606c4d57e08adc056ff8ab7a4132c784da9` 未变。
+- [x] 确认分支 `integration/legado-upstream-runtime`，HEAD `41cb8083a04ef5c9524326ec374d0d0544a96c44`；固定上游 `330e606c4d57e08adc056ff8ab7a4132c784da9a` 未变。
 - [x] 完成当前仓库 231 个 Kotlin 与 21 个 Java 文件的目标 crypto 调用方搜索；结果和下一任务范围已写入 Legado 清单与审计。
 - [ ] crypto 运行时代码尚未修改；下一项是已预登记的 Hutool/BC 与上游 crypto API 迁移。
 - [ ] 当前 HEAD CI run `44560647609` 正在执行 `:app:testDebugUnitTest`（bounded Rhino host tests）；未结束前不标记通过。
@@ -336,7 +336,7 @@
 ### Confirmed CI failure and source audit
 - Current-head predecessor CI run `44564706186` (head `d140b35d614cbad2afe8cffa81f106aaab639a1d`) failed at `:app:compileDebugKotlin` with `RhinoSafeSourceJavaExtensions.kt:1934:38 Unresolved reference 'LegadoChineseConversion'`; the APK step was skipped and no APK artifact was produced. Contract tests passed; this is not a crypto-test failure.
 - The current source tree contains the call `LegadoChineseConversion.traditionalToSimple(value)` but no production declaration/file for `LegadoChineseConversion`; only the Chinese-conversion test file exists.
-- The pinned upstream implementation is `upstream/legado/app/src/main/java/io/legado/app/utils/ChineseUtils.kt` at `330e606c4d57e08adc056ff8ab7a4132c784da9`. It delegates `s2t/t2s` to quick-transfer-core and loads the exact `TRADITIONAL_TO_SIMPLE` exclusion dictionary before the first traditional-to-simplified conversion. Its excluded terms include `多士`, which the existing regression test requires to remain unchanged.
+- The pinned upstream implementation is `upstream/legado/app/src/main/java/io/legado/app/utils/ChineseUtils.kt` at `330e606c4d57e08adc056ff8ab7a4132c784da9a`. It delegates `s2t/t2s` to quick-transfer-core and loads the exact `TRADITIONAL_TO_SIMPLE` exclusion dictionary before the first traditional-to-simplified conversion. Its excluded terms include `多士`, which the existing regression test requires to remain unchanged.
 - The CI workflow's “Restore pinned Legado Rhino extension sources” step only restores Rhino XML implementation Java sources; it does not restore Chinese conversion helpers. Therefore the unresolved symbol is a missing host source integration, not a missing Rhino artifact.
 
 ### Registered correction scope
@@ -399,7 +399,7 @@
 ## 2026-11-20 crypto compatibility regression correction — PRE-REGISTERED BEFORE RUNTIME CODE EDIT
 
 ### Current branch and CI evidence
-- Active branch: `integration/legado-upstream-runtime`; pre-registration parent HEAD: `bc18f521f5717bd8ead23677a22c0c9ae7b4e8fb`; pinned Legado upstream remains `330e606c4d57e08adc056ff8ab7a4132c784da9`.
+- Active branch: `integration/legado-upstream-runtime`; pre-registration parent HEAD: `bc18f521f5717bd8ead23677a22c0c9ae7b4e8fb`; pinned Legado upstream remains `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
 - Runs `44566457890` (code head `43baad71f6937f25baafc80541ec3e787d7731d6`) and `44566732977` (docs head `03fd349af49424703718cb843d5c5b3caf7f26f7`) both completed with failure in `:app:testDebugUnitTest`. Contract tests, pinned Rhino artifact restore/verification, pinned Rhino extension-source restore, and production Kotlin compilation succeeded. APK assembly/upload and live-source checks were skipped. Each run uploaded only unit-test reports: artifact `14552755775` and `14552826190`; neither uploaded an APK.
 - The inspected report for run `44566457890` records 266 tests with 6 failures:
   1. `supportsPinnedLegadoAsymmetricCryptoAndSignFactories`: Android `Base64.encodeToString` stub was not mocked.
@@ -527,3 +527,8 @@
 - Focused crypto tests and the full app unit-test suite are already green on run `44570879134`; this correction must not alter those test results.
 - Require a successful latest-head workflow and a real uploaded debug APK before recording packaging success.
 - This registration identifies the exact failing task, both colliding artifacts, the minimal metadata-only exclusion and the regression gates. If a new failure exposes another resource conflict, amend the ledger before broadening the exclusion or editing additional files.
+
+
+## Pinned-upstream SHA ledger correction (2026-11-20)
+
+A review of the registered APK packaging task exposed a malformed 39-character abbreviated value in the root `AGENTS.md` and several historical checklist entries. The actual submodule gitlink at this branch and the CI workflow's `expected` value both independently confirm the full, valid 40-character upstream commit SHA: `330e606c4d57e08adc056ff8ab7a4132c784da9a`. The public LegadoTeam/legado commit endpoint also confirms that exact SHA and its commit metadata. Corrected only malformed 39-character references to the exact 40-character pinned revision; no submodule pointer or upstream source was changed. The pinned-source verification step had passed on both recent CI runs. This is a documentation integrity correction, not a change to the registered packaging-fix scope.
