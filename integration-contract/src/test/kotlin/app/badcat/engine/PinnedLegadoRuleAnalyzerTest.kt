@@ -40,10 +40,10 @@ class PinnedLegadoRuleAnalyzerTest {
     @Test
     fun normalizesPinnedAnalyzerUnbalancedGroupErrors() {
         assertFailsWith<IllegalArgumentException> {
-            PinnedLegadoRuleAnalyzer.split("div.book[")
+            PinnedLegadoRuleAnalyzer.split("div.book[ && other")
         }
         assertFailsWith<IllegalArgumentException> {
-            PinnedLegadoRuleAnalyzer.split("""$.items[?(@.name == 'x')""", code = true)
+            PinnedLegadoRuleAnalyzer.split("""$.items[?(@.name == 'x') && $.fallback""", code = true)
         }
     }
 
