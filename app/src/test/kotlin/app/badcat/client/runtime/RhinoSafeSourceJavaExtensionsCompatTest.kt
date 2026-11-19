@@ -130,7 +130,7 @@ class RhinoSafeSourceJavaExtensionsCompatTest {
         )
         val response = guarded.connect("https://example.com/" + "a".repeat(16 * 1024))
         assertEquals(false, called)
-        org.junit.Assert.assertTrue(response.body.contains("16 KiB character limit"))
+        org.junit.Assert.assertTrue(response.body().contains("16 KiB character limit"))
     }
 
     @Test

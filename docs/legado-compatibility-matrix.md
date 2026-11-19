@@ -153,3 +153,8 @@ modes remain outside this increment.
 - `@put` accepts a bounded JSON object whose values are strings; key/value lengths, operation count and total template size are limited. `@get` reads only the current source's persisted string store.
 - The script context receives primitive strings for `result`, `baseUrl`, `sourceUrl` / `sourceId`, `sourceName`, `ruleName`, `key` and `page`. This does not expose the full upstream Java, HTTP, WebView, cache or Android objects.
 - Contract tests cover both URL-template and source-runtime paths, including JSON string values containing braces. Full upstream variable semantics across every AnalyzeRule stage remain unclaimed.
+
+
+### CI test-source correction (2026-11-19)
+
+- Fixed test compilation call sites for JUnit `assertThrows` and the Java `SourceHttpResponse.body()` method. This does not change the partial compatibility status of the runtime; rerun the bounded Rhino tests and Debug APK build before verification is complete.

@@ -203,3 +203,9 @@
 - Upstream reference: pinned `JsExtensions.kt` / `AnalyzeUrl.kt` at `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
 - Previous head `cacf216c3b65e11695260b8a73e138be74b22296` CI run [#44485135456](https://github.com/xkszds/badcat-legado-client/actions/runs/44485135456): contract tests passed; :app test task did not execute because Maven Central returned HTTP 429 for `me.zhanghai.android.libarchive:library:1.1.6`. Retry verification after the current commit.
 - The fix is category 3 only; full product parity remains incomplete.
+
+
+## 2026-11-19 CI compile correction
+
+- The first verification of the bounded `ajaxTestAll` cause-chain change reached app unit-test compilation and exposed two test-source API mistakes: the archive test omitted the JUnit `assertThrows` import, and the connect-error assertion treated the Java `body()` accessor as a Kotlin property.
+- Corrected only those test call sites; production behavior is unchanged. Contract tests passed on the previous run, but the Rhino test task and APK assembly did not run because Kotlin test compilation stopped first. Re-run CI is required before treating this increment as verified.
