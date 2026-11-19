@@ -120,6 +120,8 @@ data class BookSource(
     val rawJson: String? = null,
     /** Legado per-source request limit: N/M requests per M milliseconds, or M for 1/M. */
     val concurrentRate: String? = null,
+    /** Upstream BookSource.customOrder; kept at the end to preserve positional host callers. */
+    val customOrder: Int = 0,
 )
 
 data class BookCandidate(

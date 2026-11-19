@@ -67,6 +67,7 @@ class LegadoBookSourceCodecTest {
               "lastUpdateTime": 1760000000000,
               "respondTime": 2400,
               "weight": 3,
+              "customOrder": 41,
               "eventListener": true,
               "customButton": false,
               "ruleReview": {"reviewList":"div.review"},
@@ -104,6 +105,8 @@ class LegadoBookSourceCodecTest {
         assertEquals(1760000000000L, engineSource.lastUpdateTime)
         assertEquals(2400L, engineSource.respondTime)
         assertEquals(3, engineSource.weight)
+        assertEquals(41, source.customOrder)
+        assertEquals(41, engineSource.customOrder)
         assertTrue(engineSource.eventListener)
         assertEquals(false, engineSource.customButton)
         assertTrue(engineSource.ruleReviewJson!!.contains("reviewList"))
@@ -114,6 +117,7 @@ class LegadoBookSourceCodecTest {
             .asJsonArray.single().asJsonObject
         assertEquals("https://reader.example/search?q={{key}}", exported.get("searchUrl").asString)
         assertEquals("function search() { return []; }", exported.get("mainJs").asString)
+        assertEquals(41, exported.get("customOrder").asInt)
         assertTrue(exported.getAsJsonObject("futureField").get("keep").asBoolean)
     }
 
@@ -129,24 +133,28 @@ class LegadoBookSourceCodecTest {
         val sources = LegadoBookSourceCodec.decode(input)
         assertEquals(2, sources.size)
         assertTrue(sources[0].enabled)
+        assertEquals(0, sources[0].customOrder)
         assertEquals(0, sources[0].sourceType)
         assertEquals(true, sources[0].toEngineSource().enabledCookieJar)
         assertFalse(sources[1].enabled)
         assertEquals(4, sources[1].sourceType)
+        assertEquals(0, sources[1].toEngineSource().customOrder)
     }
 
     @Test
     fun changingEnabledFlagPreservesUnknownFieldsAndRules() {
         val original = LegadoBookSourceCodec.decode(
-            """{"bookSourceUrl":"https://toggle.example","bookSourceName":"Toggle","enabled":true,"future":{"x":7},"ruleSearch":{"bookList":"main"}}"""
+            """{"bookSourceUrl":"https://toggle.example","bookSourceName":"Toggle","enabled":true,"customOrder":27,"future":{"x":7},"ruleSearch":{"bookList":"main"}}"""
         ).single()
 
         val disabled = LegadoBookSourceCodec.withEnabled(original, false)
         assertFalse(disabled.enabled)
+        assertEquals(27, disabled.customOrder)
         val exported = JsonParser.parseString(
             LegadoBookSourceCodec.encode(listOf(disabled))
         ).asJsonArray.single().asJsonObject
         assertFalse(exported.get("enabled").asBoolean)
+        assertEquals(27, exported.get("customOrder").asInt)
         assertEquals(7, exported.getAsJsonObject("future").get("x").asInt)
         assertEquals("main", exported.getAsJsonObject("ruleSearch").get("bookList").asString)
     }
@@ -336,6 +344,8 @@ class LegadoBookSourceCodecTest {
             """{"bookSourceUrl":"https://metadata.example","bookSourceName":"Metadata","bookUrlPattern":"https://metadata.example/book/*","enabledReview":false,"customOrder":12,"weight":3,"lastUpdateTime":1760000000000,"respondTime":2400}"""
         ).single()
         assertEquals("Metadata", source.name)
+        assertEquals(12, source.customOrder)
+        assertEquals(12, source.toEngineSource().customOrder)
     }
 
 }

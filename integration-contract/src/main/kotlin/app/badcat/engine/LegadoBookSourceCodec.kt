@@ -45,6 +45,8 @@ data class LegadoBookSource(
     val customButton: Boolean,
     val rawJson: String,
     val concurrentRate: String? = null,
+    /** Upstream BookSource.customOrder; kept at the end to preserve positional host callers. */
+    val customOrder: Int = 0,
 ) {
     fun toEngineSource(): BookSource = BookSource(
         id = sourceId,
@@ -81,6 +83,7 @@ data class LegadoBookSource(
         customButton = customButton,
         rawJson = rawJson,
         concurrentRate = concurrentRate,
+        customOrder = customOrder,
     )
 }
 
@@ -228,6 +231,7 @@ object LegadoBookSourceCodec {
             searchUrl = source.stringOrNull("searchUrl"),
             mainJs = source.stringOrNull("mainJs"),
             concurrentRate = source.stringOrNull("concurrentRate"),
+            customOrder = source.intOrDefault("customOrder", 0),
             ruleExploreJson = source.objectOrNull("ruleExplore"),
             ruleSearchJson = source.objectOrNull("ruleSearch"),
             ruleBookInfoJson = source.objectOrNull("ruleBookInfo"),
