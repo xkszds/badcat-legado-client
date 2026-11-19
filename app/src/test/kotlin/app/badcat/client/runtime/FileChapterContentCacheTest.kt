@@ -53,4 +53,12 @@ class FileChapterContentCacheTest {
 
         assertArrayEquals(byteArrayOf(), result)
     }
+    @Test
+    fun chapterCacheDigestSeparatesIdentityFieldsContainingNewlines() {
+        val first = chapterCacheDigest("source", "book\\nchapter", "url")
+        val second = chapterCacheDigest("source\\nbook", "chapter", "url")
+
+        org.junit.Assert.assertNotEquals(first, second)
+    }
+
 }
