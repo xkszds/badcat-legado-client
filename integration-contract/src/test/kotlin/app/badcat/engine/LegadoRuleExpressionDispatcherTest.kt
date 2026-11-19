@@ -275,4 +275,29 @@ class LegadoRuleExpressionDispatcherTest {
         )
     }
 
+
+    @Test
+    fun scalarCssNoMatchRemainsExactlyThePinnedUpstreamResult() {
+        val document = SourceDocument(
+            url = "https://reader.example/search",
+            body = """
+                <div class="foo bar baz"><h3>Multi-class title</h3></div>
+                <div class="foo bar"><h3>Partial class title</h3></div>
+            """.trimIndent(),
+        )
+        val rule = "class.foo bar baz@text"
+        val upstream = io.legado.app.model.analyzeRule.UpstreamLegadoCssRuleEvaluator.getStringList(
+            document.body,
+            document.url,
+            rule,
+        )
+        val actual = assertIs<EngineResult.Success<List<String>>>(
+            LegadoRuleExpressionDispatcher.evaluate(document, rule),
+        ).value
+
+        // The dispatcher must not revive results with the retired bounded
+        // evaluator when the pinned parser legitimately returns no matches.
+        assertEquals(upstream, actual)
+    }
+
 }
