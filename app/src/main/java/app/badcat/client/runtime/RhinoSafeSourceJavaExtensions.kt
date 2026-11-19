@@ -971,7 +971,7 @@ class RhinoSafeSourceJavaExtensions(
         require(sourceId.isNotBlank()) {
             "并发工具只能在书源、订阅源或朗读源中使用"
         }
-        return "$sourceId@$name"
+        return "${sourceId.length}:$sourceId:${name.length}:$name"
     }
 
     private fun invokeSourceFunction(action: Function) {

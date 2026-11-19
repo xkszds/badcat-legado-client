@@ -34,6 +34,23 @@ class RhinoSafeSourceJavaExtensionsCompatTest {
     }
 
     @Test
+    fun sourceConcurrencyKeysDoNotAliasWhenIdsAndNamesContainAtSigns() {
+        val first = RhinoSafeSourceJavaExtensions(
+            sourceId = "a@b",
+            store = InMemorySourceScriptKeyValueStore,
+        )
+        val second = RhinoSafeSourceJavaExtensions(
+            sourceId = "a",
+            store = InMemorySourceScriptKeyValueStore,
+        )
+
+        assertEquals(0, first.tick("c"))
+        assertEquals(0, second.tick("b@c"))
+        assertEquals(1, first.tick("c"))
+        assertEquals(1, second.tick("b@c"))
+    }
+
+    @Test
     fun parseJsRequestHeadersAcceptsNullAndReturnsEmptyMap() {
         assertEquals(emptyMap<String, String>(), extensions.parseJsRequestHeaders(null))
     }
