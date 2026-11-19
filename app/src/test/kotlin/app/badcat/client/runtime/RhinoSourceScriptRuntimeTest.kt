@@ -667,15 +667,28 @@ text + re.test('aa}}')"""
             source,
             """
                 var calls = 0;
-                java.singleFlight('once', function() { calls++; });
-                java.singleFlight('once', function() { calls++; });
-                java.lock('mutex', function() { calls += 10; });
-                java.lock('mutex', function() { calls += 10; });
-                [calls, java.tick('counter'), java.tick('counter'), java.tick('counter')].join('|');
+                var callbackThisMatchesGlobalThis = true;
+                java.singleFlight('once', function() {
+                    callbackThisMatchesGlobalThis = callbackThisMatchesGlobalThis && this === globalThis;
+                    calls++;
+                });
+                java.singleFlight('once', function() {
+                    callbackThisMatchesGlobalThis = callbackThisMatchesGlobalThis && this === globalThis;
+                    calls++;
+                });
+                java.lock('mutex', function() {
+                    callbackThisMatchesGlobalThis = callbackThisMatchesGlobalThis && this === globalThis;
+                    calls += 10;
+                });
+                java.lock('mutex', function() {
+                    callbackThisMatchesGlobalThis = callbackThisMatchesGlobalThis && this === globalThis;
+                    calls += 10;
+                });
+                [calls, callbackThisMatchesGlobalThis, java.tick('counter'), java.tick('counter'), java.tick('counter')].join('|');
             """.trimIndent(),
         )
         assertTrue("Legado source concurrency helpers failed: $result", result is EngineResult.Success)
-        assertEquals("22|0|1|2", (result as EngineResult.Success).value)
+        assertEquals("22|true|0|1|2", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
 

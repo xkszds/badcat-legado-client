@@ -280,7 +280,12 @@ object RhinoScriptEngine {
     }
 
     internal fun topLevelThis(scope: VarScope): Scriptable {
-        return ScriptableObject.getTopLevelScope(scope).globalThis
+        val topLevel = ScriptableObject.getTopLevelScope(scope)
+        // ScriptBindings intentionally redirects the JS-visible globalThis to
+        // a source-scoped shared object. TopLevel.globalThis is the lexical
+        // scope object and is not necessarily the JavaScript globalThis value.
+        return (ScriptableObject.getProperty(topLevel, "globalThis") as? Scriptable)
+            ?: topLevel.globalThis
     }
 
     /** Invoke a source-provided callback inside the active isolated Rhino scope. */

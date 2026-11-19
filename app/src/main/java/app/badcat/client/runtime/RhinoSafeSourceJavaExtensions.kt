@@ -23,10 +23,10 @@ import app.badcat.engine.LegadoSourceElementList
 import io.legado.app.model.analyzeRule.QueryTTF
 import app.badcat.engine.SourceHttpResponse
 import org.htmlunit.corejs.javascript.Scriptable
-import org.htmlunit.corejs.javascript.VarScope
 import org.htmlunit.corejs.javascript.ScriptableObject
 import org.htmlunit.corejs.javascript.Context
 import org.htmlunit.corejs.javascript.Function
+import org.htmlunit.corejs.javascript.Undefined
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
@@ -1107,9 +1107,9 @@ class RhinoSafeSourceJavaExtensions(
      * the already supplied Function object.
      */
     fun functionThisObj(action: Function): Scriptable {
-        val parentScope: VarScope = action.parentScope
-            ?: throw IllegalArgumentException("JavaScript callback has no parent scope")
-        return ScriptableObject.getTopLevelScope(parentScope).globalThis
+        val topLevel = action.parentScope?.let { ScriptableObject.getTopLevelScope(it) }
+        return (topLevel?.let { ScriptableObject.getProperty(it, "globalThis") } as? Scriptable)
+            ?: Undefined.SCRIPTABLE_UNDEFINED
     }
 
     private fun invokeSourceFunction(action: Function) {
