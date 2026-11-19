@@ -1495,7 +1495,7 @@ internal fun boundedAjaxUrlValues(
     var totalUrlChars = 0
     values.forEach { value ->
         val url = value?.toString().orEmpty()
-        require(url.length <= MAX_AJAX_URL_CHARS) {
+        require(url.length <= 16 * 1024) {
             "java.ajaxAll URL exceeds the per-URL character limit"
         }
         totalUrlChars += url.length
