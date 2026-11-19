@@ -107,13 +107,14 @@ private fun sourceDescriptor(source: BookSource): Map<String, Any?> {
             }
         }
     }
+    val hasImportedJson = values.isNotEmpty()
     // Imported source JSON is the authoritative complete BookSource object.
     // Only identity and enabled state are overlaid from the runtime model;
     // null/default model fields must not erase fields retained in rawJson.
     values["bookSourceUrl"] = source.id
     values["bookSourceName"] = source.name
     values["enabled"] = source.enabled
-    if (values.isEmpty()) {
+    if (!hasImportedJson) {
         values["bookSourceGroup"] = source.group
         values["bookSourceType"] = source.sourceType
         values["enabledExplore"] = source.enabledExplore
