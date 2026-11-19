@@ -228,7 +228,9 @@ class RhinoCryptoCompatibilityTest {
             crypto.decrypt(oversizedDecodedCiphertext)
         }
 
-        val padded = RhinoBoundedSymmetricCryptoAndroid("AES/ECB/PKCS5Padding", key)
+        val padded = RhinoBoundedSymmetricCryptoAndroid("AES/CBC/PKCS5Padding", key).apply {
+            setIv("abcdef0123456789".toByteArray(Charsets.UTF_8))
+        }
         val paddedRaw = padded.encrypt(exactBytes)
         assertEquals(maxBytes + 16, paddedRaw.size)
         assertTrue(padded.encryptBase64(exactBytes).length > maxBytes)

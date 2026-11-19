@@ -1394,7 +1394,9 @@ text + re.test('aa}}')"""
             crypto.encrypt(ByteArrayInputStream(ByteArray(2 * 1024 * 1024 + 1)))
         }
 
-        val padded = RhinoBoundedSymmetricCryptoAndroid("AES/ECB/PKCS5Padding", key)
+        val padded = RhinoBoundedSymmetricCryptoAndroid("AES/CBC/PKCS5Padding", key).apply {
+            setIv("abcdef0123456789".toByteArray(Charsets.UTF_8))
+        }
         val paddedCiphertext = padded.encrypt(ByteArray(2 * 1024 * 1024))
         assertEquals(2 * 1024 * 1024 + 16, paddedCiphertext.size)
         org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
