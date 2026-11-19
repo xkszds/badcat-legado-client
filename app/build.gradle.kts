@@ -38,6 +38,12 @@ kotlin {
     }
 }
 
+configurations.named("testRuntimeClasspath") {
+    // Production and test compilation use the Android AAR; unit-test execution substitutes
+    // the same OkHttp release's JVM artifact so Robolectric can load its packaged PSL resource.
+    exclude(group = "com.squareup.okhttp3", module = "okhttp")
+}
+
 dependencies {
     implementation(project(":integration-contract"))
     implementation(project(":legado-rhino"))
@@ -65,4 +71,6 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     // Android Base64 behavior in crypto bridge tests must run against real Android shadows.
     testImplementation("org.robolectric:robolectric:4.14.1")
+    // JVM unit tests need OkHttp's classpath-backed official PSL resource, not Android AAR assets.
+    testRuntimeOnly("com.squareup.okhttp3:okhttp-jvm:5.4.0")
 }
