@@ -37,10 +37,11 @@ object InMemorySourceScriptFileCacheStore : SourceScriptFileCacheStore {
         values.remove(storageKey(sourceId, key))
     }
     override fun clearSource(sourceId: String) {
-        val prefix = "$sourceId\n"
+        val prefix = sourcePrefix(sourceId)
         values.keys.removeAll { it.startsWith(prefix) }
     }
-    private fun storageKey(sourceId: String, key: String) = "$sourceId\n$key"
+    private fun sourcePrefix(sourceId: String) = "${sourceId.length}:$sourceId:"
+    private fun storageKey(sourceId: String, key: String) = sourcePrefix(sourceId) + "${key.length}:$key"
 }
 
 /**
