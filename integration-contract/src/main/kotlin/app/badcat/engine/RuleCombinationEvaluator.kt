@@ -7,9 +7,9 @@ package app.badcat.engine
 object RuleCombinationEvaluator {
 
     fun hasNestedTopLevelOperator(expression: String): Boolean = runCatching {
-        val outer = RuleExpressionTokenizer.splitByFirstTopLevelOperator(expression)
+        val outer = PinnedLegadoRuleAnalyzer.split(expression)
         outer.operator != null && outer.rules.any { part ->
-            RuleExpressionTokenizer.splitByFirstTopLevelOperator(part.trim()).operator != null
+            PinnedLegadoRuleAnalyzer.split(part.trim()).operator != null
         }
     }.getOrDefault(false)
 
@@ -22,8 +22,8 @@ object RuleCombinationEvaluator {
         expression: String,
         evaluateRule: (String) -> List<T>,
     ): List<T> {
-        val split = RuleExpressionTokenizer.splitByFirstTopLevelOperator(expression)
-        if (split.operator == null) return evaluateRule(split.rules.single())
+        val split = PinnedLegadoRuleAnalyzer.split(expression)
+        if (split.operator == null) return evaluateRule(split.rules.single().trim())
         if (split.operator == "||") {
             // Fallback is intentionally lazy: once a branch produces values,
             // later branches must not run or turn a valid result into a failure.
@@ -55,7 +55,7 @@ object RuleCombinationEvaluator {
         expression: String,
         evaluateRule: (String) -> EngineResult<List<T>>,
     ): EngineResult<List<T>> {
-        val split = RuleExpressionTokenizer.splitByFirstTopLevelOperator(expression)
+        val split = PinnedLegadoRuleAnalyzer.split(expression)
         if (split.operator == null) return evaluateRule(split.rules.single())
 
         if (split.operator == "||") {
@@ -94,7 +94,7 @@ object RuleCombinationEvaluator {
         expression: String,
         evaluateRule: (String) -> List<T>,
     ): List<T> {
-        val split = RuleExpressionTokenizer.splitByFirstTopLevelOperator(expression)
+        val split = PinnedLegadoRuleAnalyzer.split(expression)
         if (split.operator == null) return evaluateRule(split.rules.single())
 
         val results = mutableListOf<List<T>>()
