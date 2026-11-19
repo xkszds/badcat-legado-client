@@ -18,6 +18,8 @@ val pinnedLegado by sourceSets.creating {
         "io/legado/app/model/analyzeRule/SourceHtmlParser.kt",
         "io/legado/app/model/analyzeRule/PinnedLegadoJsoupBridge.kt",
         "io/legado/app/model/analyzeRule/AnalyzeByJSonPath.kt",
+        "io/legado/app/model/analyzeRule/AnalyzeByXPath.kt",
+        "io/legado/app/model/analyzeRule/PinnedLegadoXPathBridge.kt",
         "io/legado/app/model/analyzeRule/PinnedLegadoJsonPathBridge.kt",
         "io/legado/app/utils/PrintOnDebug.kt",
     )
