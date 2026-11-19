@@ -565,3 +565,16 @@ A review of the registered APK packaging task exposed a malformed 39-character a
 - Other best-effort probes are likewise partial: the Nyasama sample returned usable results for 3/5 probes; two search endpoints returned empty results. Public-source probing encountered upstream HTTP 403/502, timeouts, a 404 and a redirect loop; several other source pages returned parseable candidate rows, but these probes are not full reading-flow validation. Treat these as source/network or source-data observations until individually reproduced; do not count them as engine passes.
 - Not verified: installation or runtime behavior on a physical Android device; complete pinned Legado runtime/host integration; broad source-corpus compatibility; complete Badcat five-category parity; signed release build. This is a verified CI Debug APK only, not the requested final complete-Legado release.
 - Self-review: the earlier pending status is now corrected with the final run conclusion. Build/test gates are recorded as passed only for this exact code head; live-source evidence is separated by source and stage, and external failures are not mislabeled as engine failures. Full runtime, device and product-parity gates remain open.
+
+
+## 2026-11-20 next task pre-registration — upstream JsExtensions/BaseSource compatibility audit (no code edits)
+
+- [ ] Audit all pinned JsExtensions.kt and inherited JsEncodeUtils.kt declarations/overloads against the host bridge, including types/defaults/nullability, Rhino-visible return-object shape, exceptions, threading/coroutines, lifecycle/context and source isolation.
+- [ ] Trace pinned BaseSource.kt and all required models/services: Room/Gson, cookies/login, script storage, cache, HTTP, WebView/browser, navigation, refresh/verification/video and batch persistence.
+- [ ] Search all repository callers/tests for getSource, source descriptor, HTTP response, file handle, getBatchContext, cacheContent, and all missing or semantically divergent methods.
+- [ ] Resolve and document the getSource(): BaseSource? versus descriptor-map collision, BatchContentContext/durable cache gap, HTTP response ABI and sandboxed file-handle boundary.
+- [ ] Record exact pinned upstream declarations/call sites and host source/test paths; classify each method as behaviorally compatible, deliberately restricted for security, unsupported in the current UI context, or unimplemented.
+- [ ] Do not change runtime/product code in this audit. Do not add fake BaseSource objects, null service placeholders, no-op UI methods or a simplified interface.
+- [ ] Acceptance: complete method/overload matrix, complete BaseSource service dependency map, known-caller list, explicit risks and one bounded next implementation slice with regression tests. Pre-register that implementation separately in all four checklists before any code edit.
+
+This gate exists because the current audit is declaration-count complete but its overload/behavior matrix is not complete; the crypto CI/build gate is now independently verified on the latest documentation head, while physical-device validation and full Legado migration remain open.
