@@ -25,6 +25,8 @@ import org.htmlunit.corejs.javascript.Scriptable
 import org.htmlunit.corejs.javascript.ScriptableObject
 import org.htmlunit.corejs.javascript.Context
 import org.htmlunit.corejs.javascript.Function
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 /**
  * Explicitly allow-listed subset of Legado's `java` helper for source scripts.
@@ -93,6 +95,9 @@ class RhinoSafeSourceJavaExtensions(
     fun longToast(msg: Any?) {
         toastPresenter("${sourceTag}: ${msg.toString()}", true)
     }
+
+    /** Matches the pinned JsExtensions default when no navigation coroutine is attached. */
+    fun getSourceNavigationContext(): CoroutineContext = EmptyCoroutineContext
 
     /** Legado source metadata helpers; expose a read-only map rather than the Android entity. */
     fun getTag(): String = sourceTag

@@ -149,3 +149,9 @@
 
 - The Rhino host now preserves the active AnalyzeRule `key` and one-based `page` bindings when Java selector helpers re-enter the shared Legado rule dispatcher. The same context is retained for overloads that supply an explicit content fragment.
 - A focused contract test verifies that the selector document adapter retains URL, body, keyword and page. This is context propagation only; it does not claim complete upstream AnalyzeRule stage semantics or close the separately tracked Java/Android API gaps.
+
+
+### JsExtensions navigation-context default (2026-11-19)
+
+- Added the pinned upstream JsExtensions default `getSourceNavigationContext()` to the Rhino host bridge. Until the app supplies a source-navigation coroutine context, it returns Kotlin `EmptyCoroutineContext`, matching the upstream interface default rather than inventing cancellation or navigation state.
+- Added a compatibility test for the default. Batch-content context, UI refresh events, WebView/browser/video/verification flows, font APIs and reader/theme configuration remain unimplemented host integrations and are not represented by stubs.

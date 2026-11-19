@@ -11,6 +11,11 @@ class RhinoSafeSourceJavaExtensionsCompatTest {
     )
 
     @Test
+    fun sourceNavigationContextMatchesPinnedUpstreamDefault() {
+        assertEquals(kotlin.coroutines.EmptyCoroutineContext, extensions.getSourceNavigationContext())
+    }
+
+    @Test
     fun ajaxUrlCollectionMaterializationStopsAtConfiguredLimit() {
         var consumed = 0
         val unbounded = Iterable {
