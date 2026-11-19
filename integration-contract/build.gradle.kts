@@ -17,6 +17,9 @@ val pinnedLegado by sourceSets.creating {
         "io/legado/app/model/analyzeRule/RuleAnalyzer.kt",
         "io/legado/app/model/analyzeRule/SourceHtmlParser.kt",
         "io/legado/app/model/analyzeRule/PinnedLegadoJsoupBridge.kt",
+        "io/legado/app/model/analyzeRule/AnalyzeByJSonPath.kt",
+        "io/legado/app/model/analyzeRule/PinnedLegadoJsonPathBridge.kt",
+        "io/legado/app/utils/PrintOnDebug.kt",
     )
 }
 
@@ -24,6 +27,7 @@ dependencies {
     add(pinnedLegado.implementationConfigurationName, "androidx.annotation:annotation:1.10.0")
     add(pinnedLegado.implementationConfigurationName, "org.jsoup:jsoup:1.23.2")
     add(pinnedLegado.implementationConfigurationName, "cn.wanghaomiao:JsoupXpath:2.5.3")
+    add(pinnedLegado.implementationConfigurationName, "com.jayway.jsonpath:json-path:3.0.0")
     implementation(pinnedLegado.output)
     implementation("com.google.code.gson:gson:2.14.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")

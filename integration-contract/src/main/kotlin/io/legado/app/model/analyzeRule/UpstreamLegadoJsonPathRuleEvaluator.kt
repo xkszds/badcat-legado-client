@@ -2,21 +2,18 @@ package io.legado.app.model.analyzeRule
 
 import com.google.gson.Gson
 
-/** Adapter for the pinned upstream AnalyzeByJSonPath rule semantics. */
+/** Adapter over the exact pinned upstream AnalyzeByJSonPath implementation. */
 object UpstreamLegadoJsonPathRuleEvaluator {
     fun getStringList(json: String, rule: String, onError: (Exception) -> Unit): List<String> =
-        AnalyzeByJSonPath(json, onError).getStringList(stripModePrefix(rule))
+        PinnedLegadoJsonPathBridge.getStringList(json, stripModePrefix(rule), onError)
 
     fun getElementList(json: String, rule: String, onError: (Exception) -> Unit): List<String> {
-        val analyzer = AnalyzeByJSonPath(json, onError)
         val normalizedRule = stripModePrefix(rule)
-        val list = analyzer.getList(normalizedRule)
+        val list = PinnedLegadoJsonPathBridge.getList(json, normalizedRule, onError)
         if (!list.isNullOrEmpty()) return list.map(::toElementString)
 
-        // Legado's init rule can select a single JSON object (for example
-        // "data.book"), not only a JSONPath array. getList() intentionally
-        // returns no entries for that shape, so preserve the upstream object.
-        val value = analyzer.getObject(normalizedRule)
+        // Legado init rules may select one JSON object rather than an array.
+        val value = PinnedLegadoJsonPathBridge.getObject(json, normalizedRule)
         return when (value) {
             is List<*> -> value.map(::toElementString)
             else -> listOf(toElementString(value))
