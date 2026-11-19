@@ -107,38 +107,43 @@ private fun sourceDescriptor(source: BookSource): Map<String, Any?> {
             }
         }
     }
+    // Imported source JSON is the authoritative complete BookSource object.
+    // Only identity and enabled state are overlaid from the runtime model;
+    // null/default model fields must not erase fields retained in rawJson.
     values["bookSourceUrl"] = source.id
     values["bookSourceName"] = source.name
-    values["bookSourceGroup"] = source.group
-    values["bookSourceType"] = source.sourceType
     values["enabled"] = source.enabled
-    values["enabledExplore"] = source.enabledExplore
-    values["enabledCookieJar"] = source.enabledCookieJar
-    values["header"] = source.header
-    values["jsLib"] = source.jsLib
-    values["loginUrl"] = source.loginUrl
-    values["loginUi"] = source.loginUi
-    values["loginCheckJs"] = source.loginCheckJs
-    values["coverDecodeJs"] = source.coverDecodeJs
-    values["bookUrlPattern"] = source.bookUrlPattern
-    values["bookSourceComment"] = source.bookSourceComment
-    values["variableComment"] = source.variableComment
-    values["exploreUrl"] = source.exploreUrl
-    values["exploreScreen"] = source.exploreScreen
-    values["lastUpdateTime"] = source.lastUpdateTime
-    values["respondTime"] = source.respondTime
-    values["weight"] = source.weight
-    values["searchUrl"] = source.searchUrl
-    values["ruleExplore"] = source.ruleExploreJson?.let(::parseSourceRuleObject)
-    values["ruleSearch"] = source.ruleSearchJson?.let(::parseSourceRuleObject)
-    values["ruleBookInfo"] = source.ruleBookInfoJson?.let(::parseSourceRuleObject)
-    values["ruleToc"] = source.ruleTocJson?.let(::parseSourceRuleObject)
-    values["ruleContent"] = source.ruleContentJson?.let(::parseSourceRuleObject)
-    values["ruleReview"] = source.ruleReviewJson?.let(::parseSourceRuleObject)
-    values["eventListener"] = source.eventListener
-    values["customButton"] = source.customButton
-    values["mainJs"] = source.mainJs
-    values["concurrentRate"] = source.concurrentRate
+    if (values.isEmpty()) {
+        values["bookSourceGroup"] = source.group
+        values["bookSourceType"] = source.sourceType
+        values["enabledExplore"] = source.enabledExplore
+        values["enabledCookieJar"] = source.enabledCookieJar
+        values["header"] = source.header
+        values["jsLib"] = source.jsLib
+        values["loginUrl"] = source.loginUrl
+        values["loginUi"] = source.loginUi
+        values["loginCheckJs"] = source.loginCheckJs
+        values["coverDecodeJs"] = source.coverDecodeJs
+        values["bookUrlPattern"] = source.bookUrlPattern
+        values["bookSourceComment"] = source.bookSourceComment
+        values["variableComment"] = source.variableComment
+        values["exploreUrl"] = source.exploreUrl
+        values["exploreScreen"] = source.exploreScreen
+        values["lastUpdateTime"] = source.lastUpdateTime
+        values["respondTime"] = source.respondTime
+        values["weight"] = source.weight
+        values["searchUrl"] = source.searchUrl
+        values["ruleExplore"] = source.ruleExploreJson?.let(::parseSourceRuleObject)
+        values["ruleSearch"] = source.ruleSearchJson?.let(::parseSourceRuleObject)
+        values["ruleBookInfo"] = source.ruleBookInfoJson?.let(::parseSourceRuleObject)
+        values["ruleToc"] = source.ruleTocJson?.let(::parseSourceRuleObject)
+        values["ruleContent"] = source.ruleContentJson?.let(::parseSourceRuleObject)
+        values["ruleReview"] = source.ruleReviewJson?.let(::parseSourceRuleObject)
+        values["eventListener"] = source.eventListener
+        values["customButton"] = source.customButton
+        values["mainJs"] = source.mainJs
+        values["concurrentRate"] = source.concurrentRate
+    }
     return values
 }
 
