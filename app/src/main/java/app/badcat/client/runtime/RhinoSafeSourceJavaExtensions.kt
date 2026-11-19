@@ -881,14 +881,14 @@ class RhinoSafeSourceJavaExtensions(
     }
 
     private fun parseRequestHeaders(headers: Any?): Map<String, String> {
-        val parsed = when (headers) {
+        val parsed: Map<String, String> = when (headers) {
             null -> emptyMap()
             is Scriptable -> {
                 val ids = headers.ids
                 require(ids.size <= MAX_HTTP_HEADER_COUNT) {
                     "HTTP headers exceed the $MAX_HTTP_HEADER_COUNT-field limit"
                 }
-                buildMap {
+                buildMap<String, String> {
                     ids.forEach { id ->
                         val name = id.toString()
                         val value = headers.get(name, headers)
