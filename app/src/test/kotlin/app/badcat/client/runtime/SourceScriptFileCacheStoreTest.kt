@@ -35,6 +35,7 @@ class SourceScriptFileCacheStoreTest {
         assertNull(store.getBytes("source-a", "shared"))
         assertArrayEquals(byteArrayOf(2), store.getBytes("source-b", "shared"))
     }
+
     @Test
     fun inMemoryStoreSeparatesSourceAndKeyValuesContainingNewlines() {
         val store = InMemorySourceScriptFileCacheStore
