@@ -78,11 +78,12 @@ class FileChapterContentCache(context: Context) : ChapterContentCache {
                 output.write(encoded)
                 output.flush()
                 target.finishWrite(output)
-                prune(target.baseFile)
             } catch (error: Exception) {
                 target.failWrite(output)
                 throw error
             }
+            // Pruning is best-effort and must never roll back a committed chapter.
+            runCatching { prune(target.baseFile) }
         }
     }
 
