@@ -4,17 +4,25 @@ import app.badcat.engine.EngineResult
 import app.badcat.engine.SourceHttpRequest
 import app.badcat.engine.SourceHttpResponse
 import app.badcat.engine.SourceRequestClient
+import okhttp3.OkHttp
+import org.junit.Before
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
 class SourceLoginSessionTest {
+    @Before
+    fun initializeOkHttpAndroidAssets() {
+        OkHttp.initialize(RuntimeEnvironment.getApplication())
+    }
+
     private class RecordingClient : SourceRequestClient {
         var lastRequest: SourceHttpRequest? = null
         override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
