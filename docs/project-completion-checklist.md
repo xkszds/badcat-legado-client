@@ -655,3 +655,10 @@ Open review items: verify the source key passed by the runtime is always the imp
 A final diff review caught an accidental self-recursive implementation in the new source-cookie-domain predicate. It was corrected in code commit `4fe83640cbaee4bbbb86875998838dd031ec1457`; the helper now compares the cookie domain to the source registrable domain or one of its subdomains. This correction is recorded explicitly rather than treating the earlier intermediate commit as valid.
 
 Current code head: `4fe83640cbaee4bbbb86875998838dd031ec1457`. Exact-head workflow run `44619521355` is pending. The earlier run `44619447738` (documentation head `e19fa8ab197e4cf6a56f48b42e50f80b3dbbad08`) was cancelled by the subsequent code correction and is not a test result. No test/build success is claimed yet. Review the exact-head job logs before accepting this increment.
+
+
+## 2026-11-20 exact-head CI failure and correction
+
+The exact-code-head workflow `44619521355` for `4fe83640cbaee4bbbb86875998838dd031ec1457` failed during `:app:compileDebugKotlin`: the default lambda for `sourceLoginCookieRemover` had three parameters while its declared callback accepts two. The contract tests and pinned Rhino artifact verification had passed; the Android host test task failed at compilation, so no host test suite or APK result is claimed for that run.
+
+Corrected the callback arity in code commit `4b6c485aa6934520dbc0665b6de6b69a85454608`. The previous failure is retained as a failure record, not overwritten. A new exact-head workflow must compile and run the full relevant tests before this implementation slice can be considered verified.
