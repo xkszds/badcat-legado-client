@@ -71,6 +71,19 @@ class RhinoSafeSourceJavaExtensionsTtfTest {
     }
 
     @Test
+    fun rejectsOversizedBase64FontInputBeforeDecoding() {
+        val extensions = RhinoSafeSourceJavaExtensions(
+            sourceId = "ttf-base64-size-fixture",
+            store = InMemorySourceScriptKeyValueStore,
+        )
+        val oversized = "A".repeat(12 * 1024 * 1024)
+        val error = org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            extensions.queryTTF(oversized)
+        }
+        assertTrue(error.message.orEmpty().contains("Base64 font data"))
+    }
+
+    @Test
     fun rejectsOversizedFontBytesBeforeParsing() {
         val extensions = RhinoSafeSourceJavaExtensions(
             sourceId = "ttf-size-fixture",
