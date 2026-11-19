@@ -178,11 +178,6 @@ class RhinoSourceScriptRuntime(
     private val sourceCookieReplacer: (sourceId: String, url: String, cookie: String) -> Unit = { _, _, _ ->
         throw UnsupportedOperationException("cookie.replaceCookie is not connected to the source cookie jar")
     },
-    private val sourceLoginCookieWriter: (sourceId: String, sourceKey: String, cookie: String) -> Unit = { _, _, _ ->
-        throw UnsupportedOperationException("source login Cookie is not connected to the source cookie jar")
-    },
-    private val sourceLoginCookieRemover: (sourceId: String, sourceKey: String) -> Unit = { _, _, _ -> },
-    private val sourceCookieClearer: (sourceId: String) -> Unit = { _ -> },
     private val sourceAjax: (source: BookSource, baseUrl: String, urlAndOptions: String) -> String = { _, _, _ -> throw UnsupportedOperationException("java.ajax is not connected to the source HTTP transport") },
     private val sourceGet: (source: BookSource, baseUrl: String, url: String, headers: Map<String, String>) -> SourceHttpResponse = { _, _, _, _ -> throw UnsupportedOperationException("java.get is not connected to the source HTTP transport") },
     private val sourceHttpRequest: (source: BookSource, baseUrl: String, method: String, url: String, body: String?, headers: Map<String, String>) -> SourceHttpResponse = { source, baseUrl, method, url, body, headers ->
@@ -201,6 +196,11 @@ class RhinoSourceScriptRuntime(
     private val androidIdProvider: () -> String = { throw UnsupportedOperationException("Android ID provider is not connected") },
     private val toastPresenter: (String, Boolean) -> Unit = { _, _ -> throw UnsupportedOperationException("Toast presenter is not connected") },
     private val sourceRateLimit: (BookSource, Boolean) -> Unit = { source, skip -> LegadoConcurrentRateLimiter.acquire(source.id, source.concurrentRate, skip) },
+    private val sourceLoginCookieWriter: (sourceId: String, sourceKey: String, cookie: String) -> Unit = { _, _, _ ->
+        throw UnsupportedOperationException("source login Cookie is not connected to the source cookie jar")
+    },
+    private val sourceLoginCookieRemover: (sourceId: String, sourceKey: String) -> Unit = { _, _, _ -> },
+    private val sourceCookieClearer: (sourceId: String) -> Unit = { _ -> },
 ) : SourceScriptRuntime {
     private val javaExtensions = ConcurrentHashMap<String, RhinoSafeSourceJavaExtensions>()
     private val sourceExtensions = ConcurrentHashMap<String, RhinoSourceLoginExtensions>()
