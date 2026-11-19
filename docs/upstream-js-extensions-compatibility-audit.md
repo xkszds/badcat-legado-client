@@ -782,3 +782,13 @@ Before further code edits, register this exact test harness correction: call okh
 - No APK delivery until CI artifacts are verified; physical-device install, complete Legado runtime and Badcat five-category parity remain separate gates.
 
 Self-review: this correction is strictly test-runtime resource wiring. It does not modify production PSL data/logic, the pinned upstream revision, OkHttp production version, cookie behavior, login state, or broaden the login/session feature scope.
+
+
+## 2026-11-20 preregistered correction — Gradle test-runtime configuration is created lazily
+
+- Exact code head `eb32dcc5b1b98a7297759126315c09473d035a3d`, Actions run `44628470076`: workflow stopped before tests because `configurations.named("debugUnitTestRuntimeClasspath")` was evaluated before Android Gradle Plugin had created that variant configuration. Error: `Configuration with name 'debugUnitTestRuntimeClasspath' not found.`
+- This is a build-script configuration timing defect; no unit tests ran, no APK was assembled, and no conclusions can be drawn about the OkHttp JVM PSL substitution yet.
+- Registered narrow correction: replace eager `configurations.named(...)` lookup with a lazy `configurations.configureEach` callback that applies the OkHttp Android-AAR exclusion only when the exact `debugUnitTestRuntimeClasspath` configuration is created. Keep `implementation("com.squareup.okhttp3:okhttp:5.4.0")` unchanged for production and keep `testRuntimeOnly("com.squareup.okhttp3:okhttp-jvm:5.4.0")`. Do not exclude OkHttp from production configurations or alter production login/domain behavior.
+- Before editing, verify the active branch remains `integration/legado-upstream-runtime`, inspect the full Gradle dependency/configuration context and all affected test imports/callers. After editing, verify the debug unit-test runtime resolves exactly one OkHttp implementation (JVM), production runtime remains the Android AAR, and the official PSL resource is available to unit tests.
+- Acceptance: focused login/session tests including multi-label eTLD+1 and unrelated CDN pass; full `:app:testDebugUnitTest`, `:integration-contract:test`, pinned Rhino artifact verification and `:app:assembleDebug` pass on the exact code head. Inspect JUnit reports, dependency graph, APK asset `assets/PublicSuffixDatabase.list` and merged AndroidX Startup initializer. Device install and broader Legado/five-category completion remain separate open gates.
+- Self-review: this is a build configuration timing correction within the previously registered test-only OkHttp substitution. It does not change production runtime semantics or expand the login/session feature scope.
