@@ -7,13 +7,29 @@ kotlin {
 }
 
 val pinnedLegado by sourceSets.creating {
-    // Keep the host's compatibility-adjusted copies isolated from the upstream
-    // source root. Adding the whole upstream tree here caused duplicate FQCNs
-    // whenever a pinned file had a platform adaptation.
-    java.srcDir("$projectDir/src/pinnedLegado/kotlin")
-    // The pinned source directory contains the selected upstream files,
-    // including the narrowly platform-adapted XPath/JSONPath copies. Do not
-    // also register the upstream app source root: it duplicates those FQCNs.
+    // Compile selected original files from the pinned upstream app tree.
+    java.srcDir("$rootDir/upstream/legado/app/src/main/java")
+    java.include(
+        "io/legado/app/model/analyzeRule/AnalyzeByJSoup.kt",
+        "io/legado/app/model/analyzeRule/AnalyzeByRegex.kt",
+        "io/legado/app/model/analyzeRule/RuleAnalyzer.kt",
+        "io/legado/app/model/analyzeRule/SourceHtmlParser.kt",
+    )
+    // Add only the platform-adapted upstream files from the isolated host tree.
+    // Keeping them out of java.srcDir prevents the upstream originals with the
+    // same FQCN from being compiled a second time.
+    tasks.named<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>("compilePinnedLegadoKotlin") {
+        source(fileTree("$projectDir/src/pinnedLegado/kotlin") {
+            include(
+                "io/legado/app/model/analyzeRule/AnalyzeByJSonPath.kt",
+                "io/legado/app/model/analyzeRule/AnalyzeByXPath.kt",
+                "io/legado/app/model/analyzeRule/PinnedLegadoJsoupBridge.kt",
+                "io/legado/app/model/analyzeRule/PinnedLegadoJsonPathBridge.kt",
+                "io/legado/app/model/analyzeRule/PinnedLegadoXPathBridge.kt",
+                "io/legado/app/utils/PrintOnDebug.kt",
+            )
+        })
+    }
     // AnalyzeRule's app-coupled lifecycle remains a separate integration task.
 }
 
