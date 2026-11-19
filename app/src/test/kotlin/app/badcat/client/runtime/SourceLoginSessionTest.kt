@@ -73,6 +73,41 @@ class SourceLoginSessionTest {
     }
 
     @Test
+    fun loginCookieHeaderIsSynchronizedAndRemovedWithLoginHeader() {
+        val writes = mutableListOf<Triple<String, String, String>>()
+        val removals = mutableListOf<Pair<String, String>>()
+        val bridge = RhinoSourceLoginExtensions(
+            sourceId = "source-cookie-A",
+            store = InMemorySourceLoginSessionStore,
+            sourceKey = "https://reader.example/source.json",
+            loginCookieWriter = { sourceId, sourceKey, cookie ->
+                writes += Triple(sourceId, sourceKey, cookie)
+            },
+            loginCookieRemover = { sourceId, sourceKey ->
+                removals += sourceId to sourceKey
+            },
+        )
+        bridge.putLoginHeader("""{"Authorization":"Bearer token","Cookie":"sid=abc; theme=dark"}""")
+        assertEquals(
+            listOf(Triple("source-cookie-A", "https://reader.example/source.json", "sid=abc; theme=dark")),
+            writes,
+        )
+        bridge.removeLoginHeader()
+        assertEquals(listOf("source-cookie-A" to "https://reader.example/source.json"), removals)
+    }
+
+    @Test
+    fun loginInfoCipherMatchesPinnedAndroidIdAesRoundTripAndRejectsBadKeyOrCiphertext() {
+        val androidId = "0123456789abcdef"
+        val plain = """{"username":"reader","token":"secret"}"""
+        val encrypted = SourceLoginInfoCipher.encrypt(plain, androidId)
+        assertTrue(encrypted != plain)
+        assertEquals(plain, SourceLoginInfoCipher.decrypt(encrypted, androidId))
+        assertTrue(runCatching { SourceLoginInfoCipher.encrypt(plain, "") }.isFailure)
+        assertTrue(runCatching { SourceLoginInfoCipher.decrypt("not-valid-ciphertext", androidId) }.isFailure)
+    }
+
+    @Test
     fun loginInfoAndHeaderCanBeReadBySeparateRhinoBridgeInstances() {
         val store = InMemorySourceLoginSessionStore
         RhinoSourceLoginExtensions("source-A", store).apply {
