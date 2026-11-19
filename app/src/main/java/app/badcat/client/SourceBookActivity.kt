@@ -796,6 +796,15 @@ class SourceChapterActivity : Activity() {
                     mainHandler.post {
                         if (isFinishing || isDestroyed) return@post
                         chapters = chapterList
+                        if (selected < 0 && chapterList.isNotEmpty()) {
+                            // Reading history/bookmarks can outlive a source's chapter URLs.
+                            // Recover against the current TOC instead of leaving the reader on a dead URL.
+                            currentIndex = -1
+                            currentChapterUrl = ""
+                            status.text = "保存的章节地址已失效，正在打开第一章…"
+                            loadChapterAt(0)
+                            return@post
+                        }
                         currentIndex = selected
                         previousButton.isEnabled = selected > 0
                         nextButton.isEnabled = selected >= 0 && selected < chapterList.lastIndex
