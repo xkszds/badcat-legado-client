@@ -98,7 +98,7 @@ class OkHttpSourceRequestClient(
             request.headers.forEach { (name, value) -> builder.header(name, value) }
 
             if (method !in BODY_FORBIDDEN_METHODS &&
-                request.body?.toByteArray(StandardCharsets.UTF_8)?.size?.toLong()?.let { it > maxRequestBytes } == true
+                request.body?.let(::utf8EncodedLength)?.let { it > maxRequestBytes } == true
             ) {
                 return EngineResult.Failure(
                     EngineErrorCode.INVALID_SOURCE,
@@ -291,6 +291,27 @@ class OkHttpSourceRequestClient(
     }
 }
 
+
+/** Count UTF-8 bytes without allocating a second copy of an untrusted source body. */
+internal fun utf8EncodedLength(value: String): Long {
+    var bytes = 0L
+    var index = 0
+    while (index < value.length) {
+        val char = value[index]
+        bytes += when {
+            char.code <= 0x7f -> 1
+            char.code <= 0x7ff -> 2
+            char.isHighSurrogate() && index + 1 < value.length && value[index + 1].isLowSurrogate() -> {
+                index++
+                4
+            }
+            char.isSurrogate() -> 1 // Java UTF-8 encoding replaces an unpaired surrogate with '?'
+            else -> 3
+        }
+        index++
+    }
+    return bytes
+}
 
 /** Defense in depth for callers that bypass SourceRequestFactory or merge login headers. */
 internal fun sourceRequestHeadersAreSafe(headers: Map<String, String>): Boolean {

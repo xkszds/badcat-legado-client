@@ -117,6 +117,15 @@ class OkHttpSourceRequestClientTest {
     }
 
     @Test
+    fun utf8EncodedLengthCountsSupplementaryAndUnpairedSurrogates() {
+        assertEquals(1L, utf8EncodedLength("a"))
+        assertEquals(2L, utf8EncodedLength("é"))
+        assertEquals(3L, utf8EncodedLength("中"))
+        assertEquals(4L, utf8EncodedLength("😀"))
+        assertEquals("�".toByteArray(StandardCharsets.UTF_8).size.toLong(), utf8EncodedLength("\uD800"))
+    }
+
+    @Test
     fun rejectsUtf8RequestBodiesByEncodedByteSizeBeforeBuildingRequestBody() = runBlocking {
         val result = OkHttpSourceRequestClient(maxRequestBytes = 4).execute(
             SourceHttpRequest(
