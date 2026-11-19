@@ -55,6 +55,19 @@ class RhinoSafeSourceJavaExtensionsCompatTest {
     }
 
     @Test
+    fun parseJsRequestHeadersBoundsCountAndValueSizes() {
+        assertThrows(IllegalArgumentException::class.java) {
+            extensions.parseJsRequestHeaders((0..100).associate { "X-$it" to "v" })
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            extensions.parseJsRequestHeaders(mapOf("X-Large" to "v".repeat(8 * 1024 + 1)))
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            extensions.parseJsRequestHeaders(" ".repeat(32 * 1024 + 1))
+        }
+    }
+
+    @Test
     fun parseJsRequestHeadersRejectsInvalidJsonAndUnsupportedTypes() {
         assertThrows(IllegalArgumentException::class.java) {
             extensions.parseJsRequestHeaders("[1,2]")

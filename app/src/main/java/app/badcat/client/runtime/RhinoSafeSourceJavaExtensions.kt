@@ -880,30 +880,66 @@ class RhinoSafeSourceJavaExtensions(
         }
     }
 
-    private fun parseRequestHeaders(headers: Any?): Map<String, String> = when (headers) {
-        null -> emptyMap()
-        is Scriptable -> buildMap {
-            headers.ids.forEach { id ->
-                val name = id.toString()
-                val value = headers.get(name, headers)
-                require(value != null) { "HTTP header names and values cannot be null" }
-                put(name, value.toString())
+    private fun parseRequestHeaders(headers: Any?): Map<String, String> {
+        val parsed = when (headers) {
+            null -> emptyMap()
+            is Scriptable -> {
+                val ids = headers.ids
+                require(ids.size <= MAX_HTTP_HEADER_COUNT) {
+                    "HTTP headers exceed the $MAX_HTTP_HEADER_COUNT-field limit"
+                }
+                buildMap {
+                    ids.forEach { id ->
+                        val name = id.toString()
+                        val value = headers.get(name, headers)
+                        require(value != null) { "HTTP header names and values cannot be null" }
+                        put(name, value.toString())
+                    }
+                }
+            }
+            is Map<*, *> -> {
+                require(headers.size <= MAX_HTTP_HEADER_COUNT) {
+                    "HTTP headers exceed the $MAX_HTTP_HEADER_COUNT-field limit"
+                }
+                headers.entries.associate { (key, value) ->
+                    require(key != null && value != null) { "HTTP header names and values cannot be null" }
+                    key.toString() to value.toString()
+                }
+            }
+            is String -> {
+                require(headers.length <= MAX_HTTP_HEADER_JSON_CHARS) {
+                    "HTTP header JSON exceeds the input size limit"
+                }
+                val json = runCatching { com.google.gson.JsonParser.parseString(headers) }
+                    .getOrElse { throw IllegalArgumentException("Invalid request header JSON", it) }
+                require(json.isJsonObject) { "HTTP headers must be a JSON object" }
+                require(json.asJsonObject.size() <= MAX_HTTP_HEADER_COUNT) {
+                    "HTTP headers exceed the $MAX_HTTP_HEADER_COUNT-field limit"
+                }
+                json.asJsonObject.entrySet().associate { (key, value) ->
+                    require(value.isJsonPrimitive) { "HTTP header values must be scalar" }
+                    key to value.asString
+                }
+            }
+            else -> throw IllegalArgumentException("HTTP headers must be an object or JSON string")
+        }
+        require(parsed.size <= MAX_HTTP_HEADER_COUNT) {
+            "HTTP headers exceed the $MAX_HTTP_HEADER_COUNT-field limit"
+        }
+        var totalChars = 0
+        parsed.forEach { (name, value) ->
+            require(name.isNotBlank() && name.length <= MAX_HTTP_HEADER_NAME_CHARS) {
+                "HTTP header name is blank or too long"
+            }
+            require(value.length <= MAX_HTTP_HEADER_VALUE_CHARS) {
+                "HTTP header value exceeds the size limit"
+            }
+            totalChars += name.length + value.length
+            require(totalChars <= MAX_HTTP_HEADER_TOTAL_CHARS) {
+                "HTTP headers exceed the total size limit"
             }
         }
-        is Map<*, *> -> headers.entries.associate { (key, value) ->
-            require(key != null && value != null) { "HTTP header names and values cannot be null" }
-            key.toString() to value.toString()
-        }
-        is String -> {
-            val json = runCatching { com.google.gson.JsonParser.parseString(headers) }
-                .getOrElse { throw IllegalArgumentException("Invalid request header JSON", it) }
-            require(json.isJsonObject) { "HTTP headers must be a JSON object" }
-            json.asJsonObject.entrySet().associate { (key, value) ->
-                require(value.isJsonPrimitive) { "HTTP header values must be scalar" }
-                key to value.asString
-            }
-        }
-        else -> throw IllegalArgumentException("HTTP headers must be an object or JSON string")
+        return parsed
     }
 
     /** Exact pinned JsExtensions alias used by request helpers. */
@@ -1402,6 +1438,11 @@ class RhinoSafeSourceJavaExtensions(
         private const val MAX_AJAX_ALL_URLS = 20
         private const val MAX_AJAX_ALL_INPUT_CHARS = 64 * 1024
         private const val MAX_AJAX_ALL_CONCURRENCY = 4
+        private const val MAX_HTTP_HEADER_COUNT = 100
+        private const val MAX_HTTP_HEADER_NAME_CHARS = 256
+        private const val MAX_HTTP_HEADER_VALUE_CHARS = 8 * 1024
+        private const val MAX_HTTP_HEADER_TOTAL_CHARS = 32 * 1024
+        private const val MAX_HTTP_HEADER_JSON_CHARS = 32 * 1024
         private const val MAX_KEY_CHARS = 256
         private const val MAX_VALUE_CHARS = 16 * 1024
         private const val MAX_AES_INPUT_BYTES = 2 * 1024 * 1024
