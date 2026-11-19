@@ -847,3 +847,9 @@ Re-read all five mandatory files and this registration; verify branch head again
 - Next code work remains within Stage 1 and must follow the model audit: no isolated/fake `BookSource` or `BaseSource`; inspect the exact pinned service/model graph and all host callers, keep Android Room/Parcelable concerns out of the JVM contract, retain raw JSON for unknown-field losslessness, and pre-register a narrower adapter slice before runtime edits.
 - Product parity remains separate: Badcat categories 1, 2, 4 and 5 are not completed by Legado category-3 progress. No full-client or final-APK claim is authorized.
 - Self-review: the earlier Stage 1 preregistration's branch baseline and “no runtime edits yet” label became stale after commit `5466caa`; this record explicitly supersedes those statements. Checklist scope remains valid, but the next implementation must respect the more specific Android model/service boundary in `upstream-model-serialization-audit.md`.
+
+## 2026-11-20 Stage 1 dependency cross-check — BaseSource boundary
+
+- Before closing Stage 1 model work, reconcile `BookSource : BaseSource` against this method/overload audit. `BaseSource` is a concrete runtime dependency surface, not a marker or a harmless interface shim; its inherited `JsExtensions`, source state, login, CookieStore, cache, shared JS scope and navigation context must be mapped to real host services.
+- No isolated BookSource integration, fake BaseSource implementation, empty context, no-op extension or `null` service injection is authorized by the model-stage registration. Record each dependency and caller in `upstream-model-serialization-audit.md`; only then register an implementation slice.
+- Baseline branch head: `eabbef43481e6c14b8bda6ea62f03c5213d1188d`; pinned upstream SHA remains `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
