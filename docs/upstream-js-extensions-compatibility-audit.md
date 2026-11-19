@@ -216,3 +216,11 @@ The host's current `RhinoLegadoSymmetricCrypto` is an allow-listed AES/DES CBC h
 - Preserve existing AES/DES script behavior while changing factory return type to an upstream-compatible Hutool object; audit all host callers and Rhino method visibility.
 - Next task (not yet implemented): add only the pinned Hutool/BC dependencies, vendor the exact three upstream crypto classes with the minimal exact Base64/isHex helper semantics, implement the full pinned `JsEncodeUtils` crypto factory/legacy method surface, and add upstream-behavior plus old-host regression tests. Verify RSA/signing and transformation support against the pinned dependency behavior; do not claim complete JS host compatibility from this slice.
 - Before code edits, run a complete repository grep for all crypto method names and current helper types, then update this audit/checklist if new callers or behavior conflicts are found.
+
+### Further host call-site/security review
+
+- Scanned all 23 Kotlin production files under `app/src/main/java/app/badcat/client/runtime/` and all 29 Kotlin test files under `app/src/test/` for the relevant crypto method/helper identifiers.
+- Existing dynamic source-rule call sites are in `RhinoSourceScriptRuntimeTest.kt`: AES `createSymmetricCrypto` round-trip, DES-CBC decryption, `aesBase64DecodeToString`, digest/HMAC, and JavaImporter AES boundary tests.
+- `RhinoSourceScriptRuntime.kt` binds the per-source bridge instance as `scope["java"]`; separately, `LEGADO_CRYPTO_COMPAT_JS` installs a narrow Packages/JavaImporter shim. Keep the JavaImporter boundary intact when adding upstream crypto factories.
+- `RhinoLegadoJsReplacementEvaluator.kt` independently implements digest/HMAC helpers; these are separate replacement-script semantics and must be regression-tested rather than silently redirected to the new Hutool bridge.
+- Remaining caller-search limitation: app UI directories, integration-contract, and legado-rhino have not been scanned. GitHub code search was incomplete, so no claim of a full repository grep is made.

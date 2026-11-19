@@ -131,3 +131,9 @@ The pinned upstream dependency coordinates are now verified: Hutool Crypto 5.8.2
 The host's current `createSymmetricCrypto` returns an AES/DES-CBC-only host facade, while the upstream factory returns a Hutool `SymmetricCrypto` backed by `SymmetricCryptoAndroid`. Existing runtime tests exercise AES and DES helper paths; the runtime binds the source-scoped helper object as `java`. Existing JavaImporter tests also enforce that general `Packages.javax.crypto` and arbitrary Java classes remain unavailable. These are mandatory regression/security constraints.
 
 **Next gate:** perform a complete repository grep for the factory/helper and all crypto API names before changing signatures. Then add the exact pinned dependencies and crypto classes, expose the upstream factories through the source-scoped `java` bridge only, preserve upstream legacy method quirks, and add Rhino/API/security regression tests. No runtime crypto implementation is claimed complete by this audit.
+
+### Additional host call-path findings
+
+All 23 Kotlin files under the app runtime package and all 29 app test Kotlin files were scanned for the relevant crypto method/helper identifiers. Existing dynamic source-script calls are in `RhinoSourceScriptRuntimeTest.kt`: AES/DES symmetric factory use, AES Base64 decoding, digest/HMAC helpers, and the restricted JavaImporter boundary. `RhinoSourceScriptRuntime.kt` binds the per-source `RhinoSafeSourceJavaExtensions` instance as `scope["java"]` and separately installs a narrow `LEGADO_CRYPTO_COMPAT_JS` Packages/JavaImporter shim. `RhinoLegadoJsReplacementEvaluator.kt` has its own digest/HMAC implementation and must be preserved/re-audited independently.
+
+This is not yet a full repository grep: app UI directories, integration-contract, and legado-rhino have not been scanned for the target identifiers. Do not change signatures or remove old helpers until that final scope is checked.

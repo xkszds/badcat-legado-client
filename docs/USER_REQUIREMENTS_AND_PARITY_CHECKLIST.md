@@ -298,3 +298,15 @@
 - [x] 清单已区分“依赖/源码审计完成”与“运行时代码完成”，没有将审计误标成 crypto 功能完成。
 - [x] 已将旧 helper、动态 Rhino 调用、JavaImporter 安全边界及上游历史 quirks 纳入风险。
 - [ ] 完整调用方 grep 和 Hutool Android 行为仍是代码实施前置条件；如后续发现清单遗漏，必须先改清单再编码。
+
+### 补充调用方审查（本轮继续核对）
+- [x] 已扫描 app/src/main/java/app/badcat/client/runtime 下全部 23 个 Kotlin 运行时源文件中的目标 crypto 标识符。
+- [x] 已扫描 app/src/test 下 29 个 Kotlin 测试文件中的目标 crypto 标识符；现有动态调用集中在 RhinoSourceScriptRuntimeTest.kt，覆盖 AES/DES factory、AES Base64 helper、digest/HMAC 和 JavaImporter 安全边界。
+- [x] 发现 RhinoLegadoJsReplacementEvaluator.kt 另有独立的 digestHex/digestBase64Str/HMacHex/HMacBase64 实现；它不调用 RhinoSafeSourceJavaExtensions 的 crypto factory，迁移时必须保持该替换运行时行为并纳入回归审查。
+- [x] 确认 RhinoSourceScriptRuntime.kt 通过 LEGADO_CRYPTO_COMPAT_JS 提供窄化的 JavaImporter/Packages shim，并将 source-scoped RhinoSafeSourceJavaExtensions 实例绑定为 scope["java"]；AES JavaImporter 限制必须保留。
+- [ ] 尚未完成 app UI 其他目录、integration-contract 与 legado-rhino 全仓范围的目标标识符 grep；GitHub code-search 的 incomplete_results=true 不能替代本地完整 grep。
+
+### 必读清单自审修正
+- [x] 将替换规则运行时的独立摘要/HMAC 实现补入旧调用方审查范围。
+- [x] 将 LEGADO_CRYPTO_COMPAT_JS 与 source-scoped java bridge 的分层关系补入安全边界要求。
+- [ ] 完整仓库 grep 仍是任何签名/返回类型变更前的阻塞项；不能因 app runtime 目录扫描完成就误标为全仓审计完成。
