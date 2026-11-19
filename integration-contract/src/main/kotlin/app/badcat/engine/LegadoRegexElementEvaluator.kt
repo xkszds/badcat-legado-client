@@ -209,13 +209,11 @@ object LegadoRegexElementEvaluator {
         val compiled = try {
             Pattern.compile(expression)
         } catch (_: Exception) {
-            val literal = if (replaceFirst) {
-                input.replaceFirst(expression, replacement)
-            } else {
-                input.replace(expression, replacement)
-            }
-            return if (literal.length <= MAX_OUTPUT_CHARACTERS) {
-                EngineResult.Success(literal)
+            // Pinned AnalyzeRule.replaceRegex returns the replacement string
+            // directly when replaceFirst is requested but the regex is invalid.
+            val fallback = if (replaceFirst) replacement else input.replace(expression, replacement)
+            return if (fallback.length <= MAX_OUTPUT_CHARACTERS) {
+                EngineResult.Success(fallback)
             } else {
                 EngineResult.Failure(
                     EngineErrorCode.UNSUPPORTED_RULE,
@@ -226,12 +224,29 @@ object LegadoRegexElementEvaluator {
         val started = System.nanoTime()
         val deadline = timeoutMilliseconds * 1_000_000L
         return try {
-            val matcher = compiled.matcher(DeadlineCharSequence(input, started, deadline))
-            val output = StringBuffer()
             if (replaceFirst) {
-                if (!matcher.find()) return EngineResult.Success(input)
-                matcher.appendReplacement(output, replacement)
+                val matcher = compiled.matcher(DeadlineCharSequence(input, started, deadline))
+                // Upstream returns an empty string when the first-match rule
+                // does not match, rather than preserving the original input.
+                if (!matcher.find()) return EngineResult.Success("")
+                val matchedText = matcher.group(0).orEmpty()
+                // AnalyzeRule applies Regex.replaceFirst to group(0), not to
+                // the whole input. Prefix and suffix text are intentionally
+                // discarded; this odd behavior is part of source compatibility.
+                val replaced = compiled.matcher(
+                    DeadlineCharSequence(matchedText, started, deadline),
+                ).replaceFirst(replacement)
+                if (replaced.length > MAX_OUTPUT_CHARACTERS) {
+                    EngineResult.Failure(
+                        EngineErrorCode.UNSUPPORTED_RULE,
+                        "Regex replacement output exceeds the configured limit",
+                    )
+                } else {
+                    EngineResult.Success(replaced)
+                }
             } else {
+                val matcher = compiled.matcher(DeadlineCharSequence(input, started, deadline))
+                val output = StringBuffer()
                 while (matcher.find()) {
                     matcher.appendReplacement(output, replacement)
                     if (output.length > MAX_OUTPUT_CHARACTERS) {
@@ -241,26 +256,23 @@ object LegadoRegexElementEvaluator {
                         )
                     }
                 }
-            }
-            // appendTail is required in both modes; without it replaceFirst
-            // silently truncates everything after the first match.
-            matcher.appendTail(output)
-            if (output.length > MAX_OUTPUT_CHARACTERS) {
-                EngineResult.Failure(
-                    EngineErrorCode.UNSUPPORTED_RULE,
-                    "Regex replacement output exceeds the configured limit",
-                )
-            } else {
-                EngineResult.Success(output.toString())
+                matcher.appendTail(output)
+                if (output.length > MAX_OUTPUT_CHARACTERS) {
+                    EngineResult.Failure(
+                        EngineErrorCode.UNSUPPORTED_RULE,
+                        "Regex replacement output exceeds the configured limit",
+                    )
+                } else {
+                    EngineResult.Success(output.toString())
+                }
             }
         } catch (timeout: RegexDeadlineExceeded) {
             EngineResult.Failure(EngineErrorCode.RULE_TIMEOUT, "Legado regex replacement exceeded its time budget", timeout)
         } catch (_: Exception) {
-            // Upstream falls back to literal replacement if regex replacement syntax fails.
-            EngineResult.Success(
-                if (replaceFirst) input.replaceFirst(expression, replacement)
-                else input.replace(expression, replacement),
-            )
+            // Match AnalyzeRule: invalid replacement syntax falls back to the
+            // raw replacement string for replaceFirst, but literal replacement
+            // for the all-matches form.
+            EngineResult.Success(if (replaceFirst) replacement else input.replace(expression, replacement))
         }
     }
 

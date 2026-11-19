@@ -206,9 +206,9 @@ class LegadoRegexElementEvaluatorTest {
     }
 
     @Test
-    fun regexReplaceFirstPreservesPrefixAndSuffixAndNoMatchReturnsOriginal() {
+    fun regexReplaceFirstReturnsOnlyMatchedReplacementAndNoMatchReturnsEmpty() {
         assertEquals(
-            "before X after two",
+            "X",
             assertIs<EngineResult.Success<String>>(
                 LegadoRegexElementEvaluator.replace(
                     "before one after two",
@@ -219,7 +219,7 @@ class LegadoRegexElementEvaluatorTest {
             ).value,
         )
         assertEquals(
-            "unchanged",
+            "",
             assertIs<EngineResult.Success<String>>(
                 LegadoRegexElementEvaluator.replace(
                     "unchanged",
@@ -232,9 +232,9 @@ class LegadoRegexElementEvaluatorTest {
     }
 
     @Test
-    fun invalidRegexReplaceFirstFallsBackToLiteralReplacement() {
+    fun invalidRegexReplaceFirstReturnsTheReplacementText() {
         assertEquals(
-            "before X after [",
+            "X",
             assertIs<EngineResult.Success<String>>(
                 LegadoRegexElementEvaluator.replace(
                     "before [ after [",
@@ -247,9 +247,9 @@ class LegadoRegexElementEvaluatorTest {
     }
 
     @Test
-    fun invalidReplacementGroupFallsBackToFirstLiteralOccurrence() {
+    fun invalidReplacementGroupReturnsTheRawReplacementText() {
         assertEquals(
-            "before $2 after a",
+            "$2",
             assertIs<EngineResult.Success<String>>(
                 LegadoRegexElementEvaluator.replace(
                     "before a after a",
@@ -273,5 +273,21 @@ class LegadoRegexElementEvaluatorTest {
         )
     }
 
+
+
+    @Test
+    fun firstReplacementUsesCaptureGroupsFromTheMatchedFragmentOnly() {
+        assertEquals(
+            "Alpha",
+            assertIs<EngineResult.Success<String>>(
+                LegadoRegexElementEvaluator.replace(
+                    "prefix Title: Alpha suffix",
+                    """Title:\s*(\w+)""",
+                    "$1",
+                    replaceFirst = true,
+                ),
+            ).value,
+        )
+    }
 
 }
