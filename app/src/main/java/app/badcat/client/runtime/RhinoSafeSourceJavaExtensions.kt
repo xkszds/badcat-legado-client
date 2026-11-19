@@ -20,6 +20,7 @@ import com.github.liuyueyi.quick.transfer.ChineseUtils as QuickChineseUtils
 import com.github.liuyueyi.quick.transfer.constants.TransType
 import app.badcat.engine.LegadoSourceElement
 import app.badcat.engine.LegadoSourceElementList
+import io.legado.app.model.analyzeRule.QueryTTF
 import app.badcat.engine.SourceHttpResponse
 import org.htmlunit.corejs.javascript.Scriptable
 import org.htmlunit.corejs.javascript.ScriptableObject
@@ -95,6 +96,84 @@ class RhinoSafeSourceJavaExtensions(
     fun longToast(msg: Any?) {
         toastPresenter("${sourceTag}: ${msg.toString()}", true)
     }
+
+    /**
+     * Parse a TrueType/OpenType font supplied as bytes, a source-cache file token,
+     * base64 text, or an HTTP(S) URL. Parsing is bounded and cached by content hash.
+     */
+    fun queryTTF(data: Any?): QueryTTF? = queryTTF(data, true)
+
+    fun queryBase64TTF(data: String?): QueryTTF? = queryTTF(data)
+
+    fun queryTTF(data: Any?, useCache: Boolean): QueryTTF? {
+        val bytes = when (data) {
+            is ByteArray -> data
+            is String -> {
+                if (data.isBlank()) return null
+                if (data.startsWith("http://", true) || data.startsWith("https://", true)) {
+                    requireHttpUrlLength(data)
+                    rateLimit(false)
+                    val response = httpGet(data, emptyMap())
+                    if (response.statusCode !in 200..299) return null
+                    response.bodyBytes ?: response.body.toByteArray(Charsets.UTF_8)
+                } else {
+                    readFile(data) ?: run {
+                        val encoded = data.substringAfter("base64,", data)
+                        base64DecodeToByteArray(encoded) ?: return null
+                    }
+                }
+            }
+            else -> return null
+        }
+        require(bytes.isNotEmpty()) { "Font data is empty" }
+        require(bytes.size <= MAX_FONT_BYTES) { "Font data exceeds the 8 MiB limit" }
+        val key = java.security.MessageDigest.getInstance("SHA-256")
+            .digest(bytes)
+            .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
+        if (useCache) synchronized(queryTtfCache) {
+            queryTtfCache[key]?.let { return it }
+        }
+        val parsed = QueryTTF(bytes)
+        if (useCache) synchronized(queryTtfCache) {
+            queryTtfCache[key] = parsed
+        }
+        return parsed
+    }
+
+    /** Replace obfuscated-font code points using the pinned Legado glyph mapping algorithm. */
+    fun replaceFont(
+        text: String,
+        errorQueryTTF: QueryTTF?,
+        correctQueryTTF: QueryTTF?,
+        filter: Boolean,
+    ): String {
+        if (errorQueryTTF == null || correctQueryTTF == null) return text
+        val output = StringBuilder(text.length)
+        val iterator = text.codePoints().iterator()
+        while (iterator.hasNext()) {
+            val oldCode = iterator.nextInt()
+            if (errorQueryTTF.isBlankUnicode(oldCode)) {
+                output.appendCodePoint(oldCode)
+                continue
+            }
+            var glyph = errorQueryTTF.getGlyfByUnicode(oldCode)
+            if (errorQueryTTF.getGlyfIdByUnicode(oldCode) == 0) glyph = null
+            if (glyph == null) {
+                if (!filter) output.appendCodePoint(oldCode)
+                continue
+            }
+            val replacementCode = correctQueryTTF.getUnicodeByGlyf(glyph)
+            if (replacementCode != 0) output.appendCodePoint(replacementCode)
+            else if (!filter) output.appendCodePoint(oldCode)
+        }
+        return output.toString()
+    }
+
+    fun replaceFont(
+        text: String,
+        errorQueryTTF: QueryTTF?,
+        correctQueryTTF: QueryTTF?,
+    ): String = replaceFont(text, errorQueryTTF, correctQueryTTF, false)
 
     /** Matches the pinned JsExtensions default outside a contentBatch execution. */
     fun getBatchContext(): Any? = null
@@ -1491,6 +1570,11 @@ class RhinoSafeSourceJavaExtensions(
         private const val MAX_VALUE_CHARS = 16 * 1024
         private const val MAX_AES_INPUT_BYTES = 2 * 1024 * 1024
         private const val MAX_DOWNLOAD_BYTES = 8 * 1024 * 1024
+        private const val MAX_FONT_BYTES = 8 * 1024 * 1024
+        private val queryTtfCache = object : LinkedHashMap<String, QueryTTF>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, QueryTTF>?): Boolean =
+                size > 64
+        }
         const val MAX_ARCHIVE_ENTRY_BYTES = 16 * 1024 * 1024
         private const val DOWNLOAD_FILE_PREFIX = "__legado_download__:"
         private const val VIRTUAL_FILE_PREFIX = "__legado_virtual_file__:"
