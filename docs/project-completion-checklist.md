@@ -830,3 +830,11 @@ Re-read all five mandatory files and this registration; verify branch head again
 - Next code work remains within Stage 1 and must follow the model audit: no isolated/fake `BookSource` or `BaseSource`; inspect the exact pinned service/model graph and all host callers, keep Android Room/Parcelable concerns out of the JVM contract, retain raw JSON for unknown-field losslessness, and pre-register a narrower adapter slice before runtime edits.
 - Product parity remains separate: Badcat categories 1, 2, 4 and 5 are not completed by Legado category-3 progress. No full-client or final-APK claim is authorized.
 - Self-review: the earlier Stage 1 preregistration's branch baseline and “no runtime edits yet” label became stale after commit `5466caa`; this record explicitly supersedes those statements. Checklist scope remains valid, but the next implementation must respect the more specific Android model/service boundary in `upstream-model-serialization-audit.md`.
+
+## 2026-11-20 Stage 1 model audit continuation (registered)
+
+- [ ] Reconcile pinned upstream `BookSource`, `Book`, `BookChapter`, `BaseSource` and nested rules against the host contract/codec/catalog/callers field by field.
+- [ ] Document official defaults, nullability, identity/equality, converters, transient fields, Room/Parcelable dependencies and service dependencies.
+- [ ] Trace every impacted caller and test; retain source identity and chapter index identity semantics.
+- [ ] Register a separate bounded code task only after the audit establishes a real Android-side integration boundary. No simplified look-alike official models, fake BaseSource, no-op methods, or UI regressions.
+- Audit baseline: branch `integration/legado-upstream-runtime`, head `eabbef43481e6c14b8bda6ea62f03c5213d1188d`; upstream SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`. This is an audit gate, not a feature completion.
