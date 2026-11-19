@@ -1589,26 +1589,55 @@ text + re.test('aa}}')"""
         val key = "0123456789abcdef".toByteArray(Charsets.UTF_8)
         val crypto = RhinoBoundedSymmetricCryptoAndroid("AES/ECB/NoPadding", key)
         val base64LimitInput = ByteArray(1_572_864) { (it % 251).toByte() }
+        val base64LimitText = "a".repeat(1_572_864)
+        val base64OverLimitText = base64LimitText + "a".repeat(16)
         val hexLimitInput = ByteArray(1_048_576) { (it % 251).toByte() }
+        val hexLimitText = "a".repeat(1_048_576)
+        val hexOverLimitText = hexLimitText + "a".repeat(16)
 
+        // Base64: exact 2 MiB encoded-string boundary for every supported input overload.
         assertEquals(2 * 1024 * 1024, crypto.encryptBase64(base64LimitInput).length)
-        assertEquals(2 * 1024 * 1024, crypto.encryptHex(hexLimitInput).length)
+        assertEquals(2 * 1024 * 1024, crypto.encryptBase64(base64LimitText).length)
+        assertEquals(2 * 1024 * 1024, crypto.encryptBase64(base64LimitText, "UTF-8").length)
+        assertEquals(2 * 1024 * 1024, crypto.encryptBase64(base64LimitText, Charsets.UTF_8).length)
+        assertEquals(2 * 1024 * 1024, crypto.encryptBase64(ByteArrayInputStream(base64LimitInput)).length)
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            crypto.encryptBase64(base64LimitInput + ByteArray(16))
+        }
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            crypto.encryptBase64(base64OverLimitText)
+        }
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            crypto.encryptBase64(base64OverLimitText, "UTF-8")
+        }
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            crypto.encryptBase64(base64OverLimitText, Charsets.UTF_8)
+        }
         org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
             crypto.encryptBase64(ByteArrayInputStream(base64LimitInput + ByteArray(16)))
         }
-        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
-            crypto.encryptHex("a".repeat(1_048_592))
-        }
 
-        val small = "encoded overload fixture"
-        assertTrue(crypto.encryptBase64(small).isNotEmpty())
-        assertTrue(crypto.encryptBase64(small, "UTF-8").isNotEmpty())
-        assertTrue(crypto.encryptBase64(small, Charsets.UTF_8).isNotEmpty())
-        assertTrue(crypto.encryptBase64(ByteArrayInputStream(small.toByteArray())).isNotEmpty())
-        assertTrue(crypto.encryptHex(small).isNotEmpty())
-        assertTrue(crypto.encryptHex(small, "UTF-8").isNotEmpty())
-        assertTrue(crypto.encryptHex(small, Charsets.UTF_8).isNotEmpty())
-        assertTrue(crypto.encryptHex(ByteArrayInputStream(small.toByteArray())).isNotEmpty())
+        // Hex: exact 2 MiB encoded-string boundary for every supported input overload.
+        assertEquals(2 * 1024 * 1024, crypto.encryptHex(hexLimitInput).length)
+        assertEquals(2 * 1024 * 1024, crypto.encryptHex(hexLimitText).length)
+        assertEquals(2 * 1024 * 1024, crypto.encryptHex(hexLimitText, "UTF-8").length)
+        assertEquals(2 * 1024 * 1024, crypto.encryptHex(hexLimitText, Charsets.UTF_8).length)
+        assertEquals(2 * 1024 * 1024, crypto.encryptHex(ByteArrayInputStream(hexLimitInput)).length)
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            crypto.encryptHex(hexLimitInput + ByteArray(16))
+        }
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            crypto.encryptHex(hexOverLimitText)
+        }
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            crypto.encryptHex(hexOverLimitText, "UTF-8")
+        }
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            crypto.encryptHex(hexOverLimitText, Charsets.UTF_8)
+        }
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            crypto.encryptHex(ByteArrayInputStream(hexLimitInput + ByteArray(16)))
+        }
 
         assertEquals(
             2 * 1024 * 1024,

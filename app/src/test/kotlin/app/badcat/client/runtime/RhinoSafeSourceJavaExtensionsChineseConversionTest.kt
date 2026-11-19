@@ -22,6 +22,18 @@ class RhinoSafeSourceJavaExtensionsChineseConversionTest {
         assertEquals("多士", extensions.t2s("多士"))
     }
     @Test
+    fun loadsPinnedUpstreamExclusionTermsAndKeepsRepeatedConversionsStable() {
+        val excludedTerms = listOf("多士", "雪梨", "菲林", "馬鈴薯", "魔獸紀元")
+        repeat(3) {
+            excludedTerms.forEach { term ->
+                assertEquals("Pinned Legado exclusion changed for $term", term, extensions.t2s(term))
+            }
+        }
+        assertEquals("繁体中文", extensions.t2s("繁體中文"))
+        assertEquals("繁体中文", extensions.t2s("繁體中文"))
+    }
+
+    @Test
     fun exposesImportedSourceTagAndReadOnlyMetadataToScripts() {
         val source = RhinoSafeSourceJavaExtensions(
             sourceId = "https://reader.example/source.json",
