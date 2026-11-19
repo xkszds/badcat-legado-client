@@ -146,7 +146,7 @@ object LegadoBookSourceCodec {
         }
         val duplicateIds = sources.groupingBy { it.sourceId }.eachCount().filterValues { it > 1 }.keys
         require(duplicateIds.isEmpty()) {
-            "Duplicate bookSourceUrl values: \${duplicateIds.joinToString()}"
+            "Duplicate bookSourceUrl values: ${duplicateIds.joinToString()}"
         }
         val array = JsonArray()
         sources.forEach { source ->

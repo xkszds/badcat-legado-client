@@ -323,9 +323,10 @@ class LegadoBookSourceCodecTest {
         assertFailsWith<IllegalArgumentException> {
             LegadoBookSourceCodec.encode(List(LegadoBookSourceCodec.MAX_SOURCES + 1) { source })
         }
-        assertFailsWith<IllegalArgumentException> {
+        val duplicateError = assertFailsWith<IllegalArgumentException> {
             LegadoBookSourceCodec.encode(listOf(source, source))
         }
+        assertTrue(duplicateError.message.orEmpty().contains(source.sourceId))
     }
 
 
