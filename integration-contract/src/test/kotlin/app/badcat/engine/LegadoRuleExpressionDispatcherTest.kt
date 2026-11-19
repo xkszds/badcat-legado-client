@@ -349,4 +349,21 @@ class LegadoRuleExpressionDispatcherTest {
         )
     }
 
+
+    @Test
+    fun recursivelyCombinesMixedPinnedOperatorsAfterTrimmingEachBranch() {
+        val document = SourceDocument(
+            url = "https://reader.example/",
+            body = """<ul><li>A</li></ul><p>B</p><section><b>C</b></section>""",
+        )
+        val result = LegadoRuleExpressionDispatcher.evaluateElements(
+            document,
+            """@CSS: ul > li && @CSS: p || @CSS: section > b""",
+        )
+        assertEquals(
+            listOf("<li>A</li>", "<p>B</p>"),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
 }
