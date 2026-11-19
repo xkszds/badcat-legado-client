@@ -199,3 +199,10 @@ Additional method-level observations from the business DEX:
 - The existing client model now exposes a helper that builds the verified one-item JSON payload for each stored mark rule. This helper does not call JavaScript or remove DOM nodes.
 
 Implementation boundary remains unchanged: the client still lacks the original page-side `onDeleteAd` implementation and the full `getInfoFromJS` page script. Do not substitute guessed CSS selectors, `querySelector` deletion, or a fabricated JavaScript snippet. A faithful deletion adapter requires an authorized page-script fixture or further verified source evidence.
+
+
+### Synthetic reader-origin injection boundary (2026-11-19)
+
+The reader renders local chapter HTML through WebView `loadDataWithBaseURL` using the reserved synthetic origin `https://reader.invalid/<version>/`. Its page-finished callback also reaches the purification adapter. A stored remote-page injection script must not execute against this local document merely because the synthetic base URL uses HTTPS. The URL policy now rejects the reserved `.invalid` namespace, with regression coverage for the apex and subdomain forms.
+
+This closes only the synthetic-origin injection boundary. It does not implement the original page-side AdMark bridge, `getInfoFromJS`, or `onDeleteAd` DOM behavior.

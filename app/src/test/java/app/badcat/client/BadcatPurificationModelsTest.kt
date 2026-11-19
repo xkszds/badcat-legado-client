@@ -175,6 +175,8 @@ class BadcatPurificationModelsTest {
             "https://user:password@reader.example/page",
             "http://",
             "https://reader.example:invalid/page",
+            "https://reader.invalid/1/",
+            "https://chapter.reader.invalid/1/",
         ).forEach { url ->
             assertNull(BadcatPurificationUrlPolicy.injectionForPage(enabled, url))
         }

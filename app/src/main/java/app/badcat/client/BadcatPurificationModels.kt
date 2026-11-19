@@ -248,8 +248,11 @@ object BadcatPurificationUrlPolicy {
     fun injectionForPage(snapshot: BadcatPurificationSnapshot, pageUrl: String): String? {
         val uri = runCatching { URI(pageUrl) }.getOrNull() ?: return null
         val scheme = uri.scheme?.lowercase()
+        val host = uri.host?.lowercase()
         if ((scheme != "http" && scheme != "https") ||
-            uri.host.isNullOrBlank() ||
+            host.isNullOrBlank() ||
+            host == "invalid" ||
+            host.endsWith(".invalid") ||
             uri.rawUserInfo != null
         ) return null
         return injectionForPage(snapshot)
