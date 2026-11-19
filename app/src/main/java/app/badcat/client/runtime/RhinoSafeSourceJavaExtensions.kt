@@ -119,6 +119,9 @@ class RhinoSafeSourceJavaExtensions(
                 } else {
                     readFile(data) ?: run {
                         val encoded = data.substringAfter("base64,", data)
+                        require(encoded.length <= MAX_FONT_BASE64_CHARS) {
+                            "Base64 font data exceeds the 8 MiB decoded-size limit"
+                        }
                         base64DecodeToByteArray(encoded) ?: return null
                     }
                 }
@@ -1574,9 +1577,10 @@ class RhinoSafeSourceJavaExtensions(
         private const val MAX_AES_INPUT_BYTES = 2 * 1024 * 1024
         private const val MAX_DOWNLOAD_BYTES = 8 * 1024 * 1024
         private const val MAX_FONT_BYTES = 8 * 1024 * 1024
+        private const val MAX_FONT_BASE64_CHARS = ((MAX_FONT_BYTES + 2) / 3) * 4 + 256
         private val queryTtfCache = object : LinkedHashMap<String, QueryTTF>(16, 0.75f, true) {
             override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, QueryTTF>?): Boolean =
-                size > 64
+                size > 8
         }
         const val MAX_ARCHIVE_ENTRY_BYTES = 16 * 1024 * 1024
         private const val DOWNLOAD_FILE_PREFIX = "__legado_download__:"
