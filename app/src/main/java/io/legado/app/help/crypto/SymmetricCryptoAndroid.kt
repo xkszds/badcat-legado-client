@@ -10,7 +10,7 @@ import java.io.InputStream
 import java.nio.charset.Charset
 
 @Keep
-class SymmetricCryptoAndroid(algorithm: String, key: ByteArray?) : SymmetricCrypto(algorithm, key) {
+open class SymmetricCryptoAndroid(algorithm: String, key: ByteArray?) : SymmetricCrypto(algorithm, key) {
     override fun encryptBase64(data: ByteArray): String = EncoderUtils.base64Encode(encrypt(data))
     override fun encryptBase64(data: String, charset: String?): String = EncoderUtils.base64Encode(encrypt(data, charset))
     override fun encryptBase64(data: String, charset: Charset?): String = EncoderUtils.base64Encode(encrypt(data, charset))

@@ -252,3 +252,11 @@ The host's current `RhinoLegadoSymmetricCrypto` is an allow-listed AES/DES CBC h
 - Before proceeding, add a bounded subclass/wrapper for the upstream `SymmetricCryptoAndroid`, `AsymmetricCrypto` and `Sign` surfaces. Preserve algorithms, overloads and upstream transformations; cap data/key material and results at 2 MiB, including InputStreams, without closing caller-owned streams.
 - Add exact-limit/over-limit and stream forward-progress tests while retaining AES/DES/3DES/RSA/signature tests and the JavaImporter sandbox.
 - This omission was not captured in the first implementation checklist; the checklist is corrected here before the next runtime edit.
+
+
+### Crypto resource-boundary implementation delta
+
+- The previous 2 MiB host resource boundary is now preserved around the upstream Hutool objects: bounded symmetric subclass, bounded asymmetric wrapper and bounded Sign wrapper.
+- InputStreams are bounded during reads, zero-progress reads fall back to a single-byte read, and caller-owned streams are not closed.
+- The `java.createSymmetricCrypto` bridge constructs the bounded upstream-compatible subclass; supported algorithms/transformation behavior is not reduced to the former AES/DES-only list.
+- Added exact-limit, over-limit, output-overflow, stream, asymmetric-key and signature-input tests. Verification is pending CI.

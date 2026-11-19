@@ -200,3 +200,10 @@
 
 - Diff review found the removed AES/DES host facade's 2 MiB data bound was not yet preserved around the newly exposed Hutool objects. A bounded wrapper for symmetric/asymmetric/signature operations is now registered before further code edits.
 - Category 3 crypto migration remains pending CI and safety-boundary correction. Other categories remain unchanged.
+
+
+## 2026-11-19 category 3 crypto resource-boundary follow-up
+
+- Preserved the old 2 MiB host crypto data boundary around the newly integrated upstream Hutool symmetric/asymmetric/signature APIs using bounded wrappers; algorithm support remains upstream-compatible.
+- Added InputStream forward-progress/no-close and exact/over-limit regression coverage. CI verification is pending.
+- Categories 1, 2, 4 and 5 remain unchanged and incomplete.

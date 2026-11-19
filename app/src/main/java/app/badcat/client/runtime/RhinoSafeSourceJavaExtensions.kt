@@ -5,7 +5,6 @@ import android.util.Base64 as AndroidBase64
 import cn.hutool.crypto.symmetric.SymmetricCrypto
 import io.legado.app.help.crypto.AsymmetricCrypto
 import io.legado.app.help.crypto.Sign
-import io.legado.app.help.crypto.SymmetricCryptoAndroid
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.security.MessageDigest

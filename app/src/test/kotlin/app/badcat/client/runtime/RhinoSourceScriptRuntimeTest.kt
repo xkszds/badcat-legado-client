@@ -12,6 +12,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Base64
+import java.io.ByteArrayInputStream
+import java.io.InputStream
+import io.legado.app.help.crypto.AsymmetricCrypto
+import io.legado.app.help.crypto.Sign
+import io.legado.app.help.crypto.RhinoBoundedSymmetricCryptoAndroid
 import java.security.KeyPairGenerator
 import java.util.concurrent.atomic.AtomicInteger
 import javax.crypto.Cipher
@@ -1514,7 +1519,54 @@ text + re.test('aa}}')"""
             var bytePlain = byteCrypto.decryptStr(byteCipher);
             randomPlain + '|' + stringPlain + '|' + bytePlain;
         """.trimIndent())
-        assertTrue("Pinned symmetric overloads failed: $result", result is EngineResult.Success)
+        assertTrue("Pinned symmetric overloads f    @Test
+    fun preservesCryptoTwoMibibyteBoundsAndInputStreamProgress() {
+        val key = "0123456789abcdef".toByteArray(Charsets.UTF_8)
+        val crypto = RhinoBoundedSymmetricCryptoAndroid("AES/ECB/NoPadding", key)
+        val exact = ByteArray(2 * 1024 * 1024) { (it % 251).toByte() }
+        val encrypted = crypto.encrypt(exact)
+        assertEquals(exact.size, encrypted.size)
+        org.junit.Assert.assertArrayEquals(exact, crypto.decrypt(encrypted))
+
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            crypto.encrypt(ByteArray(2 * 1024 * 1024 + 1))
+        }
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            crypto.encrypt(ByteArrayInputStream(ByteArray(2 * 1024 * 1024 + 1)))
+        }
+
+        val padded = RhinoBoundedSymmetricCryptoAndroid("AES/ECB/PKCS5Padding", key)
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            padded.encrypt(ByteArray(2 * 1024 * 1024))
+        }
+
+        val sourceBytes = "stream-progress!".toByteArray(Charsets.UTF_8)
+        val zeroProgressStream = object : InputStream() {
+            private val delegate = ByteArrayInputStream(sourceBytes)
+            private var firstBulkRead = true
+            override fun read(): Int = delegate.read()
+            override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+                if (firstBulkRead) {
+                    firstBulkRead = false
+                    return 0
+                }
+                return delegate.read(buffer, offset, length)
+            }
+        }
+        val streamEncrypted = crypto.encrypt(zeroProgressStream)
+        org.junit.Assert.assertArrayEquals(sourceBytes, crypto.decrypt(ByteArrayInputStream(streamEncrypted)))
+
+        val asymmetric = AsymmetricCrypto("RSA")
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            asymmetric.setPublicKey(ByteArray(2 * 1024 * 1024 + 1))
+        }
+        val signer = Sign("SHA256withRSA")
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            signer.sign(ByteArray(2 * 1024 * 1024 + 1))
+        }
+    }
+
+ailed: $result", result is EngineResult.Success)
         assertEquals("random key fixture|string key fixture|byte key fixture", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }

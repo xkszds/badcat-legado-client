@@ -376,3 +376,13 @@
 ### Self-review correction
 - [x] The prior implementation checklist did not explicitly carry forward the old facade's 2 MiB crypto data limit. This omission is corrected here before any further runtime code change.
 - [ ] Do not proceed to BaseSource/BookSource until this bounded-wrapper gate and the current crypto CI are resolved.
+
+
+## 2026-11-19 crypto resource-boundary implementation (verification pending)
+
+- [x] Added a host-owned bounded subclass around pinned `SymmetricCryptoAndroid`; symmetric encrypt/decrypt now caps byte-array, string-decoded and InputStream data/results at the previous 2 MiB boundary.
+- [x] Added bounded InputStream reading with zero-progress fallback and no close of caller-owned streams.
+- [x] Applied equivalent 2 MiB data/key/output checks to the upstream asymmetric wrapper and `Sign` wrapper while retaining the full Hutool algorithm surface.
+- [x] Updated the source-scoped `createSymmetricCrypto` factory to construct the bounded upstream-compatible subclass; no AES/DES-only transformation allow-list was reintroduced.
+- [x] Added exact-limit, over-limit, output-overflow, InputStream forward-progress, asymmetric key and signature-input tests.
+- [ ] Current-head CI, Android provider/D8/R8 behavior and full Rhino regression remain pending; do not mark the crypto slice complete until results are inspected.

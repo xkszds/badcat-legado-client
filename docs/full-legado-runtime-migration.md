@@ -165,3 +165,10 @@ Regression tests were added for AES legacy helpers and historical quirks, DES/3D
 Post-implementation diff review found a security/resource regression risk: the removed host-only symmetric facade enforced a 2 MiB input/output cap, while a raw Hutool object is unbounded. The separate JavaImporter AES helper remains bounded but does not protect `createSymmetricCrypto` return objects.
 
 Before any further runtime code edit, add a host-owned bounded wrapper/subclass around the pinned Hutool crypto objects. Preserve the upstream algorithm and method surface, but cap byte/string/InputStream input and output at the prior 2 MiB boundary; read caller-owned streams without closing them and guarantee forward progress. Apply equivalent bounds to asymmetric encryption and signing/verification. Add exact-limit/over-limit, stream, old crypto behavior and sandbox regression tests. This is a corrective host safety layer, not a return to the former AES/DES-only algorithm restriction.
+
+
+## 2026-11-19 bounded crypto host adapter (verification pending)
+
+The follow-up safety review is implemented: the upstream Hutool-backed symmetric object is now wrapped by `RhinoBoundedSymmetricCryptoAndroid`, preserving the upstream algorithm/method surface while retaining the former 2 MiB data/result limit. A shared bounded stream reader handles zero-progress reads and never closes caller-owned streams. The `AsymmetricCrypto` and `Sign` wrappers now apply the same data/key/signature bounds. The source bridge constructs the bounded symmetric subclass; it does not restore the old AES/DES-only transformation restriction.
+
+Tests cover exact-limit AES/NoPadding, over-limit input, padding-induced output overflow, oversized InputStreams, zero-progress stream behavior, asymmetric key bounds and signature input bounds. CI/provider verification is pending.

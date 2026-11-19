@@ -274,3 +274,10 @@
 
 - Review of the new Hutool crypto object identified that the prior 2 MiB host crypto input/output bound must be retained around the full upstream object surface. The separate JavaImporter AES cap does not cover Hutool factory objects.
 - The corrective bounded-wrapper task is registered in the Legado checklist before further code edits. The crypto increment remains unverified and is not complete.
+
+
+## 2026-11-19 Legado crypto resource-boundary implementation (pending verification)
+
+- Added host-owned 2 MiB bounded wrappers for symmetric, asymmetric and signing operations while retaining the pinned upstream Hutool API surface and algorithm support.
+- Bounded InputStream reads handle zero-progress and do not close caller-owned streams. Added exact-limit and over-limit regression tests.
+- The JavaImporter AES sandbox remains separate and unchanged. CI and Android provider/runtime verification are pending.
