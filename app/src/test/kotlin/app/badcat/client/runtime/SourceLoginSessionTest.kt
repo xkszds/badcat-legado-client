@@ -108,6 +108,35 @@ class SourceLoginSessionTest {
     }
 
     @Test
+    fun legacyPlainLoginInfoMigratesNonDestructivelyAndOnlyOnce() {
+        val androidId = "0123456789abcdef"
+        val legacy = """{"username":"reader","token":"old"}"""
+        var persisted = legacy
+        val firstRead = SourceLoginInfoCipher.readStored(persisted, androidId) { persisted = it }
+        assertEquals(legacy, firstRead)
+        assertTrue(persisted != legacy)
+        val encryptedAfterMigration = persisted
+        val secondRead = SourceLoginInfoCipher.readStored(persisted, androidId) { persisted = it }
+        assertEquals(legacy, secondRead)
+        assertEquals(encryptedAfterMigration, persisted)
+    }
+
+    @Test
+    fun missingAndroidIdPreservesLegacyLoginInfoAndMalformedCiphertextIsNotReturned() {
+        val legacy = """{"token":"keep"}"""
+        var migrationAttempted = false
+        assertEquals(
+            legacy,
+            SourceLoginInfoCipher.readStored(legacy, "") { migrationAttempted = true },
+        )
+        assertEquals(false, migrationAttempted)
+        assertEquals(
+            null,
+            SourceLoginInfoCipher.readStored("%%%not-ciphertext%%%", "0123456789abcdef") {},
+        )
+    }
+
+    @Test
     fun loginInfoAndHeaderCanBeReadBySeparateRhinoBridgeInstances() {
         val store = InMemorySourceLoginSessionStore
         RhinoSourceLoginExtensions("source-A", store).apply {
