@@ -4,30 +4,18 @@ import app.badcat.engine.EngineResult
 import app.badcat.engine.SourceHttpRequest
 import app.badcat.engine.SourceHttpResponse
 import app.badcat.engine.SourceRequestClient
-import okhttp3.OkHttp
 import okhttp3.internal.publicsuffix.PublicSuffixDatabase
-import okhttp3.internal.platform.Platform
-import org.junit.Before
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
 class SourceLoginSessionTest {
-    @Before
-    fun initializeOkHttpAndroidAssets() {
-        // Robolectric may load OkHttp's platform or PSL singleton before this test's context exists.
-        // Reset both, then initialize the Android application context before the first PSL lookup.
-        Platform.resetForTests()
-        OkHttp.initialize(RuntimeEnvironment.getApplication())
-    }
-
     private class RecordingClient : SourceRequestClient {
         var lastRequest: SourceHttpRequest? = null
         override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
@@ -72,11 +60,7 @@ class SourceLoginSessionTest {
         val delegate = RecordingClient()
         val client = SourceLoginSessionRequestClient(delegate, store)
 
-        val directSuffix = try {
-            PublicSuffixDatabase.get().getEffectiveTldPlusOne("www.example.co.uk")
-        } catch (failure: Throwable) {
-            throw AssertionError("OkHttp public-suffix asset lookup failed in the Robolectric test", failure)
-        }
+        val directSuffix = PublicSuffixDatabase.get().getEffectiveTldPlusOne("www.example.co.uk")
         assertEquals("example.co.uk", directSuffix)
         assertEquals("example.co.uk", legadoSourceDomain(sourceKey))
         assertEquals("example.co.uk", legadoSourceDomain("https://cdn.example.co.uk/cover.jpg"))
