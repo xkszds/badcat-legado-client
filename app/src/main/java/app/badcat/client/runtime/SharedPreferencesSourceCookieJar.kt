@@ -30,7 +30,7 @@ internal fun parseLoginCookieHeader(url: HttpUrl, raw: String): List<Cookie> {
 }
 
 internal fun sourceCookieBelongsToDomain(cookie: Cookie, sourceDomain: String): Boolean =
-    sourceCookieBelongsToDomain(cookie, sourceDomain)
+    cookie.domain == sourceDomain || cookie.domain.endsWith(".$sourceDomain")
 
 internal fun sourceCookieStorageKey(cookie: Cookie): String =
     "${cookie.domain}|${cookie.path}|${cookie.name}|${cookie.hostOnly}"
