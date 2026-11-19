@@ -172,3 +172,8 @@ Before any further runtime code edit, add a host-owned bounded wrapper/subclass 
 The follow-up safety review is implemented: the upstream Hutool-backed symmetric object is now wrapped by `RhinoBoundedSymmetricCryptoAndroid`, preserving the upstream algorithm/method surface while retaining the former 2 MiB data/result limit. A shared bounded stream reader handles zero-progress reads and never closes caller-owned streams. The `AsymmetricCrypto` and `Sign` wrappers now apply the same data/key/signature bounds. The source bridge constructs the bounded symmetric subclass; it does not restore the old AES/DES-only transformation restriction.
 
 Tests cover exact-limit AES/NoPadding, over-limit input, padding-induced output overflow, oversized InputStreams, zero-progress stream behavior, asymmetric key bounds and signature input bounds. CI/provider verification is pending.
+
+
+## 2026-11-19 post-commit bridge/test audit correction gate
+
+Diff review after the bounded-wrapper increment found two wiring defects before verification: `createSymmetricCrypto` still constructed the unbounded upstream class instead of the registered bounded subclass, and the bounded regression test had been inserted into the preceding overload test assertion, corrupting the Kotlin source. The next edit must correct the bridge factory to validate key/IV and instantiate `RhinoBoundedSymmetricCryptoAndroid`, then replace the malformed test section with two separate complete test methods. Re-inspect the exact diff and run CI; the current crypto increment is not verified.

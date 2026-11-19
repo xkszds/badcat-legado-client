@@ -260,3 +260,10 @@ The host's current `RhinoLegadoSymmetricCrypto` is an allow-listed AES/DES CBC h
 - InputStreams are bounded during reads, zero-progress reads fall back to a single-byte read, and caller-owned streams are not closed.
 - The `java.createSymmetricCrypto` bridge constructs the bounded upstream-compatible subclass; supported algorithms/transformation behavior is not reduced to the former AES/DES-only list.
 - Added exact-limit, over-limit, output-overflow, stream, asymmetric-key and signature-input tests. Verification is pending CI.
+
+
+### Post-commit correction required before crypto verification
+
+- The bridge's `createSymmetricCrypto` still instantiates `SymmetricCryptoAndroid`; the bounded wrapper is not yet wired. Correct the factory and key/IV checks.
+- The bounded test insertion corrupted the preceding overload test assertion. Rebuild that test section cleanly.
+- This is a review finding, not a passing test. The next code edit must correct both defects before relying on CI.

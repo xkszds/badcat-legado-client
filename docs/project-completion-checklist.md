@@ -281,3 +281,9 @@
 - Added host-owned 2 MiB bounded wrappers for symmetric, asymmetric and signing operations while retaining the pinned upstream Hutool API surface and algorithm support.
 - Bounded InputStream reads handle zero-progress and do not close caller-owned streams. Added exact-limit and over-limit regression tests.
 - The JavaImporter AES sandbox remains separate and unchanged. CI and Android provider/runtime verification are pending.
+
+
+## 2026-11-19 crypto wiring/test correction (pending)
+
+- Post-commit review found the factory still returning an unbounded crypto object and a malformed adjacent Kotlin test insertion. Both are registered for correction before any verification claim.
+- Crypto implementation remains pending; no successful CI for the current crypto code is claimed.

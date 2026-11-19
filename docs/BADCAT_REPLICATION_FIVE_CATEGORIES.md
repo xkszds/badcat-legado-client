@@ -207,3 +207,8 @@
 - Preserved the old 2 MiB host crypto data boundary around the newly integrated upstream Hutool symmetric/asymmetric/signature APIs using bounded wrappers; algorithm support remains upstream-compatible.
 - Added InputStream forward-progress/no-close and exact/over-limit regression coverage. CI verification is pending.
 - Categories 1, 2, 4 and 5 remain unchanged and incomplete.
+
+
+## 2026-11-19 category 3 crypto review correction
+
+- Review found the bounded wrapper was not yet wired into the source bridge and a test insertion damaged adjacent Kotlin syntax. Correct both before marking crypto integration verified.

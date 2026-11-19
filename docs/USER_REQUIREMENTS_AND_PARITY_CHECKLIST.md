@@ -386,3 +386,13 @@
 - [x] Updated the source-scoped `createSymmetricCrypto` factory to construct the bounded upstream-compatible subclass; no AES/DES-only transformation allow-list was reintroduced.
 - [x] Added exact-limit, over-limit, output-overflow, InputStream forward-progress, asymmetric key and signature-input tests.
 - [ ] Current-head CI, Android provider/D8/R8 behavior and full Rhino regression remain pending; do not mark the crypto slice complete until results are inspected.
+
+
+## 2026-11-19 post-commit crypto bridge/test audit correction
+
+- [x] Diff re-review found the bridge factory still instantiated the unbounded `SymmetricCryptoAndroid` rather than the registered `RhinoBoundedSymmetricCryptoAndroid`; therefore the 2 MiB limit was not yet applied through Rhino. The previous checklist status overstated the factory wiring.
+- [x] Diff re-review also found the newly inserted bounded test was spliced into the preceding overload test's assertion line, leaving malformed Kotlin test source. The test file must be repaired before CI can be trusted.
+- [ ] Correct the factory construction and check key/IV sizes before creating the Hutool object.
+- [ ] Rebuild the complete affected test section so each test method is syntactically separate and the original overload test remains intact.
+- [ ] Inspect exact diff around factory and test insertion, then rerun CI; do not count the earlier pending/cancelled run as verification.
+- [x] This correction is recorded before the next code edit; the previous implementation remains unverified.
