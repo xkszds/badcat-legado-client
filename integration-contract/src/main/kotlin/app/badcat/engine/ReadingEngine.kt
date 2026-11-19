@@ -96,7 +96,12 @@ data class BookSource(
     val loginUrl: String? = null,
     val loginUi: String? = null,
     val loginCheckJs: String? = null,
+    val coverDecodeJs: String? = null,
+    val bookUrlPattern: String? = null,
+    val bookSourceComment: String? = null,
+    val variableComment: String? = null,
     val exploreUrl: String? = null,
+    val exploreScreen: String? = null,
     val searchUrl: String? = null,
     val mainJs: String? = null,
     /** Raw JSON objects for upstream nested rule models; not executable by this contract. */
@@ -105,6 +110,9 @@ data class BookSource(
     val ruleBookInfoJson: String? = null,
     val ruleTocJson: String? = null,
     val ruleContentJson: String? = null,
+    val ruleReviewJson: String? = null,
+    val eventListener: Boolean = false,
+    val customButton: Boolean = false,
     /** Full upstream JSON, including rule fields not yet mapped by the host. */
     val rawJson: String? = null,
     /** Legado per-source request limit: N/M requests per M milliseconds, or M for 1/M. */

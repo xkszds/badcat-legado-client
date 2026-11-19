@@ -59,6 +59,14 @@ class LegadoBookSourceCodecTest {
               "ruleToc": {"chapterList": "a.chapter"},
               "ruleContent": {"content": "#content"},
               "mainJs": "function search() { return []; }",
+              "coverDecodeJs": "function decode(x) { return x; }",
+              "bookUrlPattern": "https://reader.example/book/*",
+              "bookSourceComment": "source note",
+              "variableComment": "token: access token",
+              "exploreScreen": "category",
+              "eventListener": true,
+              "customButton": false,
+              "ruleReview": {"reviewList":"div.review"},
               "concurrentRate": "2/500",
               "futureField": {"keep": true}
             }
@@ -85,6 +93,14 @@ class LegadoBookSourceCodecTest {
         assertEquals("typeof login === 'function'", engineSource.loginCheckJs)
         assertEquals("https://reader.example/lib.js", engineSource.jsLib)
         assertEquals("function search() { return []; }", engineSource.mainJs)
+        assertEquals("function decode(x) { return x; }", engineSource.coverDecodeJs)
+        assertEquals("https://reader.example/book/*", engineSource.bookUrlPattern)
+        assertEquals("source note", engineSource.bookSourceComment)
+        assertEquals("token: access token", engineSource.variableComment)
+        assertEquals("category", engineSource.exploreScreen)
+        assertTrue(engineSource.eventListener)
+        assertEquals(false, engineSource.customButton)
+        assertTrue(engineSource.ruleReviewJson!!.contains("reviewList"))
         assertTrue(engineSource.ruleSearchJson!!.contains("div.book"))
         assertTrue(engineSource.ruleContentJson!!.contains("#content"))
 
