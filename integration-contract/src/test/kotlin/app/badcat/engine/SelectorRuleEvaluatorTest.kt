@@ -14,6 +14,23 @@ class SelectorRuleEvaluatorTest {
     }
 
     @Test
+    fun cssDispatchUsesPinnedLegadoCssSemantics() {
+        val document = SourceDocument(
+            "https://example.test/",
+            """<ul class="books"><li>Alpha</li><li>Beta</li></ul>""",
+        )
+        val result = SelectorRuleEvaluator.evaluate(
+            document,
+            SelectorRuleType.CSS,
+            "ul.books@tag.li@text",
+        )
+        assertEquals(
+            listOf("Alpha", "Beta"),
+            assertIs<EngineResult.Success<List<String>>>(result).value,
+        )
+    }
+
+    @Test
     fun dispatchesXPathRules() {
         val document = SourceDocument("https://example.test/", "<p>Alpha</p>")
         val result = SelectorRuleEvaluator.evaluate(document, SelectorRuleType.XPATH, "//p/text()")

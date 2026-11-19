@@ -1,5 +1,7 @@
 package app.badcat.engine
 
+import io.legado.app.model.analyzeRule.UpstreamLegadoCssRuleEvaluator
+
 /** Explicit rule type avoids guessing CSS/XPath/JSONPath from ambiguous syntax. */
 enum class SelectorRuleType {
     CSS,
@@ -14,7 +16,21 @@ object SelectorRuleEvaluator {
         type: SelectorRuleType,
         expression: String,
     ): EngineResult<List<String>> = when (type) {
-        SelectorRuleType.CSS -> CssRuleEvaluator.evaluate(document, expression)
+        SelectorRuleType.CSS -> runCatching {
+            EngineResult.Success(
+                UpstreamLegadoCssRuleEvaluator.getStringList(
+                    document.body,
+                    document.url,
+                    expression,
+                ),
+            )
+        }.getOrElse { error ->
+            EngineResult.Failure(
+                EngineErrorCode.PARSE,
+                "Pinned Legado CSS evaluation failed: " + (error.message ?: error::class.java.simpleName),
+                error,
+            )
+        }
         SelectorRuleType.XPATH -> XPathRuleEvaluator.evaluate(document, expression)
         SelectorRuleType.JSON_PATH -> JsonPathRuleEvaluator.evaluate(document, expression)
     }
