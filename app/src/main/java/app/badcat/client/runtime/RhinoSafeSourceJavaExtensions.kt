@@ -874,7 +874,9 @@ class RhinoSafeSourceJavaExtensions(
                     } catch (error: Exception) {
                         if (error is kotlin.coroutines.cancellation.CancellationException) throw error
                         // Gateway adapters may wrap the original transport exception.
-                        val cause = generateSequence(error as Throwable?) { it.cause }.last()
+                        // Gateway adapters may expose nested causes. Bound traversal so a
+                        // malformed cyclic cause chain cannot hang this batch worker.
+                        val cause = generateSequence(error as Throwable?) { it.cause }.take(16).last()
                         val code = when (cause) {
                             is java.net.SocketTimeoutException -> -2
                             is java.net.UnknownHostException -> -3

@@ -45,6 +45,34 @@ class RhinoSafeSourceJavaExtensionsCompatTest {
     }
 
     @Test
+    fun ajaxTestAllMapsNestedTransportCausesToUpstreamErrorCodes() {
+        val guarded = RhinoSafeSourceJavaExtensions(
+            sourceId = "ajax-test-nested-cause-fixture",
+            store = InMemorySourceScriptKeyValueStore,
+            httpRequestWithTimeout = { _, _, _, _, _ ->
+                throw IllegalStateException("gateway wrapper", java.net.SocketTimeoutException("read timed out"))
+            },
+        )
+        val response = guarded.ajaxTestAll(listOf("https://example.com/"), timeout = 100).single()
+        assertEquals(-2, response.callTime())
+    }
+
+    @Test
+    fun ajaxTestAllBoundsCyclicTransportCauseTraversal() {
+        val first = IllegalStateException("first")
+        val second = IllegalArgumentException("second")
+        first.initCause(second)
+        second.initCause(first)
+        val guarded = RhinoSafeSourceJavaExtensions(
+            sourceId = "ajax-test-cyclic-cause-fixture",
+            store = InMemorySourceScriptKeyValueStore,
+            httpRequestWithTimeout = { _, _, _, _, _ -> throw first },
+        )
+        val response = guarded.ajaxTestAll(listOf("https://example.com/"), timeout = 100).single()
+        assertEquals(-7, response.callTime())
+    }
+
+    @Test
     fun legacyAjaxRejectsOversizedUrlBeforeCallingTransport() {
         var called = false
         val guarded = RhinoSafeSourceJavaExtensions(

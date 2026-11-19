@@ -164,3 +164,11 @@
 - Guarded reader background callbacks against updating activities after they are finishing/destroyed.
 - Run [#44426131263](https://github.com/xkszds/badcat-legado-client/actions/runs/44426131263) passed cache-pruner regression tests, contract/Rhino suites and Debug APK assembly. Run [#44426760656](https://github.com/xkszds/badcat-legado-client/actions/runs/44426760656) exposed a return-type inference issue in the chapter cache; an explicit `Unit` was added.
 - Current code head: `802bb3bbe9a797e12f103ee8b9fc622ab4d116f4`. Run [#44427488271](https://github.com/xkszds/badcat-legado-client/actions/runs/44427488271), code head `bf790b0f912ee7a5d14abd41b100d4d585cd444d`, passed contract tests, bounded Rhino tests and Debug APK assembly; best-effort uploaded-corpus reading was still running at last inspection. This run predates the newest saved-progress/lifecycle UI commits.
+
+
+## 2026-11-19 bounded ajaxTestAll error-cause traversal
+
+- Audited the pinned upstream `JsExtensions.kt` and `AnalyzeUrl.kt` at `330e606c4d57e08adc056ff8ab7a4132c784da9a`; confirmed the upstream test-mode transport mapping: timeout `-2`, unknown host `-3`, connect `-4`, socket `-5`, SSL `-6`, configured call-timeout `-1`, other I/O `-7`.
+- Found that the host adapter walked `Throwable.cause` with an unbounded sequence. A cyclic cause graph supplied by a gateway wrapper could keep an `ajaxTestAll` worker stuck indefinitely. Cause traversal is now capped at 16 links; nested SocketTimeoutException and cyclic-cause regressions were added.
+- Previous head `cacf216c3b65e11695260b8a73e138be74b22296` CI run [#44485135456](https://github.com/xkszds/badcat-legado-client/actions/runs/44485135456): contract tests passed; Android/Rhino test task was blocked before test execution because Maven Central returned HTTP 429 resolving `me.zhanghai.android.libarchive:library:1.1.6`. This is an external dependency-rate-limit failure, not a test assertion failure. Re-run verification after this increment.
+- This is a defensive correction in Legado category 3 only. Full `JsExtensions`, `AnalyzeUrl`, WebView/DNS, upstream model/pipeline integration and Badcat categories 1, 2, 4 and 5 remain incomplete.

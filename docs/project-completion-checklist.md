@@ -195,3 +195,11 @@
 - Guarded reader background callbacks against updating activities after they are finishing/destroyed.
 - Run [#44426131263](https://github.com/xkszds/badcat-legado-client/actions/runs/44426131263) passed cache-pruner regression tests, contract/Rhino suites and Debug APK assembly. Run [#44426760656](https://github.com/xkszds/badcat-legado-client/actions/runs/44426760656) exposed a return-type inference issue in the chapter cache; an explicit `Unit` was added.
 - Current code head: `802bb3bbe9a797e12f103ee8b9fc622ab4d116f4`. Run [#44427488271](https://github.com/xkszds/badcat-legado-client/actions/runs/44427488271), code head `bf790b0f912ee7a5d14abd41b100d4d585cd444d`, passed contract tests, bounded Rhino tests and Debug APK assembly; best-effort uploaded-corpus reading was still running at last inspection. This run predates the newest saved-progress/lifecycle UI commits.
+
+
+## 2026-11-19 source-runtime compatibility follow-up
+
+- Bounded `ajaxTestAll` exception-cause traversal to 16 links to prevent a cyclic Throwable cause chain from hanging a batch worker. Added tests for nested SocketTimeoutException mapping (`-2`) and cyclic cause fallback (`-7`).
+- Upstream reference: pinned `JsExtensions.kt` / `AnalyzeUrl.kt` at `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- Previous head `cacf216c3b65e11695260b8a73e138be74b22296` CI run [#44485135456](https://github.com/xkszds/badcat-legado-client/actions/runs/44485135456): contract tests passed; :app test task did not execute because Maven Central returned HTTP 429 for `me.zhanghai.android.libarchive:library:1.1.6`. Retry verification after the current commit.
+- The fix is category 3 only; full product parity remains incomplete.
