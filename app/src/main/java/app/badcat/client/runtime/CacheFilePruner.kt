@@ -13,16 +13,16 @@ internal fun pruneCacheFiles(
     protectedFile: File? = null,
 ) {
     require(maxBytes >= 0) { "Cache budget must not be negative" }
-    val cacheFiles = files.filter(File::isFile)
-    var total = cacheFiles.sumOf(File::length)
+    val cacheFiles = files.filter { it.isFile }
+    var total = cacheFiles.sumOf { it.length() }
     if (total <= maxBytes) return
 
-    cacheFiles.asSequence()
+    for (file in cacheFiles.asSequence()
         .filterNot { it == protectedFile }
-        .sortedBy(File::lastModified)
-        .forEach { file ->
-            if (total <= maxBytes) return
-            val size = file.length()
-            if (file.delete()) total -= size
-        }
+        .sortedBy { it.lastModified() }
+    ) {
+        if (total <= maxBytes) break
+        val size = file.length()
+        if (file.delete()) total -= size
+    }
 }
