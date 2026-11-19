@@ -22,6 +22,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -56,6 +57,15 @@ internal fun boundedScriptResultValues(value: Any?, maxItems: Int): List<Any?>? 
     }
     require(values.size <= maxItems) { "Source JavaScript array result exceeds the item limit" }
     return values
+}
+
+
+/** Separate the physical source file namespace from the shared app cache directory. */
+internal fun sourcePhysicalCacheDirectory(root: java.io.File, sourceId: String): java.io.File {
+    val digest = MessageDigest.getInstance("SHA-256")
+        .digest(sourceId.toByteArray(Charsets.UTF_8))
+        .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
+    return java.io.File(root, "legado_source_$digest")
 }
 
 class RhinoSourceScriptRuntime(
@@ -332,7 +342,7 @@ class RhinoSourceScriptRuntime(
                     contentWriter = { content -> currentRuleContent = content },
                     baseUrlWriter = { baseUrl -> if (!baseUrl.isNullOrBlank()) currentRuleBaseUrl = baseUrl },
                     fileStore = sourceFileCacheStore,
-                    fileRoot = sourceFileRoot,
+                    fileRoot = sourceFileRoot?.let { sourcePhysicalCacheDirectory(it, source.id) },
                     webViewUserAgent = webViewUserAgent,
                     functionInvoker = { action -> RhinoScriptEngine.callSourceFunction(action, scope) },
                 )
@@ -445,7 +455,22 @@ class RhinoSourceScriptRuntime(
             cacheExtensions.remove(sourceId)?.clear()
             sourceKeyValueStore.clearSource(sourceId)
             sourceFileCacheStore.clearSource(sourceId)
+            clearPhysicalSourceCache(sourceId)
             sourceLoginSessionStore.clearSource(sourceId)
+        }
+    }
+
+    private fun clearPhysicalSourceCache(sourceId: String) {
+        val root = sourceFileRoot ?: return
+        val target = sourcePhysicalCacheDirectory(root, sourceId)
+        runCatching {
+            if (java.nio.file.Files.isSymbolicLink(target.toPath())) {
+                java.nio.file.Files.deleteIfExists(target.toPath())
+            } else {
+                val canonicalRoot = root.canonicalFile
+                val canonicalTarget = target.canonicalFile
+                if (canonicalTarget.parentFile == canonicalRoot) target.deleteRecursively()
+            }
         }
     }
 

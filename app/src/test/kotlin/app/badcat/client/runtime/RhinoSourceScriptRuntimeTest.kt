@@ -57,6 +57,43 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun physicalSourceFilesAreIsolatedAndClearedPerSource() = runBlocking {
+        val root = java.nio.file.Files.createTempDirectory("rhino-source-isolation").toFile()
+        try {
+            val runtime = RhinoSourceScriptRuntime(sourceFileRoot = root)
+            val first = BookSource(
+                id = "https://same-cache.example/first",
+                name = "First source",
+                baseUrl = "https://same-cache.example/",
+            )
+            val second = first.copy(
+                id = "https://same-cache.example/second",
+                name = "Second source",
+            )
+
+            val firstWrite = runtime.evaluate(first, "java.getFile('shared.txt').writeText('first')")
+            val secondWrite = runtime.evaluate(second, "java.getFile('shared.txt').writeText('second')")
+            assertTrue(firstWrite is EngineResult.Success)
+            assertTrue(secondWrite is EngineResult.Success)
+
+            val firstRead = runtime.evaluate(first, "java.getFile('shared.txt').readText()")
+            val secondRead = runtime.evaluate(second, "java.getFile('shared.txt').readText()")
+            assertEquals("first", (firstRead as EngineResult.Success).value)
+            assertEquals("second", (secondRead as EngineResult.Success).value)
+
+            runtime.clearSourceState(first.id)
+
+            val secondAfterClear = runtime.evaluate(second, "java.getFile('shared.txt').readText()")
+            assertEquals("second", (secondAfterClear as EngineResult.Success).value)
+            assertTrue(sourcePhysicalCacheDirectory(root, first.id).exists().not())
+            assertTrue(sourcePhysicalCacheDirectory(root, second.id).isDirectory)
+            runtime.clearSourceState(second.id)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun exposesConfinedFileHandleWithoutExposingJavaIoFile() = runBlocking {
         val root = java.nio.file.Files.createTempDirectory("rhino-source-file").toFile()
         try {
