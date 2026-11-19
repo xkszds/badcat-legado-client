@@ -1,6 +1,8 @@
 package app.badcat.engine
 
 import io.legado.app.model.analyzeRule.UpstreamLegadoCssRuleEvaluator
+import io.legado.app.model.analyzeRule.UpstreamLegadoJsonPathRuleEvaluator
+import io.legado.app.model.analyzeRule.UpstreamLegadoXPathRuleEvaluator
 
 /** Explicit rule type avoids guessing CSS/XPath/JSONPath from ambiguous syntax. */
 enum class SelectorRuleType {
@@ -32,7 +34,15 @@ object SelectorRuleEvaluator {
                 error,
             )
         }
-        SelectorRuleType.XPATH -> XPathRuleEvaluator.evaluate(document, expression)
-        SelectorRuleType.JSON_PATH -> JsonPathRuleEvaluator.evaluate(document, expression)
+        SelectorRuleType.XPATH -> runCatching {
+            EngineResult.Success(UpstreamLegadoXPathRuleEvaluator.getStringList(document.body, document.url, expression))
+        }.getOrElse { error ->
+            EngineResult.Failure(EngineErrorCode.PARSE, "Pinned Legado XPath evaluation failed: " + (error.message ?: error::class.java.simpleName), error)
+        }
+        SelectorRuleType.JSON_PATH -> runCatching {
+            EngineResult.Success(UpstreamLegadoJsonPathRuleEvaluator.getStringList(document.body, expression) { })
+        }.getOrElse { error ->
+            EngineResult.Failure(EngineErrorCode.PARSE, "Pinned Legado JSONPath evaluation failed: " + (error.message ?: error::class.java.simpleName), error)
+        }
     }
 }
