@@ -28,7 +28,7 @@ object CssRuleEvaluator {
             return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "CSS rule is blank")
         }
         return runCatching {
-            val outerSplit = RuleExpressionTokenizer.splitByFirstTopLevelOperator(rule)
+            val outerSplit = PinnedLegadoRuleAnalyzer.split(rule)
             var firstFailure: EngineResult.Failure? = null
             val combined = RuleCombinationEvaluator.evaluateNested(rule) { part ->
                 when (val result = evaluateSingle(document, part, allowChainedSelectors = !explicitCss)) {
