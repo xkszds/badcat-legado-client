@@ -8,7 +8,12 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], manifest = Config.NONE)
 class SourceLoginSessionTest {
     private class RecordingClient : SourceRequestClient {
         var lastRequest: SourceHttpRequest? = null
@@ -53,6 +58,10 @@ class SourceLoginSessionTest {
         store.putLoginHeader(sourceKey, """{"Authorization":"Bearer secret"}""")
         val delegate = RecordingClient()
         val client = SourceLoginSessionRequestClient(delegate, store)
+
+        assertEquals("example.co.uk", legadoSourceDomain(sourceKey))
+        assertEquals("example.co.uk", legadoSourceDomain("https://cdn.example.co.uk/cover.jpg"))
+        assertEquals("third-party-cdn.net", legadoSourceDomain("https://third-party-cdn.net/cover.jpg"))
 
         client.execute(SourceHttpRequest(sourceKey, "https://cdn.example.co.uk/cover.jpg"))
         assertEquals("Bearer secret", delegate.lastRequest?.headers?.get("Authorization"))
