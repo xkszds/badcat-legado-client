@@ -88,7 +88,7 @@ class AnalyzeByJSonPath(
                         result.add(obj.toString())
                     }
                 } catch (e: Exception) {
-                    onError?.invoke(e) ?: e.printOnDebug()
+                    onError?.invoke(e)
                 }
             } else {
                 result.add(st)
@@ -138,7 +138,7 @@ class AnalyzeByJSonPath(
                 try {
                     return ArrayList(it.read<List<Any>>(rules[0]))
                 } catch (e: Exception) {
-                    onError?.invoke(e) ?: e.printOnDebug()
+                    onError?.invoke(e)
                 }
             }
         } else {
