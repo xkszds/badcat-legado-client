@@ -104,3 +104,13 @@ No runtime model code was changed in this audit. This is intentional: the depend
 - [ ] **Serialization parity not complete:** host codec retains raw JSON and extracts selected fields; official `INITIAL_GSON/GSON` and Room converter behavior are not yet wired.
 - [ ] **Fixture parity not complete:** still required for object-form, legacy string-encoded, null, missing/default fields, unknown nested fields, all six rule models, and round-trip semantics.
 - **Next task:** inspect the exact upstream `INITIAL_GSON/GSON` implementation and Android module compatibility, then implement the smallest real upstream-compatible rule-model/serialization slice. Re-audit all codec/catalog callers before changing their contracts.
+
+
+## 2026-11-19 implementation status update
+
+- [x] Initial exact source-rule model slice is now vendored in the Android app: `BookListRule`, `SearchRule`, `ExploreRule`, `BookInfoRule`, `TocRule`, `ContentRule`, `ReviewRule`, `ExploreKind`, `FlexChildStyle`, and `RowUi`.
+- [x] Exact pinned `GsonExtensions.kt` supplies `INITIAL_GSON/GSON` and the six upstream rule deserializers.
+- [x] Source attribution and GPL-3.0 notice updated; Parcelize and Flexbox build requirements added.
+- [ ] This does not make the source model complete: upstream `BookSource` and `BaseSource` remain absent, as do Room converters/database, `BaseBook`, `Book`, `BookChapter`, and runtime service dependencies.
+- [ ] New tests are authored but await CI execution on the code commit.
+- **Next:** inspect CI and fix any compile/test regressions; then map `BaseSource` and `JsExtensions` host service contracts before porting `BookSource`.

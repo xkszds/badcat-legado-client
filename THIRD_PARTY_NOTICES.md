@@ -20,3 +20,25 @@ The runtime source is vendored from the pinned upstream revision. Its upstream c
 - Preserved records: `LICENSE.txt`, `LICENSE-core-js.txt`, `LICENSE-APACHE-2.0.txt`, `NOTICE.txt`, `NOTICE-tools.txt`, `SOURCE.md`, and `rhinoDiff.txt`.
 
 The upstream Legado source files also contain original Oracle/Rhino file-level notices, including the stated GPL/classpath exception text. Those headers have been retained unchanged.
+
+
+## Pinned Legado source-rule models and Gson compatibility layer
+
+- Project: Legado
+- Repository: https://github.com/LegadoTeam/legado
+- Revision: `330e606c4d57e08adc056ff8ab7a4132c784da9`
+- License: GPL-3.0 (see `third_party/legado/LICENSE`)
+- Vendored source files:
+  - `app/src/main/java/io/legado/app/data/entities/rule/BookListRule.kt`
+  - `app/src/main/java/io/legado/app/data/entities/rule/SearchRule.kt`
+  - `app/src/main/java/io/legado/app/data/entities/rule/ExploreRule.kt`
+  - `app/src/main/java/io/legado/app/data/entities/rule/BookInfoRule.kt`
+  - `app/src/main/java/io/legado/app/data/entities/rule/TocRule.kt`
+  - `app/src/main/java/io/legado/app/data/entities/rule/ContentRule.kt`
+  - `app/src/main/java/io/legado/app/data/entities/rule/ReviewRule.kt`
+  - `app/src/main/java/io/legado/app/data/entities/rule/ExploreKind.kt`
+  - `app/src/main/java/io/legado/app/data/entities/rule/FlexChildStyle.kt`
+  - `app/src/main/java/io/legado/app/data/entities/rule/RowUi.kt`
+  - `app/src/main/java/io/legado/app/utils/GsonExtensions.kt`
+
+These files are copied from the exact pinned revision. They retain their upstream package names and implementation. This is the initial rule-model/serialization slice only; `BookSource`, `BaseSource`, Room persistence and the complete analyzer/runtime are not thereby integrated.

@@ -222,3 +222,15 @@
 ### 下次唯一优先任务
 
 在改代码前重新执行 AGENTS 第 8 条检查：确认分支和 pin、读取精确上游声明、全仓搜索受影响字段/适配器/调用者/测试，并写兼容风险。随后从 Android 模块的官方规则模型与 Gson 兼容层开始；先建立 object-form / string-encoded / null / defaults / unknown-field fixtures，再接入源 catalog。不得把 DTO 或 raw JSON codec 说成官方运行时模型。
+
+
+## 2026-11-19 pinned rule-model implementation increment
+
+- [x] Vendored the exact pinned upstream rule-model source files into the Android app under `io.legado.app.data.entities.rule`: `BookListRule`, `SearchRule`, `ExploreRule`, `BookInfoRule`, `TocRule`, `ContentRule`, `ReviewRule`, `ExploreKind`, `FlexChildStyle`, and `RowUi`.
+- [x] Vendored upstream `GsonExtensions.kt` with `INITIAL_GSON`, `GSON`, rule deserializers, primitive string/int handling and helper conversions, unchanged from pinned revision `330e606c4d57e08adc056ff8ab7a4132c784da9`.
+- [x] Added the upstream Kotlin Parcelize plugin and Flexbox 3.0.0 dependency required by those exact model files.
+- [x] Added `PinnedLegadoRuleModelsTest` covering all six BookSource nested rule classes, object-form and legacy JSON-string rule values, defaults/null, ExploreKind/RowUi, ReviewRule summary gating and ContentRule string representation.
+- [x] Updated `THIRD_PARTY_NOTICES.md` and `third_party/legado/NOTICE.md` to record the vendored GPL-3.0 source paths and pinned revision.
+- [ ] CI verification for this code commit is pending; do not mark tests/build passed until the workflow and reports are inspected.
+- [ ] This does **not** integrate the upstream `BookSource`, `BaseSource`, `BaseBook`, `Book`, `BookChapter`, Room converters/database, source lifecycle, `AnalyzeRule`, `AnalyzeUrl`, or the complete reading engine. Raw JSON preservation remains the import/export boundary.
+- Next: verify the new source/model build and test results, then implement the typed `BookSource` runtime adapter only after its `BaseSource/JsExtensions` service dependencies are mapped.

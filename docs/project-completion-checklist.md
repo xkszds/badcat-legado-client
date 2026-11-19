@@ -243,3 +243,11 @@
 - 最新文档提交对应 run [#44554459580](https://github.com/xkszds/badcat-legado-client/actions/runs/44554459580) 仍为 pending。
 - run [#44553806204](https://github.com/xkszds/badcat-legado-client/actions/runs/44553806204) 的 contract tests、bounded Rhino tests、Debug APK build/upload 及已完成 live steps 均成功；最后一个四源语料 live reading 步骤仍在运行。
 - 以上不构成设备验收或完整 Legado 完成证明。
+
+
+## 2026-11-19 pinned upstream rule model increment
+
+- [x] Added exact pinned Legado source rule entities (`BookListRule`, `SearchRule`, `ExploreRule`, `BookInfoRule`, `TocRule`, `ContentRule`, `ReviewRule`, `ExploreKind`, `FlexChildStyle`, `RowUi`) to the Android app.
+- [x] Added the pinned `INITIAL_GSON/GSON` implementation and custom rule deserializers from upstream `330e606c4d57e08adc056ff8ab7a4132c784da9`.
+- [x] Added Parcelize plugin/Flexbox dependency, source notices and focused tests for object/legacy-string decoding, null/default behavior and rule model semantics.
+- [ ] Current commit CI not yet complete. Full source entity graph, BaseSource, Room persistence and complete engine remain P0 blockers.

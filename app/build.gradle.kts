@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.parcelize")
 }
 
 android {
@@ -33,6 +34,8 @@ dependencies {
     implementation(project(":legado-rhino"))
     // The login-form host validates JSON state and action envelopes with the same parser baseline.
     implementation("com.google.code.gson:gson:2.14.0")
+    // Pinned Legado rule models use the upstream Flexbox style contract.
+    implementation("com.google.android.flexbox:flexbox:3.0.0")
     // Parser dependencies match the pinned upstream Legado source revision.
     implementation("org.jsoup:jsoup:1.23.2")
     implementation("cn.wanghaomiao:JsoupXpath:2.5.3")

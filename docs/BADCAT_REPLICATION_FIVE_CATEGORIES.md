@@ -173,3 +173,11 @@
 - [ ] 正式 Release、签名、许可证交付和设备验收。
 
 本轮 CI 状态：run [#44554459580](https://github.com/xkszds/badcat-legado-client/actions/runs/44554459580) 对最新文档 head 仍为 pending；run [#44553806204](https://github.com/xkszds/badcat-legado-client/actions/runs/44553806204) 的 contract/Rhino tests、Debug APK 和前四个 live checks 已通过，上传语料的最后一项仍在执行。不得把 pending/in-progress 写成全绿。
+
+
+## 2026-11-19 Legado category 3 model slice
+
+- [x] Category 3 initial source-rule model slice: exact pinned upstream rule classes and Gson helper were vendored into the Android app; object and legacy string forms have dedicated Android unit tests.
+- [ ] Category 3 remains incomplete: official `BookSource/BaseSource`, `Book/BookChapter`, Room persistence, AnalyzeRule/AnalyzeUrl, full JsExtensions and end-to-end flow remain open.
+- [ ] Categories 1, 2, 4 and 5 remain incomplete and were not changed by this model slice.
+- CI for the code commit is pending; no new test/build success is claimed yet.

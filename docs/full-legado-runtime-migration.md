@@ -91,3 +91,12 @@ CI run [44550830295](https://github.com/xkszds/badcat-legado-client/actions/runs
 - [ ] Model integration remains open: no official runtime entities, official Gson converters or Room-backed runtime source model have been integrated yet.
 - [ ] Next: implement the Android-side model/serialization adapter with exact upstream behavior and fixtures; preserve raw JSON in parallel. Re-run the complete pre-change compatibility search before editing.
 - Latest head CI run [#44554459580](https://github.com/xkszds/badcat-legado-client/actions/runs/44554459580) is pending. Earlier run [#44553806204](https://github.com/xkszds/badcat-legado-client/actions/runs/44553806204) passed contract/Rhino tests and Debug APK build/upload, while the final uploaded-corpus live step was still in progress.
+
+
+## 2026-11-19 first upstream rule-model code slice
+
+- Vendored the exact pinned source-rule entities and `GsonExtensions.kt` into the Android module, preserving their upstream package names and behavior.
+- Added Android-side test coverage for six nested BookSource rule types, object-form and legacy string-encoded JSON, null/default behavior and selected rule-specific semantics.
+- Added Parcelize plugin and Flexbox dependency matching pinned upstream versions. GPL-3.0 provenance is recorded in `THIRD_PARTY_NOTICES.md`.
+- This is only the rule-model/JSON foundation. No claim is made that BookSource/BaseSource, Room converters, AnalyzeRule/AnalyzeUrl or the complete reading lifecycle are integrated.
+- CI for the new code commit must be inspected before this increment is considered verified.
