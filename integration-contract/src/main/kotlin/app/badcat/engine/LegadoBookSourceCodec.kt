@@ -40,6 +40,9 @@ data class LegadoBookSource(
     val ruleBookInfoJson: String?,
     val ruleTocJson: String?,
     val ruleContentJson: String?,
+    val ruleReviewJson: String?,
+    val eventListener: Boolean,
+    val customButton: Boolean,
     val rawJson: String,
     val concurrentRate: String? = null,
 ) {
