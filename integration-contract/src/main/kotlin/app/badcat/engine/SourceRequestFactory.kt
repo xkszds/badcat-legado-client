@@ -108,6 +108,12 @@ object SourceRequestFactory {
                 "Request headers contain an invalid name or control character",
             )
         }
+        if (!headersWithinLimits(merged)) {
+            return EngineResult.Failure(
+                EngineErrorCode.INVALID_SOURCE,
+                "Request headers exceed the configured count or size limits",
+            )
+        }
 
         val prepared = LegadoUrlParameterEncoder.prepareRequest(
             url = url,
@@ -151,6 +157,17 @@ object SourceRequestFactory {
         "GET", "HEAD", "POST", "PUT", "PATCH", "PROPPATCH", "REPORT",
     )
 
+    private fun headersWithinLimits(headers: Map<String, String>): Boolean {
+        if (headers.size > MAX_HEADER_COUNT) return false
+        var totalChars = 0
+        headers.forEach { (name, value) ->
+            if (name.length > MAX_HEADER_NAME_CHARS || value.length > MAX_HEADER_VALUE_CHARS) return false
+            totalChars += name.length + value.length
+            if (totalChars > MAX_HEADER_TOTAL_CHARS) return false
+        }
+        return true
+    }
+
     private fun isValidHeader(name: String, value: String): Boolean {
         if (name.isEmpty() || name.any { it !in HEADER_NAME_CHARS }) return false
         return value.none { char ->
@@ -161,12 +178,19 @@ object SourceRequestFactory {
 
     private val HEADER_NAME_CHARS =
         "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#$%&'*+-.^_`|~"
+    private const val MAX_HEADER_COUNT = 100
+    private const val MAX_HEADER_NAME_CHARS = 256
+    private const val MAX_HEADER_VALUE_CHARS = 8 * 1024
+    private const val MAX_HEADER_TOTAL_CHARS = 32 * 1024
+    private const val MAX_HEADER_JSON_CHARS = 32 * 1024
 
     private fun parseHeaders(raw: String?): Map<String, String>? {
         if (raw.isNullOrBlank()) return emptyMap()
+        if (raw.length > MAX_HEADER_JSON_CHARS) return null
         return runCatching {
             val root = JsonParser.parseString(raw)
             require(root.isJsonObject)
+            require(root.asJsonObject.size() <= MAX_HEADER_COUNT)
             buildMap {
                 root.asJsonObject.entrySet().forEach { (name, value) ->
                     require(value.isJsonPrimitive && value.asJsonPrimitive.isString)
