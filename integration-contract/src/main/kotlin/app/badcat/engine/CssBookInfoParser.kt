@@ -56,7 +56,7 @@ class CssBookInfoParser {
                     }
                 } else {
                     val path = normalizeJsonRule(withoutPut)
-                    when (val result = JsonPathRuleEvaluator.evaluateElements(document, path)) {
+                    when (val result = LegadoRuleExpressionDispatcher.evaluateElements(document, path)) {
                         is EngineResult.Failure -> return result
                         is EngineResult.Success -> result.value.firstOrNull()
                             ?: return EngineResult.Failure(EngineErrorCode.NOT_FOUND, "Book-info init rule returned no data")

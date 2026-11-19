@@ -421,27 +421,11 @@ class CssSearchResultsParser {
      * elements with text values before each card is parsed independently.
      */
     private fun evaluateCollectionRule(document: SourceDocument, rule: String): EngineResult<List<String>> {
-        val trimmed = rule.trim()
-        val jsonPath = when {
-            trimmed.startsWith("@jsonpath:", true) -> trimmed.substringAfter(':').trim()
-            trimmed.startsWith("@json:", true) -> trimmed.substringAfter(':').trim()
-            trimmed.startsWith("$") -> trimmed
-            else -> null
-        }
-        return jsonPath?.let { JsonPathRuleEvaluator.evaluateElements(document, it) }
-            ?: LegadoRuleExpressionDispatcher.evaluateElements(document, trimmed)
+        return LegadoRuleExpressionDispatcher.evaluateElements(document, rule)
     }
 
     private fun evaluateScalarRule(document: SourceDocument, rule: String): EngineResult<List<String>> {
-        val trimmed = rule.trim()
-        val jsonPath = when {
-            trimmed.startsWith("@jsonpath:", true) -> trimmed.substringAfter(':').trim()
-            trimmed.startsWith("@json:", true) -> trimmed.substringAfter(':').trim()
-            trimmed.startsWith("$") -> trimmed
-            else -> null
-        }
-        return jsonPath?.let { JsonPathRuleEvaluator.evaluate(document, it) }
-            ?: LegadoRuleExpressionDispatcher.evaluate(document, trimmed)
+        return LegadoRuleExpressionDispatcher.evaluate(document, rule)
     }
 
     private fun isLiteralUrlRule(value: String): Boolean =
