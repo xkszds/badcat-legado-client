@@ -88,6 +88,17 @@ class BadcatReadingEngineFactory(
             sourceCookieReplacer = { sourceId, url, cookie ->
                 SharedPreferencesSourceCookieJar(context.applicationContext, sourceId).replaceCookie(url, cookie)
             },
+            sourceLoginCookieWriter = { sourceId, sourceKey, cookie ->
+                SharedPreferencesSourceCookieJar(context.applicationContext, sourceId)
+                    .replaceLoginCookieHeader(sourceKey, cookie)
+            },
+            sourceLoginCookieRemover = { sourceId, sourceKey ->
+                SharedPreferencesSourceCookieJar(context.applicationContext, sourceId)
+                    .removeForSourceDomain(sourceKey)
+            },
+            sourceCookieClearer = { sourceId ->
+                SharedPreferencesSourceCookieJar(context.applicationContext, sourceId).clear()
+            },
             sourceAjax = { source, baseUrl, urlAndOptions ->
                 val resolved = when (val parsed = LegadoUrlResolver.resolve(baseUrl, urlAndOptions)) {
                     is EngineResult.Failure -> throw IllegalArgumentException(parsed.message)
