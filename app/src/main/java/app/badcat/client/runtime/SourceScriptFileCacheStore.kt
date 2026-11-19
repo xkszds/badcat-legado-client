@@ -94,11 +94,12 @@ class FileSourceScriptCacheStore(context: Context) : SourceScriptFileCacheStore 
                 output.write(encoded)
                 output.flush()
                 target.finishWrite(output)
-                prune(target.baseFile)
             } catch (error: Exception) {
                 target.failWrite(output)
                 throw error
             }
+            // Pruning is best-effort and must not discard a committed source file.
+            runCatching { prune(target.baseFile) }
         }
     }
 
