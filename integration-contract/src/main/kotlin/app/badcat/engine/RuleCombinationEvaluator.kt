@@ -9,7 +9,7 @@ object RuleCombinationEvaluator {
     fun hasNestedTopLevelOperator(expression: String): Boolean = runCatching {
         val outer = PinnedLegadoRuleAnalyzer.split(expression)
         outer.operator != null && outer.rules.any { part ->
-            PinnedLegadoRuleAnalyzer.split(part).operator != null
+            PinnedLegadoRuleAnalyzer.split(part.trim()).operator != null
         }
     }.getOrDefault(false)
 
@@ -28,7 +28,7 @@ object RuleCombinationEvaluator {
             // Fallback is intentionally lazy: once a branch produces values,
             // later branches must not run or turn a valid result into a failure.
             for (part in split.rules) {
-                val values = evaluateNested(part, evaluateRule)
+                val values = evaluateNested(part.trim(), evaluateRule)
                 if (values.isNotEmpty()) return values
             }
             return emptyList()
@@ -61,7 +61,7 @@ object RuleCombinationEvaluator {
         if (split.operator == "||") {
             var firstFailure: EngineResult.Failure? = null
             for (part in split.rules) {
-                when (val result = evaluateNestedResult(part, evaluateRule)) {
+                when (val result = evaluateNestedResult(part.trim(), evaluateRule)) {
                     is EngineResult.Failure -> if (firstFailure == null) firstFailure = result
                     is EngineResult.Success -> if (result.value.isNotEmpty()) return result
                 }
@@ -99,7 +99,7 @@ object RuleCombinationEvaluator {
 
         val results = mutableListOf<List<T>>()
         for (rule in split.rules) {
-            val values = evaluateRule(rule)
+            val values = evaluateRule(rule.trim())
             if (values.isNotEmpty()) {
                 results += values
                 if (split.operator == "||") break

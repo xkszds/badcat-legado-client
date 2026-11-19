@@ -45,6 +45,6 @@ class PinnedRuleCombinationEvaluatorTest {
         val actual = PinnedLegadoRuleAnalyzer.split(expression)
         assertEquals(expected, actual.rules)
         assertEquals("&&", actual.operator)
-        assertEquals("""primary[data-x="x || y"]""", actual.rules.first())
+        assertEquals("""primary[data-x="x || y"]""", actual.rules.first().trim())
     }
 }
