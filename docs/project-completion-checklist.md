@@ -581,7 +581,7 @@ This gate exists because the current audit is declaration-count complete but its
 
 ## 2026-11-20 completion audit — JsExtensions/BaseSource boundary
 
-<badge color="success">Audit complete</badge>
+**Audit complete.**
 
 - [x] Re-read AGENTS.md and all four required project documents before this task.
 - [x] Confirm pinned upstream SHA and inspect JsExtensions, JsEncodeUtils, BaseSource, BookSource/RssSource, AnalyzeUrl, BatchContentContext, JsSourceEngine, AnalyzeRule and supporting services.
