@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream
 import java.io.InputStream
 
 internal const val MAX_RHINO_CRYPTO_BYTES = 2 * 1024 * 1024
+internal const val MAX_RHINO_CRYPTO_ENCODED_CHARS = 4 * 1024 * 1024
 
 internal fun requireRhinoCryptoSize(size: Int, label: String) {
     require(size in 0..MAX_RHINO_CRYPTO_BYTES) { "$label exceeds the 2 MiB limit" }
@@ -15,8 +16,8 @@ internal fun checkedRhinoCryptoOutput(bytes: ByteArray, label: String): ByteArra
 }
 
 internal fun requireRhinoCryptoEncodedSize(size: Long, label: String) {
-    require(size in 0L..MAX_RHINO_CRYPTO_BYTES.toLong()) {
-        "$label exceeds the 2 MiB encoded-output limit"
+    require(size in 0L..MAX_RHINO_CRYPTO_ENCODED_CHARS.toLong()) {
+        "$label exceeds the 4 MiB encoded-output limit"
     }
 }
 

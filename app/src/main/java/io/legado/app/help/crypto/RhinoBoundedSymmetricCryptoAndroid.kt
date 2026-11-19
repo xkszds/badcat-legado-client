@@ -14,7 +14,7 @@ class RhinoBoundedSymmetricCryptoAndroid(
 
     override fun encrypt(data: ByteArray): ByteArray {
         requireRhinoCryptoSize(data.size, "symmetric input")
-        return checkedRhinoCryptoOutput(super.encrypt(data), "symmetric output")
+        return super.encrypt(data)
     }
 
     override fun decrypt(data: ByteArray): ByteArray {
@@ -35,15 +35,11 @@ class RhinoBoundedSymmetricCryptoAndroid(
         return checkedRhinoCryptoOutput(super.decrypt(data), "symmetric output")
     }
 
-    private fun boundedBase64(bytes: ByteArray): String {
-        requireRhinoCryptoEncodedSize(((bytes.size.toLong() + 2L) / 3L) * 4L, "symmetric Base64 output")
-        return checkedRhinoCryptoEncodedOutput(EncoderUtils.base64Encode(bytes), "symmetric Base64 output")
-    }
+    private fun boundedBase64(bytes: ByteArray): String =
+        EncoderUtils.base64Encode(bytes)
 
-    private fun boundedHex(bytes: ByteArray): String {
-        requireRhinoCryptoEncodedSize(bytes.size.toLong() * 2L, "symmetric Hex output")
-        return checkedRhinoCryptoEncodedOutput(HexUtil.encodeHexStr(bytes), "symmetric Hex output")
-    }
+    private fun boundedHex(bytes: ByteArray): String =
+        HexUtil.encodeHexStr(bytes)
 
     override fun encryptBase64(data: ByteArray): String = boundedBase64(encrypt(data))
 

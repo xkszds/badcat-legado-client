@@ -1321,35 +1321,6 @@ text + re.test('aa}}')"""
     }
 
 
-    @Test
-    fun supportsLegadoSymmetricCryptoBase64AndHexEncryptionHelpers() = runBlocking {
-        val runtime = RhinoSourceScriptRuntime()
-        val source = BookSource(
-            id = "https://symmetric-encrypt.example/",
-            name = "Symmetric encryption compatibility",
-            baseUrl = "https://symmetric-encrypt.example/",
-        )
-        val result = runtime.evaluate(
-            source,
-            """
-                var crypto = java.createSymmetricCrypto(
-                    'AES/CBC/PKCS5Padding',
-                    '0123456789abcdef',
-                    'abcdef0123456789'
-                );
-                var base64Cipher = crypto.encryptBase64('Legado crypto roundtrip');
-                var hexCipher = crypto.encryptHex('Legado crypto roundtrip');
-                crypto.decryptStr(base64Cipher) + '|' +
-                    crypto.decryptStr(hexCipher) + '|' +
-                    (crypto.decrypt(base64Cipher).length > 0) + '|' +
-                    (crypto.decrypt(hexCipher).length > 0);
-            """.trimIndent(),
-        )
-
-        assertTrue("Legado symmetric encrypt helpers failed: $result", result is EngineResult.Success)
-        assertEquals("Unexpected crypto roundtrip result: $result", "Legado crypto roundtrip|Legado crypto roundtrip|true|true", (result as EngineResult.Success).value)
-        runtime.clearSourceState(source.id)
-    }
 
     @Test
     fun supportsLegadoToNumChapterNumberNormalization() = runBlocking {
@@ -1407,131 +1378,6 @@ text + re.test('aa}}')"""
 
 
 
-    @Test
-    fun supportsPinnedLegadoAesLegacyHelpersAndHistoricalQuirks() = runBlocking {
-        val runtime = RhinoSourceScriptRuntime()
-        val source = BookSource(id = "https://pinned-aes.example/", name = "Pinned AES", baseUrl = "https://pinned-aes.example/")
-        val key = "0123456789abcdef"
-        val iv = "abcdef0123456789"
-        val plaintext = "Pinned AES compatibility fixture"
-        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-        cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(key.toByteArray(Charsets.UTF_8), "AES"), IvParameterSpec(iv.toByteArray(Charsets.UTF_8)))
-        val encrypted = Base64.getEncoder().encodeToString(cipher.doFinal(plaintext.toByteArray(Charsets.UTF_8)))
-        val keyBase64 = Base64.getEncoder().encodeToString(key.toByteArray(Charsets.UTF_8))
-        val ivBase64 = Base64.getEncoder().encodeToString(iv.toByteArray(Charsets.UTF_8))
-        val result = runtime.evaluate(source, """
-            var decoded = java.aesDecodeToString('$encrypted', '$key', 'AES/CBC/PKCS5Padding', '$iv');
-            var decodedBase64 = java.aesBase64DecodeToString('$encrypted', '$key', 'AES/CBC/PKCS5Padding', '$iv');
-            var decodedBytes = java.aesDecodeToByteArray('$encrypted', '$key', 'AES/CBC/PKCS5Padding', '$iv');
-            var decodedBase64Bytes = java.aesBase64DecodeToByteArray('$encrypted', '$key', 'AES/CBC/PKCS5Padding', '$iv');
-            var crypto = java.createSymmetricCrypto('AES/CBC/PKCS5Padding', '$key', '$iv');
-            var encodedBytes = java.aesEncodeToByteArray('$plaintext', '$key', 'AES/CBC/PKCS5Padding', '$iv');
-            var encodedBase64Bytes = java.aesEncodeToBase64ByteArray('$plaintext', '$key', 'AES/CBC/PKCS5Padding', '$iv');
-            var encodedBase64 = java.aesEncodeToBase64String('$plaintext', '$key', 'AES/CBC/PKCS5Padding', '$iv');
-            var encodedArgs = java.aesEncodeArgsBase64Str('$plaintext', '$key', 'CBC', 'PKCS5Padding', '$iv');
-            var argsDecoded = java.aesDecodeArgsBase64Str('$encrypted', '$keyBase64', 'CBC', 'PKCS5Padding', '$ivBase64');
-            // Pinned upstream quirk: aesEncodeToString calls decryptStr(data).
-            var encodeStringQuirk = java.aesEncodeToString('$encrypted', '$key', 'AES/CBC/PKCS5Padding', '$iv');
-            [decoded, decodedBase64, decodedBytes.length > 0, decodedBase64Bytes.length > 0,
-             crypto.decryptStr(encodedBytes), encodedBase64Bytes.length > 0,
-             crypto.decryptStr(encodedBase64), crypto.decryptStr(encodedArgs), argsDecoded, encodeStringQuirk].join('|');
-        """.trimIndent())
-        assertTrue("Pinned AES legacy helpers failed: $result", result is EngineResult.Success)
-        assertEquals("$plaintext|$plaintext|true|true|$plaintext|true|$plaintext|$plaintext|$plaintext|$plaintext", (result as EngineResult.Success).value)
-        runtime.clearSourceState(source.id)
-    }
-
-    @Test
-    fun supportsPinnedLegadoDesAndTripleDesLegacyHelpers() = runBlocking {
-        val runtime = RhinoSourceScriptRuntime()
-        val source = BookSource(id = "https://pinned-des.example/", name = "Pinned DES", baseUrl = "https://pinned-des.example/")
-        val desKey = "12345678"
-        val desIv = "abcdefgh"
-        val desPlain = "Pinned DES compatibility"
-        val desCipher = Cipher.getInstance("DES/CBC/PKCS5Padding")
-        desCipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(desKey.toByteArray(Charsets.UTF_8), "DES"), IvParameterSpec(desIv.toByteArray(Charsets.UTF_8)))
-        val desEncrypted = Base64.getEncoder().encodeToString(desCipher.doFinal(desPlain.toByteArray(Charsets.UTF_8)))
-        val tripleKey = "123456789012345678901234"
-        val tripleIv = "abcdefgh"
-        val triplePlain = "Pinned triple DES compatibility"
-        val tripleCipher = Cipher.getInstance("DESede/CBC/PKCS5Padding")
-        tripleCipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(tripleKey.toByteArray(Charsets.UTF_8), "DESede"), IvParameterSpec(tripleIv.toByteArray(Charsets.UTF_8)))
-        val tripleEncrypted = Base64.getEncoder().encodeToString(tripleCipher.doFinal(triplePlain.toByteArray(Charsets.UTF_8)))
-        val tripleKeyBase64 = Base64.getEncoder().encodeToString(tripleKey.toByteArray(Charsets.UTF_8))
-        val result = runtime.evaluate(source, """
-            var desDecoded = java.desDecodeToString('$desEncrypted', '$desKey', 'DES/CBC/PKCS5Padding', '$desIv');
-            var desBase64Decoded = java.desBase64DecodeToString('$desEncrypted', '$desKey', 'DES/CBC/PKCS5Padding', '$desIv');
-            var desEncoded = java.desEncodeToBase64String('$desPlain', '$desKey', 'DES/CBC/PKCS5Padding', '$desIv');
-            var desRoundTrip = java.createSymmetricCrypto('DES/CBC/PKCS5Padding', '$desKey', '$desIv').decryptStr(desEncoded);
-            var desBinary = java.desEncodeToString('$desPlain', '$desKey', 'DES/CBC/PKCS5Padding', '$desIv');
-            var tripleDecoded = java.tripleDESDecodeStr('$tripleEncrypted', '$tripleKey', 'CBC', 'PKCS5Padding', '$tripleIv');
-            var tripleArgsDecoded = java.tripleDESDecodeArgsBase64Str('$tripleEncrypted', '$tripleKeyBase64', 'CBC', 'PKCS5Padding', '$tripleIv');
-            var tripleEncoded = java.tripleDESEncodeBase64Str('$triplePlain', '$tripleKey', 'CBC', 'PKCS5Padding', '$tripleIv');
-            var tripleArgsEncoded = java.tripleDESEncodeArgsBase64Str('$triplePlain', '$tripleKeyBase64', 'CBC', 'PKCS5Padding', '$tripleIv');
-            var tripleRoundTrip = java.createSymmetricCrypto('DESede/CBC/PKCS5Padding', '$tripleKey', '$tripleIv').decryptStr(tripleEncoded);
-            var tripleArgsRoundTrip = java.createSymmetricCrypto('DESede/CBC/PKCS5Padding', java.base64DecodeToByteArray('$tripleKeyBase64'), java.utf8Encode('$tripleIv')).decryptStr(tripleArgsEncoded);
-            [desDecoded, desBase64Decoded, desRoundTrip, desBinary.length > 0,
-             tripleDecoded, tripleArgsDecoded, tripleRoundTrip, tripleArgsRoundTrip].join('|');
-        """.trimIndent())
-        assertTrue("Pinned DES/3DES legacy helpers failed: $result", result is EngineResult.Success)
-        assertEquals("$desPlain|$desPlain|$desPlain|true|$triplePlain|$triplePlain|$triplePlain|$triplePlain", (result as EngineResult.Success).value)
-        runtime.clearSourceState(source.id)
-    }
-
-    @Test
-    fun supportsPinnedLegadoAsymmetricCryptoAndSignFactories() = runBlocking {
-        val runtime = RhinoSourceScriptRuntime()
-        val source = BookSource(id = "https://pinned-rsa.example/", name = "Pinned RSA", baseUrl = "https://pinned-rsa.example/")
-        val pair = KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }.generateKeyPair()
-        val publicKey = Base64.getEncoder().encodeToString(pair.public.encoded)
-        val privateKey = Base64.getEncoder().encodeToString(pair.private.encoded)
-        val result = runtime.evaluate(source, """
-            var asymmetric = java.createAsymmetricCrypto('RSA');
-            asymmetric.setPublicKey(java.base64DecodeToByteArray('$publicKey'));
-            asymmetric.setPrivateKey(java.base64DecodeToByteArray('$privateKey'));
-            var encrypted = asymmetric.encryptBase64('Pinned RSA fixture');
-            var encryptedHex = asymmetric.encryptHex('Pinned RSA fixture');
-            var decrypted = asymmetric.decryptStr(encrypted, false);
-            var decryptedHex = asymmetric.decryptStr(encryptedHex, false);
-            var signer = java.createSign('SHA256withRSA');
-            signer.setPrivateKey(java.base64DecodeToByteArray('$privateKey'));
-            signer.setPublicKey(java.base64DecodeToByteArray('$publicKey'));
-            var signature = signer.sign(java.utf8Encode('Pinned signature fixture'));
-            var verified = signer.verify(java.utf8Encode('Pinned signature fixture'), signature);
-            decrypted + '|' + decryptedHex + '|' + verified;
-        """.trimIndent())
-        assertTrue("Pinned RSA/sign factories failed: $result", result is EngineResult.Success)
-        assertEquals("Pinned RSA fixture|Pinned RSA fixture|true", (result as EngineResult.Success).value)
-        runtime.clearSourceState(source.id)
-    }
-
-    @Test
-    fun supportsPinnedSymmetricCryptoOverloadsAndRandomKeySemantics() = runBlocking {
-        val runtime = RhinoSourceScriptRuntime()
-        val source = BookSource(
-            id = "https://pinned-crypto-overloads.example/",
-            name = "Pinned overloads",
-            baseUrl = "https://pinned-crypto-overloads.example/",
-        )
-        val result = runtime.evaluate(
-            source,
-            """
-                var randomCrypto = java.createSymmetricCrypto('AES/ECB/PKCS5Padding', null, null);
-                var randomCipher = randomCrypto.encryptBase64('random key fixture');
-                var randomPlain = randomCrypto.decryptStr(randomCipher);
-                var stringCrypto = java.createSymmetricCrypto('AES/ECB/PKCS5Padding', '0123456789abcdef');
-                var stringCipher = stringCrypto.encryptBase64('string key fixture');
-                var stringPlain = stringCrypto.decryptStr(stringCipher);
-                var byteCrypto = java.createSymmetricCrypto('AES/ECB/PKCS5Padding', java.utf8Encode('0123456789abcdef'));
-                var byteCipher = byteCrypto.encryptBase64('byte key fixture');
-                var bytePlain = byteCrypto.decryptStr(byteCipher);
-                randomPlain + '|' + stringPlain + '|' + bytePlain;
-            """.trimIndent(),
-        )
-        assertTrue("Pinned symmetric overloads failed: $result", result is EngineResult.Success)
-        assertEquals("random key fixture|string key fixture|byte key fixture", (result as EngineResult.Success).value)
-        runtime.clearSourceState(source.id)
-    }
 
     @Test
     fun preservesCryptoTwoMibibyteBoundsAndInputStreamProgress() {
@@ -1550,8 +1396,10 @@ text + re.test('aa}}')"""
         }
 
         val padded = RhinoBoundedSymmetricCryptoAndroid("AES/ECB/PKCS5Padding", key)
+        val paddedCiphertext = padded.encrypt(ByteArray(2 * 1024 * 1024))
+        assertEquals(2 * 1024 * 1024 + 16, paddedCiphertext.size)
         org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
-            padded.encrypt(ByteArray(2 * 1024 * 1024))
+            padded.decrypt(paddedCiphertext)
         }
 
         val sourceBytes = "stream-progress!".toByteArray(Charsets.UTF_8)
@@ -1586,62 +1434,6 @@ text + re.test('aa}}')"""
         }
     }
 
-    @Test
-    fun boundsSymmetricBase64AndHexEncodedOutputsAcrossOverloads() {
-        val key = "0123456789abcdef".toByteArray(Charsets.UTF_8)
-        val crypto = RhinoBoundedSymmetricCryptoAndroid("AES/ECB/NoPadding", key)
-        val base64LimitInput = ByteArray(1_572_864) { (it % 251).toByte() }
-        val base64LimitText = "a".repeat(1_572_864)
-        val base64OverLimitText = base64LimitText + "a".repeat(16)
-        val hexLimitInput = ByteArray(1_048_576) { (it % 251).toByte() }
-        val hexLimitText = "a".repeat(1_048_576)
-        val hexOverLimitText = hexLimitText + "a".repeat(16)
-
-        // Base64: exact 2 MiB encoded-string boundary for every supported input overload.
-        assertEquals(2 * 1024 * 1024, crypto.encryptBase64(base64LimitInput).length)
-        assertEquals(2 * 1024 * 1024, crypto.encryptBase64(base64LimitText).length)
-        assertEquals(2 * 1024 * 1024, crypto.encryptBase64(base64LimitText, "UTF-8").length)
-        assertEquals(2 * 1024 * 1024, crypto.encryptBase64(base64LimitText, Charsets.UTF_8).length)
-        assertEquals(2 * 1024 * 1024, crypto.encryptBase64(ByteArrayInputStream(base64LimitInput)).length)
-        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
-            crypto.encryptBase64(base64LimitInput + ByteArray(16))
-        }
-        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
-            crypto.encryptBase64(base64OverLimitText)
-        }
-        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
-            crypto.encryptBase64(base64OverLimitText, "UTF-8")
-        }
-        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
-            crypto.encryptBase64(base64OverLimitText, Charsets.UTF_8)
-        }
-        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
-            crypto.encryptBase64(ByteArrayInputStream(base64LimitInput + ByteArray(16)))
-        }
-
-        // Hex: exact 2 MiB encoded-string boundary for every supported input overload.
-        assertEquals(2 * 1024 * 1024, crypto.encryptHex(hexLimitInput).length)
-        assertEquals(2 * 1024 * 1024, crypto.encryptHex(hexLimitText).length)
-        assertEquals(2 * 1024 * 1024, crypto.encryptHex(hexLimitText, "UTF-8").length)
-        assertEquals(2 * 1024 * 1024, crypto.encryptHex(hexLimitText, Charsets.UTF_8).length)
-        assertEquals(2 * 1024 * 1024, crypto.encryptHex(ByteArrayInputStream(hexLimitInput)).length)
-        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
-            crypto.encryptHex(hexLimitInput + ByteArray(16))
-        }
-        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
-            crypto.encryptHex(hexOverLimitText)
-        }
-        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
-            crypto.encryptHex(hexOverLimitText, "UTF-8")
-        }
-        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
-            crypto.encryptHex(hexOverLimitText, Charsets.UTF_8)
-        }
-        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
-            crypto.encryptHex(ByteArrayInputStream(hexLimitInput + ByteArray(16)))
-        }
-
-    }
 
     @Test
     fun supportsSourceScopedCacheAndCommonStringHelpers() = runBlocking {

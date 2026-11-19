@@ -54,4 +54,6 @@ dependencies {
     // Legado uses this dictionary-backed converter for its @js t2s/s2t helpers.
     implementation("com.github.liuyueyi:quick-transfer-core:0.2.17")
     testImplementation("junit:junit:4.13.2")
+    // Android Base64 behavior in crypto bridge tests must run against real Android shadows.
+    testImplementation("org.robolectric:robolectric:4.14.1")
 }
