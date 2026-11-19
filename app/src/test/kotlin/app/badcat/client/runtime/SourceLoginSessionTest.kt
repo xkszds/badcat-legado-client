@@ -5,6 +5,7 @@ import app.badcat.engine.SourceHttpRequest
 import app.badcat.engine.SourceHttpResponse
 import app.badcat.engine.SourceRequestClient
 import okhttp3.OkHttp
+import okhttp3.internal.publicsuffix.PublicSuffixDatabase
 import okhttp3.internal.platform.Platform
 import org.junit.Before
 import kotlinx.coroutines.runBlocking
@@ -71,6 +72,12 @@ class SourceLoginSessionTest {
         val delegate = RecordingClient()
         val client = SourceLoginSessionRequestClient(delegate, store)
 
+        val directSuffix = try {
+            PublicSuffixDatabase.get().getEffectiveTldPlusOne("www.example.co.uk")
+        } catch (failure: Throwable) {
+            throw AssertionError("OkHttp public-suffix asset lookup failed in the Robolectric test", failure)
+        }
+        assertEquals("example.co.uk", directSuffix)
         assertEquals("example.co.uk", legadoSourceDomain(sourceKey))
         assertEquals("example.co.uk", legadoSourceDomain("https://cdn.example.co.uk/cover.jpg"))
         assertEquals("third-party-cdn.net", legadoSourceDomain("https://third-party-cdn.net/cover.jpg"))
