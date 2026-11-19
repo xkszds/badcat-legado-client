@@ -1106,10 +1106,10 @@ class RhinoSafeSourceJavaExtensions(
      * Matches the pinned Legado helper without exposing Rhino internals beyond
      * the already supplied Function object.
      */
-    fun functionThisObj(action: Function): VarScope {
+    fun functionThisObj(action: Function): Scriptable {
         val parentScope: VarScope = action.parentScope
             ?: throw IllegalArgumentException("JavaScript callback has no parent scope")
-        return ScriptableObject.getTopLevelScope(parentScope)
+        return ScriptableObject.getTopLevelScope(parentScope).globalThis
     }
 
     private fun invokeSourceFunction(action: Function) {
