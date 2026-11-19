@@ -27,3 +27,28 @@ Track these as separate workstreams and verify each with fixtures and tests:
 9. Android integration: end-to-end search -> detail -> TOC -> chapter content while preserving the existing UI.
 
 Do not mark a workstream complete based only on compilation. Require focused tests and, where possible, an end-to-end fixture. Keep upstream site failures (403/404/429/5xx, TLS validation, timeouts) separate from engine compatibility defects.
+
+## Non-negotiable: deliver the complete upstream Legado runtime
+
+The user's explicit requirement is a **complete Legado implementation**, not a simplified edition, a selector-only subset, a compatibility facade with missing behavior, or placeholder APIs. This section is mandatory reading before every work session and before every code change.
+
+1. **Use the pinned upstream implementation as the behavioral source of truth.** The pinned revision is `330e606c4d57e08adc056ff8ab7a4132c784da9`. Integrate the real upstream models, rule lifecycle, AnalyzeRule/AnalyzeUrl behavior, script runtime/extensions, networking, source lifecycle, reading flow and batch behavior. Do not silently replace upstream behavior with locally invented subsets.
+2. **No fake completion.** No no-op methods, null placeholders, unsupported stubs, selector-only substitutes, or simplified implementations may be presented as complete Legado APIs. If a host capability genuinely cannot exist in a particular context, preserve the exact upstream contract and implement its documented behavior/error semantics; document the limitation explicitly rather than pretending the API is complete.
+3. **Every new upstream/original API triggers a full compatibility re-audit.** Before implementing it, inspect the exact pinned upstream declaration and call sites, then search the entire existing project for same-name methods, adapters, shims, fallback paths, duplicate implementations, overloads, test doubles and callers. After implementation, re-audit all affected old code and call paths—not just the new file—to find conflicting semantics, stale simplified code, shadowed overloads, changed nullability/types, lifecycle mismatches, threading issues, state leakage and regressions. Update or remove obsolete compatibility code where appropriate.
+4. **Regression tests are mandatory for both sides of the change.** Add tests for the new API's upstream-compatible behavior and regression tests for existing callers/implementations affected by the change. Cover overloads, null/empty/error cases, source isolation, lifecycle/context, and persistence where relevant. Run focused tests, then the broadest practical test/build suite. Inspect CI logs and APK artifacts; never infer success from a commit or a queued workflow.
+5. **Do not stop at compiling.** Verify behavior against pinned upstream tests/fixtures and real source flows where feasible. For reading, verify search -> detail -> TOC -> chapter content, including URL resolution, scripts, pagination, cookies/network behavior and replacement. For batch APIs, verify real batch context and durable cache persistence. A null batch context or fail-fast cache method is not batch support.
+6. **Preserve the host product while completing the engine.** Keep Badcat's existing UI, navigation, page hierarchy, controls, gestures and existing features intact unless the user explicitly requests a change. The engine must be complete behind the host integration, not achieved by deleting or weakening host behavior.
+7. **No partial release labeling.** Do not call the result “Legado complete/full version” and do not deliver it as the requested final APK until the required upstream runtime, host integration, regression suite, real-source checks and Android installation/device validation have passed. Report incomplete items plainly.
+8. **Mandatory pre-change checklist (perform every time):**
+   - Re-read this `AGENTS.md` in full.
+   - Confirm the active branch is `integration/legado-upstream-runtime`; never write to `main`.
+   - Confirm the pinned upstream revision and inspect the exact upstream API/source being changed.
+   - Search all existing code, adapters, compatibility layers, call sites and tests for affected behavior.
+   - Write down the compatibility and regression risks before editing.
+   - Implement upstream-compatible behavior; avoid duplicate or simplified shims.
+   - Add/update tests for the new API **and** all affected old behavior.
+   - Run focused tests and the broadest practical build/CI; inspect failure logs.
+   - Review the complete diff for regressions and verify the branch ref after pushing.
+   - Update this checklist whenever the user adds a durable project requirement.
+
+If a task appears to conflict with this policy, follow this policy and the user's complete-Legado requirement; do not take the shortcut of implementing only the newly mentioned method.
