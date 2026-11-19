@@ -12,8 +12,6 @@ import app.badcat.engine.SourceHttpResponse
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonNull
-import com.google.gson.JsonElement
-import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
 import com.script.ScriptBindings
