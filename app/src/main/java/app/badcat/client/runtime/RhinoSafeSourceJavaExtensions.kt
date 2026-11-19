@@ -181,6 +181,7 @@ class RhinoSafeSourceJavaExtensions(
      */
     fun downloadFile(url: String): String {
         require(url.isNotBlank()) { "downloadFile URL must not be blank" }
+        requireHttpUrlLength(url)
         rateLimit(false)
         val requestUrl = urlOptionStart(url)?.let { url.substring(0, it) } ?: url
         val response = httpGet(requestUrl, emptyMap())
@@ -207,6 +208,7 @@ class RhinoSafeSourceJavaExtensions(
     @Deprecated("Use downloadFile(url)", ReplaceWith("downloadFile(url)"))
     fun downloadFile(content: String, url: String): String {
         require(url.isNotBlank()) { "downloadFile URL must not be blank" }
+        requireHttpUrlLength(url)
         val extension = urlOptionType(url)
             ?.takeIf { it.matches(Regex("^[A-Za-z0-9]{1,5}$")) }
             ?: return ""
@@ -727,11 +729,18 @@ class RhinoSafeSourceJavaExtensions(
      */
     fun get(urlOrKey: String): Any =
         if (isHttpTarget(urlOrKey)) {
+            requireHttpUrlLength(urlOrKey)
             rateLimit(false)
             RhinoSourceHttpResponse(httpGet(urlOrKey, emptyMap()))
         } else {
             getStoredString(urlOrKey)
         }
+
+    private fun requireHttpUrlLength(url: String) {
+        require(url.length <= MAX_AJAX_URL_CHARS) {
+            "HTTP URL exceeds the 16 KiB character limit"
+        }
+    }
 
     private fun isHttpTarget(value: String): Boolean {
         val candidate = value.trim()
@@ -771,6 +780,7 @@ class RhinoSafeSourceJavaExtensions(
         headers: Any?,
         timeout: Int?,
     ): RhinoSourceHttpResponse {
+        requireHttpUrlLength(url)
         require(timeout == null || timeout > 0) { "HTTP timeout must be positive" }
         rateLimit(false)
         return RhinoSourceHttpResponse(
@@ -788,6 +798,7 @@ class RhinoSafeSourceJavaExtensions(
     fun connect(url: String, headers: Any?): RhinoSourceHttpResponse = connect(url, headers, null)
 
     fun connect(url: String, headers: Any?, callTimeout: Long?): RhinoSourceHttpResponse = try {
+        requireHttpUrlLength(url)
         require(callTimeout == null || callTimeout > 0) { "connect callTimeout must be positive" }
         rateLimit(false)
         RhinoSourceHttpResponse(httpRequestWithTimeout("GET", url, null, parseRequestHeaders(headers), callTimeout))

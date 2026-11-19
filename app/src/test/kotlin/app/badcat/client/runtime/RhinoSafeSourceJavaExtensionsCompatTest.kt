@@ -58,6 +58,50 @@ class RhinoSafeSourceJavaExtensionsCompatTest {
     }
 
     @Test
+    fun legacyHttpGetRejectsOversizedUrlBeforeCallingTransport() {
+        var called = false
+        val guarded = RhinoSafeSourceJavaExtensions(
+            sourceId = "get-limit-fixture",
+            store = InMemorySourceScriptKeyValueStore,
+            httpGet = { _, _ -> called = true; throw AssertionError("must not call transport") },
+        )
+        assertThrows(IllegalArgumentException::class.java) {
+            guarded.get("https://example.com/" + "a".repeat(16 * 1024))
+        }
+        assertEquals(false, called)
+    }
+
+    @Test
+    fun connectRejectsOversizedUrlBeforeCallingTransport() {
+        var called = false
+        val guarded = RhinoSafeSourceJavaExtensions(
+            sourceId = "connect-limit-fixture",
+            store = InMemorySourceScriptKeyValueStore,
+            httpRequestWithTimeout = { _, _, _, _, _ ->
+                called = true
+                throw AssertionError("must not call transport")
+            },
+        )
+        val response = guarded.connect("https://example.com/" + "a".repeat(16 * 1024))
+        assertEquals(false, called)
+        org.junit.Assert.assertTrue(response.body.contains("16 KiB character limit"))
+    }
+
+    @Test
+    fun downloadFileRejectsOversizedUrlBeforeCallingTransport() {
+        var called = false
+        val guarded = RhinoSafeSourceJavaExtensions(
+            sourceId = "download-limit-fixture",
+            store = InMemorySourceScriptKeyValueStore,
+            httpGet = { _, _ -> called = true; throw AssertionError("must not call transport") },
+        )
+        assertThrows(IllegalArgumentException::class.java) {
+            guarded.downloadFile("https://example.com/" + "a".repeat(16 * 1024))
+        }
+        assertEquals(false, called)
+    }
+
+    @Test
     fun sourceConcurrencyKeysDoNotAliasWhenIdsAndNamesContainAtSigns() {
         val first = RhinoSafeSourceJavaExtensions(
             sourceId = "a@b",
