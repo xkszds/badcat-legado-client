@@ -30,18 +30,18 @@ class RhinoBoundedSymmetricCryptoAndroid(
 
     override fun decrypt(data: String): ByteArray {
         require(data.length <= MAX_RHINO_CRYPTO_BYTES * 2) {
-            "Encoded symmetric input exceeds the 2 MiB decoded bound"
+            "Encoded symmetric input exceeds the 4 MiB character limit"
         }
         return checkedRhinoCryptoOutput(super.decrypt(data), "symmetric output")
     }
 
-    private fun boundedBase64(bytes: ByteArray): String =
+    private fun encodeBase64(bytes: ByteArray): String =
         EncoderUtils.base64Encode(bytes)
 
-    private fun boundedHex(bytes: ByteArray): String =
+    private fun encodeHex(bytes: ByteArray): String =
         HexUtil.encodeHexStr(bytes)
 
-    override fun encryptBase64(data: ByteArray): String = boundedBase64(encrypt(data))
+    override fun encryptBase64(data: ByteArray): String = encodeBase64(encrypt(data))
 
     override fun encryptBase64(data: String, charset: String?): String =
         boundedBase64(encrypt(data, charset))
@@ -53,7 +53,7 @@ class RhinoBoundedSymmetricCryptoAndroid(
 
     override fun encryptBase64(data: InputStream): String = boundedBase64(encrypt(data))
 
-    override fun encryptHex(data: ByteArray): String = boundedHex(encrypt(data))
+    override fun encryptHex(data: ByteArray): String = encodeHex(encrypt(data))
 
     override fun encryptHex(data: String, charset: String?): String = boundedHex(encrypt(data, charset))
 

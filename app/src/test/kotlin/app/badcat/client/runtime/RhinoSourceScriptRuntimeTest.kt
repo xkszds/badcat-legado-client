@@ -17,7 +17,6 @@ import java.io.InputStream
 import io.legado.app.help.crypto.AsymmetricCrypto
 import io.legado.app.help.crypto.Sign
 import io.legado.app.help.crypto.RhinoBoundedSymmetricCryptoAndroid
-import java.security.KeyPairGenerator
 import java.util.concurrent.atomic.AtomicInteger
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
