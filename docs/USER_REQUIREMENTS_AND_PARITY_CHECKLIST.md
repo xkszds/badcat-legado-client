@@ -310,3 +310,9 @@
 - [x] 将替换规则运行时的独立摘要/HMAC 实现补入旧调用方审查范围。
 - [x] 将 LEGADO_CRYPTO_COMPAT_JS 与 source-scoped java bridge 的分层关系补入安全边界要求。
 - [ ] 完整仓库 grep 仍是任何签名/返回类型变更前的阻塞项；不能因 app runtime 目录扫描完成就误标为全仓审计完成。
+
+## 2026-11-19 CI 状态更正（本轮复核）
+- run [44557806917](https://github.com/xkszds/badcat-legado-client/actions/runs/44557806917)，head 28cff4a9771fdbd32b4a085386c3d435db610b82：已完成且 conclusion=success。contract unit tests、bounded Rhino host tests、Debug APK assemble/upload、Nyasama/公开源/Feisuzhong/Pinshuzhai 与四源上传语料 live smoke 步骤均完成成功；产物包含 debug APK artifact 14546626986、unit test reports 14546077767 和 live smoke reports。
+- run [44558528157](https://github.com/xkszds/badcat-legado-client/actions/runs/44558528157)，head 6fa843febb293e95a9a0da44acc9e38b64776b48：已结束为 cancelled，不计为通过。
+- run 44557806917 验证的是旧代码提交 28cff4a，不是当前文档 head；不能把它写成当前 HEAD 的验证结果。当前文档提交后的新 CI 尚未检查到完成结果。
+- 该 CI 成功只说明该提交上的测试/构建/所配置 live smoke 成功，不等于完整 Legado、真机安装或最终 APK 验收。

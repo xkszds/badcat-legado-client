@@ -137,3 +137,9 @@ The host's current `createSymmetricCrypto` returns an AES/DES-CBC-only host faca
 All 23 Kotlin files under the app runtime package and all 29 app test Kotlin files were scanned for the relevant crypto method/helper identifiers. Existing dynamic source-script calls are in `RhinoSourceScriptRuntimeTest.kt`: AES/DES symmetric factory use, AES Base64 decoding, digest/HMAC helpers, and the restricted JavaImporter boundary. `RhinoSourceScriptRuntime.kt` binds the per-source `RhinoSafeSourceJavaExtensions` instance as `scope["java"]` and separately installs a narrow `LEGADO_CRYPTO_COMPAT_JS` Packages/JavaImporter shim. `RhinoLegadoJsReplacementEvaluator.kt` has its own digest/HMAC implementation and must be preserved/re-audited independently.
 
 This is not yet a full repository grep: app UI directories, integration-contract, and legado-rhino have not been scanned for the target identifiers. Do not change signatures or remove old helpers until that final scope is checked.
+
+## 2026-11-19 CI recheck
+
+Run [44557806917](https://github.com/xkszds/badcat-legado-client/actions/runs/44557806917) for code head `28cff4a9771fdbd32b4a085386c3d435db610b82` has now completed successfully. Its contract tests, bounded Rhino host tests, Debug APK build/upload and configured live smoke steps (including the four-source uploaded-corpus step) all completed successfully. Artifacts include Debug APK `14546626986`, unit test reports `14546077767`, and live-source reports. This run does not cover the current documentation-only head.
+
+Run `44558528157` for head `6fa843febb293e95a9a0da44acc9e38b64776b48` ended as cancelled, not passed. No CI result for the current documentation head is claimed. The successful earlier run does not establish full Legado parity or physical-device acceptance.
