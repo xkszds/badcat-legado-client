@@ -57,6 +57,7 @@ class OkHttpSourceRequestClient(
 
     override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
         if (request.sourceId.isBlank() || request.url.isBlank() ||
+            request.url.length > MAX_REQUEST_URL_CHARS ||
             request.retryCount !in 0..5 ||
             request.timeoutMillis?.let { it <= 0 || it > Int.MAX_VALUE } == true
         ) {
@@ -285,6 +286,7 @@ class OkHttpSourceRequestClient(
     }
 
     companion object {
+        private const val MAX_REQUEST_URL_CHARS = 16 * 1024
         private val SUPPORTED_METHODS = setOf("GET", "HEAD", "POST", "PUT", "PATCH", "PROPPATCH", "REPORT")
         private val BODY_REQUIRED_METHODS = setOf("POST", "PUT", "PATCH", "PROPPATCH", "REPORT")
         private val BODY_FORBIDDEN_METHODS = setOf("GET", "HEAD")

@@ -47,6 +47,18 @@ class OkHttpSourceRequestClientTest {
     }
 
     @Test
+    fun rejectsOversizedUrlsWhenTransportIsCalledDirectly() = runBlocking {
+        val result = OkHttpSourceRequestClient().execute(
+            SourceHttpRequest(
+                sourceId = "oversized-url-fixture",
+                url = "https://example.com/" + "a".repeat(16 * 1024),
+                useCookieJar = false,
+            ),
+        )
+        assertEquals(EngineErrorCode.INVALID_SOURCE, (result as EngineResult.Failure).code)
+    }
+
+    @Test
     fun rejectsDirectTransportUrlsOutsideCredentialFreeHttpAndHttps() = runBlocking {
         val client = OkHttpSourceRequestClient()
         listOf(

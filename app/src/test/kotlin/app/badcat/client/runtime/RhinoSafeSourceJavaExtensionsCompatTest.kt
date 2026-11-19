@@ -45,6 +45,19 @@ class RhinoSafeSourceJavaExtensionsCompatTest {
     }
 
     @Test
+    fun legacyAjaxRejectsOversizedUrlBeforeCallingTransport() {
+        var called = false
+        val guarded = RhinoSafeSourceJavaExtensions(
+            sourceId = "ajax-limit-fixture",
+            store = InMemorySourceScriptKeyValueStore,
+            ajaxRequest = { called = true; "unexpected" },
+        )
+        val result = guarded.ajax("https://example.com/" + "a".repeat(16 * 1024))
+        assertEquals(false, called)
+        org.junit.Assert.assertTrue(result.contains("per-URL character limit"))
+    }
+
+    @Test
     fun sourceConcurrencyKeysDoNotAliasWhenIdsAndNamesContainAtSigns() {
         val first = RhinoSafeSourceJavaExtensions(
             sourceId = "a@b",

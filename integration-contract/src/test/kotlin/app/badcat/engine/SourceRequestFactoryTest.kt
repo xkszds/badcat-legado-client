@@ -74,6 +74,18 @@ class SourceRequestFactoryTest {
     }
 
     @Test
+    fun rejectsRequestUrlsOverTheConfiguredCharacterLimitBeforeEncoding() {
+        val result = SourceRequestFactory.create(
+            source(),
+            "https://reader.example/" + "a".repeat(16 * 1024),
+        )
+        assertEquals(
+            EngineErrorCode.INVALID_SOURCE,
+            assertIs<EngineResult.Failure>(result).code,
+        )
+    }
+
+    @Test
     fun rejectsNonHttpAndCredentialBearingUrls() {
         listOf(
             "javascript:alert(1)",

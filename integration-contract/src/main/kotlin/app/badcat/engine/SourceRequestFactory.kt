@@ -58,6 +58,12 @@ object SourceRequestFactory {
                 "Source identity and request URL must not be blank",
             )
         }
+        if (url.length > MAX_REQUEST_URL_CHARS) {
+            return EngineResult.Failure(
+                EngineErrorCode.INVALID_SOURCE,
+                "Request URL exceeds the configured character limit",
+            )
+        }
 
         if (retryCount !in 0..5 ||
             timeoutMillis?.let { it <= 0 || it > Int.MAX_VALUE } == true
@@ -160,6 +166,7 @@ object SourceRequestFactory {
         )
     }
 
+    private const val MAX_REQUEST_URL_CHARS = 16 * 1024
     private val SUPPORTED_METHODS = setOf(
         "GET", "HEAD", "POST", "PUT", "PATCH", "PROPPATCH", "REPORT",
     )

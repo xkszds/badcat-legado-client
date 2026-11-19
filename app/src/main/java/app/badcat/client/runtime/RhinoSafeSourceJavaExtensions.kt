@@ -1114,6 +1114,9 @@ class RhinoSafeSourceJavaExtensions(
             else -> url?.toString().orEmpty()
         }
         require(value.isNotBlank()) { "java.ajax URL must not be blank" }
+        require(value.length <= MAX_AJAX_URL_CHARS) {
+            "java.ajax URL exceeds the per-URL character limit"
+        }
         ajaxRequest(value)
     }.getOrElse { error ->
         error.stackTraceToString().ifEmpty { error.localizedMessage ?: "noErrorMsg" }
