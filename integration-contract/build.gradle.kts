@@ -7,21 +7,17 @@ kotlin {
 }
 
 val pinnedLegado by sourceSets.creating {
-    java.srcDir("$rootDir/upstream/legado/app/src/main/java")
+    // Keep the host's compatibility-adjusted copies isolated from the upstream
+    // source root. Adding the whole upstream tree here caused duplicate FQCNs
+    // whenever a pinned file had a platform adaptation.
     java.srcDir("$projectDir/src/pinnedLegado/kotlin")
-    // Compile exact upstream selector/parser primitives used by this host.
+    // Compile only the untouched upstream primitives needed by the host.
     // AnalyzeRule's app-coupled lifecycle remains a separate integration task.
-    java.include(
-        "io/legado/app/model/analyzeRule/AnalyzeByJSoup.kt",
-        "io/legado/app/model/analyzeRule/AnalyzeByRegex.kt",
-        "io/legado/app/model/analyzeRule/RuleAnalyzer.kt",
-        "io/legado/app/model/analyzeRule/SourceHtmlParser.kt",
-        "io/legado/app/model/analyzeRule/PinnedLegadoJsoupBridge.kt",
-        "io/legado/app/model/analyzeRule/AnalyzeByJSonPath.kt",
-        "io/legado/app/model/analyzeRule/AnalyzeByXPath.kt",
-        "io/legado/app/model/analyzeRule/PinnedLegadoXPathBridge.kt",
-        "io/legado/app/model/analyzeRule/PinnedLegadoJsonPathBridge.kt",
-        "io/legado/app/utils/PrintOnDebug.kt",
+    java.srcFiles(
+        "$rootDir/upstream/legado/app/src/main/java/io/legado/app/model/analyzeRule/AnalyzeByJSoup.kt",
+        "$rootDir/upstream/legado/app/src/main/java/io/legado/app/model/analyzeRule/AnalyzeByRegex.kt",
+        "$rootDir/upstream/legado/app/src/main/java/io/legado/app/model/analyzeRule/RuleAnalyzer.kt",
+        "$rootDir/upstream/legado/app/src/main/java/io/legado/app/model/analyzeRule/SourceHtmlParser.kt",
     )
 }
 
