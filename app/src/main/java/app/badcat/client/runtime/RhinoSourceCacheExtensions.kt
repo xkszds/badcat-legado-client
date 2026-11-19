@@ -41,12 +41,19 @@ class RhinoSourceCacheExtensions(
                 store.remove(sourceId, storageKey(key))
                 return null
             }
-        val expiresAt = entry.get("expiresAt")?.asLong ?: 0L
+        val expiresAt = runCatching { entry.get("expiresAt")?.asLong ?: 0L }.getOrElse {
+            store.remove(sourceId, storageKey(key))
+            return null
+        }
         if (expiresAt > 0L && nowMillis() >= expiresAt) {
             store.remove(sourceId, storageKey(key))
             return null
         }
-        return entry.get("value")?.takeIf { it.isJsonPrimitive }?.asString
+        val value = entry.get("value")?.takeIf {
+            it.isJsonPrimitive && it.asJsonPrimitive.isString
+        }?.asString
+        if (value == null) store.remove(sourceId, storageKey(key))
+        return value
     }
 
     fun put(key: String, value: String): String = put(key, value, 0L)
