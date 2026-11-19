@@ -441,11 +441,12 @@ class CssSearchResultsParser {
     }
 
     private fun normalizeHtmlOutput(rule: String): String {
-        val split = PinnedLegadoRuleAnalyzer.split(rule)
+        val normalized = rule.trim()
+        val split = PinnedLegadoRuleAnalyzer.split(normalized)
         if (split.operator == null) {
-            return if (hasHtmlOutputSuffix(rule)) rule else "$rule@html"
+            return if (hasHtmlOutputSuffix(normalized)) normalized else "$normalized@html"
         }
-        return split.rules.joinToString(split.operator) { normalizeHtmlOutput(it) }
+        return split.rules.joinToString(split.operator) { normalizeHtmlOutput(it.trim()) }
     }
 
     private fun hasHtmlOutputSuffix(rule: String): Boolean =
