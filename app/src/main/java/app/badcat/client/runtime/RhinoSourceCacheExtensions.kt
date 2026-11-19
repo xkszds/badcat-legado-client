@@ -85,7 +85,7 @@ class RhinoSourceCacheExtensions(
         require(value.toByteArray(Charsets.UTF_8).size <= MAX_FILE_VALUE_BYTES) {
             "cache file value exceeds the size limit"
         }
-        val seconds = saveTime.toLong()
+        val seconds = checkedTtlSeconds(saveTime)
         require(seconds >= 0L && seconds <= MAX_TTL_SECONDS) { "cache file saveTime is outside the supported range" }
         val expiresAt = if (seconds == 0L) 0L else nowMillis() + seconds * 1_000L
         fileStore.put(sourceId, storageKey(key), "$expiresAt\n$value")
