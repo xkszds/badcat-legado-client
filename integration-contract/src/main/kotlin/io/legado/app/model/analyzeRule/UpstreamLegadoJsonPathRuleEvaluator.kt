@@ -12,6 +12,12 @@ object UpstreamLegadoJsonPathRuleEvaluator {
         return values.map { Gson().toJson(it) }
     }
 
-    private fun stripModePrefix(rule: String): String =
-        rule.replace(Regex("@jsonpath:|@json:", RegexOption.IGNORE_CASE), "").trim()
+    private fun stripModePrefix(rule: String): String {
+        val normalized = rule.trim()
+        return when {
+            normalized.startsWith("@jsonpath:", ignoreCase = true) -> normalized.substring(10).trim()
+            normalized.startsWith("@json:", ignoreCase = true) -> normalized.substring(6).trim()
+            else -> normalized
+        }
+    }
 }
