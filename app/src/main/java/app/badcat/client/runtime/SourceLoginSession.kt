@@ -1,6 +1,8 @@
 package app.badcat.client.runtime
 
 import android.content.Context
+import android.provider.Settings
+import io.legado.app.help.crypto.SymmetricCryptoAndroid
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import app.badcat.engine.EngineResult
@@ -52,7 +54,32 @@ object InMemorySourceLoginSessionStore : SourceLoginSessionStore {
 }
 
 /** App-private storage. Values may contain authentication secrets and are never logged. */
-class SharedPreferencesSourceLoginSessionStore(context: Context) : SourceLoginSessionStore {
+internal object SourceLoginInfoCipher {
+    fun encrypt(plainText: String, androidId: String): String {
+        val key = androidId.encodeToByteArray(0, 16)
+        require(key.size == 16) { "Android ID must provide the 16-byte Legado AES key" }
+        return SymmetricCryptoAndroid("AES", key).encryptBase64(plainText)
+    }
+
+    fun decrypt(cipherText: String, androidId: String): String {
+        val key = androidId.encodeToByteArray(0, 16)
+        require(key.size == 16) { "Android ID must provide the 16-byte Legado AES key" }
+        return SymmetricCryptoAndroid("AES", key).decrypt(cipherText).toString(Charsets.UTF_8)
+    }
+
+    fun isLegacyPlainText(value: String): Boolean = value.trimStart().startsWith("{")
+}
+
+/** App-private storage. Login info follows pinned BaseSource's Android-ID AES format. */
+class SharedPreferencesSourceLoginSessionStore(
+    context: Context,
+    private val androidIdProvider: () -> String = {
+        Settings.System.getString(
+            context.applicationContext.contentResolver,
+            Settings.Secure.ANDROID_ID,
+        ) ?: "null"
+    },
+) : SourceLoginSessionStore {
     private val preferences = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     private fun key(kind: String, sourceId: String) = "${kind}_${sourceId}"
     override fun getLoginHeader(sourceId: String) = preferences.getString(key("header", sourceId), null)
@@ -60,9 +87,22 @@ class SharedPreferencesSourceLoginSessionStore(context: Context) : SourceLoginSe
         preferences.edit().putString(key("header", sourceId), headerJson).apply()
     }
     override fun removeLoginHeader(sourceId: String) { preferences.edit().remove(key("header", sourceId)).apply() }
-    override fun getLoginInfo(sourceId: String) = preferences.getString(key("info", sourceId), null)
+    override fun getLoginInfo(sourceId: String): String? {
+        val storageKey = key("info", sourceId)
+        val stored = preferences.getString(storageKey, null) ?: return null
+        if (SourceLoginInfoCipher.isLegacyPlainText(stored)) {
+            // Non-destructive migration: if the device key is temporarily unavailable,
+            // keep and return the legacy value rather than replacing it with garbage.
+            val encrypted = runCatching { SourceLoginInfoCipher.encrypt(stored, androidIdProvider()) }
+                .getOrNull()
+            if (encrypted != null) preferences.edit().putString(storageKey, encrypted).apply()
+            return stored
+        }
+        return runCatching { SourceLoginInfoCipher.decrypt(stored, androidIdProvider()) }.getOrNull()
+    }
     override fun putLoginInfo(sourceId: String, infoJson: String) {
-        preferences.edit().putString(key("info", sourceId), infoJson).apply()
+        val encrypted = SourceLoginInfoCipher.encrypt(infoJson, androidIdProvider())
+        preferences.edit().putString(key("info", sourceId), encrypted).apply()
     }
     override fun removeLoginInfo(sourceId: String) { preferences.edit().remove(key("info", sourceId)).apply() }
     override fun clearSource(sourceId: String) {
