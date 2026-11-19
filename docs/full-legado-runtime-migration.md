@@ -723,3 +723,25 @@ Re-read all five mandatory files and this registration; verify branch head again
 - Next code work remains within Stage 1 and must follow the model audit: no isolated/fake `BookSource` or `BaseSource`; inspect the exact pinned service/model graph and all host callers, keep Android Room/Parcelable concerns out of the JVM contract, retain raw JSON for unknown-field losslessness, and pre-register a narrower adapter slice before runtime edits.
 - Product parity remains separate: Badcat categories 1, 2, 4 and 5 are not completed by Legado category-3 progress. No full-client or final-APK claim is authorized.
 - Self-review: the earlier Stage 1 preregistration's branch baseline and “no runtime edits yet” label became stale after commit `5466caa`; this record explicitly supersedes those statements. Checklist scope remains valid, but the next implementation must respect the more specific Android model/service boundary in `upstream-model-serialization-audit.md`.
+
+## 2026-11-20 Stage 1 continuation — pinned model gap audit (PRE-REGISTERED; AUDIT FIRST)
+
+### Baseline
+- Branch: `integration/legado-upstream-runtime`; head verified from `refs/heads` as `eabbef43481e6c14b8bda6ea62f03c5213d1188d`.
+- Pinned upstream: `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- `main` must remain untouched. Earlier `5466caa`/`2b2bf91` registration text is historical and must not be treated as current head.
+
+### Registered scope
+- Audit exact upstream `BookSource.kt`, `Book.kt`, `BookChapter.kt`, `BaseSource` and rule model declarations at the pinned SHA.
+- Audit current host `ReadingEngine.kt`, `LegadoBookSourceCodec.kt`, `FileBookSourceCatalog.kt`, all model constructors, adapters, source identity/login/session paths, persistence and tests.
+- Build a field-level matrix for type/default/nullability, JSON converter behavior, identity/equality, transient/ignored members, and dependencies on Room, Parcelable, app DB/context, CookieStore, cache, reader configuration and `JsExtensions`.
+- Decide the next narrow implementation boundary only after this evidence; retain existing raw JSON preservation and host source compatibility.
+
+### Risks and tests
+- Do not copy Android upstream entities into `integration-contract` or create look-alike `BaseSource`/`Book`/`BookChapter` types and call them official runtime models.
+- Preserve `bookSourceUrl` source identity and source-scoped login/Cookie behavior; chapter cache identity is book + chapter index, not URL.
+- Inspect all host constructor/caller sites and current codec tests before any signature change. The audit-only slice must not alter runtime behavior; validate source paths, method/field inventory, and consistency of the audit with pinned source.
+
+### Acceptance and exclusions
+- Audit report must identify every field and every runtime service dependency for the three entities and `BaseSource`, identify host mappings/callers, and specify a dependency-safe adapter plan.
+- This registration authorizes documentation/audit changes only. No runtime source changes, no UI changes, no main-branch writes, no fake or no-op APIs, no APK/release claims. Any code implementation requires a new pre-registration first.
