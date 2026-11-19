@@ -441,7 +441,7 @@ class CssSearchResultsParser {
     }
 
     private fun normalizeHtmlOutput(rule: String): String {
-        val split = RuleExpressionTokenizer.splitByFirstTopLevelOperator(rule)
+        val split = PinnedLegadoRuleAnalyzer.split(rule)
         if (split.operator == null) {
             return if (hasHtmlOutputSuffix(rule)) rule else "$rule@html"
         }
@@ -454,7 +454,7 @@ class CssSearchResultsParser {
     private fun hasNonHtmlOutputSuffix(rule: String): Boolean {
         val root = LegadoRuleReplacement.parse(rule).expression.trim()
         if (root.startsWith(":") || root.startsWith("@regex:", ignoreCase = true)) return false
-        val split = RuleExpressionTokenizer.splitByFirstTopLevelOperator(root)
+        val split = PinnedLegadoRuleAnalyzer.split(root)
         if (split.operator != null) return split.rules.any(::hasNonHtmlOutputSuffix)
         val value = root
         return listOf("@text", "@ownText", "@href", "@src", "@tag")
