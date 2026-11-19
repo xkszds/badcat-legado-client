@@ -41,7 +41,7 @@ dependencies {
 
 // The app consumes this module as a project dependency. Package the separately
 // compiled pinned Legado classes into the published module JAR as well.
-tasks.named<org.gradle.jvm.tasks.Jar>("jar") {
+tasks.named<org.gradle.api.tasks.bundling.Jar>("jar") {
     from(pinnedLegado.output)
 }
 
