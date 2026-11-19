@@ -16,6 +16,7 @@ val pinnedLegado by sourceSets.creating {
         "io/legado/app/model/analyzeRule/AnalyzeByRegex.kt",
         "io/legado/app/model/analyzeRule/RuleAnalyzer.kt",
         "io/legado/app/model/analyzeRule/SourceHtmlParser.kt",
+        "io/legado/app/model/analyzeRule/PinnedLegadoJsoupBridge.kt",
     )
 }
 
