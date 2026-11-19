@@ -117,13 +117,14 @@ class RhinoSafeSourceJavaExtensions(
                     if (response.statusCode !in 200..299) return null
                     response.bodyBytes ?: response.body.toByteArray(Charsets.UTF_8)
                 } else {
-                    readFile(data) ?: run {
-                        val encoded = data.substringAfter("base64,", data)
-                        require(encoded.length <= MAX_FONT_BASE64_CHARS) {
-                            "Base64 font data exceeds the 8 MiB decoded-size limit"
-                        }
-                        base64DecodeToByteArray(encoded) ?: return null
+                    // Reject oversized script input before path normalization, cache lookup,
+                    // or Base64 decoding. The original string may be an attacker-controlled
+                    // multi-megabyte value and must not be processed as a candidate path first.
+                    val encoded = data.substringAfter("base64,", data)
+                    require(encoded.length <= MAX_FONT_BASE64_CHARS) {
+                        "Base64 font data exceeds the 8 MiB decoded-size limit"
                     }
+                    readFile(data) ?: (base64DecodeToByteArray(encoded) ?: return null)
                 }
             }
             else -> return null
