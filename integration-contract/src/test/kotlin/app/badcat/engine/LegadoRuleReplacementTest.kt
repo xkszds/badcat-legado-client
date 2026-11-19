@@ -50,7 +50,7 @@ class LegadoRuleReplacementTest {
     fun trimsTheSelectorBeforeApplyingTheReplacementSuffixLikeUpstreamSourceRule() {
         val parsed = LegadoRuleReplacement.parse("  h1@text  ##old##new")
         assertEquals("h1@text", parsed.expression)
-        assertEquals("h1@text  ##old##new", parsed.toRuleString())
+        assertEquals("h1@text##old##new", parsed.toRuleString())
         assertEquals(
             listOf("new title"),
             assertIs<EngineResult.Success<List<String>>>(
