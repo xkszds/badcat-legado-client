@@ -1490,16 +1490,18 @@ text + re.test('aa}}')"""
             asymmetric.setPublicKey(java.base64DecodeToByteArray('$publicKey'));
             asymmetric.setPrivateKey(java.base64DecodeToByteArray('$privateKey'));
             var encrypted = asymmetric.encryptBase64('Pinned RSA fixture');
+            var encryptedHex = asymmetric.encryptHex('Pinned RSA fixture');
             var decrypted = asymmetric.decryptStr(encrypted, false);
+            var decryptedHex = asymmetric.decryptStr(encryptedHex, false);
             var signer = java.createSign('SHA256withRSA');
             signer.setPrivateKey(java.base64DecodeToByteArray('$privateKey'));
             signer.setPublicKey(java.base64DecodeToByteArray('$publicKey'));
             var signature = signer.sign(java.utf8Encode('Pinned signature fixture'));
             var verified = signer.verify(java.utf8Encode('Pinned signature fixture'), signature);
-            decrypted + '|' + verified;
+            decrypted + '|' + decryptedHex + '|' + verified;
         """.trimIndent())
         assertTrue("Pinned RSA/sign factories failed: $result", result is EngineResult.Success)
-        assertEquals("Pinned RSA fixture|true", (result as EngineResult.Success).value)
+        assertEquals("Pinned RSA fixture|Pinned RSA fixture|true", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
 
