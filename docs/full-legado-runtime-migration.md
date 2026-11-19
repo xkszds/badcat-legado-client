@@ -100,3 +100,12 @@ CI run [44550830295](https://github.com/xkszds/badcat-legado-client/actions/runs
 - Added Parcelize plugin and Flexbox dependency matching pinned upstream versions. GPL-3.0 provenance is recorded in `THIRD_PARTY_NOTICES.md`.
 - This is only the rule-model/JSON foundation. No claim is made that BookSource/BaseSource, Room converters, AnalyzeRule/AnalyzeUrl or the complete reading lifecycle are integrated.
 - CI for the new code commit must be inspected before this increment is considered verified.
+
+
+## 2026-11-19 verified model-slice CI and next Legado gate
+
+- [x] CI run [44556688812](https://github.com/xkszds/badcat-legado-client/actions/runs/44556688812), head `8b9d07e617fe7b2469af70aaa17ee28e79c7a0f2`: contract unit tests passed; bounded Rhino host tests passed; Debug APK assembly passed and the APK artifact was uploaded.
+- [ ] Workflow live-source smoke steps were still running at the time of this ledger update. Do not report the whole workflow as completed, and do not treat a CI APK as final complete-Legado release.
+- [x] Re-read pinned upstream `BookSource.kt` and `BaseSource.kt`: BookSource is a Room/Parcelable entity implementing BaseSource; BaseSource extends the 1,390-line JsExtensions API and carries source lifecycle, login, cookie, script and cache behavior.
+- [ ] Next gate is the full BaseSource/JsExtensions host-service dependency map. Do not copy BookSource with a fake BaseSource or no-op methods. Map every dependency to an actual host service or exact upstream unsupported/error semantics, then vendor the upstream entity graph and converters with compatibility tests.
+- [ ] Existing host BookSource/ReadingEngine DTOs remain projections; raw JSON retention is still required for lossless import/export. They are not upstream runtime entities.

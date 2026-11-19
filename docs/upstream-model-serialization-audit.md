@@ -114,3 +114,13 @@ No runtime model code was changed in this audit. This is intentional: the depend
 - [ ] This does not make the source model complete: upstream `BookSource` and `BaseSource` remain absent, as do Room converters/database, `BaseBook`, `Book`, `BookChapter`, and runtime service dependencies.
 - [ ] New tests are authored but await CI execution on the code commit.
 - **Next:** inspect CI and fix any compile/test regressions; then map `BaseSource` and `JsExtensions` host service contracts before porting `BookSource`.
+
+
+## 2026-11-19 post-CI BookSource/BaseSource dependency re-audit
+
+- [x] The pinned upstream declarations were re-opened after the rule-model increment: `BookSource.kt`, `BaseSource.kt`, `JsExtensions.kt`, and the `BookList.kt` / `BookInfo.kt` operation call sites.
+- [x] Confirmed that `BookSource` cannot be integrated independently: it implements `BaseSource`, uses Room and Parcelable, owns six typed rule properties and converters, and calls source helper methods used by the operation pipeline.
+- [x] Confirmed that `BaseSource` is a runtime contract, not a marker: it extends `JsExtensions`, manages source key/tag, login/header/cookie state, script evaluation/shared state and cache behavior.
+- [ ] No fake BaseSource, null host services or no-op JsExtensions APIs will be introduced to force compilation.
+- [ ] Compatibility risks before the next code change: method-name/overload collisions with `RhinoSafeSourceJavaExtensions`; host DTO vs upstream mutable entity semantics; source-scoped shared JS scope and persistent variables; login-header/CookieStore ordering; Room converter parity; Android UI callback lifecycle; cancellation/threading; and source identity by `bookSourceUrl`.
+- **Next implementation gate:** finish the per-method JsExtensions inventory and host capability mapping, then integrate the real upstream BaseSource/BookSource dependency slice and re-audit every existing bridge/caller/test. Do not wire AnalyzeRule/AnalyzeUrl before these dependencies are real.
