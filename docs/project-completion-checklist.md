@@ -609,4 +609,8 @@ Critical security finding: SourceLoginSessionRequestClient attaches saved login 
 - [ ] Add tests for same-site/subdomain/cross-origin/CDN requests, cookie merge/removal, encryption/migration, malformed values and two-source isolation.
 - [ ] Run focused tests and full CI before marking any implementation item complete.
 
-CI run 44610074419 passed on the current documentation head, including contract tests, Rhino tests, Debug APK assembly/upload and best-effort live source smoke steps. This does not prove physical-device installation or full Legado migration.
+CI run 44610074419 passed on the earlier documentation-registration head 32e0537048b1c82714e982c56fe6998ce6117703, including contract tests, Rhino tests, Debug APK assembly/upload and best-effort live source smoke steps. It is not the final status of later documentation-only commits and does not prove physical-device installation or full Legado migration.
+
+The CI run 44610074419 passed on the earlier documentation-registration head 32e0537048b1c82714e982c56fe6998ce6117703; it is not the final status of later documentation-only commits. The later audit-document commits have their own workflow runs.
+
+Additional lifecycle gap: clearSourceState currently clears the script stores, file cache and login-session store but does not clear SharedPreferencesSourceCookieJar. The next auth/session implementation must add per-source cookie cleanup for source removal/reset as well as removeLoginHeader, without affecting other sources.

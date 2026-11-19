@@ -629,3 +629,7 @@ Targeted scan covered all 24 host app runtime Kotlin files and all 20 app unit-t
 5. Test same-site/subdomain/cross-origin/CDN, cookie merge/removal, encrypted persistence/migration, malformed values and two-source isolation.
 
 This next task is separate from full BaseSource/BookSource integration. It does not authorize changing java.getSource ABI, adding UI/WebView methods, or implementing batch persistence. All other migration gaps remain open.
+
+### Additional auth-state lifecycle finding
+
+RhinoSourceScriptRuntime.clearSourceState clears source scope/global state, script key/value storage, source file cache, physical source cache and login-session state. It does not clear the persisted SharedPreferencesSourceCookieJar, and the runtime has no cookie-clear callback. The jar's clear() method exists but is not connected to this lifecycle. This can leave source cookies persisted after source state is cleared; include explicit per-source cookie cleanup in the next auth/session slice and test that other sources remain untouched.

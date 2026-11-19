@@ -505,3 +505,7 @@ A targeted scan covered all 24 app runtime Kotlin files and all 20 app unit-test
 ### Next bounded implementation slice (pre-registered; not started)
 
 Implement source login/session parity and credential boundaries only: same-site-only login header propagation; Cookie synchronization on putLoginHeader and cookie removal on removeLoginHeader; pinned AES-compatible loginInfo storage with tested migration of existing plaintext records; preserve per-source isolation and validate malformed input. Tests must cover same-site, subdomain, third-party CDN/cross-origin, cookie merge/removal, encryption/migration and two-source isolation. This does not implement the full BaseSource object, UI/WebView, batch, Room model or change java.getSource ABI. Those remain open.
+
+### Authentication lifecycle clarification
+
+RhinoSourceScriptRuntime.clearSourceState removes source scopes, script key/value data, file cache and login-session state, but it does not clear SharedPreferencesSourceCookieJar. The jar has a clear operation, but no cookie-clear callback is wired into this lifecycle. Source removal/reset therefore needs an explicit per-source cookie cleanup path in the next auth/session slice, with tests proving another source's cookie state is preserved.

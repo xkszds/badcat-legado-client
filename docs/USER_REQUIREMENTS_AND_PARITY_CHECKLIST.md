@@ -718,3 +718,7 @@ Before changing code, preserve the pinned BaseSource contract and implement only
 5. Add regression tests for same-site/subdomain/cross-origin/CDN requests, Cookie merge/removal, persisted encryption/migration, malformed data and two-source isolation.
 
 Acceptance: no credential is sent cross-origin; cookie state and login-header state stay synchronized and source-isolated; persisted loginInfo is not plaintext; legacy stored data has an explicit tested migration; all focused tests and full CI pass. This task does not claim full BaseSource parity and does not authorize changing the java.getSource descriptor ABI or implementing UI/WebView/batch APIs. Those remain separately open.
+
+### Authentication lifecycle clarification
+
+The targeted host lifecycle audit also found that RhinoSourceScriptRuntime.clearSourceState clears source scopes, script key/value state, file cache and login-session state, but it has no source-cookie clear callback. SharedPreferencesSourceCookieJar has a clear operation, yet it is not invoked by this lifecycle path. The next login/session implementation must cover source removal/reset as well as removeLoginHeader, and prove that clearing one source cannot clear another source's cookies.
