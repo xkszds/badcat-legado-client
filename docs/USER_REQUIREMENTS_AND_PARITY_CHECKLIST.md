@@ -146,3 +146,12 @@
 - Updated archive, charset, binary-download, cacheFile, ajaxAll, and source-runtime regression fixtures to inject the correct transport.
 - CI run [#44425052095](https://github.com/xkszds/badcat-legado-client/actions/runs/44425052095), commit `83e8c1f9f4f028d34d07d82c76f8b067b7ca8390`: contract tests and bounded Rhino tests passed; Debug APK assembly completed. Best-effort live source probes were still running at last inspection.
 - Earlier runs #44424684356 and #44424846495 failed because their commits contained the new redirect routing before all corresponding test fixtures were migrated; the fixture updates are included in the verified #44425052095 head.
+
+## 2026-11-19 cache eviction and AtomicFile durability follow-up
+
+- Added a shared cache-pruning helper that protects the just-written target from eviction, even when filesystem timestamp resolution ties it with older entries. Added deterministic tie-order and LRU eviction tests.
+- Chapter and source-file caches now treat pruning as best-effort after `AtomicFile.finishWrite`; an eviction error cannot trigger `failWrite` and roll back a successfully committed cache entry.
+- Source-file cache operations are serialized with a process-wide lock across multiple store instances. Successful reads refresh last-modified time so the shared budget can evict least-recently-used entries.
+- CI run [#44426131263](https://github.com/xkszds/badcat-legado-client/actions/runs/44426131263) passed the cache-pruner tests, contract/Rhino suites and Debug APK assembly for the helper/test increment.
+- Run [#44426760656](https://github.com/xkszds/badcat-legado-client/actions/runs/44426760656) exposed a Kotlin return-type inference issue after moving chapter pruning outside the AtomicFile write block. The explicit `Unit` result was added in the current head.
+- Current implementation head: `bf790b0f912ee7a5d14abd41b100d4d585cd444d`. Run [#44427488271](https://github.com/xkszds/badcat-legado-client/actions/runs/44427488271), head `bf790b0f912ee7a5d14abd41b100d4d585cd444d`, passed contract tests, bounded Rhino tests and Debug APK assembly; best-effort live probes were still running at last inspection.

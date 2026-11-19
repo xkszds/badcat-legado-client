@@ -119,3 +119,12 @@
 - Redirect-following GET is now used for downloads, archive URL reads, `ajaxAll`, one-argument `get(url)`, and selector URL fetches. Pinned `get/head/post` overloads retain no-auto-redirect behavior.
 - Regression fixtures were migrated to the correct callback. Run [#44425052095](https://github.com/xkszds/badcat-legado-client/actions/runs/44425052095) passed contract/Rhino tests and Debug APK assembly; live probes remained in progress at last inspection.
 - This remains category 3 engine compatibility work; the full upstream host API and categories 1, 2, 4 and 5 remain incomplete.
+
+## 2026-11-19 cache eviction and AtomicFile durability follow-up
+
+- Added a shared cache-pruning helper that protects the just-written target from eviction, even when filesystem timestamp resolution ties it with older entries. Added deterministic tie-order and LRU eviction tests.
+- Chapter and source-file caches now treat pruning as best-effort after `AtomicFile.finishWrite`; an eviction error cannot trigger `failWrite` and roll back a successfully committed cache entry.
+- Source-file cache operations are serialized with a process-wide lock across multiple store instances. Successful reads refresh last-modified time so the shared budget can evict least-recently-used entries.
+- CI run [#44426131263](https://github.com/xkszds/badcat-legado-client/actions/runs/44426131263) passed the cache-pruner tests, contract/Rhino suites and Debug APK assembly for the helper/test increment.
+- Run [#44426760656](https://github.com/xkszds/badcat-legado-client/actions/runs/44426760656) exposed a Kotlin return-type inference issue after moving chapter pruning outside the AtomicFile write block. The explicit `Unit` result was added in the current head.
+- Current implementation head: `bf790b0f912ee7a5d14abd41b100d4d585cd444d`. Run [#44427488271](https://github.com/xkszds/badcat-legado-client/actions/runs/44427488271), head `bf790b0f912ee7a5d14abd41b100d4d585cd444d`, passed contract tests, bounded Rhino tests and Debug APK assembly; best-effort live probes were still running at last inspection.
