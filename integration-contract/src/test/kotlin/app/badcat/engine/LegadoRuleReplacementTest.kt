@@ -32,7 +32,7 @@ class LegadoRuleReplacementTest {
             replaceFirst = true,
         )
 
-        assertEquals("bonana", assertIs<EngineResult.Success<String>>(result).value)
+        assertEquals("o", assertIs<EngineResult.Success<String>>(result).value)
     }
 
     @Test

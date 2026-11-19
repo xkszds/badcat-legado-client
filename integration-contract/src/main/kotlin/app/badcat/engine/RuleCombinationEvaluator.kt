@@ -34,7 +34,7 @@ object RuleCombinationEvaluator {
             return emptyList()
         }
 
-        val branches = split.rules.map { part -> evaluateNested(part, evaluateRule) }
+        val branches = split.rules.map { part -> evaluateNested(part.trim(), evaluateRule) }
             .filter { it.isNotEmpty() }
         if (branches.isEmpty()) return emptyList()
         return when (split.operator) {
@@ -71,7 +71,7 @@ object RuleCombinationEvaluator {
 
         val branches = ArrayList<List<T>>()
         for (part in split.rules) {
-            when (val result = evaluateNestedResult(part, evaluateRule)) {
+            when (val result = evaluateNestedResult(part.trim(), evaluateRule)) {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> if (result.value.isNotEmpty()) branches += result.value
             }
