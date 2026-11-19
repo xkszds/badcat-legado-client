@@ -9,20 +9,14 @@ import app.badcat.engine.EngineResult
 import app.badcat.engine.SourceHttpRequest
 import app.badcat.engine.SourceHttpResponse
 import app.badcat.engine.SourceRequestClient
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
-import okhttp3.internal.publicsuffix.PublicSuffixDatabase
+import io.legado.app.utils.NetworkUtils
 
 /**
  * Mirrors pinned NetworkUtils.getSubDomainOrNull: compare effective-TLD+1,
  * preserve IP literals and fail open when either URL cannot be parsed.
  */
-internal fun legadoSourceDomain(url: String): String? {
-    val parsed = url.toHttpUrlOrNull() ?: return null
-    val host = parsed.host
-    if (':' in host || host.matches(Regex("""\d{1,3}(\.\d{1,3}){3}"""))) return host
-    return runCatching { PublicSuffixDatabase.get().getEffectiveTldPlusOne(host) ?: host }
-        .getOrNull()
-}
+internal fun legadoSourceDomain(url: String): String? =
+    NetworkUtils.getSubDomainOrNull(url)
 
 internal fun shouldAttachSourceLoginHeader(sourceKey: String, targetUrl: String): Boolean {
     val sourceDomain = legadoSourceDomain(sourceKey) ?: return true
@@ -211,7 +205,7 @@ class RhinoSourceLoginExtensions(
     }
 }
 
-/** Adds the source's saved login header to every subsequent request for that source. */
+/** Adds saved login headers only to requests on the source's pinned Legado site. */
 class SourceLoginSessionRequestClient(
     private val delegate: SourceRequestClient,
     private val sessions: SourceLoginSessionStore,
