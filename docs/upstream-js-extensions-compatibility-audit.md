@@ -679,3 +679,40 @@ Current code head: `4fe83640cbaee4bbbb86875998838dd031ec1457`. Exact-head workfl
 The exact-code-head workflow `44619521355` for `4fe83640cbaee4bbbb86875998838dd031ec1457` failed during `:app:compileDebugKotlin`: the default lambda for `sourceLoginCookieRemover` had three parameters while its declared callback accepts two. The contract tests and pinned Rhino artifact verification had passed; the Android host test task failed at compilation, so no host test suite or APK result is claimed for that run.
 
 Corrected the callback arity in code commit `4b6c485aa6934520dbc0665b6de6b69a85454608`. The previous failure is retained as a failure record, not overwritten. A new exact-head workflow must compile and run the full relevant tests before this implementation slice can be considered verified.
+
+## 2026-11-20 pre-registered correction task — source login/session test failures (before further runtime edits)
+
+Latest exact-head workflow 44620143558 checked out documentation head 6a4e0c727a7ddc648975c0501f8026bba3ff8d3f and completed with failure. Its :integration-contract:test and pinned Rhino artifact verification passed, but :app:testDebugUnitTest reported 276 tests with 3 failures; APK assembly was skipped. Uploaded report artifact: 14575969615.
+
+### Confirmed failure evidence
+
+1. SourceLoginSessionTest.loginInfoCipherMatchesPinnedAndroidIdAesRoundTripAndRejectsBadKeyOrCiphertext fails because pinned SymmetricCryptoAndroid.encryptBase64 calls android.util.Base64.encodeToString, which is not mocked in the plain Android JVM test runner. This is a test/runtime-boundary issue, not evidence that AES itself failed.
+2. SourceLoginSessionTest.legacyPlainLoginInfoMigratesNonDestructivelyAndOnlyOnce fails because the same Android Base64 call throws and is caught by the migration's non-destructive runCatching. The plaintext remains unchanged, so the ciphertext-persisted assertion fails.
+3. SourceLoginSessionTest.loginHeadersAreOnlyAttachedToThePinnedEffectiveTldPlusOneSite fails because an unrelated CDN request still receives login headers. The assertion at the CDN check fails. PublicSuffixDatabase resolution is falling through its fail-open path in this JVM test environment or otherwise failing to distinguish these valid registrable domains. Do not change upstream fail-open semantics for invalid/unresolvable URLs; diagnose the public-suffix data/resource loading and preserve the pinned NetworkUtils.getSubDomainOrNull contract.
+
+### Source evidence inspected
+
+Pinned SymmetricCryptoAndroid.kt at 330e606c4d57e08adc056ff8ab7a4132c784da9a implements encryptBase64(data) as EncoderUtils.base64Encode(encrypt(data)); pinned EncoderUtils.base64Encode(bytes) uses Android Base64.NO_WRAP. The host can use the same SymmetricCryptoAndroid.encrypt(plainText) ciphertext bytes and Java's basic padded Base64 encoder/decoder only if a byte-for-byte fixture proves equivalence with Android NO_WRAP; alternatively configure an Android-aware test runner. Decryption should feed decoded bytes to the upstream primitive's byte-array decrypt overload. Do not substitute a different AES mode, key, padding or plaintext encoding.
+
+Pinned NetworkUtils.getSubDomainOrNull uses getBaseUrl, java.net.URL, isIPAddress, and PublicSuffixDatabase.get().getEffectiveTldPlusOne(host); any failure returns null. Host helper currently uses OkHttp HttpUrl parsing plus the same PublicSuffixDatabase and also returns null on PSL exceptions. Inspect dependency/resource loading and compare behavior with upstream before deciding whether to use the upstream helper directly or fix the missing test resource. Keep the invalid-URL fail-open behavior only where upstream does so.
+
+A related production wiring review found SharedPreferencesSourceLoginSessionStore obtains ANDROID_ID using Settings.System.getString(..., Settings.Secure.ANDROID_ID); correct API is Settings.Secure.getString, matching Android's secure setting and the factory's existing provider. Verify fallback behavior against pinned AppConst.androidId before editing.
+
+### Registered correction scope
+
+- Inspect exact current implementations, source-key identity flow from BookSource.id through SourceRequestFactory into SourceHttpRequest.sourceId, all call sites, and the current tests before editing.
+- Prove AES output parity with the pinned primitive and Android Base64.NO_WRAP; fix the JVM test boundary without changing crypto semantics. Add a deterministic known ciphertext fixture and retain round-trip, malformed ciphertext, missing key and plaintext-migration tests.
+- Diagnose and fix the public-suffix lookup/resource problem so valid unrelated hosts do not receive saved login headers; retain same-site/subdomain behavior and upstream invalid URL fail-open behavior. Add explicit IPv4/IPv6 and multi-level suffix cases where supported by pinned upstream semantics.
+- Correct the Android ID Settings API only after confirming pinned AppConst.androidId source and add a testable provider/fallback boundary.
+- Preserve source isolation, cookie behavior, request cancellation, validation and secret redaction. No broad BaseSource ABI, WebView/UI or batch API changes.
+
+### Acceptance gates
+
+- Focused login/session tests pass, including the three previously failing cases.
+- Existing login header merge/source isolation and Cookie jar parse/replace/remove/reset tests pass.
+- Full :app:testDebugUnitTest, :integration-contract:test, pinned Rhino artifact verification and :app:assembleDebug pass on the exact final code head.
+- Inspect JUnit XML/HTML and APK artifact; no success claim from queued or stale workflows.
+- Re-audit the entire diff and source identity path; update all four checklists with actual outcomes and unresolved device/source validation.
+- Physical Android device behavior, full Legado runtime and Badcat five-category parity remain separate open gates.
+
+Self-review: this task corrects the three observed CI failures plus the directly related Android ID setting lookup. It does not broaden the previously registered login/session feature scope and does not authorize marking the full login/session or Legado runtime complete.
