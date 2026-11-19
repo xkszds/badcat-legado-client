@@ -8,10 +8,12 @@ kotlin {
 
 val pinnedLegado by sourceSets.creating {
     java.srcDir("$rootDir/upstream/legado/app/src/main/java")
-    // Compile the exact upstream regex primitive as an independent source set.
-    // AnalyzeRule itself remains app-coupled; this is a real upstream source
-    // dependency, not a copied compatibility implementation.
-    java.include("io/legado/app/model/analyzeRule/AnalyzeByRegex.kt")
+    // Compile the exact upstream rule parser and regex primitive. The app-coupled
+    // AnalyzeRule lifecycle remains a separate integration task.
+    java.include(
+        "io/legado/app/model/analyzeRule/AnalyzeByRegex.kt",
+        "io/legado/app/model/analyzeRule/RuleAnalyzer.kt",
+    )
 }
 
 dependencies {
