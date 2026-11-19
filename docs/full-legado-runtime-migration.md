@@ -509,3 +509,12 @@ Implement source login/session parity and credential boundaries only: same-site-
 ### Authentication lifecycle clarification
 
 RhinoSourceScriptRuntime.clearSourceState removes source scopes, script key/value data, file cache and login-session state, but it does not clear SharedPreferencesSourceCookieJar. The jar has a clear operation, but no cookie-clear callback is wired into this lifecycle. Source removal/reset therefore needs an explicit per-source cookie cleanup path in the next auth/session slice, with tests proving another source's cookie state is preserved.
+
+
+## 2026-11-20 pre-change registration — source login/session credential boundary
+
+Implementation scope (registered before runtime edits): use pinned Legado revision `330e606c4d57e08adc056ff8ab7a4132c784da9a` and inspect its BaseSource/AnalyzeUrl login-header, CookieStore and AES loginInfo behavior. Modify only the host login/session path: `RhinoSourceLoginExtensions`, `SourceLoginSessionRequestClient`, `SharedPreferencesSourceLoginSessionStore`, `SharedPreferencesSourceCookieJar`, `RhinoSourceScriptRuntime` lifecycle wiring and `BadcatReadingEngineFactory`, plus focused tests.
+
+Required behavior: (1) attach saved login headers only to same-site targets according to pinned upstream domain semantics, never unrelated hosts/CDNs; (2) synchronize Cookie from putLoginHeader into the source-scoped cookie jar, remove associated cookie state on removeLoginHeader, and clear the source jar during clearSourceState; (3) encrypt loginInfo with the upstream androidId-derived AES-compatible scheme and provide a tested, non-destructive migration for existing plaintext values; (4) preserve source isolation, cancellation, validation, redaction and existing JS call contracts.
+
+Before implementation, inventory every host caller, adapter, overload and test; document risks for public-suffix/domain matching, cookie precedence/expiry, Android ID key availability, migration rollback/corrupt ciphertext and lifecycle ownership. Tests must cover same host, subdomain, unrelated host, CDN, redirects, cookie set/merge/remove, two-source isolation, reset cleanup, plaintext migration, encrypted round-trip, malformed ciphertext and missing/invalid key. Acceptance requires focused tests plus full CI; no full BaseSource parity claim. Do not change java.getSource descriptor ABI, implement batch APIs or add UI/WebView methods in this slice.
