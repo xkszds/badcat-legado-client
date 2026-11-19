@@ -184,3 +184,11 @@
 - Confirmed the existing `:integration-contract` JVM source set compiles selected parser files only; current per-stage CSS services and the staging `BookSource` model are not the upstream lifecycle/models. Do not pass them to upstream analyzer classes or add fake application globals.
 - Current incomplete areas remain: full upstream models/converters; real `AnalyzeUrl` transport semantics; `AnalyzeRule` lifecycle; all `JsExtensions` host API families; search/detail/TOC/content operation migration; batch save context and durable persistence; full upstream parity fixtures; Android device installation/reading validation.
 - Next gate: model/serialization foundation and rule-entity graph inventory, followed by real host service contracts. No UI redesign.
+
+
+## 2026-11-19 upstream model/serialization audit
+
+- Added `docs/upstream-model-serialization-audit.md` after inspecting pinned `BookSource`, `BaseSource`, `BaseBook`, `Book`, `BookChapter`, `SearchBook`, `RssArticle` and all source rule entity declarations/converters.
+- Confirmed the host `ReadingEngine.BookSource` and `BookChapter` are staging/UI projections, not upstream runtime entities. The source codec preserves raw JSON but does not provide typed rule accessors, `BaseSource` lifecycle, `RuleDataInterface`, or full chapter metadata.
+- Recorded the module boundary risk: current `:integration-contract` is JVM-only, while upstream entities require Android Parcelable/Room and application services. Do not copy Android-bound entities into the JVM module or create fake `appCtx/appDb/BaseSource` implementations.
+- Next code gate is an Android-side upstream model/runtime adapter with lossless raw JSON retained alongside typed runtime models. Before changing any model, re-read `AGENTS.md`, search all field consumers/callers/tests, record ABI/serialization risks and add object/string/null/default/unknown-field round-trip fixtures.
