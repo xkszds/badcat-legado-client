@@ -13,12 +13,14 @@ val pinnedLegado by sourceSets.creating {
     java.srcDir("$projectDir/src/pinnedLegado/kotlin")
     // Compile only the untouched upstream primitives needed by the host.
     // AnalyzeRule's app-coupled lifecycle remains a separate integration task.
-    java.srcFiles(
-        "$rootDir/upstream/legado/app/src/main/java/io/legado/app/model/analyzeRule/AnalyzeByJSoup.kt",
-        "$rootDir/upstream/legado/app/src/main/java/io/legado/app/model/analyzeRule/AnalyzeByRegex.kt",
-        "$rootDir/upstream/legado/app/src/main/java/io/legado/app/model/analyzeRule/RuleAnalyzer.kt",
-        "$rootDir/upstream/legado/app/src/main/java/io/legado/app/model/analyzeRule/SourceHtmlParser.kt",
-    )
+    java.srcDir(fileTree("$rootDir/upstream/legado/app/src/main/java") {
+        include(
+            "io/legado/app/model/analyzeRule/AnalyzeByJSoup.kt",
+            "io/legado/app/model/analyzeRule/AnalyzeByRegex.kt",
+            "io/legado/app/model/analyzeRule/RuleAnalyzer.kt",
+            "io/legado/app/model/analyzeRule/SourceHtmlParser.kt",
+        )
+    })
 }
 
 dependencies {
