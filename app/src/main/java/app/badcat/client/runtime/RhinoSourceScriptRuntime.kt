@@ -199,7 +199,7 @@ class RhinoSourceScriptRuntime(
     private val sourceLoginCookieWriter: (sourceId: String, sourceKey: String, cookie: String) -> Unit = { _, _, _ ->
         throw UnsupportedOperationException("source login Cookie is not connected to the source cookie jar")
     },
-    private val sourceLoginCookieRemover: (sourceId: String, sourceKey: String) -> Unit = { _, _, _ -> },
+    private val sourceLoginCookieRemover: (sourceId: String, sourceKey: String) -> Unit = { _, _ -> },
     private val sourceCookieClearer: (sourceId: String) -> Unit = { _ -> },
 ) : SourceScriptRuntime {
     private val javaExtensions = ConcurrentHashMap<String, RhinoSafeSourceJavaExtensions>()
