@@ -19,6 +19,8 @@ val pinnedLegado by sourceSets.creating {
 
 dependencies {
     add(pinnedLegado.implementationConfigurationName, "androidx.annotation:annotation:1.10.0")
+    add(pinnedLegado.implementationConfigurationName, "org.jsoup:jsoup:1.23.2")
+    add(pinnedLegado.implementationConfigurationName, "cn.wanghaomiao:JsoupXpath:2.5.3")
     implementation(pinnedLegado.output)
     implementation("com.google.code.gson:gson:2.14.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
