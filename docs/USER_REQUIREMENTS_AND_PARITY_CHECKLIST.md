@@ -728,3 +728,20 @@ The targeted host lifecycle audit also found that RhinoSourceScriptRuntime.clear
 Implemented the first bounded sub-slice in `SourceLoginSession.kt`: saved source login headers are attached only when the source key and initial request URL resolve to the same effective-TLD+1 domain, matching pinned `NetworkUtils.getSubDomainOrNull` and `AnalyzeUrl.isLoginHeaderSite`. IP literals are compared directly. As upstream does, malformed/unresolvable URLs fail open. Automatic redirect-chain stripping is not claimed; pinned AnalyzeUrl evaluates the initial URL.
 
 Regression coverage added for a same-site subdomain, an unrelated CDN host, and invalid-source-key fallback. This does not complete the registered task: Cookie synchronization/cleanup and AES loginInfo encryption plus legacy migration remain open. No release or full Legado parity claim.
+
+
+## 2026-11-20 source login/session implementation progress — verification pending
+
+The previously registered BaseSource login/session slice now has implementation changes on `integration/legado-upstream-runtime`:
+
+- `SourceLoginSessionRequestClient` retains the same-site/effective-TLD+1 login-header boundary from commit `c910ca461d26175125fcd02918b8680012c07037`.
+- `RhinoSourceLoginExtensions.putLoginHeader` now forwards a supplied Cookie request-header value to the source-scoped cookie adapter before persisting the login header. `removeLoginHeader` removes the saved header and asks the adapter to remove cookies for that source's registrable domain.
+- `SharedPreferencesSourceCookieJar` parses raw `Cookie: name=value; ...` request-header pairs as host-only cookies on the source host; replacing login cookies removes cookies for the source registrable domain and its subdomains while preserving unrelated CDN-domain cookies. Source reset is wired to clear only that source's jar.
+- Persisted `loginInfo` now uses the pinned upstream `BaseSource.kt` algorithm: first 16 Android-ID bytes as key and `SymmetricCryptoAndroid("AES", key).encryptBase64(info)`. Existing JSON plaintext is returned and migrated to ciphertext on read when the Android ID is available. Missing keys preserve plaintext; malformed ciphertext returns null without deleting the stored value.
+- Added regression coverage for Cookie header parsing, cookie-domain boundaries, login-header cookie writer/remover callbacks, source-reset cookie cleanup, AES round-trip, idempotent plaintext migration, missing key and malformed ciphertext.
+
+Pinned upstream evidence inspected: `BaseSource.kt` at `330e606c4d57e08adc056ff8ab7a4132c784da9a` calls `CookieStore.replaceCookie(getKey(), cookie)`, `CookieStore.removeCookie(getKey())`, and uses `AppConst.androidId.encodeToByteArray(0, 16)` with `SymmetricCryptoAndroid("AES", key)`. `AppConst.androidId` reads Android's `ANDROID_ID` setting (fallback string `"null"`).
+
+Verification status at this documentation update: exact-head CI for code head `c451b0c304703c2ffa84d855b8aa2d3a44a36ad1` is pending (run `44619334579`). Earlier per-commit workflow runs were cancelled by subsequent pushes and are not counted as passing. Do not mark this slice verified until the exact final head completes focused tests, full unit tests and Debug APK assembly and its logs are inspected.
+
+Open review items: verify the source key passed by the runtime is always the imported source URL for every caller; exercise durable SharedPreferences cookie replace/remove across separately constructed jar instances; compare generated AES ciphertext/decryption against a pinned upstream fixture; verify migration with real Android preferences/device; inspect exact-head CI. Same-site login-header filtering checks the initial URL as upstream does; it does not claim redirect-chain header stripping. This increment does not complete BaseSource/JsExtensions, full Legado runtime, physical-device validation or Badcat five-category parity.
