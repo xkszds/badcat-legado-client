@@ -11,6 +11,22 @@ class RhinoSafeSourceJavaExtensionsCompatTest {
     )
 
     @Test
+    fun batchContextMatchesPinnedUpstreamDefaultOutsideBatchExecution() {
+        org.junit.Assert.assertNull(extensions.getBatchContext())
+    }
+
+    @Test
+    fun cacheContentFailsExplicitlyWhenNoBatchContextIsInstalled() {
+        val error = assertThrows(IllegalStateException::class.java) {
+            extensions.cacheContent(mapOf("index" to 1), "chapter text")
+        }
+        assertEquals(
+            "java.cacheContent can only be called in a batch content rule",
+            error.message,
+        )
+    }
+
+    @Test
     fun sourceNavigationContextMatchesPinnedUpstreamDefault() {
         assertEquals(kotlin.coroutines.EmptyCoroutineContext, extensions.getSourceNavigationContext())
     }

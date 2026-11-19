@@ -96,6 +96,18 @@ class RhinoSafeSourceJavaExtensions(
         toastPresenter("${sourceTag}: ${msg.toString()}", true)
     }
 
+    /** Matches the pinned JsExtensions default outside a contentBatch execution. */
+    fun getBatchContext(): Any? = null
+
+    /**
+     * The upstream helper only accepts writes while a batch-content context is installed.
+     * Batch chapter persistence is not connected to this host yet, so fail explicitly
+     * instead of silently losing chapter content.
+     */
+    fun cacheContent(chapter: Any?, content: String): Boolean {
+        throw IllegalStateException("java.cacheContent can only be called in a batch content rule")
+    }
+
     /** Matches the pinned JsExtensions default when no navigation coroutine is attached. */
     fun getSourceNavigationContext(): CoroutineContext = EmptyCoroutineContext
 
