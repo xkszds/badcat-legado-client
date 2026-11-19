@@ -832,3 +832,33 @@ Before further code edits, register this exact test harness correction: call okh
 - CI run `44626750474` did not reach tests: Gradle failed resolving `org.jetbrains.kotlin.plugin.parcelize:2.4.20` from configured plugin repositories. This is recorded as dependency-resolution/build infrastructure failure, not as a test result. A rerun of the failed job was requested; its result is pending.
 - Current acceptance remains open: obtain the direct PSL failure cause; resolve any demonstrated test asset/context issue without hardcoded suffixes or production semantic changes; pass exact-head app tests, contract tests, pinned Rhino verification and Debug APK assembly; inspect merged manifest and reports. Physical-device validation, full Legado runtime and five-category parity remain separate open gates.
 - Self-review: this diagnostic increment stays within the preregistered PSL test-harness correction. It does not establish the login/session slice or broader runtime as complete.
+
+
+## 2026-11-20 preregistered correction — Robolectric OkHttp Android PSL asset is absent
+
+### Evidence from exact-head CI
+
+- Diagnostic code head `ab0150a2cf5ce070ec2ef8d322f5bd2edf6475cb`, run `44626750474`, failed only `SourceLoginSessionTest.loginHeadersAreOnlyAttachedToThePinnedEffectiveTldPlusOneSite`; 276 tests ran, one failed. The direct PSL assertion preserved the root cause:
+  - `IllegalStateException: Unable to load PublicSuffixDatabase.list resource.`
+  - Caused by `java.io.FileNotFoundException: PublicSuffixDatabase.list`
+  - Origin: OkHttp 5.4.0 `AssetPublicSuffixList.listSource` calling Robolectric `AssetManager.open("PublicSuffixDatabase.list")`.
+- This confirms `Platform.resetForTests()` and `OkHttp.initialize(RuntimeEnvironment.getApplication())` correctly reach the Android asset loader but the unit-test sandbox does not contain the AAR-provided asset. It is not a PSL algorithm mismatch or a production domain fallback issue.
+- Exact branch head at registration: `bf6bab98963b90eb5e4842031e7f448e843df2a6`; pinned Legado SHA remains `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+
+### Registered test-harness-only correction
+
+- Inspect OkHttp 5.4.0 published Android and JVM artifacts/Gradle module metadata and the Android AAR asset packaging. Keep production `implementation("com.squareup.okhttp3:okhttp:5.4.0")` unchanged.
+- Make the Robolectric unit-test runtime consume the matching `com.squareup.okhttp3:okhttp-jvm:5.4.0` implementation (whose PSL loader reads the JVM classpath resource) instead of the Android AAR asset loader, using a narrowly scoped test-runtime dependency substitution/exclusion only if the published metadata confirms API/binary compatibility. Keep test compile API compatible; remove Android-only test initialization only if the JVM test runtime no longer exposes it. Do not let both duplicate OkHttp implementations coexist at test runtime.
+- If the JVM artifact cannot be substituted cleanly, instead configure Robolectric to consume the exact dependency-provided Android AAR asset from the generated merged-assets output. Do not copy/vendor the PSL file, download a separate list, synthesize suffixes, or hard-code domains.
+- Audit all usages of OkHttp internal test-only APIs and all app test runtime dependencies; production remains on Android AAR and must retain its AndroidX Startup initialization provider and `PublicSuffixDatabase.list` asset.
+- Keep production `legadoSourceDomain`, `shouldAttachSourceLoginHeader`, pinned upstream fail-open behavior and login-header security semantics unchanged.
+
+### Required regressions and acceptance
+
+- Verify the selected test runtime resolves one OkHttp implementation only and loads its official 5.4.0 PSL resource successfully.
+- Retain eTLD+1 checks for `www.example.co.uk`, `cdn.example.co.uk`, unrelated `third-party-cdn.net`, IPv4, IPv6, malformed URL and upstream invalid-source fail-open behavior.
+- Run focused login/session tests, full `:app:testDebugUnitTest`, `:integration-contract:test`, pinned Rhino artifact verification and `:app:assembleDebug` on the exact final code head.
+- Inspect JUnit XML/HTML, test runtime dependency graph, assembled APK contents for Android `assets/PublicSuffixDatabase.list`, and merged manifest for AndroidX Startup `PlatformInitializer`.
+- No APK delivery until CI artifacts are verified; physical-device install, complete Legado runtime and Badcat five-category parity remain separate gates.
+
+Self-review: this correction is strictly test-runtime resource wiring. It does not modify production PSL data/logic, the pinned upstream revision, OkHttp production version, cookie behavior, login state, or broaden the login/session feature scope.
