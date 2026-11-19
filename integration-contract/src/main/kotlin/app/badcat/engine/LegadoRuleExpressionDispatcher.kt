@@ -152,8 +152,10 @@ object LegadoRuleExpressionDispatcher {
                                 val upstreamValues = UpstreamLegadoCssRuleEvaluator.getStringList(
                                     document.body, document.url, toUpstreamCssRule(branch),
                                 )
-                                if (upstreamValues.isNotEmpty()) EngineResult.Success(upstreamValues)
-                                else CssRuleEvaluator.evaluate(document, resolved.value.expression)
+                                // Empty is a valid upstream result. Falling back to the
+                                // legacy bounded evaluator here changes Legado semantics
+                                // (and can turn a legitimate no-match into a false match).
+                                EngineResult.Success(upstreamValues)
                             }.getOrElse { error ->
                                 EngineResult.Failure(
                                     EngineErrorCode.PARSE,
