@@ -168,3 +168,35 @@ The existing platform-neutral `:integration-contract` is intentionally Android-f
 - [ ] Full rule engine, full JsExtensions closure, unified lifecycle, batch cache, Badcat categories 1/2/4/5, physical device and release acceptance remain open.
 
 Self-review: this audit found that “BookChapter identity is index” is incomplete if stated without context: Room persists by (bookUrl,url), separately enforces unique (bookUrl,index), while equals/hashCode compare URL only. Preserve all three facts in future cache and adapter design. This audit authorizes no runtime code edits and makes no feature-completion claim.
+
+## 2026-11-20 persistence and Android integration boundary follow-up
+
+### Current host evidence (re-read at branch head 0bce0f5862c516e4d35c89103010f6995c29594e)
+
+- The app module has no Room dependency, no Room database, no DAO, and no Book/BookChapter entity files. The only durable source catalog is `FileBookSourceCatalog`, which stores a JSON array in app-private `AtomicFile` storage. This is useful for lossless source import/export, but it is not an upstream BookSource Room repository and it does not persist books or chapters.
+- `integration-contract` is an Android-free Kotlin module. Its `ReadingEngine.BookSource`, `BookCandidate`, `BookDetail`, and `BookChapter` are presentation/engine projections. `BookChapter` currently contains only index/title/url. They must remain clearly distinguished from official entities.
+- The app already vendors pinned rule entity classes under `io.legado.app.data.entities.rule` and has a focused model test, but the source codec still stores rule JSON as strings in the platform-neutral descriptor. The seven model files' provenance does not make the full BookSource/BaseSource runtime present.
+- The current app Gradle dependencies include Gson, Flexbox, Rhino host, OkHttp and parser/crypto dependencies, but no Room runtime/compiler or upstream database stack. The source catalog's AtomicFile writes are atomic and bounded; that does not supply upstream Book/BookChapter persistence semantics.
+- The current `BadcatReadingEngineFactory` wires real host implementations for HTTP, CookieJar, login state, key-value storage, file cache and the existing Rhino bridge. It does not provide the full upstream `CacheManager`, `CookieStore`, `SharedJsScope`, `RuleBigDataHelp`, `ReadBook`, `BookHelp`, `ContentProcessor`, `AppConfig`, or application database contracts required by pinned entities and `BaseSource`.
+- The host `legado-rhino` module provides Rhino execution/sandbox infrastructure, but does not define the pinned `io.legado.app.help.JsExtensions` API. A source-only copy of `BookSource` would therefore fail its actual supertype/runtime contract; replacing BaseSource with an empty interface or changing `getSource()` to suit the host would be a fake upstream port.
+
+### Dependency-safe implementation decision
+
+Do not add isolated Room annotations to a DTO and do not port `BookSource` before its actual `BaseSource : JsExtensions` dependency exists. The next implementation must establish an Android-side Legado runtime boundary that owns the exact pinned models and their services. It must connect to the existing host services through explicit adapters (network, cookies, source-keyed persistent values, AES login info, cache, shared JS scope, concurrency and reader context) while preserving the exact upstream API and lifecycle. The JVM contract stays Android-free and receives deliberate projections only.
+
+Before runtime edits, separately pre-register the first concrete module slice with:
+1. an exact upstream source manifest and license/provenance for every copied model/service file;
+2. a complete dependency closure for BookSource/BaseSource/JsExtensions and Book/BookChapter/BaseBook/RuleDataInterface, with no unresolved app singleton or helper;
+3. a migration design for current AtomicFile source catalog and future Room books/chapters, including schema keys, migrations and unknown-field storage;
+4. a complete caller list for codec/catalog/source activities, ReadingEngine, login/session and chapter persistence/cache;
+5. pinned fixtures proving official Gson defaults, typed rule mutation, unknown-field round-trip, Book/Chapter identity and persistence behavior.
+
+### New explicit blockers
+
+- [ ] No Android database/Room infrastructure or official Book/BookChapter persistence.
+- [ ] No complete pinned JsExtensions type in the app source tree; the Rhino runtime is infrastructure, not the upstream host API.
+- [ ] No full BaseSource service lifecycle or its persistent state adapters.
+- [ ] No official Book/BookChapter implementation; host projections are intentionally lossy.
+- [ ] No complete caller inventory for future Book/Chapter persistence because no persistence path currently exists.
+
+No runtime code changed during this follow-up. The source catalog's existing JSON preservation is retained and must not be regressed.
