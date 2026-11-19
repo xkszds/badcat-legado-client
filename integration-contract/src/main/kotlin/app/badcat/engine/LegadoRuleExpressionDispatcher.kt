@@ -149,12 +149,19 @@ object LegadoRuleExpressionDispatcher {
                     is EngineResult.Success ->
                         if (resolved.value.type == SelectorRuleType.CSS) {
                             runCatching {
-                                val upstreamValues = UpstreamLegadoCssRuleEvaluator.getStringList(
-                                    document.body, document.url, toUpstreamCssRule(branch),
-                                )
-                                // Empty is a valid upstream result. Falling back to the
-                                // legacy bounded evaluator here changes Legado semantics
-                                // (and can turn a legitimate no-match into a false match).
+                                val suffix = branch.substringAfterLast("@", "").lowercase()
+                                val upstreamRule = toUpstreamCssRule(withDefaultTextExtraction(branch))
+                                val upstreamValues = if (suffix == "tag") {
+                                    UpstreamLegadoCssRuleEvaluator.getElementTagList(
+                                        document.body, document.url, upstreamRule,
+                                    )
+                                } else {
+                                    UpstreamLegadoCssRuleEvaluator.getStringList(
+                                        document.body, document.url, upstreamRule,
+                                    )
+                                }
+                                // Empty is a valid upstream result. Never revive a
+                                // no-match with the retired bounded CSS implementation.
                                 EngineResult.Success(upstreamValues)
                             }.getOrElse { error ->
                                 EngineResult.Failure(
@@ -228,6 +235,17 @@ object LegadoRuleExpressionDispatcher {
             branches.flatten()
         }
         return EngineResult.Success(combined)
+    }
+
+
+    private fun withDefaultTextExtraction(expression: String): String {
+        val raw = expression.trim()
+        val suffix = raw.substringAfterLast("@", "").lowercase()
+        if (suffix in setOf("text", "textnodes", "owntext", "html", "all", "href", "src", "tag") ||
+            suffix.startsWith("attr(") || suffix.matches(Regex("[a-z_:][a-z0-9_:-]*"))) {
+            return raw
+        }
+        return "$raw@text"
     }
 
     private fun stripExtractionSuffix(expression: String): String {

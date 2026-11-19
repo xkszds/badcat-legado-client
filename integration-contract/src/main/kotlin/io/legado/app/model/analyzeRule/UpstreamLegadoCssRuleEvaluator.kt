@@ -14,6 +14,13 @@ object UpstreamLegadoCssRuleEvaluator {
         return analyzer.getElements(normalizedRule).map { it.text() }
     }
 
+    /** Tag extraction is not an attribute lookup in the pinned AnalyzeByJSoup API. */
+    fun getElementTagList(html: String, baseUrl: String, rule: String): List<String> {
+        val normalizedRule = normalizeElementRule(rule)
+        val analyzer = AnalyzeByJSoup(parseSourceHtml(html).also { it.setBaseUri(baseUrl) })
+        return analyzer.getElements(normalizedRule).map { it.tagName() }
+    }
+
     private fun normalizeElementRule(rule: String): String {
         val extractionRule = if (rule.substringAfterLast("@", "").lowercase() in
             setOf("text", "textnodes", "owntext", "html", "all", "href", "src", "tag")) {
