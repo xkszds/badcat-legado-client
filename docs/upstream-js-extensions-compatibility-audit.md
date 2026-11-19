@@ -562,3 +562,70 @@ Trace BaseSource's real dependency graph: BookSource and rule entities; Room/Gso
 Risks to enumerate: JVM/Rhino overload ambiguity, return-object reflection shape, mutable source identity and state leakage, coroutine/thread cancellation, response/body ownership and redirects, Android lifecycle ownership, filesystem sandboxing, and chapter-index/save-token persistence semantics. No fake BaseSource, null/fake service, no-op method or broader JavaImporter/Packages access.
 
 Acceptance: every upstream declaration/overload is accounted for with exact source and host references; every mismatch is classified as compatible, deliberate security restriction, UI-context unsupported, or missing; complete caller/test inventory and dependency graph are documented; a bounded implementation slice and regression criteria are prepared. This task is audit-only; register the implementation in all four checklists before editing runtime code.
+
+## 2026-11-20 declaration and behavior audit — findings and next gate
+
+The audit-only task registered above is complete. No runtime/product code was changed.
+
+### Declaration inventory and gaps
+
+Pinned JsExtensions has 122 function declarations total (118 public across 77 names); inherited JsEncodeUtils has 30 public declarations across 27 names. The current RhinoSafeSourceJavaExtensions main bridge has 150 public declarations across 110 names. All 30 JsEncodeUtils declaration slots and 27 names exist in the host declaration scan, but source-level presence is not proof of semantic parity.
+
+17 public JsExtensions names / 30 overload declarations are absent: refreshBookInfo, refreshBookToc, refreshContent, webView, webViewGetSource, webViewGetOverrideUrl, openVideoPlayer, startBrowser, startBrowserAwait, getVerificationCode, openUrl, showBrowser, getReadBookConfig, getReadBookConfigMap, getThemeMode, getThemeConfig, getThemeConfigMap.
+
+The following same-name APIs are not ABI-equivalent:
+| Upstream | Current host | Finding |
+|---|---|---|
+| getSource(): BaseSource? | getSource(): Map<String, Any?> | Critical collision. Existing runtime test requires nested/future source JSON map. Keep it under a descriptor accessor when migrating; do not silently replace it. |
+| getTag(): String? | String | Nullability/return ABI differs. |
+| getBatchContext(): BatchContentContext? | Any? (always null) | Outside-batch default matches; actual batch type/lifecycle is absent. |
+| cacheContent(Any?, String): Boolean | same signature, always throws | No batch persistence implementation. |
+| get/head/post -> Jsoup Connection.Response | RhinoSourceHttpResponse | Facade omits Jsoup request/cookie/body/stream semantics; not a drop-in response object. |
+| connect/ajaxAll/ajaxTestAll -> StrResponse | RhinoSourceHttpResponse | Same host facade used for different upstream response types. |
+| getFile(String): File | RhinoSourceFileHandle | Deliberate sandbox restriction; facade is not the complete File API. |
+| toURL -> JsURL | RhinoLegadoUrl | Different object shape/method surface. |
+| ajax/ajaxAll/ajaxTestAll/connect | overload/parameter/return differences | Input array/timeout/skip-rate-limit and response behavior need per-overload tests. |
+| timeFormat/timeFormatUTC | Number/String overloads in host vs Long upstream | Type coercion and Rhino overload resolution differ. |
+| log/logType | String return in host vs Any?/Unit upstream | Return semantics differ. |
+| htmlFormat/hexEncodeToString | nullable and return-nullability differences | Need exact null/empty handling tests. |
+
+Host-only methods and helper wrappers must not be counted as upstream parity.
+
+### BaseSource and lifecycle findings
+
+Pinned BaseSource is an interface extending JsExtensions. Both BookSource and RssSource implement it. BaseSource uses Room/GSON-backed models and depends on AppConfig/AppConst/AppLog, CacheManager, CookieStore, ConcurrentRateLimiter, SharedJsScope, JsSourceEngine, LoginUiV2, Android UI/navigation services and Book/BookChapter data. Its source evalJS binds java, source, sourceApi, baseUrl, cookie and cache; source and sourceApi refer to the actual BaseSource object. It implements dynamic header parsing, login UI v1/v2, login(), login header/cookie handling, encrypted loginInfo, source variables, source key/value put/get, refreshExplore, refreshJSLib, putConcurrent and evalJS.
+
+The current host runtime uses a BookSource DTO plus raw JSON, not upstream BookSource/RssSource Room entities. It binds java to RhinoSafeSourceJavaExtensions, cookie to RhinoSourceCookieExtensions, source to RhinoSourceLoginExtensions and cache to RhinoSourceCacheExtensions. sourceApi is not bound. The source helper exposes getKey, variable and login-state helpers, but not the full BaseSource contract. sourceDescriptor() reconstructs a JS-friendly raw JSON map and overlays identity/enabled fields.
+
+Host service mapping:
+- SharedPreferencesSourceScriptKeyValueStore: durable source-scoped key/value state.
+- SharedPreferencesSourceLoginSessionStore: durable source-scoped login header/info.
+- SharedPreferencesSourceCookieJar: durable source-isolated OkHttp cookie state.
+- FileSourceScriptCacheStore / RhinoSourceFileHandle: source file cache with canonical-root sandbox.
+- OkHttpSourceRequestClient / SourceRequestFactory / LegadoUrlResolver: bounded host HTTP transport and URL resolution, not pinned AnalyzeUrl.
+- RhinoSourceCacheExtensions: source-scoped cache semantics, not global CacheManager/appDb/ACache.
+- BadcatReadingEngineFactory wires these real services; default constructors may still use in-memory stores for tests or callers that do not inject production adapters.
+
+AnalyzeUrl in the pinned source carries BaseSource, ruleData, chapter, CoroutineContext, dynamic source headers, URL options, proxy/DNS/retry/redirect/timeouts, cookies, bodyJs/webJs and WebView behavior. The host uses a narrower custom resolver and SourceRequestFactory. SourceRequestFactory parses static JSON headers; it does not execute dynamic header rules.
+
+CookieStore upstream uses domain-oriented DB and Android WebView cookie state; host uses per-source OkHttp jars. CacheManager upstream uses appDb, memory LRU and ACache; host uses per-source SharedPreferences/file stores. These are real host services with deliberate isolation, but behavior differences must be documented and tested.
+
+### Batch lifecycle finding
+
+Pinned BatchContentContext resolves chapter objects by BookChapter.index; URL strings are accepted only when unique, so duplicate chapter URLs cannot silently write to the wrong chapter. It applies the source content replacement rule, checks coroutine cancellation, requires the request-start ContentSaveToken and persists through BookHelp.saveContent's version fence. JsSourceEngine installs the context only for getContentBatch and clears it in finally; JsSourceBook returns unsaved chapters for ordinary single-chapter fallback. AnalyzeRule also carries a batchContext and binds chapters.
+
+The host has no corresponding contentBatch flow in SourceChapterContentService. getBatchContext is always null and cacheContent always throws; only the outside-batch failure is tested. Do not implement a simplified URL-only cache write.
+
+### Caller/test scan
+
+Targeted scan covered all 24 host app runtime Kotlin files and all 20 app unit-test Kotlin files. Current java.getSource descriptor use is in RhinoSourceScriptRuntimeTest; batch default/failure is in RhinoSafeSourceJavaExtensionsCompatTest; source login scripts are in RhinoSourceScriptRuntimeTest and SourceLoginSessionTest. The scan found no other static Kotlin production caller of these bridge methods within those scopes.
+
+### Next implementation task registration (not started): source login/session parity and credential boundary
+
+1. Restrict SourceLoginSessionRequestClient login-header merging to the same site as the source, matching pinned AnalyzeUrl semantics; cross-origin/CDN requests must not receive Authorization/custom login headers.
+2. Synchronize Cookie values from putLoginHeader into the source cookie jar; remove associated cookie state on removeLoginHeader without touching other sources.
+3. Encrypt loginInfo using the pinned androidId-derived AES key and implement a tested migration for existing plaintext host records.
+4. Preserve source isolation, cancellation, validation and secret redaction.
+5. Test same-site/subdomain/cross-origin/CDN, cookie merge/removal, encrypted persistence/migration, malformed values and two-source isolation.
+
+This next task is separate from full BaseSource/BookSource integration. It does not authorize changing java.getSource ABI, adding UI/WebView methods, or implementing batch persistence. All other migration gaps remain open.

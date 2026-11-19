@@ -469,3 +469,39 @@ Required output: a declaration-by-declaration matrix covering signature/default/
 Known targets/callers include RhinoSafeSourceJavaExtensions, RhinoSourceScriptRuntime (scope["java"]), source descriptor injection, host HTTP/file wrappers, batch/cache adapters, and their tests. Risks include JVM/Rhino overload ambiguity, object ABI, mutable source identity, source-state leakage, coroutine cancellation, response/body ownership, Android UI lifecycle, filesystem boundaries and chapter-index/save-token correctness.
 
 This is audit-only: no runtime code edits. Acceptance requires every upstream declaration and overload accounted for with exact source/caller references, every host mismatch classified, and a narrowly scoped implementation task plus regression/acceptance plan pre-registered in all required checklists before code changes.
+
+## 2026-11-20 audit result — JsExtensions/BaseSource contract and service dependency map
+
+Audit-only work completed against upstream SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a and host HEAD 32e0537048b1c82714e982c56fe6998ce6117703. No runtime code was changed.
+
+### Declaration and ABI inventory
+
+- JsExtensions.kt: 122 function declarations total, 118 public declarations across 77 names.
+- JsEncodeUtils.kt: 30 public declarations across 27 names.
+- RhinoSafeSourceJavaExtensions main bridge: 150 public declarations across 110 names. All 30 inherited JsEncodeUtils declaration slots / 27 names are present in the source declaration scan. Runtime behavior remains separately subject to compatibility tests.
+- Missing public JsExtensions names: refreshBookInfo, refreshBookToc, refreshContent, webView, webViewGetSource, webViewGetOverrideUrl, openVideoPlayer, startBrowser, startBrowserAwait, getVerificationCode, openUrl, showBrowser, getReadBookConfig, getReadBookConfigMap, getThemeMode, getThemeConfig, getThemeConfigMap (17 names, 30 overload declarations).
+- Same-name is not same ABI: getSource returns BaseSource? upstream but Map in host; getFile returns File upstream but RhinoSourceFileHandle in host; toURL returns JsURL upstream but RhinoLegadoUrl in host; get/head/post return Jsoup Connection.Response upstream but RhinoSourceHttpResponse in host; connect/ajaxAll/ajaxTestAll return StrResponse arrays/upstream values but host wraps all in RhinoSourceHttpResponse. ajax/ajaxAll/ajaxTestAll overload shapes, timeFormat/timeFormatUTC parameter types, log/logType return types, htmlFormat nullability, hexEncodeToString nullability and getTag nullability also differ.
+- Batch is absent: host getBatchContext always returns null and cacheContent always throws. The upstream implementation uses BatchContentContext, BookChapter.index identity, duplicate-URL ambiguity rejection, content replacement, ContentSaveToken/version fences and fallback for chapters not saved by getContentBatch.
+- Source object is a limited login helper, not BaseSource; sourceApi is not bound. java.getSource is a descriptor map and its current test asserts that shape.
+
+### Pinned dependency map
+
+BaseSource is a public interface extending JsExtensions, implemented by both Room-backed BookSource and RssSource. It depends on AppConfig/AppConst/AppLog, GSON and Room entities/converters, CacheManager, CookieStore, ConcurrentRateLimiter, SharedJsScope, JsSourceEngine, LoginUiV2, and UI/navigation helpers. BaseSource methods include dynamic getHeaderMap, login UI parsing/evaluation, login(), encrypted loginInfo, login header/cookie synchronization, source variables and key/value storage, refreshExplore, refreshJSLib, putConcurrent and evalJS bindings (java, source, sourceApi, baseUrl, cookie, cache). AnalyzeRule and JsSourceEngine also implement JsExtensions with their own source/book/chapter/batch context and coroutine bindings.
+
+The host instead uses a BookSource DTO and raw JSON catalog, with SharedPreferencesSourceScriptKeyValueStore, SharedPreferencesSourceLoginSessionStore, SharedPreferencesSourceCookieJar, FileSourceScriptCacheStore, OkHttpSourceRequestClient, SourceRequestFactory, LegadoUrlResolver and RhinoSourceScriptRuntime. This is a real bounded host service graph, but not the pinned Room/GSON entity graph or a BaseSource implementation. The current codec retains raw JSON for unknown fields; there is no RssSource runtime model.
+
+Network calls use the host SourceRequestFactory/OkHttp transport, not pinned AnalyzeUrl. Static source headers are parsed as JSON; dynamic header-rule execution and the full AnalyzeUrl option surface (proxy/DNS/bodyJs/webJs/WebView/redirect/retry/coroutine semantics) are not equivalent. Pinned get/head/post are Jsoup response APIs with redirects disabled; connect/ajax use AnalyzeUrl/StrResponse semantics. The host response facades intentionally hide sockets/streams, but are not ABI-equivalent.
+
+CookieStore is domain-oriented and backed by appDb plus Android WebView cookie state; the host uses source-isolated OkHttp cookie jars. CacheManager uses appDb, memory LRU and ACache; the host uses per-source key/value and file stores. These are deliberate host boundaries, but cookie/login/header semantics need explicit parity review. Host login headers are currently merged into every request for a sourceId, whereas pinned AnalyzeUrl scopes them to the source site; this is a credential-leak risk.
+
+BatchContentContext requires Book, BookChapter, BookSource, BookHelp, ContentSaveToken, replacement rules and chapter persistence. JsSourceEngine installs the batch context for the duration of getContentBatch and clears it in finally; JsSourceBook snapshots per-chapter save tokens and retries unsaved chapters. None of that is connected to the current SourceChapterContentService.
+
+File access is a deliberate security restriction: pinned getFile exposes java.io.File relative to the reading cache; host exposes a canonical-root-confined RhinoSourceFileHandle because Rhino blocks java.io.File. Preserve the sandbox and add compatible facade methods only when safely supported.
+
+### Caller and test audit
+
+A targeted scan covered all 24 app runtime Kotlin files and all 20 app unit-test Kotlin files. Current descriptor-map use is exercised by RhinoSourceScriptRuntimeTest; getBatchContext/cacheContent outside-batch behavior by RhinoSafeSourceJavaExtensionsCompatTest; source login helpers by RhinoSourceScriptRuntimeTest and SourceLoginSessionTest. No other static Kotlin production caller of these exact bridge methods was found in that scan.
+
+### Next bounded implementation slice (pre-registered; not started)
+
+Implement source login/session parity and credential boundaries only: same-site-only login header propagation; Cookie synchronization on putLoginHeader and cookie removal on removeLoginHeader; pinned AES-compatible loginInfo storage with tested migration of existing plaintext records; preserve per-source isolation and validate malformed input. Tests must cover same-site, subdomain, third-party CDN/cross-origin, cookie merge/removal, encryption/migration and two-source isolation. This does not implement the full BaseSource object, UI/WebView, batch, Room model or change java.getSource ABI. Those remain open.

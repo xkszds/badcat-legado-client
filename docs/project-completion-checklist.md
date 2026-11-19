@@ -578,3 +578,35 @@ A review of the registered APK packaging task exposed a malformed 39-character a
 - [ ] Acceptance: complete method/overload matrix, complete BaseSource service dependency map, known-caller list, explicit risks and one bounded next implementation slice with regression tests. Pre-register that implementation separately in all four checklists before any code edit.
 
 This gate exists because the current audit is declaration-count complete but its overload/behavior matrix is not complete; the crypto CI/build gate is now independently verified on the latest documentation head, while physical-device validation and full Legado migration remain open.
+
+## 2026-11-20 completion audit — JsExtensions/BaseSource boundary
+
+<badge color="success">Audit complete</badge>
+
+- [x] Re-read AGENTS.md and all four required project documents before this task.
+- [x] Confirm pinned upstream SHA and inspect JsExtensions, JsEncodeUtils, BaseSource, BookSource/RssSource, AnalyzeUrl, BatchContentContext, JsSourceEngine, AnalyzeRule and supporting services.
+- [x] Compare public declarations and overload counts with RhinoSafeSourceJavaExtensions.
+- [x] Trace current host source/global bindings, cookie/login/cache/file/HTTP services and targeted runtime/test callers.
+- [x] Register this audit in all four required checklists before work.
+- [x] Record findings and the next implementation task in all four checklists.
+- [ ] Implement full BaseSource/JsExtensions parity.
+- [ ] Resolve java.getSource ABI without losing the existing descriptor-map use case.
+- [ ] Integrate BookSource/RssSource models and Room/GSON lifecycle.
+- [ ] Integrate real batch-content context and durable chapter persistence.
+- [ ] Implement or explicitly support UI/WebView/navigation/config APIs.
+- [ ] Validate runtime on a physical Android device and complete source-corpus tests.
+
+The audit found 17 public JsExtensions method names (30 overload declarations) absent from the host bridge. JsEncodeUtils has all 30 declarations/27 names present at source-declaration level. The largest ABI mismatch is getSource(): BaseSource? upstream versus Map descriptor in host. The host source global is a login helper, not BaseSource; sourceApi is absent. BatchContentContext/cacheContent are not connected. The host response wrapper and file facade are intentionally narrower than Jsoup Connection.Response and java.io.File.
+
+Critical security finding: SourceLoginSessionRequestClient attaches saved login headers to every URL for a sourceId, but pinned AnalyzeUrl only attaches them for the source's same site. Cookie synchronization/removal and AES encryption of loginInfo also differ. This is the next bounded implementation task, registered separately below.
+
+### Next implementation pre-registration — source login/session parity and credential boundary (not started)
+
+- [ ] Restrict saved login-header propagation to the source site, matching pinned AnalyzeUrl semantics; never send Authorization/custom login headers to unrelated hosts or CDNs.
+- [ ] Synchronize Cookie from putLoginHeader into the source cookie jar; remove associated cookie state when removeLoginHeader is called.
+- [ ] Encrypt loginInfo using the pinned androidId-derived AES key and add a tested migration for existing plaintext host records.
+- [ ] Preserve source isolation, cancellation, header validation and secret redaction.
+- [ ] Add tests for same-site/subdomain/cross-origin/CDN requests, cookie merge/removal, encryption/migration, malformed values and two-source isolation.
+- [ ] Run focused tests and full CI before marking any implementation item complete.
+
+CI run 44610074419 passed on the current documentation head, including contract tests, Rhino tests, Debug APK assembly/upload and best-effort live source smoke steps. This does not prove physical-device installation or full Legado migration.
