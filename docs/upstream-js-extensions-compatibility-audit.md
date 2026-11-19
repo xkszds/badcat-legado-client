@@ -633,3 +633,12 @@ This next task is separate from full BaseSource/BookSource integration. It does 
 ### Additional auth-state lifecycle finding
 
 RhinoSourceScriptRuntime.clearSourceState clears source scope/global state, script key/value storage, source file cache, physical source cache and login-session state. It does not clear the persisted SharedPreferencesSourceCookieJar, and the runtime has no cookie-clear callback. The jar's clear() method exists but is not connected to this lifecycle. This can leave source cookies persisted after source state is cleared; include explicit per-source cookie cleanup in the next auth/session slice and test that other sources remain untouched.
+
+
+## 2026-11-20 implementation registration — BaseSource login/session contract
+
+Pinned-source targets to inspect before editing: `BaseSource.kt` loginHeader/putLoginHeader/removeLoginHeader/loginInfo encryption and cookie behavior; `AnalyzeUrl.kt` same-site login-header attachment and redirect handling; upstream AES utility/key derivation; CookieStore behavior. Host targets/callers: `RhinoSourceLoginExtensions`, `SourceLoginSessionRequestClient`, `SharedPreferencesSourceLoginSessionStore`, `SharedPreferencesSourceCookieJar`, `RhinoSourceScriptRuntime.clearSourceState`, `BadcatReadingEngineFactory`, `SourceLoginSessionTest`, `RhinoSourceScriptRuntimeTest` and all repository-wide references to these symbols.
+
+Compatibility/security risks: same-site domain matching and public suffixes; redirects changing origin; Cookie header precedence and cookie attributes; per-source state leakage; key derivation/platform identifier availability; plaintext-to-ciphertext migration and rollback; malformed/legacy records; reset lifecycle and cancellation. No widening of Rhino Java access and no fake BaseSource/service.
+
+Required regression matrix: same origin, valid subdomain, unrelated origin, CDN, cross-origin redirect; Cookie import/merge/removal; source reset removes only that source's cookies; independent source IDs; encrypted persistence and decryption; plaintext migration idempotence; malformed ciphertext/missing key; secret redaction; existing login scripts and cancellation. This is a bounded implementation task, not proof of full BaseSource/JsExtensions parity.
