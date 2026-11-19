@@ -294,3 +294,13 @@
 - Corrected the source bridge to instantiate the bounded Hutool-compatible symmetric subclass and validate key/IV size.
 - Repaired the malformed test insertion and added the bounded stream/limit regression as a separate test.
 - Added a decoded-byte check for asymmetric Base64/Hex ciphertext before decryption. CI remains pending.
+
+
+## 2026-11-20 Legado crypto current-head verification — PRE-REGISTERED
+
+- [ ] Inspect current-head run `44564458448` for `f924681f783628dedf6f835e191a701ba5ae6a16`; its initial state was pending/no jobs.
+- [ ] Inspect ancestor run `44564284230` separately; it does not validate the current asymmetric decoded-byte correction.
+- [ ] Verify focused tests, app unit tests, Hutool/BC dependency/provider packaging, Debug APK assembly, reports and artifacts.
+- [ ] Review the exact current diff for bounded symmetric/asymmetric/signature operations, decoded ciphertext, InputStream handling and sandbox preservation.
+- [ ] Register any discovered runtime correction and regression tests before editing code.
+- [ ] Record actual results and self-audit this checklist after verification. Crypto slice remains unverified until current-head CI succeeds; complete Legado and device acceptance remain open.

@@ -404,3 +404,34 @@
 - [x] Repaired the malformed test insertion. The overload test is restored as a complete method and the 2 MiB/InputStream regression test is a separate complete method.
 - [x] Asymmetric Base64/Hex string decrypt now decodes with the pinned Hutool `SecureUtil.decode` path and checks decoded byte length before crypto processing.
 - [ ] CI and full test suite remain pending; inspect current run logs and confirm no compile/runtime regressions before marking the crypto slice verified.
+
+
+## 2026-11-20 Legado crypto verification and correction task — PRE-REGISTERED
+
+### Current baseline (verified before this task)
+- [x] Re-read root `AGENTS.md` in full and the required product/engine checklists, migration plan, model/serialization audit, analyzer audit, JsExtensions audit, UI map, PPRule evidence and original purification evidence.
+- [x] Confirmed active branch `integration/legado-upstream-runtime`; current HEAD before this ledger update: `f924681f783628dedf6f835e191a701ba5ae6a16`. Never modify `main`.
+- [x] Confirmed pinned upstream Legado revision `330e606c4d57e08adc056ff8ab7a4132c784da9`.
+- [x] Inspected latest code diff: bounded asymmetric encoded input now decodes through pinned Hutool `SecureUtil.decode` and applies the 2 MiB decoded-byte check.
+- [x] Current crypto runtime has been implemented but is NOT verified. CI run `44564284230` (parent code head `24c39c4...`) was still running contract tests; run `44564458448` for current head `f924681...` was pending with no jobs yet.
+
+### Task scope — verification first, then only evidence-driven fixes
+- [ ] Poll run `44564284230` and current-head run `44564458448`; inspect every job step and full logs, especially app unit tests, Rhino crypto tests, Hutool/BC provider, D8/R8 and Debug APK assembly.
+- [ ] If current-head run has not started or did not include the latest source commit, wait for/trigger a current-head verification only after confirming the workflow state; never infer success from the parent run.
+- [ ] Inspect the exact current diff and all changed crypto files/tests for key/data/result bounds, String Base64/Hex decoding, caller-owned InputStream handling, Android provider registration and Rhino-visible overload behavior.
+- [ ] If CI reveals a defect, register the precise corrective scope and regression test here BEFORE changing runtime code; then fix only that scope and rerun focused and broad CI.
+- [ ] If CI passes, inspect test reports and APK artifact metadata; report only what the workflow actually verifies. Android physical-device/provider acceptance remains a separate open gate.
+- [ ] After verification, re-audit affected legacy AES/DES/3DES helpers, RSA/signature, JavaImporter allow-list, source-scoped bridge and independent digest/HMAC replacement evaluator.
+
+### Acceptance criteria
+- [ ] Contract unit tests pass.
+- [ ] Bounded Rhino host tests pass, including AES/DES/3DES/RSA/signature, exact-limit/over-limit and stream behavior.
+- [ ] Android Debug APK assembles with Hutool/BC dependencies (no D8/R8 duplicate/provider packaging failure).
+- [ ] Current HEAD—not merely an ancestor—has a completed successful CI run and inspectable reports/artifact.
+- [ ] No relaxation of JavaImporter/Packages/reflection sandbox and no regression to existing crypto behavior.
+- [ ] No claim of complete Legado or device validation from this crypto-only slice.
+
+### Self-review of checklist accuracy
+- [x] Corrected the previous session's stale HEAD report: current branch is `f924681...`, not `24c39c4...` or `41cb8083...`.
+- [x] Explicitly separated the current pending run from the ancestor in-progress run.
+- [ ] At task end, record actual CI status, inspected logs/artifacts, any code correction and the resulting commit/HEAD; re-evaluate whether this checklist omitted any test or compatibility risk.

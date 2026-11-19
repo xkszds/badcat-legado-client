@@ -275,3 +275,13 @@ The host's current `RhinoLegadoSymmetricCrypto` is an allow-listed AES/DES CBC h
 - The damaged overload test source was repaired and the bounded crypto test is now a separate method.
 - Asymmetric string ciphertext is decoded through `SecureUtil.decode` and bounded before decryption.
 - CI is still pending; these corrections are not a test pass.
+
+
+### 2026-11-20 current-head crypto verification gate (pre-registered)
+
+- Current host branch HEAD before ledger update: `f924681f783628dedf6f835e191a701ba5ae6a16`; pinned upstream: `330e606c4d57e08adc056ff8ab7a4132c784da9`.
+- Run `44564284230` targets ancestor `24c39c4...` and must not be reported as verification of the current asymmetric decoded-input correction.
+- Run `44564458448` targets current HEAD and was pending/no jobs at inspection. Poll it and inspect full job logs/steps, test reports and APK artifact.
+- Verify the decoded Base64/Hex ciphertext bound as well as symmetric/asymmetric/signature bounds, stream ownership/progress, legacy helpers, JavaImporter restrictions and replacement-evaluator isolation.
+- No additional runtime code change is authorized by this entry. If a defect is found, append a specific fix/test task to the required checklist before editing.
+- The crypto increment remains pending until current-HEAD CI is successful. Physical-device crypto/provider checks and the remaining upstream runtime are still incomplete.

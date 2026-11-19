@@ -182,3 +182,17 @@ Diff review after the bounded-wrapper increment found two wiring defects before 
 ## 2026-11-19 crypto bridge/test wiring correction applied
 
 The bridge now checks key/IV sizes and constructs `RhinoBoundedSymmetricCryptoAndroid`, so the old 2 MiB limit is active through the actual source-scoped Rhino `java.createSymmetricCrypto` path. The corrupted adjacent test insertion was repaired into two independent test methods. Asymmetric string ciphertext is decoded through pinned Hutool `SecureUtil.decode` and checked against the decoded-byte limit before processing. Verification remains pending CI.
+
+
+## 2026-11-20 crypto verification gate — PRE-REGISTERED BEFORE FURTHER IMPLEMENTATION
+
+The current source commit is `f924681f783628dedf6f835e191a701ba5ae6a16` on `integration/legado-upstream-runtime`; pinned upstream remains `330e606c4d57e08adc056ff8ab7a4132c784da9`. The immediate task is to verify the just-implemented bounded Hutool/BC crypto slice before beginning BaseSource/BookSource work.
+
+- Inspect CI run `44564284230` (ancestor `24c39c4...`) and current-head run `44564458448` (`f924681...`) independently; inspect step summaries and full logs.
+- Verify current-head contract/Rhino tests, Android dependency resolution, provider behavior visible in tests, D8/R8 packaging and Debug APK assembly.
+- Review changed crypto implementation and tests for the 2 MiB input/key/output bounds, decoded Base64/Hex bytes, stream progress/ownership, all Hutool overloads and Rhino reflection visibility.
+- Do not change runtime code until a concrete defect is found and that corrective task plus its tests is recorded here and in the mandatory user checklist.
+- If verification passes, mark only the crypto slice's CI/build gates complete; physical-device validation, complete JsExtensions, BaseSource/BookSource, AnalyzeRule/AnalyzeUrl and end-to-end reading remain open.
+- If verification fails, record the exact failing job/step/log evidence and pre-register a narrow correction before editing.
+
+Checklist self-review: older status entries used stale branch heads and mixed pending/current/ancestor CI runs. This section distinguishes them and makes current-HEAD verification explicit.
