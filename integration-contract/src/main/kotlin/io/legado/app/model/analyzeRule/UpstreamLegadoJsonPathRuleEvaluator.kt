@@ -8,8 +8,26 @@ object UpstreamLegadoJsonPathRuleEvaluator {
         AnalyzeByJSonPath(json, onError).getStringList(stripModePrefix(rule))
 
     fun getElementList(json: String, rule: String, onError: (Exception) -> Unit): List<String> {
-        val values = AnalyzeByJSonPath(json, onError).getList(stripModePrefix(rule)).orEmpty()
-        return values.map { Gson().toJson(it) }
+        val analyzer = AnalyzeByJSonPath(json, onError)
+        val normalizedRule = stripModePrefix(rule)
+        val list = analyzer.getList(normalizedRule)
+        if (!list.isNullOrEmpty()) return list.map(::toElementString)
+
+        // Legado's init rule can select a single JSON object (for example
+        // "data.book"), not only a JSONPath array. getList() intentionally
+        // returns no entries for that shape, so preserve the upstream object.
+        val value = analyzer.getObject(normalizedRule)
+        return when (value) {
+            is List<*> -> value.map(::toElementString)
+            else -> listOf(toElementString(value))
+        }
+    }
+
+    private fun toElementString(value: Any?): String = when (value) {
+        null -> "null"
+        is String -> value
+        is Number, is Boolean -> value.toString()
+        else -> Gson().toJson(value)
     }
 
     private fun stripModePrefix(rule: String): String {
