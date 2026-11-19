@@ -114,7 +114,7 @@ class RhinoCryptoCompatibilityTest {
             var tripleArgsEncoded = java.tripleDESEncodeArgsBase64Str('$triplePlain', '$tripleKeyBase64', 'CBC', 'PKCS5Padding', '$tripleIv');
             var tripleRoundTrip = java.createSymmetricCrypto('DESede/CBC/PKCS5Padding', '$tripleKey', '$tripleIv').decryptStr(tripleEncoded);
             var tripleArgsRoundTrip = java.createSymmetricCrypto('DESede/CBC/PKCS5Padding', java.base64DecodeToByteArray('$tripleKeyBase64'), java.utf8Encode('$tripleIv')).decryptStr(tripleArgsEncoded);
-            [desDecoded, desBase64Decoded, desRoundTrip, desBinary.length > 0,
+            [desDecoded, desBase64Decoded, desRoundTrip, String(desBinary).length > 0,
              tripleDecoded, tripleArgsDecoded, tripleRoundTrip, tripleArgsRoundTrip].join('|');
         """.trimIndent())
         assertTrue("Pinned DES/3DES legacy helpers failed: $result", result is EngineResult.Success)
@@ -223,7 +223,9 @@ class RhinoCryptoCompatibilityTest {
         org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
             crypto.decrypt("0".repeat(4 * 1024 * 1024 + 1))
         }
-        val oversizedDecodedCiphertext = Base64.getEncoder().encodeToString(ByteArray(maxBytes + 1))
+        val oversizedDecodedCiphertext = Base64.getEncoder().encodeToString(ByteArray(maxBytes + 1) { 0xFF.toByte() })
+        assertTrue(oversizedDecodedCiphertext.any { it == '/' || it == '+' })
+        assertEquals(maxBytes + 1, Base64.getDecoder().decode(oversizedDecodedCiphertext).size)
         org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
             crypto.decrypt(oversizedDecodedCiphertext)
         }
