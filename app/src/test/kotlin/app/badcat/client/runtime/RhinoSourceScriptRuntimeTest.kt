@@ -129,7 +129,7 @@ class RhinoSourceScriptRuntimeTest {
             )
             assertTrue("Safe file facade should be visible to Rhino: $result", result is EngineResult.Success)
             assertEquals("source file", (result as EngineResult.Success).value)
-            assertTrue(java.io.File(root, "fixture.txt").isFile)
+            assertTrue(java.io.File(sourcePhysicalCacheDirectory(root, source.id), "fixture.txt").isFile)
 
             val traversal = runtime.evaluate(source, "java.getFile('../../outside.txt').exists()")
             assertTrue("File facade must reject paths outside cache boundary", traversal is EngineResult.Failure)
