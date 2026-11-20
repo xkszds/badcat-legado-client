@@ -768,3 +768,10 @@ Search/Explore → BookInfo → BookChapterList → BookContent；依赖 Analyze
 - **Remaining semantic gap:** the host does not yet expose a user-driven direct replace/delete operation equivalent to upstream `BookHelp.saveContent(replace)` / `delContent`; the fence primitive and invalidation path are implemented and tested, but no equivalent product action was found in the current host reader. Do not claim complete mutation lifecycle parity.
 - Latest code/test commits in this slice include `b6e5c350f6ba19fdc9e6affb1c883721440af568` and earlier sequential commits; the exact current HEAD must be used for validation below.
 - Tests/build/CI have not been executed. PoC-1.0 remains partial/not accepted pending real runner execution and remaining mutation lifecycle review.
+
+
+#### PoC-1.0 additional differential fixtures (2026-11-20)
+
+- Tightened the JVM service fixtures so every fake cache must implement the required index-keyed/fenced contract. Added a service-level same-URL/different-index test: two chapters with one URL are stored under separate chapter indices, and re-reading the first chapter hits only its own cache entry. Added explicit service rejection for negative chapter indices.
+- The pinned upstream mutation review found `BookHelp.saveContent` expected-version writes, direct replace/delete fencing, and resource-refresh fencing. The host currently has no independent chapter-body edit/delete UI or additional body-cache deletion caller; the explicit cache invalidation API is ready but no current product action invokes it. This is a known gap, not a completed parity claim.
+- Latest implementation/test HEAD before this documentation update: `e6426f8f119f524ad9e386153c03b8f0cd97a4a9`. Combined statuses and associated workflow runs were empty; no test/build/CI/APK/device result is available.
