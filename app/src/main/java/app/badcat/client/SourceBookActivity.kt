@@ -20,6 +20,7 @@ import app.badcat.client.runtime.BadcatReadingEngineFactory
 import app.badcat.engine.BookChapter
 import app.badcat.engine.ChapterCatalogQuery
 import app.badcat.engine.EngineResult
+import app.badcat.engine.EngineErrorCode
 import app.badcat.engine.ReadingEngine
 import java.util.concurrent.Executors
 import kotlinx.coroutines.Dispatchers
@@ -442,7 +443,6 @@ class SourceBookActivity : Activity() {
             chapterList.addView(TextView(this).apply { text = "目录为空" })
             return
         }
-        val readingState = BadcatReadingStateRepository(this)
         val bookmarked = chapters.filter { readingState.isBookmarked(sourceId, bookUrl, it.url) }
         if (bookmarked.isNotEmpty()) {
             chapterList.addView(Button(this).apply {
@@ -793,7 +793,7 @@ class SourceChapterActivity : Activity() {
                                 safeEngineCall {
                                     engine.chapterContent(
                                         sourceId, bookUrl,
-                                        BookChapter(requestedChapterIndex, chapterTitle, currentChapterUrl),
+                                        BookChapter(requestedChapterIndex, fallbackTitle, currentChapterUrl),
                                         bookName,
                                     )
                                 }
