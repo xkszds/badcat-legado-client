@@ -147,3 +147,11 @@
 - No production code, settings, persistence, UI, network, or DOM behavior changed.
 - Exact-HEAD CI run #3073 / ID `44822313338`, HEAD `e41fbe48810522cb02ec8e0a6280b4702c463feb`: job `assemble-debug` exists; setup steps succeeded; `Run contract unit tests` is currently `in_progress`. Job-log download currently returns BlobNotFound, so no test result is claimed yet.
 - Acceptance remains pending until the focused/full unit-test step and workflow reach terminal status. This checkpoint does not claim AdMark category acceptance.
+
+
+### Fourth-2.6 CI result update
+
+- Exact implementation HEAD: `e41fbe48810522cb02ec8e0a6280b4702c463feb`; Actions run #3073 / ID `44822313338`.
+- Verified from the job-step API: `Run contract unit tests` completed `success`; `Run authentic Legado runtime model contract tests` completed `success`; pinned JS API inventory generation/upload completed `success`.
+- The overall workflow is still `in_progress`; dependency-closure generation is the active step at the latest poll. Therefore this is a focused unit-test pass, not a terminal CI result or category acceptance.
+- Job-log download still returned BlobNotFound; the step API is the evidence for the completed test step.
