@@ -1030,3 +1030,13 @@
 - **禁止事项：** 不新建简化 `ReadConfig`/`ParagraphAnchor` shadow DTO；不把 WebView scrollY 映射为 paragraphAnchor；不把全局 `ReadBookConfig.Config` 塞进 Book；不引入 Room/schema v1；不改现有 preference key。
 - **下一门禁：** 精确检查上游 `Book.Converters`、GSON 的 LocalDate adapter、BookDao readConfig JSON property mutation、ReadBook/TTS 锚点恢复测试；同时枚举 Badcat 所有 progress/bookmark/history caller，形成字段/身份/null/default/unknown 对照和候选模块边界图。只有真实类型 round-trip 与 caller/单写者方案明确后，才能另行登记可执行 PoC。
 - **状态：** 依赖闭包和关键调用链已定位；完整上游实体接入未实现；Badcat 映射未实现；测试/build/CI/APK/真机验收均未由本次审计提供。B′仍未通过。
+
+
+### PoC-0.6 nullable Map test-assertion compilation correction registration (2026-11-20)
+
+- **Exact evidence:** workflow run `44705280574` for code HEAD `44e8fc61cca6ac2305fbed2d81722924ec6e7f48` reached `:app:compileDebugUnitTestKotlin`; Kotlin then rejected direct `map["..."]` access at lines 78–80 because the explicit receiver type was nullable `Map<String?, Any?>?`. The earlier generic inference error is gone. No unit tests ran and no APK was produced.
+- **Scope:** only `app/src/test/kotlin/io/legado/app/utils/LegadoGsonCompatibilityTest.kt` in `initialGsonUsesPinnedIntegerAndStringCoercion`. Keep the exact parameterized TypeToken and fixture; make the test assert a non-null deserialized map before indexing (e.g. `requireNotNull(INITIAL_GSON.fromJson<Map<String?, Any?>>(json, mapType))`), retaining all existing value assertions. Do not change production Gson/adapters or expected coercion semantics.
+- **Callers/ownership:** test-only; no production caller, persistence writer, transaction, database, cache or UI changes.
+- **Risk/test:** Kotlin Gson overload/generic nullability; exact acceptance is unit-test source compilation, then all app unit tests pass and `:app:assembleDebug` completes on the same exact code HEAD. Check artifact and report hashes before claiming success.
+- **Exclusions:** no ReadConfig model integration, Room/schema v1, persistence migration, UI or runtime code changes. Roll back this test-only change if explicit generic invocation does not bind to the registered TypeToken adapter.
+- **Status:** preregistered from exact run log; correction not yet implemented; PoC-0.6 and B′ remain unaccepted.
