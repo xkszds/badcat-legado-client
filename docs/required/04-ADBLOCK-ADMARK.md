@@ -2,6 +2,68 @@
 
 > 开始第四类任务：读总流程 [00-MASTER-WORKFLOW.md](00-MASTER-WORKFLOW.md) + 本文件。若改到阅读器 WebView 生命周期，再读第二类。原版净化 evidence 是证据资料，不是例行必读。
 
+## A. 第四类框架：大类 / 小类 / 完成情况
+
+> 本节只建立与第三类相同的分层导航和完成情况索引。下方原有目标、原版证据、实现记录、安全要求、登记和历史记录均保留，不改写其原文。状态只表示已有证据中的实现进度，不代表分类验收。
+
+### 大类 0：原版证据与规则语义
+| 小类 | 工作内容 | 已完成什么 | 当前状态 |
+|---|---|---|---|
+| 0.1 原版类/方法定位 | DEX 类、方法和设置键 | 已确认 ADBlockUtils、AdBlockPresenter、AdMarkDao、AdMarkHttpApi、AdMarkService、SettingAdBlockActivity 及相关方法/键 | 部分证据已确认 |
+| 0.2 AdMark 数据结构 | protobuf family、DbAdMark 字段 | 已记录 Issued/Report、AdMarkItem/AdMarkRuleItem 和 DbAdMark 字段 | 部分证据已确认 |
+| 0.3 URL matcher 语义 | urlPattern JSON integer array 到 Pattern matcher | 已确认路径模式拼接及 Pattern.matcher(url).find() 行为 | 已有静态证据；实现有局部覆盖 |
+| 0.4 页面端协议 | getInfoFromJS、onDeleteAd 和 DOM 删除 | 已确认桥接调用名称和部分调用关系 | 未完成；页面脚本/DOM 删除算法未恢复 |
+
+### 大类 1：AdBlock 设置与注入入口
+| 小类 | 工作内容 | 已完成什么 | 当前状态 |
+|---|---|---|---|
+| 1.1 开关与脚本设置 | key_is_ad_block、key_ad_block_js_inject | 已有独立开关和有界 injection script 设置 | 部分实现 |
+| 1.2 注入生命周期入口 | Reader WebView page-finished hook | 已有 page-finished 注入选择 hook | 部分实现 |
+| 1.3 脚本来源与更新 | 原版脚本恢复、更新与可信来源 | 已有本地脚本设置；原版完整脚本/规则更新尚缺 | 未完成 |
+| 1.4 注入失败处理 | 诊断、回退和不影响正文 | 已明确注入失败不得影响正文的安全要求 | 未验收 |
+
+### 大类 2：URL 匹配与安全隔离
+| 小类 | 工作内容 | 已完成什么 | 当前状态 |
+|---|---|---|---|
+| 2.1 Host 匹配 | 精确 host 与域名边界 | 已有 exact-host matcher | 局部测试/覆盖待完整核验 |
+| 2.2 URL Pattern 匹配 | 已验证 urlPattern 数组解析与匹配 | 已有 URL-pattern matcher 和单条 payload helper | 部分实现 |
+| 2.3 来源策略 | HTTP(S)、本地页面、malformed/credential URL | 已记录 .invalid synthetic origin 拒绝策略 | 部分实现 |
+| 2.4 页面隔离 | 禁止向小说本地正文页面注入网页脚本 | 已有 .invalid 隔离规则和生产调用路径审查记录 | 部分实现；真实 Provider 验证待完成 |
+| 2.5 资源/执行限制 | 来源、长度、时间、资源上限 | 已明确安全边界要求 | 未完成完整验证 |
+
+### 大类 3：AdMark 数据与规则管理
+| 小类 | 工作内容 | 已完成什么 | 当前状态 |
+|---|---|---|---|
+| 3.1 本地目录 | AdMark catalog CRUD | 已有 app-private catalog 的 upsert/remove | 部分实现 |
+| 3.2 导入导出 | JSON 导入/导出和规则保留 | 已有本地 import/export | 部分实现 |
+| 3.3 规则语义 | host、urlPattern、markRules 的独立保留与执行 | 已有字段独立保留和 matcher；markRules 精确执行语义未确认 | 部分实现 |
+| 3.4 服务端更新 | 授权服务协议、版本和更新流程 | 已确认存在 API/Service 符号，但没有授权协议和完整实现依据 | 未完成 |
+
+### 大类 4：页面 JavaScript Bridge 与 DOM 删除
+| 小类 | 工作内容 | 已完成什么 | 当前状态 |
+|---|---|---|---|
+| 4.1 getInfoFromJS | 页面读取 URL-pattern list | 已确认方法名/用途线索 | 未完成页面端真实实现 |
+| 4.2 onDeleteAd | 接收 markRule payload 并执行删除 | 已确认单条 markRule JSON payload helper 和原版调用线索 | 未完成页面端真实实现 |
+| 4.3 DOM 规则执行 | markRules 匹配目标元素并删除 | 尚无已验证的 selector/DOM 算法 | 未完成；禁止猜测实现 |
+| 4.4 Bridge 生命周期 | 页面切换、异步回调和资源释放 | 已有过期 page-finished callback 隔离修复 | 部分实现；异步回调与资源释放仍待验收 |
+
+### 大类 5：用户标记与设置界面
+| 小类 | 工作内容 | 已完成什么 | 当前状态 |
+|---|---|---|---|
+| 5.1 长按标记 | 页面长按、生成标记信息和确认 | 已确认原版 WebView bridge handler 接收 JsAdMarkInfo、用户确认后保存的静态证据 | 未完成新客户端交互闭环 |
+| 5.2 确认/取消 | 用户确认、取消及保存结果 | 已记录原版确认后保存流程线索 | 未完成新客户端交互闭环 |
+| 5.3 白名单/黑名单 | 站点允许/拒绝设置与管理 | 已列为未完成项 | 未完成 |
+| 5.4 设置页 | AdBlock/AdMark 设置与规则管理 UI | 已有设置开关/脚本设置基础 | 未完成完整设置页 parity |
+
+### 大类 6：测试、真机与分类验收
+| 小类 | 工作内容 | 已完成什么 | 当前状态 |
+|---|---|---|---|
+| 6.1 JVM 契约测试 | 当前/过期/空白/null URL identity | 已有 3 项 JVM 测试覆盖当前、缺失/空白和不同 URL 不归一化 | 局部测试通过记录 |
+| 6.2 Android WebView Provider | 真实 Provider、API 35、JS bridge 和页面回调 | 已登记真实 Provider instrumentation；既有运行因 page-finished latch timeout 失败，后续 CI 仍待终态 | 阻断中 |
+| 6.3 跨域/重定向 | 来源变化、页面切换和注入隔离 | 已列入真机验证要求 | 未完成 |
+| 6.4 原版闭环验收 | 真实网页标记、确认、删除和恢复 | 已有局部模型/入口，不具备完整闭环证据 | 未验收 |
+
+
 ## 目标和边界
 
 独立恢复原版 WebView 广告过滤、AdMark 标记/删除和设置流程。不能用 Legado 正文替换、普通 CSS 或 PPRule 替代。原 APK/DEX 只读；不得猜私有服务协议、伪造接口或执行未经验证的 JS。
