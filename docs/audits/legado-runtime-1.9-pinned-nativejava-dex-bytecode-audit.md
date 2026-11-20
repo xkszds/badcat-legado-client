@@ -49,9 +49,8 @@ This confirms the type-sensitive, conversion-weight-based model for the exact sh
 
 ## 3. Exact shipped conversion-weight implementation
 
-NativeJavaObject.getConversionWeight is present in classes3.dex with descriptor:
-(Lorg/htmlunit/corejs/javascript/NativeJavaObject;Ljava/lang/Object;Lorg/htmlunit/corejs/javascript/lc/type/TypeInfo;)I
-(actual full static method descriptor: (Ljava/lang/Object;Lorg/htmlunit/corejs/javascript/lc/type/TypeInfo;)I)
+NativeJavaObject.getConversionWeight is present in classes3.dex as a static method with full descriptor:
+(Ljava/lang/Object;Lorg/htmlunit/corejs/javascript/lc/type/TypeInfo;)I
 
 - Code offset: 5725500
 - Instruction units: 320
