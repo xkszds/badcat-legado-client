@@ -67,6 +67,23 @@ jobs:
       - name: Run authentic Legado runtime model contract tests
         run: gradle --no-daemon :legado-runtime:testDebugUnitTest
 
+      - name: Generate pinned Legado JavaScript API inventory
+        run: |
+          python3 -m py_compile .github/scripts/legado-js-abi-inventory.py
+          python3 .github/scripts/legado-js-abi-inventory.py \
+            --upstream-root upstream/legado/app/src/main/java \
+            --host-root app/src/main/java \
+            --output build/legado-js-abi-inventory.json
+
+      - name: Upload pinned Legado JavaScript API inventory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: legado-js-abi-inventory
+          path: build/legado-js-abi-inventory.json
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Restore pinned Legado Rhino artifact
         run: |
           upstream_commit="330e606c4d57e08adc056ff8ab7a4132c784da9"
