@@ -759,3 +759,12 @@ Search/Explore → BookInfo → BookChapterList → BookContent；依赖 Analyze
 - **Validation:** no local Gradle runner is available through the repository connector. The code and test diffs were reviewed, but tests/build/CI are not executed or verified. No APK/device/real-source evidence.
 - **Acceptance:** PoC-1.0 remains partial/not accepted until focused JVM + Android cache tests and app build execute, and all production cache mutation/clear paths are audited to invoke invalidation. The five-domain B′ PoC remains unpassed.
 - **Next:** audit every chapter-cache delete/replace/clear callsite and wire explicit invalidation; then run tests/build/CI. Do not start schema v1 or Room.
+
+
+#### PoC-1.0 contract tightening and mutation-path audit (2026-11-20)
+
+- Tightened `ChapterContentCache`: index-keyed `beginSave/get/isCurrent/put/invalidate` are now required methods, not silent default fallbacks. Legacy URL-keyed methods remain explicit compatibility methods. Production `FileChapterContentCache` implements the required typed contract; test fakes were updated to do so.
+- Re-read pinned `BookHelp.kt` mutation paths: upstream `saveContent` uses expected-version publication; direct replacement and `delContent` advance the fence before writing/deleting; resource refresh fences old chapter writes too. Host's current production graph has no separate chapter-cache clear/edit API or additional caller outside `SourceChapterContentService` and `FileChapterContentCache`; bounded pruning is the only other file deletion path. The new explicit `invalidate(sourceId,bookUrl,index)` is available for future mutation wiring, but no existing product UI action currently calls it.
+- **Remaining semantic gap:** the host does not yet expose a user-driven direct replace/delete operation equivalent to upstream `BookHelp.saveContent(replace)` / `delContent`; the fence primitive and invalidation path are implemented and tested, but no equivalent product action was found in the current host reader. Do not claim complete mutation lifecycle parity.
+- Latest code/test commits in this slice include `b6e5c350f6ba19fdc9e6affb1c883721440af568` and earlier sequential commits; the exact current HEAD must be used for validation below.
+- Tests/build/CI have not been executed. PoC-1.0 remains partial/not accepted pending real runner execution and remaining mutation lifecycle review.
