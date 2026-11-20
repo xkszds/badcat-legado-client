@@ -805,3 +805,10 @@ Search/Explore → BookInfo → BookChapterList → BookContent；依赖 Analyze
 - **Acceptance:** rerun workflow; both failing contract tests pass; all app unit tests pass; APK assemble/upload completes. Record exact run ID, test count, artifact SHA and any later live/device evidence. If another failure appears, preregister its exact scope before changing production code.
 - **Rollback:** revert the isolated test-only commit; no user data or runtime behavior changes.
 - **Status:** preregistered after exact CI log and pinned-source comparison; correction not yet implemented. PoC-0.6 and B′ remain unaccepted.
+
+
+#### PoC-0.6 fixture correction implementation checkpoint (2026-11-20)
+
+- **Actual change:** only `app/src/test/kotlin/io/legado/app/utils/LegadoGsonCompatibilityTest.kt` changed at code commit `e278d9f3715e2b4b9aeced1d897857c47c591e95`. The number-map fixture now uses the exact parameterized `TypeToken<Map<String?, Any?>?>` registration. All six string-wrapped rule fixtures now use `GSON.toJson(innerJson)` to produce valid outer JSON string values; object-form fixtures and original semantic assertions remain.
+- No production Gson/rule model, Gradle, data, cache, UI or persistence code changed. Pinned Gson implementation remains byte-identical to upstream at the recorded SHA.
+- **Validation pending:** push-triggered workflow run `44703572220` was pending when this entry was written; no tests, APK or CI pass is claimed yet. Update this checkpoint with exact final run outcome and artifact evidence after completion.
