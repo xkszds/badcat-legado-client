@@ -155,3 +155,17 @@
 - Verified from the job-step API: `Run contract unit tests` completed `success`; `Run authentic Legado runtime model contract tests` completed `success`; pinned JS API inventory generation/upload completed `success`.
 - The overall workflow is still `in_progress`; dependency-closure generation is the active step at the latest poll. Therefore this is a focused unit-test pass, not a terminal CI result or category acceptance.
 - Job-log download still returned BlobNotFound; the step API is the evidence for the completed test step.
+
+
+## 2026-11-21 Fourth-2.7 registration — AdMark catalog persistence and atomic-import contracts
+
+- Starting branch/HEAD: `integration/legado-upstream-runtime` / `a74487f92126dfad27472b734429a0531983037a`.
+- Scope: add Robolectric contract tests for the existing app-private `BadcatAdMarkCatalog` persistence behavior: write/read across catalog recreation, upsert identity replacement, merge-import semantics, remove behavior, and fail-closed import/replace validation without altering the prior persisted catalog.
+- Audited callers: `BadcatPurificationCoordinator` delegates catalog operations; `BadcatPurificationActivity` invokes add/list/remove/import/export. Production store uses Android `AtomicFile`; codec validates complete import before catalog merge/write.
+- Target file: new `app/src/test/kotlin/app/badcat/client/BadcatAdMarkCatalogTest.kt` only. Production model/store/coordinator/UI, storage schema, preferences, network and WebView behavior are excluded.
+- Upstream/original reference: original Badcat AdMark evidence in `docs/badcat-original-purification-evidence.md`; no Legado SHA applies.
+- Data ownership/transaction: existing app-private AtomicFile catalog remains the sole local AdMark owner. No parallel store or schema change. Tests must clean their fixed catalog file before/after execution and must not rely on execution order.
+- Risks: test isolation under Robolectric, AtomicFile backup/recovery semantics, import merge identity and accidental mutation on invalid input.
+- Contract tests: catalog survives object recreation; upsert replaces same host+urlPattern identity; import merges and replaces matching identity while preserving unrelated records; remove deletes only requested identity; malformed/duplicate/oversized import and duplicate replaceAll fail without changing the existing export.
+- Acceptance: focused `:app:testDebugUnitTest` and exact-HEAD full workflow must reach terminal success. This validates local catalog persistence contracts only; it does not establish server sync, DOM deletion or original AdMark parity.
+- Exclusions: no production code changes, no file-format changes, no UI, no guessed private service protocol, no DOM selectors, no WebView Provider or device claim.
