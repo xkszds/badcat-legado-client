@@ -191,3 +191,18 @@
 - Contract tests: with a valid backup and a partial base file, reopening the catalog returns the backed-up records; with only a backup file present, reopening restores and returns the committed records. Assert the recovered catalog can subsequently be exported and reopened.
 - Acceptance: focused `:app:testDebugUnitTest` passes on the exact implementation HEAD and the corresponding full workflow reaches terminal status. If Robolectric does not faithfully exercise `AtomicFile`, record that limitation and defer device validation rather than substituting a fake implementation.
 - Exclusions: no production recovery rewrite, no forced crash/process-kill test, no schema migration, no changes to AdMark rule semantics, and no claim of full AdBlock/AdMark parity.
+
+
+### Fourth-2.7 CI result update
+
+- Exact test implementation HEAD: `289ab57a430c344f175e03bc9cb56164c406e4bb`; run #3077 / ID `44822785706`, job `136587658684`.
+- Verified job-step API: `Run contract unit tests` completed `success`; authentic Legado model contract tests and source/ABI preparation steps also completed successfully.
+- Overall run #3077 reached terminal `failure` because `Run bounded Rhino replacement host tests` failed. Android WebView provider instrumentation and APK assembly were skipped. Therefore Fourth-2.7's focused unit-test suite passed, but its registered acceptance condition (full workflow terminal success) was not met; do not mark the subtask fully accepted.
+
+
+### Fourth-2.8 implementation checkpoint
+
+- Test-only implementation committed at `f3b4a0942b2a348a67da90c59718b47b89c8172c`: added two Robolectric cases in `app/src/test/kotlin/app/badcat/client/BadcatAdMarkCatalogTest.kt` covering recovery from a valid `.bak` alongside a partial base file, and recovery when only the backup exists. Each case verifies that recovered records remain readable after catalog recreation.
+- No production code, catalog format, schema, settings, UI, network or WebView behavior changed.
+- Exact implementation HEAD run #3080 / ID `44823406608` is present with job record; the run is `in_progress`. A separate documentation-registration run #3079 / ID `44823353123` is also in progress. The exact-HEAD #3080 focused unit-test step has not yet been confirmed complete at this checkpoint.
+- Fourth-2.8 acceptance remains pending until focused tests pass and the exact-HEAD workflow reaches terminal success. Robolectric coverage does not substitute for device/process-kill validation.
