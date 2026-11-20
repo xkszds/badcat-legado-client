@@ -87,7 +87,7 @@ class RhinoSourceJsAbiBytecodeTest {
                 var batch = java.ajaxAll(['/one', '/two'], true);
                 [
                     noArg.get('bookSourceName'),
-                    Object.keys(nullArg).length,
+                    nullArg.size(),
                     stringArg.get('X-Test'),
                     objectArg.get('Count'),
                     objectArg.get('Enabled'),
