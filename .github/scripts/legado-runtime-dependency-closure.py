@@ -170,6 +170,26 @@ def _mask_non_code(text: str) -> str:
     return text
 
 
+
+def _same_package_candidates(index: "SourceIndex", key: str, text: str) -> list[dict]:
+    package = _package(index.files[key], text)
+    masked = _mask_non_code(text)
+    import_lines = {item["line"] for item in _parse_imports(text)}
+    found = {}
+    for line_no, line in enumerate(masked.splitlines(), 1):
+        if line_no in import_lines or line.lstrip().startswith(("package ", "import ")):
+            continue
+        for match in re.finditer(r"\b[A-Za-z_][A-Za-z0-9_]*\b", line):
+            symbol = match.group(0)
+            candidates = index.symbols_by_package.get(package, {}).get(symbol, [])
+            targets = sorted({record[0] for record in candidates if record[0] != key})
+            if targets:
+                found[(line_no, symbol, tuple(targets))] = {
+                    "line": line_no, "symbol": symbol, "targets": targets, "ambiguous": len(targets) > 1
+                }
+    return [found[item] for item in sorted(found)]
+
+
 def _classify_unresolved(name: str) -> tuple[str, str | None]:
     for prefix, evidence in GENERATED_ANDROID_SYMBOLS:
         if name == prefix or name.startswith(prefix + "."):
@@ -374,34 +394,23 @@ def build_report(root: Path) -> dict:
                 })
 
         # Same-package references are lexical candidates, not compiler decisions.
-        package = _package(path, text)
-        masked = _mask_non_code(text)
-        declaration_lines = {record["line"] for record in index.declaration_records.get(key, [])}
-        import_lines = {item["line"] for item in imports}
-        for line_no, line in enumerate(masked.splitlines(), 1):
-            if line_no in declaration_lines or line_no in import_lines or line.lstrip().startswith(("package ", "import ")):
-                continue
-            for match in re.finditer(r"\b[A-Za-z_][A-Za-z0-9_]*\b", line):
-                symbol = match.group(0)
-                candidates = index.symbols_by_package.get(package, {}).get(symbol, [])
-                targets = sorted({record[0] for record in candidates if record[0] != key})
-                if not targets:
+        for candidate in _same_package_candidates(index, key, text):
+            line_no, symbol, targets = candidate["line"], candidate["symbol"], candidate["targets"]
+            if candidate["ambiguous"]:
+                ambiguous.append({"from": key, "line": line_no, "symbol": symbol,
+                                  "candidateTargets": targets, "edgeKind": "same_package_lexical",
+                                  "classification": "ambiguous_same_package_symbol"})
+            for target in targets:
+                edge_key = (key, target, line_no, symbol, "same_package_lexical")
+                if edge_key in edge_keys:
                     continue
-                if len(targets) > 1:
-                    ambiguous.append({"from": key, "line": line_no, "symbol": symbol,
-                                      "candidateTargets": targets, "edgeKind": "same_package_lexical",
-                                      "classification": "ambiguous_same_package_symbol"})
-                for target in targets:
-                    edge_key = (key, target, line_no, symbol, "same_package_lexical")
-                    if edge_key in edge_keys:
-                        continue
-                    edges.append({"from": key, "to": target, "line": line_no, "symbol": symbol,
-                                  "alias": None, "edgeKind": "same_package_lexical",
-                                  "resolution": "declaration_candidate", "confidence": "lexical_candidate"})
-                    edge_keys.add(edge_key)
-                    if target not in parent:
-                        parent[target] = key
-                        queue.append(target)
+                edges.append({"from": key, "to": target, "line": line_no, "symbol": symbol,
+                              "alias": None, "edgeKind": "same_package_lexical",
+                              "resolution": "declaration_candidate", "confidence": "lexical_candidate"})
+                edge_keys.add(edge_key)
+                if target not in parent:
+                    parent[target] = key
+                    queue.append(target)
 
     def shortest_path(key: str) -> list[str]:
         result = []
@@ -442,7 +451,7 @@ def build_report(root: Path) -> dict:
 
     external_groups = Counter(item["packageGroup"] for item in external)
     unresolved.sort(key=lambda item: (item["from"], item["line"], item["import"]))
-    edges.sort(key=lambda item: (item["from"], item["to"], item["import"]))
+    edges.sort(key=lambda item: (item["from"], item["to"], item.get("line", 0), item.get("symbol", "")))
     external.sort(key=lambda item: (item["from"], item["line"], item["import"]))
 
     return {
@@ -462,7 +471,8 @@ def build_report(root: Path) -> dict:
             "seedCount": len(SEEDS),
             "resolvedSeedCount": len(seed_keys),
             "reachableSourceFileCount": len(visited),
-            "internalImportEdges": len(edges),
+            "internalImportEdges": sum(1 for edge in edges if edge["edgeKind"] == "import"),
+            "totalResolvedSourceEdges": len(edges),
             "unresolvedImportCount": len(unresolved),
             "unresolvedInternalImportCount": sum(1 for item in unresolved if item["classification"] == "internal_namespace_unresolved"),
             "generatedAndroidSymbolImportCount": sum(1 for item in unresolved if item["classification"] == "generated_android_symbol"),
