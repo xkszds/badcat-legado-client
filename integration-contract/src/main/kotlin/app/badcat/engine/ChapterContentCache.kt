@@ -27,7 +27,7 @@ data class ChapterContentSaveToken(
 
 /** Host-owned persistence boundary for offline chapter reading. */
 interface ChapterContentCache {
-    /** Legacy URL-keyed methods remain for source compatibility only. */
+    /** Legacy URL-keyed operations are retained for migration/debug compatibility. */
     suspend fun get(sourceId: String, bookUrl: String, chapterUrl: String): CachedChapterContent?
     suspend fun put(
         sourceId: String,
@@ -36,27 +36,16 @@ interface ChapterContentCache {
         value: CachedChapterContent,
     )
 
-    /** Identity-safe methods. Implementations should override these for index-keyed storage. */
-    fun beginSave(sourceId: String, bookUrl: String, chapter: BookChapter): ChapterContentSaveToken =
-        ChapterContentSaveToken(ChapterContentCacheKey(sourceId, bookUrl, chapter.index), 0L)
-
-    suspend fun get(sourceId: String, bookUrl: String, chapter: BookChapter): CachedChapterContent? =
-        get(sourceId, bookUrl, chapter.url)
-
-    fun isCurrent(token: ChapterContentSaveToken): Boolean = true
-
-    /** Returns false when the request token is stale and publication is rejected. */
+    /** Every implementation must provide the index-keyed, fenced operations. */
+    fun beginSave(sourceId: String, bookUrl: String, chapter: BookChapter): ChapterContentSaveToken
+    suspend fun get(sourceId: String, bookUrl: String, chapter: BookChapter): CachedChapterContent?
+    fun isCurrent(token: ChapterContentSaveToken): Boolean
     suspend fun put(
         sourceId: String,
         bookUrl: String,
         chapter: BookChapter,
         token: ChapterContentSaveToken,
         value: CachedChapterContent,
-    ): Boolean {
-        put(sourceId, bookUrl, chapter.url, value)
-        return true
-    }
-
-    /** Invalidates cached content and advances the generation for this chapter identity. */
-    suspend fun invalidate(sourceId: String, bookUrl: String, chapterIndex: Int) = Unit
+    ): Boolean
+    suspend fun invalidate(sourceId: String, bookUrl: String, chapterIndex: Int)
 }
