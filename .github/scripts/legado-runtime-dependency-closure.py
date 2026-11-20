@@ -84,7 +84,7 @@ DEPENDENCY_PROVIDED_SYMBOLS = (
 )
 
 BLIND_SPOTS = [
-    "Same-package references without import statements are not added as graph edges.",
+    "Same-package edges are lexical identifier candidates and may include false positives; they do not prove Kotlin/Java compiler binding or overload selection.",
     "Fully-qualified type/function references in declarations or string-evaluated scripts may be missed.",
     "Reflection, generated Kotlin/Java code, KSP/KAPT output, service-loader metadata and JNI are not resolved.",
     "Gradle variants, source-set exclusions, manifest/resource linking and dependency substitution are summarized only, not compiled.",
@@ -489,7 +489,7 @@ def build_report(root: Path) -> dict:
 
     return {
         "pinnedUpstream": PINNED,
-        "inventoryKind": "recursive Kotlin/Java source import graph; not compiler-complete dependency closure",
+        "inventoryKind": "recursive Kotlin/Java import plus lexical same-package candidate graph; not compiler-complete dependency closure",
         "sourceRoots": SOURCE_ROOTS,
         "seeds": {
             "declared": list(SEEDS),
@@ -561,6 +561,17 @@ def self_test() -> None:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(body, encoding="utf-8")
 
+        (base / "app/build.gradle").parent.mkdir(parents=True, exist_ok=True)
+        (base / "app/build.gradle").write_text('plugins { id("com.android.library") }\ndependencies { implementation("demo:library:1.0") }', encoding="utf-8")
+        (base / "app/src/main/res/values").mkdir(parents=True, exist_ok=True)
+        (base / "app/src/main/res/values/strings.xml").write_text("<resources/>", encoding="utf-8")
+        (base / "app/src/main/assets").mkdir(parents=True, exist_ok=True)
+        (base / "app/src/main/assets/sample.js").write_text("export const x = 1", encoding="utf-8")
+        (base / "app/src/main/AndroidManifest.xml").write_text("<manifest/>", encoding="utf-8")
+        build_inventory = _build_input_inventory(base, ["app/build.gradle"])
+        assert build_inventory["resourceSummary"] == {"total": 3, "manifest": 1, "resources": 1, "assets": 1}
+        assert build_inventory["buildFiles"][0]["path"] == "app/build.gradle"
+
         labels = list(SOURCE_ROOTS)
         idx = SourceIndex(roots, labels)
         resolved, kind = idx.resolve("demo.b.B")
@@ -579,7 +590,7 @@ def self_test() -> None:
         assert _classify_unresolved("org.htmlunit.corejs.javascript.Context")[0] == "dependency_provided_symbol"
         assert _classify_unresolved("io.legado.app.utils.notFound")[0] == "internal_namespace_unresolved"
         resolved, kind = idx.resolve("demo.b.*")
-        assert kind == "wildcard" and len(resolved) == 6
+        assert kind == "wildcard" and len(resolved) == 11
         resolved, kind = idx.resolve("demo.b.JavaHelpers.VALUE")
         assert kind == "file" and any(item.endswith(":demo/b/JavaHelpers.java") for item in resolved)
         resolved, kind = idx.resolve("demo.b.JavaHelpers.*")
