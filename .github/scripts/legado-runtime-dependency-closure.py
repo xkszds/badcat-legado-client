@@ -46,7 +46,7 @@ INTERNAL_PREFIXES = (
     "org.htmlunit.corejs.javascript",
 )
 IMPORT_RE = re.compile(r"^\s*import\s+([A-Za-z_][A-Za-z0-9_.*]*)(?:\s+as\s+([A-Za-z_][A-Za-z0-9_]*))?\s*$")
-JAVA_IMPORT_RE = re.compile(r"^\\s*import\\s+(static\\s+)?([A-Za-z_][A-Za-z0-9_.*]*)\\s*;\\s*$")
+JAVA_IMPORT_RE = re.compile(r"^\s*import\s+(static\s+)?([A-Za-z_][A-Za-z0-9_.*]*)\s*;\s*$")
 PACKAGE_RE = re.compile(r"^\s*package\s+([A-Za-z_][A-Za-z0-9_.]*)", re.MULTILINE)
 DECL_RE = re.compile(
     r"^\s*(?:(?:public|internal|private|protected|open|abstract|sealed|data|enum|annotation|expect|actual|inline|value)\s+)*"
