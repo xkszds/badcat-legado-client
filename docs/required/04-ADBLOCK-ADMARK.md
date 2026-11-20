@@ -124,3 +124,17 @@
 - Contract/verification: inspect exact workflow diff; after push, verify new run is bound to exact resulting HEAD, run status is not blocked by the previous branch-wide group, and `jobs_url` exposes a job record. Confirm earlier #3060 is not cancelled by this change. Verify the prior #3063 state separately; do not treat pending or a job record alone as test success.
 - Acceptance: orchestration fix is accepted only after a new exact-HEAD run exposes its job and reaches a terminal result. Android instrumentation, unit tests, APK and product acceptance remain separate gates.
 - Exclusions: do not cancel or mutate run #3060; no test behavior, app source, emulator test, or runtime code changes.
+
+
+## 2026-11-21 Fourth-2.6 registration — AdMark import/export fail-closed contract
+
+- Starting branch/HEAD: `integration/legado-upstream-runtime` / `f38b2006704c5670500c4477a594250f2ecab899`.
+- Scope: strengthen deterministic JVM contract coverage for the existing AdMark JSON codec's accepted input shapes and rejection behavior. This is a bounded subtask under 3.2 import/export and 6.1 JVM contract tests.
+- Audited production paths: `BadcatPurificationActivity` routes pasted/file imports through `BadcatPurificationCoordinator.importAdMarks`; coordinator delegates to `BadcatAdMarkCatalog.importJson`; catalog decodes the full payload before merging and committing through Android `AtomicFile`. Export uses the same codec. The codec supports legacy flat arrays and the observed nested `markItems/ruleItems` shape, while deliberately ignoring server-supplied `adBlockJsInject`.
+- Target file: `app/src/test/java/app/badcat/client/BadcatPurificationModelsTest.kt` only. No production source, persistence schema, UI, settings, network endpoint, or runtime injection behavior is in scope.
+- Upstream/original reference: original Badcat AdMark DEX/protobuf shape recorded in `docs/badcat-original-purification-evidence.md`; no Legado SHA dependency applies.
+- Data ownership/transaction: no changes. Existing app-private `AtomicFile` catalog remains the sole local AdMark record owner; import must decode/validate before the catalog merge/write path.
+- Risks: malformed or duplicate entries must fail closed; import must not accept wrong JSON types or silently install server-provided scripts; test assertions must not invent unverified DOM/markRules semantics.
+- Contract tests: nested and flat supported shapes; duplicate identity rejection; malformed group/rule/field types; invalid URL-pattern/rule values; imported payload containing `adBlockJsInject` must not expose or install that script; verify byte/item boundary guards where deterministic without allocating excessive memory.
+- Acceptance: focused `:app:testDebugUnitTest` passes on exact implementation HEAD; full CI result must be recorded separately. This only validates import/export contracts and does not complete AdMark service sync, DOM deletion, or original purifier parity.
+- Exclusions: no new format fields, no guessed server protocol, no DOM selectors, no remote script acquisition, no settings/UI changes, no Android Provider or device claim.
