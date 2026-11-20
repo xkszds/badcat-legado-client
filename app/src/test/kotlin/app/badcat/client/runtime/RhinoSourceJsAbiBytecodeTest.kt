@@ -3,7 +3,7 @@ package app.badcat.client.runtime
 import android.webkit.JavascriptInterface
 import app.badcat.engine.EngineResult
 import app.badcat.engine.SourceHttpResponse
-import io.legado.app.data.entities.BookSource
+import app.badcat.engine.BookSource
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
