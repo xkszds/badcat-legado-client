@@ -291,3 +291,64 @@ Search/Explore → BookInfo → BookChapterList → BookContent；依赖 Analyze
 - **Risks:** accidentally introducing a second database or dual-writer; changing source/session identity; losing unknown JSON members; inventing null/default conversion; incorrectly treating chapter URL, index or Kotlin equals as interchangeable identity; moving favorites/bookmarks/history into the engine schema without evidence; breaking legacy AtomicFile/SharedPreferences data.
 - **Required output:** schema/table and index draft; per-field upstream→host mapping with unresolved fields explicitly marked; converters and JSON preservation strategy; single-writer/transaction map; legacy data migration inventory; all callers; regression and fault-injection tests; exact acceptance/exit gates.
 - **Acceptance:** a reviewed, evidence-linked schema contract and complete known caller inventory sufficient to preregister a separate code-only schema slice. If upstream declarations or current callers cannot be established from the pinned/current tree, record the gap and do not invent a schema. B′ remains unpassed. No APK/release claim.
+
+
+### PoC-0.4 audit findings — pinned schema and current host ownership
+
+**Pinned upstream sources directly inspected**
+- `BookSource.kt`: `book_sources`, PK `bookSourceUrl`, non-unique index on the same field. Its persisted constructor has 35 properties (including six nullable typed rules); equality/hash/key use `bookSourceUrl`. The six Room converters serialize rules with pinned `GSON.toJson` and deserialize with `GSON.fromJsonObject<T>(...).getOrNull()`. The rule models also define deserializers accepting either JSON object or a JSON string primitive; other JSON shapes become null.
+- `Book.kt`: `books`, PK `bookUrl`, unique index `(name,author)`; 32 persisted constructor properties, including nested `ReadConfig`, reading index/position/time, source origin, user overrides, variables and sync/cover state. `variableMap`, HTML fields, download URLs, folder cache and computed config accessors are ignored/transient and are not columns. `ReadConfig` converter uses pinned Gson. Book equality/hash use only `bookUrl`.
+- `BookChapter.kt`: `chapters`, PK `(url,bookUrl)`, non-unique index `bookUrl`, unique index `(bookUrl,index)`, FK `bookUrl -> books.bookUrl ON DELETE CASCADE`. Persisted constructor has 17 properties: `url,title,isVolume,baseUrl,bookUrl,index,isVip,isPay,resourceUrl,tag,wordCount,start,end,startFragmentId,endFragmentId,variable,imgUrl`. `variableMap`, `deferUpdates`, `titleMD5` are runtime/ignored state. Equality/hash compare URL only and must not be used as row identity.
+- `AppDatabase.kt`: upstream DB is version 113, 26 entities + view and a long migration graph. This confirms the B′ choice not to import the whole unrelated DB.
+- Rule entity source files inspected: ExploreRule, SearchRule, BookListRule, BookInfoRule, TocRule, ContentRule, ReviewRule. ReviewRule includes its own boolean default and extended review/summary/detail/reply rule fields; it must not be dropped merely because the current reader path does not execute it.
+
+**Current host ownership and callers confirmed from branch tree/source**
+- `FileBookSourceCatalog` is the sole current source catalog writer. It stores a JSON array in `legado-book-sources.json` via AtomicFile; import replaces by `sourceId`, enable mutates only raw JSON's `enabled`, remove/export operate on that file. The codec validates a bounded JSON document, maps selected scalar fields and retains full `rawJson`; it does not persist a typed upstream BookSource or nested mutable rule objects.
+- `BadcatReadingStateRepository` is the single current access boundary for progress/bookmark/history preference data. Progress keys persist last chapter URL and per-chapter scrollY; bookmark companion metadata shares the progress preference file; history is a separate JSON array preference. These are not official Book fields and scrollY is not the same unit/meaning as upstream `durChapterPos`.
+- `SourceBookActivity` owns the live chapter list in Activity memory and calls the ReadingEngine for detail/TOC. `SourceChapterActivity` reads/writes last chapter URL, chapter scrollY, bookmark state and history via the repository; it updates progress on chapter display and scroll persistence. No durable Book/BookChapter DAO was found.
+- `FavoritesActivity` owns a separate Badcat favorites/folder preference domain and reads history timestamps for sorting. `BookmarkActivity` and `ReadingHistoryActivity` are presentation/callers of the repository, not Legado DAO owners.
+- `SourceTocService` produces chapter projections; `SourceChapterContentService` uses `ChapterContentCache`; `FileChapterContentCache` owns bounded AtomicFile body entries. Cache metadata currently has no durable DB generation pointer/token or TOC foreign key.
+- `:app` currently has no Room runtime/compiler/schema export dependency or Room database. `:integration-contract` remains Android-free and contains only projections.
+
+### Proposed Badcat-owned schema contract (draft, not implemented)
+
+| Table | Primary/unique identity | Required columns and constraints | Sole owner |
+|---|---|---|---|
+| `legado_sources` | PK `source_id` (= exact `bookSourceUrl`) | `raw_json` NOT NULL; mapped indexed columns for name/type/enabled/customOrder/group/search/explore; six rule JSON payloads retained as JSON values; updated/import metadata. Unknown source fields remain in raw JSON. | Source repository/facade |
+| `library_books` | PK composite `(source_id,book_url)` | All 32 upstream Book persisted fields represented with upstream nullability/default metadata; source FK; optional `upstream_json` for future-field preservation; unique `(source_id,name,author)` rather than globally unique name/author to prevent cross-source collisions. | Book repository/facade |
+| `library_chapters` | PK composite `(source_id,book_url,chapter_url)`; unique `(source_id,book_url,chapter_index)` | All 17 upstream BookChapter persisted fields; FK `(source_id,book_url)` to books with cascade; preserve chapter URL and index separately. | TOC repository/facade |
+| `reading_progress` | PK `(source_id,book_url)` | `last_chapter_url`, nullable `chapter_index`, upstream-compatible `dur_chapter_pos` and `dur_chapter_time`, separate nullable `legacy_scroll_y`, unresolved-mapping flag/version. Do not convert pixel scrollY into character position. | Reading-state repository/facade |
+| `chapter_cache_entries` | PK `(source_id,book_url,chapter_url)` | `chapter_index`, `generation` monotonic integer, `content_version`, immutable payload file ID/path, byte length, savedAt, checksum; FK to current chapter identity with explicit invalidation on TOC replacement. | Cache repository/facade |
+| `migration_journal` | PK migration ID | state, source snapshot manifest/checksums, row counts, started/verified/cutover timestamps, error details. | Migration coordinator |
+
+**Schema caveats requiring proof before implementation**
+1. Upstream Book unique `(name,author)` is global. B′ composite source-scoped Book identity intentionally relaxes this constraint to preserve Badcat's already source-scoped identity; document this as a host extension, not byte-for-byte Room parity.
+2. BookChapter PK and unique index mirror upstream keys but add source scope. TOC refresh must preserve URL/index semantics and avoid duplicate page replay; URL-only equality is not a storage key.
+3. BookSource rule converters must accept both object and string-encoded JSON; preserve raw unknown members even when typed decode cannot understand them. Do not serialize a typed object over raw JSON unless mutation semantics explicitly identify the changed rule.
+4. Book.ReadConfig contains nested nullable/default fields including LocalDate and ParagraphAnchor; converter compatibility must be verified against pinned Gson type adapters, not generic Gson assumptions.
+5. Upstream Book constructor defaults that use `System.currentTimeMillis()` are dynamic. Schema defaults annotated as SQL zero do not equal Kotlin construction defaults; keep constructor/default and migration/default semantics separate.
+6. BookSource `enabledCookieJar` is nullable but constructor default true and the Room column default is declared as 0. Do not silently normalize null/true/false.
+7. BookChapter's variable big-data helpers and mutation methods call appDb/RuleBigDataHelp; the proposed row is storage shape only, not a complete upstream BookChapter runtime implementation.
+8. Cache payload files remain immutable generation objects; the Room row only points to the published generation. File cleanup is retryable and must not run before the transaction commits.
+
+**Caller inventory status**
+- Confirmed direct persistence owners and UI consumers above.
+- Still required before cutover: repository-wide search for all constructor sites, direct preference/file path access, favorite-folder and reader-state writes, cache creation/injection sites, all TOC list transforms and all tests/fixtures. The source audit was not a complete static call graph, so do not call the inventory exhaustive yet.
+
+**PoC-0.4 result**
+- [x] Pinned model table names, keys, indexes, persisted constructor fields and ignored runtime fields inspected for the three core entities.
+- [x] Six typed BookSource rule columns and object/string converter behavior identified.
+- [x] Current host durable owners and main Activity/repository/cache callers mapped.
+- [x] Draft schema/identity and explicit differences from upstream recorded.
+- [ ] Exhaustive source-level caller scan not complete.
+- [ ] Room dependency, entities, DAOs, schema export and migration tests not implemented.
+- [ ] Legacy snapshot/dry-run/rollback executable design and fault-injection tests not implemented.
+- [ ] No test/build/CI/APK/device result is claimed for this documentation audit.
+
+**Next ordered work**
+1. Complete repository-wide caller/access scan (including search for preference names, AtomicFile names, cache constructors, TOC transforms and model constructors) and close the ownership matrix.
+2. Verify pinned Gson `INITIAL_GSON`/runtime Gson adapters, ReadConfig LocalDate/ParagraphAnchor converters, and every nullable/default distinction with fixtures.
+3. Freeze schema v1 SQL/Room entity definitions and exported schema JSON; register a separate schema-only code change with Room compiler/runtime and schema verification tests.
+4. Only after schema-only CI passes, implement legacy backup + dry-run + idempotent import + rollback state machine; no production cutover in that step.
+
+**Self-review:** this is an evidence-backed schema draft, not executable schema and not B′ acceptance. It deliberately does not map UI pixel scrollY to upstream character position, does not claim exhaustive caller discovery, and does not change any runtime code.
