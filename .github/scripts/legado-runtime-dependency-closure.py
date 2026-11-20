@@ -48,11 +48,32 @@ INTERNAL_PREFIXES = (
 IMPORT_RE = re.compile(r"^\s*import\s+([A-Za-z_][A-Za-z0-9_.*]*)(?:\s+as\s+([A-Za-z_][A-Za-z0-9_]*))?\s*$")
 JAVA_IMPORT_RE = re.compile(r"^\s*import\s+(static\s+)?([A-Za-z_][A-Za-z0-9_.*]*)\s*;\s*$")
 PACKAGE_RE = re.compile(r"^\s*package\s+([A-Za-z_][A-Za-z0-9_.]*)", re.MULTILINE)
-DECL_RE = re.compile(
-    r"^\s*(?:(?:public|internal|private|protected|open|abstract|sealed|data|enum|annotation|expect|actual|inline|value)\s+)*"
-    r"(?:class|interface|object|typealias|fun|val|var|enum\s+class|data\s+class)\s+"
-    r"([A-Za-z_][A-Za-z0-9_]*)",
+DECL_MODIFIERS = r"(?:(?:public|internal|private|protected|open|abstract|sealed|data|enum|annotation|expect|actual|inline|value|final|override|suspend|operator|infix|external|tailrec|const|lateinit|noinline|crossinline)\s+)*"
+DECL_ANNOTATIONS = r"(?:(?:@[A-Za-z_][A-Za-z0-9_.]*(?:\([^\n]*?\))?)\s+)*"
+TYPE_DECL_RE = re.compile(
+    r"^\s*" + DECL_ANNOTATIONS + DECL_MODIFIERS
+    + r"(?:class|interface|object|typealias|enum\s+class|annotation\s+class|fun\s+interface)\s+"
+    + r"([A-Za-z_][A-Za-z0-9_]*)",
     re.MULTILINE,
+)
+FUNCTION_DECL_RE = re.compile(
+    r"^\s*" + DECL_ANNOTATIONS + DECL_MODIFIERS
+    + r"fun\s+(?:<[^>\n]+>\s*)?"
+    + r"(?:(?:[A-Za-z_][A-Za-z0-9_?.<>!, ]*)\.)?"
+    + r"([A-Za-z_][A-Za-z0-9_]*)\s*(?:<[^>\n]+>\s*)?\(",
+    re.MULTILINE,
+)
+PROPERTY_DECL_RE = re.compile(
+    r"^\s*" + DECL_ANNOTATIONS + DECL_MODIFIERS
+    + r"(?:val|var)\s+(?:(?:[A-Za-z_][A-Za-z0-9_?.<>!, ]*)\.)?"
+    + r"([A-Za-z_][A-Za-z0-9_]*)\b",
+    re.MULTILINE,
+)
+GENERATED_ANDROID_SYMBOLS = (
+    ("io.legado.app.R", "Android resource symbol generated from app resources"),
+    ("io.legado.app.BuildConfig", "Android Gradle BuildConfig generation"),
+    ("io.legado.app.BR", "Android data-binding BR symbol generation"),
+    ("io.legado.app.databinding", "Android view/data-binding generated classes"),
 )
 
 BLIND_SPOTS = [
@@ -79,7 +100,19 @@ def _package(path: Path, text: str) -> str:
 
 
 def _decls(text: str) -> set[str]:
-    return set(DECL_RE.findall(text))
+    # Kotlin extension functions/properties and generic/reified declarations
+    # are imported from their package just like ordinary top-level symbols.
+    names: set[str] = set()
+    for pattern in (TYPE_DECL_RE, FUNCTION_DECL_RE, PROPERTY_DECL_RE):
+        names.update(pattern.findall(text))
+    return names
+
+
+def _classify_unresolved(name: str) -> tuple[str, str | None]:
+    for prefix, evidence in GENERATED_ANDROID_SYMBOLS:
+        if name == prefix or name.startswith(prefix + "."):
+            return "generated_android_symbol", evidence
+    return "internal_namespace_unresolved", None
 
 
 def _is_internal(name: str, prefixes: Iterable[str]) -> bool:
@@ -231,12 +264,16 @@ def build_report(root: Path) -> dict:
                 matches, kind = index.resolve(name)
                 resolution_counts[kind] += 1
                 if not matches:
+                    classification, evidence = _classify_unresolved(name)
+                    resolution_counts[classification] += 1
                     unresolved.append({
                         "from": key,
                         "line": item["line"],
                         "import": name,
                         "alias": item["alias"],
-                        "reason": "internal_namespace_unresolved",
+                        "reason": classification,
+                        "classification": classification,
+                        "evidence": evidence,
                     })
                     continue
                 for target in matches:
@@ -315,7 +352,10 @@ def build_report(root: Path) -> dict:
             "resolvedSeedCount": len(seed_keys),
             "reachableSourceFileCount": len(visited),
             "internalImportEdges": len(edges),
-            "unresolvedInternalImportCount": len(unresolved),
+            "unresolvedImportCount": len(unresolved),
+            "unresolvedInternalImportCount": sum(1 for item in unresolved if item["classification"] != "generated_android_symbol"),
+            "generatedAndroidSymbolImportCount": sum(1 for item in unresolved if item["classification"] == "generated_android_symbol"),
+            "unresolvedByClassification": dict(sorted(Counter(item["classification"] for item in unresolved).items())),
             "externalImportCount": len(external),
             "resolutionKinds": dict(sorted(resolution_counts.items())),
             "externalPackageGroups": dict(sorted(external_groups.items())),
@@ -352,6 +392,7 @@ def self_test() -> None:
             (c, "package demo.b\nfun helper() = Unit"),
             (d, "package demo.b\nclass D"),
             (java, "package demo.b;\npublic class JavaHelpers { public static final int VALUE = 1; }"),
+            (roots[0] / "demo" / "b" / "Extensions.kt", "package demo.b\n@JvmName(\"helpers\")\ninternal inline fun <reified T : Any> T?.asHelper(): T? = this\nfun String.helperProperty(): Int = length\n"),
         )
         for path, body in fixtures:
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -363,6 +404,12 @@ def self_test() -> None:
         assert kind == "file" and any(item.endswith(":demo/b/B.kt") for item in resolved)
         resolved, kind = idx.resolve("demo.b.helper")
         assert kind == "top_level_symbol" and any(item.endswith(":demo/b/Helpers.kt") for item in resolved)
+        resolved, kind = idx.resolve("demo.b.asHelper")
+        assert kind == "top_level_symbol" and any(item.endswith(":demo/b/Extensions.kt") for item in resolved)
+        resolved, kind = idx.resolve("demo.b.helperProperty")
+        assert kind == "top_level_symbol" and any(item.endswith(":demo/b/Extensions.kt") for item in resolved)
+        assert _classify_unresolved("io.legado.app.databinding.ActivityMainBinding")[0] == "generated_android_symbol"
+        assert _classify_unresolved("io.legado.app.utils.notFound")[0] == "internal_namespace_unresolved"
         resolved, kind = idx.resolve("demo.b.*")
         assert kind == "wildcard" and len(resolved) == 4
         resolved, kind = idx.resolve("demo.b.JavaHelpers.VALUE")
