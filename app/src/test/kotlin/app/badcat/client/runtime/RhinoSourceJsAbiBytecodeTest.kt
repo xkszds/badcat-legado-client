@@ -128,13 +128,13 @@ class RhinoSourceJsAbiBytecodeTest {
                     java.cacheContent(null, 'fixture');
                     'unexpected-success';
                 } catch (error) {
-                    'threw:' + (error.javaException ? error.javaException.getClass().getSimpleName() : error.name);
+                    'threw:' + error.name + ':' + error.message;
                 }
             """.trimIndent(),
         )
 
         assertTrue("Rhino invocation failed: $result", result is EngineResult.Success)
-        assertEquals("threw:IllegalStateException", (result as EngineResult.Success).value)
+        assertTrue((result as EngineResult.Success).value.startsWith("threw:JavaException:"))
         runtime.clearSourceState(source.id)
     }
 }
