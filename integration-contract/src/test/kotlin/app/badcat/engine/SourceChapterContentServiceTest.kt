@@ -401,4 +401,50 @@ class SourceChapterContentServiceTest {
         assertEquals(listOf(requestedUrl), requests)
     }
 
+    @Test
+    fun staleNetworkResponseIsReturnedButCannotPublishAfterChapterInvalidation() = runBlocking {
+        val source = BookSource(
+            id = "fenced",
+            name = "Fenced",
+            baseUrl = "https://reader.example/",
+            ruleContentJson = """{"content":"div#content"}""",
+        )
+        val chapter = BookChapter(12, "Chapter 12", "https://reader.example/chapter/shared")
+        val key = ChapterContentCacheKey(source.id, "https://reader.example/book", chapter.index)
+        val fence = ChapterContentSaveFence()
+        var stored: CachedChapterContent? = null
+        val cache = object : ChapterContentCache {
+            override suspend fun get(sourceId: String, bookUrl: String, chapterUrl: String): CachedChapterContent? = null
+            override suspend fun put(sourceId: String, bookUrl: String, chapterUrl: String, value: CachedChapterContent) = Unit
+            override fun beginSave(sourceId: String, bookUrl: String, chapter: BookChapter) = fence.token(key)
+            override fun isCurrent(token: ChapterContentSaveToken) = fence.isCurrent(token)
+            override suspend fun put(
+                sourceId: String,
+                bookUrl: String,
+                chapter: BookChapter,
+                token: ChapterContentSaveToken,
+                value: CachedChapterContent,
+            ): Boolean = fence.publishIfCurrent(token) { stored = value }
+        }
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                // Simulate a replace/invalidation while the request is in flight.
+                fence.invalidate(key)
+                return EngineResult.Success(
+                    SourceHttpResponse(200, request.url, body = "<div id='content'>fresh network body</div>"),
+                )
+            }
+        }
+
+        val result = assertIs<EngineResult.Success<ChapterContent>>(
+            SourceChapterContentService(
+                http = SourceHttpGateway(client),
+                cache = cache,
+            ).load(source, "https://reader.example/book", chapter),
+        )
+
+        assertEquals("fresh network body", result.value.text)
+        assertEquals(null, stored)
+    }
+
 }
