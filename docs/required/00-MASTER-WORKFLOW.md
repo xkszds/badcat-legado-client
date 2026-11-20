@@ -144,3 +144,12 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 - Verbatim import into Android-free `:integration-contract` is rejected. Exact BookChapter closure, full host caller inventory and a minimal compile-ready authentic-model module boundary remain open; no schema v1 or Room work is authorized yet.
 - This was a documentation/evidence checkpoint only; no runtime, tests, Gradle or UI changed. Prior exact baseline `981d064b50de1fcb68fc91213085b057a8561b13` had no reported status checks or workflow runs. B′ remains unpassed.
 - Next: complete exact-path dependency and host caller inventory, then preregister a minimal authentic-model integration and executable serialization fixtures before proceeding to schema design.
+
+
+## 2026-11-20 Third-category PoC-0.7 dependency closure inventory
+
+- Completed a source/build graph inventory against Badcat's full non-truncated Git tree and pinned Legado source `330e606c4d57e08adc056ff8ab7a4132c784da9a`. The category-3 report records exact source paths, declarations, direct dependency families, host ownership paths and the remaining caller-scan gap.
+- Authentic `BookSource` depends on `BaseSource` login/Cookie/cache/Rhino lifecycle; `Book` depends on app DB, BookHelp/ContentProcessor/AppConfig/ReadBook; `BookChapter` depends on app DB, AnalyzeUrl/RuleDataInterface, large-variable storage and Android app context. These are not isolated DTOs.
+- Host `:integration-contract` is Kotlin/JVM and deliberately Android-free; its current engine/services/catalog use host projections. A verbatim import of the three upstream entities into that module is rejected. A dedicated Android source boundary is not yet shown to be isolated or buildable without pulling broad app services.
+- PoC-0.7 remains not accepted; B′ remains unpassed. The next ordered action is a symbol-level host callsite scan and explicit B′ exit-option comparison before any model integration, schema v1 or Room work.
+- This was a documentation/evidence inventory only: no runtime, Gradle, UI or tests changed, and no test/build/CI/APK pass is claimed.
