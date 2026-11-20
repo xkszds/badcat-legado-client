@@ -1144,3 +1144,13 @@
 7. 任何未覆盖能力必须列为阻断项。只允许报告“局部实现/部分兼容/PoC 通过”，不得将其表述为完整 Legado 兼容运行层。不得因用户希望一口气完成而跳过测试或把失败项改成成功。
 
 **本次记录只更新报告，不修改运行时代码、Gradle、数据库、UI 或 APK；不代表完整运行层已实现。**
+
+## 2026-11-20 Runtime-0.1 registration — isolated Android module / authentic upstream model-rule slice
+
+- Scope: create a dedicated Android library module `:legado-runtime` without Legado UI/Reader. First compile gate is limited to the exact pinned upstream rule model classes and Gson contract as a dependency-closure probe; it is explicitly not a complete runtime and cannot be reported as such.
+- Upstream: `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`, source roots under `app/src/main/java/io/legado/app/data/entities/rule` and `app/src/main/java/io/legado/app/utils/GsonExtensions.kt`. Preserve original package names and source contents; use upstream sources via the pinned submodule rather than shadow DTOs.
+- Target module/configuration: add `:legado-runtime` as Android library with Kotlin Android + Parcelize, compile the authentic ExploreRule/SearchRule/BookInfoRule/TocRule/ContentRule/ReviewRule and their shared interfaces/Gson adapter. Do not add `BookSource`, `BaseSource`, `AnalyzeRule`, `AnalyzeUrl` or app UI classes to this first slice until their full dependency closure is registered.
+- Tests: run `:legado-runtime:testDebugUnitTest` with upstream object/string dual-form fixtures and default/null/unknown-field round-trip checks. CI checkout must initialize the pinned submodule and verify its exact SHA before compiling.
+- Exclusions for this slice: no production caller migration, no app UI changes, no database/Room schema, no reader changes, no replacement of current runtime. This is an authentic source/module feasibility gate only.
+- Acceptance: exact upstream source files compile in the new Android module and executable tests exercise the actual classes. Failure must be recorded with missing dependency symbols; do not add same-name stubs or simplified replacements to force compilation.
+- Status before implementation: registered only; no runtime code changed yet.
