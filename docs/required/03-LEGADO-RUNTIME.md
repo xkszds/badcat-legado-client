@@ -1394,3 +1394,15 @@
 - **PoC-2 result:** source/build closure and A/B/C comparison audit completed; no production code, source sets, database, UI, reader or callers changed. No build/test/APK pass is claimed by this documentation-only audit.
 - **Next gate / PoC-3 registration:** method-level contract and caller map for BaseSource, JsExtensions, SharedJsScope, JsSourceEngine, AnalyzeRule/AnalyzeUrl, Cookie/cache, login/verification. For each method record upstream path, behavior, side effects, state owner, callback thread/lifecycle, error/null semantics and possible Badcat service implementation. Only then register exact authentic source slice and compiler tests. Do not pull upstream app, DAO or UI/Reader wholesale; no stubs/no-op/shadow API.
 - B′, full Legado compatibility and release readiness remain unaccepted.
+
+
+### Runtime-0.7 PoC-3 method-level contract audit result (2026-11-20)
+
+- Detailed inventory: `docs/audits/legado-runtime-0.7-poc3-method-service-contracts.md`.
+- Inspected pinned source declarations for BaseSource, JsExtensions, SharedJsScope, JsSourceEngine, AnalyzeRule, AnalyzeUrl, CookieStore, CacheManager, SourceLoginJsExtensions, SourceVerificationHelp, LoginUiV2 and BaseSourceExtensions.
+- Mapped BaseSource login/header/encrypted-login-info/variables/cache/JS lifecycle; JsExtensions HTTP overloads, WebView/browser/verification/video, cookies/files/archive, encoding/TTF/reader-theme APIs; shared JS scope, source JS dispatch, rule parsing, URL/request lifecycle, cookie/cache storage and login/verification callbacks.
+- Sampled pinned callsites/implementers: App registers BookSource/RssSource/HttpTTS with NativeBaseSource; JsExtensions is implemented by BaseSource, JsSourceEngine, WebJsExtensions, RssJsExtensions and SourceLoginJsExtensions; SourceLoginJsExtensions.Callback is consumed by SourceLoginDialog and ExploreAdapter; BackstageWebView injects a source JS interface. This is not an exhaustive caller inventory.
+- Consolidated candidate ports: source/context; persistence/session; JS runtime; HTTP/network; WebView/browser/verification; login host; book/chapter lifecycle; environment/files/crypto. Highest risks are CacheManager/CookieStore/SharedJsScope state ownership and JsExtensions/login/verification WebView UI coupling.
+- **Result:** method-level service map completed as an audit; no implementation slice yet proven isolated. Full upstream API/overload/response shape and all callers remain acceptance requirements. No production Kotlin/Java, DB/schema, UI/Reader or callers changed.
+- **Next gate:** exhaustive pinned-source callsite inventory and a narrowly scoped, real behavior-preserving service-port prototype. Begin with the lowest-coupling persistence-free rule/JS slice only after its imports and callbacks are fully mapped. Each new source set must be preregistered before changes; no Any?/Map shadow API, no-op bridge or omission of browser/login/verification/media/theme APIs.
+- PoC-1 compile boundary failed; PoC-2 architecture audit did not select a final architecture; PoC-3 contract map does not constitute a runtime or compatibility pass. B′ and release readiness remain unaccepted.
