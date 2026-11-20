@@ -173,6 +173,26 @@ jobs:
       - name: Run bounded Rhino replacement host tests
         run: gradle --no-daemon :app:testDebugUnitTest
 
+      - name: Capture compiled host JavaScript bridge JVM ABI
+        if: always()
+        run: |
+          class_file="$(find app/build -type f -name 'RhinoSafeSourceJavaExtensions.class' -print -quit)"
+          if [ -z "$class_file" ]; then
+            echo "Compiled RhinoSafeSourceJavaExtensions.class was not produced"
+            exit 1
+          fi
+          mkdir -p build/legado-host-jvm-abi
+          javap -p -s -v "$class_file" > build/legado-host-jvm-abi/RhinoSafeSourceJavaExtensions.javap.txt
+          sha256sum build/legado-host-jvm-abi/RhinoSafeSourceJavaExtensions.javap.txt | tee build/legado-host-jvm-abi/SHA256SUMS.txt
+
+      - name: Upload compiled host JavaScript bridge JVM ABI
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: legado-host-jvm-abi
+          path: build/legado-host-jvm-abi/**
+          if-no-files-found: warn
+          retention-days: 14
       - name: Upload unit test reports
         if: always()
         uses: actions/upload-artifact@v4
