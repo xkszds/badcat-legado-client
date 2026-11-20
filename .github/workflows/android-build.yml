@@ -146,27 +146,55 @@ jobs:
               --output "$local_root/$file"
           done
 
-      - name: Probe authentic BookSource and BaseSource compile boundary
+      - name: Verify G2d stage-1 authentic source manifest
         run: |
-          mkdir -p build/runtime-0.7-poc
+          python3 - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+
+          manifest_path = pathlib.Path("legado-runtime-poc/source-closure-stage1.json")
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          expected = "330e606c4d57e08adc056ff8ab7a4132c784da9a"
+          actual = subprocess.check_output(
+              ["git", "-C", "upstream/legado", "rev-parse", "HEAD"], text=True
+          ).strip()
+          assert actual == expected == manifest["pinnedUpstream"]["commit"], (actual, expected)
+          entries = manifest["sources"]
+          paths = [entry["path"] for entry in entries]
+          assert len(paths) == len(set(paths)), "duplicate source path in manifest"
+          for entry in entries:
+              path = pathlib.Path("upstream/legado") / entry["path"]
+              assert path.is_file(), f"missing pinned source: {entry['path']}"
+              blob = subprocess.check_output(
+                  ["git", "-C", "upstream/legado", "hash-object", str(path)], text=True
+              ).strip()
+              assert blob == entry["gitBlobSha1"], (entry["path"], blob, entry["gitBlobSha1"])
+          print(f"Verified {len(entries)} authentic source blobs at {actual}")
+          PY
+
+      - name: Compile G2d stage-1 authentic rule/model source group
+        run: |
+          mkdir -p build/runtime-g2d-stage1
+          cp legado-runtime-poc/source-closure-stage1.json build/runtime-g2d-stage1/
           set +e
-          gradle --no-daemon :legado-runtime-poc:compileDebugKotlin > build/runtime-0.7-poc/compiler.log 2>&1
+          gradle --no-daemon :legado-runtime-poc:compileDebugKotlin > build/runtime-g2d-stage1/compiler.log 2>&1
           compile_status=$?
           set -e
-          cat build/runtime-0.7-poc/compiler.log
-          printf '%s\n' "$compile_status" > build/runtime-0.7-poc/exit-code.txt
+          cat build/runtime-g2d-stage1/compiler.log
+          printf '%s\n' "$compile_status" > build/runtime-g2d-stage1/exit-code.txt
           if [ "$compile_status" -eq 0 ]; then
-            echo "POC_RESULT=COMPILED_REQUIRES_MANUAL_REVIEW"
+            echo "G2D_STAGE1_RESULT=COMPILED_REQUIRES_CONTRACT_REVIEW"
           else
-            echo "POC_RESULT=BLOCKED_COMPILER_DIAGNOSTICS_CAPTURED"
+            echo "G2D_STAGE1_RESULT=COMPILER_DIAGNOSTICS_CAPTURED"
           fi
 
-      - name: Upload authentic source compiler probe diagnostics
+      - name: Upload G2d stage-1 compiler probe evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: legado-runtime-0.7-compiler-probe
-          path: build/runtime-0.7-poc/**
+          name: legado-runtime-g2d-stage1-probe
+          path: build/runtime-g2d-stage1/**
           if-no-files-found: error
           retention-days: 14
 

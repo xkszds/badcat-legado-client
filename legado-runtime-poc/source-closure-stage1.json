@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "task": "Runtime-1.0 PoC-7j G2d stage 1",
+  "badcatRegistrationCommit": "93a5e5dc6495dc4d43463e1029bc5ac54b1572f0",
+  "pinnedUpstream": {
+    "repository": "LegadoTeam/legado",
+    "commit": "330e606c4d57e08adc056ff8ab7a4132c784da9a"
+  },
+  "probeModule": ":legado-runtime-poc",
+  "stage": "authentic rule/model/serialization/constants/exception/pure-utility source group",
+  "sources": [
+    {
+      "path": "app/src/main/java/io/legado/app/data/entities/rule/BookListRule.kt",
+      "gitBlobSha1": "60015b9982e10aa744c4a97b32f71cf28834eccd",
+      "role": "rule-interface",
+      "ownerModule": ":app"
+    },
+    {
+      "path": "app/src/main/java/io/legado/app/data/entities/rule/ExploreRule.kt",
+      "gitBlobSha1": "6871515ea685dc4cb2245ecc45c952604634267d",
+      "role": "rule-model",
+      "ownerModule": ":app"
+    },
+    {
+      "path": "app/src/main/java/io/legado/app/data/entities/rule/SearchRule.kt",
+      "gitBlobSha1": "ba8cda4543a4afb507224ba57f0f1f5ab4ad5594",
+      "role": "rule-model",
+      "ownerModule": ":app"
+    },
+    {
+      "path": "app/src/main/java/io/legado/app/data/entities/rule/BookInfoRule.kt",
+      "gitBlobSha1": "54fd639003b4b4780d095c5afa379eac25a8620b",
+      "role": "rule-model",
+      "ownerModule": ":app"
+    },
+    {
+      "path": "app/src/main/java/io/legado/app/data/entities/rule/TocRule.kt",
+      "gitBlobSha1": "f525e912340257125059b6ad87d0cf7e73d6a1dc",
+      "role": "rule-model",
+      "ownerModule": ":app"
+    },
+    {
+      "path": "app/src/main/java/io/legado/app/data/entities/rule/ContentRule.kt",
+      "gitBlobSha1": "74020cd33c89dc0af189bae2ed68afd2c52d1446",
+      "role": "rule-model",
+      "ownerModule": ":app"
+    },
+    {
+      "path": "app/src/main/java/io/legado/app/data/entities/rule/ReviewRule.kt",
+      "gitBlobSha1": "cb22a3b55e405e4303cd41987a8177000867cbc9",
+      "role": "rule-model",
+      "ownerModule": ":app"
+    },
+    {
+      "path": "app/src/main/java/io/legado/app/utils/GsonExtensions.kt",
+      "gitBlobSha1": "c0bebcb9bf072f04a680e269765bb5b2e76cd88d",
+      "role": "serialization",
+      "ownerModule": ":app"
+    },
+    {
+      "path": "app/src/main/java/io/legado/app/constant/AppPattern.kt",
+      "gitBlobSha1": "dc3244b873c6f913f72fd5cf1151814dd1dad2e1",
+      "role": "constant",
+      "ownerModule": ":app"
+    },
+    {
+      "path": "app/src/main/java/io/legado/app/constant/BookSourceType.kt",
+      "gitBlobSha1": "f7c1344290f96bb255a937c9535d3c13b737a6c7",
+      "role": "constant",
+      "ownerModule": ":app"
+    },
+    {
+      "path": "app/src/main/java/io/legado/app/exception/NoStackTraceException.kt",
+      "gitBlobSha1": "03e469283a3f9be711ebf08846d067a4691524b5",
+      "role": "exception",
+      "ownerModule": ":app"
+    },
+    {
+      "path": "app/src/main/java/io/legado/app/utils/MapExtensions.kt",
+      "gitBlobSha1": "d035b2a7395e346967d777ae94f29d5dd09f2fa7",
+      "role": "utility",
+      "ownerModule": ":app"
+    }
+  ],
+  "dependencies": [
+    "androidx.room:room-runtime:2.8.4",
+    "androidx.annotation:annotation:1.10.0",
+    "com.google.code.gson:gson:2.14.0",
+    "cn.hutool:hutool-crypto:5.8.22",
+    "org.bouncycastle:bcprov-jdk18on:1.86",
+    "org.bouncycastle:bcpkix-jdk18on:1.86",
+    "org.jetbrains:annotations:26.0.2",
+    "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0",
+    ":legado-rhino (existing probe baseline; not required by this isolated source group)"
+  ],
+  "deliberatelyExcludedForThisIncrement": [
+    "BaseSource.kt",
+    "BookSource.kt",
+    "Book.kt",
+    "BookChapter.kt",
+    "AudioPlay.kt",
+    "RowUi.kt",
+    "CacheManager.kt",
+    "CookieStore.kt",
+    "JsExtensions.kt",
+    "JsSourceEngine.kt",
+    "SharedJsScope.kt",
+    "LoginUiV2.kt",
+    "AppConfig.kt",
+    "AppLog.kt",
+    "AppConst.kt"
+  ],
+  "notes": [
+    "This is an independently compilable first source group, not the full BookSource/BaseSource runtime.",
+    "ReviewRule.kt blob was verified from the pinned recursive Git tree; use cb22a3b55e405e4303cd41987a8177000867cbc9 (not the inconsistent SHA recorded in an earlier diagnostic table).",
+    "No production source is copied or rewritten; Gradle compiles the pinned submodule files directly."
+  ]
+}

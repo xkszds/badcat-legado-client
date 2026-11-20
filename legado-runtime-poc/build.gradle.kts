@@ -37,14 +37,25 @@ dependencies {
     implementation(project(":legado-rhino"))
 }
 
-// Compile only the two unchanged upstream source files under their original FQCNs.
-// Do not add host or upstream substitute classes to this probe.
+// G2d stage 1: compile an independently bounded, authentic upstream source group.
+// The previous two-file BaseSource/BookSource failure remains the control evidence
+// (G2c artifact 14635151778); these roots are reintroduced only in a later increment.
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     if (name == "compileDebugKotlin" || name == "compileReleaseKotlin") {
         source(fileTree("$rootDir/upstream/legado/app/src/main/java") {
             include(
-                "io/legado/app/data/entities/BookSource.kt",
-                "io/legado/app/data/entities/BaseSource.kt",
+                "io/legado/app/data/entities/rule/BookListRule.kt",
+                "io/legado/app/data/entities/rule/ExploreRule.kt",
+                "io/legado/app/data/entities/rule/SearchRule.kt",
+                "io/legado/app/data/entities/rule/BookInfoRule.kt",
+                "io/legado/app/data/entities/rule/TocRule.kt",
+                "io/legado/app/data/entities/rule/ContentRule.kt",
+                "io/legado/app/data/entities/rule/ReviewRule.kt",
+                "io/legado/app/utils/GsonExtensions.kt",
+                "io/legado/app/constant/AppPattern.kt",
+                "io/legado/app/constant/BookSourceType.kt",
+                "io/legado/app/exception/NoStackTraceException.kt",
+                "io/legado/app/utils/MapExtensions.kt",
             )
         })
     }
