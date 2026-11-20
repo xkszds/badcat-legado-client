@@ -2071,3 +2071,15 @@
 - **Decision:** design **COMPLETE / NOT EXECUTED**. Rhino-only test can use existing JVM/Robolectric test infrastructure; WebView half requires separately registered instrumentation-only runner/dependency/test changes and a real provider. No production fix bundled with the probe.
 - **Validation:** read-only Gradle/test/source inspection only. No fixture/test source or Gradle file changed; no compile, Gradle, test, CI, device/emulator, WebView provider or APK run. No production code, DB/schema/migration/persistence, caller, UI/Reader or `main` changed. Runtime remains partial; G2 remains BLOCKED/partial; B′ and full Legado compatibility remain unpassed.
 - **Checklist self-audit:** only the preregistered design report and this result entry changed; no gate promoted.
+
+
+### 2026-11-21 Runtime-2.1 registration — Rhino-only overload differential unit test
+
+- **Starting branch/HEAD:** `integration/legado-upstream-runtime` / `b70e6d03bf853b80dd106a0c6e53694e84c6243b`. Recheck before implementation and commit. Fixed upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Trigger:** Runtime-2.0 completed the executable test design. Existing JUnit/Robolectric dependencies and the exact :legado-rhino dependency are present; the Rhino half can be tested without changing Gradle or production code.
+- **Task type:** test-only implementation and focused unit validation.
+- **Objective:** add one public test fixture with two same-name/same-arity methods annotated with @JavascriptInterface, one taking String and one taking Int, then inject the same object through ScriptBindings and invoke it through the exact HtmlUnit-backed RhinoScriptEngine. Assert String/Number/null/undefined select STRING/INT/STRING/STRING. Use fresh scopes for each invocation and preserve exceptions. This verifies the resolver in the repository's actual JVM test classpath, independently from the DEX static audit.
+- **Allowed changes:** exactly one new test file: `app/src/test/kotlin/app/badcat/client/runtime/RhinoOverloadResolutionTest.kt`. No production source, Gradle, workflow or other file changes. Existing JUnit/Robolectric dependencies only.
+- **Acceptance:** test fixture is public and visible to RhinoClassShutter; both methods have identical name/arity and exact parameter types; all four argument cases assert expected marker; focused test executes successfully; report exact command/result. Any failure must be investigated without weakening assertions.
+- **Explicit exclusions:** no WebView/instrumentation test, no test runner or Gradle dependency change, no production bridge change, no compiler experiment, no DB/schema/migration/persistence, no callers, no UI/Reader, no G3/G4, no APK/release or `main`.
+- **Status at registration:** preregistered only. Runtime-2.0 design complete/not executed; WebView half remains blocked on instrumentation setup/device; G2 remains BLOCKED/partial; B′ and full Legado compatibility remain unpassed.
