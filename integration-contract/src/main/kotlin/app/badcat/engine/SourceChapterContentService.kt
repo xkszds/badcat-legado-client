@@ -63,11 +63,13 @@ class SourceChapterContentService(
                 )
             }
             val response = when (val result = http.execute(source, currentUrl, page = pageCount + 1, key = bookName)) {
-                is EngineResult.Failure -> return cached?.let { EngineResult.Success(it.content) } ?: result
+                is EngineResult.Failure -> return cached?.takeIf { saveToken == null || cache?.isCurrent(saveToken) != false }
+                    ?.let { EngineResult.Success(it.content) } ?: result
                 is EngineResult.Success -> result.value
             }
             if (response.statusCode !in 200..299) {
-                return cached?.let { EngineResult.Success(it.content) } ?: EngineResult.Failure(
+                return cached?.takeIf { saveToken == null || cache?.isCurrent(saveToken) != false }
+                    ?.let { EngineResult.Success(it.content) } ?: EngineResult.Failure(
                     EngineErrorCode.NETWORK,
                     "Chapter content request for source '${source.id}' returned HTTP ${response.statusCode}",
                 )
