@@ -171,3 +171,10 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 - Category-3 checklist now contains an initial five-domain mapping for BookSource, Book, BookChapter, reading progress and chapter body/cache, with acceptance assertions and an explicit note that it is not a frozen schema.
 - Next candidate is an Android-free chapter-identity contract PoC carrying index through engine/service/UI while preserving URL navigation. It requires separate exact-scope preregistration and differential tests; no Room or schema changes authorized.
 - Inspection/documentation only; no tests/build/CI/APK pass claimed.
+
+
+## 2026-11-20 PoC-0.8 checkpoint
+
+- Third-category chapter-index identity PoC is partially implemented on the integration branch: typed chapter-object content API, ambiguity-safe URL resolver, and index propagation through the primary TOC/bookmark/resume reader path. Detailed file/caller/test evidence and remaining legacy URL callers are recorded in `03-LEGADO-RUNTIME.md`.
+- PoC-0.8 is not accepted; tests/build/CI are not verified (latest checked HEAD had no reported status checks or workflow runs). No APK or device validation.
+- B′ remains unpassed; no schema v1, Room migration, cache fencing, or architecture switch is authorized by this checkpoint.
