@@ -85,11 +85,11 @@ class RhinoSourceJsAbiBytecodeTest {
                 var objectArg = java.parseJsRequestHeaders({Count: 7, Enabled: true});
                 var batch = java.ajaxAll(['/one', '/two'], true);
                 [
-                    noArg.bookSourceName,
+                    noArg.get('bookSourceName'),
                     Object.keys(nullArg).length,
-                    stringArg['X-Test'],
-                    objectArg.Count,
-                    objectArg.Enabled,
+                    stringArg.get('X-Test'),
+                    objectArg.get('Count'),
+                    objectArg.get('Enabled'),
                     batch.length,
                     batch[0].body(),
                     batch[1].body(),
