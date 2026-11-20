@@ -447,9 +447,9 @@ def self_test() -> None:
         resolved, kind = idx.resolve("demo.b.helperProperty")
         assert kind == "top_level_symbol" and any(item.endswith(":demo/b/Extensions.kt") for item in resolved)
         resolved, kind = idx.resolve("demo.b.deepSearch")
-        assert kind == "top_level_symbol" and any(item.endswith(":demo/b/Extensions.kt") for item in resolved)
+        assert kind == "top_level_symbol" and any(item.endswith(":demo/b/NestedGeneric.kt") for item in resolved)
         resolved, kind = idx.resolve("demo.b.hasEntry")
-        assert kind == "top_level_symbol" and any(item.endswith(":demo/b/Extensions.kt") for item in resolved)
+        assert kind == "top_level_symbol" and any(item.endswith(":demo/b/NestedGeneric.kt") for item in resolved)
         assert _classify_unresolved("io.legado.app.databinding.ActivityMainBinding")[0] == "generated_android_symbol"
         assert _classify_unresolved("org.htmlunit.corejs.javascript.Context")[0] == "dependency_provided_symbol"
         assert _classify_unresolved("io.legado.app.utils.notFound")[0] == "internal_namespace_unresolved"
