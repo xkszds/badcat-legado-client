@@ -107,3 +107,17 @@ Search/Explore → BookInfo → BookChapterList → BookContent；依赖 Analyze
 - 将历史 Legado 程序、测试、固定 SHA、模型/服务缺口、B′ 五项 PoC、退出条件和自动维护要求集中到本文件。
 - 详细审计资料仍保留为证据，不再要求每次 Legado 任务全部重读；例行入口仅为总流程清单 + 本文件。
 - 本次仅整理文档，没有新增/修改 Legado runtime 代码，也没有新增测试或 APK。整理开始时的代码基线为 `11549e7824683553c4039befa2f714fabfb805c3`；不得将历史 CI 结果外推到后续 HEAD。
+
+
+## 2026-11-20 PoC-0 registration — five-domain contract and ownership baseline (before runtime edits)
+
+- **Starting HEAD:** `493cbd16f0b68d29d8c8eed466f542f5e0932da4`; active branch confirmed as `integration/legado-upstream-runtime`.
+- **Pinned source:** `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Task/category:** Third category — B′ minimum PoC, baseline gate.
+- **Exact scope:** Inspect and document the five PoC domains (BookSource, Book, BookChapter, reading progress, chapter cache): upstream field/identity/default/serialization contracts; current Badcat persistence and all existing model/codec/cache/progress interfaces; proposed single-writer ownership, adapter boundary, transaction and invalidation rules; migration/rollback proof plan. This first slice is an evidence and contract baseline, not a claim that B′ is implemented.
+- **Target surfaces to audit:** `:integration-contract` ReadingEngine/BookSource/BookChapter/ChapterContentCache; LegadoBookSourceCodec and tests; app FileBookSourceCatalog, FileChapterContentCache, ReaderProgressMetrics and reader persistence callers; Gradle module/dependency graph; pinned upstream BookSource/Book/BookChapter, BaseSource/BaseBook, relevant DAO/cache/content persistence declarations.
+- **Ownership hypothesis to challenge, not assume:** Badcat repository is the sole writer for each adopted domain; UI consumes Badcat projections; Legado runtime receives only typed compatibility interfaces/models and never imports Badcat DAO or storage classes. Do not decide the final database engine until the five-domain transaction and migration requirements are evidenced.
+- **Risks:** source/book/chapter identity collision; URL uniqueness assumptions; host progress/reader state split; chapter cache key and upstream save-token mismatch; raw JSON vs typed rule object/string semantics; unknown-field loss; partial import; duplicate writes; cross-file/DB transaction impossibility; AtomicFile crash recovery; migration rollback; runtime dependency leakage.
+- **Required evidence/tests for this slice:** complete field/identity mapping table; current caller inventory; source-code boundary inventory; proposed writer/read projection table; fixture requirements for object/string rule JSON, missing/null/default/unknown fields; deterministic migration dry-run/idempotency/rollback/restart scenarios; architecture test design and explicit fail conditions. No code edit is permitted until these contracts and target callers are sufficiently mapped.
+- **Acceptance/exit:** This slice is accepted only when all five domains have named source-of-truth, sole writer, stable identity, transaction boundary, cache invalidation/recovery semantics, and a testable migration path. If a domain cannot be isolated or restored, stop B′ expansion and prepare the restricted data-layer A / hybrid comparison. No APK/release claim.
+- **Explicit exclusions:** no UI changes; no changes to main; no runtime/API implementation, Room migration, cache rewrite, reader progress rewrite, selector/Rhino work, or source compatibility claims in this registration.
