@@ -21,29 +21,29 @@ android {
     testOptions {
         unitTests.isIncludeAndroidResources = true
     }
+
+    sourceSets.getByName("main").java {
+        // Compile the actual pinned Legado sources from the git submodule.
+        // This first gate deliberately includes only the six source-rule models
+        // and their exact Gson contract; lifecycle/runtime closure is a later gate.
+        srcDir("$rootDir/upstream/legado/app/src/main/java")
+        include(
+            "io/legado/app/data/entities/rule/BookListRule.kt",
+            "io/legado/app/data/entities/rule/ExploreRule.kt",
+            "io/legado/app/data/entities/rule/SearchRule.kt",
+            "io/legado/app/data/entities/rule/BookInfoRule.kt",
+            "io/legado/app/data/entities/rule/TocRule.kt",
+            "io/legado/app/data/entities/rule/ContentRule.kt",
+            "io/legado/app/data/entities/rule/ReviewRule.kt",
+            "io/legado/app/utils/GsonExtensions.kt",
+        )
+    }
 }
 
 kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
     }
-}
-
-sourceSets.getByName("main").java {
-    // Compile the actual pinned Legado sources from the git submodule.
-    // This first gate deliberately includes only the six source-rule models
-    // and their exact Gson contract; lifecycle/runtime closure is a later gate.
-    srcDir("$rootDir/upstream/legado/app/src/main/java")
-    include(
-        "io/legado/app/data/entities/rule/BookListRule.kt",
-        "io/legado/app/data/entities/rule/ExploreRule.kt",
-        "io/legado/app/data/entities/rule/SearchRule.kt",
-        "io/legado/app/data/entities/rule/BookInfoRule.kt",
-        "io/legado/app/data/entities/rule/TocRule.kt",
-        "io/legado/app/data/entities/rule/ContentRule.kt",
-        "io/legado/app/data/entities/rule/ReviewRule.kt",
-        "io/legado/app/utils/GsonExtensions.kt",
-    )
 }
 
 dependencies {
