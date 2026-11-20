@@ -178,3 +178,9 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 - Third-category chapter-index identity PoC is partially implemented on the integration branch: typed chapter-object content API, ambiguity-safe URL resolver, and index propagation through the primary TOC/bookmark/resume reader path. Detailed file/caller/test evidence and remaining legacy URL callers are recorded in `03-LEGADO-RUNTIME.md`.
 - PoC-0.8 is not accepted; tests/build/CI are not verified (latest checked HEAD had no reported status checks or workflow runs). No APK or device validation.
 - B′ remains unpassed; no schema v1, Room migration, cache fencing, or architecture switch is authorized by this checkpoint.
+
+
+## 2026-11-20 PoC-0.9 checkpoint
+
+- Legacy history/bookmark URL-only reader launches now resolve against the fresh TOC and proceed only on a unique match; stale/ambiguous identities fail closed without fetching a guessed chapter. Existing stored URL keys remain unchanged.
+- PoC-0.8/0.9 implementation remains partial and unaccepted; current HEAD has no reported status checks or workflow runs, and no test/build/APK/device validation. Detailed evidence and next gates are in the third-category checklist.
