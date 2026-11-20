@@ -278,3 +278,16 @@ Search/Explore → BookInfo → BookChapterList → BookContent；依赖 Analyze
 6. **Fourth task:** durable Book/BookChapter/TOC and progress index mapping.
 7. **Fifth task:** chapter cache generation/token fence, batch-context integration and restart/recovery tests.
 8. **Final PoC gate:** real-source search→detail→TOC→chapter→cache on Android device, plus architecture tests and exact-head CI. Until then B′ is not passed.
+
+
+## 2026-11-20 PoC-0.4 registration — Room schema contract draft and legacy caller inventory
+
+- **Starting HEAD:** `dbd1c76f06382d166e77c3170279de2951ebfaa9`; branch `integration/legado-upstream-runtime`.
+- **Pinned upstream:** `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Scope:** source-audit and report-only schema contract draft for the selected B′ candidate. Inspect exact pinned upstream BookSource/Book/BookChapter/rule declarations, Room keys/indexes/converters relevant to those models, current host Gradle/database dependencies, current persistence stores and every reader/writer/caller for source catalog, progress, TOC, chapter cache, favorites/bookmarks/history. Produce a proposed Badcat-owned schema field map, constraints, converter strategy, ownership/caller matrix, unresolved ambiguities and an implementation test plan.
+- **Target report:** this category-3 checklist only. No runtime code, Gradle dependencies, entities, DAOs, migrations, UI, or tests are changed in this audit slice.
+- **Fact-source rule:** use only the exact pinned upstream SHA and current branch files. Do not infer an upstream default or converter behavior from a host projection. Preserve upstream BookChapter primary key `(url,bookUrl)`, unique `(bookUrl,index)`, and distinguish Kotlin equality from Room identity.
+- **Caller inventory targets:** `FileBookSourceCatalog`, `LegadoBookSourceCodec`, source/login/session consumers, `BadcatReadingStateRepository`, all reader Activities, favorites/bookmarks/history, `SourceTocService`, `SourceChapterContentService`, `ChapterContentCache`, `FileChapterContentCache`, and all tests/fixtures.
+- **Risks:** accidentally introducing a second database or dual-writer; changing source/session identity; losing unknown JSON members; inventing null/default conversion; incorrectly treating chapter URL, index or Kotlin equals as interchangeable identity; moving favorites/bookmarks/history into the engine schema without evidence; breaking legacy AtomicFile/SharedPreferences data.
+- **Required output:** schema/table and index draft; per-field upstream→host mapping with unresolved fields explicitly marked; converters and JSON preservation strategy; single-writer/transaction map; legacy data migration inventory; all callers; regression and fault-injection tests; exact acceptance/exit gates.
+- **Acceptance:** a reviewed, evidence-linked schema contract and complete known caller inventory sufficient to preregister a separate code-only schema slice. If upstream declarations or current callers cannot be established from the pinned/current tree, record the gap and do not invent a schema. B′ remains unpassed. No APK/release claim.
