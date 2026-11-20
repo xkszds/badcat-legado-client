@@ -120,3 +120,12 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 - Confirmed separate stores still exist (source AtomicFile, progress/bookmark SharedPreferences, history SharedPreferences, ephemeral TOC, chapter AtomicFile cache), and app Gradle has no Room runtime/compiler/schema infrastructure. Adding Room before migration and reader/writer cutover would create a second source of truth.
 - No runtime code, tests, Gradle or UI changed. Converter parity for all nested ReadConfig/default/null cases and executable migration/rollback remain open. B′ remains unpassed.
 - Next order: pinned Gson fixtures → freeze schema v1 + constraints → separately preregister schema-only Room implementation → migration backup/dry-run/idempotency/rollback/restart tests → staged single-writer cutover.
+
+## 2026-11-20 PoC-0.6 Gson contract checkpoint
+
+- Registered the pinned Gson/rule fixture scope before test changes (11f9abdfc76f9298087fb27456ac36892aea28ea).
+- Added actual-host contract tests in app/src/test/kotlin/io/legado/app/utils/LegadoGsonCompatibilityTest.kt (d634aa7be41f4407fa10e09eca3476a2af687b38).
+- Direct normalized comparison against pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a found exact source matches for GsonExtensions and all six rule classes.
+- Tests are NOT executed: workflow lookup returned no runs and no local Gradle runner was available through the repository connector. Do not claim tests/build/CI passed.
+- Host lacks the actual pinned Book/BookSource/BookChapter model files; ReadConfig/ParagraphAnchor and complete model field/default/null round-trip cannot be tested without introducing forbidden shadow DTOs. Schema v1 freeze and Room implementation remain blocked.
+- Next: integrate the authentic pinned model contract/dependencies, add ReadConfig/ParagraphAnchor + full model round-trip fixtures, execute focused and full CI, then freeze schema v1 and register schema-only Room code. B′ remains unpassed.
