@@ -7,7 +7,6 @@ import io.legado.app.data.entities.BookSource
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.AssertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -36,9 +35,9 @@ class RhinoSourceJsAbiBytecodeTest {
         assertEquals(listOf(Any::class.java, String::class.java), cacheContent.parameterTypes.toList())
         assertEquals(Boolean::class.javaPrimitiveType, cacheContent.returnType)
 
-        // @JvmOverloads must be verified on emitted JVM methods, not inferred from Kotlin source.
-        assertTrue(named("ajaxAll\$default").single().isSynthetic)
-        assertTrue(named("ajaxTestAll\$default").single().isSynthetic)
+        // Verify emitted JVM overloads and compiler-generated default-argument bridges.
+        assertEquals(setOf(1, 2), named("ajaxAll").map { it.parameterCount }.toSet())
+        assertEquals(setOf(2, 3), named("ajaxTestAll").map { it.parameterCount }.toSet())
         assertTrue(named("ajaxAll\$default").single().isSynthetic)
         assertTrue(named("ajaxTestAll\$default").single().isSynthetic)
         assertEquals(setOf(1, 2, 3), named("get").map { it.parameterCount }.toSet())
