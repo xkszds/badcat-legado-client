@@ -153,3 +153,12 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 - Host `:integration-contract` is Kotlin/JVM and deliberately Android-free; its current engine/services/catalog use host projections. A verbatim import of the three upstream entities into that module is rejected. A dedicated Android source boundary is not yet shown to be isolated or buildable without pulling broad app services.
 - PoC-0.7 remains not accepted; B′ remains unpassed. The next ordered action is a symbol-level host callsite scan and explicit B′ exit-option comparison before any model integration, schema v1 or Room work.
 - This was a documentation/evidence inventory only: no runtime, Gradle, UI or tests changed, and no test/build/CI/APK pass is claimed.
+
+
+## 2026-11-20 Category-3 caller scan and architecture comparison
+
+- Verified host production call paths: `ReadingEngine` host projections → `SourceReadingEngine` → search/detail/TOC/content services → `SourceBookActivity`; progress/bookmarks/history through `BadcatReadingStateRepository`; source import/export through `FileBookSourceCatalog`/raw JSON codec; body cache through `FileChapterContentCache`; favorites through separate JSON owner.
+- Confirmed semantic gaps: chapter content is currently loaded from URL and synthesized with index 0; host progress stores URL/scrollY rather than upstream ReadConfig/ParagraphAnchor; cache keys use sourceId/bookUrl/chapterUrl and lack upstream content-save fencing; persistence domains have separate owners and no single transaction.
+- Category-3 checklist compares continued B′, constrained A, and hybrid official model/DAO ownership behind a Badcat façade. B′ is not passed; A is only a constrained fallback, not full compatibility; hybrid is the fidelity target but blocked by broad upstream app/DB closure and migration/rollback proof.
+- Next gate is a five-domain field/identity mapping matrix plus exact upstream batch/cache/progress contract inspection, then a separately preregistered executable PoC. No schema v1, Room migration, broad source copy or UI change authorized yet.
+- Documentation-only; no tests/build/CI/APK pass claimed.
