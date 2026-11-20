@@ -1557,3 +1557,14 @@
 - **Exclusions:** no JS bridge methods, no-op callbacks, generic URL launcher, WebView/browser/verification UI, navigation policy changes, login UI changes, source permission changes, production caller wiring, Gradle, DB/schema/persistence, APK/release or `main` changes.
 - **Risks:** untrusted source scripts must not gain unrestricted external intents, arbitrary browsing, clipboard, WebView, or UI access. A superficial Intent launcher would bypass upstream source attribution/confirmation and permission suppression; WebView request completion must be lifecycle-safe and cancellation-aware.
 - **Status at registration:** audit only. PoC-5 identifies missing navigation/browser/WebView/verification names and separate WebView bridge scopes; PoC-7a/7b remain audit-only. B′ and full Legado compatibility remain unpassed.
+
+
+### 2026-11-20 Runtime-1.0 PoC-7c result — navigation/browser/WebView/verification host seam
+
+- **Registration:** `617c8690a2f967aa584d30626a8f80f68585385e`; starting HEAD `f9d8c0176d84b6a3c510cd7a83894c16713f3ce3`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Detailed report:** `docs/audits/legado-runtime-1.0-poc7c-navigation-web-host-seam-audit.md`, commit `2f0b151b052376862978517cb86090ae289d62cb`.
+- **Upstream result:** URL/video actions enforce source UI policy and attribution; URL opening includes validation, special import/deep-link handling and confirmation. Browser and image verification are keyed request/result protocols with cancellation and cleanup. BackstageWebView is off-main-thread and carries source headers/tag/cache/delay/navigation context. WebJsExtensions is an Activity-lifecycle async JS promise bridge using request IDs and weak references. SourceNavigationBridge is a separate WebView JS interface; Login UI v2 is not equivalent to the V1/browser login surface.
+- **Badcat result:** the allow-listed Rhino Java bridge has no equivalent navigation/browser/verification/WebView methods. Existing Login UI v2 service is a limited declarative login path and does not provide these services. A generic Intent launcher or synchronous Rhino helper would be a semantic and security downgrade.
+- **Decision:** keep all affected APIs marked missing/unequal. Future implementation needs execution-scoped typed ports, explicit source permission/URL policy, lifecycle-owned UI, cancellable keyed verification, isolated WebView execution and request-ID promise completion. No JS methods until those host capabilities exist.
+- **Actual changes:** registration and audit report only. No production Kotlin/Java, Gradle, tests, DB/schema, persistence, callers, Badcat UI/Reader, APK or `main` changed. No tests/build/CI/source-smoke/device result is claimed.
+- **Status:** PoC-7c is audit-only; no compatibility status upgrade. Full Legado compatibility and B′ remain unpassed.
