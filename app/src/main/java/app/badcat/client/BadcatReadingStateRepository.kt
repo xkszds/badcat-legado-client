@@ -220,6 +220,9 @@ class BadcatReadingStateRepository(context: Context) : ReadingProgressStore {
     private fun chapterScrollKey(sourceId: String, bookUrl: String, chapterUrl: String): String =
         CHAPTER_SCROLL_PREFIX + encodeIdentity(sourceId, bookUrl, chapterUrl)
 
+    private fun bookmarkKey(sourceId: String, bookUrl: String, chapterUrl: String): String =
+        BOOKMARK_PREFIX + encodeIdentity(sourceId, bookUrl, chapterUrl)
+
     private companion object {
         const val PROGRESS_PREFS = "badcat_reading_progress"
         const val LAST_CHAPTER_PREFIX = "last_chapter_"
