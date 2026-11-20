@@ -72,7 +72,6 @@ PROPERTY_DECL_RE = re.compile(
 GENERATED_ANDROID_SYMBOLS = (
     ("io.legado.app.R", "Android resource symbol generated from app resources"),
     ("io.legado.app.BuildConfig", "Android Gradle BuildConfig generation"),
-    ("io.legado.app.BR", "Android data-binding BR symbol generation"),
     ("io.legado.app.databinding", "Android view/data-binding generated classes"),
 )
 
