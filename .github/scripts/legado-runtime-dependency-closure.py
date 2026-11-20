@@ -347,11 +347,11 @@ def self_test() -> None:
         d = roots[1] / "demo" / "b" / "D.kt"
         java = roots[2] / "demo" / "b" / "JavaHelpers.java"
         fixtures = (
-            (a, "package demo.a\\nimport demo.b.B as Bee\\nimport demo.b.*\\nimport demo.b.helper\\nimport demo.missing.Nope\\nimport static demo.b.JavaHelpers.VALUE;\\nclass A"),
-            (b, "package demo.b\\nimport demo.a.A\\nclass B"),
-            (c, "package demo.b\\nfun helper() = Unit"),
-            (d, "package demo.b\\nclass D"),
-            (java, "package demo.b;\\npublic class JavaHelpers { public static final int VALUE = 1; }"),
+            (a, "package demo.a\nimport demo.b.B as Bee\nimport demo.b.*\nimport demo.b.helper\nimport demo.missing.Nope\nimport static demo.b.JavaHelpers.VALUE;\nclass A"),
+            (b, "package demo.b\nimport demo.a.A\nclass B"),
+            (c, "package demo.b\nfun helper() = Unit"),
+            (d, "package demo.b\nclass D"),
+            (java, "package demo.b;\npublic class JavaHelpers { public static final int VALUE = 1; }"),
         )
         for path, body in fixtures:
             path.parent.mkdir(parents=True, exist_ok=True)
