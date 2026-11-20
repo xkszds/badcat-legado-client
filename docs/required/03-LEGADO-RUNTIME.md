@@ -1049,3 +1049,13 @@
 - **Exclusions:** no production Gson, models, Gradle, Room, persistence, cache, UI or runtime code changed. The separate ReadConfig/ParagraphAnchor dependency audit is documentation-only and does not authorize model integration.
 - **Validation:** workflow triggered by the code commit is pending at this checkpoint; no unit-test, assemble, APK, artifact hash or device pass is claimed. Exact next CI run must compile the test, execute the full suite and assemble debug.
 - **Status:** test-only correction; PoC-0.6 and B′ remain unaccepted.
+
+
+### PoC-0.6 Gson primitive-vs-boxed Int fixture mismatch registration (2026-11-20)
+
+- **Exact evidence:** CI run `44706206576`, exact HEAD `b923d122bc8db27619d2cf51ee12e60148e070bb`, compiled all production and unit-test sources and executed 290 tests; 289 passed, 1 failed. The failing test is `LegadoGsonCompatibilityTest.initialGsonUsesPinnedIntegerAndStringCoercion`, line 85: `JsonSyntaxException: Expected an int but was BEGIN_OBJECT`. JUnit report artifact `badcat-unit-test-reports`, artifact ID `14615531751`, SHA-256 `05409ab85a0b045f071b32a610c00d1cdfd054b4a3c9c9ccf1d36de8dbac9eb6`.
+- **Root cause from exact source:** production `INITIAL_GSON` registers `IntJsonDeserializer` against `Int::class.java` (primitive int class); test incorrectly requests `Int::class.javaObjectType` (boxed `java.lang.Integer`), bypassing the registered adapter. The failure is fixture/type mismatch, not evidence that production adapter fails its registered type.
+- **Registered scope:** only the two assertions in `app/src/test/kotlin/io/legado/app/utils/LegadoGsonCompatibilityTest.kt` change target class from `Int::class.javaObjectType` to exact registered `Int::class.java`. Keep malformed-object-to-null and numeric-truncation assertions. No production Gson, adapter registration, dependencies, models, Gradle, Room, persistence, cache or UI changes.
+- **Callers/ownership:** test-only; no production data writer, transaction, runtime or UI impact.
+- **Acceptance:** exact next code HEAD must compile, execute all app tests with all 290+ passing (including malformed object returns null and 7.9 coerces to 7 using primitive adapter), then complete `:app:assembleDebug`; capture exact run, report and APK hashes. If primitive-target test does not invoke the registered adapter as expected, stop and inspect Gson TypeAdapter lookup; do not widen production registration as a test workaround.
+- **Status:** scope registered before implementation. Prior run's unit tests are not all passing; APK was not assembled. PoC-0.6 and B′ remain unaccepted.
