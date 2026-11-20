@@ -169,3 +169,12 @@
 - Contract tests: catalog survives object recreation; upsert replaces same host+urlPattern identity; import merges and replaces matching identity while preserving unrelated records; remove deletes only requested identity; malformed/duplicate/oversized import and duplicate replaceAll fail without changing the existing export.
 - Acceptance: focused `:app:testDebugUnitTest` and exact-HEAD full workflow must reach terminal success. This validates local catalog persistence contracts only; it does not establish server sync, DOM deletion or original AdMark parity.
 - Exclusions: no production code changes, no file-format changes, no UI, no guessed private service protocol, no DOM selectors, no WebView Provider or device claim.
+
+
+### Fourth-2.7 implementation checkpoint
+
+- Test implementation committed at `289ab57a430c344f175e03bc9cb56164c406e4bb`: added Robolectric coverage for catalog recreation persistence, case-insensitive identity upsert, merge-import replacement, targeted removal, and invalid/duplicate/oversized import or replaceAll preserving the prior export.
+- Only new file: `app/src/test/kotlin/app/badcat/client/BadcatAdMarkCatalogTest.kt`. No production code or UI/persistence format changed.
+- Exact-HEAD CI run #3077 / ID `44822785706`, HEAD `289ab57a430c344f175e03bc9cb56164c406e4bb`: job `assemble-debug` exists; checkout, pinned-upstream verification, JDK and Android SDK setup succeeded; Android build-tools installation is currently in progress. Unit tests have not started yet.
+- The prior Fourth-2.6 focused unit-test step is independently confirmed success on exact implementation HEAD `e41fbe48810522cb02ec8e0a6280b4702c463feb` in run #3073; overall workflow #3073 remains in progress in later runtime verification steps.
+- Fourth-2.7 acceptance remains pending until its focused tests and exact-HEAD workflow reach terminal success. This is a local persistence-contract test increment only, not category acceptance.
