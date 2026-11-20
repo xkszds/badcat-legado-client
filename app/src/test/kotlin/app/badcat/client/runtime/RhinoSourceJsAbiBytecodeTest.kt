@@ -53,6 +53,7 @@ class RhinoSourceJsAbiBytecodeTest {
         // These helpers are called through Rhino's direct Java-object binding, not Android WebView.
         assertFalse(getSource.isAnnotationPresent(JavascriptInterface::class.java))
         assertFalse(timeFormat.all { it.isAnnotationPresent(JavascriptInterface::class.java) })
+        assertTrue(named("aesDecodeToString").single().isAnnotationPresent(JavascriptInterface::class.java))
     }
 
     @Test
@@ -121,10 +122,10 @@ class RhinoSourceJsAbiBytecodeTest {
             source,
             """
                 try {
-                    java.getSource(1);
+                    java.cacheContent(null, 'fixture');
                     'unexpected-success';
                 } catch (error) {
-                    'threw:' + (error.name || error.javaException.getClass().getSimpleName());
+                    'threw:' + (error.javaException ? error.javaException.getClass().getSimpleName() : error.name);
                 }
             """.trimIndent(),
         )
