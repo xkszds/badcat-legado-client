@@ -411,7 +411,7 @@ def self_test() -> None:
         assert _classify_unresolved("io.legado.app.databinding.ActivityMainBinding")[0] == "generated_android_symbol"
         assert _classify_unresolved("io.legado.app.utils.notFound")[0] == "internal_namespace_unresolved"
         resolved, kind = idx.resolve("demo.b.*")
-        assert kind == "wildcard" and len(resolved) == 4
+        assert kind == "wildcard" and len(resolved) == 5
         resolved, kind = idx.resolve("demo.b.JavaHelpers.VALUE")
         assert kind == "file" and any(item.endswith(":demo/b/JavaHelpers.java") for item in resolved)
         resolved, kind = idx.resolve("demo.b.JavaHelpers.*")
@@ -430,7 +430,7 @@ def self_test() -> None:
         for item in _parse_imports(idx.texts[b_key]):
             b_targets.update(idx.resolve(item["name"])[0])
         assert b_key in a_targets and a_key in b_targets, "cross-root import cycle must resolve"
-        assert len(idx.files) == 5 and len(set(idx.files)) == 5, "source-root identities must not collide"
+        assert len(idx.files) == 6 and len(set(idx.files)) == 6, "source-root identities must not collide"
 
         report_a = build_report(base)
         report_b = build_report(base)
