@@ -784,7 +784,7 @@ class SourceChapterActivity : Activity() {
                     // Render the requested chapter as soon as its content is ready.
                     val content = contentTask.await()
                     val fallbackChapter = BookChapter(
-                        index = 0,
+                        index = requestedChapterIndex.coerceAtLeast(0),
                         title = fallbackTitle.ifBlank { bookName },
                         url = currentChapterUrl,
                     )
