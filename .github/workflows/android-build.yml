@@ -64,6 +64,9 @@ jobs:
       - name: Run contract unit tests
         run: gradle --no-daemon :integration-contract:test
 
+      - name: Run authentic Legado runtime model contract tests
+        run: gradle --no-daemon :legado-runtime:testDebugUnitTest
+
       - name: Restore pinned Legado Rhino artifact
         run: |
           upstream_commit="330e606c4d57e08adc056ff8ab7a4132c784da9"
