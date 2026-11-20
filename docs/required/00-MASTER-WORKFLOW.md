@@ -212,3 +212,8 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 - 完整性必须以固定上游 SHA 的全部书源相关真实源码、API/overload、模型、规则、JS ABI、HTTP/Cookie/登录、BaseSource 生命周期及必要依赖闭包为准；逐项差分验收。未覆盖能力一律阻断完整兼容结论。
 - 当前旧 selector-only/host projection 方案不满足最终交付门槛。优先验证独立 Android Runtime 模块/受控上游核心源码/Hybrid 方案；不得为了维持 Android-free contract 或 B′ 而削弱上游语义。此为最高优先级架构门禁。
 - 本条为需求与流程记录，不代表完整 Runtime 已实现或验收；代码、构建、真机和 UI 状态以第三类报告的证据为准。
+
+## 2026-11-20 Runtime-0.3 execution note
+
+- Dedicated Android `:legado-runtime` currently passes its first authentic upstream rule-model/Gson contract gate (see `03-LEGADO-RUNTIME.md`); this is not full source-runtime compatibility.
+- Added repeatable pinned Legado JavaScript extension API inventory and CI artifact generation. The next step is to consume that generated gap list and build the full upstream service/dependency closure. Do not route production search/reader callers or claim complete compatibility yet.
