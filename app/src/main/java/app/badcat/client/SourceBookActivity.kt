@@ -588,6 +588,7 @@ class SourceChapterActivity : Activity() {
     private val preferences by lazy {
         getSharedPreferences("badcat_reading_progress", MODE_PRIVATE)
     }
+    private val readingState by lazy { BadcatReadingStateRepository(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -600,7 +601,7 @@ class SourceChapterActivity : Activity() {
         currentChapterUrl = intent.getStringExtra(EXTRA_CHAPTER_URL).orEmpty()
         val chapterTitle = intent.getStringExtra(EXTRA_CHAPTER_TITLE).orEmpty()
         if (currentChapterUrl.isBlank()) {
-            currentChapterUrl = preferences.getString(readingProgressKey(sourceId, bookUrl), "").orEmpty()
+            currentChapterUrl = readingState.lastChapterUrl(sourceId, bookUrl).orEmpty()
         }
         textSizeSp = preferences.getFloat("reader_text_size", 18f).coerceIn(14f, 32f)
         lineSpacingMultiplier = preferences.getFloat("reader_line_spacing", 1.15f).coerceIn(1.0f, 2.0f)
@@ -818,12 +819,7 @@ class SourceChapterActivity : Activity() {
 
     private fun saveCurrentScrollPosition() {
         if (!::readerScroll.isInitialized || currentChapterUrl.isBlank()) return
-        preferences.edit()
-            .putInt(
-                chapterScrollPositionKey(sourceId, bookUrl, currentChapterUrl),
-                readerScroll.scrollY.coerceAtLeast(0),
-            )
-            .apply()
+        readingState.saveChapterScrollY(sourceId, bookUrl, currentChapterUrl, readerScroll.scrollY)
         lastScrollPositionPersistedAt = android.os.SystemClock.elapsedRealtime()
     }
 
@@ -836,20 +832,12 @@ class SourceChapterActivity : Activity() {
         if (currentChapterUrl.isBlank()) return
         val now = android.os.SystemClock.elapsedRealtime()
         if (now - lastScrollPositionPersistedAt < SCROLL_POSITION_SAVE_INTERVAL_MS) return
-        preferences.edit()
-            .putInt(
-                chapterScrollPositionKey(sourceId, bookUrl, currentChapterUrl),
-                body.scrollY.coerceAtLeast(0),
-            )
-            .apply()
+        readingState.saveChapterScrollY(sourceId, bookUrl, currentChapterUrl, body.scrollY)
         lastScrollPositionPersistedAt = now
     }
 
     private fun restoreCurrentScrollPosition() {
-        val savedY = preferences.getInt(
-            chapterScrollPositionKey(sourceId, bookUrl, currentChapterUrl),
-            0,
-        ).coerceAtLeast(0)
+        val savedY = readingState.chapterScrollY(sourceId, bookUrl, currentChapterUrl)
         pendingScrollY = savedY
     }
 
@@ -1059,8 +1047,8 @@ class SourceChapterActivity : Activity() {
                 if (readingSessionStartedAt == 0L) readingSessionStartedAt = android.os.SystemClock.elapsedRealtime()
                 renderReaderDocument()
                 currentChapterUrl = chapter.url
-                preferences.edit().putString(readingProgressKey(sourceId, bookUrl), chapter.url).apply()
-                ReadingHistoryActivity.save(this, sourceId, bookUrl, bookName.ifBlank { "未命名书籍" }, chapter.url, result.value.title.ifBlank { chapter.title })
+                readingState.saveLastChapterUrl(sourceId, bookUrl, chapter.url)
+                readingState.saveHistory(sourceId, bookUrl, bookName.ifBlank { "未命名书籍" }, chapter.url, result.value.title.ifBlank { chapter.title })
             }
             is EngineResult.Failure -> status.text = "正文加载失败（${result.code}）：${result.message}"
         }
@@ -1073,10 +1061,7 @@ class SourceChapterActivity : Activity() {
             restoreCurrentScrollPosition()
             if (intent.getBooleanExtra(EXTRA_JUMP_TO_BOOKMARK, false)) {
                 intent.removeExtra(EXTRA_JUMP_TO_BOOKMARK)
-                val bookmarkY = preferences.getInt(
-                    chapterBookmarkKey(sourceId, bookUrl, currentChapterUrl),
-                    -1,
-                )
+                val bookmarkY = readingState.bookmarkScrollY(sourceId, bookUrl, currentChapterUrl) ?: -1
                 if (bookmarkY >= 0) {
                     pendingBookmarkY = bookmarkY
                 }
@@ -1090,25 +1075,20 @@ class SourceChapterActivity : Activity() {
             return
         }
         val position = readerScroll.scrollY.coerceAtLeast(0)
-        val bookmarkKey = chapterBookmarkKey(sourceId, bookUrl, currentChapterUrl)
-        val encoded = bookmarkKey.removePrefix("chapter_bookmark_")
-        preferences.edit()
-            .putInt(bookmarkKey, position)
-            .putString("chapter_bookmark_title_" + encoded, currentChapterTitle.ifBlank { "章节书签" })
-            .putString("chapter_bookmark_book_" + encoded, bookName.ifBlank { "未命名小说" })
-            .putLong("chapter_bookmark_time_" + encoded, System.currentTimeMillis())
-            .apply()
+        readingState.saveBookmark(
+            sourceId, bookUrl, currentChapterUrl, bookName, currentChapterTitle, position,
+        )
         status.text = "书签已保存（当前位置），可在「我的 - 书签管理」查看"
     }
 
     private fun jumpToChapterBookmark() {
         if (currentChapterUrl.isBlank()) return
-        val key = chapterBookmarkKey(sourceId, bookUrl, currentChapterUrl)
-        if (!preferences.contains(key)) {
+        val savedPosition = readingState.bookmarkScrollY(sourceId, bookUrl, currentChapterUrl)
+        if (savedPosition == null) {
             status.text = "本章还没有保存书签"
             return
         }
-        val position = preferences.getInt(key, 0).coerceAtLeast(0)
+        val position = savedPosition
         readerScroll.post {
             readerScroll.post { readerScroll.scrollTo(0, position) }
         }
