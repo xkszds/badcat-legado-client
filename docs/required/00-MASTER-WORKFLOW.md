@@ -217,3 +217,8 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 
 - Dedicated Android `:legado-runtime` currently passes its first authentic upstream rule-model/Gson contract gate (see `03-LEGADO-RUNTIME.md`); this is not full source-runtime compatibility.
 - Added repeatable pinned Legado JavaScript extension API inventory and CI artifact generation. The next step is to consume that generated gap list and build the full upstream service/dependency closure. Do not route production search/reader callers or claim complete compatibility yet.
+
+## 2026-11-20 Runtime-0.4 JS ABI and host-service audit
+
+- Third-category report now contains the generated Kotlin API gap inventory and the source/caller audit for missing JS methods, browser/WebView/verification callbacks, legacy login JS and reader/theme configuration bridges. Current host projections and Login UI v2 do not implement those upstream contracts; do not patch placeholder methods or migrate production callers before the real upstream dependency-closure architecture is selected.
+- Runtime-0.3 tooling correction and exact CI evidence are recorded in `03-LEGADO-RUNTIME.md`; its successful Debug build and 293 passing tests are local regression evidence only, not full Legado compatibility or B′ acceptance.
