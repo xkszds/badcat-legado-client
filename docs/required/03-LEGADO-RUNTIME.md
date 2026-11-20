@@ -1,106 +1,288 @@
-# 第三类必读清单：Legado 核心模型、运行时与 B′ PoC
+# 第三类必读清单：Legado 运行时总框架与分级任务树
 
-> **Legado 工作唯一必读分类清单。** 每次 Legado 任务只读总流程 [00-MASTER-WORKFLOW.md](00-MASTER-WORKFLOW.md) + 本文件。详细审计文档仅在追查具体源码时打开。
-> 上游固定 SHA：`330e606c4d57e08adc056ff8ab7a4132c784da9a`；GPL-3.0；分支：`integration/legado-upstream-runtime`，不改 main。
+> **唯一入口：** 每次第三类任务先读 `00-MASTER-WORKFLOW.md`，再读本文件。本文按“总框架流程 → 大类 → 小类 → 程序/模块 → 验收门禁”组织；后半部分保留按日期记录的原始审计证据。
+> **固定基准：** `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`；GPL-3.0；只允许在 `integration/legado-upstream-runtime` 工作，禁止改 `main`。
 
-## 1. 目标和范围
+## A. 第三类总框架流程（从源配置到可恢复阅读）
 
-在 Badcat 自有持久化和原版 UI 后建立完整独立 Legado 兼容运行时。覆盖官方模型/序列化、AnalyzeRule/AnalyzeUrl、Rhino/JsExtensions、HTTP/Cookie/登录、source state、统一 search/detail/TOC/content 生命周期、batch context 和 durable cache。禁止 selector-only、no-op、null/unsupported 占位、同名简化 API、测试专用实现或仅凭编译宣称完成。
+第三类不是把 Legado 的文件整包搬进来，而是让 Badcat 原版 UI 通过受控适配层，使用固定版本的 Legado 兼容运行时。必须按以下顺序推进，不得跳过前置门禁：
 
-不负责重做 Badcat UI/Reader UI、AdBlock/AdMark、PPRule；跨类改动才追加读取相应分类。
+```text
+0. 固定基线 / 上游差异 / 架构门禁
+        ↓
+1. 数据模型与序列化（BookSource / Book / BookChapter / Rule / ReadConfig）
+        ↓
+2. 书源解析规则（AnalyzeRule / AnalyzeUrl / CSS / XPath / JSON / 正则 / 替换）
+        ↓
+3. JS 运行时（Rhino / JsExtensions / BaseSource / JS 生命周期）
+        ↓
+4. 网络与会话（HTTP / Cookie / 登录 / Header / 重定向 / 限流）
+        ↓
+5. 书源业务链（导入 → 搜索/发现 → 详情 → 目录 → 正文）
+        ↓
+6. 章节身份与批量正文（index / URL alias / BatchContentContext）
+        ↓
+7. 缓存与持久化（章节缓存 / token fence / CacheManager / 失效）
+        ↓
+8. 阅读状态（进度 / 书签 / 历史 / ReadConfig / ParagraphAnchor）
+        ↓
+9. B′ 五域 PoC（单一事实源 / 单写者 / 事务 / 迁移回滚 / 重启）
+        ↓
+10. 自动化验收（契约 / 架构 / 回放 / 真实源 / 真机 / APK）
+        ↓
+11. 与第一、二类产品集成并完成发布验收
+```
 
-## 2. B′ 约束与 PoC
+**依赖原则：** 前一阶段未满足契约，不得把后续阶段标记为完成。比如，章节 URL 可以用于导航，但不能替代 `(bookUrl, chapterIndex)` 身份；能搜索或能显示正文，不代表完整 Legado 生命周期已接通。
 
-候选架构：Badcat 自有持久化 + Badcat UI + Legado 兼容运行时 + 严格隔离适配层。Runtime 不得直接引用 Badcat DAO；UI 不得直接依赖官方 DAO。JVM integration contract 保持 Android-free，Android/Room/Parcelable 留在 Android 边界。
+## B. 大类与小类任务树
 
-五项 PoC：BookSource、Book、BookChapter、阅读进度、章节缓存。逐字段映射、null/default/unknown preservation、identity/dedup、单写多读、事务、缓存失效、重启恢复、迁移 dry-run/幂等/回滚、架构测试、录制回放、真实源全链路和 Android 实机全部通过才可扩大。
+### 大类 0：架构、固定上游与项目治理
 
-任一出现适配层泄漏、双模型状态分裂、迁移不能回滚、缓存/身份语义不一致、真实源引擎内失败或真机数据无法恢复，暂停 B′，评估限定数据层 A（官方核心模型/DAO/必要存储，不迁移 Reader UI、不引入无关 RSS/听书实体）；再不适合则官方核心表 + 兼容门面、旧表只读保留。PoC 未通过前不得称 B′ 已实现。
+| 小类 | 工作内容 | 验收条件 |
+|---|---|---|
+| 0.1 固定版本基线 | pin SHA、GPL 来源、上游目录和构建版本 | 每个实现都可追溯到固定 SHA |
+| 0.2 模块边界 | Badcat UI / Repository / Compatibility Facade / Runtime 分层 | Runtime 不引用 Badcat DAO；UI 不引用官方 DAO |
+| 0.3 上游差异治理 | API、overload、模型字段、Room、JsExtensions 差异报告 | 自动生成报告、人工批准升级 |
+| 0.4 退出/回退方案 | B′、限定 A、Hybrid 比较及退出条件 | 适配层泄漏或迁移不可逆时停止扩张 |
 
-## 3. 固定上游执行链和依赖
+### 大类 1：数据模型、身份与序列化
 
-Search/Explore → BookInfo → BookChapterList → BookContent；依赖 AnalyzeRule、AnalyzeUrl、JsExtensions/Rhino、BaseSource、Room/持久化、CookieStore、CacheManager、SharedJsScope、BookHelp、ContentProcessor、BatchContentContext 和应用初始化。只搬 AnalyzeRule/Jsoup/Rhino 不等于完整运行时。
+| 小类 | 工作内容 | 主要对象 |
+|---|---|---|
+| 1.1 书源模型 | BookSource 字段、六类规则、BaseSource 生命周期、customOrder | BookSource / BookSourceCodec |
+| 1.2 书籍模型 | Book 元数据、来源归属、用户覆盖字段、变量 | Book / ReadConfig |
+| 1.3 章节模型 | BookChapter 完整字段、章节排序、重复 URL | BookChapter / chapter index |
+| 1.4 规则序列化 | object/string 双形态、null/missing/default、未知字段 | Explore/Search/BookInfo/TOC/Content/Review |
+| 1.5 阅读配置模型 | ReadConfig、ParagraphAnchor、日期与嵌套字段 | Book.ReadConfig |
+| 1.6 身份与映射 | host projection ↔ upstream model、去重、冲突、来源范围 | sourceId / bookUrl / chapterIndex |
 
-上游 AppDatabase 是 Room v113、26 entities、一个 view 和长 migration chain。当前 Badcat 没有 Room/DAO；书源 JSON 由 FileBookSourceCatalog + AtomicFile 保存。不能假装现有存储等价于官方数据库，不能单独复制 BookSource 而伪造 BaseSource。
+### 大类 2：规则解析与内容处理
 
-## 4. 既有程序和证据（按范围，不夸大）
+| 小类 | 工作内容 | 验收条件 |
+|---|---|---|
+| 2.1 AnalyzeRule | CSS、XPath、JSONPath、正则及上下文选择 | 与固定上游逐项差分 |
+| 2.2 AnalyzeUrl | URL 模板、相对地址、变量、脚本、请求配置 | URL 语义与上游一致 |
+| 2.3 规则上下文 | 变量作用域、父子节点、替换链、错误传播 | 无静默空结果/假成功 |
+| 2.4 正文处理 | 分页 nextContentUrl、正文清洗、替换、图片/资源 | 章节完整且可重放 |
+| 2.5 目录处理 | TOC 解析、排序、卷/付费/VIP/更新时间 | 不把 URL 当唯一身份 |
 
-### 模型/序列化
-- Android-free integration-contract 的 BookSource/BookCandidate/BookDetail/BookChapter 是投影，不是官方实体。
-- LegadoBookSourceCodec/FileBookSourceCatalog 有选定字段映射和 raw JSON 保留；未形成完整官方 mutable BookSource/BaseSource。
-- 七个 rule entity（ExploreRule/SearchRule/BookListRule/BookInfoRule/TocRule/ContentRule/ReviewRule）曾与 pin 逐字节核对；来源一致不等于运行时接线完成。
-- BookSource.customOrder 曾加入 host projection/codec（commit 5466caaf7cbbf2035b393b8dde70ef286d93a56e），只是窄字段修正。
-- BookChapter host projection 只有 index/title/url；官方字段远多于此。官方 Room PK=(url,bookUrl)，unique=(bookUrl,index)，equals/hashCode 按 URL 比较。
+### 大类 3：JS 与书源运行时生命周期
 
-### Rhino / JsExtensions / JS
-- 有 Rhino 执行/沙箱、source scoped bridge、部分 Java/JS helper、JS 上下文传播、加密工具和资源边界测试。
-- pinned JsExtensions 审计为 118 public declarations；host 缺 17 个名称/30 个 overload。
-- java.getSource() ABI 冲突：upstream 返回 BaseSource，host 旧路径返回 JSON Map；需兼容策略，不能破坏既有 caller。
-- JsExtensions 涉及 WebView/activity/dialog/UI event、verification/browser、AnalyzeUrl、HTTP response/Jsoup、archive/file/encoding、font/TTF、reader config、video、batch context；不能用空 stub 填齐。
-- BaseSource 是实际生命周期服务：登录、loginInfo 加密、源变量、Cookie、CacheManager、SharedJsScope、限流、jsLib 等，不是 marker interface。
+| 小类 | 工作内容 | 验收条件 |
+|---|---|---|
+| 3.1 Rhino 核心 | Context、执行隔离、超时、资源释放 | 沙箱边界和异常可测 |
+| 3.2 JsExtensions API | 所有公开声明、参数、返回值、overload | 固定上游 API 覆盖率可量化 |
+| 3.3 JS Bridge | Java/JS 对象桥接、source scoped bridge | 兼容旧 caller，无 ABI 偷换 |
+| 3.4 BaseSource | 登录、源变量、Cookie、CacheManager、限流、jsLib | 完整生命周期，不是空接口 |
+| 3.5 上下文传播 | SharedJsScope、协程/线程、回调和取消 | 请求间不串源、不泄漏上下文 |
+| 3.6 辅助能力 | 加解密、编码、文件/压缩、字体、视频、WebView/UI 回调 | 逐项实现真实行为，不用 no-op 补 API |
 
-### HTTP / Cookie / 登录 / 缓存
-- 有 GET/HEAD/POST timeout overload、redirect 区分、redirect-aware GET 下载/archive/ajaxAll/selector 等历史增量，仍需逐项对照 pin 做契约验证。
-- 有源登录/会话同站 header 边界、Cookie 同步/清除、加密 loginInfo、明文迁移、源隔离和 Robolectric 测试记录。
-- 有 AtomicFile chapter/source cache、LRU/pruning、写入后清理容错、跨 store 锁、TOC 进度恢复等局部实现；不等于官方 CacheManager/BookHelp/ContentProcessor/BatchContentContext 和章节 save token。
-- 中文转换、限流、source lock、URL script、正文替换等有局部实现；每个 API 必须按 caller/测试单独确认。
+### 大类 4：HTTP、Cookie、登录与安全
 
-### 历史测试与真实书源（只对对应 commit）
-- CI #44605770188：commit cc78171... 的构建/测试与 APK packaging 修复记录，不是当前 head。
-- CI #44630795195：commit 2b2bf91... 的 login/session 阶段通过记录，不外推当前 head。
-- JUnit artifact 14582903590：276 tests、0 failure/error/skip，属于历史模型窄切片。
-- 历史 E2E：Bixiange GBK POST 搜索→详情→114 页 TOC→正文；Pinshuzhai 搜索→详情→1,650 章 TOC→正文。
-- 真实源 403/404/429/5xx、TLS、超时、redirect loop 要与引擎缺陷区分。
+| 小类 | 工作内容 | 验收条件 |
+|---|---|---|
+| 4.1 HTTP 基础 | GET/POST/HEAD、超时、取消、响应体 | 参数和错误语义匹配 |
+| 4.2 重定向 | 普通跳转、下载、Ajax、循环和策略 | 不丢 header/cookie，循环受控 |
+| 4.3 Cookie/会话 | 域隔离、同步、清除、持久化 | 源间隔离，重启行为明确 |
+| 4.4 登录 | loginUrl/loginUi/loginInfo、加密和迁移 | 登录态可恢复，敏感数据安全 |
+| 4.5 安全限制 | JS 时间/内存、HTTP 策略、文件和缓存上限 | 默认开启硬限制 |
 
-## 5. 已知关键缺口
+### 大类 5：书源业务链与服务编排
 
-- 官方 BookSource/BaseSource/Book/BookChapter 完整模型和持久化未集成；规则对象 object/string 双形态、null/missing/default/unknown round-trip 需契约测试。
-- BaseSource/JsExtensions 全部真实服务闭包缺失；17 names/30 overload gap 未关闭；java.getSource ABI 冲突未解决。
-- 完整 AnalyzeRule/AnalyzeUrl selector/context/replacement/JS/request/response 语义仍未逐项验收。
-- 搜索/发现→详情→目录→正文还需统一 source/session/script/http/cookie/state 生命周期。
-- BatchContentContext、章节去重、save token、持久化 cache、invalidate/resume 未证明完整。
-- 迁移、架构边界测试、manifest、自动上游 diff、录制回放框架和真机 PoC 未完成。
+| 小类 | 工作内容 | 验收条件 |
+|---|---|---|
+| 5.1 书源目录 | 导入、启停、排序、导出、未知字段保留 | 原始 JSON 不被无意丢失 |
+| 5.2 搜索/发现 | search、explore、分页、去重 | 请求、解析、会话统一 |
+| 5.3 书籍详情 | detail、元数据覆盖、TOC URL 初始化 | 字段更新规则清晰 |
+| 5.4 目录服务 | TOC 获取、分页/下一目录、章节对象 | 保留 index 和完整对象 |
+| 5.5 正文服务 | 多页正文、替换、错误和离线回退 | typed chapter identity 全链路 |
+| 5.6 统一编排 | Search → Detail → TOC → Content 生命周期 | source/session/script/http/cookie 一致 |
 
-## 6. 强制自动维护
+### 大类 6：章节身份、批量正文与导航兼容
 
-- 契约测试：字段/default/null/missing/round-trip/unknown fields/rule JSON 双形态/identity/cache token/Cookie/JS lifecycle。
-- 架构测试：禁止 Runtime→Badcat DAO、UI→官方 DAO，CI fail。
-- 上游自动差异：API/overload/model/default/Room migration/JsExtensions，人工决定，不自动升级。
-- 录制回放为主、少量真实书源冒烟为辅。
-- 迁移自动测试：备份/dry-run/idempotency/rollback/upgrade/restart。
-- 安全默认限制：HTTP timeout/cancel、JS 时间/资源/隔离、缓存容量/TTL/文件上限。
-- JSON/YAML manifest 注入源码 commit、Legado SHA、adapter version、DB schema、测试报告 hash 到 CI/APK。
-- 每月自动差异报告；仅安全、关键兼容、明确功能/性能/稳定收益才升级，稳定优先。
+| 小类 | 工作内容 | 验收条件 |
+|---|---|---|
+| 6.1 章节身份 | `(bookUrl, chapterIndex)`；sourceId 为 host 隔离维度 | 同 URL 不同 index 不混淆 |
+| 6.2 URL alias | 原始/绝对/规范化 URL 映射 | 只有唯一匹配才接受 URL-only |
+| 6.3 旧链接兼容 | 历史/书签只存 URL 时重新查 TOC | 缺失或歧义时 fail closed |
+| 6.4 BatchContentContext | URL 候选集、chapter object 精确匹配、缺失重试 | 与 pinned upstream 差分测试 |
+| 6.5 章节顺序与筛选 | 搜索、倒序、翻页不改变真实 index | UI 显示序号不覆盖身份 |
 
-## 7. 实施顺序（不可跳级）
+### 大类 7：缓存、版本令牌与持久化
 
-1. B′ 五项 PoC 的字段/身份映射和事实源/事务设计。
-2. 适配接口和禁止依赖架构测试。
-3. 迁移工具及备份/dry-run/幂等/回滚/重启演练。
-4. 五项 PoC 契约测试和脱敏录制回放。
-5. 少量真实书源全链路和 Android 实机。
-6. PoC 通过后，扩展官方模型和完整服务闭包。
-7. 完整 AnalyzeRule/AnalyzeUrl。
-8. Rhino/JsExtensions/BaseSource 缺口和 ABI。
-9. 统一 search/detail/TOC/content。
-10. BatchContentContext 和 durable cache/token。
-11. 与第一/二类适配，真机验收和发布。
+| 小类 | 工作内容 | 验收条件 |
+|---|---|---|
+| 7.1 章节正文缓存 | 按 sourceId/bookUrl/index 存储正文 | 同 URL 不同 index 隔离 |
+| 7.2 SaveToken/Fence | 请求开始取 token、替换/失效递增版本 | 旧异步写不能覆盖新正文 |
+| 7.3 缓存失效 | 删除、替换、资源刷新、目录更新 | 所有 mutation caller 都触发失效 |
+| 7.4 通用 CacheManager | source/runtime key-value、TTL、LRU、持久化 | 与章节正文缓存分域 |
+| 7.5 存储原子性 | AtomicFile/数据库事务/容量/清理 | 崩溃恢复、上限、并发正确 |
+| 7.6 迁移兼容 | 旧 URL key、旧文件、旧 JSON | 不猜 index；安全冷启动/回滚 |
 
-## 8. 每次任务登记/结果
+### 大类 8：阅读状态与产品数据映射
 
-改 runtime 前先登记日期、起始 HEAD、pin、精确 upstream 声明/call sites、host 全部 caller、目标文件、适配边界、事实源/事务、风险、契约/回归测试、验收/退出条件。完成后记录实际变更、所有 callers、focused/full tests、JUnit 数量、CI run+exact HEAD、APK/报告哈希、真实源/设备结果、遗留差距和清单自审。
+| 小类 | 工作内容 | 验收条件 |
+|---|---|---|
+| 8.1 阅读进度 | 当前章节 index、position、time、volume | 重启恢复且单写者 |
+| 8.2 书签 | 章节身份、滚动位置、备注 | 旧 URL 可唯一解析 |
+| 8.3 阅读历史 | 书籍身份、章节位置、更新时间 | 不与进度混为一个数据域 |
+| 8.4 ReadConfig | 书籍级阅读配置、段落锚点 | 与全局 ReadBookConfig 区分 |
+| 8.5 收藏/书架映射 | source/book identity、去重、导入导出 | 与 Book 主记录不双写 |
 
-## 9. 证据文档（按需查阅，不是每次必读）
+### 大类 9：B′ 五域持久化 PoC 与迁移
 
-- full-legado-runtime-migration.md：完整迁移流水/执行链。
-- USER_REQUIREMENTS_AND_PARITY_CHECKLIST.md：原始 Legado 详细需求。
-- upstream-js-extensions-compatibility-audit.md：118 declarations 逐项审计。
-- upstream-model-serialization-audit.md：模型/数据库/服务依赖审计。
-- project-completion-checklist.md：历史跨类任务、CI 和错误修复记录。
-- BADCAT_REPLICATION_FIVE_CATEGORIES.md：产品五类历史定义。
+| 小类 | 工作内容 | 验收条件 |
+|---|---|---|
+| 9.1 五域事实源 | BookSource / Book / BookChapter / Progress / Chapter Cache | 每域唯一事实源和唯一 writer |
+| 9.2 事务边界 | 目录刷新、书籍更新、进度与缓存协调 | 无跨 store 假原子 |
+| 9.3 架构守卫 | 模块依赖测试、静态扫描 | 禁止依赖违规 |
+| 9.4 迁移工具 | 备份、dry-run、幂等、失败回滚 | 旧数据可完整恢复 |
+| 9.5 重启恢复 | 进程重启、缓存恢复、进度续读 | 录制回放可重复 |
+| 9.6 退出评估 | B′ → 限定 A → Hybrid | 触发条件时停止，不强行推进 |
 
-**当前状态：部分实现；B′ PoC 未验收；完整 Legado 未完成。** 本次清单建立时 branch HEAD 为 11549e7824683553c4039befa2f714fabfb805c3，未确认该 HEAD 有新的 CI run；历史 CI 不得当作当前 head 证据。
+### 大类 10：质量验证、真实源与交付
 
+| 小类 | 工作内容 | 验收条件 |
+|---|---|---|
+| 10.1 单元/契约测试 | 字段、序列化、规则、身份、token | 固定上游 differential fixtures |
+| 10.2 架构测试 | DAO/模块依赖隔离 | CI 强制失败 |
+| 10.3 录制回放 | 脱敏请求/响应、异常和边界 | 不依赖站点实时稳定性 |
+| 10.4 真实书源 | 搜索→详情→目录→正文→缓存 | 区分站点故障和引擎缺陷 |
+| 10.5 Android 真机 | 导入、阅读、重启、恢复、兼容 | 原版 Badcat UI 无回归 |
+| 10.6 CI/APK/manifest | 测试报告、版本清单、APK hash | exact HEAD 对应产物 |
+| 10.7 发布验收 | GPL、来源、许可证、报告、哈希 | 所有前置门禁通过 |
+
+## C. 已实现程序归类（按代码能力归位，不按提交时间排列）
+
+> 状态含义：**已落代码**不等于已验收；**局部实现**不等于上游完整兼容；**待 CI 验证**不等于测试通过。此表只列有代码路径或明确历史证据的程序，不把计划/接口空壳算作完成。
+
+### C1. 大类 1：数据模型、身份与序列化
+
+| 小类 | 已落地程序/文件 | 当前状态与边界 |
+|---|---|---|
+| 1.1 书源模型 | `integration-contract` 的 BookSource projection；`LegadoBookSourceCodec`；`FileBookSourceCatalog` | 局部实现；raw JSON 可保留，非官方 mutable BookSource/BaseSource |
+| 1.4 规则序列化 | 六类 rule deserializer + `INITIAL_GSON/GSON/GSONStrict`；`app/src/main/java/io/legado/app/utils/GsonExtensions.kt` | 源码与 pin 已核对一致；尚非完整 Book/BookSource/ReadConfig 序列化 |
+| 1.4 规则序列化测试 | `app/src/test/kotlin/io/legado/app/utils/LegadoGsonCompatibilityTest.kt` | 已补齐两处 fixture 编码错误；对应代码提交 `e278d9f` 的 CI 运行曾被取消，必须重新获得通过证据 |
+| 1.6 身份投影 | `BookCandidate` / `BookDetail` / `BookChapter(index,title,url)` | 局部 projection；BookChapter 官方字段未覆盖，不能当官方实体 |
+
+### C2. 大类 2：规则解析与内容处理
+
+| 小类 | 已落地程序/文件 | 当前状态与边界 |
+|---|---|---|
+| 2.1/2.2 规则执行 | AnalyzeRule/AnalyzeUrl 相关选定上游源和 host 适配 | 局部实现；selector/context/replacement/JS/request/response 语义仍需逐项差分 |
+| 2.4 正文处理 | `SourceChapterContentService`、CSS 正文 parser、文本替换接口、nextContentUrl 分页 | 有可运行服务路径；不能等同完整官方 ContentProcessor |
+| 2.5 目录处理 | `SourceTocService`、TOC parser/章节投影 | 有服务路径；完整上游字段、批量和 URL alias 语义未验收 |
+
+### C3. 大类 3：JS 与书源运行时生命周期
+
+| 小类 | 已落地程序/文件 | 当前状态与边界 |
+|---|---|---|
+| 3.1 Rhino 核心 | `legado-rhino` / host Rhino runtime、沙箱和资源边界测试 | 有运行时和历史测试证据；须以当前 HEAD CI 重新验证 |
+| 3.3 JS Bridge | source-scoped bridge、JS context propagation、Java/JS helper | 部分实现；`java.getSource()` ABI 冲突仍未解决 |
+| 3.6 辅助能力 | 加解密、编码及部分 JS helpers | 局部实现；不得推断 118 declarations 已全部兼容 |
+
+### C4. 大类 4：HTTP、Cookie、登录与安全
+
+| 小类 | 已落地程序/文件 | 当前状态与边界 |
+|---|---|---|
+| 4.1 HTTP 基础 | GET/HEAD/POST timeout overload、取消/响应处理的既有实现 | 局部实现；需逐 API 对照固定上游 |
+| 4.2 重定向 | redirect-aware GET、下载/archive/Ajax/selector 等历史修复 | 局部实现；需回归重定向链和 header/cookie |
+| 4.3 Cookie/会话 | Cookie 同步/清除、同站 header 边界、源隔离 | 有历史实现和测试记录；当前 HEAD 未重新验收 |
+| 4.4 登录 | 加密 loginInfo、登录态迁移/会话管理 | 局部实现；BaseSource 全生命周期仍缺 |
+| 4.5 安全限制 | Rhino 资源边界、缓存大小上限、HTTP timeout | 部分能力已落地；统一硬限制和安全审计未完成 |
+
+### C5. 大类 5：书源业务链与服务编排
+
+| 小类 | 已落地程序/文件 | 当前状态与边界 |
+|---|---|---|
+| 5.1 书源目录 | `FileBookSourceCatalog`、`LegadoBookSourceCodec`、AtomicFile JSON 导入/导出/启停 | 局部实现；没有 Room/官方 DAO 事实源 |
+| 5.2 搜索/发现 | `SourceSearchService`、`SourceExploreService`、`SourceReadingEngine` | 有 host 服务编排；脚本行为只支持已接通的范围 |
+| 5.3 详情 | `SourceBookDetailService` | 有 host 服务路径；完整模型更新/用户覆盖规则未验收 |
+| 5.4 目录 | `SourceTocService` | 有 host 服务路径；目录持久化与完整章节实体缺失 |
+| 5.5 正文 | `SourceChapterContentService` | 有 host 服务路径；批量正文及官方 ContentProcessor 不完整 |
+| 5.6 统一编排 | `SourceReadingEngine`、`BadcatReadingEngineFactory` | 已有 search/detail/TOC/content host orchestration；不代表完整 BaseSource/session lifecycle |
+
+### C6. 大类 6：章节身份、批量正文与导航兼容
+
+| 小类 | 已落地程序/文件 | 当前状态与边界 |
+|---|---|---|
+| 6.1 章节身份 | typed `chapterContent(BookChapter)`、`ChapterCatalogQuery.findByIdentity` | PoC-0.8 局部实现；index 已进入主要内容边界 |
+| 6.2 URL alias | `ChapterCatalogQuery.findByUrl` | 仅唯一 URL 匹配成功；重复 URL 返回 null，尚未完整实现上游规范化 alias 候选映射 |
+| 6.3 旧链接兼容 | `SourceChapterActivity.loadInitial` 的 legacy URL-only resolve | PoC-0.9 已落代码；旧历史/书签需唯一 TOC 匹配，缺失/歧义 fail closed |
+| 6.4 BatchContentContext | 当前仅有上游契约审计和差分测试要求 | 未完整移植/接线；URL alias 候选列表、batch save/retry 仍缺 |
+
+### C7. 大类 7：缓存、版本令牌与持久化
+
+| 小类 | 已落地程序/文件 | 当前状态与边界 |
+|---|---|---|
+| 7.1 章节正文缓存 | `ChapterContentCache`、`FileChapterContentCache` | 已按 sourceId/bookUrl/chapterIndex 建 typed cache key；旧 URL 文件不猜 index |
+| 7.2 SaveToken/Fence | `ChapterContentSaveFence`、`ChapterContentSaveToken`、`ChapterContentCacheKey` | 已有进程内版本 fence 和过期写拒绝；不是跨进程 durable token |
+| 7.3 缓存失效 | `invalidate(sourceId,bookUrl,index)`、`replace` fencing | 基础 API 已有；当前产品无独立正文编辑/删除入口，所有 mutation caller 尚未闭环 |
+| 7.4 通用 CacheManager | pinned 上游契约已审计 | 未完整实现；不要与章节正文缓存混为一谈 |
+| 7.5 存储原子性 | `AtomicFile`、共享 Mutex、LRU/pruning、容量限制 | 局部实现；不代表五域统一事务 |
+
+### C8. 大类 8：阅读状态与产品数据映射
+
+| 小类 | 已落地程序/文件 | 当前状态与边界 |
+|---|---|---|
+| 8.1 阅读进度 | `BadcatReadingStateRepository` + `ReadingProgressStore` | 已抽出 Badcat 自有读写边界并保留旧 preference key；尚未映射官方 Book.ReadConfig/完整进度字段 |
+| 8.2 书签 | `BadcatReadingStateRepository` bookmark methods | 局部持久化；旧 URL key 保持兼容，chapter index 迁移未完成 |
+| 8.3 阅读历史 | repository facade + `ReadingHistoryActivity` | 历史列表有独立存储/投影；不能当作权威阅读进度 |
+| 8.4 ReadConfig | pinned 源字段/依赖已审计 | 官方 Book.ReadConfig/ParagraphAnchor 尚未集成；禁止 shadow DTO 冒充 |
+| 8.5 收藏/书架映射 | Favorites JSON owner / activity | 独立数据域；未并入统一 Book 事实源 |
+
+### C9. 大类 9：B′ 五域持久化 PoC 与迁移
+
+| 小类 | 已落地程序/证据 | 当前状态与边界 |
+|---|---|---|
+| 9.1 五域事实源 | 五域字段/identity mapping、当前 owner/caller inventory | 调查/映射已做；单一事实源和唯一 writer 未证明 |
+| 9.2 事务边界 | AtomicFile/SharedPreferences/file cache ownership audit | 多 store 并存；没有跨域事务 |
+| 9.3 架构守卫 | 模块边界调查 | 自动架构测试未完成 |
+| 9.4 迁移工具 | dry-run/backup/idempotency/rollback 设计 | 只有设计；未实现/演练 |
+| 9.5 重启恢复 | 旧 preference/file 行为和 cache restart 设计 | 未完成五域统一重启验证 |
+| 9.6 退出评估 | B′、限定 A、Hybrid 比较 | 已比较但未批准切换；B′ 未通过 |
+
+### C10. 大类 10：质量验证、真实源与交付
+
+| 小类 | 已落地程序/证据 | 当前状态与边界 |
+|---|---|---|
+| 10.1 单元/契约测试 | Gson fixtures、chapter identity/fence tests、Rhino/crypto 历史 tests | 有测试代码；最新整套测试尚未验证通过 |
+| 10.2 架构测试 | 边界要求和设计记录 | 未完成 |
+| 10.3 录制回放 | 真实源历史 E2E 证据 | 系统化脱敏录制回放框架未完成 |
+| 10.4 真实书源 | Bixiange/Pinshuzhai 历史搜索→详情→TOC→正文证据 | 只对对应历史 commit 有效，不外推当前 HEAD |
+| 10.5 Android 真机 | 历史 APK/设备以旧 commit 为准 | 当前 PoC 未完成真机验收 |
+| 10.6 CI/APK | 历史 workflow 和 artifact 记录 | 最新代码提交 `e278d9f` 对应 workflow `44703572220` 曾被取消；最新文档 workflow 不代表代码验证。当前无本次修正的通过证据 |
+| 10.7 发布验收 | GPL/固定 pin/发布门禁 | 未完成；不得称正式发布就绪 |
+
+## D. 全局验收门禁（任何小类都必须遵守）
+
+1. **先登记再改代码：** 日期、起始 HEAD、上游 SHA、精确文件、所有 caller、事实源/事务、风险、测试、验收和退出条件。
+2. **真实实现：** 禁止 selector-only、no-op、null/unsupported 占位、同名简化 API、测试专用替身冒充生产能力。
+3. **字段与身份：** null/missing/default/unknown、序列化 round-trip、规则 object/string 双形态、重复 URL、chapter index 都要有契约测试。
+4. **数据边界：** Runtime 不引用 Badcat DAO；UI 不引用官方 DAO；每个数据域明确唯一 writer。
+5. **缓存：** 区分章节正文缓存与通用 CacheManager；token、invalidate、replace、容量和 TTL 分别验收。
+6. **测试证据：** focused tests → 全量 tests → CI exact HEAD → APK/artifact hash → 真实源 → Android 真机；任何一步未做都明确标记。
+7. **状态不得越级：** 文档已登记 ≠ 已实现；已落代码 ≠ 测试通过；测试通过 ≠ PoC 通过；Debug APK ≠ Release 就绪。
+
+## E. 当前总状态与下一顺序
+
+- **总体：** 第三类为“部分实现”；完整 Legado 运行时未完成；B′ 五域 PoC 未通过。
+- **模型/序列化：** 六类规则和 Gson 有源代码/测试夹具；Book/BookSource/BookChapter/ReadConfig 官方完整模型未集成。
+- **章节身份：** PoC-0.8/0.9 已有实现；URL alias 的完整规范化和 BatchContentContext 未完成。
+- **缓存：** PoC-1.0 的 index key 和 in-process fence 已落代码；缓存 mutation 生命周期和 CI 验收未完成。
+- **最新修正：** Gson 测试 fixture 修正已提交，提交 `e278d9f3715e2b4b9aeced1d897857c47c591e95`；对应运行 `44703572220` 被取消，不能宣称通过。最新清单提交为当前 branch HEAD。
+- **禁止启动：** 在模型闭包/序列化、迁移和 rollback 门禁未通过前，不冻结 schema v1、不引入 Room cutover、不切换架构。
+- **接下来优先顺序：**
+  1. 重新运行最新代码 HEAD 的 CI，确认 Gson fixture 修正后测试结果。
+  2. 根据真实 CI 结果修复下一项阻断，仍需先精确登记。
+  3. 完成 ReadConfig/ParagraphAnchor 和官方模型闭包的可执行契约方案，不引入 shadow DTO。
+  4. 补齐章节 URL normalization/alias ambiguity differential tests 与 BatchContentContext 行为。
+  5. 完成缓存 mutation caller audit 和失效闭环。
+  6. 再进入五域唯一事实源、迁移 dry-run/rollback 和架构守卫。
+  7. 最后做真实书源、Android 真机和 APK 验收。
+
+## F. 持续任务记录与历史证据
 
 ## 2026-11-20 必读清单集中化记录
 
