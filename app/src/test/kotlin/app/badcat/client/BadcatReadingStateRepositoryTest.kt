@@ -12,7 +12,7 @@ import org.robolectric.RuntimeEnvironment
 
 @RunWith(RobolectricTestRunner::class)
 class BadcatReadingStateRepositoryTest {
-    private val context get() = RuntimeEnvironment.getApplication<android.app.Application>()
+    private val context get() = RuntimeEnvironment.getApplication()
 
     @Test
     fun readsLegacyLastChapterAndScrollKeysAndSurvivesRepositoryRecreation() {
