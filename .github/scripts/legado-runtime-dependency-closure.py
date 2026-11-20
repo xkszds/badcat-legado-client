@@ -519,7 +519,7 @@ def self_test() -> None:
             (roots[1] / "demo" / "b" / "NestedGeneric.kt", "package demo.b\nfun <T, K : Comparable<K>> List<T>.deepSearch(key: K): Int = 0\nfun HashMap<String, *>.hasEntry(key: String): Boolean = true"),
             (roots[0] / "demo" / "b" / "Parent.kt", "package demo.b\nopen class Parent"),
             (roots[0] / "demo" / "b" / "Marker.kt", "package demo.b\nannotation class Marker"),
-            (roots[1] / "demo" / "b" / "Child.kt", "package demo.b\n@Marker class Child : Parent() { val item: D? = null; fun invoke() = helper() }\ntypealias ParentAlias = Parent"),
+            (roots[1] / "demo" / "b" / "Child.kt", "package demo.b\n@Marker class Child : Parent() { val item: D? = null; val duplicate: Duplicate? = null; fun invoke() = helper() }\ntypealias ParentAlias = Parent"),
             (roots[2] / "demo" / "b" / "DuplicateOne.kt", "package demo.b\ninterface Duplicate"),
             (roots[2] / "demo" / "b" / "DuplicateTwo.kt", "package demo.b\ninterface Duplicate"),
         )
@@ -568,7 +568,8 @@ def self_test() -> None:
         child_key = next(key for key in idx.files if key.endswith(":demo/b/Child.kt"))
         child_edges = _same_package_candidates(idx, child_key, idx.texts[child_key])
         child_symbols = {edge["symbol"] for edge in child_edges}
-        assert {"Marker", "Parent", "D", "helper", "ParentAlias"}.issubset(child_symbols)
+        assert {"Marker", "Parent", "D", "helper", "Duplicate"}.issubset(child_symbols)
+        assert any(record["name"] == "ParentAlias" and record["kind"] == "type" for record in idx.declaration_records[child_key])
         duplicate_edge = next(edge for edge in child_edges if edge["symbol"] == "Duplicate")
         assert duplicate_edge["ambiguous"] and len(duplicate_edge["targets"]) == 2
 
