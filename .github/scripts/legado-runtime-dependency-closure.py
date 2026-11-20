@@ -46,6 +46,7 @@ INTERNAL_PREFIXES = (
     "org.htmlunit.corejs.javascript",
 )
 IMPORT_RE = re.compile(r"^\s*import\s+([A-Za-z_][A-Za-z0-9_.*]*)(?:\s+as\s+([A-Za-z_][A-Za-z0-9_]*))?\s*$")
+JAVA_IMPORT_RE = re.compile(r"^\\s*import\\s+(static\\s+)?([A-Za-z_][A-Za-z0-9_.*]*)\\s*;\\s*$")
 PACKAGE_RE = re.compile(r"^\s*package\s+([A-Za-z_][A-Za-z0-9_.]*)", re.MULTILINE)
 DECL_RE = re.compile(
     r"^\s*(?:(?:public|internal|private|protected|open|abstract|sealed|data|enum|annotation|expect|actual|inline|value)\s+)*"
@@ -342,39 +343,51 @@ def self_test() -> None:
         b = roots[1] / "demo" / "b" / "B.kt"
         c = roots[2] / "demo" / "b" / "Helpers.kt"
         d = roots[1] / "demo" / "b" / "D.kt"
-        for path, body in (
-            (a, "package demo.a\nimport demo.b.B as Bee\nimport demo.b.*\nimport demo.b.helper\nimport demo.missing.Nope\nclass A"),
-            (b, "package demo.b\nimport demo.a.A\nclass B"),
-            (c, "package demo.b\nfun helper() = Unit"),
-            (d, "package demo.b\nclass D"),
-        ):
+        java = roots[2] / "demo" / "b" / "JavaHelpers.java"
+        fixtures = (
+            (a, "package demo.a\\nimport demo.b.B as Bee\\nimport demo.b.*\\nimport demo.b.helper\\nimport demo.missing.Nope\\nimport static demo.b.JavaHelpers.VALUE;\\nclass A"),
+            (b, "package demo.b\\nimport demo.a.A\\nclass B"),
+            (c, "package demo.b\\nfun helper() = Unit"),
+            (d, "package demo.b\\nclass D"),
+            (java, "package demo.b;\\npublic class JavaHelpers { public static final String VALUE = \\"x\\"; }"),
+        )
+        for path, body in fixtures:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(body, encoding="utf-8")
-        idx = SourceIndex(roots, list(SOURCE_ROOTS))
+
+        labels = list(SOURCE_ROOTS)
+        idx = SourceIndex(roots, labels)
         resolved, kind = idx.resolve("demo.b.B")
         assert kind == "file" and any(item.endswith(":demo/b/B.kt") for item in resolved)
         resolved, kind = idx.resolve("demo.b.helper")
         assert kind == "top_level_symbol" and any(item.endswith(":demo/b/Helpers.kt") for item in resolved)
         resolved, kind = idx.resolve("demo.b.*")
-        assert kind == "wildcard" and len(resolved) == 3
-        report = build_report(base)
-        # The production seed list is intentionally absent in this fixture;
-        # graph resolver behavior is tested directly and missing seeds surfaced.
-        assert len(report["seeds"]["missingOrAmbiguous"]) == len(SEEDS)
-        assert "Same-package references" in " ".join(report["limitations"])
+        assert kind == "wildcard" and len(resolved) == 4
+        resolved, kind = idx.resolve("demo.b.JavaHelpers.VALUE")
+        assert kind == "file" and any(item.endswith(":demo/b/JavaHelpers.java") for item in resolved)
+        resolved, kind = idx.resolve("demo.b.JavaHelpers.*")
+        assert kind == "static_wildcard" and any(item.endswith(":demo/b/JavaHelpers.java") for item in resolved)
         assert idx.resolve("demo.missing.Nope")[1] == "unresolved"
+
         parsed = _parse_imports(_read_text(a))
         assert any(item["name"] == "demo.b.B" and item["alias"] == "Bee" for item in parsed)
         assert any(item["name"] == "demo.b.JavaHelpers.VALUE" and item.get("static") for item in parsed)
         a_key = next(key for key in idx.files if key.endswith(":demo/a/A.kt"))
         b_key = next(key for key in idx.files if key.endswith(":demo/b/B.kt"))
-        a_imports = {item["name"] for item in _parse_imports(idx.texts[a_key])}
-        b_imports = {item["name"] for item in _parse_imports(idx.texts[b_key])}
-        assert any(target == b_key for target in idx.resolve("demo.b.B")[0])
-        assert any(target == a_key for target in idx.resolve("demo.a.A")[0])
-        assert "demo.a.A" in b_imports and "demo.b.B" in a_imports
-        # Root labels must remain distinct even though every source root ends in 'java'.
-        assert len(idx.files) == 5 and len(set(idx.files)) == 5
+        a_targets = set()
+        for item in _parse_imports(idx.texts[a_key]):
+            a_targets.update(idx.resolve(item["name"])[0])
+        b_targets = set()
+        for item in _parse_imports(idx.texts[b_key]):
+            b_targets.update(idx.resolve(item["name"])[0])
+        assert b_key in a_targets and a_key in b_targets, "cross-root import cycle must resolve"
+        assert len(idx.files) == 5 and len(set(idx.files)) == 5, "source-root identities must not collide"
+
+        report_a = build_report(base)
+        report_b = build_report(base)
+        assert len(report_a["seeds"]["missingOrAmbiguous"]) == len(SEEDS)
+        assert json.dumps(report_a, sort_keys=True) == json.dumps(report_b, sort_keys=True)
+        assert "Same-package references" in " ".join(report_a["limitations"])
     print("dependency closure scanner self-test: PASS")
 
 
