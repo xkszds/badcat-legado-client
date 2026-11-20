@@ -1178,3 +1178,12 @@
 
 - The earlier Runtime-0.1 entry noted the live smoke stage was still running at report time. It subsequently completed: workflow run `44713621740` for exact code HEAD `591a1be5b9ab5a670192b8a68e686ab2b4c994a9` finished with conclusion `success`. This confirms the full configured workflow completed, in addition to the individually recorded model tests and APK build.
 - The unit-test report artifact `14618681694` was downloaded and inspected: 33 JUnit suites, 290 tests, 0 failures, 0 errors, 0 skipped. The APK artifact `14618297498` was downloaded and inspected: `app-debug.apk`, 18,213,022 bytes, SHA-256 `0ee850a92e30465dbc53652d0f1d59b258b6b648fbc6de1e6b6e84af3e407ad2`.
+
+## 2026-11-20 Runtime-0.3 registration — repeatable JS extension API inventory
+
+- Added `.github/scripts/legado-js-abi-inventory.py`. It inventories public direct-member Kotlin declarations from pinned `JsExtensions`, inherited `JsEncodeUtils`, `RegexJsExtensions`, `WebJsExtensions`, and `SourceLoginJsExtensions`, and compares the primary `JsExtensions + JsEncodeUtils` surface with Badcat `RhinoSafeSourceJavaExtensions`.
+- The script records declaration source/line, Kotlin signature text, overload counts, missing names, host-only names, and the `@JavascriptInterface` marker. It deliberately labels the result as a Kotlin source-level inventory, not a JVM descriptor or behavioral compatibility proof.
+- Added CI generation and artifact upload (`legado-js-abi-inventory`) from the exact pinned `upstream/legado` submodule. `py_compile` runs before generation. This gives every subsequent implementation change a reproducible gap report rather than relying on manually counted method names.
+- Scope is intentionally broader than the primary interface: WebView and login extension classes are inventoried separately because their callbacks must be implemented by Badcat-owned services/UI without importing Legado presentation layers. RSS-only extensions remain outside this book-source runtime scope.
+- Status at registration: script and workflow committed; inventory generation is awaiting CI execution. No missing API is treated as an acceptable no-op, and no production runtime caller has been migrated.
+- Next: inspect the generated report and upgrade it to bytecode-level JVM descriptor comparison where the upstream and host compilation boundaries permit; then define typed host callbacks for each UI-facing upstream API and resolve `BaseSource`/`BookSource`/`AnalyzeRule`/`AnalyzeUrl` dependency closure before wiring any of them into production.
