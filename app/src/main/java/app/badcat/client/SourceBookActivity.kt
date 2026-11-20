@@ -418,15 +418,22 @@ class SourceBookActivity : Activity() {
             chapterList.addView(Button(this).apply {
                 text = "继续上次阅读"
                 setOnClickListener {
+                    val resumeChapter = ChapterCatalogQuery.findByUrl(chapters, savedChapterUrl)
+                    if (resumeChapter == null) {
+                        android.widget.Toast.makeText(
+                            this@SourceBookActivity,
+                            "上次章节无法唯一定位，请从目录选择章节",
+                            android.widget.Toast.LENGTH_SHORT,
+                        ).show()
+                        return@setOnClickListener
+                    }
                     startActivity(Intent(this@SourceBookActivity, SourceChapterActivity::class.java).apply {
                         putExtra(SourceChapterActivity.EXTRA_SOURCE_ID, sourceId)
                         putExtra(SourceChapterActivity.EXTRA_BOOK_URL, bookUrl)
                         putExtra(SourceChapterActivity.EXTRA_BOOK_NAME, bookName)
-                        putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, savedChapterUrl)
-                        ChapterCatalogQuery.findByUrl(chapters, savedChapterUrl)?.let {
-                            putExtra(SourceChapterActivity.EXTRA_CHAPTER_INDEX, it.index)
-                        }
-                        putExtra(SourceChapterActivity.EXTRA_CHAPTER_TITLE, "继续阅读")
+                        putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, resumeChapter.url)
+                        putExtra(SourceChapterActivity.EXTRA_CHAPTER_INDEX, resumeChapter.index)
+                        putExtra(SourceChapterActivity.EXTRA_CHAPTER_TITLE, resumeChapter.title)
                     })
                 }
             })
