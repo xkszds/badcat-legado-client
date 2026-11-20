@@ -1006,3 +1006,12 @@
 - **风险与测试：** Kotlin/Gson Java 泛型重载推断；验收必须由 Android CI 完成 `:app:testDebugUnitTest` 与 `:app:assembleDebug`，确认编译通过且六类规则、整数 coercion、null/unknown field 测试真实执行。检查 exact HEAD 对应 run 和产物；不得把编译成功当成完整 PoC 通过。
 - **排除/退出：** 不触碰 Room/schema v1、模型接入或 B′架构切换；若显式类型仍无法匹配真实 adapter，则暂停并检查依赖/重载，不改生产语义迁就测试。
 - **状态：** 已根据 run 日志登记，修正尚未实施；PoC-0.6 与 B′仍未验收。
+
+
+#### PoC-0.6 CI compile blocker correction checkpoint (2026-11-20)
+
+- **实际变更：** 在 `app/src/test/kotlin/io/legado/app/utils/LegadoGsonCompatibilityTest.kt` 将 Map 反序列化结果显式声明为 `Map<String?, Any?>?`，为 Kotlin/Gson 的泛型重载提供目标类型；保留参数化 TypeToken、fixture 和原断言。代码提交：`44e8fc61cca6ac2305fbed2d81722924ec6e7f48`。
+- **登记先后：** 精确修正范围已先写入本清单，登记提交 `1460e518083d7227917482b4a572c74e7b96fa1f`，之后才改测试代码。
+- **排除项核对：** 未改生产 Gson、规则模型、Gradle、Room/数据库、缓存、持久化或 UI；固定上游 SHA 未变。
+- **验证：** 该代码提交会触发 Android debug workflow；当前登记时尚无该 exact HEAD 的完成结果。等待 CI 对 `:app:compileDebugUnitTestKotlin`、单元测试和 debug assemble 给出结果，不预先宣称通过；无 APK/测试报告 hash 证据。
+- **状态：** 仅修复 Kotlin 测试编译器类型推断问题；PoC-0.6、B′和完整运行时均未验收。
