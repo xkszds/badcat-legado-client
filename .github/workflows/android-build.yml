@@ -146,6 +146,30 @@ jobs:
               --output "$local_root/$file"
           done
 
+      - name: Probe authentic BookSource and BaseSource compile boundary
+        run: |
+          mkdir -p build/runtime-0.7-poc
+          set +e
+          gradle --no-daemon :legado-runtime-poc:compileDebugKotlin > build/runtime-0.7-poc/compiler.log 2>&1
+          compile_status=$?
+          set -e
+          cat build/runtime-0.7-poc/compiler.log
+          printf '%s\n' "$compile_status" > build/runtime-0.7-poc/exit-code.txt
+          if [ "$compile_status" -eq 0 ]; then
+            echo "POC_RESULT=COMPILED_REQUIRES_MANUAL_REVIEW"
+          else
+            echo "POC_RESULT=BLOCKED_COMPILER_DIAGNOSTICS_CAPTURED"
+          fi
+
+      - name: Upload authentic source compiler probe diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: legado-runtime-0.7-compiler-probe
+          path: build/runtime-0.7-poc/**
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Run bounded Rhino replacement host tests
         run: gradle --no-daemon :app:testDebugUnitTest
 
