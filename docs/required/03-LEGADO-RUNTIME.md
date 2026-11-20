@@ -1532,3 +1532,14 @@
 - **Exclusions:** no production JS methods, event bus, callbacks, no-op handlers, generic refresh façade, service mutation, cache/schema/persistence changes, UI changes, APK/release work or `main` changes. Any implementation must be separately preregistered with typed identity, cancellation/stale-response tests and reader-position/cache regression tests.
 - **Risks:** upstream uses three distinct global LiveEventBus tags and checks Activity state `STARTED` before acting; the event itself is Boolean and does not carry source/book/chapter identity. Badcat's current reader path carries typed chapter index but does not yet expose a source-script refresh lifecycle. A naïve global event could refresh the wrong open book or allow an older async detail/TOC/content response to overwrite newer state.
 - **Status at registration:** audit only. PoC-5 recorded these three upstream names as missing from the host JS bridge. PoC-7a did not implement them. Full upstream API parity and B′ remain blocked.
+
+
+### 2026-11-20 Runtime-1.0 PoC-7b result — book/TOC/content refresh host seam
+
+- **Registration:** `94f1cecb478736601ddae94a79c55dde93b2cbee`; starting HEAD `f71457b646bca831daa58a355dc42d26b280c112`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Detailed report:** `docs/audits/legado-runtime-1.0-poc7b-refresh-host-seam-audit.md`, commit `36a72235dd478c0570295dcc831b8fdb886129b2`.
+- **Upstream result:** `refreshBookInfo`, `refreshBookToc`, and `refreshContent` post three distinct LiveEventBus tags with Boolean payloads and no identity. STARTED-gated consumers refresh book detail, replace the TOC, or invalidate/reload the current chapter respectively; these are not interchangeable operations.
+- **Badcat result:** detail/TOC/content services exist, but there is no source-script refresh dispatcher or reader-facing typed invalidate-and-reload API. Current typed chapter identity and save-token fencing are useful prerequisites, not a refresh implementation. A normal content load can return cached content.
+- **Decision:** do not copy the global Boolean event bus. A future bridge must carry source/book/chapter identity, route to the matching active screen, preserve lifecycle gating, cancel/fence stale requests, reconcile current chapter after TOC replacement, and invalidate the exact typed cache entry before content reload.
+- **Actual changes:** audit documentation only. No production Kotlin/Java, Gradle, tests, DB/schema, persistence, production callers, Badcat UI/Reader, APK or `main` changed. No tests/build/CI/source-smoke/device result is claimed.
+- **Status:** PoC-7b is audit-only; all three refresh APIs remain missing from the host bridge. No compatibility status upgrade. Full Legado compatibility and B′ remain unpassed.
