@@ -39,6 +39,8 @@ class RhinoSourceJsAbiBytecodeTest {
         // @JvmOverloads must be verified on emitted JVM methods, not inferred from Kotlin source.
         assertEquals(setOf(1, 2), named("ajaxAll").map { it.parameterCount }.toSet())
         assertEquals(setOf(2, 3), named("ajaxTestAll").map { it.parameterCount }.toSet())
+        assertTrue(named("ajaxAll\\$default").single().isSynthetic)
+        assertTrue(named("ajaxTestAll\\$default").single().isSynthetic)
         assertEquals(setOf(1, 2, 3), named("get").map { it.parameterCount }.toSet())
 
         val timeFormat = named("timeFormat")
@@ -50,8 +52,7 @@ class RhinoSourceJsAbiBytecodeTest {
         assertTrue(timeFormat.all { it.returnType == String::class.java })
 
         // These helpers are called through Rhino's direct Java-object binding, not Android WebView.
-        assertFalse(named("getSource").single().isAnnotationPresent(JavascriptInterface::class.java))
-        assertNotNull(named("timeFormat").first())
+        assertFalse(methods.any { it.isAnnotationPresent(JavascriptInterface::class.java) })
     }
 
     @Test
