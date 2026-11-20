@@ -199,12 +199,12 @@ class FileChapterContentCache(context: Context) : ChapterContentCache {
 
 /** Length-prefix each identity field so embedded separators cannot alias another chapter key. */
 internal fun chapterCacheDigest(sourceId: String, bookUrl: String, chapterIndex: Int): String =
-    chapterCacheDigest(sourceId, bookUrl, chapterIndex.toString())
+    chapterCacheDigestIdentity(sourceId, bookUrl, "index:$chapterIndex")
 
 internal fun chapterCacheDigest(sourceId: String, bookUrl: String, chapterUrl: String): String =
-    chapterCacheDigest(sourceId, bookUrl, "url:$chapterUrl")
+    chapterCacheDigestIdentity(sourceId, bookUrl, "url:$chapterUrl")
 
-private fun chapterCacheDigest(sourceId: String, bookUrl: String, chapterIdentity: String): String {
+private fun chapterCacheDigestIdentity(sourceId: String, bookUrl: String, chapterIdentity: String): String {
     val raw = buildString {
         listOf(sourceId, bookUrl, chapterIdentity).forEach { value ->
             append(value.length).append(':').append(value)
