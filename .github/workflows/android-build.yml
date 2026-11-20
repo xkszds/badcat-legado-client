@@ -201,6 +201,36 @@ jobs:
       - name: Run bounded Rhino replacement host tests
         run: gradle --no-daemon :app:testDebugUnitTest
 
+      - name: Run real Android WebView provider instrumentation (API 35)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: |
+            set +e
+            gradle --no-daemon :app:connectedDebugAndroidTest
+            test_status=$?
+            mkdir -p build/runtime-2.3-webview
+            adb exec-out run-as app.badcat.client cat files/runtime-2.3-webview-report.json > build/runtime-2.3-webview/runtime-2.3-webview-report.json 2>/dev/null
+            capture_status=$?
+            if [ "$capture_status" -ne 0 ]; then
+              echo "WebView instrumentation report was not produced or could not be retrieved"
+            else
+              cat build/runtime-2.3-webview/runtime-2.3-webview-report.json
+            fi
+            exit "$test_status"
+
+      - name: Upload real WebView provider instrumentation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: legado-webview-provider-runtime-2.3
+          path: build/runtime-2.3-webview/**
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Capture compiled host JavaScript bridge JVM ABI
         if: always()
         run: |

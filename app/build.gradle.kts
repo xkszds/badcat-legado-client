@@ -14,6 +14,7 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0-integration"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     packaging {
@@ -77,4 +78,7 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.14.1")
     // JVM unit tests need OkHttp's classpath-backed official PSL resource, not Android AAR assets.
     testRuntimeOnly("com.squareup.okhttp3:okhttp-jvm:5.4.0")
+    androidTestImplementation("androidx.test:core:1.6.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
 }
