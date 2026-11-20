@@ -80,6 +80,15 @@ interface ReadingEngine {
         chapterUrl: String,
         bookName: String? = null,
     ): EngineResult<ChapterContent>
+
+    /** Preferred identity-safe path: preserves the TOC chapter index and title. */
+    suspend fun chapterContent(
+        sourceId: String,
+        bookUrl: String,
+        chapter: BookChapter,
+        bookName: String? = null,
+    ): EngineResult<ChapterContent> =
+        chapterContent(sourceId, bookUrl, chapter.url, bookName)
 }
 
 data class BookSource(
