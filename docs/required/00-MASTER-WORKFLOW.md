@@ -136,3 +136,11 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 - At exact pinned SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`, BookSource/Book/BookChapter are coupled to Android Parcelable/Room and upstream base contracts; Book additionally reaches app database and reading helpers. They cannot be copied blindly into the Android-free integration-contract module.
 - Next ordered gate is a dependency-closure and caller audit to find the smallest faithful integration seam, with no shadow DTOs. Schema v1 freeze and Room remain blocked until authentic model serialization and executable fixtures pass.
 - No code/tests/Gradle/UI/APK changed in this registration. Current HEAD has no reported CI statuses or workflow runs. B′ remains unpassed.
+
+
+## 2026-11-20 Third-category PoC-0.7 source-closure checkpoint
+
+- Category-3 checklist records the pinned source findings: BookSource requires Android/Room/Parcelable, BaseSource and rule/Gson contracts; Book additionally depends on app DB, BookHelp/ContentProcessor/AppConfig and reader helpers; BaseSource is a live login/Cookie/cache/Rhino lifecycle service, not a marker interface.
+- Verbatim import into Android-free `:integration-contract` is rejected. Exact BookChapter closure, full host caller inventory and a minimal compile-ready authentic-model module boundary remain open; no schema v1 or Room work is authorized yet.
+- This was a documentation/evidence checkpoint only; no runtime, tests, Gradle or UI changed. Prior exact baseline `981d064b50de1fcb68fc91213085b057a8561b13` had no reported status checks or workflow runs. B′ remains unpassed.
+- Next: complete exact-path dependency and host caller inventory, then preregister a minimal authentic-model integration and executable serialization fixtures before proceeding to schema design.
