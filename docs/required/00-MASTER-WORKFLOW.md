@@ -232,3 +232,10 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 
 - Third-category report now contains the generated Kotlin API gap inventory and the source/caller audit for missing JS methods, browser/WebView/verification callbacks, legacy login JS and reader/theme configuration bridges. Current host projections and Login UI v2 do not implement those upstream contracts; do not patch placeholder methods or migrate production callers before the real upstream dependency-closure architecture is selected.
 - Runtime-0.3 tooling correction and exact CI evidence are recorded in `03-LEGADO-RUNTIME.md`; its successful Debug build and 293 passing tests are local regression evidence only, not full Legado compatibility or B′ acceptance.
+
+## 2026-11-21 强制纠错记录：任务结果未回写不得开始下一项工作
+
+- **已发生的流程疏漏：** 第三类 Runtime-2.3 CI recovery 的 run #3065（ID `44819598610`，exact code HEAD `9cfb1e8f5dd4386a2b37669fcbdb7b1837c5ead4`）结束后，没有立即把真实 CI 结果写入第三类必读清单；在结果回写缺失的情况下，后续工作已继续推进到 Runtime-2.4。后来才补写到 `docs/required/03-LEGADO-RUNTIME.md`。这是违反本总清单第 0.1 节和第 4 节的流程错误，不能以聊天记录、记忆或后补说明代替及时回写。
+- **永久门禁（所有五类、所有任务适用）：** 一项任务只要产生了可判定结果（包括 CI 结束、测试结束、构建/打包结束、调查结论或明确阻断），必须先在本次所属分类必读清单写入结果，再允许开始下一项实质任务。结果至少包括实际变更/未变更、精确测试与 CI run/ID/exact HEAD/status、日志证据、产物及哈希（若有）、失败根因与影响范围、验收结论、遗留项和清单自审。若任务仍在运行，必须明确标记 pending/in_progress，继续跟踪；不得写成通过或结束。
+- **提交前自检：** 写回分类清单后，重新读取刚更新的文件，核对登记与结果一一对应、证据和结论准确、未把 pending 当通过；确认完成后才可切换到下一任务。若当前无法取得结果或无法写回，暂停后续任务并明确报告阻断原因。
+- **总清单维护责任：** 本节记录跨类别的流程教训和统一门禁；具体技术日志仍写入对应分类清单，避免把总清单变成流水账。以后发现任何类别发生相同遗漏，必须先修正分类结果，再在本节补充跨类纠正规则，不得静默继续。
