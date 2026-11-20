@@ -76,6 +76,13 @@ GENERATED_ANDROID_SYMBOLS = (
     ("io.legado.app.databinding", "Android view/data-binding generated classes"),
 )
 
+DEPENDENCY_PROVIDED_SYMBOLS = (
+    (
+        "org.htmlunit.corejs.javascript",
+        "org.htmlunit:htmlunit-core-js:5.3.0-legado.4; modules/rhino/build.gradle exposes libs.htmlunit.core.js and gradle/libs.versions.toml pins the version",
+    ),
+)
+
 BLIND_SPOTS = [
     "Same-package references without import statements are not added as graph edges.",
     "Fully-qualified type/function references in declarations or string-evaluated scripts may be missed.",
@@ -112,6 +119,9 @@ def _classify_unresolved(name: str) -> tuple[str, str | None]:
     for prefix, evidence in GENERATED_ANDROID_SYMBOLS:
         if name == prefix or name.startswith(prefix + "."):
             return "generated_android_symbol", evidence
+    for prefix, evidence in DEPENDENCY_PROVIDED_SYMBOLS:
+        if name == prefix or name.startswith(prefix + "."):
+            return "dependency_provided_symbol", evidence
     return "internal_namespace_unresolved", None
 
 
@@ -353,8 +363,9 @@ def build_report(root: Path) -> dict:
             "reachableSourceFileCount": len(visited),
             "internalImportEdges": len(edges),
             "unresolvedImportCount": len(unresolved),
-            "unresolvedInternalImportCount": sum(1 for item in unresolved if item["classification"] != "generated_android_symbol"),
+            "unresolvedInternalImportCount": sum(1 for item in unresolved if item["classification"] == "internal_namespace_unresolved"),
             "generatedAndroidSymbolImportCount": sum(1 for item in unresolved if item["classification"] == "generated_android_symbol"),
+            "dependencyProvidedImportCount": sum(1 for item in unresolved if item["classification"] == "dependency_provided_symbol"),
             "unresolvedByClassification": dict(sorted(Counter(item["classification"] for item in unresolved).items())),
             "externalImportCount": len(external),
             "resolutionKinds": dict(sorted(resolution_counts.items())),
@@ -409,6 +420,7 @@ def self_test() -> None:
         resolved, kind = idx.resolve("demo.b.helperProperty")
         assert kind == "top_level_symbol" and any(item.endswith(":demo/b/Extensions.kt") for item in resolved)
         assert _classify_unresolved("io.legado.app.databinding.ActivityMainBinding")[0] == "generated_android_symbol"
+        assert _classify_unresolved("org.htmlunit.corejs.javascript.Context")[0] == "dependency_provided_symbol"
         assert _classify_unresolved("io.legado.app.utils.notFound")[0] == "internal_namespace_unresolved"
         resolved, kind = idx.resolve("demo.b.*")
         assert kind == "wildcard" and len(resolved) == 5
