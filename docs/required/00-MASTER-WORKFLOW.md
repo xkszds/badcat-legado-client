@@ -129,3 +129,10 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 - Tests are NOT executed: workflow lookup returned no runs and no local Gradle runner was available through the repository connector. Do not claim tests/build/CI passed.
 - Host lacks the actual pinned Book/BookSource/BookChapter model files; ReadConfig/ParagraphAnchor and complete model field/default/null round-trip cannot be tested without introducing forbidden shadow DTOs. Schema v1 freeze and Room implementation remain blocked.
 - Next: integrate the authentic pinned model contract/dependencies, add ReadConfig/ParagraphAnchor + full model round-trip fixtures, execute focused and full CI, then freeze schema v1 and register schema-only Room code. B′ remains unpassed.
+
+## 2026-11-20 PoC-0.7 ordered gate update
+
+- Third-category detailed registration/result: `docs/required/03-LEGADO-RUNTIME.md`, “PoC-0.7 registration — authentic upstream model source-closure audit”.
+- At exact pinned SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`, BookSource/Book/BookChapter are coupled to Android Parcelable/Room and upstream base contracts; Book additionally reaches app database and reading helpers. They cannot be copied blindly into the Android-free integration-contract module.
+- Next ordered gate is a dependency-closure and caller audit to find the smallest faithful integration seam, with no shadow DTOs. Schema v1 freeze and Room remain blocked until authentic model serialization and executable fixtures pass.
+- No code/tests/Gradle/UI/APK changed in this registration. Current HEAD has no reported CI statuses or workflow runs. B′ remains unpassed.
