@@ -84,6 +84,23 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+      - name: Generate pinned Legado source dependency closure
+        run: |
+          python3 -m py_compile .github/scripts/legado-runtime-dependency-closure.py
+          python3 .github/scripts/legado-runtime-dependency-closure.py --self-test
+          python3 .github/scripts/legado-runtime-dependency-closure.py \
+            --upstream-root upstream/legado \
+            --output build/legado-runtime-dependency-closure.json
+
+      - name: Upload pinned Legado source dependency closure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: legado-runtime-dependency-closure
+          path: build/legado-runtime-dependency-closure.json
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Restore pinned Legado Rhino artifact
         run: |
           upstream_commit="330e606c4d57e08adc056ff8ab7a4132c784da9"
