@@ -1059,3 +1059,11 @@
 - **Callers/ownership:** test-only; no production data writer, transaction, runtime or UI impact.
 - **Acceptance:** exact next code HEAD must compile, execute all app tests with all 290+ passing (including malformed object returns null and 7.9 coerces to 7 using primitive adapter), then complete `:app:assembleDebug`; capture exact run, report and APK hashes. If primitive-target test does not invoke the registered adapter as expected, stop and inspect Gson TypeAdapter lookup; do not widen production registration as a test workaround.
 - **Status:** scope registered before implementation. Prior run's unit tests are not all passing; APK was not assembled. PoC-0.6 and B′ remain unaccepted.
+
+
+#### PoC-0.6 primitive Int fixture correction implementation checkpoint (2026-11-20)
+
+- **Actual change:** both Int contract assertions now request `Int::class.java`, exactly matching the primitive class used by production `INITIAL_GSON.registerTypeAdapter`; boxed `Int::class.javaObjectType` was removed from this fixture. No expected values or production behavior changed. Code commit: `d3f5efd224943781adb5ed7dc7fce39362252aa5`.
+- **Registration order:** exact failing test and adapter-class mismatch were recorded first in `ac09f0a26957fffd2b843c2082a9eb32458b451c`.
+- **Validation:** push-triggered Android CI is expected for the code commit; no result is claimed yet. Must see all app tests pass and debug APK assemble on exact HEAD. Previous 290-test run had 289 pass/1 fail and did not assemble APK.
+- **Exclusions:** no production Gson, Gradle, model, Room, database, cache, runtime or UI change. B′ and PoC-0.6 remain unaccepted.
