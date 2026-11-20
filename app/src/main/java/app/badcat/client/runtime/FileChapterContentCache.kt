@@ -5,6 +5,10 @@ import android.util.AtomicFile
 import app.badcat.engine.CachedChapterContent
 import app.badcat.engine.ChapterContent
 import app.badcat.engine.ChapterContentCache
+import app.badcat.engine.BookChapter
+import app.badcat.engine.ChapterContentCacheKey
+import app.badcat.engine.ChapterContentSaveToken
+import app.badcat.engine.ChapterContentSaveFence
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -14,6 +18,7 @@ import java.io.File
 import java.security.MessageDigest
 
 private val chapterCacheMutex = Mutex()
+private val chapterCacheSaveFence = ChapterContentSaveFence()
 
 /**
  * Private, bounded on-disk chapter cache. It stores already parsed and
@@ -88,9 +93,95 @@ class FileChapterContentCache(context: Context) : ChapterContentCache {
         }
     }
 
+    override fun beginSave(
+        sourceId: String,
+        bookUrl: String,
+        chapter: BookChapter,
+    ): ChapterContentSaveToken = chapterCacheSaveFence.token(
+        ChapterContentCacheKey(sourceId, bookUrl, chapter.index),
+    )
+
+    override fun isCurrent(token: ChapterContentSaveToken): Boolean =
+        chapterCacheSaveFence.isCurrent(token)
+
+    override suspend fun get(
+        sourceId: String,
+        bookUrl: String,
+        chapter: BookChapter,
+    ): CachedChapterContent? = withContext(Dispatchers.IO) {
+        chapterCacheMutex.withLock {
+            val file = AtomicFile(cacheFile(sourceId, bookUrl, chapter.index))
+            val cached = runCatching {
+                val encoded = file.openRead().use { readBoundedChapterCacheEntry(it, MAX_ENTRY_BYTES) }
+                    ?: return@runCatching null
+                val json = JSONObject(String(encoded, Charsets.UTF_8))
+                if (json.optString("chapterUrl") != chapter.url) return@runCatching null
+                CachedChapterContent(
+                    content = ChapterContent(
+                        title = json.optString("title"),
+                        text = json.getString("text"),
+                        nextPageUrl = json.optString("nextPageUrl").takeIf(String::isNotBlank),
+                        previousChapterUrl = json.optString("previousChapterUrl").takeIf(String::isNotBlank),
+                    ),
+                    savedAtEpochMillis = json.getLong("savedAt"),
+                )
+            }.getOrNull()
+            if (cached != null) file.baseFile.setLastModified(System.currentTimeMillis())
+            cached
+        }
+    }
+
+    override suspend fun put(
+        sourceId: String,
+        bookUrl: String,
+        chapter: BookChapter,
+        token: ChapterContentSaveToken,
+        value: CachedChapterContent,
+    ): Boolean = withContext(Dispatchers.IO) {
+        if (token.key != ChapterContentCacheKey(sourceId, bookUrl, chapter.index)) return@withContext false
+        chapterCacheMutex.withLock {
+            chapterCacheSaveFence.publishIfCurrent(token) {
+                val target = AtomicFile(cacheFile(sourceId, bookUrl, chapter.index))
+                val json = JSONObject().apply {
+                    put("chapterUrl", chapter.url)
+                    put("title", value.content.title)
+                    put("text", value.content.text)
+                    put("nextPageUrl", value.content.nextPageUrl)
+                    put("previousChapterUrl", value.content.previousChapterUrl)
+                    put("savedAt", value.savedAtEpochMillis)
+                }
+                val encoded = json.toString().toByteArray(Charsets.UTF_8)
+                require(encoded.size <= MAX_ENTRY_BYTES) { "Chapter cache entry exceeds size limit" }
+                val output = target.startWrite()
+                try {
+                    output.write(encoded)
+                    output.flush()
+                    target.finishWrite(output)
+                } catch (error: Exception) {
+                    target.failWrite(output)
+                    throw error
+                }
+                runCatching { prune(target.baseFile) }
+            }
+        }
+    }
+
+    override suspend fun invalidate(sourceId: String, bookUrl: String, chapterIndex: Int) =
+        withContext(Dispatchers.IO) {
+            val key = ChapterContentCacheKey(sourceId, bookUrl, chapterIndex)
+            chapterCacheMutex.withLock {
+                chapterCacheSaveFence.invalidate(key)
+                AtomicFile(cacheFile(sourceId, bookUrl, chapterIndex)).delete()
+            }
+            Unit
+        }
+
     private fun cacheFile(sourceId: String, bookUrl: String, chapterUrl: String): File {
         return File(directory, "${chapterCacheDigest(sourceId, bookUrl, chapterUrl)}.json")
     }
+
+    private fun cacheFile(sourceId: String, bookUrl: String, chapterIndex: Int): File =
+        File(directory, "${chapterCacheDigest(sourceId, bookUrl, chapterIndex)}.json")
 
     /** Evict least-recently-read entries until the shared cache is within budget. */
     private fun prune(protectedFile: File) {
@@ -107,9 +198,15 @@ class FileChapterContentCache(context: Context) : ChapterContentCache {
 
 
 /** Length-prefix each identity field so embedded separators cannot alias another chapter key. */
-internal fun chapterCacheDigest(sourceId: String, bookUrl: String, chapterUrl: String): String {
+internal fun chapterCacheDigest(sourceId: String, bookUrl: String, chapterIndex: Int): String =
+    chapterCacheDigest(sourceId, bookUrl, chapterIndex.toString())
+
+internal fun chapterCacheDigest(sourceId: String, bookUrl: String, chapterUrl: String): String =
+    chapterCacheDigest(sourceId, bookUrl, "url:$chapterUrl")
+
+private fun chapterCacheDigest(sourceId: String, bookUrl: String, chapterIdentity: String): String {
     val raw = buildString {
-        listOf(sourceId, bookUrl, chapterUrl).forEach { value ->
+        listOf(sourceId, bookUrl, chapterIdentity).forEach { value ->
             append(value.length).append(':').append(value)
         }
     }.toByteArray(Charsets.UTF_8)
