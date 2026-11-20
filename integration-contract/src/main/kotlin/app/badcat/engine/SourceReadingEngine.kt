@@ -128,12 +128,26 @@ class SourceReadingEngine(
             is EngineResult.Failure -> return result
             is EngineResult.Success -> result.value
         }
-        return contentService.load(
-            source,
-            bookUrl,
-            BookChapter(index = 0, title = "", url = chapterUrl),
-            bookName = bookName.orEmpty(),
-        )
+        return chapterContent(sourceId, bookUrl, BookChapter(index = 0, title = "", url = chapterUrl), bookName)
+    }
+
+    override suspend fun chapterContent(
+        sourceId: String,
+        bookUrl: String,
+        chapter: BookChapter,
+        bookName: String?,
+    ): EngineResult<ChapterContent> {
+        val source = when (val result = findSource(sourceId)) {
+            is EngineResult.Failure -> return result
+            is EngineResult.Success -> result.value
+        }
+        if (chapter.index < 0 || chapter.url.isBlank()) {
+            return EngineResult.Failure(
+                EngineErrorCode.INVALID_SOURCE,
+                "Chapter index must be non-negative and chapter URL must not be blank",
+            )
+        }
+        return contentService.load(source, bookUrl, chapter, bookName = bookName.orEmpty())
     }
 
     private suspend fun findSource(sourceId: String): EngineResult<BookSource> =
