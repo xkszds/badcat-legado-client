@@ -778,19 +778,38 @@ class SourceChapterActivity : Activity() {
                     val tocTask = async(Dispatchers.IO) {
                         safeEngineCall { engine.chapters(sourceId, bookUrl) }
                     }
-                    val contentTask = async(Dispatchers.IO) {
-                        safeEngineCall {
-                            engine.chapterContent(
-                                sourceId, bookUrl,
-                                BookChapter(requestedChapterIndex.coerceAtLeast(0), chapterTitle, currentChapterUrl),
-                                bookName,
+                    // Indexed launches keep the fast parallel path. Legacy URL-only
+                    // launches must resolve against the fresh TOC before requesting content.
+                    val resolvedLegacyChapter: BookChapter? = if (requestedChapterIndex < 0) {
+                        val currentToc = tocTask.await()
+                        val currentCatalog = (currentToc as? EngineResult.Success)?.value.orEmpty()
+                        ChapterCatalogQuery.findByUrl(currentCatalog, currentChapterUrl)
+                    } else {
+                        null
+                    }
+                    val content: EngineResult<app.badcat.engine.ChapterContent> =
+                        if (requestedChapterIndex >= 0) {
+                            async(Dispatchers.IO) {
+                                safeEngineCall {
+                                    engine.chapterContent(
+                                        sourceId, bookUrl,
+                                        BookChapter(requestedChapterIndex, chapterTitle, currentChapterUrl),
+                                        bookName,
+                                    )
+                                }
+                            }.await()
+                        } else if (resolvedLegacyChapter != null) {
+                            safeEngineCall {
+                                engine.chapterContent(sourceId, bookUrl, resolvedLegacyChapter, bookName)
+                            }
+                        } else {
+                            EngineResult.Failure(
+                                EngineErrorCode.NOT_FOUND,
+                                "保存的章节地址在当前目录中不存在或不唯一，未请求正文",
                             )
                         }
-                    }
-                    // Do not make the reader wait for a slow table of contents.
-                    // Render the requested chapter as soon as its content is ready.
-                    val content = contentTask.await()
-                    val fallbackChapter = BookChapter(
+                    // Indexed launches render as soon as content is ready without waiting for TOC.
+                    val fallbackChapter = resolvedLegacyChapter ?: BookChapter(
                         index = requestedChapterIndex.coerceAtLeast(0),
                         title = fallbackTitle.ifBlank { bookName },
                         url = currentChapterUrl,
