@@ -11,6 +11,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
+import com.google.gson.reflect.TypeToken
 
 /**
  * Contract tests for Gson behavior copied from LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a.
@@ -23,23 +24,25 @@ class LegadoGsonCompatibilityTest {
 
     @Test
     fun allSixRuleConvertersAcceptObjectAndStringEncodedObject() {
+        fun encodedObject(json: String): String = GSON.toJson(json)
+
         assertEquals("li.book", GSON.fromJson("""{"bookList":"li.book"}""", ExploreRule::class.java).bookList)
-        assertEquals("li.book", GSON.fromJson(""""{"bookList":"li.book"}"""", ExploreRule::class.java).bookList)
+        assertEquals("li.book", GSON.fromJson(encodedObject("""{"bookList":"li.book"}"""), ExploreRule::class.java).bookList)
 
         assertEquals("h3.title", GSON.fromJson("""{"name":"h3.title"}""", SearchRule::class.java).name)
-        assertEquals("h3.title", GSON.fromJson(""""{"name":"h3.title"}"""", SearchRule::class.java).name)
+        assertEquals("h3.title", GSON.fromJson(encodedObject("""{"name":"h3.title"}"""), SearchRule::class.java).name)
 
         assertEquals("h1", GSON.fromJson("""{"name":"h1"}""", BookInfoRule::class.java).name)
-        assertEquals("h1", GSON.fromJson(""""{"name":"h1"}"""", BookInfoRule::class.java).name)
+        assertEquals("h1", GSON.fromJson(encodedObject("""{"name":"h1"}"""), BookInfoRule::class.java).name)
 
         assertEquals("dd a", GSON.fromJson("""{"chapterList":"dd a"}""", TocRule::class.java).chapterList)
-        assertEquals("dd a", GSON.fromJson(""""{"chapterList":"dd a"}"""", TocRule::class.java).chapterList)
+        assertEquals("dd a", GSON.fromJson(encodedObject("""{"chapterList":"dd a"}"""), TocRule::class.java).chapterList)
 
         assertEquals("article", GSON.fromJson("""{"content":"article"}""", ContentRule::class.java).content)
-        assertEquals("article", GSON.fromJson(""""{"content":"article"}"""", ContentRule::class.java).content)
+        assertEquals("article", GSON.fromJson(encodedObject("""{"content":"article"}"""), ContentRule::class.java).content)
 
         assertEquals(true, GSON.fromJson("""{"enabled":true}""", ReviewRule::class.java).enabled)
-        assertEquals(true, GSON.fromJson(""""{"enabled":true}"""", ReviewRule::class.java).enabled)
+        assertEquals(true, GSON.fromJson(encodedObject("""{"enabled":true}"""), ReviewRule::class.java).enabled)
     }
 
     @Test
@@ -67,9 +70,10 @@ class LegadoGsonCompatibilityTest {
 
     @Test
     fun initialGsonUsesPinnedIntegerAndStringCoercion() {
+        val mapType = object : TypeToken<Map<String?, Any?>?>() {}.type
         val map = INITIAL_GSON.fromJson(
             """{"whole":3.0,"fraction":3.25,"nested":[2.0,true]}""",
-            Map::class.java
+            mapType
         )
         assertEquals(3L, map["whole"])
         assertEquals(3.25, map["fraction"])
