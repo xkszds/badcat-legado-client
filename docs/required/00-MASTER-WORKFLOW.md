@@ -233,9 +233,33 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 - Third-category report now contains the generated Kotlin API gap inventory and the source/caller audit for missing JS methods, browser/WebView/verification callbacks, legacy login JS and reader/theme configuration bridges. Current host projections and Login UI v2 do not implement those upstream contracts; do not patch placeholder methods or migrate production callers before the real upstream dependency-closure architecture is selected.
 - Runtime-0.3 tooling correction and exact CI evidence are recorded in `03-LEGADO-RUNTIME.md`; its successful Debug build and 293 passing tests are local regression evidence only, not full Legado compatibility or B′ acceptance.
 
-## 2026-11-21 强制纠错记录：任务结果未回写不得开始下一项工作
+## 持续改进：任务结果闭环执行机制（所有类别、所有任务强制适用）
 
-- **已发生的流程疏漏：** 第三类 Runtime-2.3 CI recovery 的 run #3065（ID `44819598610`，exact code HEAD `9cfb1e8f5dd4386a2b37669fcbdb7b1837c5ead4`）结束后，没有立即把真实 CI 结果写入第三类必读清单；在结果回写缺失的情况下，后续工作已继续推进到 Runtime-2.4。后来才补写到 `docs/required/03-LEGADO-RUNTIME.md`。这是违反本总清单第 0.1 节和第 4 节的流程错误，不能以聊天记录、记忆或后补说明代替及时回写。
-- **永久门禁（所有五类、所有任务适用）：** 一项任务只要产生了可判定结果（包括 CI 结束、测试结束、构建/打包结束、调查结论或明确阻断），必须先在本次所属分类必读清单写入结果，再允许开始下一项实质任务。结果至少包括实际变更/未变更、精确测试与 CI run/ID/exact HEAD/status、日志证据、产物及哈希（若有）、失败根因与影响范围、验收结论、遗留项和清单自审。若任务仍在运行，必须明确标记 pending/in_progress，继续跟踪；不得写成通过或结束。
-- **提交前自检：** 写回分类清单后，重新读取刚更新的文件，核对登记与结果一一对应、证据和结论准确、未把 pending 当通过；确认完成后才可切换到下一任务。若当前无法取得结果或无法写回，暂停后续任务并明确报告阻断原因。
-- **总清单维护责任：** 本节记录跨类别的流程教训和统一门禁；具体技术日志仍写入对应分类清单，避免把总清单变成流水账。以后发现任何类别发生相同遗漏，必须先修正分类结果，再在本节补充跨类纠正规则，不得静默继续。
+本节规定后续实际执行方法。目标是让每项工作从开始、执行、验证、记录到复核形成一个不可跳过的闭环；分类清单是项目状态的唯一工作记录，聊天内容和模型记忆不得代替它。
+
+### A. 开始前建立本轮工作上下文
+1. 重新读取当前分支的本总清单，再读取本轮所属分类清单；核验分支名和最新 HEAD。
+2. 从分类清单确认上一项工作的最后状态、未完成事项、阻断条件和下一项已登记任务；不得凭聊天摘要猜测项目进度。
+3. 若上一项任务状态为 pending/in_progress，先恢复该任务并取得结果；若上一项已结束但结果尚未回写或复核，先补齐该闭环。两种情况都不得另开下一项实质任务。
+4. 本轮目标、允许修改范围或验收条件有变化时，先更新登记并复核，再开始实施。
+
+### B. 执行中维护明确状态
+1. 每项任务开始时，在所属分类清单登记唯一任务标题/编号、目标、范围、起始 HEAD、验证方法和验收条件。
+2. 将工作状态明确区分为 registered、in_progress、blocked、completed；不得把“已发起”“等待 CI”“步骤尚未执行”写成完成。
+3. 对 CI、测试、构建、打包、调查等异步工作，保存可追踪的 run/job/任务标识和 exact HEAD；只要仍在运行，就保持 pending/in_progress，并在同一任务内继续轮询和检查日志。
+4. 若出现新失败、范围变化、证据冲突或额外修改需求，暂停扩展操作，先查明影响并登记必要的范围调整；不把未经登记的修复混入当前任务。
+
+### C. 结果先回写，再开始下一项（硬停止门）
+1. 一项工作产生可判定结果或明确阻断后，立即在所属分类清单记录：实际变更/未变更、测试命令及精确结果、CI run/job/ID/exact HEAD/conclusion、关键日志证据、产物及哈希（如有）、失败根因和影响范围、验收结论、遗留事项。
+2. 若结果尚未产生，记录当前 pending/in_progress 状态、已完成步骤、尚未完成步骤和下一次检查目标；不得提前写通过或失败结论。
+3. **回写完成前，禁止开始下一项实质工作。** 不得先修另一个问题、切换类别、启动新构建/CI、修改其他文件或推进下一阶段，再回头补记录。
+4. 回写后必须重新读取刚更新的分类清单，逐项核对任务登记、真实证据、结论和遗留事项；确认记录与结果一致、没有遗漏、没有把 pending 当成通过，才解除硬停止门。
+5. 若无法获取真实结果、无法写回或无法完成复核，保持停止状态，并向用户说明具体阻断；不得用口头总结、历史聊天或推测替代。
+
+### D. 每轮结束时做一次交接
+1. 在分类清单明确写出当前最终状态、证据位置、尚未完成事项，以及唯一明确的下一步建议。
+2. 下一轮开始时重新读取清单并从该状态继续，不重复已完成工作，也不跳过未完成的验证。
+3. 只有分类清单已完成回写并复核，才允许结束本轮并转入其他任务。
+4. 总清单只维护跨类别通用流程和架构门禁；具体技术证据、任务流水和结果始终写入所属分类清单，避免重复维护和状态分叉。
+
+**执行原则：先确认状态，再开展工作；先取得证据，再下结论；先回写并复核，再推进下一项。任何任务都不得绕过此闭环。**
