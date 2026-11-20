@@ -352,3 +352,14 @@ Search/Explore → BookInfo → BookChapterList → BookContent；依赖 Analyze
 4. Only after schema-only CI passes, implement legacy backup + dry-run + idempotent import + rollback state machine; no production cutover in that step.
 
 **Self-review:** this is an evidence-backed schema draft, not executable schema and not B′ acceptance. It deliberately does not map UI pixel scrollY to upstream character position, does not claim exhaustive caller discovery, and does not change any runtime code.
+
+
+## 2026-11-20 PoC-0.5 registration — exhaustive persistence caller scan and converter contract verification
+
+- **Starting HEAD:** `a905d953abab4e7c7513de79a65b937684a1e8e8`; active branch `integration/legado-upstream-runtime`.
+- **Pinned upstream:** `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Scope:** finish the remaining static ownership scan for source catalog, progress/history/bookmarks/favorites, TOC and chapter cache; inspect pinned Gson/Room converter and nested ReadConfig serialization declarations; reconcile every verified caller and identity/transaction limitation in the category report. If repository evidence supports a safe, bounded schema-only implementation slice, register it separately; otherwise explicitly block implementation rather than add an unverified second store.
+- **Targets:** all current source files found through the repository tree; exact persistence filenames/keys; all cache interface/implementation and construction sites; TOC list transforms and tests; source codec and raw JSON mutation paths; pinned upstream Gson initialization/type adapters and Room converter declarations.
+- **Risks:** code search index may not cover this branch; a partial search result is not proof of zero callers. A schema-only Room addition without Android build/CI verification could break build or lock in incorrect defaults. Gson adapter behavior must be read from the pinned source, not inferred from generic Gson. Preserve scrollY as a distinct Badcat pixel offset; do not convert it to upstream character position.
+- **Required checks:** recursive tree enumeration plus direct source inspection; search every exact legacy key/file/class name; inspect all callers and tests; verify nested converter/type adapter source; record which searches are exhaustive vs incomplete; compare Room version/Gradle dependencies; no schema/runtime edit unless all field and migration contracts are unambiguous.
+- **Acceptance:** caller inventory is evidence-complete for the files actually present at the audited HEAD; converter behaviors and unresolved default/null cases are explicit; implementation blockers and next code-only slice are clear. No UI change, no main branch, no claim B′ passed. If the tool cannot retrieve the full tree or exact sources, report that limitation and do not invent a complete scan.
