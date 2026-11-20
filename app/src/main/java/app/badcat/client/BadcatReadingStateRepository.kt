@@ -125,7 +125,7 @@ class BadcatReadingStateRepository(context: Context) {
 
     fun clearBookmarks() {
         val edit = progress.edit()
-        progress.all.keys.filter { it.startsWith(BOOKMARK_PREFIX) }.forEach(edit::remove)
+        progress.all.keys.filter { it.startsWith(BOOKMARK_PREFIX) }.forEach { key -> edit.remove(key) }
         edit.apply()
     }
 
