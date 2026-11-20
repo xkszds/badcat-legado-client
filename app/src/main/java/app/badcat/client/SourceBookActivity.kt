@@ -10,7 +10,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Base64
 import android.widget.Button
 import android.view.View
 import android.view.ViewGroup
@@ -1241,27 +1240,4 @@ class SourceChapterActivity : Activity() {
         const val EXTRA_CHAPTER_TITLE = "reader_chapter_title"
         const val EXTRA_JUMP_TO_BOOKMARK = "reader_jump_to_bookmark"
     }
-}
-
-private fun readingProgressKey(sourceId: String, bookUrl: String): String {
-    val raw = "$sourceId\n$bookUrl".toByteArray(Charsets.UTF_8)
-    return "last_chapter_" + Base64.encodeToString(raw, Base64.URL_SAFE or Base64.NO_WRAP)
-}
-
-private fun chapterScrollPositionKey(
-    sourceId: String,
-    bookUrl: String,
-    chapterUrl: String,
-): String {
-    val raw = "$sourceId\n$bookUrl\n$chapterUrl".toByteArray(Charsets.UTF_8)
-    return "chapter_scroll_" + Base64.encodeToString(raw, Base64.URL_SAFE or Base64.NO_WRAP)
-}
-
-private fun chapterBookmarkKey(
-    sourceId: String,
-    bookUrl: String,
-    chapterUrl: String,
-): String {
-    val raw = "$sourceId\n$bookUrl\n$chapterUrl".toByteArray(Charsets.UTF_8)
-    return "chapter_bookmark_" + Base64.encodeToString(raw, Base64.URL_SAFE or Base64.NO_WRAP)
 }
