@@ -234,9 +234,8 @@ class SourceBookActivity : Activity() {
             return
         }
         pendingStartReading = false
-        val progressPreferences = getSharedPreferences("badcat_reading_progress", MODE_PRIVATE)
-        val progressKey = readingProgressKey(sourceId, bookUrl)
-        val saved = progressPreferences.getString(progressKey, null)
+        val readingState = BadcatReadingStateRepository(this)
+        val saved = readingState.lastChapterUrl(sourceId, bookUrl)
         val resumeChapter = ChapterCatalogQuery.findByUrl(allChapters, saved)
         if (resumeChapter != null) {
             openChapter(resumeChapter)
@@ -244,7 +243,7 @@ class SourceBookActivity : Activity() {
             // A source may remove or rewrite a chapter URL. Do not send the reader
             // to a stale URL; clear the invalid bookmark and start from the first chapter.
             if (!saved.isNullOrBlank()) {
-                progressPreferences.edit().remove(progressKey).apply()
+                readingState.clearLastChapterUrl(sourceId, bookUrl)
             }
             openChapter(allChapters.first())
         }
@@ -414,8 +413,8 @@ class SourceBookActivity : Activity() {
         }
         chapterList.removeAllViews()
         status.append("\n\n目录：${chapters.size} 章（点击章节开始阅读）")
-        val savedChapterUrl = getSharedPreferences("badcat_reading_progress", MODE_PRIVATE)
-            .getString(readingProgressKey(sourceId, bookUrl), null)
+        val readingState = BadcatReadingStateRepository(this)
+        val savedChapterUrl = readingState.lastChapterUrl(sourceId, bookUrl)
         if (!savedChapterUrl.isNullOrBlank()) {
             chapterList.addView(Button(this).apply {
                 text = "继续上次阅读"
@@ -434,8 +433,8 @@ class SourceBookActivity : Activity() {
             chapterList.addView(TextView(this).apply { text = "目录为空" })
             return
         }
-        val prefs = getSharedPreferences("badcat_reading_progress", MODE_PRIVATE)
-        val bookmarked = chapters.filter { prefs.contains(chapterBookmarkKey(sourceId, bookUrl, it.url)) }
+        val readingState = BadcatReadingStateRepository(this)
+        val bookmarked = chapters.filter { readingState.isBookmarked(sourceId, bookUrl, it.url) }
         if (bookmarked.isNotEmpty()) {
             chapterList.addView(Button(this).apply {
                 text = "本书书签（" + bookmarked.size + "）"
@@ -448,7 +447,6 @@ class SourceBookActivity : Activity() {
                             BadcatTheme.alertBuilder(this@SourceBookActivity)
                                 .setTitle(chapter.title)
                                 .setItems(arrayOf("打开书签", "删除书签")) { _, action ->
-                                    val key = chapterBookmarkKey(sourceId, bookUrl, chapter.url)
                                     if (action == 0) {
                                         startActivity(Intent(this@SourceBookActivity, SourceChapterActivity::class.java).apply {
                                             putExtra(SourceChapterActivity.EXTRA_SOURCE_ID, sourceId)
@@ -459,7 +457,7 @@ class SourceBookActivity : Activity() {
                                             putExtra(SourceChapterActivity.EXTRA_JUMP_TO_BOOKMARK, true)
                                         })
                                     } else {
-                                        prefs.edit().remove(key).apply()
+                                        readingState.removeBookmark(sourceId, bookUrl, chapter.url)
                                         showChapters(chapters)
                                     }
                                 }
