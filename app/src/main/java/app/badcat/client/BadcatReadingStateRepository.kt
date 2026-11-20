@@ -86,7 +86,7 @@ class BadcatReadingStateRepository(context: Context) {
                 scrollY = value.coerceAtLeast(0),
                 savedAt = progress.getLong(BOOKMARK_TIME_PREFIX + encoded, 0L),
             )
-        }.sortedWith(compareByDescending<Bookmark> { it.savedAt }.thenByDescending { it.chapterUrl })
+        }.sortedWith(compareByDescending<Bookmark> { it.savedAt }.thenByDescending { encodeIdentity(it.sourceId, it.bookUrl, it.chapterUrl) })
 
     fun saveBookmark(
         sourceId: String,
@@ -190,8 +190,10 @@ class BadcatReadingStateRepository(context: Context) {
     }
 
     fun latestReadTimes(): Map<String, Long> = historyRecords().fold(mutableMapOf()) { result, item ->
-        val key = item.sourceId + "|" + item.bookUrl
-        result[key] = maxOf(result[key] ?: 0L, item.updatedAt)
+        if (item.updatedAt > 0L) {
+            val key = item.sourceId + "|" + item.bookUrl
+            result[key] = maxOf(result[key] ?: 0L, item.updatedAt)
+        }
         result
     }
 
