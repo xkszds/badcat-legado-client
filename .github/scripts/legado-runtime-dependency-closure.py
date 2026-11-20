@@ -94,6 +94,12 @@ BLIND_SPOTS = [
 ]
 
 
+
+def _git_blob_sha1(text: str) -> str:
+    data = text.encode("utf-8")
+    return hashlib.sha1(f"blob {len(data)}\0".encode("utf-8") + data).hexdigest()
+
+
 def _read_text(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8")
@@ -465,7 +471,7 @@ def build_report(root: Path) -> dict:
             "declarations": sorted(index.declarations[key]),
             "declarationRecords": index.declaration_records[key],
             "contentSha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
-            "gitBlobSha1": hashlib.sha1(f"blob {len(text.encode('utf-8'))}\0".encode("utf-8") + text.encode("utf-8")).hexdigest(),
+            "gitBlobSha1": _git_blob_sha1(text),
             "importCount": len(imports),
             "dependencyFamilies": _family_flags(relative, imports, text),
             "shortestSeedPath": shortest_path(key),
@@ -572,6 +578,9 @@ def self_test() -> None:
         build_inventory = _build_input_inventory(base, ["app/build.gradle"])
         assert build_inventory["resourceSummary"] == {"total": 3, "manifest": 1, "resources": 1, "assets": 1}
         assert build_inventory["buildFiles"][0]["path"] == "app/build.gradle"
+        assert _git_blob_sha1("hello\n") == "ce013625030ba8dba906f756967f9e9ca394464a"
+        masked = _mask_non_code('class Example // Parent\nval text = "Duplicate"')
+        assert "Parent" not in masked and "Duplicate" not in masked
 
         labels = list(SOURCE_ROOTS)
         idx = SourceIndex(roots, labels)
