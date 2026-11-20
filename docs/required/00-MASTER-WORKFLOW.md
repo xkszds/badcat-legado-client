@@ -85,3 +85,11 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 - 第四类 AdBlock/AdMark：本地模型/存储、开关、注入入口和 matcher 有部分实现；DOM 删除闭环未完成。
 - 第五类 PPRule：protobuf decoder 和有限 helper 有部分实现；完整 dispatch/JS/pagination/UI 未完成。
 - 正式 Release、真机全面验收：未完成。
+
+
+## 2026-11-20 清单体系建立记录
+
+- 在 `integration/legado-upstream-runtime` 上建立总流程清单和五份分类必读清单，并更新 AGENTS 的必读导航。
+- 将原有 Legado 需求/迁移/模型/JS 扩展审计文档、项目完成记录和五类总表标记为按需查阅的历史证据，避免每次重复阅读。
+- 本次仅调整文档，没有修改运行时代码、测试或 APK。
+- 本次整理的起始代码基线为 `11549e7824683553c4039befa2f714fabfb805c3`；最终文档 HEAD 以当前分支引用为准。文档提交没有对应的 CI run/status 证据，不宣称 CI 通过。

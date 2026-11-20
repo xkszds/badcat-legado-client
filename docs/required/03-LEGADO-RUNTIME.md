@@ -100,3 +100,10 @@ Search/Explore → BookInfo → BookChapterList → BookContent；依赖 Analyze
 - BADCAT_REPLICATION_FIVE_CATEGORIES.md：产品五类历史定义。
 
 **当前状态：部分实现；B′ PoC 未验收；完整 Legado 未完成。** 本次清单建立时 branch HEAD 为 11549e7824683553c4039befa2f714fabfb805c3，未确认该 HEAD 有新的 CI run；历史 CI 不得当作当前 head 证据。
+
+
+## 2026-11-20 必读清单集中化记录
+
+- 将历史 Legado 程序、测试、固定 SHA、模型/服务缺口、B′ 五项 PoC、退出条件和自动维护要求集中到本文件。
+- 详细审计资料仍保留为证据，不再要求每次 Legado 任务全部重读；例行入口仅为总流程清单 + 本文件。
+- 本次仅整理文档，没有新增/修改 Legado runtime 代码，也没有新增测试或 APK。整理开始时的代码基线为 `11549e7824683553c4039befa2f714fabfb805c3`；不得将历史 CI 结果外推到后续 HEAD。
