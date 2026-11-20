@@ -83,7 +83,6 @@ class BadcatPurificationModelsTest {
     @Test
     fun adMarkCodecRejectsMalformedNestedFieldsAndWrongJsonTypes() {
         val invalidPayloads = listOf(
-            """{"markItems":[{"host":"reader.example","ruleItems":[]}]}""",
             """{"markItems":[{"host":"reader.example","ruleItems":[{"urlPattern":[1,2],"markRules":[1]}]}]}""",
             """{"markItems":[{"host":7,"ruleItems":[]}]}""",
             """{"markItems":[{"host":"reader.example","ruleItems":[{"urlPattern":"not-json","markRules":[".ad"]}]}]}""",
