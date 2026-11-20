@@ -480,6 +480,7 @@ class SourceBookActivity : Activity() {
             putExtra(SourceChapterActivity.EXTRA_BOOK_URL, bookUrl)
             putExtra(SourceChapterActivity.EXTRA_BOOK_NAME, bookName)
             putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, chapter.url)
+            putExtra(SourceChapterActivity.EXTRA_CHAPTER_INDEX, chapter.index)
             putExtra(SourceChapterActivity.EXTRA_CHAPTER_TITLE, chapter.title)
         })
     }
@@ -571,6 +572,7 @@ class SourceChapterActivity : Activity() {
     private var chapters: List<BookChapter> = emptyList()
     private var currentIndex: Int = -1
     private var currentChapterUrl: String = ""
+    private var requestedChapterIndex: Int = -1
     private var textSizeSp: Float = 18f
     private var lineSpacingMultiplier: Float = 1.15f
     private var readerTheme: Int = 0
@@ -598,6 +600,7 @@ class SourceChapterActivity : Activity() {
         bookUrl = intent.getStringExtra(EXTRA_BOOK_URL).orEmpty()
         bookName = intent.getStringExtra(EXTRA_BOOK_NAME).orEmpty()
         currentChapterUrl = intent.getStringExtra(EXTRA_CHAPTER_URL).orEmpty()
+        requestedChapterIndex = intent.getIntExtra(EXTRA_CHAPTER_INDEX, -1)
         val chapterTitle = intent.getStringExtra(EXTRA_CHAPTER_TITLE).orEmpty()
         if (currentChapterUrl.isBlank()) {
             currentChapterUrl = readingState.lastChapterUrl(sourceId, bookUrl).orEmpty()
@@ -766,7 +769,11 @@ class SourceChapterActivity : Activity() {
                     }
                     val contentTask = async(Dispatchers.IO) {
                         safeEngineCall {
-                            engine.chapterContent(sourceId, bookUrl, currentChapterUrl, bookName)
+                            engine.chapterContent(
+                                sourceId, bookUrl,
+                                BookChapter(requestedChapterIndex.coerceAtLeast(0), chapterTitle, currentChapterUrl),
+                                bookName,
+                            )
                         }
                     }
                     // Do not make the reader wait for a slow table of contents.
@@ -790,7 +797,8 @@ class SourceChapterActivity : Activity() {
                     // Navigation metadata can arrive later without blocking the text.
                     val toc = tocTask.await()
                     val chapterList = (toc as? EngineResult.Success)?.value.orEmpty()
-                    val selected = chapterList.indexOfFirst { it.url == currentChapterUrl }
+                    val selected = ChapterCatalogQuery.findByIdentity(chapterList, requestedChapterIndex.takeIf { it >= 0 }, currentChapterUrl)
+                        ?.let { chapterList.indexOf(it) } ?: -1
                     mainHandler.post {
                         if (isFinishing || isDestroyed) return@post
                         chapters = chapterList
@@ -1020,7 +1028,7 @@ class SourceChapterActivity : Activity() {
         nextButton.isEnabled = false
         status.text = "正在加载：${chapter.title}"
         worker.execute {
-            val result = runBlocking { safeEngineCall { engine.chapterContent(sourceId, bookUrl, chapter.url, bookName) } }
+            val result = runBlocking { safeEngineCall { engine.chapterContent(sourceId, bookUrl, chapter, bookName) } }
             mainHandler.post {
                 if (isFinishing || isDestroyed) return@post
                 if (result is EngineResult.Success) currentIndex = target
@@ -1238,6 +1246,7 @@ class SourceChapterActivity : Activity() {
         const val EXTRA_BOOK_NAME = "reader_book_name"
         const val EXTRA_CHAPTER_URL = "reader_chapter_url"
         const val EXTRA_CHAPTER_TITLE = "reader_chapter_title"
+        const val EXTRA_CHAPTER_INDEX = "reader_chapter_index"
         const val EXTRA_JUMP_TO_BOOKMARK = "reader_jump_to_bookmark"
     }
 }
