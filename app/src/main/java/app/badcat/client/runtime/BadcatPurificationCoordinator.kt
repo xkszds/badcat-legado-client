@@ -52,14 +52,25 @@ class BadcatWebViewPurificationAdapter(
     private val coordinator: BadcatPurificationCoordinator,
 ) {
     fun onPageFinished(webView: WebView, pageUrl: String) {
+        // WebViewClient callbacks may arrive after a newer navigation has
+        // replaced the document. Never apply the old callback's script to the
+        // currently displayed page.
+        if (!isCurrentWebViewDocument(webView.url, pageUrl)) return
+
         val script = BadcatPurificationUrlPolicy.injectionForPage(coordinator.snapshot(), pageUrl)
             ?: return
         val wasJavaScriptEnabled = webView.settings.javaScriptEnabled
         if (!wasJavaScriptEnabled) webView.settings.javaScriptEnabled = true
         webView.evaluateJavascript(script) {
+            // The setting is WebView-wide rather than document-scoped. Restore
+            // the exact previous value even if navigation happened meanwhile.
             if (!wasJavaScriptEnabled) {
                 runCatching { webView.settings.javaScriptEnabled = false }
             }
         }
     }
 }
+
+/** Exact URL identity check for rejecting callbacks belonging to older documents. */
+internal fun isCurrentWebViewDocument(currentUrl: String?, callbackUrl: String): Boolean =
+    !callbackUrl.isBlank() && currentUrl != null && currentUrl == callbackUrl
