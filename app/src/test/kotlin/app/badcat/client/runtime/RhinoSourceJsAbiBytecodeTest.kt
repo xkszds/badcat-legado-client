@@ -82,12 +82,14 @@ class RhinoSourceJsAbiBytecodeTest {
             source,
             """
                 var noArg = java.getSource();
+                var missingArg = java.parseJsRequestHeaders();
                 var nullArg = java.parseJsRequestHeaders(null);
                 var stringArg = java.parseJsRequestHeaders('{"X-Test":"text"}');
                 var objectArg = java.parseJsRequestHeaders({Count: 7, Enabled: true});
                 var batch = java.ajaxAll(['/one', '/two'], true);
                 [
                     noArg.get('bookSourceName'),
+                    missingArg.size(),
                     nullArg.size(),
                     stringArg.get('X-Test'),
                     objectArg.get('Count'),
@@ -103,7 +105,7 @@ class RhinoSourceJsAbiBytecodeTest {
 
         assertTrue("Rhino invocation failed: $result", result is EngineResult.Success)
         assertEquals(
-            "ABI Rhino fixture|0|text|7|true|2|body:/one|body:/two|true|true",
+            "ABI Rhino fixture|0|0|text|7|true|2|body:/one|body:/two|true|true",
             (result as EngineResult.Success).value,
         )
         assertEquals(setOf("/one", "/two"), requestedUrls.toSet())
@@ -131,7 +133,7 @@ class RhinoSourceJsAbiBytecodeTest {
         )
 
         assertTrue("Rhino invocation failed: $result", result is EngineResult.Success)
-        assertTrue((result as EngineResult.Success).value.startsWith("threw:"))
+        assertEquals("threw:IllegalStateException", (result as EngineResult.Success).value)
         runtime.clearSourceState(source.id)
     }
 }
