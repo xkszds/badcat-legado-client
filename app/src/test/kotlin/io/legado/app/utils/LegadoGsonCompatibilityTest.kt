@@ -82,8 +82,8 @@ class LegadoGsonCompatibilityTest {
         assertEquals(2L, (map["nested"] as List<*>)[0])
 
         assertEquals("42", INITIAL_GSON.fromJson("42", String::class.java))
-        assertNull(INITIAL_GSON.fromJson("{}", Int::class.javaObjectType))
-        assertEquals(7, INITIAL_GSON.fromJson("7.9", Int::class.javaObjectType))
+        assertNull(INITIAL_GSON.fromJson("{}", Int::class.java))
+        assertEquals(7, INITIAL_GSON.fromJson("7.9", Int::class.java))
     }
 
     @Test
