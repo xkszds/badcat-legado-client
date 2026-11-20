@@ -363,3 +363,72 @@ Search/Explore → BookInfo → BookChapterList → BookContent；依赖 Analyze
 - **Risks:** code search index may not cover this branch; a partial search result is not proof of zero callers. A schema-only Room addition without Android build/CI verification could break build or lock in incorrect defaults. Gson adapter behavior must be read from the pinned source, not inferred from generic Gson. Preserve scrollY as a distinct Badcat pixel offset; do not convert it to upstream character position.
 - **Required checks:** recursive tree enumeration plus direct source inspection; search every exact legacy key/file/class name; inspect all callers and tests; verify nested converter/type adapter source; record which searches are exhaustive vs incomplete; compare Room version/Gradle dependencies; no schema/runtime edit unless all field and migration contracts are unambiguous.
 - **Acceptance:** caller inventory is evidence-complete for the files actually present at the audited HEAD; converter behaviors and unresolved default/null cases are explicit; implementation blockers and next code-only slice are clear. No UI change, no main branch, no claim B′ passed. If the tool cannot retrieve the full tree or exact sources, report that limitation and do not invent a complete scan.
+
+
+### PoC-0.5 audit results — current-tree caller scan and converter/schema gate
+
+**Repository inventory method and coverage**
+- Enumerated the complete Git tree at the preregistered source head `990b18773eed5adce92cf2c4066ad1e2ce29b90a`: 437 entries, GitHub reported `truncated=false`.
+- Inspected the persistence implementation files, reader/catalog/favorites/history/bookmark activities, engine factory, TOC/content service interfaces and implementations, focused cache/TOC/content tests, and app/integration-contract Gradle files.
+- GitHub code-search endpoint returned no indexed results for all queried exact identifiers (legacy preference names, cache classes, constructors, AtomicFile, RoomDatabase, SharedPreferences, getSource). This is treated as an index limitation, not evidence that identifiers are unused. Direct tree/source inspection is the evidence basis.
+- Audit completeness is therefore **complete for the direct persistence owners and identified production wiring below**, but not a formal compiler-generated call graph. The report does not claim zero unlisted reflection/dynamic access.
+
+**Verified production ownership and call sites**
+1. **BookSource catalog**
+   - Writer/reader: `FileBookSourceCatalog`; file `filesDir/legado-book-sources.json`; Android `AtomicFile`; process-wide coroutine Mutex; JSON array encoded/decoded by `LegadoBookSourceCodec`.
+   - Operations: `all`, `importJson` (replace by sourceId, preserve insertion order), `setEnabled` (patch enabled field in raw JSON), `remove`, `exportJson`.
+   - Engine construction: `BadcatReadingEngineFactory` owns one catalog and exposes it via `sourceCatalog()`; `SourceCatalogActivity` is the management UI surface. This remains a source-descriptor store, not a typed mutable upstream BookSource/BaseSource lifecycle.
+2. **Progress, bookmarks and history**
+   - Sole compatibility access boundary: `BadcatReadingStateRepository`.
+   - Progress/bookmark file: SharedPreferences `badcat_reading_progress`; last chapter key is Base64 URL-safe encoded `(sourceId,bookUrl)`; scroll/bookmark identity is encoded `(sourceId,bookUrl,chapterUrl)`; bookmark value/title/book/time are written in one Editor operation.
+   - History file/key: `badcat_reading_history/records`, JSON array; upsert identity `(sourceId,bookUrl)`; it is not official Book progress and is not a chapter-position store.
+   - Callers: `SourceBookActivity` restores/clears last chapter, checks/deletes bookmark state, persists scroll, last chapter, history and bookmark; `BookmarkActivity` lists/removes/clears bookmark records; `ReadingHistoryActivity` lists/removes/clears history and its static save entry delegates to repository; `FavoritesActivity` reads latest history timestamps for ordering.
+   - Favorites are separate direct SharedPreferences writers in `FavoritesActivity`: `badcat_favorites/books` and `folders`, keyed by composite `(sourceId,bookUrl)`. They are Badcat product state and intentionally excluded from Legado Book ownership.
+   - Reader visual preferences remain separately stored and are not progress.
+3. **TOC**
+   - `SourceBookActivity.allChapters` is Activity-memory state; `SourceTocService` fetches pages and calls its progress callback with accumulated chapters. The service and final result currently `distinctBy { it.url }` and reassign indexes. `SourceBookActivity` also has a separate search-result `distinctBy { it.bookUrl }` projection.
+   - Tests in `SourceTocServiceTest` cover pagination, redirects, cycles, scripts and error cases. Existing fixtures codify URL-only chapter deduplication. This behavior must be intentionally reviewed against exact upstream merge/update behavior before altering.
+   - No durable TOC/BookChapter repository or DAO was found in the complete 437-entry tree.
+4. **Chapter content cache**
+   - Interface: `ChapterContentCache.get/put(sourceId,bookUrl,chapterUrl)`; no chapter index, generation token, invalidation or compare-and-publish method.
+   - Implementation: `FileChapterContentCache` in `app/.../runtime`, AtomicFile per entry, process-wide Mutex, bounded 4 MiB entry/64 MiB budget, payload plus savedAt. Cache file identity hashes length-prefixed `(sourceId,bookUrl,chapterUrl)`.
+   - Production wiring: `BadcatReadingEngineFactory` injects a new `FileChapterContentCache` into `SourceChapterContentService`.
+   - Callers/tests: `SourceChapterContentService` reads a valid TTL cache before HTTP, falls back to cached content on request failure, writes after successful replacement; `FileChapterContentCacheTest` covers persistence/bounds; `SourceChapterContentServiceTest` covers cache hit/fallback/write failure. No stale-writer fence exists.
+5. **Model construction and projection**
+   - Production source UI and engine exchange `BookSource`, `BookCandidate`, `BookDetail`, `BookChapter` projections in the Android-free `:integration-contract` module. No production durable Book/BookChapter entity or constructor-to-DAO path exists.
+   - App Gradle currently has Gson and parser/network libraries but no Room runtime/compiler, schema export configuration or migration infrastructure. `:integration-contract` is JVM-only and deliberately has no Android/Room dependencies.
+
+**Converter/default contract status**
+- Pinned model declarations and rule converter behavior recorded in PoC-0.4 remain the current evidence: BookSource has six typed rule payloads; the upstream rule deserializers accept object and string-encoded object forms; Book includes nested ReadConfig; constructor defaults and Room SQL defaults can differ (including dynamic timestamps and nullable `enabledCookieJar`).
+- The current host codec's `objectOrNull` normalizes object and stringified object to an object JSON string for selected projection fields, but the complete raw source JSON is separately retained. Invalid/non-object forms become null in the projection; the raw JSON preservation prevents immediate export loss but does not provide typed runtime semantics.
+- **Not verified in this audit:** byte-for-byte Gson adapter parity for every nested ReadConfig type (including LocalDate/ParagraphAnchor), every rule's missing/null/default semantics, all 32 Book and 17 BookChapter persisted constructor field mappings, and upstream converter behavior for malformed payloads. No schema converter or typed entity was added. These are hard blockers for schema v1, not silently assumed defaults.
+
+**Ownership decision after full scan**
+- The existing five domains still do not share a transaction: source catalog AtomicFile, progress/bookmarks SharedPreferences, history SharedPreferences, ephemeral TOC list and chapter AtomicFile cache are separate stores.
+- Adding Room now would create a second source of truth until a migration state machine and all readers/writers are switched atomically. The audit does not support a safe production cutover in this slice.
+- Therefore no Room dependency, entity, DAO, schema JSON, migration, dual-write, or runtime code was introduced. This is a deliberate safety stop, not an implementation completion.
+
+**PoC-0.5 result**
+- [x] Full Git tree enumerated without truncation.
+- [x] Direct source catalog writer and engine/UI wiring identified.
+- [x] Progress/bookmark/history writers and all identified Activity consumers listed.
+- [x] Favorites kept separate as Badcat product state.
+- [x] TOC projection and URL-dedup callers/tests identified.
+- [x] Chapter cache interface, implementation, production injection and tests identified.
+- [x] Current Gradle confirms Room is absent; no false Room-equivalence claim.
+- [ ] Formal compiler-generated all-callers graph not available from GitHub connector; no-index search was not treated as proof.
+- [ ] Full pinned Gson nested converter/default/null matrix remains open.
+- [ ] Room schema and executable backup/dry-run/idempotent import/rollback remain unimplemented.
+- [ ] No code/test/build/CI/APK/device result is claimed for this audit slice.
+
+**Next stage gate (ordered, no skipping)**
+1. Create pinned Gson fixtures from the actual upstream converter/type-adapter source and tests; include object/string rule JSON, missing/null/default/unknown members, ReadConfig LocalDate/ParagraphAnchor and round-trip.
+2. Freeze the exact schema v1 field matrix, including upstream field counts and explicit host extensions; export schema JSON and test PK/unique/FK constraints.
+3. Add Room runtime/compiler only in a separately preregistered schema-only change; no production reader/writer cutover in that commit.
+4. Add deterministic migration journal + snapshot manifest + dry-run/import/idempotency/fault injection/rollback/restart tests; preserve all old stores until migration verification.
+5. Only after those gates pass, switch one domain at a time behind repositories with a single writer and restart validation. No simultaneous dual-write.
+
+**Audit self-review**
+- The complete Git tree was retrieved and direct owners/wiring inspected. The code-search service returned empty results and was explicitly not treated as exhaustive evidence.
+- Scope stayed within category 3; no UI, Reader redesign, AdBlock/AdMark, PPRule, main branch, runtime implementation or release packaging changed.
+- B′ remains unpassed. This audit closes the caller inventory for known persistence owners but does not close the Gson contract, Room implementation, migration or runtime acceptance gates.
