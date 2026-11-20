@@ -321,6 +321,39 @@ def _parse_imports(text: str) -> list[dict]:
     return imports
 
 
+
+def _build_input_inventory(root: Path, build_files: list[str]) -> dict:
+    interesting = re.compile(r"^\s*(plugins|id\(|alias\(|implementation|api\(|kapt\(|ksp\(|compileOnly|runtimeOnly|sourceSets|android\s*\{|namespace|applicationId|minSdk|targetSdk|buildFeatures|manifestPlaceholders|include\(|project\(|versionCatalogs|maven)\b")
+    builds = []
+    for rel in sorted(set(build_files)):
+        path = root / rel
+        if not path.is_file():
+            continue
+        content = _read_text(path)
+        lines = [{"line": n, "text": line.strip()} for n, line in enumerate(content.splitlines(), 1)
+                 if interesting.search(line)]
+        builds.append({"path": rel, "sha256": hashlib.sha256(content.encode("utf-8")).hexdigest(),
+                       "module": path.parent.relative_to(root).as_posix() or ".", "evidenceLines": lines})
+    resources = []
+    candidates = [root / "app/src/main/AndroidManifest.xml"]
+    for base in (root / "app/src/main/res", root / "app/src/main/assets"):
+        if base.exists():
+            candidates.extend(sorted(base.rglob("*")))
+    for path in candidates:
+        if path.is_file():
+            rel = path.relative_to(root).as_posix()
+            resources.append({"path": rel, "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                              "kind": "manifest" if rel.endswith("AndroidManifest.xml") else
+                                      "asset" if "/assets/" in rel else "resource"})
+    resources.sort(key=lambda item: item["path"])
+    return {"buildFiles": builds, "resourceFiles": resources,
+            "resourceSummary": {"total": len(resources),
+                                "manifest": sum(x["kind"] == "manifest" for x in resources),
+                                "resources": sum(x["kind"] == "resource" for x in resources),
+                                "assets": sum(x["kind"] == "asset" for x in resources)},
+            "evaluation": "Static file/hash/evidence-line inventory only; Gradle variants, dependency resolution, generated outputs and resource linking require Gradle/compiler evidence."}
+
+
 def build_report(root: Path) -> dict:
     roots = [root / rel for rel in SOURCE_ROOTS]
     index = SourceIndex(roots, list(SOURCE_ROOTS))
@@ -492,7 +525,8 @@ def build_report(root: Path) -> dict:
         "externalImports": external,
         "buildOwnership": {
             "buildFilesFound": sorted(set(build_files)),
-            "note": "Build files are listed for manual module/source-set review; Gradle configuration is not evaluated.",
+            **_build_input_inventory(root, build_files),
+            "note": "Static Gradle/build/resource inventory only; no Gradle variant or compiler semantics are inferred.",
         },
         "limitations": BLIND_SPOTS,
     }
