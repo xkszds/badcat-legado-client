@@ -465,6 +465,7 @@ def build_report(root: Path) -> dict:
             "declarations": sorted(index.declarations[key]),
             "declarationRecords": index.declaration_records[key],
             "contentSha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+            "gitBlobSha1": hashlib.sha1(f"blob {len(text.encode('utf-8'))}\0".encode("utf-8") + text.encode("utf-8")).hexdigest(),
             "importCount": len(imports),
             "dependencyFamilies": _family_flags(relative, imports, text),
             "shortestSeedPath": shortest_path(key),
