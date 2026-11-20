@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.util.Base64
 import org.json.JSONArray
 import org.json.JSONObject
+import app.badcat.engine.ReadingProgressStore
 
 /**
  * Single Badcat-owned access boundary for durable reading state.
@@ -14,7 +15,7 @@ import org.json.JSONObject
  * This repository is not an official Legado Book DAO; the compatibility facade will map its
  * typed state to the pinned upstream model without exposing SharedPreferences to the runtime.
  */
-class BadcatReadingStateRepository(context: Context) {
+class BadcatReadingStateRepository(context: Context) : ReadingProgressStore {
     private val appContext = context.applicationContext
     private val progress: SharedPreferences
         get() = appContext.getSharedPreferences(PROGRESS_PREFS, Context.MODE_PRIVATE)
@@ -40,22 +41,22 @@ class BadcatReadingStateRepository(context: Context) {
         val updatedAt: Long,
     )
 
-    fun lastChapterUrl(sourceId: String, bookUrl: String): String? =
+    override fun lastChapterUrl(sourceId: String, bookUrl: String): String? =
         progress.getString(lastChapterKey(sourceId, bookUrl), null)
 
-    fun saveLastChapterUrl(sourceId: String, bookUrl: String, chapterUrl: String) {
+    override fun saveLastChapterUrl(sourceId: String, bookUrl: String, chapterUrl: String) {
         if (sourceId.isBlank() || bookUrl.isBlank() || chapterUrl.isBlank()) return
         progress.edit().putString(lastChapterKey(sourceId, bookUrl), chapterUrl).apply()
     }
 
-    fun clearLastChapterUrl(sourceId: String, bookUrl: String) {
+    override fun clearLastChapterUrl(sourceId: String, bookUrl: String) {
         progress.edit().remove(lastChapterKey(sourceId, bookUrl)).apply()
     }
 
-    fun chapterScrollY(sourceId: String, bookUrl: String, chapterUrl: String): Int =
+    override fun chapterScrollY(sourceId: String, bookUrl: String, chapterUrl: String): Int =
         progress.getInt(chapterScrollKey(sourceId, bookUrl, chapterUrl), 0).coerceAtLeast(0)
 
-    fun saveChapterScrollY(sourceId: String, bookUrl: String, chapterUrl: String, scrollY: Int) {
+    override fun saveChapterScrollY(sourceId: String, bookUrl: String, chapterUrl: String, scrollY: Int) {
         if (sourceId.isBlank() || bookUrl.isBlank() || chapterUrl.isBlank()) return
         progress.edit().putInt(chapterScrollKey(sourceId, bookUrl, chapterUrl), scrollY.coerceAtLeast(0)).apply()
     }
