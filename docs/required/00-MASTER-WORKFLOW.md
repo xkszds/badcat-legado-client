@@ -1,7 +1,7 @@
 # Badcat B′ 总流程必读清单（唯一总入口）
 
 > 每次任务先读本文件，再读本次任务所属的一份分类清单。单类任务不需要重读其他四类；跨类任务只追加读取实际受影响的分类。历史审计文档是证据资料，不是例行必读清单。
-> 分支：`integration/legado-upstream-runtime`（禁止写入 main）。Legado 固定行为基准：`330e606c4d57e08adc056ff8ab7a4132c784da9`。
+> 分支：`integration/legado-upstream-runtime`（禁止写入 main）。Legado 固定行为基准：`330e606c4d57e08adc056ff8ab7a4132c784da9a`。
 
 ## 1. 总目标
 
