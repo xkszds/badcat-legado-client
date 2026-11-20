@@ -167,7 +167,7 @@ jobs:
               path = pathlib.Path("upstream/legado") / entry["path"]
               assert path.is_file(), f"missing pinned source: {entry['path']}"
               blob = subprocess.check_output(
-                  ["git", "-C", "upstream/legado", "hash-object", str(path)], text=True
+                  ["git", "-C", "upstream/legado", "hash-object", "--", entry["path"]], text=True
               ).strip()
               assert blob == entry["gitBlobSha1"], (entry["path"], blob, entry["gitBlobSha1"])
           print(f"Verified {len(entries)} authentic source blobs at {actual}")
