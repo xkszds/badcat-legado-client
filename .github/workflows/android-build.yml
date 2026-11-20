@@ -208,6 +208,8 @@ jobs:
           target: google_apis
           arch: x86_64
           disable-animations: true
+        env:
+          ANDROID_I_WANT_MY_TCG: "yes"
           script: |
             set +e
             gradle --no-daemon :app:connectedDebugAndroidTest
