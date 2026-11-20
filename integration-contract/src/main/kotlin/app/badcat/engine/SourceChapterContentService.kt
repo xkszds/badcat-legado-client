@@ -31,14 +31,20 @@ class SourceChapterContentService(
         if (cacheTtlMillis < 0) {
             return EngineResult.Failure(EngineErrorCode.INVALID_SOURCE, "cacheTtlMillis must not be negative")
         }
+        // Capture the chapter generation before any network work. A replacement
+        // that happens while this request is in flight will fence its later write.
+        val saveToken = cache?.beginSave(source.id, bookUrl, chapter)
         val cached = try {
-            cache?.get(source.id, bookUrl, chapter.url)
+            cache?.get(source.id, bookUrl, chapter)
         } catch (cancelled: java.util.concurrent.CancellationException) {
             throw cancelled
         } catch (_: Exception) {
             null
         }
-        if (cached != null && System.currentTimeMillis() - cached.savedAtEpochMillis in 0..cacheTtlMillis) {
+        if (cached != null &&
+            (saveToken == null || cache?.isCurrent(saveToken) != false) &&
+            System.currentTimeMillis() - cached.savedAtEpochMillis in 0..cacheTtlMillis
+        ) {
             return EngineResult.Success(cached.content)
         }
 
@@ -142,12 +148,15 @@ class SourceChapterContentService(
             )
         }
         try {
-            cache?.put(
-                source.id,
-                bookUrl,
-                chapter.url,
-                CachedChapterContent(finalContent, System.currentTimeMillis()),
-            )
+            if (saveToken != null) {
+                cache?.put(
+                    source.id,
+                    bookUrl,
+                    chapter,
+                    saveToken,
+                    CachedChapterContent(finalContent, System.currentTimeMillis()),
+                )
+            }
         } catch (cancelled: java.util.concurrent.CancellationException) {
             throw cancelled
         } catch (_: Exception) {
