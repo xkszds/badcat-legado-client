@@ -33,6 +33,23 @@ class ChapterCatalogQueryTest {
         assertEquals(null, ChapterCatalogQuery.findByUrl(chapters, null))
     }
 
+
+    @Test
+    fun rejectsAmbiguousUrlInsteadOfGuessingFirstChapter() {
+        val duplicateUrl = "https://example.test/shared"
+        val duplicates = listOf(BookChapter(4, "First", duplicateUrl), BookChapter(9, "Second", duplicateUrl))
+        assertEquals(null, ChapterCatalogQuery.findByUrl(duplicates, duplicateUrl))
+    }
+
+    @Test
+    fun resolvesTypedIdentityByIndexAndChecksUrlAlias() {
+        val duplicateUrl = "https://example.test/shared"
+        val duplicates = listOf(BookChapter(4, "First", duplicateUrl), BookChapter(9, "Second", duplicateUrl))
+        assertEquals(duplicates[1], ChapterCatalogQuery.findByIdentity(duplicates, 9, duplicateUrl))
+        assertEquals(null, ChapterCatalogQuery.findByIdentity(duplicates, 9, "https://example.test/stale"))
+        assertEquals(null, ChapterCatalogQuery.findByIdentity(duplicates, 7, duplicateUrl))
+    }
+
     @Test
     fun filteringAndReverseCanBeCombined() {
         assertEquals(
