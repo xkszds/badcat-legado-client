@@ -102,3 +102,12 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 - Do not import the entire upstream AppDatabase v113/26-entity product schema. Do not begin schema/runtime code until the exact entity/converter matrix, legacy backup/dry-run/rollback and all old readers/writers are registered.
 - Corrected PoC-0.2 wording: upstream BookChapter PK `(url,bookUrl)` prohibits duplicate URL rows for one book; unique index `(bookUrl,index)` separately protects chapter order. URL-only host TOC dedup still needs behavior comparison, but must not be described as violating the upstream schema by itself.
 - No runtime code or tests changed; B′ remains unpassed. This entry records the architecture gate and ordered next tasks only.
+
+
+## 2026-11-20 B′ PoC-0.4 schema-contract audit
+
+- Category-3 detailed report: `docs/required/03-LEGADO-RUNTIME.md`, section “PoC-0.4 audit findings — pinned schema and current host ownership”.
+- Inspected pinned BookSource/Book/BookChapter declarations and rule model contracts at `330e606c4d57e08adc056ff8ab7a4132c784da9a`; recorded current Badcat source/progress/favorite/bookmark/history/TOC/cache ownership and a draft Badcat-owned Room schema.
+- Key contract: BookSource PK `bookSourceUrl`; Book PK `bookUrl` plus upstream unique `(name,author)`; BookChapter PK `(url,bookUrl)`, unique `(bookUrl,index)`, cascade FK to Book. The B′ host schema draft scopes book/chapter keys by `sourceId` as an explicit host extension.
+- No runtime code, Gradle, tests, database, migration or UI changed. Caller inventory is not yet exhaustive; Room schema and rollback are not implemented; B′ remains unpassed.
+- Next: exhaustive caller/access scan → verify Gson/ReadConfig converters and defaults → register schema-only Room implementation separately → implement migration dry-run/backup/rollback before any cutover.
