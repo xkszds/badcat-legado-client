@@ -7,6 +7,34 @@ import kotlin.test.assertFailsWith
 import kotlinx.coroutines.runBlocking
 
 class SourceChapterContentServiceTest {
+
+    private class StaticCache(private val value: CachedChapterContent) : ChapterContentCache {
+        private val fence = ChapterContentSaveFence()
+        private var key: ChapterContentCacheKey? = null
+        private var stored: CachedChapterContent? = null
+
+        override fun beginSave(sourceId: String, bookUrl: String, chapter: BookChapter): ChapterContentSaveToken {
+            val identity = ChapterContentCacheKey(sourceId, bookUrl, chapter.index)
+            key = identity
+            return fence.token(identity)
+        }
+
+        override suspend fun get(sourceId: String, bookUrl: String, chapter: BookChapter) = value
+        override fun isCurrent(token: ChapterContentSaveToken) = fence.isCurrent(token)
+        override suspend fun put(
+            sourceId: String, bookUrl: String, chapter: BookChapter,
+            token: ChapterContentSaveToken, value: CachedChapterContent,
+        ): Boolean = fence.publishIfCurrent(token) { stored = value }
+
+        override suspend fun invalidate(sourceId: String, bookUrl: String, chapterIndex: Int) {
+            fence.invalidate(ChapterContentCacheKey(sourceId, bookUrl, chapterIndex))
+        }
+
+        override suspend fun get(sourceId: String, bookUrl: String, chapterUrl: String) = value
+        override suspend fun put(sourceId: String, bookUrl: String, chapterUrl: String, value: CachedChapterContent) {
+            stored = value
+        }
+    }
     private class FixtureClient : SourceRequestClient {
         val requests = mutableListOf<String>()
 
@@ -304,11 +332,7 @@ class SourceChapterContentServiceTest {
         val chapter = BookChapter(0, "Cached", "https://reader.example/chapter/1")
         val client = FixtureClient()
         val cachedContent = ChapterContent("Cached title", "Saved chapter text")
-        val cache = object : ChapterContentCache {
-            override suspend fun get(sourceId: String, bookUrl: String, chapterUrl: String) =
-                CachedChapterContent(cachedContent, System.currentTimeMillis())
-            override suspend fun put(sourceId: String, bookUrl: String, chapterUrl: String, value: CachedChapterContent) = Unit
-        }
+        val cache = StaticCache(CachedChapterContent(cachedContent, System.currentTimeMillis()))
         val result = assertIs<EngineResult.Success<ChapterContent>>(
             SourceChapterContentService(http = SourceHttpGateway(client), cache = cache).load(
                 source, "https://reader.example/book/1", chapter,
@@ -323,11 +347,7 @@ class SourceChapterContentServiceTest {
         val source = BookSource(id = "fixture", name = "Fixture", baseUrl = "https://reader.example/")
         val chapter = BookChapter(0, "Cached", "https://reader.example/chapter/1")
         val cachedContent = ChapterContent("Offline title", "Offline chapter text")
-        val cache = object : ChapterContentCache {
-            override suspend fun get(sourceId: String, bookUrl: String, chapterUrl: String) =
-                CachedChapterContent(cachedContent, System.currentTimeMillis() - 60_000)
-            override suspend fun put(sourceId: String, bookUrl: String, chapterUrl: String, value: CachedChapterContent) = Unit
-        }
+        val cache = StaticCache(CachedChapterContent(cachedContent, System.currentTimeMillis() - 60_000))
         val failingClient = object : SourceRequestClient {
             override suspend fun execute(request: SourceHttpRequest) =
                 EngineResult.Failure(EngineErrorCode.NETWORK, "offline")
@@ -417,7 +437,11 @@ class SourceChapterContentServiceTest {
             override suspend fun get(sourceId: String, bookUrl: String, chapterUrl: String): CachedChapterContent? = null
             override suspend fun put(sourceId: String, bookUrl: String, chapterUrl: String, value: CachedChapterContent) = Unit
             override fun beginSave(sourceId: String, bookUrl: String, chapter: BookChapter) = fence.token(key)
+            override suspend fun get(sourceId: String, bookUrl: String, chapter: BookChapter): CachedChapterContent? = null
             override fun isCurrent(token: ChapterContentSaveToken) = fence.isCurrent(token)
+            override suspend fun invalidate(sourceId: String, bookUrl: String, chapterIndex: Int) {
+                fence.invalidate(key)
+            }
             override suspend fun put(
                 sourceId: String,
                 bookUrl: String,
