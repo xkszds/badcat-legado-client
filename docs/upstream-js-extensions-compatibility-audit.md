@@ -1,5 +1,9 @@
 # Pinned Legado JsExtensions compatibility audit
 
+
+> **必读入口已调整（2026-11-20）**：本文件保留为详细证据/审计资料，不再要求每次开发重读。新的流程入口是 [总流程清单](required/00-MASTER-WORKFLOW.md)，对应分类唯一必读清单是 [第三类 Legado](required/03-LEGADO-RUNTIME.md)。分类清单已汇总任务范围、当前状态、缺口和验收；只有需要核对本文件中的具体字段/API/证据时才打开。
+
+
 Audit date: 2026-11-19  
 Host branch: `integration/legado-upstream-runtime`  
 Pinned upstream: `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`
