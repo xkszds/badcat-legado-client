@@ -622,7 +622,7 @@ def self_test() -> None:
         report_b = build_report(base)
         assert len(report_a["seeds"]["missingOrAmbiguous"]) == len(SEEDS)
         assert json.dumps(report_a, sort_keys=True) == json.dumps(report_b, sort_keys=True)
-        assert "Same-package references" in " ".join(report_a["limitations"])
+        assert "Same-package edges are lexical identifier candidates" in " ".join(report_a["limitations"])
     print("dependency closure scanner self-test: PASS")
 
 
