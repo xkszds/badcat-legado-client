@@ -351,7 +351,7 @@ def self_test() -> None:
             (b, "package demo.b\\nimport demo.a.A\\nclass B"),
             (c, "package demo.b\\nfun helper() = Unit"),
             (d, "package demo.b\\nclass D"),
-            (java, "package demo.b;\\npublic class JavaHelpers { public static final String VALUE = \\"x\\"; }"),
+            (java, "package demo.b;\\npublic class JavaHelpers { public static final int VALUE = 1; }"),
         )
         for path, body in fixtures:
             path.parent.mkdir(parents=True, exist_ok=True)
