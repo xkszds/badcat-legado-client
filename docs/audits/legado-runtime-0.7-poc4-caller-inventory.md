@@ -95,3 +95,21 @@ This proves a small authentic rule-tokenization/parser slice is viable. It does 
 - Incomplete: exhaustive BookSource/BookChapter/model access graph; exhaustive method-level call graph for every JS extension overload; bytecode descriptor audit; service-port implementation; compiler-complete authentic BookSource/BaseSource runtime boundary.
 - Changes in this task: audit documentation only. No Kotlin/Java, Gradle, database, persistence, UI/Reader, production caller, test, APK or `main` change.
 - Acceptance: PoC-4 is a useful caller inventory checkpoint, **not** an exhaustive call graph and **not** a Runtime-0.7 or full-compatibility pass. PoC-1 compiler boundary remains failed; PoC-2 architecture remains unselected; PoC-3 method contract remains audit-only.
+
+
+## Paginated entity-symbol reference inventory supplement
+
+The first report version treated the convenience search's 100-result limit as a remaining entity-scan blocker. That limit was removed by using the GitHub code-search API's `page` parameter against the same pinned repository snapshot.
+
+| Token | GitHub total_count | Page counts | Unique paths | `app/src/main/java` paths | `incomplete_results` |
+|---|---:|---|---:|---:|---|
+| `BookSource` | 382 | 100 / 100 / 100 / 82 | 382 | 141 | false |
+| `BookChapter` | 154 | 100 / 54 | 154 | 92 | false |
+
+The ten service-contract token searches also returned complete first-page result sets with `incomplete_results=false`: JsExtensions 44, BaseSource 50, AnalyzeRule 92, AnalyzeUrl 65, CookieStore 19, CacheManager 43, JsSourceEngine 12, SharedJsScope 13, SourceLoginJsExtensions 11, SourceVerificationHelp 7.
+
+Interpretation:
+- This closes the lexical source-file inventory for the two high-volume entity tokens and the ten service-contract class tokens in the pinned GitHub code-search index.
+- It does not automatically classify every match as a runtime caller; each set contains definitions, tests, docs, reader/RSS/audio/video/product callers and API tooling. The report's verified caller matrix classifies the principal production paths.
+- It is still not a compiler-level semantic call graph. Kotlin reflection, dynamic JavaScript method names, user-supplied JS libraries/rules and generated symbols require separate ABI/fixture/lifecycle coverage.
+- Accordingly, the model/entity **textual reference scan is now complete in the pinned code-search index**; method-level dynamic JS API call coverage and source-level service dependency closure remain open.
