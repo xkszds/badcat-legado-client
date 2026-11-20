@@ -423,6 +423,9 @@ class SourceBookActivity : Activity() {
                         putExtra(SourceChapterActivity.EXTRA_BOOK_URL, bookUrl)
                         putExtra(SourceChapterActivity.EXTRA_BOOK_NAME, bookName)
                         putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, savedChapterUrl)
+                        ChapterCatalogQuery.findByUrl(chapters, savedChapterUrl)?.let {
+                            putExtra(SourceChapterActivity.EXTRA_CHAPTER_INDEX, it.index)
+                        }
                         putExtra(SourceChapterActivity.EXTRA_CHAPTER_TITLE, "继续阅读")
                     })
                 }
@@ -450,8 +453,9 @@ class SourceBookActivity : Activity() {
                                         startActivity(Intent(this@SourceBookActivity, SourceChapterActivity::class.java).apply {
                                             putExtra(SourceChapterActivity.EXTRA_SOURCE_ID, sourceId)
                                             putExtra(SourceChapterActivity.EXTRA_BOOK_URL, bookUrl)
-                                        putExtra(SourceChapterActivity.EXTRA_BOOK_NAME, bookName)
+                                            putExtra(SourceChapterActivity.EXTRA_BOOK_NAME, bookName)
                                             putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, chapter.url)
+                                            putExtra(SourceChapterActivity.EXTRA_CHAPTER_INDEX, chapter.index)
                                             putExtra(SourceChapterActivity.EXTRA_CHAPTER_TITLE, chapter.title)
                                             putExtra(SourceChapterActivity.EXTRA_JUMP_TO_BOOKMARK, true)
                                         })
