@@ -198,3 +198,25 @@ xkszds/badcat-legado-client,legado-host-jvm-abi,actions-artifact,06712ecfa821222
 - No compilation, Gradle task, tests, CI run, APK build, device test or live-source verification was performed by this audit.
 - No production source, test, Gradle, workflow, database/schema/migration, persistence, UI or Reader files changed.
 - Only this report and the Runtime category checklist result are authorized outputs.
+
+
+## 8. 2026-11-21 follow-up — retrieved host CI ABI artifact
+
+The previously missing Badcat host artifact has now been found and downloaded from the exact Runtime-1.5 result HEAD.
+
+- Branch: `integration/legado-upstream-runtime`
+- Exact workflow run: [Android debug build #3028](https://github.com/xkszds/badcat-legado-client/actions/runs/44787339966)
+- Run ID: `44787339966`; event: `push`; conclusion: `success`; head SHA: `25dad001a1ae99fcc0763cfd7eb983ab584e422b`.
+- Successful job: `assemble-debug` (`136465872354`). The job steps report success for contract unit tests, authentic Legado runtime model contract tests, G2d stage-1 compiler probe, `Capture compiled host JavaScript bridge JVM ABI`, `Upload compiled host JavaScript bridge JVM ABI`, and `Assemble debug APK`.
+- Artifact: `legado-host-jvm-abi`; artifact ID `14653689795`; size 165,211 bytes; created 2026-11-20T17:56:26Z; expires 2026-12-04T17:56:25Z; GitHub digest `sha256:707fb4f19f1e70c93f3938c158e884a8b65b5bee6ec6af8530a1c96b0e8a6c4f`.
+- Downloaded archive SHA-256 recomputed locally: `707fb4f19f1e70c93f3938c158e884a8b65b5bee6ec6af8530a1c96b0e8a6c4f` (exact match).
+- Archive contents: `RhinoSafeSourceJavaExtensions.javap.txt` (1,361,755 bytes) and `SHA256SUMS.txt`. The embedded manifest SHA-256 for the javap report is `ee881435ef053c96b7f09b25abafe045e7c1ea7040892408a1e164317284b60c`; locally recomputed file hash matches exactly.
+- Classfile header: `app.badcat.client.runtime.RhinoSafeSourceJavaExtensions`, classfile major version 65 (Java 21), 70 fields and 234 methods. The dump contains JVM descriptors, generic signatures, bytecode, parameter/return annotations and one `kotlin.Metadata` annotation. Fourteen methods carry `android.webkit.JavascriptInterface` annotations.
+
+**Scope limitation:** this is authentic compiled evidence for the Badcat host bridge at the exact Badcat HEAD above. It is not an upstream Legado `JsExtensions`/subinterface class artifact and does not establish the upstream Kotlin/JVM ABI, Rhino overload dispatch, or upstream WebView annotation inheritance. It closes the *retrieval* blocker for the host artifact only, not the upstream APK/DEX blocker.
+
+The same successful CI run also executed the existing workflow's G2d stage-1 compile probe, contract tests, model contract tests and Debug APK assembly. This is recorded as an observed CI fact; it is not a claim that G2d/G2d full runtime, G3/G4, Release APK or device acceptance passed.
+
+The official Legado beta APK binary remains unavailable through the current download path. Direct retrieval of `legado_app_3.26110117_universal_release_vc38521.apk` failed; its GitHub release metadata digest has not been locally recomputed and no DEX inspection has been performed.
+
+**Updated decision:** host artifact retrieval is complete and host JVM ABI evidence is now available. Runtime-1.5 remains **PARTIAL / ACCEPTANCE NOT MET** until the official pinned-upstream APK is obtained and inspected and the upstream-specific ABI gaps are addressed. No new build or compiler experiment was initiated in this follow-up.
