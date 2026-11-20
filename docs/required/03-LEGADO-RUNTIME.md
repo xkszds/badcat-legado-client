@@ -1040,3 +1040,12 @@
 - **Risk/test:** Kotlin Gson overload/generic nullability; exact acceptance is unit-test source compilation, then all app unit tests pass and `:app:assembleDebug` completes on the same exact code HEAD. Check artifact and report hashes before claiming success.
 - **Exclusions:** no ReadConfig model integration, Room/schema v1, persistence migration, UI or runtime code changes. Roll back this test-only change if explicit generic invocation does not bind to the registered TypeToken adapter.
 - **Status:** preregistered from exact run log; correction not yet implemented; PoC-0.6 and B′ remain unaccepted.
+
+
+#### PoC-0.6 nullable Map assertion correction implementation checkpoint (2026-11-20)
+
+- **Actual change:** test now uses explicit `INITIAL_GSON.fromJson<Map<String?, Any?>>(json, mapType)` and wraps the result in `requireNotNull` before the existing index/value assertions. This preserves the registered parameterized TypeToken and makes the fixture's non-null precondition explicit. Code commit: `34f7dfd0ea4842ef75af1420a66231c16e4befaa`.
+- **Registration order:** the exact nullable-receiver compile failure and one-file scope were recorded first in commit `c2d3a8249eb1f717cd4096b996c239710c2ccac6`; only then was test code changed.
+- **Exclusions:** no production Gson, models, Gradle, Room, persistence, cache, UI or runtime code changed. The separate ReadConfig/ParagraphAnchor dependency audit is documentation-only and does not authorize model integration.
+- **Validation:** workflow triggered by the code commit is pending at this checkpoint; no unit-test, assemble, APK, artifact hash or device pass is claimed. Exact next CI run must compile the test, execute the full suite and assemble debug.
+- **Status:** test-only correction; PoC-0.6 and B′ remain unaccepted.
