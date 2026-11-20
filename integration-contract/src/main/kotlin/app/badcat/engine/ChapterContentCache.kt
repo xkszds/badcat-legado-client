@@ -43,6 +43,8 @@ interface ChapterContentCache {
     suspend fun get(sourceId: String, bookUrl: String, chapter: BookChapter): CachedChapterContent? =
         get(sourceId, bookUrl, chapter.url)
 
+    fun isCurrent(token: ChapterContentSaveToken): Boolean = true
+
     /** Returns false when the request token is stale and publication is rejected. */
     suspend fun put(
         sourceId: String,
