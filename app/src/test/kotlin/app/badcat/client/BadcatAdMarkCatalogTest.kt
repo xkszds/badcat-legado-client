@@ -124,4 +124,30 @@ class BadcatAdMarkCatalogTest {
 
         assertEquals(before, catalog.exportJson())
     }
+
+    @Test
+    fun openReadRestoresBackupWhenBaseContainsAnInterruptedWrite() {
+        BadcatAdMarkCatalog(context).upsert(first)
+        catalogFile.copyTo(backupFile, overwrite = true)
+        catalogFile.writeText("""{"interrupted":""")
+
+        val recovered = BadcatAdMarkCatalog(context)
+
+        assertEquals(listOf(first), recovered.all())
+        assertFalse(backupFile.exists())
+        assertEquals(listOf(first), BadcatAdMarkCatalog(context).all())
+    }
+
+    @Test
+    fun openReadRestoresWhenOnlyTheBackupFileExists() {
+        BadcatAdMarkCatalog(context).upsert(first)
+        assertTrue(catalogFile.renameTo(backupFile))
+
+        val recovered = BadcatAdMarkCatalog(context)
+
+        assertEquals(listOf(first), recovered.all())
+        assertTrue(catalogFile.exists())
+        assertFalse(backupFile.exists())
+        assertEquals(listOf(first), BadcatAdMarkCatalog(context).all())
+    }
 }
