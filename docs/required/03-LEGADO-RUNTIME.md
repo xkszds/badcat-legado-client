@@ -155,3 +155,10 @@ Search/Explore → BookInfo → BookChapterList → BookContent；依赖 Analyze
 **Boundary assessment:** B′ is not yet demonstrated. Current source catalog, history and content cache are independent persistence mechanisms. The five-domain source-of-truth and transaction model cannot honestly be declared solved. The next implementation must not add a second mutable Book/Chapter copy or dual-write UI state before the ownership decision is complete.
 
 **PoC-0 result:** investigation is partially complete; acceptance is **not met**. Remaining blockers: enumerate every reader progress/favorite/bookmark writer and caller; inspect current full host TOC/content persistence path; decide whether the PoC needs one Room database or a transactional repository over existing stores; specify rollback for migration from current JSON/SharedPreferences/files; create a compile-time module boundary and executable architecture test. No runtime code changed and no test/CI/APK result is claimed in this audit.
+
+
+**Repository verification for this investigation update:**
+- Finding record commit: `7afa123476c7a3abce4dbbb3d2e921454b7faa04`.
+- Branch ref rechecked and points to that exact HEAD.
+- Combined status checks: empty; commit-associated workflow runs: empty. Therefore this documentation/investigation commit has no CI pass evidence.
+- No runtime source, tests, build configuration, or APK were changed/generated in this slice.
