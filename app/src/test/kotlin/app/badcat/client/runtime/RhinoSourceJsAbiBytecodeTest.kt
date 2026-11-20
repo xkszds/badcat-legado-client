@@ -52,7 +52,7 @@ class RhinoSourceJsAbiBytecodeTest {
 
         // These helpers are called through Rhino's direct Java-object binding, not Android WebView.
         assertFalse(getSource.isAnnotationPresent(JavascriptInterface::class.java))
-        assertFalse(timeFormat.all { it.isAnnotationPresent(JavascriptInterface::class.java) })
+        assertFalse(timeFormat.any { it.isAnnotationPresent(JavascriptInterface::class.java) })
         assertTrue(named("aesDecodeToString").single().isAnnotationPresent(JavascriptInterface::class.java))
     }
 
@@ -98,15 +98,15 @@ class RhinoSourceJsAbiBytecodeTest {
                     batch.length,
                     batch[0].body(),
                     batch[1].body(),
-                    java.timeFormat(0).length > 0,
-                    java.timeFormat('0').length > 0
+                    java.timeFormat(0).length() > 0,
+                    java.timeFormat('0').length() > 0
                 ].join('|');
             """.trimIndent(),
         )
 
         assertTrue("Rhino invocation failed: $result", result is EngineResult.Success)
         assertEquals(
-            "ABI Rhino fixture|0|1|body:/default-argument|text|7|true|2|body:/one|body:/two|true|true",
+            "ABI Rhino fixture|0|1|body:/default-argument|text|7.0|true|2|body:/one|body:/two|true|true",
             (result as EngineResult.Success).value,
         )
         assertEquals(setOf("/default-argument", "/one", "/two"), requestedUrls.toSet())
