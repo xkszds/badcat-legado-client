@@ -204,3 +204,11 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 ## 2026-11-20 PoC-1.0 regression fixture update
 
 - Added JVM service coverage for same-URL chapters remaining separate by index and stale response publication being fenced. The required cache interface now forces implementations to provide typed/fenced operations. No tests were executed; CI remains unverified and PoC-1.0 is not accepted.
+
+## 2026-11-20 用户最终确认：必须交付完整 Legado 书源兼容运行层
+
+- 用户明确要求交付物必须是**完整的 Legado 书源兼容运行层**，不得以部分兼容、selector-only、常见规则子集或单条 Search→Detail→TOC→Content 演示链代替。详细能力范围、可行性审视、小跑证据和实施门禁以第三类必读清单 `03-LEGADO-RUNTIME.md` 最新章节为准。
+- 坏坏猫仍是唯一产品外壳：保留原版搜索界面/流程、其他页面、净化、书架/收藏、书签、阅读器、CSS/排版和交互；只接入完整 Legado 书源导入与运行能力，不引入 Legado UI/Reader UI。
+- 完整性必须以固定上游 SHA 的全部书源相关真实源码、API/overload、模型、规则、JS ABI、HTTP/Cookie/登录、BaseSource 生命周期及必要依赖闭包为准；逐项差分验收。未覆盖能力一律阻断完整兼容结论。
+- 当前旧 selector-only/host projection 方案不满足最终交付门槛。优先验证独立 Android Runtime 模块/受控上游核心源码/Hybrid 方案；不得为了维持 Android-free contract 或 B′ 而削弱上游语义。此为最高优先级架构门禁。
+- 本条为需求与流程记录，不代表完整 Runtime 已实现或验收；代码、构建、真机和 UI 状态以第三类报告的证据为准。
