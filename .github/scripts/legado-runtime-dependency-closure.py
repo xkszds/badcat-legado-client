@@ -27,8 +27,7 @@ SEEDS = (
     "io/legado/app/data/entities/BookChapter.kt",
     "io/legado/app/data/entities/BaseSource.kt",
     "io/legado/app/data/entities/BaseBook.kt",
-            (roots[0] / "demo" / "b" / "Extensions.kt", "package demo.b\n@JvmName(\"helpers\")\ninternal inline fun <reified T : Any> T?.asHelper(): T? = this\nfun String.helperProperty(): Int = length\nfun <T, K : Comparable<K>> List<T>.deepSearch(key: K): Int = 0\nfun HashMap<String, *>.hasEntry(key: String): Boolean = true\n"),
-            (roots[1] / "demo" / "b" / "NestedGeneric.kt", "package demo.b\nfun <T, K : Comparable<K>> List<T>.deepSearch(key: K): Int = 0\nfun HashMap<String, *>.hasEntry(key: String): Boolean = true"),
+    "io/legado/app/help/JsExtensions.kt",
     "io/legado/app/help/JsEncodeUtils.kt",
     "io/legado/app/model/analyzeRule/AnalyzeRule.kt",
     "io/legado/app/model/analyzeRule/AnalyzeUrl.kt",
@@ -431,6 +430,7 @@ def self_test() -> None:
             (d, "package demo.b\nclass D"),
             (java, "package demo.b;\npublic class JavaHelpers { public static final int VALUE = 1; }"),
             (roots[0] / "demo" / "b" / "Extensions.kt", "package demo.b\n@JvmName(\"helpers\")\ninternal inline fun <reified T : Any> T?.asHelper(): T? = this\nfun String.helperProperty(): Int = length\n"),
+            (roots[1] / "demo" / "b" / "NestedGeneric.kt", "package demo.b\nfun <T, K : Comparable<K>> List<T>.deepSearch(key: K): Int = 0\nfun HashMap<String, *>.hasEntry(key: String): Boolean = true"),
         )
         for path, body in fixtures:
             path.parent.mkdir(parents=True, exist_ok=True)
