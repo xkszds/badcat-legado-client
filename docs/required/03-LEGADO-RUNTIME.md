@@ -1,7 +1,7 @@
 # 第三类必读清单：Legado 核心模型、运行时与 B′ PoC
 
 > **Legado 工作唯一必读分类清单。** 每次 Legado 任务只读总流程 [00-MASTER-WORKFLOW.md](00-MASTER-WORKFLOW.md) + 本文件。详细审计文档仅在追查具体源码时打开。
-> 上游固定 SHA：`330e606c4d57e08adc056ff8ab7a4132c784da9`；GPL-3.0；分支：`integration/legado-upstream-runtime`，不改 main。
+> 上游固定 SHA：`330e606c4d57e08adc056ff8ab7a4132c784da9a`；GPL-3.0；分支：`integration/legado-upstream-runtime`，不改 main。
 
 ## 1. 目标和范围
 
