@@ -1099,3 +1099,48 @@
 - **起始基线：** `integration/legado-upstream-runtime`，HEAD `5e79276badd050feaabb5c3002afa65b9938b0e8`。本注册只更新必读规则，不代表代码已达到新门槛。
 - **既有 CI 证据（仅供准确记录）：** run `44707054980`，exact HEAD 同上，job 成功；日志显示 contract unit tests、bounded Rhino host tests 和 Debug APK assemble 均完成成功，APK artifact `badcat-legado-debug` ID `14615483023`，ZIP SHA-256 `f68f5e8eea5241e29a3cda0feaa230ac50d3abf3f687d57396a5dee0884ba802`。但真实源证据有限：Nyasama 搜索 3/5 返回可用结果；Pinshuzhai 的单源 Search→Detail→TOC→Content 通过；上传语料样本仅 1/4 完整跑通（3 个失败）。这不证明完整 Legado 兼容，也不证明 Badcat 真机/UI 验收。
 - **本轮尚未修改运行时代码/Gradle/数据库/UI，也未冻结 schema v1；** 下一步是按上述顺序完成符号/API 和依赖闭包差异审计，再登记第一批实现变更。
+
+---
+
+## 2026-11-20 用户再次确认：交付目标必须是“完整的 Legado 书源兼容运行层”
+
+**本条为不可降级的最终产品要求，优先级高于任何现有 PoC、模块边界、局部进度或实现成本。**
+
+### 用户要求（原意明确记录）
+
+- 交付物必须是**完整的 Legado 书源兼容运行层**，不是“部分兼容”、简化版、常见书源兼容版、selector-only 解析器或仅支持搜索/详情/目录/正文的演示实现。
+- “完整”以固定上游 LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a 的全部书源相关运行语义为基准；必须真实复用上游实现及其完整必要依赖闭包，或以逐项差分测试证明完全等价。不得自行删减书源规则、JS API、HTTP/Cookie/登录行为、模型字段、执行生命周期或缓存语义。
+- **坏坏猫仍是唯一产品 UI 和阅读器**：原版坏坏猫搜索界面/搜索流程、所有其他页面布局、净化系统、书架/收藏、书签、阅读器、CSS/排版与交互全部由坏坏猫保留。Legado 只提供完整书源导入、规则解析和运行能力，不带入 Legado UI、书架 UI 或 Reader UI。
+- 不允许因“完整运行层”而擅自搬入与书源执行无关的 Legado 产品模块；但只要某个上游模型、服务、扩展或基础设施是完整书源能力的真实依赖，就必须纳入依赖闭包，不能以“非核心模块”为由排除。
+
+### 完整运行层必须覆盖的能力
+
+1. **书源模型与数据契约**：固定上游全部书源字段、嵌套规则模型、默认值、null/missing、未知字段、Gson 适配器、导入/导出和 round-trip 行为。
+2. **规则解释器**：完整 AnalyzeRule、AnalyzeUrl、CSS/JSoup、XPath、JSONPath、正则、规则组合、变量、替换、嵌套规则、URL 模板、请求/响应规则和上下文语义。
+3. **JavaScript ABI**：固定上游 Rhino 版本、全部书源相关 JsExtensions、静态/实例方法、重载签名、参数转换、返回值、异常、共享/隔离上下文、JS 库及源作用域变量。
+4. **网络与会话**：完整 HTTP 请求选项、GET/POST 等方法、headers/body、编码、重定向、超时/取消、响应类型/字节、CookieJar、Cookie 同步、登录流程、会话和源隔离行为。
+5. **书源生命周期**：真实 BaseSource 行为及其所有必要扩展/服务，包含初始化、登录、搜索、发现、分页、详情、目录、正文、多页正文、批量内容、替换、缓存保存/失效、异常恢复与清理。
+6. **业务与辅助依赖**：只要被上述能力实际调用，相关模型、加解密/编码、HTML/网络工具、缓存、文件/存储、WebView/浏览器桥接和 Android 平台服务都必须纳入；逐项注明复用方式和隔离边界。
+7. **Badcat 接口边界**：坏坏猫原有 UI 调用兼容门面；门面不得改变原有界面/交互，也不得用投影模型丢弃上游规则语义。阅读器只消费引擎输出及必要元数据，继续由坏坏猫执行净化、CSS、排版和阅读交互。
+
+### 可行性审视与当前小跑结果（2026-11-20）
+
+- **结论：目标可行，但现有实现/架构不能直接宣称达到目标；需要以真实上游源码闭包重构/重组 Runtime 集成边界。**
+- 固定上游工程结构检查：settings.gradle 只 include :app、:modules:book、:modules:rhino；书源关键模型/服务并非集中在一个独立 SDK。BookSource、Book、BookChapter、BaseSource、JsExtensions、AnalyzeRule、AnalyzeUrl 分布在上游 app 源码，modules:rhino 只是 Rhino 模块，不能单独代表完整书源运行层。
+- 当前 Badcat :integration-contract 是 Android-free Kotlin/JVM 边界；其中固定上游源码目前仅见少量 AnalyzeByJSoup/JSONPath/XPath 桥接文件，不能承载完整 Android/Room/Parcelable/Context/BaseSource 依赖闭包。
+- 当前 SelectorLegadoRuleRuntime 源码明确标注为 bounded selector-only runtime，不是完整 AnalyzeRule；当前 SourceScriptRuntime 对尚未实现的源变量返回 UNSUPPORTED_RULE；UnsupportedSourceScriptRuntime 也明确 fail-closed。这些是诚实的局部实现，不满足最终交付要求。
+- 当前 SourceRequestClient/host service 和投影模型属于适配边界，不能等同完整官方 HTTP、Cookie、登录及 BaseSource 生命周期。
+- 历史 CI 小跑基线 5e79276badd050feaabb5c3002afa65b9938b0e8：integration-contract:test、:app:testDebugUnitTest 和 :app:assembleDebug 均成功；JUnit 报告为 290 项通过、0 失败。该证据只说明当前局部实现可构建/通过已有测试，不证明完整兼容。历史真实书源测试中 Pinshuzhai 单源 Search→Detail→TOC→Content 通过；上传语料 1/4 完整通过，另外样本有超时/404，需区分站点故障与引擎缺陷。
+- 未执行完整上游源码闭包接入 PoC，未完成全符号差分，未证明所有 JsExtensions ABI/overloads、HTTP/Cookie/login 生命周期、全规则类型、缓存与批量正文语义等价；未进行当前最新文档 HEAD 的重新构建；未完成 Badcat 真机/UI 全面回归。因此不得标记“完整”或“完成”。
+
+### 架构决定与后续实施门禁
+
+1. 暂停继续扩展旧 SelectorLegadoRuleRuntime 作为主引擎的路线；它只能保留为明确标注的过渡/测试组件，不能作为完整运行层。
+2. 先完成固定 SHA 书源相关**全部符号/API/overload/模型/资源/服务依赖闭包**清单，包含直接和传递依赖；每项记录上游路径、签名、caller、依赖、Badcat 接入点、实现来源、差异和测试。
+3. 新建独立 Android Runtime 模块的最小真实源码 PoC：优先接入真实 BookSource → BaseSource → AnalyzeRule → AnalyzeUrl → Rhino/JsExtensions → HTTP/Cookie 依赖链。允许 Runtime 使用必要 Android 平台 API；不得为了保持 Android-free integration-contract 而削弱上游闭包。
+4. 对比“受控上游核心源码模块”“独立 Android Runtime 模块”“Hybrid 平台服务适配”三条方案，选择能容纳完整闭包且不带入 Legado UI/Reader UI 的方案。任何方案都必须证明实际运行的是真实上游语义。
+5. 完整 Runtime 通过后，才把坏坏猫原搜索入口和原阅读器接入兼容门面；先做原 UI/净化/CSS/阅读器回归，不重写坏坏猫产品层。
+6. 完整验收必须包括：符号覆盖 100% 盘点；上游固定样本差分测试；模型序列化/规则/JS ABI/HTTP/Cookie/登录/生命周期/缓存/批量行为契约；脱敏录制回放；多类型可用真实书源 E2E；Android 集成测试；Badcat 原 UI/净化/阅读器真机回归。
+7. 任何未覆盖能力必须列为阻断项。只允许报告“局部实现/部分兼容/PoC 通过”，不得将其表述为完整 Legado 兼容运行层。不得因用户希望一口气完成而跳过测试或把失败项改成成功。
+
+**本次记录只更新报告，不修改运行时代码、Gradle、数据库、UI 或 APK；不代表完整运行层已实现。**
