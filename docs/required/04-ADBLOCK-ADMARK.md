@@ -178,3 +178,16 @@
 - Exact-HEAD CI run #3077 / ID `44822785706`, HEAD `289ab57a430c344f175e03bc9cb56164c406e4bb`: job `assemble-debug` exists; checkout, pinned-upstream verification, JDK and Android SDK setup succeeded; Android build-tools installation is currently in progress. Unit tests have not started yet.
 - The prior Fourth-2.6 focused unit-test step is independently confirmed success on exact implementation HEAD `e41fbe48810522cb02ec8e0a6280b4702c463feb` in run #3073; overall workflow #3073 remains in progress in later runtime verification steps.
 - Fourth-2.7 acceptance remains pending until its focused tests and exact-HEAD workflow reach terminal success. This is a local persistence-contract test increment only, not category acceptance.
+
+
+## 2026-11-21 Fourth-2.8 registration — AdMark AtomicFile interrupted-write recovery
+
+- Starting branch/HEAD: `integration/legado-upstream-runtime` / `440ce15c20b5e1207712a6d85b92fe068a597a2a` (verified as the branch's latest commit before this registration).
+- Scope: add Robolectric contract tests for Android `AtomicFile.openRead()` recovery used by the existing AdMark catalog. Simulate an interrupted write with a valid `.bak` plus a partial/corrupt base file, and a backup-only state; verify the catalog recovers the last committed records.
+- Audited production path: `BadcatAdMarkCatalog.readItems()` checks base/backup existence and delegates recovery to `AtomicFile.openRead()`; writes use `startWrite/finishWrite/failWrite`. Existing callers remain `BadcatPurificationCoordinator` and `BadcatPurificationActivity`; no second persistence owner exists.
+- Target file: `app/src/test/kotlin/app/badcat/client/BadcatAdMarkCatalogTest.kt` only. No production code, schema, UI, preferences, network or WebView changes.
+- Data ownership/transaction: app-private `AtomicFile` remains the sole catalog store. The backup represents the last committed version; the test must not alter production recovery logic or rely on test ordering.
+- Risks: Robolectric filesystem behavior may differ from Android's real filesystem; tests should exercise the actual Android `AtomicFile` implementation and clean both base and backup files before/after each case.
+- Contract tests: with a valid backup and a partial base file, reopening the catalog returns the backed-up records; with only a backup file present, reopening restores and returns the committed records. Assert the recovered catalog can subsequently be exported and reopened.
+- Acceptance: focused `:app:testDebugUnitTest` passes on the exact implementation HEAD and the corresponding full workflow reaches terminal status. If Robolectric does not faithfully exercise `AtomicFile`, record that limitation and defer device validation rather than substituting a fake implementation.
+- Exclusions: no production recovery rewrite, no forced crash/process-kill test, no schema migration, no changes to AdMark rule semantics, and no claim of full AdBlock/AdMark parity.
