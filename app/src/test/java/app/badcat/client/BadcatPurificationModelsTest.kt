@@ -60,6 +60,75 @@ class BadcatPurificationModelsTest {
     }
 
     @Test
+    fun adMarkCodecRejectsDuplicateIdentityAcrossNestedAndFlatRecords() {
+        val duplicate = """
+            {
+              "markItems": [
+                {
+                  "host": "reader.example",
+                  "ruleItems": [
+                    {"urlPattern": [1, 2, 3], "markRules": [".first"]},
+                    {"urlPattern": "[1,2,3]", "markRules": [".second"]}
+                  ]
+                }
+              ]
+            }
+        """.trimIndent()
+
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            BadcatAdMarkJsonCodec.decode(duplicate)
+        }
+    }
+
+    @Test
+    fun adMarkCodecRejectsMalformedNestedFieldsAndWrongJsonTypes() {
+        val invalidPayloads = listOf(
+            """{"markItems":[{"host":"reader.example","ruleItems":[]}]}""",
+            """{"markItems":[{"host":"reader.example","ruleItems":[{"urlPattern":[1,2],"markRules":[1]}]}]}""",
+            """{"markItems":[{"host":7,"ruleItems":[]}]}""",
+            """{"markItems":[{"host":"reader.example","ruleItems":[{"urlPattern":"not-json","markRules":[".ad"]}]}]}""",
+            """{"markItems":[{"host":"reader.example","ruleItems":[{"urlPattern":[1.5,2],"markRules":[".ad"]}]}]}""",
+            """{"markItems":[{"host":"reader.example","ruleItems":[{"urlPattern":[1,2],"markRules":[]}]}]}""",
+        )
+
+        invalidPayloads.forEach { payload ->
+            org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+                BadcatAdMarkJsonCodec.decode(payload)
+            }
+        }
+    }
+
+    @Test
+    fun adMarkCodecRejectsPayloadsAboveTheByteLimitBeforeParsing() {
+        val oversized = " ".repeat(BadcatAdMarkJsonCodec.MAX_JSON_BYTES + 1)
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            BadcatAdMarkJsonCodec.decode(oversized)
+        }
+    }
+
+    @Test
+    fun adMarkCodecNeverImportsServerProvidedInjectionScript() {
+        val payload = """
+            {
+              "adBlockJsInject": "window.injectUntrustedServerCode = true;",
+              "markItems": [
+                {
+                  "host": "reader.example",
+                  "ruleItems": [
+                    {"urlPattern": [1, 2, 3], "markRules": [".ad-card"]}
+                  ]
+                }
+              ]
+            }
+        """.trimIndent()
+
+        val decoded = BadcatAdMarkJsonCodec.decode(payload)
+        assertEquals(listOf(mark), decoded)
+        assertFalse(BadcatAdMarkJsonCodec.encode(decoded).contains("adBlockJsInject"))
+        assertFalse(BadcatAdMarkJsonCodec.encode(decoded).contains("injectUntrustedServerCode"))
+    }
+
+    @Test
     fun adMarkCodecKeepsCompatibilityWithEarlierFlatExports() {
         val legacy = """[
             {"host":"reader.example","urlPattern":"[1,2,3]","markRules":[".ad-card"]}
