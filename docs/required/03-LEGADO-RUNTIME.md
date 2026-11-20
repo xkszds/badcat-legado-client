@@ -609,3 +609,44 @@ Search/Explore → BookInfo → BookChapterList → BookContent；依赖 Analyze
 - **Result:** no safe minimal authentic-model integration seam has been demonstrated. PoC-0.7 remains **not accepted**. The evidence strongly indicates that BookSource's BaseSource lifecycle and Book/BookChapter's app DB/reader helpers make the naive model-only seam non-isolated. Before any code integration, compare (1) a true dedicated upstream app-layer slice with explicit service ports, (2) official model/DB ownership plus Badcat compatibility façade (hybrid), and (3) constrained A with lossless raw JSON and Badcat-owned durable models. B′ remains unpassed.
 - **No implementation or tests changed in this inventory slice.** No Gradle/test/build/APK/CI pass is claimed. The preceding documentation registration commit has no runtime validation implications.
 - **Next ordered task:** finish symbol-level host callsite scan and compare B′ exit options against exact acceptance criteria; choose one narrow next PoC and register it before editing code. Do not start Room/schema v1 or migrations until the model/data ownership decision is explicit.
+
+
+### PoC-0.7 symbol-level host caller scan and architecture exit comparison (2026-11-20)
+
+#### Verified production callsites and identity flow
+
+- `ReadingEngine.kt` is the shared contract consumed by app UI. It declares independent host `BookSource`, `BookCandidate`, `BookDetail`, `BookChapter(index,title,url)`, and `ChapterContent(title,text,...)`. The host BookChapter has no upstream bookUrl composite key, row metadata, VIP/pay/resource flags, variables or serialization converters.
+- `SourceReadingEngine.kt` resolves a source by `BookSource.id`, then calls host Search/Detail/TOC/Content services. Its chapter-content path synthesizes `BookChapter(index=0,title="",url=chapterUrl)` from a URL; therefore the current runtime does not carry an upstream chapter index or full chapter identity into content loading.
+- `SourceTocService.kt` accumulates and returns host `List<BookChapter>`; `SourceChapterContentService.kt` accepts that host chapter and reads/writes cache by `(source.id, bookUrl, chapter.url)`. This cache key is host-scoped and URL-based, not the pinned upstream `(bookUrl,index)` batch identity.
+- `SourceBookActivity.kt` owns chapter lists, restores progress by chapter URL, opens chapter UI with `sourceId/bookUrl`, and passes host chapters to content. It persists last chapter URL, scrollY, history and bookmark state through `BadcatReadingStateRepository`. A fallback chapter is constructed from URL when a chapter object is unavailable.
+- `SourceSearchActivity.kt` consumes host `BookSource` and `BookCandidate`; it de-duplicates candidates using `sourceId + "|" + bookUrl`, persists result state as JSON sourceId/bookUrl, and navigates to SourceBookActivity using those fields.
+- `FileBookSourceCatalog.kt` is the durable source catalog owner; `LegadoBookSourceCodec` imports/exports raw JSON and maps it into the host projection. `SourceCatalogActivity.kt` drives source exploration and uses the host BookCandidate to open books.
+- `BadcatReadingStateRepository.kt` implements `ReadingProgressStore` using legacy SharedPreferences keys/JSON. Its durable identity is encoded `(sourceId,bookUrl,chapterUrl)`; progress API exposes last URL and scrollY, not upstream Book/ReadConfig.
+- `FavoritesActivity.kt` owns a separate favorites JSON model keyed by `(sourceId,bookUrl)`; `BookmarkActivity.kt` and `ReadingHistoryActivity.kt` render repository-owned projections and navigate with the same triple identity. These are real independent persistence owners that a migration/transaction design must reconcile.
+- `FileChapterContentCache.kt` owns chapter-body AtomicFile data under a digest of `(sourceId,bookUrl,chapterUrl)`; it is not an upstream CacheManager generic KV store and has no content-save fencing token. `ChapterContentCache.kt` exposes only get/put with those three string keys.
+- Exact caller evidence confirms sourceId/bookUrl/chapterUrl is a cross-UI identity contract. Any model/DB replacement must preserve this navigation and old persisted key compatibility, while resolving chapter URL to a book-scoped index without ambiguity.
+
+#### Ownership/semantic gaps discovered
+
+1. Search/detail/TOC/content are wired through host projections; authentic upstream BookSource/Book/BookChapter are not accepted by these public contracts.
+2. Content load from a URL synthesizes index 0, so batch-content candidate matching and upstream save token semantics are absent at the current UI-to-engine boundary.
+3. Progress persists URL + scrollY only; upstream ReadConfig and ParagraphAnchor are not represented in the host progress contract.
+4. Chapter cache is per-host identity and atomic file storage, with no upstream generic CacheManager, durable content token or stale-write fencing.
+5. Favorites, bookmarks/history, progress, TOC and body cache have distinct owners. There is no shared transaction or single-writer cutover today.
+6. Existing raw source JSON retention is useful for lossless import/export, but nested typed rule behavior still depends on host runtime adapters and cannot substitute for upstream model semantics.
+
+#### Architecture options compared
+
+| Option | Faithfulness | Migration/ownership risk | Scope | Decision |
+|---|---|---|---|---|
+| Continue B′ unchanged (Badcat-owned persistence + compatibility runtime) | Good for existing Badcat UI and source JSON; incomplete for authentic Book/BookChapter, ReadConfig/ParagraphAnchor, batch identity/token unless substantial adapters are added | Medium-high: must reconcile multiple existing stores and implement identity resolution/fencing | Medium-high | Keep only as a time-boxed candidate; current PoC gates are not passed |
+| A — constrained Badcat-owned data layer with lossless upstream JSON and explicit runtime ports | Preserves current UI and legacy key owners; can incrementally add complete fields/behavior contracts, but does not claim upstream Room entity identity | Lower initial cutover risk; semantic drift risk remains unless differential fixtures against pinned upstream are mandatory | Medium, incremental | Viable fallback for user-visible progress while runtime parity grows; not yet accepted as full compatibility |
+| Hybrid — authentic upstream model/DAO ownership behind Badcat compatibility façade | Highest fidelity for Room converters, model identity, ReadConfig and chapter fields; UI can remain unchanged through façade | Highest integration/migration risk: requires upstream app DB/helper closure, a single writer, data reconciliation and rollback; no narrow module boundary yet | Very high | Most faithful long-term option if full model/DB parity is mandatory, but blocked pending buildable module and rollback proof |
+
+#### Gate decision
+
+- **Do not claim B′ passed.** Its core premise (Badcat persistence is the single fact source) is not currently true across the listed stores, and the authentic upstream model closure is not isolated. The B′ candidate remains open only if the next PoC can demonstrate one writer per data domain, faithful URL↔(bookUrl,index) identity resolution, ReadConfig mapping, content token fencing, and restart/rollback behavior.
+- **Do not switch to A as “full Legado compatibility”.** A can be a safe incremental host-owned persistence fallback, but must be labeled a constrained adapter architecture and pass differential behavior fixtures; it cannot erase missing upstream runtime behavior.
+- **Hybrid is the fidelity target but not yet authorized for implementation.** Before choosing it, prove the exact upstream Gradle module/source-set closure, local submodule buildability, required DB/helper graph, and no dual-writer rollback protocol. Importing all upstream app code without a scoped boundary is a no-go.
+- **Immediate next gate:** inspect existing upstream batch-content/cache/progress contracts and host tests; create a machine-checkable field/identity mapping matrix for the five PoC domains; then preregister one executable, narrow PoC. No schema v1, Room migration, broad source copy or UI change until that matrix and architecture choice are accepted.
+- **Evidence limits:** caller scan is targeted to the production search/detail/TOC/content and progress/favorites/bookmark/history path. It does not claim every app source file or every upstream caller has been exhaustively indexed. No tests/build/CI/APK were run in this documentation-only slice.
