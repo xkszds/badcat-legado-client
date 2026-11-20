@@ -21,7 +21,7 @@ class SourceChapterContentService(
         bookName: String = "",
     ): EngineResult<ChapterContent> {
         MainJsSourceGuard.failure(source, "chapter content", scriptRuntimeAvailable = scriptRuntime != null)?.let { return it }
-        if (bookUrl.isBlank() || chapter.url.isBlank() || maxPages < 1) {
+        if (bookUrl.isBlank() || chapter.index < 0 || chapter.url.isBlank() || maxPages < 1) {
             return EngineResult.Failure(
                 EngineErrorCode.INVALID_SOURCE,
                 "Book URL, chapter URL and positive maxPages are required",
