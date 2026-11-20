@@ -14,7 +14,7 @@ import org.robolectric.annotation.Config
  */
 class RhinoOverloadProbe {
     @JavascriptInterface
-    fun select(value: String, second: String): String = "STRING"
+    fun select(value: String, second: String?): String = "STRING"
 
     @JavascriptInterface
     fun select(value: String, second: Int): String = "INT"
