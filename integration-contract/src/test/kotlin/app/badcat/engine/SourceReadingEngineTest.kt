@@ -231,7 +231,7 @@ class SourceReadingEngineTest {
             engine.chapterContent(
                 "fixture",
                 detail.bookUrl,
-                chapters.single().url,
+                chapters.single(),
                 bookName = detail.name,
             ),
         ).value
@@ -650,3 +650,4 @@ class SourceReadingEngineTest {
         assertEquals(5, requests.size)
     }
 }
+
