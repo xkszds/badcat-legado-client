@@ -471,4 +471,63 @@ class SourceChapterContentServiceTest {
         assertEquals(null, stored)
     }
 
+    @Test
+    fun sameChapterUrlAtDifferentIndexesUsesSeparateCacheEntries() = runBlocking {
+        val source = BookSource(
+            id = "index-cache",
+            name = "Index cache",
+            baseUrl = "https://reader.example/",
+            ruleContentJson = """{"content":"div#content"}""",
+        )
+        val bookUrl = "https://reader.example/book"
+        val fence = ChapterContentSaveFence()
+        val values = linkedMapOf<ChapterContentCacheKey, Pair<String, CachedChapterContent>>()
+        val cache = object : ChapterContentCache {
+            override fun beginSave(sourceId: String, bookUrl: String, chapter: BookChapter) =
+                fence.token(ChapterContentCacheKey(sourceId, bookUrl, chapter.index))
+            override suspend fun get(sourceId: String, bookUrl: String, chapter: BookChapter): CachedChapterContent? {
+                val key = ChapterContentCacheKey(sourceId, bookUrl, chapter.index)
+                return values[key]?.takeIf { it.first == chapter.url }?.second
+            }
+            override fun isCurrent(token: ChapterContentSaveToken) = fence.isCurrent(token)
+            override suspend fun put(
+                sourceId: String, bookUrl: String, chapter: BookChapter,
+                token: ChapterContentSaveToken, value: CachedChapterContent,
+            ): Boolean = fence.publishIfCurrent(token) {
+                values[token.key] = chapter.url to value
+            }
+            override suspend fun invalidate(sourceId: String, bookUrl: String, chapterIndex: Int) {
+                val key = ChapterContentCacheKey(sourceId, bookUrl, chapterIndex)
+                fence.invalidate(key)
+                values.remove(key)
+            }
+            override suspend fun get(sourceId: String, bookUrl: String, chapterUrl: String): CachedChapterContent? = null
+            override suspend fun put(
+                sourceId: String, bookUrl: String, chapterUrl: String, value: CachedChapterContent,
+            ) = Unit
+        }
+        var requestCount = 0
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                requestCount++
+                return EngineResult.Success(
+                    SourceHttpResponse(200, request.url, body = "<div id='content'>body-$requestCount</div>"),
+                )
+            }
+        }
+        val service = SourceChapterContentService(http = SourceHttpGateway(client), cache = cache)
+        val sameUrlFirst = BookChapter(3, "First identity", "https://reader.example/shared")
+        val sameUrlSecond = BookChapter(8, "Second identity", "https://reader.example/shared")
+
+        val first = assertIs<EngineResult.Success<ChapterContent>>(service.load(source, bookUrl, sameUrlFirst))
+        val second = assertIs<EngineResult.Success<ChapterContent>>(service.load(source, bookUrl, sameUrlSecond))
+        val firstAgain = assertIs<EngineResult.Success<ChapterContent>>(service.load(source, bookUrl, sameUrlFirst))
+
+        assertEquals("body-1", first.value.text)
+        assertEquals("body-2", second.value.text)
+        assertEquals("body-1", firstAgain.value.text)
+        assertEquals(2, requestCount)
+        assertEquals(setOf(3, 8), values.keys.map { it.chapterIndex }.toSet())
+    }
+
 }
