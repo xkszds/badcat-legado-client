@@ -994,3 +994,15 @@
 - **Actual change:** only `app/src/test/kotlin/io/legado/app/utils/LegadoGsonCompatibilityTest.kt` changed at code commit `e278d9f3715e2b4b9aeced1d897857c47c591e95`. The number-map fixture now uses the exact parameterized `TypeToken<Map<String?, Any?>?>` registration. All six string-wrapped rule fixtures now use `GSON.toJson(innerJson)` to produce valid outer JSON string values; object-form fixtures and original semantic assertions remain.
 - No production Gson/rule model, Gradle, data, cache, UI or persistence code changed. Pinned Gson implementation remains byte-identical to upstream at the recorded SHA.
 - **Validation pending:** push-triggered workflow run `44703572220` was pending when this entry was written; no tests, APK or CI pass is claimed yet. Update this checkpoint with exact final run outcome and artifact evidence after completion.
+
+
+### PoC-0.6 CI test-compilation blocker registration (2026-11-20)
+
+- **起始 HEAD：** `8dfdf1fb93c5bed770f78b5d4a6b9c5eaa81fab7`；当前分支仅 `integration/legado-upstream-runtime`。
+- **证据：** Android debug workflow run `44704579262`，job `136180875657`，在 `:app:compileDebugUnitTestKotlin` 失败；唯一 Kotlin 错误为 `LegadoGsonCompatibilityTest.kt:74:32 Cannot infer type for type parameter 'T'`。主代码 Java/Kotlin 编译已到达测试编译阶段；这不是运行时测试断言失败，也不能据此宣称测试通过。
+- **精确范围：** 仅 `app/src/test/kotlin/io/legado/app/utils/LegadoGsonCompatibilityTest.kt` 第 74 行附近的 `INITIAL_GSON.fromJson(..., mapType)` 调用；显式声明接收类型 `Map<String?, Any?>?` 或显式泛型类型参数，保留已登记的 TypeToken、JSON fixture 与全部断言。不得改生产 Gson、模型、Gradle、数据库、缓存或 UI。
+- **调用方/所有权：** 仅该测试直接调用实际 host `INITIAL_GSON`；无生产 caller、持久化 writer、事务或 UI 影响。
+- **上游/契约：** 固定 Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`；保留上游 Gson adapter 注册和参数化 Map adapter 语义，不使用 raw Map 降级。
+- **风险与测试：** Kotlin/Gson Java 泛型重载推断；验收必须由 Android CI 完成 `:app:testDebugUnitTest` 与 `:app:assembleDebug`，确认编译通过且六类规则、整数 coercion、null/unknown field 测试真实执行。检查 exact HEAD 对应 run 和产物；不得把编译成功当成完整 PoC 通过。
+- **排除/退出：** 不触碰 Room/schema v1、模型接入或 B′架构切换；若显式类型仍无法匹配真实 adapter，则暂停并检查依赖/重载，不改生产语义迁就测试。
+- **状态：** 已根据 run 日志登记，修正尚未实施；PoC-0.6 与 B′仍未验收。
