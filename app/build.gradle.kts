@@ -48,6 +48,8 @@ configurations.configureEach {
 
 dependencies {
     implementation(project(":integration-contract"))
+    // Compile and package the authentic pinned Legado rule-model slice; runtime orchestration is not wired yet.
+    implementation(project(":legado-runtime"))
     implementation(project(":legado-rhino"))
     // The login-form host validates JSON state and action envelopes with the same parser baseline.
     implementation("com.google.code.gson:gson:2.14.0")
