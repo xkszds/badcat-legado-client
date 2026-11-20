@@ -138,3 +138,12 @@
 - Contract tests: nested and flat supported shapes; duplicate identity rejection; malformed group/rule/field types; invalid URL-pattern/rule values; imported payload containing `adBlockJsInject` must not expose or install that script; verify byte/item boundary guards where deterministic without allocating excessive memory.
 - Acceptance: focused `:app:testDebugUnitTest` passes on exact implementation HEAD; full CI result must be recorded separately. This only validates import/export contracts and does not complete AdMark service sync, DOM deletion, or original purifier parity.
 - Exclusions: no new format fields, no guessed server protocol, no DOM selectors, no remote script acquisition, no settings/UI changes, no Android Provider or device claim.
+
+
+### Fourth-2.6 implementation checkpoint
+
+- Test-only implementation is committed in `app/src/test/java/app/badcat/client/BadcatPurificationModelsTest.kt` at `e41fbe48810522cb02ec8e0a6280b4702c463feb`.
+- Added four contract cases: duplicate identity rejection across nested/flat representations; malformed nested field/type/rule rejection; byte-limit rejection before JSON parsing; and proof that server-supplied `adBlockJsInject` is not imported or exported.
+- No production code, settings, persistence, UI, network, or DOM behavior changed.
+- Exact-HEAD CI run #3073 / ID `44822313338`, HEAD `e41fbe48810522cb02ec8e0a6280b4702c463feb`: job `assemble-debug` exists; setup steps succeeded; `Run contract unit tests` is currently `in_progress`. Job-log download currently returns BlobNotFound, so no test result is claimed yet.
+- Acceptance remains pending until the focused/full unit-test step and workflow reach terminal status. This checkpoint does not claim AdMark category acceptance.
