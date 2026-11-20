@@ -162,3 +162,12 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 - Category-3 checklist compares continued B′, constrained A, and hybrid official model/DAO ownership behind a Badcat façade. B′ is not passed; A is only a constrained fallback, not full compatibility; hybrid is the fidelity target but blocked by broad upstream app/DB closure and migration/rollback proof.
 - Next gate is a five-domain field/identity mapping matrix plus exact upstream batch/cache/progress contract inspection, then a separately preregistered executable PoC. No schema v1, Room migration, broad source copy or UI change authorized yet.
 - Documentation-only; no tests/build/CI/APK pass claimed.
+
+
+## 2026-11-20 Category-3 batch/cache/progress contracts
+
+- Inspected pinned `BatchContentContext`, `BookHelp.ContentSaveFence`, `CacheManager`, `ReadBookConfig` and upstream regression tests. Upstream batch identity is `(bookUrl,chapterIndex)`, URL-only matching must reject ambiguity, and stale asynchronous saves are fenced by per-chapter version tokens.
+- Current Badcat UI/engine drops chapter index at content load (URL is passed and a fallback index 0 chapter is synthesized); current body cache is keyed by sourceId/bookUrl/chapterUrl and has no equivalent save token. Generic CacheManager TTL/LRU is a separate domain from chapter-body cache.
+- Category-3 checklist now contains an initial five-domain mapping for BookSource, Book, BookChapter, reading progress and chapter body/cache, with acceptance assertions and an explicit note that it is not a frozen schema.
+- Next candidate is an Android-free chapter-identity contract PoC carrying index through engine/service/UI while preserving URL navigation. It requires separate exact-scope preregistration and differential tests; no Room or schema changes authorized.
+- Inspection/documentation only; no tests/build/CI/APK pass claimed.
