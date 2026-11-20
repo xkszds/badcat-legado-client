@@ -10,9 +10,19 @@ object ChapterCatalogQuery {
         return if (reverse) matching.asReversed() else matching
     }
 
-    /** Resolve persisted reading progress against the current TOC, not a stale URL. */
+    /** Resolve URL navigation only when it identifies exactly one chapter. */
     fun findByUrl(chapters: List<BookChapter>, savedUrl: String?): BookChapter? {
         val url = savedUrl?.takeIf(String::isNotBlank) ?: return null
-        return chapters.firstOrNull { it.url == url }
+        val matches = chapters.filter { it.url == url }
+        return matches.singleOrNull()
+    }
+
+    /** Resolve the persisted chapter index first; URL is a compatibility check, not identity. */
+    fun findByIdentity(chapters: List<BookChapter>, index: Int?, url: String?): BookChapter? {
+        if (index != null && index >= 0) {
+            return chapters.singleOrNull { it.index == index }
+                ?.takeIf { url.isNullOrBlank() || it.url == url }
+        }
+        return findByUrl(chapters, url)
     }
 }
