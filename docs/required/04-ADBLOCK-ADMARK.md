@@ -35,3 +35,16 @@
 默认关闭远程注入；脚本有来源/域名策略、长度/时间/资源上限；不执行未验证 markRules；不猜 CSS selector 或 querySelector 删除逻辑；注入失败可诊断且不影响正文。测试覆盖 protobuf/JSON、matcher、确认/取消、callback payload、DOM 行为、页面隔离和真机流程。
 
 **当前状态：部分实现，未验收；原版 page script 与 DOM 删除闭环缺失。**
+
+## 2026-11-21 Fourth-2.4 registration — stale WebView callback isolation
+
+- Starting branch/HEAD: `integration/legado-upstream-runtime` / `4238d86069f7373b2ba2172d90a0d1bdbf529794`.
+- Scope: harden the existing Badcat WebView injection adapter against stale `onPageFinished` callbacks and asynchronous JavaScript callbacks after navigation; do not broaden which origins are trusted.
+- Audited production caller: `SourceChapterActivity` in `app/src/main/java/app/badcat/client/SourceBookActivity.kt`; its WebView uses `loadDataWithBaseURL` with `https://reader.invalid/<version>/` and renders locally generated chapter HTML. No production remote-page WebView caller was found in the current app source tree.
+- Target files: `app/src/main/java/app/badcat/client/runtime/BadcatPurificationCoordinator.kt`; add real-provider instrumentation coverage under `app/src/androidTest/kotlin/app/badcat/client/runtime/`; update this checklist with exact results.
+- Upstream reference: original Badcat 1.5.0.5 DEX evidence recorded in `docs/badcat-original-purification-evidence.md`; no Legado upstream dependency applies to this category.
+- Data ownership: no persistence or schema changes. Existing settings store remains the sole owner of `key_is_ad_block` and `key_ad_block_js_inject`; AdMark catalog remains unchanged.
+- Security constraints: preserve rejection of `.invalid`, local/non-web schemes, malformed URLs and credential-bearing URLs; never inject a stored script into the synthetic chapter document; do not infer `markRules` selectors or implement guessed `getInfoFromJS`/`onDeleteAd` callbacks.
+- Contract tests: real Android WebView provider test must prove an old page callback cannot inject into the current page, a current eligible HTTP(S) page can receive the configured bounded script, and synthetic `.invalid` pages remain untouched; JavaScript enablement must be restored without affecting a later page.
+- Acceptance: focused unit tests and API-35 real-provider instrumentation pass on exact HEAD; report records provider identity and observations. This task only closes a lifecycle race and does not complete original AdBlock/AdMark behavior.
+- Exclusions: remote script acquisition, private `adMark/issued` or `adMark/report` service calls, page-side DOM deletion, original long-press marking UI, allowlist/denylist settings, and full original purifier parity.
