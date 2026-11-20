@@ -111,6 +111,7 @@ class SourceIndex:
         self.files: dict[str, Path] = {}
         self.texts: dict[str, str] = {}
         self.packages: dict[str, list[str]] = {}
+        self.by_relative: dict[str, list[str]] = {}
         self.declarations: dict[str, set[str]] = {}
         for root, root_label in zip(self.roots, labels):
             if not root.exists():
@@ -126,6 +127,7 @@ class SourceIndex:
                 self.files[key] = path
                 self.texts[key] = text
                 self.packages.setdefault(package, []).append(key)
+                self.by_relative.setdefault(rel, []).append(key)
                 self.declarations[key] = _decls(text)
         for values in self.packages.values():
             values.sort()
@@ -140,7 +142,7 @@ class SourceIndex:
             # Java static wildcard imports target a class, not a package.
             for suffix in (".kt", ".java"):
                 relative = "/".join(target.split(".")) + suffix
-                owner_files = [key for key in self.files if key.endswith(":" + relative)]
+                owner_files = self.by_relative.get(relative, [])
                 if owner_files:
                     return sorted(owner_files), "static_wildcard"
             return [], "unresolved"
@@ -152,7 +154,7 @@ class SourceIndex:
             stem = "/".join(segments[:cut])
             for suffix in (".kt", ".java"):
                 relative = stem + suffix
-                matches = [key for key in self.files if key.endswith(":" + relative)]
+                matches = self.by_relative.get(relative, [])
                 if matches:
                     return sorted(matches), "file"
 
