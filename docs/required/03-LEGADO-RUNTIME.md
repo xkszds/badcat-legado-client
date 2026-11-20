@@ -1361,3 +1361,13 @@
 - **What was actually changed:** documentation audit only. No source files copied/modified; no Gradle changes; no tests/build/APK run for this documentation commit; no DB/schema, production caller, UI or reader change.
 - **Next implementation gate:** create a disposable Android-library compile target outside production wiring, add only the two exact upstream files as compiler inputs and their real declared dependencies, and collect actual Kotlin/Gradle diagnostics. Do not silence errors with fake types or broad app source inclusion. If the compiler proves the boundary requires broad Legado product UI/Reader or official database ownership, record the architecture failure and revise the plan rather than calling C viable.
 - **Status:** Runtime-0.7 remains investigation/PoC in progress; no compile PoC has passed, B′ is unpassed, and full Legado compatibility is not claimed.
+
+
+### Runtime-0.7 PoC-1 compiler-probe subtask registration (2026-11-20)
+
+- Starting HEAD: ccc35ad9613ad0886069458292a7965fb9a976fd; pinned upstream SHA unchanged.
+- Exact target files: settings.gradle.kts (register isolated module), new :legado-runtime-poc Android-library build.gradle.kts and manifest, .github/workflows/android-build.yml (invoke and archive probe diagnostics), plus a small source manifest/report under docs/audits/.
+- Compiler inputs: exactly the original upstream BookSource.kt and BaseSource.kt from the pinned submodule; no copied or rewritten source and no additional upstream source files in this first probe. Compile against actual Android SDK, Room 2.8.4, Parcelize Kotlin plugin 2.4.20, Gson 2.14.0, Hutool 5.8.22, Bouncy Castle 1.86, Badcat's already restored pinned Rhino Android module and required published dependencies. The unresolved upstream internal imports are intentionally exposed as compiler diagnostics.
+- Invocation: :legado-runtime-poc:compileDebugKotlin in a diagnostic-capture step. This is a feasibility probe; an expected unresolved-source compile failure must be captured as an artifact without failing the unrelated app regression job. Unexpected success must also be reported for manual verification, not automatically accepted.
+- No stubs, shadow types, fake services, no-op implementations, source rewriting, production dependencies/callers, DB/schema, UI/reader, or main changes. No source-set expansion beyond the two declared authentic files in this first probe.
+- Acceptance for this subtask is a reproducible compiler diagnostic artifact and exact evidence of whether the two-file boundary compiles with real external dependencies. Failure is a valid result and will inform the next exact source-closure slice; it is not a Runtime-0.7 pass.
