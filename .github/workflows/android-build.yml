@@ -208,8 +208,6 @@ jobs:
           target: google_apis
           arch: x86_64
           disable-animations: true
-        env:
-          ANDROID_I_WANT_MY_TCG: "yes"
           script: |
             set +e
             gradle --no-daemon :app:connectedDebugAndroidTest
@@ -223,6 +221,8 @@ jobs:
               cat build/runtime-2.3-webview/runtime-2.3-webview-report.json
             fi
             exit "$test_status"
+        env:
+          ANDROID_I_WANT_MY_TCG: "yes"
 
       - name: Upload real WebView provider instrumentation report
         if: always()
