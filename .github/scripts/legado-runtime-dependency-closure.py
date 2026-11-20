@@ -517,6 +517,11 @@ def self_test() -> None:
             (java, "package demo.b;\npublic class JavaHelpers { public static final int VALUE = 1; }"),
             (roots[0] / "demo" / "b" / "Extensions.kt", "package demo.b\n@JvmName(\"helpers\")\ninternal inline fun <reified T : Any> T?.asHelper(): T? = this\nfun String.helperProperty(): Int = length\n"),
             (roots[1] / "demo" / "b" / "NestedGeneric.kt", "package demo.b\nfun <T, K : Comparable<K>> List<T>.deepSearch(key: K): Int = 0\nfun HashMap<String, *>.hasEntry(key: String): Boolean = true"),
+            (roots[0] / "demo" / "b" / "Parent.kt", "package demo.b\nopen class Parent"),
+            (roots[0] / "demo" / "b" / "Marker.kt", "package demo.b\nannotation class Marker"),
+            (roots[1] / "demo" / "b" / "Child.kt", "package demo.b\n@Marker class Child : Parent() { val item: D? = null; fun invoke() = helper() }\ntypealias ParentAlias = Parent"),
+            (roots[2] / "demo" / "b" / "DuplicateOne.kt", "package demo.b\ninterface Duplicate"),
+            (roots[2] / "demo" / "b" / "DuplicateTwo.kt", "package demo.b\ninterface Duplicate"),
         )
         for path, body in fixtures:
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -559,7 +564,13 @@ def self_test() -> None:
         for item in _parse_imports(idx.texts[b_key]):
             b_targets.update(idx.resolve(item["name"])[0])
         assert b_key in a_targets and a_key in b_targets, "cross-root import cycle must resolve"
-        assert len(idx.files) == 7 and len(set(idx.files)) == 7, "source-root identities must not collide"
+        assert len(idx.files) == 12 and len(set(idx.files)) == 12, "source-root identities must not collide"
+        child_key = next(key for key in idx.files if key.endswith(":demo/b/Child.kt"))
+        child_edges = _same_package_candidates(idx, child_key, idx.texts[child_key])
+        child_symbols = {edge["symbol"] for edge in child_edges}
+        assert {"Marker", "Parent", "D", "helper", "ParentAlias"}.issubset(child_symbols)
+        duplicate_edge = next(edge for edge in child_edges if edge["symbol"] == "Duplicate")
+        assert duplicate_edge["ambiguous"] and len(duplicate_edge["targets"]) == 2
 
         report_a = build_report(base)
         report_b = build_report(base)
