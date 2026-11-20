@@ -184,3 +184,9 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 
 - Legacy history/bookmark URL-only reader launches now resolve against the fresh TOC and proceed only on a unique match; stale/ambiguous identities fail closed without fetching a guessed chapter. Existing stored URL keys remain unchanged.
 - PoC-0.8/0.9 implementation remains partial and unaccepted; current HEAD has no reported status checks or workflow runs, and no test/build/APK/device validation. Detailed evidence and next gates are in the third-category checklist.
+
+
+## 2026-11-20 PoC-1.0 checkpoint
+
+- Chapter-body cache now has a required typed `(sourceId, bookUrl, chapterIndex)` contract and in-process version fence; production AtomicFile cache separates same-URL chapters, checks URL metadata, and rejects stale asynchronous publication after invalidation. Legacy URL-keyed methods remain compatibility-only.
+- PoC-1.0 is partial/not accepted: no test/build/CI/APK/device evidence, no direct replace/delete product operation, and no full upstream mutation lifecycle parity. B′ remains unpassed.
