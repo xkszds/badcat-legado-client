@@ -8,8 +8,6 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import org.json.JSONArray
-import org.json.JSONObject
 
 /** Reading history backed by the same per-book progress store as the reader. */
 class ReadingHistoryActivity : Activity() {
@@ -73,18 +71,7 @@ class ReadingHistoryActivity : Activity() {
 
     private fun refresh() {
         list.removeAllViews()
-        val raw = getSharedPreferences(PREFS, MODE_PRIVATE).getString(KEY, "[]").orEmpty()
-        val records = runCatching {
-            val json = JSONArray(raw)
-            (0 until json.length()).mapNotNull { index ->
-                json.optJSONObject(index)?.let { item ->
-                    val source = item.optString("sourceId")
-                    val bookUrl = item.optString("bookUrl")
-                    val chapterUrl = item.optString("chapterUrl")
-                    if (source.isBlank() || bookUrl.isBlank() || chapterUrl.isBlank()) null else item
-                }
-            }
-        }.getOrDefault(emptyList())
+        val records = BadcatReadingStateRepository(this).historyRecords()
         if (records.isEmpty()) {
             list.addView(TextView(this).apply {
                 text = "还没有阅读记录\n打开一本书并阅读章节后，记录会自动出现在这里。"
@@ -95,10 +82,10 @@ class ReadingHistoryActivity : Activity() {
             return
         }
         records.forEach { item ->
-            val name = item.optString("bookName").ifBlank { "未命名书籍" }
-            val chapterTitle = item.optString("chapterTitle").ifBlank { "继续阅读" }
+            val name = item.bookName
+            val chapterTitle = item.chapterTitle
             list.addView(TextView(this).apply {
-                text = "$name\n$chapterTitle\n书源：${item.optString("sourceId")}"
+                text = "$name\n$chapterTitle\n书源：${item.sourceId}"
                 textSize = 15f
                 setTextColor(Color.rgb(48, 55, 66))
                 setPadding(dp(14), dp(16), dp(14), dp(16))
@@ -106,10 +93,10 @@ class ReadingHistoryActivity : Activity() {
                 isClickable = true
                 setOnClickListener {
                     startActivity(Intent(this@ReadingHistoryActivity, SourceChapterActivity::class.java).apply {
-                        putExtra(SourceChapterActivity.EXTRA_SOURCE_ID, item.optString("sourceId"))
-                        putExtra(SourceChapterActivity.EXTRA_BOOK_URL, item.optString("bookUrl"))
+                        putExtra(SourceChapterActivity.EXTRA_SOURCE_ID, item.sourceId)
+                        putExtra(SourceChapterActivity.EXTRA_BOOK_URL, item.bookUrl)
                         putExtra(SourceChapterActivity.EXTRA_BOOK_NAME, name)
-                        putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, item.optString("chapterUrl"))
+                        putExtra(SourceChapterActivity.EXTRA_CHAPTER_URL, item.chapterUrl)
                         putExtra(SourceChapterActivity.EXTRA_CHAPTER_TITLE, chapterTitle)
                     })
                 }
@@ -119,7 +106,7 @@ class ReadingHistoryActivity : Activity() {
                         .setMessage("仅删除《$name》的历史记录，不删除书籍或书签。")
                         .setNegativeButton("取消", null)
                         .setPositiveButton("删除") { _, _ ->
-                            removeRecord(item.optString("sourceId"), item.optString("bookUrl"))
+                            BadcatReadingStateRepository(this@ReadingHistoryActivity).removeHistory(item.sourceId, item.bookUrl)
                             refresh()
                         }.show()
                     true
@@ -132,30 +119,22 @@ class ReadingHistoryActivity : Activity() {
     }
 
     private fun confirmClearHistory() {
-        val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
-        val records = runCatching { JSONArray(prefs.getString(KEY, "[]").orEmpty()) }.getOrDefault(JSONArray())
-        if (records.length() == 0) {
+        val count = BadcatReadingStateRepository(this).historyRecords().size
+        if (count == 0) {
             BadcatTheme.alertBuilder(this).setMessage("当前没有阅读记录").setPositiveButton("知道了", null).show()
             return
         }
         BadcatTheme.alertBuilder(this).setTitle("清空阅读记录")
-            .setMessage("将删除全部 ${records.length()} 条阅读记录，不会删除收藏、书签或阅读进度。")
+            .setMessage("将删除全部 ${count} 条阅读记录，不会删除收藏、书签或阅读进度。")
             .setNegativeButton("取消", null)
             .setPositiveButton("清空") { _, _ ->
-                prefs.edit().putString(KEY, "[]").apply()
+                BadcatReadingStateRepository(this@ReadingHistoryActivity).clearHistory()
                 refresh()
             }.show()
     }
 
     private fun removeRecord(sourceId: String, bookUrl: String) {
-        val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
-        val old = runCatching { JSONArray(prefs.getString(KEY, "[]").orEmpty()) }.getOrDefault(JSONArray())
-        val next = JSONArray()
-        for (i in 0 until old.length()) {
-            val item = old.optJSONObject(i) ?: continue
-            if (item.optString("sourceId") != sourceId || item.optString("bookUrl") != bookUrl) next.put(item)
-        }
-        prefs.edit().putString(KEY, next.toString()).apply()
+        BadcatReadingStateRepository(this).removeHistory(sourceId, bookUrl)
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
@@ -165,22 +144,9 @@ class ReadingHistoryActivity : Activity() {
         const val KEY = "records"
 
         fun save(context: android.content.Context, sourceId: String, bookUrl: String, bookName: String, chapterUrl: String, chapterTitle: String) {
-            if (sourceId.isBlank() || bookUrl.isBlank() || chapterUrl.isBlank()) return
-            val prefs = context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
-            val old = runCatching { JSONArray(prefs.getString(KEY, "[]").orEmpty()) }.getOrDefault(JSONArray())
-            val next = JSONArray()
-            for (i in 0 until old.length()) {
-                val item = old.optJSONObject(i) ?: continue
-                if (item.optString("sourceId") != sourceId || item.optString("bookUrl") != bookUrl) next.put(item)
-            }
-            next.put(JSONObject()
-                .put("sourceId", sourceId)
-                .put("bookUrl", bookUrl)
-                .put("bookName", bookName)
-                .put("chapterUrl", chapterUrl)
-                .put("chapterTitle", chapterTitle)
-                .put("updatedAt", System.currentTimeMillis()))
-            prefs.edit().putString(KEY, next.toString()).apply()
+            BadcatReadingStateRepository(context).saveHistory(
+                sourceId, bookUrl, bookName, chapterUrl, chapterTitle,
+            )
         }
     }
 }
