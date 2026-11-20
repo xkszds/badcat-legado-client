@@ -220,3 +220,48 @@ The same successful CI run also executed the existing workflow's G2d stage-1 com
 The official Legado beta APK binary remains unavailable through the current download path. Direct retrieval of `legado_app_3.26110117_universal_release_vc38521.apk` failed; its GitHub release metadata digest has not been locally recomputed and no DEX inspection has been performed.
 
 **Updated decision:** host artifact retrieval is complete and host JVM ABI evidence is now available. Runtime-1.5 remains **PARTIAL / ACCEPTANCE NOT MET** until the official pinned-upstream APK is obtained and inspected and the upstream-specific ABI gaps are addressed. No new build or compiler experiment was initiated in this follow-up.
+
+
+## 9. 2026-11-21 follow-up — official pinned APK and DEX inspection
+
+### 9.1 APK provenance and integrity
+
+- User supplied `legado_app_3.26110117_universal_release_vc38521.apk` (27,857,704 bytes).
+- Locally recomputed SHA-256: `31e5a1db1ea47508a1c8193e8e9c1b5aeb49b585317e1e8466d2851e7038e0b3`; exact match with the GitHub Release API digest recorded in section 3.2.
+- APK `META-INF/version-control-info.textproto` embeds revision `330e606c4d57e08adc056ff8ab7a4132c784da9a`, exactly matching the pinned upstream SHA.
+- APK `META-INF/com/android/build/gradle/app-metadata.properties` declares AGP `8.13.2`.
+- APK contains `classes.dex` (9,412,728 bytes), `classes2.dex` (714,716 bytes), and `classes3.dex` (10,780,088 bytes). All three DEX files were parsed. The parser enumerated 19,663 class definitions and 137,238 method IDs across the three DEX files.
+
+### 9.2 DEX class and descriptor findings
+
+Authentic class definitions found in the pinned APK include:
+
+| Class | DEX | Defined methods | Public methods | Method annotation entries | `JavascriptInterface` methods |
+|---|---|---:|---:|---:|---:|
+| `io.legado.app.help.JsExtensions` | classes.dex | 148 | 148 | 56 | 54 |
+| `io.legado.app.help.RegexJsExtensions` | classes.dex | 40 | 36 | not separately summarized | not separately summarized |
+| `io.legado.app.help.webView.WebJsExtensions` | classes.dex | 67 | 54 | 12 | 12 |
+| `io.legado.app.ui.login.SourceLoginJsExtensions` | classes3.dex | 12 | 12 | 1 | 0 |
+| `io.legado.app.ui.rss.read.RssJsExtensions` | classes3.dex | 190 | 185 | 71 | 64 |
+| `io.legado.app.data.entities.BaseSource` | classes.dex | 71 | 71 | class-level MemberClasses annotation present | not used as a WebView count |
+| `io.legado.app.model.analyzeRule.AnalyzeRule` | classes3.dex | 213 | — | class-level Keep annotation | — |
+| `io.legado.app.model.analyzeRule.AnalyzeUrl` | classes3.dex | 209 | — | class-level Keep/SuppressLint/MemberClasses annotations | — |
+
+The DEX method tables expose concrete parameter and return descriptors for every listed defined method. For example, `JsExtensions` contains overloaded `ajax` descriptors `(Ljava/lang/Object;)Ljava/lang/String;` and `(Ljava/lang/Object;Ljava/lang/Long;)Ljava/lang/String;`, and overloaded `base64Decode` descriptors with String, int and String parameters. The complete descriptor inventory is derived directly from DEX method_ids and class_data encoded method lists; it is not inferred from Kotlin source signatures.
+
+Annotation directory inspection distinguishes class annotations from method annotations. The `JsExtensions` interface has 54 methods explicitly carrying `android.webkit.JavascriptInterface`; `WebJsExtensions` has 12; `RssJsExtensions` has 64. `SourceLoginJsExtensions` has no method carrying that annotation in this DEX class. These are direct DEX annotations only; they do not by themselves establish runtime registration or inherited exposure through a WebView object.
+
+### 9.3 Kotlin metadata and limitations
+
+- No DEX string-pool entry for `Lkotlin/Metadata;` or `kotlin/Metadata` was found in any of the three DEX files. Therefore this APK does not provide retained Kotlin Metadata annotation evidence for reconstructing Kotlin-level declarations/default-argument semantics.
+- DEX does provide authentic compiled method descriptors and direct annotation placement, including synthetic/default bridge methods where retained in the class data. It does not preserve the original JVM `.class` file representation or all Kotlin compiler metadata.
+- A custom structural DEX parser was used to read DEX string/type/proto/method/class tables, class_data and annotation directories. It does not decompile method bodies into source, emulate Rhino overload selection, prove dynamic JavaScript calls, or establish all runtime registration paths.
+- R8/DEX method counts must not be compared one-to-one with Kotlin source `fun` counts: inherited members, overloads, generated methods, synthetic accessors, default bridges, and shrinker transformations affect the inventories.
+
+### 9.4 Combined host and upstream evidence status
+
+- The host `legado-host-jvm-abi` artifact retrieval and local digest verification are complete (section 8). It supplies authentic host JVM class-file descriptors and annotations for `RhinoSafeSourceJavaExtensions` at Badcat HEAD `25dad001a1ae99fcc0763cfd7eb983ab584e422b`.
+- The official pinned APK retrieval, local digest verification, embedded source-revision check, and DEX class/descriptor/annotation inspection are now complete.
+- The two artifacts describe different sides: host JVM class-file ABI versus upstream Android DEX ABI. They must not be conflated as a direct binary-compatible pair. A descriptor-level crosswalk and actual Rhino/WebView dispatch behavior still require method-by-method semantic analysis and runtime evidence.
+
+**Updated decision:** the two artifact-acquisition blockers are closed. Runtime-1.5 is still **PARTIAL / ACCEPTANCE NOT MET** because the DEX evidence does not resolve Rhino overload selection, full WebView registration/inheritance semantics, Kotlin metadata/default semantics removed from DEX, all dynamic source entry points/effects, or the complete compatibility call graph. The next permissible step is to update the registered report/checklist with this evidence and then propose a separately preregistered bounded semantic/dispatch audit if needed. No new compiler experiment, build, test, production code change, DB/schema change, UI/Reader change, or G3/G4 work was performed in this follow-up.
