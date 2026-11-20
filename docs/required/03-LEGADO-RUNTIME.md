@@ -783,3 +783,11 @@ Search/Explore → BookInfo → BookChapterList → BookContent；依赖 Analyze
 - **Registered corrective scope:** `app/src/main/java/app/badcat/client/BadcatReadingStateRepository.kt` (restore the existing bookmark key encoding as `BOOKMARK_PREFIX + encodeIdentity(sourceId,bookUrl,chapterUrl)`, preserving current preference keys); `app/src/main/java/app/badcat/client/SourceBookActivity.kt` (remove duplicate local declaration, use the method's `fallbackTitle` parameter, add exact `EngineErrorCode` import). No other data format, UI or behavior change.
 - **Acceptance:** app Kotlin compilation succeeds; contract tests remain passing; rerun Android debug workflow and only claim APK after `assembleDebug` and artifact upload complete.
 - Status: preregistered after exact CI failure log inspection; no correction code changed yet.
+
+
+### PoC-1.0 test-compilation blocker correction registration (2026-11-20)
+
+- Latest code-head CI run `44652704662` confirms `:integration-contract:test` passed and `:app:compileDebugKotlin` now passed after the preceding fixes. It then failed at `:app:compileDebugUnitTestKotlin` only: `BadcatReadingStateRepositoryTest.kt:15` calls `RuntimeEnvironment.getApplication<android.app.Application>()`, but Robolectric 4.14.1 exposes a non-generic `getApplication()` method.
+- **Registered scope extension:** `app/src/test/kotlin/app/badcat/client/BadcatReadingStateRepositoryTest.kt`, one-line test-harness compatibility correction only: call `RuntimeEnvironment.getApplication()` without type arguments. No production code or test assertions change.
+- **Acceptance:** app unit-test sources compile; then complete the remaining Android tests and APK build in the same workflow. This is a test compile correction, not evidence of tests passing.
+- Status: preregistered after exact CI log review; edit not yet made.
