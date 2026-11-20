@@ -123,6 +123,8 @@ jobs:
           path: |
             app/build/reports/tests/testDebugUnitTest/**
             app/build/test-results/testDebugUnitTest/**
+            legado-runtime/build/reports/tests/testDebugUnitTest/**
+            legado-runtime/build/test-results/testDebugUnitTest/**
           if-no-files-found: ignore
           retention-days: 7
 
