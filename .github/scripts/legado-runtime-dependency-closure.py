@@ -102,13 +102,16 @@ def _family_flags(path: str, imports: list[str], content: str) -> list[str]:
 
 
 class SourceIndex:
-    def __init__(self, roots: list[Path]):
+    def __init__(self, roots: list[Path], root_labels: list[str] | None = None):
         self.roots = [root.resolve() for root in roots]
+        labels = root_labels or [root.name for root in roots]
+        if len(labels) != len(roots):
+            raise ValueError("root_labels must have one label per source root")
         self.files: dict[str, Path] = {}
         self.texts: dict[str, str] = {}
         self.packages: dict[str, list[str]] = {}
         self.declarations: dict[str, set[str]] = {}
-        for root in self.roots:
+        for root, root_label in zip(self.roots, labels):
             if not root.exists():
                 continue
             for path in sorted(root.rglob("*")):
@@ -116,7 +119,7 @@ class SourceIndex:
                     continue
                 rel = path.relative_to(root).as_posix()
                 # Keep root identity in keys so equal relative paths cannot collide.
-                key = f"{root.name}:{rel}"
+                key = f"{root_label}:{rel}"
                 text = _read_text(path)
                 package = _package(path, text)
                 self.files[key] = path
@@ -131,7 +134,15 @@ class SourceIndex:
         target = imported[:-2] if wildcard else imported
         if wildcard:
             matches = self.packages.get(target, [])
-            return list(matches), "wildcard" if matches else "unresolved"
+            if matches:
+                return list(matches), "wildcard"
+            # Java static wildcard imports target a class, not a package.
+            for suffix in (".kt", ".java"):
+                relative = "/".join(target.split(".")) + suffix
+                owner_files = [key for key in self.files if key.endswith(":" + relative)]
+                if owner_files:
+                    return sorted(owner_files), "static_wildcard"
+            return [], "unresolved"
 
         # Exact file/class candidates first. Progressive truncation handles
         # nested types such as Book.ReadConfig -> Book.kt.
@@ -164,13 +175,24 @@ def _parse_imports(text: str) -> list[dict]:
                 "line": line_no,
                 "name": match.group(1),
                 "alias": match.group(2),
+                "language": "kotlin",
+            })
+            continue
+        java_match = JAVA_IMPORT_RE.match(line)
+        if java_match:
+            imports.append({
+                "line": line_no,
+                "name": java_match.group(2),
+                "alias": None,
+                "language": "java",
+                "static": bool(java_match.group(1)),
             })
     return imports
 
 
 def build_report(root: Path) -> dict:
     roots = [root / rel for rel in SOURCE_ROOTS]
-    index = SourceIndex(roots)
+    index = SourceIndex(roots, list(SOURCE_ROOTS))
     seed_keys: list[str] = []
     missing_seeds: list[str] = []
     for seed in SEEDS:
@@ -328,7 +350,7 @@ def self_test() -> None:
         ):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(body, encoding="utf-8")
-        idx = SourceIndex(roots)
+        idx = SourceIndex(roots, list(SOURCE_ROOTS))
         resolved, kind = idx.resolve("demo.b.B")
         assert kind == "file" and any(item.endswith(":demo/b/B.kt") for item in resolved)
         resolved, kind = idx.resolve("demo.b.helper")
@@ -341,6 +363,18 @@ def self_test() -> None:
         assert len(report["seeds"]["missingOrAmbiguous"]) == len(SEEDS)
         assert "Same-package references" in " ".join(report["limitations"])
         assert idx.resolve("demo.missing.Nope")[1] == "unresolved"
+        parsed = _parse_imports(_read_text(a))
+        assert any(item["name"] == "demo.b.B" and item["alias"] == "Bee" for item in parsed)
+        assert any(item["name"] == "demo.b.JavaHelpers.VALUE" and item.get("static") for item in parsed)
+        a_key = next(key for key in idx.files if key.endswith(":demo/a/A.kt"))
+        b_key = next(key for key in idx.files if key.endswith(":demo/b/B.kt"))
+        a_imports = {item["name"] for item in _parse_imports(idx.texts[a_key])}
+        b_imports = {item["name"] for item in _parse_imports(idx.texts[b_key])}
+        assert any(target == b_key for target in idx.resolve("demo.b.B")[0])
+        assert any(target == a_key for target in idx.resolve("demo.a.A")[0])
+        assert "demo.a.A" in b_imports and "demo.b.B" in a_imports
+        # Root labels must remain distinct even though every source root ends in 'java'.
+        assert len(idx.files) == 5 and len(set(idx.files)) == 5
     print("dependency closure scanner self-test: PASS")
 
 
