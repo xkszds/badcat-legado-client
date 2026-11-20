@@ -111,3 +111,12 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 - Key contract: BookSource PK `bookSourceUrl`; Book PK `bookUrl` plus upstream unique `(name,author)`; BookChapter PK `(url,bookUrl)`, unique `(bookUrl,index)`, cascade FK to Book. The B′ host schema draft scopes book/chapter keys by `sourceId` as an explicit host extension.
 - No runtime code, Gradle, tests, database, migration or UI changed. Caller inventory is not yet exhaustive; Room schema and rollback are not implemented; B′ remains unpassed.
 - Next: exhaustive caller/access scan → verify Gson/ReadConfig converters and defaults → register schema-only Room implementation separately → implement migration dry-run/backup/rollback before any cutover.
+
+
+## 2026-11-20 B′ PoC-0.5 persistence ownership audit result
+
+- Detailed category-3 report: `docs/required/03-LEGADO-RUNTIME.md`, section “PoC-0.5 audit results — current-tree caller scan and converter/schema gate”.
+- Complete Git tree at the preregistered source head had 437 entries and was not truncated. Direct persistence owners and production wiring were identified: FileBookSourceCatalog/SourceCatalogActivity/BadcatReadingEngineFactory; BadcatReadingStateRepository and SourceBookActivity/BookmarkActivity/ReadingHistoryActivity/FavoritesActivity; Activity-memory TOC via SourceTocService; ChapterContentCache/FileChapterContentCache/SourceChapterContentService and engine factory injection.
+- Confirmed separate stores still exist (source AtomicFile, progress/bookmark SharedPreferences, history SharedPreferences, ephemeral TOC, chapter AtomicFile cache), and app Gradle has no Room runtime/compiler/schema infrastructure. Adding Room before migration and reader/writer cutover would create a second source of truth.
+- No runtime code, tests, Gradle or UI changed. Converter parity for all nested ReadConfig/default/null cases and executable migration/rollback remain open. B′ remains unpassed.
+- Next order: pinned Gson fixtures → freeze schema v1 + constraints → separately preregister schema-only Room implementation → migration backup/dry-run/idempotency/rollback/restart tests → staged single-writer cutover.
