@@ -1067,3 +1067,11 @@
 - **Registration order:** exact failing test and adapter-class mismatch were recorded first in `ac09f0a26957fffd2b843c2082a9eb32458b451c`.
 - **Validation:** push-triggered Android CI is expected for the code commit; no result is claimed yet. Must see all app tests pass and debug APK assemble on exact HEAD. Previous 290-test run had 289 pass/1 fail and did not assemble APK.
 - **Exclusions:** no production Gson, Gradle, model, Room, database, cache, runtime or UI change. B′ and PoC-0.6 remain unaccepted.
+
+
+#### PoC-0.6 CI scheduling checkpoint after primitive fixture correction (2026-11-20)
+
+- Code commit `d3f5efd224943781adb5ed7dc7fce39362252aa5` triggered run `44706931097`, but that exact run was cancelled after a subsequent documentation push entered the workflow concurrency group. This is a scheduler cancellation, not a test result.
+- The earlier documentation-only run `44706902363` began before the code correction and therefore does not validate it.
+- This checkpoint is intentionally the final documentation push before waiting for a fresh workflow on the current tree. The new workflow must include code commit `d3f5efd224943781adb5ed7dc7fce39362252aa5` and the exact resulting HEAD; do not push another commit until that run completes, to avoid cancelling it again.
+- Required evidence remains: all unit tests pass and `:app:assembleDebug` completes; capture report/APK artifact IDs and SHA-256. No current pass or APK is claimed.
