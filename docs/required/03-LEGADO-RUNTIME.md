@@ -2172,3 +2172,12 @@
 - **APK:** `Assemble debug APK` and `Upload debug APK` were skipped after the instrumentation step failed; no APK artifact is evidenced by this run.
 - **Decision:** Runtime-2.3 remains **NOT ACCEPTED**. This run confirms that the TCG configuration allowed the emulator to reach boot-complete, but did not establish a working instrumentation session. It is an emulator/ADB setup failure, not a WebView overload assertion result. Runtime overall remains PARTIAL; G2 remains BLOCKED/partial; B′ and full Legado compatibility remain unpassed.
 - **Checklist self-audit:** this result was missing from the checklist during the subsequent Runtime-2.4 discussion. It is now recorded from the actual run/job logs. The omission was a workflow failure; chat history is not a substitute for the required checklist.
+
+
+### 2026-11-21 Runtime-2.4 tracking checkpoint — CI #3083 still in progress
+
+- **Exact run:** #3083 / ID `44824408254`; exact workflow HEAD `87096526d17af15166de4d99f6fdddc3ea801bc6`; job `136593201501`; branch `integration/legado-upstream-runtime`; [workflow run](https://github.com/xkszds/badcat-legado-client/actions/runs/44824408254).
+- **Observed status:** overall run `in_progress`. The contract unit tests and authentic Legado runtime model contract tests passed; JavaScript API inventory/dependency closure generation and uploads passed; pinned Rhino artifact/source checks passed; G2d source manifest/compiler probe passed. Bounded Rhino replacement host tests concluded `failure`.
+- **WebView:** API 35 instrumentation step is currently `in_progress`; no final test result, four-case observation set, provider metadata, or report artifact has yet been verified. Report upload, ABI capture/upload, unit-test report upload, APK assemble/upload and live smoke steps remain pending at this checkpoint.
+- **Interpretation:** Runtime-2.4 workflow decoupling is exercising the intended downstream step despite bounded Rhino host-test failure, but it is not yet proven that instrumentation completes or APK evidence is produced. Do not infer a fix for #3065 ADB `Broken pipe (32)` from a step merely starting.
+- **Status:** pending/in_progress; Runtime-2.4 not accepted. This checkpoint is a state update only, not a new task or pass claim. Continue polling this same run and record its terminal result before starting the #3065 ADB remediation task.
