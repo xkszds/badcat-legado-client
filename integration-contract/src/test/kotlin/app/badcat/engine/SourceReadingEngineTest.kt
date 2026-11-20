@@ -649,5 +649,44 @@ class SourceReadingEngineTest {
         assertEquals("Fixture chapter body.", content.text)
         assertEquals(5, requests.size)
     }
-}
+    @Test
+    fun typedChapterContentPreservesActualTocIndexAndTitle() = runBlocking {
+        val source = BookSource(
+            id = "identity-fixture",
+            name = "Identity fixture",
+            baseUrl = "https://reader.example/",
+            ruleContentJson = """{"content":"div#content"}""",
+        )
+        var observedIndex = -1
+        var observedTitle = ""
+        val gateway = SourceHttpGateway(object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> =
+                EngineResult.Success(SourceHttpResponse(200, request.url, body = "<div id='content'>body</div>"))
+        })
+        val engine = SourceReadingEngine(
+            catalog = BookSourceCatalog { EngineResult.Success(listOf(source)) },
+            searchUrlResolver = BookSourceSearchUrlResolver(),
+            searchService = SourceSearchService(gateway),
+            detailService = SourceBookDetailService(gateway),
+            tocService = SourceTocService(gateway),
+            contentService = SourceChapterContentService(
+                http = gateway,
+                scopedTextReplacement = ScopedBookTextReplacement { title, text, context ->
+                    observedIndex = context.chapter.index
+                    observedTitle = context.chapter.title
+                    ReplacedChapterContent(title, text)
+                },
+            ),
+        )
 
+        val selected = BookChapter(37, "Selected chapter", "https://reader.example/chapter/37")
+        val result = assertIs<EngineResult.Success<ChapterContent>>(
+            engine.chapterContent("identity-fixture", "https://reader.example/book", selected, "Novel"),
+        )
+
+        assertEquals("body", result.value.text)
+        assertEquals(37, observedIndex)
+        assertEquals("Selected chapter", observedTitle)
+    }
+
+}
