@@ -350,26 +350,8 @@ class FavoritesActivity : Activity() {
         BadcatTheme.applyTree(this, window.decorView)
     }
 
-    private fun latestBookReadTimes(): Map<String, Long> {
-        val raw = getSharedPreferences(ReadingHistoryActivity.PREFS, MODE_PRIVATE)
-            .getString(ReadingHistoryActivity.KEY, "[]").orEmpty()
-        return runCatching {
-            val records = JSONArray(raw)
-            buildMap {
-                for (index in 0 until records.length()) {
-                    val item = records.optJSONObject(index) ?: continue
-                    val sourceId = item.optString("sourceId")
-                    val bookUrl = item.optString("bookUrl")
-                    if (sourceId.isBlank() || bookUrl.isBlank()) continue
-                    val updatedAt = item.optLong("updatedAt", 0L)
-                    if (updatedAt > 0L) {
-                        val key = "$sourceId|$bookUrl"
-                        put(key, maxOf(get(key) ?: 0L, updatedAt))
-                    }
-                }
-            }
-        }.getOrDefault(emptyMap())
-    }
+    private fun latestBookReadTimes(): Map<String, Long> =
+        BadcatReadingStateRepository(this).latestReadTimes()
 
     private fun folderCard(folder: FavoriteFolder, count: Int): View = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
