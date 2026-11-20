@@ -833,12 +833,9 @@ class SourceChapterActivity : Activity() {
                         if (isFinishing || isDestroyed) return@post
                         chapters = chapterList
                         if (selected < 0 && chapterList.isNotEmpty()) {
-                            // Reading history/bookmarks can outlive a source's chapter URLs.
-                            // Recover against the current TOC instead of leaving the reader on a dead URL.
+                            // A stale or ambiguous legacy URL must never silently select another chapter.
                             currentIndex = -1
-                            currentChapterUrl = ""
-                            status.text = "保存的章节地址已失效，正在打开第一章…"
-                            loadChapterAt(0)
+                            status.text = "保存的章节地址已失效或无法唯一定位，请返回目录重新选择"
                             return@post
                         }
                         currentIndex = selected
