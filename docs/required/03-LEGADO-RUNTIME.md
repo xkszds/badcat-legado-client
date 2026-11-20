@@ -446,3 +446,25 @@ Search/Explore → BookInfo → BookChapterList → BookContent；依赖 Analyze
 - **Risks:** Gson primitive deserializer accepts more than string primitives and may throw on primitive values that are not valid JSON strings; Kotlin default constructor behavior can be bypassed/altered by Gson reflection; absent vs explicit null semantics differ; unknown fields are ignored by typed models unless raw JSON is separately retained. Do not claim raw JSON retention is equivalent to typed model round-trip.
 - **Required tests:** all six rule types object/string input; array/null invalid behavior; malformed nested JSON; unknown-member tolerance plus raw-source preservation boundary; INITIAL_GSON scalar/map coercion; LocalDate ISO string, legacy object, invalid and null behavior; stable serialization round-trip and HTML escaping behavior.
 - **Acceptance/exit:** focused tests pass on the exact host implementations; source comparison records exact differences; unresolved ReadConfig/ParagraphAnchor and complete Book/BookChapter field round-trip remain explicit blockers. No Room/schema/DAO/migration or production storage change in this slice. B′ remains unpassed.
+
+
+### PoC-0.6 execution result — pinned Gson and rule JSON contract
+
+- **Registration commit:** `11f9abdfc76f9298087fb27456ac36892aea28ea`.
+- **Test commit:** `d634aa7be41f4407fa10e09eca3476a2af687b38`.
+- **Pinned upstream:** `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- Direct normalized source comparison against the pinned upstream confirms exact content matches for:
+  - `GsonExtensions.kt` (9,479 chars);
+  - `ExploreRule.kt` (1,126);
+  - `SearchRule.kt` (1,120);
+  - `BookInfoRule.kt` (1,095);
+  - `TocRule.kt` (947);
+  - `ContentRule.kt` (2,009);
+  - `ReviewRule.kt` (2,350).
+- Added `app/src/test/kotlin/io/legado/app/utils/LegadoGsonCompatibilityTest.kt` against actual host Gson/rule classes. It covers six rule object/string forms, array/null deserialization, unknown-field behavior, map numeric coercion, String/Int adapters, LocalDate ISO/legacy-object/null/invalid behavior, HTML escaping and ContentRule serialization round-trip.
+- Important behavior confirmed from source: rule deserializers route object JSON through INITIAL_GSON; any JSON primitive is passed to INITIAL_GSON as a string; arrays/null return null. GSON's six rule adapters and INITIAL_GSON adapter setup match the pinned source byte-for-byte after newline normalization.
+- **Not covered / still blocking schema freeze:** this host source tree does not include upstream `Book.kt`, `BookSource.kt`, or `BookChapter.kt` entities. Thus no authentic `Book.ReadConfig` or `ParagraphAnchor` fixture can be compiled here. Pinned `Book.ReadConfig` contains nullable `startDate: LocalDate?`, nullable `paragraphAnchor: ParagraphAnchor?`, nullable/defaulted booleans/ints/strings and a `List<Long>`; `ParagraphAnchor` fields are `chapterUrl`, `itemId`, `chapterPosition`. Its Room converter is `GSON.toJson(config)` / `GSON.fromJsonObject<ReadConfig>(json).getOrNull()`. A locally invented shadow type is explicitly rejected.
+- Unknown fields: typed Gson model parsing ignores unrecognized members and serialization drops them; source-catalog raw JSON preservation is a separate mechanism. It must not be confused with typed model unknown-field round-trip.
+- **Execution evidence:** GitHub branch head verified at test commit `d634aa7be41f4407fa10e09eca3476a2af687b38`. The commit workflow lookup returned no workflow runs; no local Gradle runner was available through the repository connector. Therefore test source is added but **not executed**, and no test/build/CI pass is claimed.
+- **Result:** partial gate. Source parity for the seven shared files is verified and fixture coverage is authored, but execution and ReadConfig/ParagraphAnchor coverage remain open. Do not freeze schema v1 or add Room yet.
+- **Next ordered action:** obtain/bring in the exact pinned Book/BookSource/BookChapter model contract and its dependencies as real upstream-compatible sources (not local shadow DTOs), then add/run ReadConfig/ParagraphAnchor and model field/null/default round-trip tests. After that, complete schema v1 field map and schema-only preregistration. B′ remains unpassed.
