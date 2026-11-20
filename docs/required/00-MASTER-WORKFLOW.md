@@ -93,3 +93,12 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 - 将原有 Legado 需求/迁移/模型/JS 扩展审计文档、项目完成记录和五类总表标记为按需查阅的历史证据，避免每次重复阅读。
 - 本次仅调整文档，没有修改运行时代码、测试或 APK。
 - 本次整理的起始代码基线为 `11549e7824683553c4039befa2f714fabfb805c3`；最终文档 HEAD 以当前分支引用为准。文档提交没有对应的 CI run/status 证据，不宣称 CI 通过。
+
+
+## 2026-11-20 B′ PoC-0.3 architecture registration
+
+- Third-category report: `docs/required/03-LEGADO-RUNTIME.md`, section “PoC-0.3 registration — persistence ownership and rollback architecture decision”.
+- Candidate for the next PoC implementation: Badcat-owned Room metadata database as the sole writer for BookSource, Book, BookChapter, reading progress and chapter-cache metadata; immutable generation-addressed chapter body files; one compatibility facade; preserve Badcat UI. This is a candidate, not a passed PoC.
+- Do not import the entire upstream AppDatabase v113/26-entity product schema. Do not begin schema/runtime code until the exact entity/converter matrix, legacy backup/dry-run/rollback and all old readers/writers are registered.
+- Corrected PoC-0.2 wording: upstream BookChapter PK `(url,bookUrl)` prohibits duplicate URL rows for one book; unique index `(bookUrl,index)` separately protects chapter order. URL-only host TOC dedup still needs behavior comparison, but must not be described as violating the upstream schema by itself.
+- No runtime code or tests changed; B′ remains unpassed. This entry records the architecture gate and ordered next tasks only.
