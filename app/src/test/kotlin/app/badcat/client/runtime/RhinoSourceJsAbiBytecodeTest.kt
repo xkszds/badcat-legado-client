@@ -82,15 +82,16 @@ class RhinoSourceJsAbiBytecodeTest {
             source,
             """
                 var noArg = java.getSource();
-                var missingArg = java.parseJsRequestHeaders();
                 var nullArg = java.parseJsRequestHeaders(null);
                 var stringArg = java.parseJsRequestHeaders('{"X-Test":"text"}');
                 var objectArg = java.parseJsRequestHeaders({Count: 7, Enabled: true});
+                var batchDefault = java.ajaxAll(['/default-argument']);
                 var batch = java.ajaxAll(['/one', '/two'], true);
                 [
                     noArg.get('bookSourceName'),
-                    missingArg.size(),
                     nullArg.size(),
+                    batchDefault.length,
+                    batchDefault[0].body(),
                     stringArg.get('X-Test'),
                     objectArg.get('Count'),
                     objectArg.get('Enabled'),
@@ -105,10 +106,10 @@ class RhinoSourceJsAbiBytecodeTest {
 
         assertTrue("Rhino invocation failed: $result", result is EngineResult.Success)
         assertEquals(
-            "ABI Rhino fixture|0|0|text|7|true|2|body:/one|body:/two|true|true",
+            "ABI Rhino fixture|0|1|body:/default-argument|text|7|true|2|body:/one|body:/two|true|true",
             (result as EngineResult.Success).value,
         )
-        assertEquals(setOf("/one", "/two"), requestedUrls.toSet())
+        assertEquals(setOf("/default-argument", "/one", "/two"), requestedUrls.toSet())
         runtime.clearSourceState(source.id)
     }
 
