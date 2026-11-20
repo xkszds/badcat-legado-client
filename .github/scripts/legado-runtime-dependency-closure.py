@@ -8,6 +8,7 @@ missing import is or is not a build failure.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import tempfile
@@ -141,6 +142,34 @@ def _decls(text: str) -> set[str]:
     return names
 
 
+
+def _declaration_records(text: str) -> list[dict]:
+    records = []
+    patterns = (
+        ("type", re.compile(r"^\s*(?:(?:public|internal|private|protected|open|abstract|sealed|data|enum|annotation|expect|actual|value|final)\s+)*(?:class|interface|object|typealias|enum\s+class|annotation\s+class|fun\s+interface)\s+([A-Za-z_][A-Za-z0-9_]*)")),
+        ("function", re.compile(r"^\s*(?:(?:public|internal|private|protected|open|inline|suspend|operator|infix|override|external|tailrec)\s+)*fun\s+(?:<[^>]*>\s*)?(?:(?:[A-Za-z_][A-Za-z0-9_?.<>!, ]*)\.)?([A-Za-z_][A-Za-z0-9_]*)\s*(?:<[^>]*>\s*)?\(")),
+        ("property", re.compile(r"^\s*(?:(?:public|internal|private|protected|const|lateinit|override)\s+)*(?:val|var)\s+(?:[A-Za-z_][A-Za-z0-9_?.<>!, ]*\.)?([A-Za-z_][A-Za-z0-9_]*)\b")),
+        ("java_type", re.compile(r"^\s*(?:(?:public|protected|private|abstract|final|static)\s+)*(?:class|interface|enum|record|@interface)\s+([A-Za-z_][A-Za-z0-9_]*)")),
+    )
+    for line_no, line in enumerate(text.splitlines(), 1):
+        if line.lstrip().startswith(("//", "*", "/*", "import ", "package ")):
+            continue
+        for kind, pattern in patterns:
+            match = pattern.search(line)
+            if match:
+                records.append({"name": match.group(1), "kind": kind, "line": line_no})
+                break
+    return records
+
+
+def _mask_non_code(text: str) -> str:
+    text = re.sub(r"/\*.*?\*/", lambda m: re.sub(r"[^\n]", " ", m.group(0)), text, flags=re.S)
+    text = re.sub(r"//[^\n]*", lambda m: " " * len(m.group(0)), text)
+    text = re.sub(r'"""[\s\S]*?"""|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'',
+                  lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
+    return text
+
+
 def _classify_unresolved(name: str) -> tuple[str, str | None]:
     for prefix, evidence in GENERATED_ANDROID_SYMBOLS:
         if name == prefix or name.startswith(prefix + "."):
@@ -182,6 +211,8 @@ class SourceIndex:
         self.packages: dict[str, list[str]] = {}
         self.by_relative: dict[str, list[str]] = {}
         self.declarations: dict[str, set[str]] = {}
+        self.declaration_records: dict[str, list[dict]] = {}
+        self.symbols_by_package: dict[str, dict[str, list[tuple[str, int, str]]]] = {}
         for root, root_label in zip(self.roots, labels):
             if not root.exists():
                 continue
@@ -198,8 +229,16 @@ class SourceIndex:
                 self.packages.setdefault(package, []).append(key)
                 self.by_relative.setdefault(rel, []).append(key)
                 self.declarations[key] = _decls(text)
+                records = _declaration_records(text)
+                self.declaration_records[key] = records
+                symbols = self.symbols_by_package.setdefault(package, {})
+                for record in records:
+                    symbols.setdefault(record["name"], []).append((key, record["line"], record["kind"]))
         for values in self.packages.values():
             values.sort()
+        for symbols in self.symbols_by_package.values():
+            for values in symbols.values():
+                values.sort()
 
     def resolve(self, imported: str) -> tuple[list[str], str]:
         wildcard = imported.endswith(".*")
@@ -282,6 +321,8 @@ def build_report(root: Path) -> dict:
     edges: list[dict] = []
     unresolved: list[dict] = []
     external: list[dict] = []
+    ambiguous: list[dict] = []
+    edge_keys: set[tuple] = set()
     import_counts: Counter[str] = Counter()
     resolution_counts: Counter[str] = Counter()
 
@@ -313,13 +354,12 @@ def build_report(root: Path) -> dict:
                     })
                     continue
                 for target in matches:
-                    edges.append({
-                        "from": key,
-                        "to": target,
-                        "import": name,
-                        "alias": item["alias"],
-                        "resolution": kind,
-                    })
+                    edge_key = (key, target, item["line"], name, "import")
+                    if edge_key not in edge_keys:
+                        edges.append({"from": key, "to": target, "line": item["line"], "symbol": name,
+                                      "alias": item["alias"], "edgeKind": "import", "resolution": kind,
+                                      "confidence": "source_import"})
+                        edge_keys.add(edge_key)
                     if target not in parent:
                         parent[target] = key
                         queue.append(target)
@@ -332,6 +372,36 @@ def build_report(root: Path) -> dict:
                     "alias": item["alias"],
                     "packageGroup": root_package,
                 })
+
+        # Same-package references are lexical candidates, not compiler decisions.
+        package = _package(path, text)
+        masked = _mask_non_code(text)
+        declaration_lines = {record["line"] for record in index.declaration_records.get(key, [])}
+        import_lines = {item["line"] for item in imports}
+        for line_no, line in enumerate(masked.splitlines(), 1):
+            if line_no in declaration_lines or line_no in import_lines or line.lstrip().startswith(("package ", "import ")):
+                continue
+            for match in re.finditer(r"\b[A-Za-z_][A-Za-z0-9_]*\b", line):
+                symbol = match.group(0)
+                candidates = index.symbols_by_package.get(package, {}).get(symbol, [])
+                targets = sorted({record[0] for record in candidates if record[0] != key})
+                if not targets:
+                    continue
+                if len(targets) > 1:
+                    ambiguous.append({"from": key, "line": line_no, "symbol": symbol,
+                                      "candidateTargets": targets, "edgeKind": "same_package_lexical",
+                                      "classification": "ambiguous_same_package_symbol"})
+                for target in targets:
+                    edge_key = (key, target, line_no, symbol, "same_package_lexical")
+                    if edge_key in edge_keys:
+                        continue
+                    edges.append({"from": key, "to": target, "line": line_no, "symbol": symbol,
+                                  "alias": None, "edgeKind": "same_package_lexical",
+                                  "resolution": "declaration_candidate", "confidence": "lexical_candidate"})
+                    edge_keys.add(edge_key)
+                    if target not in parent:
+                        parent[target] = key
+                        queue.append(target)
 
     def shortest_path(key: str) -> list[str]:
         result = []
@@ -351,6 +421,8 @@ def build_report(root: Path) -> dict:
             "relativePath": relative,
             "package": _package(index.files[key], text),
             "declarations": sorted(index.declarations[key]),
+            "declarationRecords": index.declaration_records[key],
+            "contentSha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
             "importCount": len(imports),
             "dependencyFamilies": _family_flags(relative, imports, text),
             "shortestSeedPath": shortest_path(key),
@@ -384,6 +456,9 @@ def build_report(root: Path) -> dict:
         },
         "summary": {
             "indexedSourceFiles": len(index.files),
+            "samePackageLexicalEdges": sum(1 for edge in edges if edge.get("edgeKind") == "same_package_lexical"),
+            "importEdges": sum(1 for edge in edges if edge.get("edgeKind") == "import"),
+            "ambiguousSamePackageReferences": len(ambiguous),
             "seedCount": len(SEEDS),
             "resolvedSeedCount": len(seed_keys),
             "reachableSourceFileCount": len(visited),
@@ -402,6 +477,7 @@ def build_report(root: Path) -> dict:
         },
         "nodes": nodes,
         "edges": edges,
+        "ambiguousReferences": sorted(ambiguous, key=lambda item: (item["from"], item["line"], item["symbol"])),
         "unresolvedInternalImports": unresolved,
         "externalImports": external,
         "buildOwnership": {
