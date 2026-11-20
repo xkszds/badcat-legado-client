@@ -5,7 +5,6 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
-import android.util.Base64
 import android.view.Gravity
 import android.view.View
 import android.widget.LinearLayout
@@ -13,7 +12,6 @@ import android.widget.ScrollView
 import android.widget.TextView
 
 private data class ReaderBookmark(
-    val key: String,
     val sourceId: String,
     val bookUrl: String,
     val chapterUrl: String,
@@ -24,7 +22,7 @@ private data class ReaderBookmark(
 )
 
 class BookmarkActivity : Activity() {
-    private val prefs by lazy { getSharedPreferences("badcat_reading_progress", MODE_PRIVATE) }
+    private val readingState by lazy { BadcatReadingStateRepository(this) }
     private lateinit var content: LinearLayout
     private val ink = Color.rgb(48, 55, 66)
     private val muted = Color.rgb(135, 145, 158)
@@ -78,22 +76,9 @@ class BookmarkActivity : Activity() {
 
     override fun onResume() { super.onResume(); if (::content.isInitialized) refresh(); BadcatTheme.applyTree(this, window.decorView) }
 
-    private fun readBookmarks(): List<ReaderBookmark> = prefs.all.mapNotNull { (key, value) ->
-        if (!key.startsWith("chapter_bookmark_") || value !is Int) return@mapNotNull null
-        val raw = key.removePrefix("chapter_bookmark_")
-        val decoded = runCatching {
-            String(Base64.decode(raw, Base64.URL_SAFE or Base64.NO_WRAP), Charsets.UTF_8).split("\n")
-        }.getOrNull() ?: return@mapNotNull null
-        if (decoded.size != 3 || decoded.any { it.isBlank() }) return@mapNotNull null
-        val titleKey = "chapter_bookmark_title_" + raw
-        ReaderBookmark(
-            key, decoded[0], decoded[1], decoded[2],
-            prefs.getString("chapter_bookmark_book_" + raw, null).orEmpty().ifBlank { "未命名小说" },
-            prefs.getString(titleKey, null).orEmpty().ifBlank { decoded[2].substringAfterLast('/').take(48).ifBlank { "章节书签" } },
-            value.coerceAtLeast(0),
-            prefs.getLong("chapter_bookmark_time_" + raw, 0L),
-        )
-    }.sortedWith(compareByDescending<ReaderBookmark> { it.savedAt }.thenByDescending { it.key })
+    private fun readBookmarks(): List<ReaderBookmark> = readingState.bookmarks().map {
+        ReaderBookmark(it.sourceId, it.bookUrl, it.chapterUrl, it.bookName, it.chapterTitle, it.scrollY, it.savedAt)
+    }
 
     private fun refresh() {
         content.removeAllViews()
@@ -139,11 +124,7 @@ class BookmarkActivity : Activity() {
                         BadcatTheme.alertBuilder(this@BookmarkActivity).setMessage("删除这条书签？")
                             .setNegativeButton("取消", null)
                             .setPositiveButton("删除") { _, _ ->
-                                val raw = item.key.removePrefix("chapter_bookmark_")
-                                prefs.edit().remove(item.key)
-                                    .remove("chapter_bookmark_title_" + raw)
-                                    .remove("chapter_bookmark_book_" + raw)
-                                    .remove("chapter_bookmark_time_" + raw).apply()
+                                readingState.removeBookmark(item.sourceId, item.bookUrl, item.chapterUrl)
                                 refresh()
                             }.show()
                     })
@@ -155,18 +136,16 @@ class BookmarkActivity : Activity() {
     }
 
     private fun confirmClearAll() {
-        val keys = prefs.all.keys.filter { it.startsWith("chapter_bookmark_") }
-        if (keys.isEmpty()) {
+        val count = readingState.bookmarks().size
+        if (count == 0) {
             BadcatTheme.alertBuilder(this).setMessage("当前没有可清空的书签").setPositiveButton("知道了", null).show()
             return
         }
         BadcatTheme.alertBuilder(this).setTitle("清空全部书签")
-            .setMessage("将删除 ${readBookmarks().size} 条书签，不会删除小说或阅读进度。此操作不可撤销。")
+            .setMessage("将删除 ${count} 条书签，不会删除小说或阅读进度。此操作不可撤销。")
             .setNegativeButton("取消", null)
             .setPositiveButton("清空") { _, _ ->
-                val edit = prefs.edit()
-                keys.forEach { key -> edit.remove(key) }
-                edit.apply()
+                readingState.clearBookmarks()
                 refresh()
             }.show()
     }
