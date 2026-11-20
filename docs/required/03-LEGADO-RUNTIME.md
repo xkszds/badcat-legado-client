@@ -1638,3 +1638,16 @@
 - **Exclusions:** no source copying, Gradle/module edits, shadow types, no-op, API changes, DB/schema/Room, persistence, production wiring, UI/Reader, tests/build/APK/device, or `main` writes.
 - **Risks:** GitHub tree/import graph cannot prove reflection, generated code, runtime service registration or complete compiler closure. Explicitly retain these as unresolved G2 inputs rather than fabricate certainty.
 - **Required tests/evidence:** deterministic manifest validation (schema/duplicate path/blob SHA), graph integrity (all resolved internal edges point to pinned tree files), root/caller coverage report. Since this task is inventory-only, no runtime tests or build pass is expected.
+
+
+### 2026-11-20 Runtime-1.0 PoC-7f result — G1 source/dependency manifest
+
+- **Registration:** `d4dbfd82290cec1b6ab27366441a30f6db3f450f`; starting HEAD `16a5752a76b1eb7f6643b5912f7ec21e7c036db5`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Machine-readable manifest:** `docs/audits/legado-runtime-1.0-poc7f-source-dependency-manifest.json`, commit `809053677c5cc5b810f0f522bedc6348b533852b`; fetched back and parsed as valid JSON. It contains 17 behavior-bearing root files, exact blob SHAs/direct imports, 773 app main resource/asset files, eight upstream Gradle/build inputs and 17 Badcat host caller anchors.
+- **Human report:** `docs/audits/legado-runtime-1.0-poc7f-source-dependency-manifest.md`, commit `8507b24c4149ea4722c9bca065420a68c225fbf9`.
+- **Tree integrity:** Badcat tree 478 entries and Legado tree 3,298 entries; both API responses `truncated=false`. Pinned upstream has 1,078 Kotlin/Java files under `app/src/main/java`.
+- **Manifest scope:** BaseSource, BookSource, Book, BookChapter, JsExtensions, JsSourceEngine, SharedJsScope, AnalyzeRule, AnalyzeUrl, CookieStore, CacheManager, login/verification, HTTP/WebView bridges and source lifecycle. Caller anchors include source import/export, search/detail/TOC/content, HTTP/login/session, existing JS host and contract services. Upstream anchors include App/NativeBaseSource, JsSourceBook, BookList/BookInfo/BookChapterList/BookContent, SourceHelp, CookieManager, login, verification and browser callers.
+- **G1 status:** partial inventory gate completed. Direct imports and same-basename source candidates are recorded, not a recursively resolved compiler closure. Prior 658-node/6,303-edge graph remains lower-bound evidence. Same-package references, reflection, DI, generated Room/KSP/Parcelize/BuildConfig/R, resource/manifest wiring and runtime callbacks remain unresolved.
+- **G2 next:** package-aware recursive declaration graph + all callers + resource/generated/dependency variants, then iterative compile of unchanged pinned sources in isolated Android modules. No stubs/no-op/shadow types/source rewriting. Stop if closure forces Legado product UI/Reader or a second DB authority.
+- **Actual changes:** docs and JSON manifest only. No Kotlin/Java runtime, Gradle, tests, DB/schema, persistence, production caller, UI/Reader, APK or `main` changed. No test/build/CI/source-smoke/device result is claimed.
+- **Status:** G1 inventory is not compiler closure; G2 not started; B′ and full Legado compatibility remain unpassed/blocked.
