@@ -1,5 +1,9 @@
 > **范围说明（重要）**：本文件仅是 Legado 引擎技术迁移细项，不是用户所说的“坏坏猫复刻五大类”。坏坏猫产品级五大类要求以 [BADCAT_REPLICATION_FIVE_CATEGORIES.md](BADCAT_REPLICATION_FIVE_CATEGORIES.md) 为准；后续必须同时维护两份清单，不得用本文件替代 UI、阅读器、AdBlock/AdMark、PPRule 等复刻任务。
 
+
+> **必读入口已调整（2026-11-20）**：本文件保留为详细历史需求/实施记录，不再要求每次开发重读。新的流程入口是 [总流程清单](required/00-MASTER-WORKFLOW.md)，对应分类唯一必读清单是 [第三类 Legado](required/03-LEGADO-RUNTIME.md)。分类清单已汇总当前状态、下一步和验收；只有追查本文件的具体历史细节时才打开。
+
+
 # 用户要求：完整还原原版 Legado（长期执行清单）
 
 > 本文件是本仓库的长期需求基线。后续会话、开发者和自动化任务必须先读本文件与 `docs/full-legado-runtime-migration.md`，再继续实现；不得把已完成的局部解析器移植误报为完整兼容。所有需求、缺口、测试证据和决策都必须持续更新在 GitHub，不依赖聊天记录。

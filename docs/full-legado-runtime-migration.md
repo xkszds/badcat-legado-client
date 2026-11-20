@@ -1,5 +1,9 @@
 # Full upstream Legado runtime migration
 
+
+> **必读入口已调整（2026-11-20）**：本文件保留为详细历史需求/实施记录，不再要求每次开发重读。新的流程入口是 [总流程清单](required/00-MASTER-WORKFLOW.md)，对应分类唯一必读清单是 [第三类 Legado](required/03-LEGADO-RUNTIME.md)。分类清单已汇总当前状态、下一步和验收；只有追查本文件的具体历史细节时才打开。
+
+
 > 长期用户需求与五大类完整验收清单：[docs/USER_REQUIREMENTS_AND_PARITY_CHECKLIST.md](USER_REQUIREMENTS_AND_PARITY_CHECKLIST.md)。每次继续开发前必须先读该清单并更新完成状态。
 
 ## Goal
