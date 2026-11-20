@@ -3,6 +3,18 @@
 > **唯一入口：** 每次第三类任务先读 `00-MASTER-WORKFLOW.md`，再读本文件。本文按“总框架流程 → 大类 → 小类 → 程序/模块 → 验收门禁”组织；后半部分保留按日期记录的原始审计证据。
 > **固定基准：** `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`；GPL-3.0；只允许在 `integration/legado-upstream-runtime` 工作，禁止改 `main`。
 
+## 最高优先级硬门槛：完整 Legado 书源运行层 + 坏坏猫产品外壳（不可降级）
+
+这是第三类所有子任务的先决条件，优先级高于 B′、模块拆分、Room/迁移和任何局部实现进度。
+
+1. **Badcat 产品层不换：** 原版坏坏猫搜索 UI、其他页面、净化系统、书架/收藏、书签、阅读器、CSS/排版和交互保持坏坏猫自身实现。Legado 不提供替代 UI/Reader。
+2. **Legado 书源引擎必须按固定上游完整对齐：** 固定基准 `330e606c4d57e08adc056ff8ab7a4132c784da9a`。书源格式/字段/默认值/序列化、所有书源规则类型、AnalyzeRule/AnalyzeUrl、Rhino 与全部书源相关 JsExtensions/overload/jsLib、HTTP/请求配置/响应处理、Cookie/登录/源变量/会话、BaseSource 生命周期、搜索/发现/分页/详情/目录/正文/多页正文/批量内容、缓存及其依赖模型/工具/服务都纳入兼容范围。
+3. **完整不是只跑通一条链：** Search → Detail → TOC → Content 的成功只是必要条件。还要证明所有书源公开 API、规则执行语义、边界行为和生命周期与固定上游一致。每个符号/能力必须登记：上游路径与签名、Badcat 接入点、实现来源、差异、测试证据、状态。
+4. **只接受真实上游实现或经验证的等价实现：** 优先复用固定 SHA 源码和完整依赖闭包；适配器必须薄。禁止 shadow DTO 伪装官方模型、同名简化方法、selector-only、no-op、空返回、假成功、测试替身进入生产路径。不能完整实现时必须显式阻断，不得降级宣称兼容。
+5. **模块架构为兼容性服务：** 如果当前 Android-free `:integration-contract`、B′ Badcat 自有数据方案或现有 host projection 阻碍完整上游闭包，必须重新审查并比较 Android Runtime 模块、受控上游核心模块和 Hybrid；不得为了保住 B′ 让 Legado 语义缩水。不得未经迁移/回滚审查就直接搬入整套 AppDatabase 或 Room schema。
+6. **范围排除：** 不搬 Legado UI、书架产品流程或 Reader UI；RSS/TTS/音视频等只有在固定书源链路实际依赖时才纳入。坏坏猫阅读器只消费章节正文与必要元数据，负责自身净化、排版、CSS 和阅读交互。
+7. **完成门禁：** 书源 API 符号覆盖清单 100% 盘点；模型/规则/JS/HTTP/Cookie/登录/生命周期差分契约；脱敏回放；多种真实书源全链路；Android 集成及 Badcat 原 UI 回归。任何未覆盖能力均阻止“完整兼容”结论。
+
 ## A. 第三类总框架流程（从源配置到可恢复阅读）
 
 第三类不是把 Legado 的文件整包搬进来，而是让 Badcat 原版 UI 通过受控适配层，使用固定版本的 Legado 兼容运行时。必须按以下顺序推进，不得跳过前置门禁：
@@ -1075,3 +1087,15 @@
 - The earlier documentation-only run `44706902363` began before the code correction and therefore does not validate it.
 - This checkpoint is intentionally the final documentation push before waiting for a fresh workflow on the current tree. The new workflow must include code commit `d3f5efd224943781adb5ed7dc7fce39362252aa5` and the exact resulting HEAD; do not push another commit until that run completes, to avoid cancelling it again.
 - Required evidence remains: all unit tests pass and `:app:assembleDebug` completes; capture report/APK artifact IDs and SHA-256. No current pass or APK is claimed.
+
+
+## 2026-11-20 重新定界注册：完整 Legado 书源运行能力（最高优先级）
+
+- **用户确认的产品目标：** 坏坏猫继续作为唯一产品外壳；保留原版坏坏猫搜索界面/搜索流程、其他页面布局、净化、阅读器、CSS/排版和交互。Legado 只提供书源导入及完整书源解析运行能力，不搬 Legado UI、书架 UI 或 Reader UI。
+- **不可降低的兼容标准：** 固定上游 SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a` 的全部书源相关模型、规则、JS/Rhino/JsExtensions、HTTP、Cookie、登录、BaseSource 生命周期、搜索/发现、详情、目录、正文、多页/批量、缓存及实际依赖闭包。逐项符号/API 覆盖和差分测试是“完整”的定义；单条真实源 E2E 不能代替完整覆盖。
+- **架构重新审视：** 当前 B′、Android-free `:integration-contract` 和 host projection 仅是实验路线，不享有优先于兼容性的地位。下一阶段必须审计现有生产实现与固定上游的逐符号差异，确认哪些真实上游源码/模块能直接复用，再比较独立 Android Runtime、受控上游核心模块和 Hybrid。禁止新增 shadow DTO、简化同名 API 或 no-op 来维持当前架构。
+- **明确排除：** Legado UI/Reader UI、无书源依赖的 RSS/TTS/音视频产品功能；Badcat Reader 保留并消费引擎正文结果，继续负责净化与显示。
+- **重新审视的实施顺序：** (1) 上游书源 API/依赖闭包清单；(2) Badcat 当前代码/调用方/测试替身逐项盘点；(3) 对每项标记真实复用、等价适配、缺失或错误语义；(4) 评估架构与数据所有权；(5) 先登记具体模块和测试，再改代码。不得先建 Room/schema v1 或做大规模搬运。
+- **起始基线：** `integration/legado-upstream-runtime`，HEAD `5e79276badd050feaabb5c3002afa65b9938b0e8`。本注册只更新必读规则，不代表代码已达到新门槛。
+- **既有 CI 证据（仅供准确记录）：** run `44707054980`，exact HEAD 同上，job 成功；日志显示 contract unit tests、bounded Rhino host tests 和 Debug APK assemble 均完成成功，APK artifact `badcat-legado-debug` ID `14615483023`，ZIP SHA-256 `f68f5e8eea5241e29a3cda0feaa230ac50d3abf3f687d57396a5dee0884ba802`。但真实源证据有限：Nyasama 搜索 3/5 返回可用结果；Pinshuzhai 的单源 Search→Detail→TOC→Content 通过；上传语料样本仅 1/4 完整跑通（3 个失败）。这不证明完整 Legado 兼容，也不证明 Badcat 真机/UI 验收。
+- **本轮尚未修改运行时代码/Gradle/数据库/UI，也未冻结 schema v1；** 下一步是按上述顺序完成符号/API 和依赖闭包差异审计，再登记第一批实现变更。
