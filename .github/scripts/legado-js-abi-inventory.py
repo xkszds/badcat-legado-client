@@ -27,16 +27,16 @@ HOST_FILE = "app/badcat/client/runtime/RhinoSafeSourceJavaExtensions.kt"
 
 def find_scope(lines: list[str], symbol: str) -> tuple[int, int]:
     declaration = re.compile(
-        rf"^(?:(?:public|internal|private)\\s+)?"
-        rf"(?:interface|class|object)\\s+{re.escape(symbol)}\\b"
+        rf"^(?:(?:public|internal|private)\s+)?"
+        rf"(?:interface|class|object)\s+{re.escape(symbol)}\b"
     )
     start = next((i for i, line in enumerate(lines) if declaration.match(line)), None)
     if start is None:
         raise RuntimeError(f"Cannot find Kotlin declaration {symbol}")
     end = len(lines)
     top_level = re.compile(
-        r"^(?:(?:public|internal|private)\\s+)?"
-        r"(?:interface|class|object|enum\\s+class|data\\s+class|sealed\\s+class)\\s+"
+        r"^(?:(?:public|internal|private)\s+)?"
+        r"(?:interface|class|object|enum\s+class|data\s+class|sealed\s+class)\s+"
     )
     for i in range(start + 1, len(lines)):
         if top_level.match(lines[i]):
@@ -54,11 +54,11 @@ def _strip_line_comment(line: str) -> str:
         if quote:
             if escaped:
                 escaped = False
-            elif char == "\\\\":
+            elif char == "\\":
                 escaped = True
             elif char == quote:
                 quote = None
-        elif char in ("\\\"", "'"):
+        elif char in ("\\"", "'"):
             quote = char
         elif line[i:i + 2] == "//":
             return line[:i]
@@ -79,7 +79,7 @@ def capture_signature(lines: list[str], start: int, limit: int) -> str:
                 continue
             if stripped.startswith(("{", "=", "}")):
                 break
-            if re.match(r"^(?:@|(?:override\\s+)?fun\\s+|private\\s+|protected\\s+|internal\\s+|val\\s+|var\\s+)", stripped):
+            if re.match(r"^(?:@|(?:override\s+)?fun\s+|private\s+|protected\s+|internal\s+|val\s+|var\s+)", stripped):
                 break
         quote = None
         escaped = False
@@ -88,12 +88,12 @@ def capture_signature(lines: list[str], start: int, limit: int) -> str:
             if quote:
                 if escaped:
                     escaped = False
-                elif char == "\\\\":
+                elif char == "\\":
                     escaped = True
                 elif char == quote:
                     quote = None
                 continue
-            if char in ("\\\"", "'"):
+            if char in ("\\"", "'"):
                 quote = char
             elif char == "(":
                 depth += 1
@@ -112,7 +112,7 @@ def capture_signature(lines: list[str], start: int, limit: int) -> str:
                 if quote:
                     if char == quote:
                         quote = None
-                elif char in ("\\\"", "'"):
+                elif char in ("\\"", "'"):
                     quote = char
                 elif char in ("{", "="):
                     body_pos = pos
@@ -128,14 +128,14 @@ def capture_signature(lines: list[str], start: int, limit: int) -> str:
             next_line = _strip_line_comment(lines[i]).strip()
             if not next_line or next_line.startswith((":", "where ")):
                 continue
-            if next_line.startswith(("{", "=", "}")) or re.match(r"^(?:@|(?:override\\s+)?fun\\s+)", next_line):
+            if next_line.startswith(("{", "=", "}")) or re.match(r"^(?:@|(?:override\s+)?fun\s+)", next_line):
                 break
             # A continuation return type is allowed.
             parts.append(next_line)
             break
         parts.append(raw)
         i += 1
-    signature = re.sub(r"\\s+", " ", " ".join(parts)).strip()
+    signature = re.sub(r"\s+", " ", " ".join(parts)).strip()
     return signature
 
 
@@ -144,15 +144,15 @@ def collect_scope(root: Path, relative: str, symbol: str) -> list[dict]:
     lines = path.read_text(encoding="utf-8").splitlines()
     start, end = find_scope(lines, symbol)
     methods: list[dict] = []
-    method_start = re.compile(r"^ {4}(?:(?:override|suspend|inline|operator|infix|tailrec|external)\\s+)*fun\\s+")
+    method_start = re.compile(r"^ {4}(?:(?:override|suspend|inline|operator|infix|tailrec|external)\s+)*fun\s+")
     for i in range(start + 1, end):
         if not method_start.match(lines[i]):
             continue
         signature = capture_signature(lines, i, end)
-        name_match = re.search(r"\\bfun\\s+(?:<[^>]+>\\s*)?([A-Za-z_][A-Za-z0-9_]*)\\s*\\(", signature)
+        name_match = re.search(r"\bfun\s+(?:<[^>]+>\s*)?([A-Za-z_][A-Za-z0-9_]*)\s*\(", signature)
         if not name_match:
             continue
-        annotations = "\\n".join(lines[max(start, i - 5):i])
+        annotations = "\n".join(lines[max(start, i - 5):i])
         methods.append({
             "scope": symbol,
             "source": relative,
@@ -223,7 +223,7 @@ def main() -> None:
         ],
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report["comparison"], ensure_ascii=False, indent=2))
 
 
