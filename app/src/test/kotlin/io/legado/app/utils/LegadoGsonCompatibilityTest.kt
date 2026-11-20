@@ -71,7 +71,7 @@ class LegadoGsonCompatibilityTest {
     @Test
     fun initialGsonUsesPinnedIntegerAndStringCoercion() {
         val mapType = object : TypeToken<Map<String?, Any?>?>() {}.type
-        val map = INITIAL_GSON.fromJson(
+        val map: Map<String?, Any?>? = INITIAL_GSON.fromJson(
             """{"whole":3.0,"fraction":3.25,"nested":[2.0,true]}""",
             mapType
         )
