@@ -7,10 +7,12 @@ on:
     branches: [ main, fix/favorites-search-ui, integration/legado-upstream-runtime ]
   workflow_dispatch:
 
-# Keep each pushed commit's verification run: rapid, independent fixes must
-# not cancel the tests/build that are validating the preceding commit.
+# Give every pushed commit an independent concurrency group. GitHub Actions
+# keeps at most one pending run per group, so a branch-only group silently
+# replaces older pending commits instead of preserving their verification.
+# Runner-capacity queuing remains visible as queued jobs on each run.
 concurrency:
-  group: badcat-android-build-${{ github.ref }}
+  group: badcat-android-build-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: false
 
 permissions:
