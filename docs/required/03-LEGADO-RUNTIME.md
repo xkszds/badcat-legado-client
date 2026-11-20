@@ -721,3 +721,13 @@ Search/Explore → BookInfo → BookChapterList → BookContent；依赖 Analyze
 - **Acceptance/rollback:** no URL-only launch may synthesize index 0; exact unique TOC chapter object must reach content service. Revert this isolated slice to roll back; no persisted data changes.
 - **Exclusions:** changing bookmark/history data schema, Room, chapter cache identity/token fence, TOC URL de-dup policy, UI redesign, upstream BatchContentContext implementation.
 - **Status at registration:** preregistered; implementation not started; PoC-0.8 remains partial/not accepted.
+
+
+#### PoC-0.9 implementation checkpoint (2026-11-20)
+
+- **Actual change:** `SourceChapterActivity.loadInitial` now preserves the indexed fast path for intents carrying a non-negative chapter index. For legacy history/bookmark intents without an index, it awaits the current TOC, calls `ChapterCatalogQuery.findByUrl`, and only calls typed `chapterContent(BookChapter)` if exactly one chapter matches. Missing/ambiguous URLs produce `NOT_FOUND` without requesting the requested chapter body.
+- Stale or ambiguous catalog resolution no longer silently redirects to the first chapter. It reports that the saved chapter cannot be uniquely located and asks the user to return to the TOC. Existing `BookmarkActivity` and `ReadingHistoryActivity` URL-only intents and stored keys remain unchanged and are handled by this resolver.
+- **No persistence change:** no bookmark/history/progress key, database, cache, transaction or UI layout changed. No migration required.
+- **Validation:** code path and callers were reviewed from the integration branch. At exact HEAD `6fb7cd3d79f5bb9987b85aaae8d125105a576074`, GitHub combined statuses and associated workflow runs both returned empty lists. Tests/app build/CI remain not executed or verified; no APK/device/real-source evidence.
+- **Acceptance:** behavior is implemented but PoC-0.9 is not accepted until the focused contract tests and app build execute, and the complete URL alias/normalization contract is compared with upstream BatchContentContext. This also does not prove cache identity or save-token fencing.
+- **Next:** run the focused tests/build in an actual runner when available; then proceed to a separate preregistered cache identity + ContentSaveFence PoC. Do not begin Room/schema v1.
