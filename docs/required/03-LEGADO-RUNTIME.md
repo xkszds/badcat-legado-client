@@ -1431,3 +1431,10 @@
 - **Result and limitation:** principal runtime callers are mapped, but whole-app BookSource/BookChapter access and every JS overload callsite are not yet exhaustive. PoC-4 is therefore an audit checkpoint, not an exhaustive call graph and not a Runtime-0.7/full-compatibility pass. PoC-1's authentic two-file compile boundary remains failed; PoC-2 architecture remains unselected; PoC-3 remains a contract audit.
 - **Actual changes:** documentation only. No Kotlin/Java, Gradle, tests, database/schema, persistence, production callers, UI/Reader, APK or `main` changed. No test/build/CI pass is claimed for this documentation commit.
 - **Next gate:** complete targeted BookSource/BookChapter/model access inventory and method-level JS ABI/callsite mapping; then preregister PoC-5 with exact source files, all imports/callers, typed real service ports, compiler target, differential tests and exclusions before code changes. Do not use Map/Any? shadow contracts, no-op services or wholesale upstream UI/DB/Reader inclusion.
+
+
+#### PoC-4 paginated caller-inventory correction
+
+- Follow-up used the GitHub code-search REST API's pagination at the same pinned SHA, with `incomplete_results=false`: `BookSource` returned 382 unique paths (100/100/100/82; 141 production `app/src/main/java` paths); `BookChapter` returned 154 unique paths (100/54; 92 production paths). The ten runtime-service class-token searches each returned complete first-page result sets (7–92 matches).
+- This closes the prior 100-result truncation for the **textual reference inventory** of these symbols. It does not turn lexical matches into a semantic call graph: results include declarations, tests, docs, unrelated product consumers, and cannot reveal dynamic JS method names or reflection.
+- Audit report was updated with the paginated counts and scope interpretation. PoC-4 remains an audit checkpoint; the method-level JS ABI/dynamic-call map and service closure remain open. No runtime code or tests changed.
