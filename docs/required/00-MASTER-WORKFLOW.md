@@ -190,3 +190,8 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 
 - Chapter-body cache now has a required typed `(sourceId, bookUrl, chapterIndex)` contract and in-process version fence; production AtomicFile cache separates same-URL chapters, checks URL metadata, and rejects stale asynchronous publication after invalidation. Legacy URL-keyed methods remain compatibility-only.
 - PoC-1.0 is partial/not accepted: no test/build/CI/APK/device evidence, no direct replace/delete product operation, and no full upstream mutation lifecycle parity. B′ remains unpassed.
+
+
+## 2026-11-20 PoC-1.0 regression fixture update
+
+- Added JVM service coverage for same-URL chapters remaining separate by index and stale response publication being fenced. The required cache interface now forces implementations to provide typed/fenced operations. No tests were executed; CI remains unverified and PoC-1.0 is not accepted.
