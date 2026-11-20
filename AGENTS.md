@@ -53,14 +53,26 @@ The user's explicit requirement is a **complete Legado implementation**, not a s
 
 If a task appears to conflict with this policy, follow this policy and the user's complete-Legado requirement; do not take the shortcut of implementing only the newly mentioned method.
 
-## Mandatory pre-work ledger discipline (user requirement, 2026-11-19)
+## Mandatory checklist navigation and work discipline (2026-11-20)
 
-For every work session and every new implementation task:
-1. Re-read this file and the applicable required checklists before acting.
-2. Before changing runtime/product code, append the task scope, exact target, upstream source, known callers, compatibility/security risks, regression tests and acceptance criteria to the mandatory checklist and the relevant migration plan.
-3. Execute only the recorded scope. If inspection reveals that the checklist is inaccurate or incomplete, correct the checklist first, then continue.
-4. After the work, update the checklist with actual files/behavior changed, test commands/results, CI run and commit SHA, unresolved items, and an explicit review of whether the checklist itself was correct.
-5. Never mark a task complete based on a plan, documentation-only commit, compilation alone, pending CI, or unverified APK.
+Canonical checklist system:
+- `docs/required/00-MASTER-WORKFLOW.md` — read for every task.
+- Read exactly the relevant category checklist for a single-category task:
+  1. `docs/required/01-BADCAT-UI.md`
+  2. `docs/required/02-READER.md`
+  3. `docs/required/03-LEGADO-RUNTIME.md`
+  4. `docs/required/04-ADBLOCK-ADMARK.md`
+  5. `docs/required/05-PP-RULE.md`
+
+Do not require every session to reread all five category lists or all historical audits. For a cross-category task, read only the additional category lists actually affected. Historical audit files are supporting evidence, not routine entry checklists. In particular, Legado work uses the master workflow plus the single consolidated category-3 checklist.
+
+For every task:
+1. Confirm branch `integration/legado-upstream-runtime`; never write to `main`.
+2. Read this AGENTS file, the master workflow and the relevant category checklist.
+3. Before code changes, register scope, exact target, upstream source/pinned SHA, callers, data ownership, compatibility/security risks, contract/regression tests and acceptance/exit criteria in the relevant category checklist.
+4. Execute only the registered scope. If the checklist is incomplete, correct it before code.
+5. After work, record actual files/behavior, test commands/results, exact CI run/head, artifact hashes, unresolved items and checklist self-review in that category checklist.
+6. Never mark completion based on a plan, documentation-only commit, compilation alone, pending CI or unverified APK.
 
 This process is mandatory; do not begin a code change while its task and regression/acceptance requirements are absent from the checklist.
 
