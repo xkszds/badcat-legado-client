@@ -65,14 +65,14 @@ class FileChapterContentCacheTest {
     fun chapterIndexSeparatesSameUrlCacheEntries() {
         val first = chapterCacheDigest("source", "book", 4)
         val second = chapterCacheDigest("source", "book", 9)
-        assertNotEquals(first, second)
+        org.junit.Assert.assertNotEquals(first, second)
     }
 
     @Test
     fun chapterIndexCacheKeyDoesNotAliasLegacyUrlCacheKey() {
         val indexed = chapterCacheDigest("source", "book", 4)
         val legacy = chapterCacheDigest("source", "book", "https://example.test/chapter")
-        assertNotEquals(indexed, legacy)
+        org.junit.Assert.assertNotEquals(indexed, legacy)
     }
 
 }
