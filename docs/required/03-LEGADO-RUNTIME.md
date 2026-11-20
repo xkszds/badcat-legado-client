@@ -2083,3 +2083,15 @@
 - **Acceptance:** test fixture is public and visible to RhinoClassShutter; both methods have identical name/arity and exact parameter types; all four argument cases assert expected marker; focused test executes successfully; report exact command/result. Any failure must be investigated without weakening assertions.
 - **Explicit exclusions:** no WebView/instrumentation test, no test runner or Gradle dependency change, no production bridge change, no compiler experiment, no DB/schema/migration/persistence, no callers, no UI/Reader, no G3/G4, no APK/release or `main`.
 - **Status at registration:** preregistered only. Runtime-2.0 design complete/not executed; WebView half remains blocked on instrumentation setup/device; G2 remains BLOCKED/partial; B′ and full Legado compatibility remain unpassed.
+
+
+### 2026-11-21 Runtime-2.1 result — Rhino-only overload differential unit test
+
+- **Registration:** starting HEAD `b70e6d03bf853b80dd106a0c6e53694e84c6243b`; registration commit `a2ff0d5aac0730c35fc703f8c22d052d6822d022`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Change:** added exactly `app/src/test/kotlin/app/badcat/client/runtime/RhinoOverloadResolutionTest.kt`; commit `a61e44ddfb406def548c0ace28337fcd5157e72e`; blob `e658e1e25dff82cae00bb476a9ede715ec640a6c`. No other file changed in that commit.
+- **Fixture:** public test-only RhinoOverloadProbe has two same-name/same-arity public methods annotated with JavascriptInterface: select(String,String) returns STRING and select(String,Int) returns INT. Each Rhino evaluation creates a fresh ScriptBindings scope and injects the same fixture through RhinoScriptEngine.eval.
+- **Assertions:** four tests assert String→STRING, Number→INT, null→STRING and undefined→STRING, matching Runtime-1.9 exact shipped DEX conversion-weight evidence.
+- **Execution/CI:** push triggered Android debug build run #3049 / Run ID `44802679068`, commit `a61e44dd...`. At checklist update the run status is **pending**, GitHub reports zero jobs so far and the commit has no completed status checks. The focused unit test has **not yet been verified as executed or passed**. No local Gradle execution was available in this task.
+- **Decision:** implementation is present; Runtime-2.1 **PARTIAL / NOT ACCEPTED** until the focused test is observed passing in a real workflow run. If CI remains queued/cancelled, record that as no test evidence, not a pass.
+- **Validation:** source/commit inspection only; no compile, Gradle, test, CI completion, device/WebView or APK validation claimed. No production source, Gradle/workflow, DB/schema/migration/persistence, callers, UI/Reader or `main` changed.
+- **Checklist self-audit:** only the preregistered single test file changed plus this result entry. WebView instrumentation half remains separate and unimplemented; G2 remains BLOCKED/partial; B′ and full Legado compatibility remain unpassed.
