@@ -58,7 +58,7 @@ def _strip_line_comment(line: str) -> str:
                 escaped = True
             elif char == quote:
                 quote = None
-        elif char in ("\\"", "'"):
+        elif char == '"' or char == "'":
             quote = char
         elif line[i:i + 2] == "//":
             return line[:i]
@@ -93,7 +93,7 @@ def capture_signature(lines: list[str], start: int, limit: int) -> str:
                 elif char == quote:
                     quote = None
                 continue
-            if char in ("\\"", "'"):
+            if char == '"' or char == "'":
                 quote = char
             elif char == "(":
                 depth += 1
@@ -112,7 +112,7 @@ def capture_signature(lines: list[str], start: int, limit: int) -> str:
                 if quote:
                     if char == quote:
                         quote = None
-                elif char in ("\\"", "'"):
+                elif char == '"' or char == "'":
                     quote = char
                 elif char in ("{", "="):
                     body_pos = pos
