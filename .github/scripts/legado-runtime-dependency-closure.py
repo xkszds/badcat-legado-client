@@ -27,7 +27,7 @@ SEEDS = (
     "io/legado/app/data/entities/BookChapter.kt",
     "io/legado/app/data/entities/BaseSource.kt",
     "io/legado/app/data/entities/BaseBook.kt",
-    "io/legado/app/help/JsExtensions.kt",
+            (roots[0] / "demo" / "b" / "Extensions.kt", "package demo.b\n@JvmName(\"helpers\")\ninternal inline fun <reified T : Any> T?.asHelper(): T? = this\nfun String.helperProperty(): Int = length\nfun <T, K : Comparable<K>> List<T>.deepSearch(key: K): Int = 0\nfun HashMap<String, *>.hasEntry(key: String): Boolean = true\n"),
     "io/legado/app/help/JsEncodeUtils.kt",
     "io/legado/app/model/analyzeRule/AnalyzeRule.kt",
     "io/legado/app/model/analyzeRule/AnalyzeUrl.kt",
@@ -111,6 +111,33 @@ def _decls(text: str) -> set[str]:
     names: set[str] = set()
     for pattern in (TYPE_DECL_RE, FUNCTION_DECL_RE, PROPERTY_DECL_RE):
         names.update(pattern.findall(text))
+
+    # Balance nested type parameters, e.g. <T, K : Comparable<K>>, then
+    # resolve the final receiver/member segment before the parameter list.
+    for line in text.splitlines():
+        fun_match = re.search(r"\bfun\b", line)
+        if not fun_match:
+            continue
+        tail = line[fun_match.end():].strip()
+        if tail.startswith("<"):
+            depth = 0
+            generic_end = -1
+            for index, char in enumerate(tail):
+                if char == "<":
+                    depth += 1
+                elif char == ">":
+                    depth -= 1
+                    if depth == 0:
+                        generic_end = index
+                        break
+            if generic_end >= 0:
+                tail = tail[generic_end + 1:].strip()
+        signature = tail.split("(", 1)[0].strip()
+        if signature:
+            member = signature.rsplit(".", 1)[-1].strip()
+            match = re.match(r"\`?([A-Za-z_][A-Za-z0-9_]*)\`?(?:<|$)", member)
+            if match:
+                names.add(match.group(1))
     return names
 
 
@@ -417,6 +444,10 @@ def self_test() -> None:
         resolved, kind = idx.resolve("demo.b.asHelper")
         assert kind == "top_level_symbol" and any(item.endswith(":demo/b/Extensions.kt") for item in resolved)
         resolved, kind = idx.resolve("demo.b.helperProperty")
+        assert kind == "top_level_symbol" and any(item.endswith(":demo/b/Extensions.kt") for item in resolved)
+        resolved, kind = idx.resolve("demo.b.deepSearch")
+        assert kind == "top_level_symbol" and any(item.endswith(":demo/b/Extensions.kt") for item in resolved)
+        resolved, kind = idx.resolve("demo.b.hasEntry")
         assert kind == "top_level_symbol" and any(item.endswith(":demo/b/Extensions.kt") for item in resolved)
         assert _classify_unresolved("io.legado.app.databinding.ActivityMainBinding")[0] == "generated_android_symbol"
         assert _classify_unresolved("org.htmlunit.corejs.javascript.Context")[0] == "dependency_provided_symbol"
