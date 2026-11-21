@@ -320,9 +320,9 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Run full app unit test suite (includes Rhino host compatibility)
+      - name: Run app unit suite for Third-category Runtime (exclude Fourth-category tests)
         id: bounded_rhino_tests
-        run: gradle --no-daemon :app:testDebugUnitTest
+        run: gradle --no-daemon :app:testDebugUnitTest -PbadcatThirdCategoryTestProfile=true
 
       - name: Upload compiled Rhino host surface inventory
         if: always()

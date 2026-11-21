@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.testing.Test
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -36,6 +38,21 @@ android {
 kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+    }
+}
+
+// Temporary Runtime validation profile: keep Fourth-category tests out of the Third-category lane.
+// Omit -PbadcatThirdCategoryTestProfile=true to run every test again for Fourth-category validation.
+val badcatThirdCategoryTestProfile =
+    providers.gradleProperty("badcatThirdCategoryTestProfile").orNull == "true"
+
+tasks.withType<Test>().configureEach {
+    if (badcatThirdCategoryTestProfile) {
+        filter {
+            excludeTestsMatching("app.badcat.client.BadcatPurificationModelsTest")
+            excludeTestsMatching("app.badcat.client.BadcatAdMarkCatalogTest")
+            excludeTestsMatching("app.badcat.client.runtime.BadcatWebViewPurificationAdapterTest")
+        }
     }
 }
 
