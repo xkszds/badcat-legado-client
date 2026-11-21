@@ -2,6 +2,7 @@ package app.badcat.client.runtime
 
 import android.content.Context
 import android.os.Build
+import android.os.ParcelFileDescriptor
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -13,6 +14,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.Base64
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
@@ -123,9 +125,11 @@ class WebViewOverloadResolutionInstrumentedTest {
                 .put("webViewProviderVersionName", providerInfo.versionName ?: JSONObject.NULL)
                 .put("webViewProviderLongVersionCode", providerInfo.longVersionCode)
                 .put("observations", org.json.JSONArray(observations))
+            val reportBytes = report.toString(2).toByteArray(Charsets.UTF_8)
             context.openFileOutput("runtime-2.3-webview-report.json", Context.MODE_PRIVATE).use {
-                it.write(report.toString(2).toByteArray(Charsets.UTF_8))
+                it.write(reportBytes)
             }
+            exportReportToShellReadablePath(instrumentation, reportBytes)
             instrumentation.runOnMainSync {
                 webViewRef.getAndSet(null)?.apply {
                     stopLoading()
@@ -134,5 +138,22 @@ class WebViewOverloadResolutionInstrumentedTest {
                 }
             }
         }
+    }
+
+    /**
+     * Gradle's connectedAndroidTest uninstalls the target and test APKs before
+     * returning to the CI script. Export through UiAutomation's shell identity
+     * so the report survives that uninstall and can be pulled afterwards.
+     */
+    private fun exportReportToShellReadablePath(
+        instrumentation: android.app.Instrumentation,
+        reportBytes: ByteArray,
+    ) {
+        val path = "/data/local/tmp/runtime-2.3-webview-report.json"
+        val encoded = Base64.getEncoder().encodeToString(reportBytes)
+        val command = "sh -c 'echo $encoded | base64 -d > $path && chmod 644 $path && echo REPORT_EXPORTED'"
+        val descriptor = instrumentation.uiAutomation.executeShellCommand(command)
+        val output = ParcelFileDescriptor.AutoCloseInputStream(descriptor).bufferedReader().use { it.readText() }
+        assertTrue("Instrumentation shell could not export WebView report: $output", output.contains("REPORT_EXPORTED"))
     }
 }
