@@ -1,20 +1,22 @@
 # Reading engine contract
 
-This directory defines a small, platform-neutral port for the existing Badcat UI.
+This directory defines platform-neutral contracts for the existing Badcat UI and the pinned Legado runtime.
 
-## Implemented
+## Implemented contract surfaces
 
-- Host-facing operations for source listing, search, book detail, chapter listing and chapter content.
+- Existing Badcat reading operations: source listing, search, book detail, chapter listing and chapter content.
 - Separate interfaces for chapter text replacement, page HTML filtering, catalog cleanup and video payload processing.
-- Legado book-source JSON import/export codec. It validates the upstream identity fields `bookSourceUrl` and `bookSourceName`, maps basic source metadata, and retains the full JSON object so nested rules and unknown future fields are not silently discarded.
-- Unit tests for codec import/export/defaults/validation and purification-domain separation.
+- Legado book-source JSON import/export codec. It validates upstream identity fields and retains the full JSON object so nested rules and unknown future fields are not silently discarded.
+- **Runtime↔Android Host Port type boundary** in `RuntimeHostPort.kt`: source/caller identity, operation context and coroutine cancellation parent; hidden WebView request/result types; visible browser verification; separate image-code verification; typed host errors/cancellation; UI dispatch outcomes; and distinct product refresh events.
+- Deterministic JVM contract tests, including public API signature inspection for Android/AndroidX type leakage.
 
-## Not implemented yet
+## Not implemented
 
-- Legado online search/detail/catalog/content rule execution.
-- Rhino environment and script bindings.
-- HTTP/network and cookie handling.
-- Source persistence/database integration.
-- Android reader UI integration.
+- No Android Host Port implementation or production JS API connection exists yet.
+- No hidden/background WebView owner, pool, recycle or destruction lifecycle implementation exists yet.
+- No visible browser/verification Activity or image-code UI adapter exists yet.
+- No Badcat product-event subscribers are connected to the new refresh port.
+- Existing Legado online search/detail/catalog/content rule execution, Rhino environment and full source lifecycle remain incomplete.
+- HTTP/network and cookie behavior, source persistence/database integration and Android reader UI integration are not complete.
 
-The codec is source-file interchange plumbing, not a substitute for the Legado app-layer runtime. A concrete engine adapter must be implemented against the immutable upstream revision in `gradle/legado-upstream.properties`.
+The Host Port declarations are not stubs: they define the required typed boundary, but intentionally provide no default/no-op implementation. A production adapter must be implemented only after its real host service and lifecycle exist. The codec is source-file interchange plumbing, not a substitute for the Legado app-layer runtime.
