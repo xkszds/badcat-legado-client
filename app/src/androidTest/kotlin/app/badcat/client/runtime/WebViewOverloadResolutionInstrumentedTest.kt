@@ -149,6 +149,17 @@ class WebViewOverloadResolutionInstrumentedTest {
         instrumentation: android.app.Instrumentation,
         reportBytes: ByteArray,
     ) {
+        val shellProbeCommand = "echo BADCAT_UIAUTOMATION_SHELL_PROBE"
+        val shellProbeDescriptor = instrumentation.uiAutomation.executeShellCommand(shellProbeCommand)
+        val shellProbeOutput = ParcelFileDescriptor.AutoCloseInputStream(shellProbeDescriptor)
+            .bufferedReader()
+            .use { it.readText() }
+        assertTrue(
+            "UiAutomation shell stdout probe returned no marker; output: " +
+                shellProbeOutput.ifBlank { "<empty stdout>" },
+            shellProbeOutput.contains("BADCAT_UIAUTOMATION_SHELL_PROBE"),
+        )
+
         val path = "/data/local/tmp/runtime-2.3-webview-report.json"
         val encoded = Base64.getEncoder().encodeToString(reportBytes)
         val command = "sh -c 'echo $encoded | base64 -d > $path; export_status=\$?; if [ \$export_status -eq 0 ]; then chmod 644 $path; export_status=\$?; fi; if [ \$export_status -eq 0 ]; then echo REPORT_EXPORTED; fi; echo REPORT_EXIT_STATUS=\$export_status; exit \$export_status' 2>&1"
