@@ -151,9 +151,13 @@ class WebViewOverloadResolutionInstrumentedTest {
     ) {
         val path = "/data/local/tmp/runtime-2.3-webview-report.json"
         val encoded = Base64.getEncoder().encodeToString(reportBytes)
-        val command = "sh -c 'echo $encoded | base64 -d > $path && chmod 644 $path && echo REPORT_EXPORTED'"
+        val command = "sh -c 'echo $encoded | base64 -d > $path; export_status=\$?; if [ \$export_status -eq 0 ]; then chmod 644 $path; export_status=\$?; fi; if [ \$export_status -eq 0 ]; then echo REPORT_EXPORTED; fi; echo REPORT_EXIT_STATUS=\$export_status; exit \$export_status' 2>&1"
         val descriptor = instrumentation.uiAutomation.executeShellCommand(command)
         val output = ParcelFileDescriptor.AutoCloseInputStream(descriptor).bufferedReader().use { it.readText() }
-        assertTrue("Instrumentation shell could not export WebView report: $output", output.contains("REPORT_EXPORTED"))
+        val diagnosticOutput = output.ifBlank { "<empty stdout/stderr; shell returned no diagnostic output>" }
+        assertTrue(
+            "Instrumentation shell could not export WebView report; command output: $diagnosticOutput",
+            output.contains("REPORT_EXPORTED") && output.contains("REPORT_EXIT_STATUS=0"),
+        )
     }
 }
