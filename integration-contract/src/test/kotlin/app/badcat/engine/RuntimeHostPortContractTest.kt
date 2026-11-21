@@ -151,7 +151,7 @@ class RuntimeHostPortContractTest {
         )
         val exposedTypes = buildList<Type> {
             apiTypes.forEach { type ->
-                add(type.genericSuperclass)
+                type.genericSuperclass?.let(::add)
                 addAll(type.genericInterfaces)
                 type.declaredFields.forEach { add(it.genericType) }
                 type.declaredConstructors.forEach { constructor ->
