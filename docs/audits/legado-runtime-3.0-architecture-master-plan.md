@@ -452,3 +452,49 @@ No port above is implemented merely by appearing in this table. It is a contract
 - NO-GO: no broad upstream copy, production wiring, compiler PoC, schema/Room migration, caller cutover or complete compatibility claim. The WebView overload experiment has no valid observation; the JS declaration report is not JVM ABI proof.
 - Read-only source review and artifact inspection only. No production code, tests, Gradle, workflow, DB, UI/Reader, AdMark, PPRule or main changed in this audit step.
 - Next single audit item: complete compiled JVM/Rhino-visible surface audit for inherited and overloaded scopes: annotations, generated overload bridges, return descriptors, wrapper registration, R8 keep rules and WebView interface exposure. Use reproducible compiler/bytecode inventory; do not rerun the broken WebView probe until its report handoff root cause is separately registered.
+
+## 15. Runtime-3.0 evidence checkpoint — compiled JVM/Rhino-visible surface (2026-11-22)
+
+Audit base: Badcat branch `integration/legado-upstream-runtime`, exact HEAD `1aa044ed6f5822a7915f78aa38abf20084905f9a`; pinned upstream `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`. This checkpoint completes the first compiled-host-class inspection, but **does not complete the registered all-scope JVM/Rhino ABI audit**.
+
+### 15.1 CI #3110 terminal result and exact failure classification
+
+- Run `44941460394`, job `136959361077`, exact HEAD `1aa044ed6f5822a7915f78aa38abf20084905f9a`; terminal conclusion: failure.
+- Step 20 is labelled “Run bounded Rhino replacement host tests”, but its actual command is `gradle --no-daemon :app:testDebugUnitTest`, i.e. the full app unit-test task. The log reports 312 app tests and exactly two failures, both Fourth-category AdMark:
+  1. `BadcatAdMarkCatalogTest.rejectedImportAndReplaceAllLeavePreviouslyPersistedCatalogUntouched` — `IllegalArgumentException` at test line 98.
+  2. `BadcatPurificationModelsTest.adMarkCodecNeverImportsServerProvidedInjectionScript` — assertion failure at test line 125.
+  Do not classify this step as a Rhino failure and do not modify AdMark under this Runtime task.
+- The JUnit report artifact #14722047696 (113,766 bytes; ZIP SHA-256 `e1edd71298bd6aea840e5525b7ad8c566f38c14f276654132087f84ebb473503`) confirms the two AdMark failures. The Rhino-focused XML suites include 170 passing tests, including `RhinoSourceJsAbiBytecodeTest` 3/3, `RhinoSourceScriptRuntimeTest` 95/95, replacement 11/11, overload 4/4, crypto 6/6, archive 17/17, Chinese conversion 5/5, compatibility 20/20, TTF 5/5, cache 3/3 and embedded URL 1/1. The pinned rule-model module suite passed 3/3.
+- Step 22 API 35 `WebViewOverloadResolutionInstrumentedTest` failed at the instrumentation shell report-export handoff: the shell returned empty stdout/stderr. The provider test did not yield its String/Number/null/undefined observations. WebView report artifact #14721658755 is only 253 bytes; diagnostics artifact #14721698607 is 101,098 bytes. This is not evidence that any overload result is correct or incorrect.
+- Step 18 G2d stage-1 authentic source-group compile probe passed (`BUILD SUCCESSFUL`, 17 actionable tasks); this is a bounded rule/model group, not the full compiler-resolved runtime closure.
+- Step 25 JVM ABI capture and step 28 `:app:assembleDebug` succeeded. Debug APK artifact #14721908249 (13,891,264 bytes) is diagnostic-only, not an accepted delivery APK. Live-source smoke steps were skipped.
+
+### 15.2 What the compiled host ABI artifact actually proves
+
+- Artifact #14722326210 `legado-host-jvm-abi`, 165,212 bytes; ZIP SHA-256 `e7586955fa638cab9c178c735f03c7a8f5ad93899a8f1f9a19d83f84e9e41ecf`.
+- It contains only `RhinoSafeSourceJavaExtensions.javap.txt` and `SHA256SUMS.txt`. The captured class is the Debug-variant `app.badcat.client.runtime.RhinoSafeSourceJavaExtensions`; class SHA-256 `596cfa2a538f8d77c106058303b815d52601e28ebe7ffa0625d8c9325fd4d14d`. The classfile is Java 21 (major version 65), with 70 fields and 234 JVM methods.
+- This confirms emitted descriptors and compiler-generated entries for this one host class, not the full inherited scope family, upstream bytecode parity, every object reachable through Rhino, or a minified Release ABI.
+- Examples confirmed in the compiled descriptor table and the existing 3 ABI tests:
+  - `getSource()` returns `java.util.Map`, not pinned `BaseSource`.
+  - `getBatchContext()` returns `java.lang.Object`; `cacheContent(Object,String)` returns primitive boolean.
+  - `ajaxAll` emits one- and two-argument overloads plus Kotlin synthetic default-argument bridge; `ajaxTestAll` emits two- and three-argument overloads plus its synthetic default bridge.
+  - `get` emits one-, two- and three-argument overloads; `timeFormat` accepts `Number` and `String`, both returning `String`.
+- The source class declares 14 functions annotated `@JavascriptInterface`, all in the legacy crypto helper family. The annotation alone does not establish WebView exposure. In the inspected production runtime the object is assigned to Rhino `scope["java"]`; no evidence was found that this same object instance is passed to `WebView.addJavascriptInterface`. The API 35 provider probe is a separate test and currently has no valid report.
+- `RhinoScriptEngine` installs `RhinoClassShutter` and `RhinoWrapFactory`. The latter uses `CatchableNativeJavaObject` for ordinary host objects; its property lookup delegates to Rhino's Java-object reflection and wraps returned `NativeJavaMethod` values. No per-method allowlist is present in this wrapper. `RhinoClassShutter` is a class/package visibility gate, not a method allowlist. Therefore the bridge's actual script-visible public member set must be enumerated and tested; source comments describing a “narrow” bridge are not a substitute for that enumeration.
+- Badcat source binding remains different from upstream invocation ABI: `scope["java"]` is the host bridge, `scope["source"]` is `RhinoSourceLoginExtensions`, and no `sourceApi` binding is installed. This does not provide upstream real `BaseSource` identity or the `source/sourceApi` alias contract.
+- R8/Release status: `legado-rhino/consumer-rules.pro` contains only a comment; `legado-runtime/consumer-rules.pro` is empty. Both library Gradle files wire those consumer rule files. `app/build.gradle.kts` has no explicit `buildTypes`, `proguardFiles` or minification configuration. No minified Release artifact or post-R8 method-visibility result was produced. Do not infer either a successful or broken R8 ABI from the Debug class.
+- Existing `RhinoSourceJsAbiBytecodeTest` verifies selected descriptors, overloads, three selected annotation facts and a real Rhino invocation. It does not enumerate the complete reflected member set, inherited/adjacent bridge objects, or compare compiled descriptors against pinned upstream classes.
+
+### 15.3 Dependency-closure artifact remains a candidate graph
+
+- Artifact #14722310422 `legado-runtime-dependency-closure`, 1,995,708 bytes; ZIP SHA-256 `b101bb002b71b6158cd1d23ca2875561ef100f332df3fd7fe7f20e2645644108`.
+- Summary: 1,186 indexed source files; 16/16 declared seeds resolved; 1,085 reachable source-file candidates; 152,175 total lexical/import edges; 25,950 ambiguous same-package lexical references; 906 unresolved imports classified as generated Android symbols (690) or dependency-provided symbols (216); 7,629 external import records.
+- The artifact explicitly identifies itself as a recursive Kotlin/Java import plus lexical same-package candidate graph. It does not resolve compiler binding, overload selection, reflection, generated/KSP/KAPT code, service-loader metadata, JNI, Gradle variants, resource linking or runtime necessity. It is not a compiler-resolved dependency closure and cannot independently justify importing all 1,085 candidates.
+
+### 15.4 Decision and remaining scope
+
+- **Completed in this checkpoint:** exact terminal CI failure classification; one compiled Debug host class descriptor inventory; selected ABI test review; Rhino wrapper/class-shutter source review; consumer-rule and Gradle minification configuration review.
+- **Still unresolved:** compiled inventory for every concrete scope object (main Java bridge, Cookie/source/cache bridges, returned file/HTTP/URL wrappers, Regex replacement scope and any Web/Login inherited scope); exhaustive Rhino-reflected member enumeration; compiled comparison against pinned upstream scope classes; Release/R8 behavior; actual WebView interface registration and provider overload observations.
+- **GO:** continue the static all-scope ABI audit and design a bounded reproducible inventory. **NO-GO:** production wiring, method-surface changes, broad upstream import, compiler PoC, schema migration, caller cutover, WebView behavior claims or full-compatibility/release claims.
+- This checkpoint inspected source and CI artifacts only. No production code, tests, Gradle, workflow, DB, UI/Reader, AdMark, PPRule or `main` changed. No live-source or device acceptance was achieved.
+- **Next single audit item:** enumerate the exact objects installed into each Badcat Rhino scope and every public member reachable through their compiled wrappers, including return-object wrappers; compare each scope separately with its pinned upstream counterpart. Do not rerun the broken WebView provider test until its report-export handoff is registered and fixed as a separate task.
