@@ -120,3 +120,74 @@ A clean extraction cannot be achieved by merely adding `:modules:book` and `:mod
 **Interim decision:** GO only to finish static callsite/resource/Gradle and typed-port inventory under Runtime-3.0. NO-GO for broad source copy, production wiring, schema/Room work, or a compiler PoC until the exact patchable cut-set and required semantic ports are enumerated. The evidence makes a *controlled upstream-source fork with narrow injection seams* the leading candidate, but does not yet prove it buildable or complete. Static candidate graph, compiler-resolved closure and runtime dynamic closure remain separate and incomplete.
 
 **Validation:** read-only pinned source/tree inspection and Badcat source inspection only. No build, tests, CI, runtime, device, APK or live-source validation was performed in this checkpoint. No production files changed.
+
+
+## 11. Runtime-3.0 evidence checkpoint: static callers, dynamic entry points and host cut-set (2026-11-22)
+
+Audit base: Badcat \`integration/legado-upstream-runtime\` at \`dc4950eebe93344efa1a5de206ce1c90b48c31f1\`; upstream \`LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a\`. Read-only source audit; no compiler-resolved or runtime closure is claimed.
+
+### 11.1 Static caller map
+
+- \`model/webBook/WebBook.kt\` is the book-source business entry. It dispatches JS sources to \`JsSourceBook\` and rule sources to \`AnalyzeRule\`/\`AnalyzeUrl\`. The JS route covers search, explore, detail, chapters, content and batch content.
+- \`JsSourceBook\` calls named functions through \`JsSourceEngine\`; \`JsSourceReview\` is a separate summary/detail/replies path called by \`ReviewController\`, \`ReadBookActivity\` and \`ReviewDetailDialog\`.
+- \`BaseSource.evalJS\` injects the same source object as \`source\` and \`sourceApi\`, together with \`java\`, \`baseUrl\`, \`cookie\` and \`cache\`. Login and rule execution use the same source identity.
+- \`BatchContentContext\` is created by \`JsSourceBook.getContentBatchAwait\`, installed in \`JsSourceEngine.callContentBatch\`, read by \`JsExtensions.cacheContent\`, and persisted through \`BookHelp.saveContent\`.
+- \`BackstageWebView\` is reached from \`JsExtensions\`, \`AnalyzeUrl\`/\`AnalyzeRule\` and \`CodeEditViewModel\`. \`WebViewPool\` is also used by browser, login, RSS, video, book-info and bottom-sheet UI surfaces.
+- Login UI v2 flows from \`BaseSource.evalLoginUiV2/evalLoginActionV2\` into \`SourceLoginV2Delegate\`. Browser/captcha verification flows through \`SourceVerificationHelp\`; JS navigation is wrapped by \`SourceNavigationBridge\`.
+- \`CacheManager\`, \`CookieStore\`, \`SourceHelp\`, \`BookHelp\` and \`BackstageWebView\` reach Room/appDb or Android framework state. These are concrete data/UI ownership edges, not abstract parser dependencies.
+
+### 11.2 Dynamic and reflective entry points
+
+1. \`JsSourceConfig\` uses Rhino AST \`Parser\` nodes (\`FunctionNode\`, \`VariableInitializer\`) to discover top-level source functions and validate login UI v2, review functions and \`getContentBatch\`/maxBatchSize pairing. Static grep alone cannot close this path.
+2. \`JsSourceEngine.callFunction(name,args)\` resolves a function by runtime string name through \`ScriptableObject.getProperty\`, compiles a call expression and evaluates it in the source scope. Optional function absence has a distinct result.
+3. \`NativeBaseSource\` overrides Rhino \`has/get/put\` for source properties. \`RhinoWrapFactory\` chooses wrappers by runtime/static type and \`RhinoClassShutter\` restricts script-visible classes. Replacing the source with a Map snapshot or creating a fresh object per call is not equivalent.
+4. \`WebJsExtensions.request(funName,jsParam,id)\` dispatches 16 async names: \`run\`, \`ajaxAwait\`, \`connectAwait\`, \`getAwait\`, \`headAwait\`, \`postAwait\`, \`webViewAwait\`, \`webViewGetSourceAwait\`, \`decryptStrAwait\`, \`encryptBase64Await\`, \`encryptHexAwait\`, \`createSignHexAwait\`, \`downloadFileAwait\`, \`readTxtFileAwait\`, \`importScriptAwait\`, \`getStringAwait\`. It returns Promise resolution/rejection by callback ID and memory cache.
+5. \`BackstageWebView\` resolves the source by tag from \`appDb.bookSourceDao\`, injects source/java/cache interfaces and navigation callbacks. \`WebJsExtensions\` uses generated interface names; \`WebViewPool.release\` removes them, resets the WebView or destroys it. Timeout/cancellation affects WebView lifetime.
+6. \`SourceNavigationBridge\` re-enters the originating coroutine context from the WebView thread and applies navigation suppression to URL/video callbacks.
+7. R8 rules keep \`JsExtensions\` descendants, entities, \`CookieStore\`, \`CacheManager\`, \`StrResponse\`, annotation and signature metadata. Runtime-injected \`@JavascriptInterface\` methods and dynamically looked-up members still require bytecode/shrinker validation.
+8. The inspected reflection/security paths include Rhino class visibility/wrapping and \`FileDocExtensions\`' reflective \`TreeDocumentFile\` construction. \`AnalyzeUrl.UrlOption.getMethod()\` is a URL-option accessor, not Java reflection. No general reflective source-function router was established; generated/reflection closure remains unproven.
+9. \`SharedJsScope\` loads \`assets/scripts/cryptojs.min.js\` and source \`jsLib\`; \`assets/js_source_template.js\` documents the JS source API; WebView bootstrap is assembled in code. The pinned inventory has 774 resource files (1 manifest, 648 res resources, 125 assets), but does not prove all are required by the runtime cut.
+10. Pinned \`settings.gradle\` includes only \`:app\`, \`:modules:book\`, \`:modules:rhino\`. Runtime roots remain in \`:app\`; app build owns Room/KSP, WebKit, Media3, Glide/KSP, Cronet, OkHttp, archive/crypto and broad product dependencies. Importing only book/Rhino modules does not import the source engine.
+
+### 11.3 CI-generated static inventory and ABI evidence
+
+- Dependency candidate artifact ID \`14719910553\`, ZIP SHA-256 \`4809e1c8d1e7f78b4e62475102fffd4473dacbfcf5b9e7fbba1a8fbd24f820b5\`: 1,186 indexed source files, 16 resolved seeds, 1,085 reachable candidates, 152,175 lexical/import edges, 25,950 ambiguous same-package references and 906 generated/dependency unresolved imports. The artifact explicitly says this is a lexical candidate graph, not compiler-complete closure.
+- JS source declaration artifact ID \`14719855857\`, ZIP SHA-256 \`caf29d6cebfc4c5c340922e0a7d56e47ad41b115492fa30e9a8d6d35eaa7baa8\`: 148 upstream declarations/104 names vs 150 host main-bridge declarations/110 names; 17 missing names, 22 overload-count differences and 38 same-name signature differences. It is source declaration inventory, not JVM descriptors. WebJsExtensions and SourceLoginJsExtensions are separate scopes.
+- Concrete shape differences include upstream \`getSource(): BaseSource?\` vs host \`getSource(): Map<String, Any?>\`, and upstream \`getBatchContext(): BatchContentContext?\` vs host \`Any?\`. The method inventory does not establish runtime parameter coercion, object identity, exceptions, cancellation or side effects.
+
+### 11.4 Candidate typed Host Port cut-set (not implemented)
+
+| Port | Must preserve |
+|---|---|
+| Source repository/identity | Stable BaseSource/BookSource identity, source key/tag, import/enable/delete lifecycle; no Map substitute. |
+| Rhino runtime/shared scope | Context/scope identity, sourceApi alias, NativeBaseSource property semantics, jsLib loading/removal, class shutter, cancellation and exceptions. |
+| AnalyzeRule/AnalyzeUrl | Real rule context, URL resolution, embedded JS, request options, response types and rule defaults. Prefer authentic upstream engine; ports isolate platform calls rather than replace rules. |
+| HTTP | Method/body/headers, source identity, redirect policy per entry point, timeout, rate limit, cancellation, response metadata/body and errors. |
+| Cookie/session/login | Domain normalization, persisted/session cookies, WebView↔HTTP sync, merge/replace/remove, login header scoping, encrypted login info and source variables. |
+| Generic cache/file/archive | Memory/disk split, LRU, TTL, ACache file semantics, jsLib invalidation, path confinement, archive/font behavior and size limits. Keep chapter-body storage separate. |
+| Book/chapter/batch | Real Book/BookChapter identity, index and URL ambiguity, save token/fence, replacement, batch save, missing-chapter retry and cancellation. |
+| WebView/browser | Pool lifecycle, injected-interface add/remove, navigation/sniffer callbacks, Cookie sync, timeout/cancel, Promise callback IDs and cleanup. |
+| Login/verification/navigation UI | Login UI v2 render/action schema, errors/countdowns/close, browser/captcha handoff, refetch, coroutine re-entry and navigation suppression. Badcat supplies its own UI. |
+| Product event/config | Refresh book/TOC/content events, read/theme config projection, open URL/video callbacks; retain Badcat UI/Reader. |
+| Concurrency/context | Per-source rate/concurrency keys, lock/singleFlight/tick, coroutine context, cancellation and no cross-source scope leakage. |
+
+### 11.5 Decision
+
+- **GO:** continue the registered read-only Runtime-3.0 architecture audit and close method-level caller/provider mapping and explicit patch seams.
+- **NO-GO:** broad upstream source import, production wiring, compiler PoC, Room/schema/migration, caller cutover or release claim. Static candidate edges and candidate ports do not prove a compiler boundary.
+- Controlled upstream-source fork with narrow typed injection seams remains the viable direction, but buildability is not proven. No behavior may be dropped merely to make a cut compile.
+
+### 11.6 Pinned upstream blob references
+
+All paths below are pinned to \`330e606c4d57e08adc056ff8ab7a4132c784da9a\`:
+
+- \`BaseSource.kt\` \`9f5174d7ad6cb74a7e6b2d1f9260d90e3e8e6baa\`; \`BookSource.kt\` \`7f63496ebf25c820b7d0c715d2fbce8e7bd29b9c\`.
+- \`AnalyzeRule.kt\` \`7591a026a072ac8a6fe4902add0795812fe0a0a6\`; \`AnalyzeUrl.kt\` \`d898c88dfd844d73f06d9396d0b46f39939f7e6c\`; \`JsExtensions.kt\` \`f6808edd2a0d312e8bd13649935dea444cb82581\`.
+- \`SharedJsScope.kt\` \`dab7770d746c851c06ad05c08a35a2866a6100b3\`; \`JsSourceEngine.kt\` \`44452025f81d8751afee92d3ee1f2d52f9e55905\`; \`JsSourceBook.kt\` \`66d9878bed8671fe130d9c9c507608d89d393cf5\`; \`JsSourceReview.kt\` \`44ce6b029debc5d73df914627c18a820c598d92f\`; \`JsSourceConfig.kt\` \`871165021c2192b7d79ca2768bfdc6b4cfd35740\`.
+- \`WebJsExtensions.kt\` \`dd6532396b8f02e37376885aa2c6c1e430af1ad9\`; \`WebViewPool.kt\` \`ea31fac447e2176c68f590413ff7e272730019d8\`; \`BackstageWebView.kt\` \`285f229ff2f9f00e7588b221a8543a2879bafe86\`.
+- \`SourceNavigationBridge.kt\` \`82b7adeb3e105a3553ba6e5b4391c4f91c2e8c9f\`; \`SourceVerificationHelp.kt\` \`d15769767513ca23bdbcc633709a348ae09c5b08\`; \`LoginUiV2.kt\` \`fd4fca1baa694a821400a46d08ff20d6607f4b96\`; \`BatchContentContext.kt\` \`68cad877f048b171e4f0f6cf22b1e0dd1e6481f9\`.
+- \`CacheManager.kt\` \`9575697d8ed60c0864aa3fd52d548ba059054205\`; \`CookieStore.kt\` \`09720d79f7009db052c080b54fc5fa2805257b64\`; \`SourceHelp.kt\` \`09145629dfb8d92772cf5fa339fda5ed33fb555d\`; \`BookHelp.kt\` \`78e9e82b67145b835678c7aa1111eaf1631b77d2\`; \`AppDatabase.kt\` \`d3d516c7b3e73ef4ab3beb373e8e8ec3d03c204c\`.
+- \`NativeBaseSource.kt\` \`8313dedf737fe42cb4381535f6e74760c4f31786\`; \`RhinoWrapFactory.kt\` \`4a3d8c30329664e725cb64ae89a88a5dfe4ebc6a\`; \`RhinoClassShutter.kt\` \`e9033fa47753038751191926a4f898bf5680c05b\`.
+- \`SourceLoginV2Delegate.kt\` \`2b5fb5b0e7efb5b1df36ff906a8ce17b672ac41c\`; \`WebBook.kt\` \`d7a924c2d687bc99d6e25099cefacc9d920e1386\`; \`ReviewController.kt\` \`0e5be8d8ec83094a9fdf4ae5bebf9370f64fdc7e\`.
+- \`BookInfoViewModel.kt\` \`eb0b5853a7e880eb62e33ea1cca4210262adbbb0\`; \`ReadBookActivity.kt\` \`29d3c6dd3cf75178569416e5e97ec1005d1b1c1b\`; \`WebViewActivity.kt\` \`fec705d67831e07f6e25a94d94ede9b000ca088f\`; \`BottomWebViewDialog.kt\` \`5d354092597502bafe26424b3c39cdca667d33f6\`.
+- \`FileDocExtensions.kt\` \`b0bc9f2765bc98cf4d39aa8da68c49623497b4fd\`; \`app/build.gradle\` \`eb26ab098e63401a3c506fbd21ca8fdc95616aa7\`; \`settings.gradle\` \`beb9639fbb751b1736ad5baf5afc509c6718c4ca\`; \`proguard-rules.pro\` \`2993b30d101be1bcf2e80545a6f3e89139004406\`; \`AndroidManifest.xml\` \`38246c5895d276ecc9ebc6dc4451a609c7e5ca07\`; \`js_source_template.js\` \`25ae7673c9f66c2b3959aa370f6c98a4efe3a1e4\`.
