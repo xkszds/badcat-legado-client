@@ -204,6 +204,19 @@ jobs:
         id: bounded_rhino_tests
         run: gradle --no-daemon :app:testDebugUnitTest
 
+      - name: Enable KVM access for Android emulator
+        run: |
+          if [ ! -e /dev/kvm ]; then
+            echo "KVM device /dev/kvm is not available on this runner"
+            exit 1
+          fi
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          sudo chmod 0666 /dev/kvm
+          ls -l /dev/kvm
+          test -r /dev/kvm && test -w /dev/kvm
+
       - name: Run real Android WebView provider instrumentation (API 35)
         if: ${{ always() && (steps.bounded_rhino_tests.outcome == 'success' || steps.bounded_rhino_tests.outcome == 'failure') }}
         uses: reactivecircus/android-emulator-runner@v2
@@ -215,10 +228,10 @@ jobs:
           # CI #3065 showed that this nonessential call fails with Broken pipe; the probe
           # uses bounded callbacks and does not require animations to be disabled.
           disable-animations: false
+          disable-linux-hw-accel: false
+          pre-emulator-launch-script: $ANDROID_HOME/emulator/emulator -accel-check
           # Keep shell state in the checked-in script; the action dispatches inline lines separately.
           script: bash .github/scripts/runtime-webview-provider-probe.sh
-        env:
-          ANDROID_I_WANT_MY_TCG: "yes"
 
       - name: Upload WebView emulator ADB diagnostics
         if: always()
