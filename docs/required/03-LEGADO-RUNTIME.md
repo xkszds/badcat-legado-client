@@ -2470,3 +2470,14 @@
 - **Acceptance:** Python syntax check; regression self-test passes; inventory runs against the exact pinned upstream and current host roots; report includes RssJsExtensions and all registered host objects; inspect generated JSON for non-empty scope records and expected binding metadata. This is source-inventory tool validation only, not compiled JVM/Rhino parity or behavior acceptance.
 - **CI #3112 evidence:** steps 8 and 9 passed; only the pinned runtime model contract suite report was uploaded (3 tests, 0 failures). Step 10 failed before producing the JS inventory. Step 20 replacement-host tests, step 23 WebView provider instrumentation, and step 29 Debug APK were skipped. Step 21 upload found no `build/legado-host-rhino-surface.json`; no compiled host surface artifact exists for this run. No APK was produced.
 - **Result status at registration:** investigation complete; fix not yet implemented or validated. No branch write has occurred in this registration step.
+
+
+### 2026-11-22 Runtime-3.0 registration — host inventory sibling-module path resolution
+
+- **Starting branch/HEAD:** `integration/legado-upstream-runtime` / `64ad6b3c6f207ca353b167128978265ff7471e93`; pinned upstream remains `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Finding:** after correcting the Kotlin declaration parser, static review found that `HOST_OBJECTS` stores `LegadoSourceElement` and `LegadoSourceElementList` at repository-root-relative `integration-contract/...` paths, while `collect_scope()` resolves every host path against `--host-root app/src/main/java`. Those two entries would therefore fail with a missing-file error before the inventory JSON is emitted.
+- **Task (one root cause):** make the two sibling-module source paths resolve explicitly from the configured host root without changing any production code or inventing fallback path discovery.
+- **Authorized files:** `.github/scripts/legado-js-abi-inventory.py` and this checklist only.
+- **Acceptance:** path resolution points to the exact tracked `integration-contract/src/main/kotlin/app/badcat/engine/LegadoSourceElement.kt`; both element classes are collected; all other host entries still resolve; full inventory command emits JSON with all registered host objects.
+- **Exclusions:** no production runtime/Kotlin test/workflow/Gradle/database/UI/Reader/AdMark/PPRule/`main` changes. This remains source-inventory validation, not ABI parity or runtime behavior acceptance.
+- **Status at registration:** static path defect identified; not yet corrected or executed against the repository tree.
