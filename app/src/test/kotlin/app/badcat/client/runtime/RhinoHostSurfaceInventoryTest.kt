@@ -138,6 +138,7 @@ class RhinoHostSurfaceInventoryTest {
             "inheritedPublicMethods" to public.map(::methodRecord).sortedBy { it["descriptor"].toString() },
             "publicFields" to fields.map(::fieldRecord).sortedBy { it["name"].toString() },
             "publicConstructors" to constructors.map(::constructorRecord).sortedBy { it["descriptor"].toString() },
+            "rhinoWrapperType" to wrapped.javaClass.name,
             "rhinoPropertyIds" to wrapped.getIds().map { it.toString() }.sorted(),
             "rhinoCallableMethodNames" to visibleNames,
         )
