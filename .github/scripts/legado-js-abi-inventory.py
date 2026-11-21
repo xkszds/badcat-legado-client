@@ -74,24 +74,56 @@ RETURNED_EXTERNAL_TYPES = [
 ]
 
 
+KOTLIN_TYPE_MODIFIERS = (
+    "public|protected|internal|private|expect|actual|final|open|abstract|sealed|"
+    "data|value|inline|enum|annotation|fun|inner|external|companion"
+)
+KOTLIN_TYPE_PREFIX = rf"(?:(?:{KOTLIN_TYPE_MODIFIERS})\s+)*"
+
+
 def find_scope(lines: list[str], symbol: str) -> tuple[int, int]:
+    # Kotlin declarations may carry modifiers such as "open class" or
+    # "data class". Keep the anchor at column zero so nested declarations do
+    # not accidentally terminate or satisfy a top-level scope.
     declaration = re.compile(
-        rf"^(?:(?:public|internal|private)\s+)?"
-        rf"(?:interface|class|object)\s+{re.escape(symbol)}\b"
+        rf"^{KOTLIN_TYPE_PREFIX}(?:interface|class|object)\s+"
+        rf"{re.escape(symbol)}\b"
     )
     start = next((i for i, line in enumerate(lines) if declaration.match(line)), None)
     if start is None:
         raise RuntimeError(f"Cannot find Kotlin declaration {symbol}")
     end = len(lines)
     top_level = re.compile(
-        r"^(?:(?:public|internal|private)\s+)?"
-        r"(?:interface|class|object|enum\s+class|data\s+class|sealed\s+class)\s+"
+        rf"^{KOTLIN_TYPE_PREFIX}(?:interface|class|object)\s+"
     )
     for i in range(start + 1, len(lines)):
         if top_level.match(lines[i]):
             end = i
             break
     return start, end
+
+
+def run_parser_self_tests() -> None:
+    # Guard the exact grammar regression that broke CI #3112, plus legal
+    # Kotlin declaration modifiers and top-level-only scope boundaries.
+    declarations = {
+        "RssJsExtensions": "open class RssJsExtensions(",
+        "AbstractBridge": "public abstract class AbstractBridge",
+        "Payload": "internal data class Payload",
+        "Contract": "sealed interface Contract",
+        "Mode": "enum class Mode",
+        "Marker": "annotation class Marker",
+        "Token": "value class Token",
+        "Singleton": "private object Singleton",
+        "FunctionalContract": "fun interface FunctionalContract",
+    }
+    for symbol, line in declarations.items():
+        start, end = find_scope([line, "    class Nested", "class Following"], symbol)
+        if (start, end) != (0, 2):
+            raise AssertionError(
+                f"Scope parser boundary mismatch for {symbol}: {(start, end)}"
+            )
+    print("Kotlin scope parser self-test: passed")
 
 
 def _strip_line_comment(line: str) -> str:
@@ -214,6 +246,7 @@ def collect_scope(root: Path, relative: str, symbol: str) -> list[dict]:
 
 
 def main() -> None:
+    run_parser_self_tests()
     parser = argparse.ArgumentParser()
     parser.add_argument("--upstream-root", required=True, type=Path)
     parser.add_argument("--host-root", required=True, type=Path)
