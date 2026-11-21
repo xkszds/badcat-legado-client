@@ -205,6 +205,8 @@ jobs:
         run: gradle --no-daemon :app:testDebugUnitTest
 
       - name: Enable KVM access for Android emulator
+        id: enable_kvm
+        if: always()
         run: |
           if [ ! -e /dev/kvm ]; then
             echo "KVM device /dev/kvm is not available on this runner"
@@ -218,7 +220,7 @@ jobs:
           test -r /dev/kvm && test -w /dev/kvm
 
       - name: Run real Android WebView provider instrumentation (API 35)
-        if: ${{ always() && (steps.bounded_rhino_tests.outcome == 'success' || steps.bounded_rhino_tests.outcome == 'failure') }}
+        if: ${{ always() && steps.enable_kvm.outcome == 'success' && (steps.bounded_rhino_tests.outcome == 'success' || steps.bounded_rhino_tests.outcome == 'failure') }}
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
