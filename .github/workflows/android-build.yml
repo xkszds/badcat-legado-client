@@ -320,7 +320,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Run bounded Rhino replacement host tests
+      - name: Run full app unit test suite (includes Rhino host compatibility)
         id: bounded_rhino_tests
         run: gradle --no-daemon :app:testDebugUnitTest
 

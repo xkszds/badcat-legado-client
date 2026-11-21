@@ -27,35 +27,50 @@ if [ "$device_state_status" -ne 0 ] || [ "$device_state" != "device" ] || \
   exit 1
 fi
 
-report_path="/data/local/tmp/runtime-2.3-webview-report.json"
-adb -s "$ANDROID_SERIAL" shell rm -f "$report_path" \
-  > "$diagnostics_dir/adb-report-cleanup.txt" 2>&1
-cleanup_status=$?
-if [ "$cleanup_status" -ne 0 ]; then
-  echo "Could not clear stale WebView instrumentation report"
-  exit "$cleanup_status"
-fi
-
 gradle --no-daemon :app:connectedDebugAndroidTest
 test_status=$?
 
-adb -s "$ANDROID_SERIAL" exec-out cat "$report_path" \
-  > "$diagnostics_dir/runtime-2.3-webview-report.json" \
-  2> "$diagnostics_dir/adb-report-capture.txt"
+# connectedAndroidTest may uninstall the test APK before returning. The test
+# writes its bounded JSON report to logcat before teardown, so collect it from
+# the still-running emulator rather than relying on UiAutomation shell stdout.
+adb -s "$ANDROID_SERIAL" logcat -d -s BadcatWebViewProbe:I \
+  > "$diagnostics_dir/adb-report-logcat.txt" 2>&1
 capture_status=$?
 
 report_status=0
-if [ "$capture_status" -ne 0 ] || [ ! -s "$diagnostics_dir/runtime-2.3-webview-report.json" ]; then
-  echo "WebView instrumentation report was not exported or could not be retrieved after Gradle uninstall"
+if [ "$capture_status" -ne 0 ] || [ ! -s "$diagnostics_dir/adb-report-logcat.txt" ]; then
+  echo "WebView instrumentation report logcat capture failed"
   report_status=1
 else
-  python3 -m json.tool "$diagnostics_dir/runtime-2.3-webview-report.json" >/dev/null
-  json_status=$?
-  if [ "$json_status" -ne 0 ]; then
-    echo "WebView instrumentation report is not valid JSON"
-    report_status=1
-  else
-    cat "$diagnostics_dir/runtime-2.3-webview-report.json"
+  python3 - "$diagnostics_dir/adb-report-logcat.txt" "$diagnostics_dir/runtime-2.3-webview-report.json" <<'PY'
+import base64
+import json
+import sys
+
+log_path, report_path = sys.argv[1:]
+with open(log_path, encoding="utf-8", errors="replace") as stream:
+    encoded = [
+        line.split("REPORT_BASE64=", 1)[1].strip()
+        for line in stream
+        if "REPORT_BASE64=" in line
+    ]
+if not encoded:
+    raise SystemExit("No REPORT_BASE64 payload found in WebView probe logcat")
+payload = base64.b64decode(encoded[-1], validate=True)
+report = json.loads(payload)
+if report.get("task") != "Runtime-2.3":
+    raise SystemExit("Unexpected WebView report task marker")
+observations = report.get("observations")
+expected = {"string", "number", "null", "undefined"}
+if not isinstance(observations, list) or {item.get("case") for item in observations} != expected:
+    raise SystemExit("WebView report does not contain all four overload observations")
+with open(report_path, "w", encoding="utf-8") as stream:
+    json.dump(report, stream, ensure_ascii=False, indent=2)
+print(json.dumps(report, ensure_ascii=False, indent=2))
+PY
+  report_status=$?
+  if [ "$report_status" -ne 0 ]; then
+    echo "WebView instrumentation report could not be decoded or validated"
   fi
 fi
 
