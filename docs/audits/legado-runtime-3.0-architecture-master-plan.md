@@ -73,3 +73,50 @@
 | 单一数据事实源 | 目标硬约束 | 方案未选择，B′未通过 |
 | 当前生产路径完整兼容 | NO-GO | 现有证据显示 host projection/定制服务为主 |
 | 开始大规模生产移植 | NO-GO（当前） | 架构审查尚未完成 |
+
+
+## 10. Runtime-3.0 evidence checkpoint — pinned upstream roots and actual host boundary
+
+Inspection ref: `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`. The following are exact Git tree blob SHAs at that ref; they are source identity evidence, not a claim that the dependency closure is complete.
+
+### 10.1 Pinned source roots and import evidence
+
+| Root | Pinned blob SHA | Direct dependency evidence |
+|---|---|---|
+| `data/entities/BaseSource.kt` | `9f5174d7ad6cb74a7e6b2d1f9260d90e3e8e6baa` | Extends `JsExtensions`; imports Android `JavascriptInterface`, `CacheManager`, `CookieStore`, `SharedJsScope`, `JsSourceEngine`, LoginUiV2, AppConfig, crypto, source-scope helpers and script bindings. Its methods include login UI/action, login state/header/info, source variables, explore refresh, JS library refresh and `evalJS`. |
+| `data/entities/BookSource.kt` | `7f63496ebf25c820b7d0c715d2fbce8e7bd29b9c` | Android Parcelable + Room Entity/Index/PrimaryKey/TypeConverters; owns all six rule-model fields and Gson converter methods; implements source key/tag/login JS and content-batch helpers. |
+| `model/analyzeRule/AnalyzeRule.kt` | `7591a026a072ac8a6fe4902add0795812fe0a0a6` | Imports Android TextUtils/Keep; BaseBook/BaseSource/Book/BookChapter/BookSource/RssArticle; CacheManager, JsExtensions, BackstageWebView, CookieStore, BatchContentContext, SharedJsScope, network/Gson and HtmlUnit Rhino types. Has typed chapter, next-chapter, batch-context and coroutine-context setters. |
+| `model/analyzeRule/AnalyzeUrl.kt` | `d898c88dfd844d73f06d9396d0b46f39939f7e6c` | Imports Android Base64/SuppressLint, Media3, Glide, AppConfig, BackstageWebView, CookieManager/CookieStore/Cronet, request/response helpers, concurrent limiter, SharedJsScope, OkHttp and Rhino. Supports suspend and blocking request/response/byte/input-stream/upload paths and WebView options. |
+| `help/JsExtensions.kt` | `f6808edd2a0d312e8bd13649935dea444cb82581` | Imports AppCompatActivity, BackstageWebView, CookieStore, SourceHelp/SourceVerificationHelp, BookHelp, AnalyzeUrl, BottomWebViewDialog, online-import/open-URL activities, archive/file/config/theme helpers and Android app context. The public interface includes source navigation, batch/cache, refresh, WebView, browser, verification, HTTP, file/archive, encoding, font, TTF and reader/theme configuration methods. |
+| `model/SharedJsScope.kt` | `dab7770d746c851c06ad05c08a35a2866a6100b3` | Uses app context, ACache/files, OkHttp, LruCache, Rhino ScriptBindings and shared global state; lifecycle includes get/remove/cache/create/evaluate. |
+| `model/jsSource/JsSourceEngine.kt` | `44452025f81d8751afee92d3ee1f2d52f9e55905` | Uses BaseSource/BookSource, CacheManager, JsExtensions, CookieStore, source shared-scope helpers, BatchContentContext and Rhino; builds per-source scope and calls named JS functions. |
+| `help/CacheManager.kt` | `9575697d8ed60c0864aa3fd52d548ba059054205` | Directly imports `appDb` and Room `Cache` entity in addition to in-memory/disk caches; generic cache and chapter-body cache are distinct domains. |
+| `help/http/CookieStore.kt` | `09720d79f7009db052c080b54fc5fa2805257b64` | Directly imports `appDb` and Room `Cookie` entity; implements CookieManagerInterface plus web-cookie, merge, key lookup and clear operations. |
+| `help/source/SourceHelp.kt` | `09145629dfb8d92772cf5fa339fda5ed33fb555d` | Directly imports `appDb`, BookSource/RSS source entities, source config/cache, ReadBook/ReadManga/VideoPlay, VideoPlayService/VideoPlayerActivity and app context. |
+| `help/book/BookHelp.kt` | `78e9e82b67145b835678c7aa1111eaf1631b77d2` | Directly imports `appDb`, Book/BookChapter/BookSource, AppConfig, AnalyzeUrl, local/EPUB book implementations, Android document/file APIs, image/file/network helpers and coroutine/file synchronization. Contains content save fencing, content/cache/image IO and chapter identity matching. |
+| `data/AppDatabase.kt` | `(tree entry verified; see pinned source tree)` | Room database owns Book, BookChapter, BookSource, Cookie, Cache and additional product entities/DAOs. Importing DAO-backed helpers unchanged would introduce the upstream database authority and broad product schema. |
+
+### 10.2 Upstream Gradle/module boundary
+
+At the pinned upstream revision, `settings.gradle` includes only `:app`, `:modules:book`, and `:modules:rhino`. `:modules:book` is a small Android library (minSdk 21, Java/Kotlin 21) with annotation dependency. `:modules:rhino` is an Android library exposing HtmlUnit core JS and depending on coroutines, OkHttp and AndroidX collection. The actual source runtime roots above live under the upstream `:app` source set, not in either reusable module. Upstream `:app` configures Room/KSP, AndroidX WebKit, Media3, Glide, Cronet, app context, archive/crypto and a broad set of app dependencies. This disproves the assumption that adding the two reusable modules alone imports the source runtime.
+
+### 10.3 Badcat production caller evidence at audited HEAD
+
+At Badcat HEAD `b1d16355543f47850d1a8a7cab9aa869b95caba0`:
+
+- `app/.../runtime/BadcatReadingEngineFactory.kt` constructs `SourceSearchService`, `SourceBookDetailService`, `SourceTocService`, and `SourceChapterContentService`, passing a `SourceScriptRuntime` into these custom services.
+- `app/.../SourceSearchActivity.kt` invokes `engine.searchPage(...)` and `engine.explore(...)`; result selection launches `SourceBookActivity` with projected source/book fields.
+- `app/.../SourceBookActivity.kt` invokes the custom engine's chapter-content entry point for typed chapter and legacy URL-resolved paths.
+- `integration-contract/.../SourceReadingEngine.kt` delegates to the four host services and has a legacy URL overload which synthesizes `BookChapter(index = 0, title = "", url = chapterUrl)`. Thus the live Badcat path is still host service/projection based, not upstream `BaseSource → AnalyzeRule/AnalyzeUrl → JsSourceEngine`.
+
+### 10.4 Architectural consequence and status
+
+A clean extraction cannot be achieved by merely adding `:modules:book` and `:modules:rhino`: the source roots reside in `:app` and statically call app-level services. Three dependency classes are now evidenced:
+
+1. **Product/UI edge:** `JsExtensions` directly references browser/WebView/dialog/activity and source verification/import UI; `SourceHelp` references video player/service; these need behavior-preserving typed ports or Badcat-owned UI adapters, not omission/no-op.
+2. **Data authority edge:** `CacheManager`, `CookieStore`, `SourceHelp`, and `BookHelp` reach `appDb`/Room entities. A controlled extraction must replace static DAO ownership with typed ports while preserving transactions, identity, cache and cookie semantics; it must not ship a second upstream database.
+3. **Runtime state edge:** `BaseSource`, `AnalyzeRule`, `AnalyzeUrl`, `SharedJsScope`, and `JsSourceEngine` share source object identity, JS scopes, coroutine context, batch context, cancellation, login state and request state. A string-map facade or per-call isolated JS context is not behavior-equivalent.
+
+**Interim decision:** GO only to finish static callsite/resource/Gradle and typed-port inventory under Runtime-3.0. NO-GO for broad source copy, production wiring, schema/Room work, or a compiler PoC until the exact patchable cut-set and required semantic ports are enumerated. The evidence makes a *controlled upstream-source fork with narrow injection seams* the leading candidate, but does not yet prove it buildable or complete. Static candidate graph, compiler-resolved closure and runtime dynamic closure remain separate and incomplete.
+
+**Validation:** read-only pinned source/tree inspection and Badcat source inspection only. No build, tests, CI, runtime, device, APK or live-source validation was performed in this checkpoint. No production files changed.
