@@ -39,8 +39,8 @@ HOST_OBJECTS = {
     "return.rawResponse": ("RhinoSourceRawResponse", HOST_FILE),
     "return.rawRequest": ("RhinoSourceRawRequest", HOST_FILE),
     "return.url": ("RhinoLegadoUrl", HOST_FILE),
-    "return.element": ("LegadoSourceElement", "integration-contract/src/main/kotlin/app/badcat/engine/LegadoSourceElement.kt"),
-    "return.elementList": ("LegadoSourceElementList", "integration-contract/src/main/kotlin/app/badcat/engine/LegadoSourceElement.kt"),
+    "return.element": ("LegadoSourceElement", "../../../../integration-contract/src/main/kotlin/app/badcat/engine/LegadoSourceElement.kt"),
+    "return.elementList": ("LegadoSourceElementList", "../../../../integration-contract/src/main/kotlin/app/badcat/engine/LegadoSourceElement.kt"),
 }
 
 UPSTREAM_SCOPE_INHERITANCE = {
