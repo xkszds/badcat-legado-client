@@ -16,6 +16,7 @@ from pathlib import Path
 
 UPSTREAM_SCOPES = {
     "JsExtensions": "io/legado/app/help/JsExtensions.kt",
+    "RssJsExtensions": "io/legado/app/ui/rss/read/RssJsExtensions.kt",
     "JsEncodeUtils": "io/legado/app/help/JsEncodeUtils.kt",
     "RegexJsExtensions": "io/legado/app/help/RegexJsExtensions.kt",
     "WebJsExtensions": "io/legado/app/help/webView/WebJsExtensions.kt",
@@ -23,6 +24,54 @@ UPSTREAM_SCOPES = {
 }
 HOST_SCOPE = "RhinoSafeSourceJavaExtensions"
 HOST_FILE = "app/badcat/client/runtime/RhinoSafeSourceJavaExtensions.kt"
+
+# Concrete objects actually bound to Badcat Rhino scopes, plus objects returned
+# by the main bridge and the @js: replacement evaluator. Keep this explicit:
+# a class being present in the APK does not make it a bound JS API.
+HOST_OBJECTS = {
+    "scope.java": ("RhinoSafeSourceJavaExtensions", HOST_FILE),
+    "scope.cookie": ("RhinoSourceCookieExtensions", "app/badcat/client/runtime/RhinoSourceCookieExtensions.kt"),
+    "scope.source": ("RhinoSourceLoginExtensions", "app/badcat/client/runtime/SourceLoginSession.kt"),
+    "scope.cache": ("RhinoSourceCacheExtensions", "app/badcat/client/runtime/RhinoSourceCacheExtensions.kt"),
+    "replacement.java": ("LegadoRegexJsExtensions", "app/badcat/client/runtime/RhinoLegadoJsReplacementEvaluator.kt"),
+    "return.file": ("RhinoSourceFileHandle", "app/badcat/client/runtime/RhinoSourceFileHandle.kt"),
+    "return.httpResponse": ("RhinoSourceHttpResponse", HOST_FILE),
+    "return.rawResponse": ("RhinoSourceRawResponse", HOST_FILE),
+    "return.rawRequest": ("RhinoSourceRawRequest", HOST_FILE),
+    "return.url": ("RhinoLegadoUrl", HOST_FILE),
+    "return.element": ("LegadoSourceElement", "integration-contract/src/main/kotlin/app/badcat/engine/LegadoSourceElement.kt"),
+    "return.elementList": ("LegadoSourceElementList", "integration-contract/src/main/kotlin/app/badcat/engine/LegadoSourceElement.kt"),
+}
+
+UPSTREAM_SCOPE_INHERITANCE = {
+    "JsExtensions": ["JsEncodeUtils"],
+    "RssJsExtensions": ["JsExtensions"],
+    "WebJsExtensions": ["RssJsExtensions"],
+    "SourceLoginJsExtensions": ["RssJsExtensions"],
+    "RegexJsExtensions": ["JsEncodeUtils"],
+}
+
+SOURCE_RUNTIME_BINDINGS = {
+    "RhinoSourceScriptRuntime": {
+        "java": "RhinoSafeSourceJavaExtensions",
+        "cookie": "RhinoSourceCookieExtensions",
+        "source": "RhinoSourceLoginExtensions",
+        "cache": "RhinoSourceCacheExtensions",
+    },
+    "RhinoLegadoJsReplacementEvaluator": {
+        "java": "LegadoRegexJsExtensions",
+        "additionalBindings": ["result", "book", "chapter"],
+    },
+}
+
+RETURNED_EXTERNAL_TYPES = [
+    "org.jsoup.nodes.Document",
+    "org.jsoup.nodes.Element (inherited through Document)",
+    "org.jsoup.select.Elements",
+    "cn.hutool.crypto.symmetric.SymmetricCrypto",
+    "io.legado.app.help.crypto.AsymmetricCrypto",
+    "io.legado.app.help.crypto.Sign",
+]
 
 
 def find_scope(lines: list[str], symbol: str) -> tuple[int, int]:
@@ -175,6 +224,13 @@ def main() -> None:
     for scope, relative in UPSTREAM_SCOPES.items():
         upstream.extend(collect_scope(args.upstream_root, relative, scope))
     host = collect_scope(args.host_root, HOST_FILE, HOST_SCOPE)
+    host_objects = {}
+    for binding, (symbol, relative) in HOST_OBJECTS.items():
+        host_objects[binding] = {
+            "class": symbol,
+            "source": relative,
+            "methods": collect_scope(args.host_root, relative, symbol),
+        }
 
     # JsExtensions inherits JsEncodeUtils; compare both against the host's
     # primary source Java extension object. Other UI-related scopes are
@@ -216,9 +272,15 @@ def main() -> None:
         },
         "upstreamScopes": upstream,
         "hostScope": host,
+        "upstreamScopeInheritance": UPSTREAM_SCOPE_INHERITANCE,
+        "sourceRuntimeBindings": SOURCE_RUNTIME_BINDINGS,
+        "hostObjects": host_objects,
+        "returnedExternalTypes": RETURNED_EXTERNAL_TYPES,
         "limitations": [
             "Kotlin source signatures are not JVM descriptors; compiler-generated overloads, bridges, annotations and inherited Rhino APIs still require bytecode-level verification.",
-            "The WebJsExtensions and SourceLoginJsExtensions scopes are inventoried separately; they require real Badcat-owned UI/service callbacks and are not declared compatible merely because listed.",
+            "RssJsExtensions is included as a direct declaration source; WebJsExtensions and SourceLoginJsExtensions inherit its scope family and remain separate callback contexts, not automatically compatible Badcat source-runtime bindings.",
+            "Host object entries are source declarations only. The separate compiled/Rhino reflection artifact must be used for emitted JVM descriptors and the actual script-visible member set.",
+            "External return types are listed as reachable surfaces but are not compiled from this host source inventory; their dependency bytecode and post-R8 behavior require separate capture.",
             "This report does not prove runtime behavior, parameter coercion, exceptions, coroutine context, return-object identity, or JS engine lifecycle.",
         ],
     }
