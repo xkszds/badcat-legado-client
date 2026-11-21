@@ -2401,3 +2401,17 @@
 - **Result:** read-only source review and code-search callsite cross-check only. No build/test/CI/device/APK/live-source validation; no code or tests changed.
 - **Decision:** GO to continue static Runtime-3.0 audit; NO-GO for production batch wiring, broad source import, persistence/schema work, compiler PoC, caller cutover or full-compatibility claims.
 - **Next single audit item:** finish the source-object/shared-scope lifecycle mapping (BaseSource identity, Rhino wrapper/property semantics, shared JS scope creation/removal, login state and per-source concurrency/cancellation) and identify exact host patch seams. Do not begin implementation until that cut-set is explicit.
+
+
+### 2026-11-22 Runtime-3.0 evidence checkpoint — BaseSource identity, SharedJsScope and source lifecycle
+
+- **Starting branch/HEAD:** `integration/legado-upstream-runtime` / `c61ee640ee9f7e2241bf7815d5adc0ebb4e96911`. Fixed upstream remains `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Task:** complete the registered source-object/shared-scope lifecycle audit and identify exact typed host patch seams.
+- **Upstream identity:** `BookSource` primary key, `BaseSource.getKey()`, equals/hash identity are `bookSourceUrl`; per-source shared-global handle is `MD5(jsLib):source class name:MD5(source key)`; jsLib shared scope is keyed by `MD5(jsLib)`; CryptoJS fallback is owner object identity + Thread.
+- **Invocation ABI:** `BaseSource.evalJS` binds the same object as `java/source/sourceApi`; `JsSourceEngine` binds engine as `java` and same BookSource object as `source/sourceApi`; `AnalyzeRule` and `AnalyzeUrl` bind their own executor as `java` and real BaseSource as `source`, without a separate sourceApi. `NativeBaseSource` property semantics are registered globally by App.initRhino.
+- **Lifecycle callers:** `JsSourceUpsert`, `BookSourceEditViewModel`, `SourceHelp.deleteBookSourceInternal`, and `SharedJsScope.remove` distinguish jsLib-wide invalidation, source-class/key deletion, same-key replacement and key migration. Login UI v1/v2 default-map initialization is a separate state contract.
+- **Badcat gap:** catalog import/replace/remove has no runtime invalidation callback; `SourceScriptRuntime` exposes no lifecycle method; concrete `clearSourceState` has no production caller and clears KV/files/login/Cookie as well as JS state, so it is too broad to wire indiscriminately. Current `source`/sourceApi object identity and one-time mainJs behavior differ from upstream.
+- **Pinned source/test blobs:** recorded in audit report section 13.6.
+- **Validation:** read-only pinned-source and caller inspection plus Badcat source-test inventory. No tests/build/CI/device/APK/live-source validation. No production code, tests, Gradle, workflow, DB, UI/Reader, AdMark, PPRule or `main` changed.
+- **Decision:** GO to continue static API/provider inventory; NO-GO for production lifecycle wiring, broad source import, compiler PoC, schema migration, caller cutover or complete-compatibility claim.
+- **Next single audit item:** method-level provider/caller mapping for missing/overloaded `JsExtensions` APIs; separate essential source-runtime behavior from product-only UI surfaces without dropping any public source behavior.

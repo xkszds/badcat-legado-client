@@ -279,3 +279,74 @@ Badcat inspected blobs at the audit HEAD:
 - **NO-GO:** no production batch wiring, broad upstream import, persistence redesign, schema/Room work, compiler PoC, caller cutover or complete compatibility claim.
 - **Read-only validation only:** pinned upstream and Badcat source inspection plus GitHub code-search callsite cross-check. No build, unit/instrumentation test, CI, emulator, device, APK or live-source test was run.
 - No production code, tests, Gradle, workflow, database, UI/Reader, AdMark, PPRule or `main` changed.
+
+
+## 13. Runtime-3.0 evidence checkpoint — BaseSource identity, shared scope and lifecycle cut-set (2026-11-22)
+
+### 13.1 Pinned upstream object and wrapper contract
+
+All upstream evidence below is pinned to `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+
+- `BookSource` is a Room entity whose primary key and `BaseSource.getKey()` are `bookSourceUrl`; equality/hash identity also use that URL. It is not an arbitrary catalog ID or a display name.
+- `App.initRhino()` registers `NativeBaseSource.factory` for `BookSource`, `RssSource`, and `HttpTTS`; rule objects, `BookChapter`, and `Book.ReadConfig` use read-only wrappers. This registration is part of the source-object ABI, not optional UI decoration.
+- `NativeBaseSource` changes property reflection: JavaBean-style `setX` methods are hidden as callable members when a matching property exists, and writes are constrained to the supported `variable` property. A generic Rhino Java wrapper or Map cannot be assumed equivalent.
+- Binding identity differs by invocation entry:
+  - `BaseSource.evalJS()`: `java`, `source`, and `sourceApi` are the same real BaseSource instance.
+  - `JsSourceEngine`: `java` is the invocation engine; `source` and `sourceApi` are the same real BookSource instance.
+  - `AnalyzeRule`: `java` is the AnalyzeRule instance and `source` is the real BaseSource; no separate `sourceApi` alias is installed.
+  - `AnalyzeUrl`: `java` is the AnalyzeUrl instance and `source` is the real BaseSource; request bindings include typed page/key/result/infoMap context.
+- `JsSourceEngine.buildScope()` creates invocation bindings, chains to the shared jsLib/global state and evaluates the source `mainJs` before invoking the named top-level function. This occurs per engine invocation; the shared library/global scope is a separate layer.
+
+### 13.2 Shared scope and identity rules
+
+- `SharedJsScope.getScope(jsLib)` keys the reusable library scope by MD5 of the complete jsLib text. The cache is an LRU of weak references (capacity 16), with per-key creation synchronization; jsLib is evaluated into the shared scope and extensions are restricted afterward.
+- Per-source shared global state is separately keyed by `MD5(jsLib):sourceClassName:MD5(source.getKey())`. The source class/type is part of identity; using only a source URL or DTO id is incomplete.
+- CryptoJS fallback scopes use owner object identity plus current Thread, which is distinct from the jsLib shared-scope key.
+- `SharedJsScope.remove(jsLib)` removes the cached shared library scope, remote jsLib cache entries referenced by the library, and shared-global-state entries under that jsLib hash prefix. This can affect multiple sources sharing the same library.
+- `AnalyzeRule`, `AnalyzeUrl`, `BaseSource.evalJS`, and `JsSourceEngine` have different invocation binding and scope construction paths. A single generic “source scope” does not preserve these contracts.
+
+### 13.3 Upstream source lifecycle callers
+
+- `JsSourceUpsert.save()` preserves user-managed state, compares old/new source identity and jsLib, invalidates the old jsLib scope when the library changes, and distinguishes same-key replacement from key migration. A key migration deletes the old source through `SourceHelp`; same-key replacement deletes/reinserts the Room row and updates source config.
+- `BookSourceEditViewModel.save()` follows corresponding edit semantics; changing jsLib invalidates the old shared library; changing the source URL deletes the old source; same-key edits remove source config before reinsertion.
+- `SourceHelp.deleteBookSourceInternal()` clears shared global state for the concrete source class/key, deletes the BookSource row, and deletes persistent source variables inside the surrounding Room transaction. RSS deletion also removes associated RSS articles.
+- `SharedJsScope.remove()` is library-wide invalidation, while source deletion is source-class/key invalidation. They are not interchangeable.
+- Login data is another independent lifecycle domain: `getLoginInfoMap()` reads saved info first; Login UI v2 returns an empty default map; v1 may evaluate inline login UI JS with `result`, `book`, and `chapter` bindings, filters button rows, derives defaults, and persists them. Login info, login Header, CookieStore, source variables and JS shared globals must not be indiscriminately cleared together.
+
+### 13.4 Badcat delta at audited HEAD
+
+- `LegadoBookSourceCodec` maps the imported source identity into the Badcat `BookSource.id` / `baseUrl` projection, but the production catalog stores JSON records in `AtomicFile`, not upstream Room `BookSource` entities.
+- `FileBookSourceCatalog.importJson()` replaces records with matching source IDs; `remove()` removes a record. Neither path notifies `RhinoSourceScriptRuntime`.
+- `SourceRuntime.SourceScriptRuntime` has no source-lifecycle invalidation method. `RhinoSourceScriptRuntime.clearSourceState()` exists only on the concrete class; no production caller was found in the audited tree.
+- The concrete clear method serializes against evaluation using the per-source Mutex, then clears Rhino scopes/global state, bridge instances, KV data, file cache, physical cache, login session and Cookie state. This is much broader than upstream source deletion or jsLib invalidation and must not be wired blindly to every import/replace/delete event.
+- Current Badcat Rhino bindings still use a login helper as `source`, omit upstream `sourceApi`, and expose a Map-like source descriptor from `java.getSource()`; they do not preserve NativeBaseSource object identity/property behavior.
+- Badcat keeps one persistent VarScope per source ID, serializes same-source evaluations with a Mutex, and evaluates `mainJs` once per source version. Its tests explicitly assert this policy (`initializesMainJsOnceBeforeSourceRules`, `serializesConcurrentEvaluationForOneSource`, `clearsSourceGlobalsUnderTheEvaluationLock`). Those tests document Badcat behavior; they do not establish upstream equivalence. Upstream JS engine constructs per-invocation scope and evaluates mainJs on each invocation. The concurrency behavior therefore needs a differential contract, not an assumption that the Mutex is equivalent.
+
+### 13.5 Required host patch seams (contract candidates, not implemented)
+
+| Seam | Required behavior |
+|---|---|
+| Source identity/repository | Supply the correct source class and real source object; preserve `bookSourceUrl`/getKey identity and replacement/key-migration semantics. |
+| Rhino wrapper registry | Register equivalent wrappers for mutable source objects and read-only rule/chapter/config objects; preserve property/method visibility and setter behavior. |
+| Invocation scope factory | Separate BaseSource, JsSourceEngine, AnalyzeRule and AnalyzeUrl binding contracts; retain typed book/chapter/page/result/context objects and aliases. |
+| Shared scope provider | Preserve jsLib-hash sharing, source-class/key global-state identity, CryptoJS owner/thread fallback, creation synchronization and invalidation fan-out. |
+| Lifecycle coordinator | Distinguish source deletion, same-key replacement, key migration, jsLib change and ordinary metadata edit; perform only the matching invalidation and serialize it against in-flight evaluation. |
+| Login/session ports | Preserve login UI v1/v2 default initialization, encryption/storage, Header, Cookie and source-variable boundaries. |
+| Execution coordination | Differentially verify per-source concurrency, callback lifetime, cancellation, timeout and cleanup; do not equate a host Mutex with upstream semantics without tests. |
+
+### 13.6 Decision and validation
+
+- **GO:** source-object/shared-scope/lifecycle cut-set is now explicit enough to guide the next static API/provider audit.
+- **NO-GO:** no production wiring, broad upstream import, compiler PoC, database/schema migration, caller cutover or complete compatibility claim.
+- **Read-only evidence:** pinned upstream and Badcat source inspection, code-search caller cross-check, and source-test inventory. No tests/build/CI/device/APK/live-source validation was run in this audit step.
+- No production code, tests, Gradle, workflow, database, UI/Reader, AdMark, PPRule or `main` changed.
+
+Pinned inspected blobs:
+
+- Upstream `BaseSource.kt`: `9f5174d7ad6cb74a7e6b2d1f9260d90e3e8e6baa`; `BookSource.kt`: `7f63496ebf25c820b7d0c715d2fbce8e7bd29b9c`.
+- Upstream `NativeBaseSource.kt`: `8313dedf737fe42cb4381535f6e74760c4f31786`; `BaseSourceExtensions.kt`: `4b70e9848dde0c3adad44f8cc5147a2abe128cb1`.
+- Upstream `SharedJsScope.kt`: `dab7770d746c851c06ad05c08a35a2866a6100b3`; `JsSourceEngine.kt`: `44452025f81d8751afee92d3ee1f2d52f9e55905`.
+- Upstream `AnalyzeRule.kt`: `7591a026a072ac8a6fe4902add0795812fe0a0a6`; `AnalyzeUrl.kt`: `d898c88dfd844d73f06d9396d0b46f39939f7e6c`.
+- Upstream `JsSourceUpsert.kt`: `cc4120734510dfcf2c5b45b5fbc5e0f8e4c26a9e`; `SourceHelp.kt`: `09145629dfb8d92772cf5fa339fda5ed33fb555d`; `App.kt`: `71b83735b9a41fe0a459fee3a2175fa7518215b8`.
+- Upstream tests: `LoginInfoMapInitializationTest.kt` `26178c7f48865a949083d9870e5d4b252df20676`; `JsSourceEngineTest.kt` `165d2c1115f270b3690defc9af5063f67d7e9f1e`.
+- Badcat `FileBookSourceCatalog.kt`: `dedcb159e0cc08d8e8488076bf3e9d2441ab17d1`; `RhinoSourceScriptRuntime.kt`: `f1d8f0225a434e79fbd37d0d8c1ec132f5c9541f`; `SourceRuntime.kt`: `c99001865c1c4eaeae7979af7d5c85daabe9f09c`; `RhinoSourceScriptRuntimeTest.kt`: `d2dbf0ac22735934fea10bdb71254b4a65bfd4da`.
