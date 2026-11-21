@@ -211,30 +211,70 @@ jobs:
           api-level: 35
           target: google_apis
           arch: x86_64
-          disable-animations: true
+          # The runner's animation toggles call the Android Settings service after boot.
+          # CI #3065 showed that this nonessential call fails with Broken pipe; the probe
+          # uses bounded callbacks and does not require animations to be disabled.
+          disable-animations: false
           script: |
             set +e
+            mkdir -p build/runtime-2.3-webview
+            adb version > build/runtime-2.3-webview/adb-version.txt 2>&1
+            adb devices -l > build/runtime-2.3-webview/adb-devices-before.txt 2>&1
+            device_state="$(adb -s "$ANDROID_SERIAL" get-state 2>&1)"
+            device_state_status=$?
+            boot_state="$(adb -s "$ANDROID_SERIAL" shell getprop sys.boot_completed 2>&1)"
+            boot_state_status=$?
+            {
+              echo "serial=$ANDROID_SERIAL"
+              echo "get_state_status=$device_state_status"
+              echo "device_state=$device_state"
+              echo "boot_property_status=$boot_state_status"
+              echo "sys.boot_completed=$boot_state"
+            } > build/runtime-2.3-webview/adb-preflight.txt
+            if [ "$device_state_status" -ne 0 ] || [ "$device_state" != "device" ] || [ "$boot_state_status" -ne 0 ] || [ "$boot_state" != "1" ]; then
+              echo "ADB preflight failed; capturing guest logcat before stopping"
+              adb -s "$ANDROID_SERIAL" logcat -d -b all -t 2000 > build/runtime-2.3-webview/adb-preflight-logcat.txt 2>&1 || true
+              exit 1
+            fi
+
             gradle --no-daemon :app:connectedDebugAndroidTest
             test_status=$?
-            mkdir -p build/runtime-2.3-webview
-            adb exec-out run-as app.badcat.client cat files/runtime-2.3-webview-report.json > build/runtime-2.3-webview/runtime-2.3-webview-report.json 2>/dev/null
+            adb exec-out run-as app.badcat.client cat files/runtime-2.3-webview-report.json > build/runtime-2.3-webview/runtime-2.3-webview-report.json 2> build/runtime-2.3-webview/adb-report-capture.txt
             capture_status=$?
-            if [ "$capture_status" -ne 0 ]; then
+            if [ "$capture_status" -ne 0 ] || [ ! -s build/runtime-2.3-webview/runtime-2.3-webview-report.json ]; then
               echo "WebView instrumentation report was not produced or could not be retrieved"
+              report_status=1
             else
               cat build/runtime-2.3-webview/runtime-2.3-webview-report.json
+              report_status=0
             fi
-            exit "$test_status"
+            adb devices -l > build/runtime-2.3-webview/adb-devices-after.txt 2>&1 || true
+            if [ "$test_status" -ne 0 ] || [ "$report_status" -ne 0 ]; then
+              adb -s "$ANDROID_SERIAL" logcat -d -b all -t 4000 > build/runtime-2.3-webview/adb-post-test-logcat.txt 2>&1 || true
+            fi
+            if [ "$test_status" -ne 0 ]; then
+              exit "$test_status"
+            fi
+            exit "$report_status"
         env:
           ANDROID_I_WANT_MY_TCG: "yes"
+
+      - name: Upload WebView emulator ADB diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: legado-webview-emulator-diagnostics
+          path: build/runtime-2.3-webview/adb-*.txt
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Upload real WebView provider instrumentation report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: legado-webview-provider-runtime-2.3
-          path: build/runtime-2.3-webview/**
-          if-no-files-found: warn
+          path: build/runtime-2.3-webview/runtime-2.3-webview-report.json
+          if-no-files-found: error
           retention-days: 14
 
       - name: Capture compiled host JavaScript bridge JVM ABI
