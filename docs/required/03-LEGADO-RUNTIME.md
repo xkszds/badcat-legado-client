@@ -2340,3 +2340,24 @@
 - **Explicit exclusions:** no production runtime/bridge changes; no changes to the existing report-export command or assertions; no CI script/workflow changes; no Fourth-category AdMark fixes; no DB/persistence, UI/Reader, G2/B′ promotion, release claim, or `main`.
 - **Status at registration:** Runtime-2.10 is diagnostic-only and NOT ACCEPTED. Runtime-2.11 is registered only; no Runtime-2.11 source change or CI run has been made.
 
+
+
+### 当前架构决策覆盖规则（2026-11-21，Runtime-3.0）
+- 当前主线是受控移植固定 SHA 的真实 Legado 书源核心，以类型化宿主接口连接 Badcat；Badcat UI/Reader 保持产品主体。
+- 历史 B′/A/Hybrid 和 Runtime-1.x/2.x 内容、数据、测试、CI、产物和失败记录全部保留，不删除、不重写；但不再自动约束当前架构。
+- 不得因历史 B′ 登记继续推进 Room/schema v1、双写或数据 cutover；也不得因历史 Runtime-2.11 登记继续做嵌套 Shell 探针，除非未来新决策明确重新授权。
+- Runtime-3.0 当前只进行架构证据审查，不改生产代码、测试、Gradle、workflow、数据库、UI/Reader，不修第四类 AdMark，不改 main。
+- 任何历史候选重新启用都必须独立登记，并附新证据和新的验收标准。
+
+
+### 2026-11-21 Runtime-3.0 registration — architecture master review (current active task)
+
+- **Starting branch/HEAD:** `integration/legado-upstream-runtime` / `85c1fc8fd11b61cf00c2e1b485c10fbb5b786f87`. Fixed upstream: `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Authority:** Runtime-3.0 is the active architecture direction. Prior B′/A/Hybrid and Runtime-1.x/2.x records remain historical evidence and optional alternatives; they do not dictate current design.
+- **Objective:** read-only, evidence-based architecture audit; determine whether a behavior-preserving, buildable Legado source runtime can exclude Legado product UI/Reader while retaining actual source execution semantics.
+- **Work packages:** exact upstream source/declaration/blob/import/caller/resource/Gradle inventory; Badcat production call graph; every upstream public JS API/overload mapped to actual provider/signature/return/exception/thread/callback/caller; typed Host Port contract candidates; data owner/writer/identity/transaction/recovery audit for five domains plus Cookie/login/source variables/favorites/bookmarks/history.
+- **Allowed files:** this registration/report under `docs/audits/` and the two required checklists only. No production code, tests, Gradle, workflow, DB, persistence, UI/Reader, AdMark, PPRule, APK or main.
+- **Deliverables:** `docs/audits/legado-runtime-3.0-architecture-master-plan.md`, updated with exact paths and pinned blob SHAs for inspected files, actual callers, API/provider mappings, unresolved dependencies, and GO/NO-GO boundary matrix.
+- **Acceptance:** separate static lexical candidate graph, compiler-resolved dependency closure, and runtime dynamic closure. No “complete closure” claim without reproducible evidence. GO only if the behavior-preserving boundary is buildable without importing Legado product UI/Reader or introducing competing DB authority; otherwise document exact blocker and viable alternatives without weakening behavior.
+- **Explicit exclusions:** no Runtime-2.11 probe; no production wiring or broad source import; no Room/schema v1/migration/double-write/cutover; no shadow DTO/no-op/Any?/Map simplification; no UI/Reader replacement; no Fourth-category AdMark fixes; no release/device/complete-compatibility claim; no main.
+- **Initial status:** REGISTERED; architecture audit in progress, not yet complete.

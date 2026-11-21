@@ -16,9 +16,56 @@
 - **边界排除：** 不搬运 Legado 的整套 UI、书架产品流程和 Reader UI；不因“完整书源能力”而无依据地引入与书源执行无关的 RSS、TTS、音视频或其他产品页面。若某个上游组件是书源规则或生命周期的实际依赖，则必须纳入，而不是按目录名称随意排除。
 - **验收定义：** 上游书源相关 API/符号覆盖清单 + 固定样本差分契约测试 + 脱敏回放 + 多类型真实书源 E2E + Android 集成测试；任何一项缺口都只能标记“部分实现/局部通过”，不能标记完整 Legado 兼容或发布就绪。
 
-## 2. 正式架构候选：方案 B′（必须先 PoC）
+## 2. 当前正式架构方向：Runtime-3.0 受控上游核心移植
 
-**Badcat 自有持久化 + Badcat 原有 UI + Legado 兼容运行时 + 严格隔离适配层 + 可退出的最小 PoC。** B′ 是当前首选验证路线，不是已经证明的最优结论。
+**当前唯一执行主线：坏坏猫原版产品层 + 固定 SHA Legado 真实书源执行核心 + 类型化宿主接口 + 独立验证的数据单一事实源。**
+
+本节优先级高于本文件中保留的历史架构候选和历史任务记录。新任务必须以 Runtime-3.0 作为设计起点，不得让旧 B′、A、Hybrid 的既有边界或失败假设预先限定新方案。
+
+### 2.1 产品与能力硬边界
+- 坏坏猫是唯一产品主体。保留原版 UI、搜索、收藏/书架、小说、书签、导航、净化、Reader、CSS/排版和交互；绝不以 Legado UI/Reader 替换。
+- Legado 固定 SHA 是书源执行行为基准，完整盘点并保留规则、模型、AnalyzeRule/AnalyzeUrl、Rhino/JsExtensions/jsLib、BaseSource 生命周期、HTTP、Cookie、登录、WebView/浏览器/验证码回调、搜索/发现/详情/目录/正文/分页/批量正文、缓存等真实依赖。
+- 可以隔离 Android UI、数据库、网络、Cookie、登录、WebView、缓存和生命周期等平台边界，但必须使用类型化 Host Ports，保留上游输入输出、null/default、异常、线程/协程、取消、回调、状态、事务和资源释放语义。
+- 禁止为方便编译而删除上游行为、no-op、空返回、假数据、shadow DTO、Map/Any? 万能桥接、同名简化 API，或将测试替身接入生产路径。
+- 不搬运 Legado 产品 UI、书架流程或 Reader。若书源执行闭包确实依赖某组件，则按真实调用证据保留其行为或提供差分证明的宿主实现，不得按目录名称武断排除。
+- 固定上游：`LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`。升级须独立登记并完整差分。
+
+### 2.2 目标分层
+1. **Badcat Product UI**：原版页面、导航、阅读器、净化、CSS、交互。
+2. **Compatibility Facade**：集中处理类型、身份、序列化、错误和生命周期边界转换，不把适配逻辑散落在 UI。
+3. **Controlled Legado Runtime**：尽可能原样复用固定 SHA 的真实上游源码及完整行为依赖。
+4. **Typed Platform Host Ports**：Android Context、HTTP、Cookie、登录 UI、WebView/浏览器、缓存、数据库、线程/协程、资源生命周期。
+5. **Single-source Data Ownership**：每个数据域一个事实源和写入者，事务、缓存失效、备份、迁移、回滚、重启恢复均可验证。数据库选型暂不预设。
+
+### 2.3 数据策略
+- Runtime-3.0 首先证明真实执行闭包和可构建边界；不先冻结 schema v1、不加 Room、不迁移用户数据、不双写。
+- 审计 BookSource、Book、BookChapter、Progress、Chapter Cache 五域，并扩展 Cookie、登录态、源变量、收藏、书签、历史：字段、身份、owner、读者、写入者、事务、缓存 key、恢复和迁移。
+- 旧 B′（Badcat-owned persistence）、限定 A、Hybrid、官方核心表+兼容门面等继续作为历史候选保留。只有基于新证据重新比较、重新登记并通过单写者/迁移/回滚 PoC 后才可启用。
+- 不因旧 B′ 曾经优先就强迫 Runtime 塞进旧模块边界；也不因完整兼容的目标而直接搬入整个 Legado AppDatabase 或产品 UI。
+
+### 2.4 实施阶段与门禁
+| 阶段 | 目标 | 通过条件 |
+|---|---|---|
+| 0 架构总审查 | 固定 SHA 源码/声明/caller/依赖/Gradle/资源/反射/数据 owner 盘点 | 可追溯清单、调用图、依赖图、未知项和 GO/NO-GO |
+| 1 Runtime 边界 PoC | 原样上游核心 + 类型化 Host Ports，排除 Legado 产品 UI/Reader | 可复现编译、架构守卫、真实规则/JS/请求闭环 |
+| 2 模型与规则 | BookSource/Book/BookChapter/ReadConfig、规则、AnalyzeRule/AnalyzeUrl | 字段/序列化/规则固定 SHA 差分通过 |
+| 3 JS 与生命周期 | Rhino、JsExtensions overload、BaseSource、jsLib、SharedJsScope | API/ABI/上下文/回调/取消/释放差分通过 |
+| 4 网络与平台服务 | HTTP、Cookie、登录、WebView/浏览器/验证码、缓存、安全 | 真实服务语义和生命周期测试通过 |
+| 5 书源业务链 | 搜索/发现/分页/详情/目录/正文/多页/批量正文 | 多类型书源全链路差分回放通过 |
+| 6 数据所有权 PoC | 五域及关联状态单一事实源、事务、迁移、回滚、恢复 | 单写者、无丢失、重启/升级演练通过 |
+| 7 Badcat 集成 | 接回原版 UI/Reader，不改变产品交互 | 原版 UI 回归、真机阅读和恢复通过 |
+| 8 发布验收 | 契约/架构/回放/真实源/真机/APK/许可证 | exact HEAD 产物与所有关键门禁通过 |
+
+### 2.5 历史方案保留规则
+- 原 B′ 五域 PoC、限定 A、Hybrid、旧模块拆分、Runtime-1.x/2.x 的任务登记、CI、产物、失败记录完整保留，不删除、不改写其历史结论。
+- 历史资料只用于追溯假设、失败原因和可复用证据，不自动支配 Runtime-3.0 的模块、数据或任务顺序。
+- 重新启用历史候选必须新建决策记录，明确重启原因、仍适用的证据、变化的前提和新的可证伪验收标准。
+- Runtime-2.11 嵌套 Shell 探针暂停并由 Runtime-3.0 架构总审查取代；原注册和历史记录保留，不代表执行或通过。
+
+
+## 历史架构候选：方案 B′（保留原始论证，不再自动支配当前实施）
+
+**Badcat 自有持久化 + Badcat 原有 UI + Legado 兼容运行时 + 严格隔离适配层 + 可退出的最小 PoC。** B′ 是此前阶段的首选验证路线；该历史结论保留供追溯，但自 Runtime-3.0 起不再是当前默认路线。只有在新架构决策中重新登记并通过门禁后才可恢复。
 
 | 层 | 责任 | 禁止 |
 |---|---|---|
