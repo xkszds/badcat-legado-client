@@ -498,3 +498,20 @@ Audit base: Badcat branch `integration/legado-upstream-runtime`, exact HEAD `1aa
 - **GO:** continue the static all-scope ABI audit and design a bounded reproducible inventory. **NO-GO:** production wiring, method-surface changes, broad upstream import, compiler PoC, schema migration, caller cutover, WebView behavior claims or full-compatibility/release claims.
 - This checkpoint inspected source and CI artifacts only. No production code, tests, Gradle, workflow, DB, UI/Reader, AdMark, PPRule or `main` changed. No live-source or device acceptance was achieved.
 - **Next single audit item:** enumerate the exact objects installed into each Badcat Rhino scope and every public member reachable through their compiled wrappers, including return-object wrappers; compare each scope separately with its pinned upstream counterpart. Do not rerun the broken WebView provider test until its report-export handoff is registered and fixed as a separate task.
+
+
+## 16. Runtime-3.0 evidence checkpoint — all-scope DEX crosswalk and CI #3111
+
+Exact audit HEAD: 46dded4dbad38809831884de95566ca9fc76f06a on integration/legado-upstream-runtime; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+
+CI #3111 (run 44942383833 / job 136962210486) ended FAILURE on the exact audit HEAD. The full app unit-test task ran 312 tests with two failures, both Fourth-category AdMark; 170 Rhino-focused tests passed. The separate pinned model contract suite passed. API 35 WebView instrumentation failed because the report export produced no shell output and the follow-up pull found no report file; no overload observation was collected. The WebView report ZIP is artifact 14722401453, SHA-256 0c1b050a96ebdedd3e8fc98c504222fc7304f68e82b971ce17633839016fd977.
+
+The JS inventory ZIP 14722476228 (SHA-256 331adde7fcde15ec488c14004984cd382f3d586c605a1a0a3747fbc57f38bbe9) records 173 declarations but its configured upstream scope list omits RssJsExtensions; its host inventory is only RhinoSafeSourceJavaExtensions. The JVM ABI ZIP 14722281919 (SHA-256 77661adf6d079be18c445d2d31df310a31ce1b0ab2242921850177019334877d) likewise contains only that main bridge's javap output.
+
+The exact-HEAD Debug APK ZIP 14722177393 (SHA-256 4aecf3f42c11bb4674810c73c818669567aa7bdccec7066ae9951a470dc5cb06) contains app-debug.apk SHA-256 090662d5639a052bcf7ddeef33c02828a9bf8a521f47ee74abd900db5e436927. A read-only DEX crosswalk enumerated the four source-runtime bindings (java/cookie/source/cache), separate @js: replacement java helper, and return objects (file/HTTP/URL/element/Jsoup/crypto). Notable declared public method counts: cookie 5, cache 12, login/session 11, replacement 10, file handle 30, HTTP response 19, raw response 5, raw request 1, URL 7, LegadoSourceElement 27, LegadoSourceElementList 17; Jsoup Document 29 and Element 147; Elements 70. These are DEX declarations, not a complete Rhino reflection or JVM ABI proof.
+
+RhinoWrapFactory uses generic reflective wrappers for ordinary host objects; no per-method allowlist/custom registration was found. ClassShutter controls class/package visibility, not individual methods. This is a boundary audit item, not a confirmed exploit. The source inventory also does not model inherited return-object methods or post-R8 behavior.
+
+Decision: static all-scope compiled/reflected inventory only is GO; production wiring, broad upstream import, compiler PoC, schema/caller cutover and full compatibility/release are NO-GO. WebView report export remains a separate blocked task. No production code/tests/Gradle/workflow/DB/UI/Reader/AdMark/PPRule/main changed; no live-source or device acceptance.
+
+Next: include RssJsExtensions plus every concrete host scope and returned-object class in the inventory; capture compiled descriptors and actual Rhino-reflected public members per object, then compare each to the pinned upstream provider.
