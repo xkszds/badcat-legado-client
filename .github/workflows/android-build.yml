@@ -66,6 +66,126 @@ jobs:
       - name: Run contract unit tests
         run: gradle --no-daemon :integration-contract:test
 
+      - name: Diagnose Kotlin Parcelize Maven endpoints
+        id: parcelize_endpoint_diagnostic
+        continue-on-error: true
+        run: |
+          set -u
+          artifact_path="org/jetbrains/kotlin/kotlin-parcelize-runtime/2.4.20/kotlin-parcelize-runtime-2.4.20"
+          work_dir="build/parcelize-endpoint-diagnostic"
+          mkdir -p "$work_dir"
+          report="$work_dir/report.txt"
+          : > "$report"
+          overall=0
+
+          probe() {
+            label="$1"
+            base="$2"
+            extension="$3"
+            url="${base}${artifact_path}.${extension}"
+            body="$work_dir/${label}.${extension}"
+            headers="$work_dir/${label}.${extension}.headers"
+            errors="$work_dir/${label}.${extension}.curl-errors"
+            status="000"
+            curl_exit=0
+
+            status="$(curl --location --max-redirs 5 --connect-timeout 15 --max-time 45 \
+              --silent --show-error --dump-header "$headers" --output "$body" \
+              --write-out '%{http_code}' "$url" 2>"$errors")" || curl_exit=$?
+
+            {
+              echo "ENDPOINT=$label"
+              echo "URL=$url"
+              echo "HTTP_STATUS=$status"
+              echo "CURL_EXIT=$curl_exit"
+              if [ -s "$headers" ]; then
+                echo "RESPONSE_HEADERS_BEGIN"
+                awk 'BEGIN { IGNORECASE=1 } /^HTTP\// || /^content-type:/ || /^content-length:/ || /^last-modified:/ || /^etag:/ { print }' "$headers"
+                echo "RESPONSE_HEADERS_END"
+              fi
+              if [ -s "$errors" ]; then
+                sed 's/^/CURL_ERROR=/' "$errors"
+              fi
+              if [ -f "$body" ]; then
+                echo "BYTES=$(wc -c < "$body" | tr -d ' ')"
+                sha256sum "$body"
+              else
+                echo "BODY_MISSING=true"
+              fi
+            } | tee -a "$report"
+
+            if [ "$curl_exit" -ne 0 ] || [ "$status" != "200" ] || [ ! -s "$body" ]; then
+              overall=1
+              echo "CONTENT_VALID=false" | tee -a "$report"
+              return
+            fi
+
+            if [ "$extension" = "pom" ]; then
+              if python3 - "$body" <<'PY'
+          import sys
+          import xml.etree.ElementTree as ET
+
+          root = ET.parse(sys.argv[1]).getroot()
+          ns = {"m": "http://maven.apache.org/POM/4.0.0"}
+          actual = (
+              root.findtext("m:groupId", namespaces=ns),
+              root.findtext("m:artifactId", namespaces=ns),
+              root.findtext("m:version", namespaces=ns),
+          )
+          expected = ("org.jetbrains.kotlin", "kotlin-parcelize-runtime", "2.4.20")
+          if actual != expected:
+              raise SystemExit(f"POM_GAV_MISMATCH actual={actual!r} expected={expected!r}")
+          print(f"POM_VALID=true GAV={':'.join(actual)}")
+          PY
+              then
+                echo "CONTENT_VALID=true" | tee -a "$report"
+              else
+                overall=1
+                echo "CONTENT_VALID=false" | tee -a "$report"
+              fi
+            else
+              if python3 - "$body" <<'PY'
+          import sys
+          import zipfile
+
+          with zipfile.ZipFile(sys.argv[1]) as archive:
+              bad = archive.testzip()
+              names = archive.namelist()
+              classes = [name for name in names if name.endswith(".class")]
+              if bad is not None or not names or not classes:
+                  raise SystemExit(f"JAR_INVALID bad_entry={bad!r} entries={len(names)} classes={len(classes)}")
+          print(f"JAR_VALID=true entries={len(names)} classes={len(classes)}")
+          PY
+              then
+                echo "CONTENT_VALID=true" | tee -a "$report"
+              else
+                overall=1
+                echo "CONTENT_VALID=false" | tee -a "$report"
+              fi
+            fi
+          }
+
+          for endpoint in \
+            "central|https://repo.maven.apache.org/maven2/" \
+            "google-central-mirror|https://maven-central.storage-download.googleapis.com/maven2/"; do
+            label="${endpoint%%|*}"
+            base="${endpoint#*|}"
+            probe "$label" "$base" pom
+            probe "$label" "$base" jar
+          done
+
+          echo "DIAGNOSTIC_EXIT=$overall" | tee -a "$report"
+          exit "$overall"
+
+      - name: Upload Kotlin Parcelize Maven endpoint diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kotlin-parcelize-maven-endpoint-diagnostic
+          path: build/parcelize-endpoint-diagnostic/**
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Run authentic Legado runtime model contract tests
         run: gradle --no-daemon :legado-runtime:testDebugUnitTest
 
