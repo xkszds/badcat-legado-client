@@ -215,47 +215,8 @@ jobs:
           # CI #3065 showed that this nonessential call fails with Broken pipe; the probe
           # uses bounded callbacks and does not require animations to be disabled.
           disable-animations: false
-          script: |
-            set +e
-            mkdir -p build/runtime-2.3-webview
-            adb version > build/runtime-2.3-webview/adb-version.txt 2>&1
-            adb devices -l > build/runtime-2.3-webview/adb-devices-before.txt 2>&1
-            device_state="$(adb -s "$ANDROID_SERIAL" get-state 2>&1)"
-            device_state_status=$?
-            boot_state="$(adb -s "$ANDROID_SERIAL" shell getprop sys.boot_completed 2>&1)"
-            boot_state_status=$?
-            {
-              echo "serial=$ANDROID_SERIAL"
-              echo "get_state_status=$device_state_status"
-              echo "device_state=$device_state"
-              echo "boot_property_status=$boot_state_status"
-              echo "sys.boot_completed=$boot_state"
-            } > build/runtime-2.3-webview/adb-preflight.txt
-            if [ "$device_state_status" -ne 0 ] || [ "$device_state" != "device" ] || [ "$boot_state_status" -ne 0 ] || [ "$boot_state" != "1" ]; then
-              echo "ADB preflight failed; capturing guest logcat before stopping"
-              adb -s "$ANDROID_SERIAL" logcat -d -b all -t 2000 > build/runtime-2.3-webview/adb-preflight-logcat.txt 2>&1 || true
-              exit 1
-            fi
-
-            gradle --no-daemon :app:connectedDebugAndroidTest
-            test_status=$?
-            adb exec-out run-as app.badcat.client cat files/runtime-2.3-webview-report.json > build/runtime-2.3-webview/runtime-2.3-webview-report.json 2> build/runtime-2.3-webview/adb-report-capture.txt
-            capture_status=$?
-            if [ "$capture_status" -ne 0 ] || [ ! -s build/runtime-2.3-webview/runtime-2.3-webview-report.json ]; then
-              echo "WebView instrumentation report was not produced or could not be retrieved"
-              report_status=1
-            else
-              cat build/runtime-2.3-webview/runtime-2.3-webview-report.json
-              report_status=0
-            fi
-            adb devices -l > build/runtime-2.3-webview/adb-devices-after.txt 2>&1 || true
-            if [ "$test_status" -ne 0 ] || [ "$report_status" -ne 0 ]; then
-              adb -s "$ANDROID_SERIAL" logcat -d -b all -t 4000 > build/runtime-2.3-webview/adb-post-test-logcat.txt 2>&1 || true
-            fi
-            if [ "$test_status" -ne 0 ]; then
-              exit "$test_status"
-            fi
-            exit "$report_status"
+          # Keep shell state in the checked-in script; the action dispatches inline lines separately.
+          script: bash .github/scripts/runtime-webview-provider-probe.sh
         env:
           ANDROID_I_WANT_MY_TCG: "yes"
 
