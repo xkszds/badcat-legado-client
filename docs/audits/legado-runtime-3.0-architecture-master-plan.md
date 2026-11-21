@@ -191,3 +191,91 @@ All paths below are pinned to \`330e606c4d57e08adc056ff8ab7a4132c784da9a\`:
 - \`SourceLoginV2Delegate.kt\` \`2b5fb5b0e7efb5b1df36ff906a8ce17b672ac41c\`; \`WebBook.kt\` \`d7a924c2d687bc99d6e25099cefacc9d920e1386\`; \`ReviewController.kt\` \`0e5be8d8ec83094a9fdf4ae5bebf9370f64fdc7e\`.
 - \`BookInfoViewModel.kt\` \`eb0b5853a7e880eb62e33ea1cca4210262adbbb0\`; \`ReadBookActivity.kt\` \`29d3c6dd3cf75178569416e5e97ec1005d1b1c1b\`; \`WebViewActivity.kt\` \`fec705d67831e07f6e25a94d94ede9b000ca088f\`; \`BottomWebViewDialog.kt\` \`5d354092597502bafe26424b3c39cdca667d33f6\`.
 - \`FileDocExtensions.kt\` \`b0bc9f2765bc98cf4d39aa8da68c49623497b4fd\`; \`app/build.gradle\` \`eb26ab098e63401a3c506fbd21ca8fdc95616aa7\`; \`settings.gradle\` \`beb9639fbb751b1736ad5baf5afc509c6718c4ca\`; \`proguard-rules.pro\` \`2993b30d101be1bcf2e80545a6f3e89139004406\`; \`AndroidManifest.xml\` \`38246c5895d276ecc9ebc6dc4451a609c7e5ca07\`; \`js_source_template.js\` \`25ae7673c9f66c2b3959aa370f6c98a4efe3a1e4\`.
+
+
+## 12. Runtime-3.0 evidence checkpoint: BatchContentContext full caller and lifecycle audit (2026-11-22)
+
+Audit base: Badcat `integration/legado-upstream-runtime` at `833209165cb860557fad23944ab50e04039acb93`; upstream `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`. Read-only source review. This checkpoint closes the main static caller map for batch chapter content; it does not claim compiler closure or runtime parity.
+
+### 12.1 Complete statically confirmed execution paths
+
+The upstream has two distinct batch entry paths which converge on the same `BatchContentContext` and `java.cacheContent` contract:
+
+1. **JavaScript source:** `CacheBook` → `WebBook.getContentBatchAwait` → `JsSourceBook.getContentBatchAwait` → `JsSourceEngine.callContentBatch` → `JsExtensions.cacheContent` → `BatchContentContext.saveContent` → `BookHelp.saveContent`.
+2. **Rule source:** `CacheBook` → `WebBook.getContentBatchAwait` → `BookContent.analyzeContentBatch` → `AnalyzeRule.setBatchContext` → `JsExtensions.cacheContent` → the same `BatchContentContext.saveContent` → `BookHelp.saveContent`.
+
+`WebBook` chooses the JS route only for JS sources; ordinary rule sources use `BookContent.analyzeContentBatch`. Both paths install the context before script execution and close it in `finally`. A runtime implementation that only wires the JS path or only wires the CSS/rule path is incomplete.
+
+### 12.2 Context identity and save semantics
+
+`BatchContentContext` captures the actual `BookSource`, `Book`, ordered `BookChapter` list, originating `CoroutineContext`, and a per-chapter `ContentSaveToken` captured before the batch starts.
+
+- Chapter identity is `BookChapter.index`, not URL. A chapter object is resolved against the current batch by index. A URL is accepted only when it uniquely identifies one chapter; raw, absolute and normalized URL aliases are indexed. Numeric identifiers are rejected to prevent confusing an array position with a chapter index.
+- Duplicate URLs are valid in a TOC. Passing a URL shared by multiple chapters is an ambiguity error even if one twin has already been saved. Passing the actual chapter object remains unambiguous.
+- The context applies the source's real `replaceRegex` through `AnalyzeRule`, with the chapter and its absolute URL as context; online text formatting is also applied before persistence.
+- Save and close operations are synchronized. `saveContent` checks cancellation, rejects a closed context, resolves the chapter, rejects blank post-replacement content, requires the pre-captured save token, checks cancellation again, and only marks the chapter saved after the fenced save succeeds.
+- `close()` prevents late asynchronous JS callbacks from publishing after the batch ends. Missing chapters remain ordered and are returned to the caller for ordinary single-chapter fallback.
+- `BookHelp.saveContent` validates book URL, chapter index and cache-folder identity, then uses `ContentSaveFence.writeIfCurrent` with the captured version before publishing the chapter file. This prevents an old in-flight batch response from overwriting a newer authoritative edit/cache generation. A successful write posts the product `SAVE_CONTENT` event; optional chapter metadata update reaches the Room DAO.
+- `CacheBook.runBatch` owns download tickets and fallback: it snapshots content tokens, preserves chapters saved before a script exception, rechecks token freshness, sends missing/blank chapters back to the single-chapter queue, propagates cancellation, and finishes every ticket in `finally`. This coordination is part of observable behavior, not an optional optimization.
+
+### 12.3 Existing upstream test contract
+
+Pinned upstream tests establish more than a happy path:
+
+- `BatchContentContextTest`: duplicate-URL ambiguity, relative/absolute aliases, chapter-object identity, rejection of numeric/null/unknown identifiers, repeated save for a unique URL, and ordered missing-chapter calculation.
+- `BatchContentDownloadTest`: raw/`<js>`/`@js:` wrappers; both rule and JS source routes; replacement and blank-output rejection; stale batch response cannot overwrite a user edit; reader/read-aloud joining a batch; cancellation of one waiter does not cancel the producer; restoring queued manual work after cancellation; partial script failure retaining successful writes and retrying only missing chapters; cancellation before lazy task startup; late callbacks rejected after close; and content/image cache coordination.
+
+These pinned tests are a minimum porting/contract suite. Their existence in upstream is not evidence that Badcat currently passes them.
+
+### 12.4 Badcat comparison at audited HEAD
+
+- `RhinoSafeSourceJavaExtensions.getBatchContext()` returns `null`.
+- `RhinoSafeSourceJavaExtensions.cacheContent()` throws an explicit `IllegalStateException`; it does not silently drop data.
+- `CssChapterContentParser` explicitly rejects `contentBatch` (along with other unsupported rule fields). `SourceChapterContentService` has no batch-context installation/persistence route.
+- The current Badcat source path is a custom search/detail/TOC/content service pipeline, not upstream `CacheBook → WebBook → JsSourceBook/BookContent`.
+- Therefore neither upstream batch route is integrated. This is a known compatibility blocker, not an isolated missing helper method.
+
+### 12.5 Required typed port cut-set for a future implementation
+
+A behavior-preserving cut must provide all of the following; this is a contract inventory, not an implementation authorization:
+
+| Required seam | Semantics that must survive |
+|---|---|
+| Batch execution scope | Install one context for the exact JS/rule invocation; expose it to `java.cacheContent`; isolate per source/batch; close in `finally`; reject late callbacks. |
+| Book/chapter identity repository | Preserve Book/BookChapter identity and stable chapter index; never identify a chapter solely by a potentially duplicated URL. |
+| Content replacement | Execute upstream `AnalyzeRule` replacement semantics with chapter/base URL and formatting context, not a simplified string replace. |
+| Content cache publisher | Preserve file naming, book-folder identity, cache invalidation/version token, compare-and-save fencing, and reader-visible save event. |
+| Download coordinator | Preserve batch tickets/claims, partial success, missing-chapter fallback, single-chapter retry, cancellation and waiter/producer ownership. |
+| Metadata/event host | Preserve optional chapter metadata persistence and `SAVE_CONTENT` notification without introducing a second database authority. |
+
+A generic `Any?` context, map-based chapter identity, no-op save, URL-only matching, or writing chapter text without the save fence would not satisfy this contract.
+
+### 12.6 Pinned source and test blob references
+
+All upstream entries are pinned to `330e606c4d57e08adc056ff8ab7a4132c784da9a`:
+
+- `BatchContentContext.kt`: `68cad877f048b171e4f0f6cf22b1e0dd1e6481f9`.
+- `JsSourceBook.kt`: `66d9878bed8671fe130d9c9c507608d89d393cf5`.
+- `JsSourceEngine.kt`: `44452025f81d8751afee92d3ee1f2d52f9e55905`.
+- `JsExtensions.kt`: `f6808edd2a0d312e8bd13649935dea444cb82581`.
+- `BookHelp.kt`: `78e9e82b67145b835678c7aa1111eaf1631b77d2`.
+- `BookContent.kt`: `cbc353920315db9810f57aec935faeaca5310a13`.
+- `AnalyzeRule.kt`: `7591a026a072ac8a6fe4902add0795812fe0a0a6`.
+- `BaseSource.kt`: `9f5174d7ad6cb74a7e6b2d1f9260d90e3e8e6baa`.
+- `WebBook.kt`: `d7a924c2d687bc99d6e25099cefacc9d920e1386`.
+- `CacheBook.kt`: `f1c24dc905664b592a04daccc4e09ae6e8578409`.
+- `BatchContentContextTest.kt`: `67207fecb4a96e8aae0a1bd7083d61cccbf657a9`.
+- `BatchContentDownloadTest.kt`: `81e4debe9194d3a9c6590be29c4fdcc5565349f7`.
+
+Badcat inspected blobs at the audit HEAD:
+
+- `RhinoSafeSourceJavaExtensions.kt`: `6a00e649895c4c1d223b768c6b288632ec033de9`.
+- `RhinoSourceScriptRuntime.kt`: `f1d8f0225a434e79fbd37d0d8c1ec132f5c9541f`.
+- `CssChapterContentParser.kt` and `SourceChapterContentService.kt` were inspected at the same Badcat HEAD; the tree inventory is the source of truth for their exact blob IDs.
+
+### 12.7 Decision and validation
+
+- **GO:** static batch-context caller/lifecycle inventory is sufficiently mapped to inform a later typed-port design.
+- **NO-GO:** no production batch wiring, broad upstream import, persistence redesign, schema/Room work, compiler PoC, caller cutover or complete compatibility claim.
+- **Read-only validation only:** pinned upstream and Badcat source inspection plus GitHub code-search callsite cross-check. No build, unit/instrumentation test, CI, emulator, device, APK or live-source test was run.
+- No production code, tests, Gradle, workflow, database, UI/Reader, AdMark, PPRule or `main` changed.
