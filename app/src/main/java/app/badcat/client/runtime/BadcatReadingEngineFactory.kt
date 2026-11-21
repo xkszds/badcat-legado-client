@@ -49,12 +49,13 @@ class BadcatReadingEngineFactory(
     private val replaceRuleCatalog = FileReplaceRuleCatalog(context.applicationContext)
     private val badcatPurificationSettings = BadcatPurificationSettingsStore(context.applicationContext)
     private val badcatAdMarkCatalog = BadcatAdMarkCatalog(context.applicationContext)
+    private val sourceCookieStore by lazy {
+        SharedPreferencesSourceCookieJar(context.applicationContext)
+    }
 
     fun create(): ReadingEngine {
         val transport = requestClient ?: OkHttpSourceRequestClient(
-            cookieJarProvider = { sourceId ->
-                SharedPreferencesSourceCookieJar(context.applicationContext, sourceId)
-            },
+            cookieJarProvider = { sourceCookieStore },
         )
         val durableRequestClient = SourceLoginSessionRequestClient(transport, loginSessionStore)
         val activeScriptRuntime: SourceScriptRuntime = scriptRuntime ?: RhinoSourceScriptRuntime(
@@ -76,28 +77,29 @@ class BadcatReadingEngineFactory(
                 }
             },
             sourceLoginSessionStore = loginSessionStore,
-            sourceCookieReader = { sourceId, url ->
-                SharedPreferencesSourceCookieJar(context.applicationContext, sourceId).getCookie(url)
+            sourceCookieReader = { _, url ->
+                sourceCookieStore.getCookie(url)
             },
-            sourceCookieRemover = { sourceId, url ->
-                SharedPreferencesSourceCookieJar(context.applicationContext, sourceId).removeForUrl(url)
+            sourceCookieRemover = { _, url ->
+                sourceCookieStore.removeCookie(url)
             },
-            sourceCookieWriter = { sourceId, url, cookie ->
-                SharedPreferencesSourceCookieJar(context.applicationContext, sourceId).setCookie(url, cookie)
+            sourceCookieWriter = { _, url, cookie ->
+                sourceCookieStore.setCookie(url, cookie)
             },
-            sourceCookieReplacer = { sourceId, url, cookie ->
-                SharedPreferencesSourceCookieJar(context.applicationContext, sourceId).replaceCookie(url, cookie)
+            sourceCookieReplacer = { _, url, cookie ->
+                sourceCookieStore.replaceCookie(url, cookie)
             },
-            sourceLoginCookieWriter = { sourceId, sourceKey, cookie ->
-                SharedPreferencesSourceCookieJar(context.applicationContext, sourceId)
-                    .replaceLoginCookieHeader(sourceKey, cookie)
+            sourceLoginCookieWriter = { _, sourceKey, cookie ->
+                sourceCookieStore.mergeLoginCookieHeader(sourceKey, cookie)
             },
-            sourceLoginCookieRemover = { sourceId, sourceKey ->
-                SharedPreferencesSourceCookieJar(context.applicationContext, sourceId)
-                    .removeForSourceDomain(sourceKey)
+            sourceLoginCookieRemover = { _, sourceKey ->
+                sourceCookieStore.removeCookie(sourceKey)
             },
             sourceCookieClearer = { sourceId ->
-                SharedPreferencesSourceCookieJar(context.applicationContext, sourceId).clear()
+                sourceCookieStore.clearDomain(sourceId)
+            },
+            sourceCookieKeyRemover = { _, url, key ->
+                sourceCookieStore.removeCookie(url, key)
             },
             sourceAjax = { source, baseUrl, urlAndOptions ->
                 val resolved = when (val parsed = LegadoUrlResolver.resolve(baseUrl, urlAndOptions)) {

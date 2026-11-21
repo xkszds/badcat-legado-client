@@ -14,6 +14,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.net.URI
 import okhttp3.Response
 import okhttp3.Interceptor
+import okhttp3.internal.publicsuffix.PublicSuffixDatabase
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.EOFException
@@ -96,7 +97,18 @@ class OkHttpSourceRequestClient(
         return try {
             val client = clientFor(request)
             val builder = Request.Builder().url(request.url)
-            request.headers.forEach { (name, value) -> builder.header(name, value) }
+            val explicitCookie = request.headers.entries
+                .lastOrNull { it.key.equals("Cookie", ignoreCase = true) }
+                ?.value
+            if (explicitCookie != null) {
+                builder.tag(
+                    ExplicitCookieHeader::class.java,
+                    ExplicitCookieHeader(explicitCookie, effectiveCookieDomain(parsedUrl)),
+                )
+            }
+            request.headers.forEach { (name, value) ->
+                if (!name.equals("Cookie", ignoreCase = true)) builder.header(name, value)
+            }
 
             if (method !in BODY_FORBIDDEN_METHODS &&
                 request.body?.let(::utf8EncodedLength)?.let { it > maxRequestBytes } == true
@@ -199,7 +211,7 @@ class OkHttpSourceRequestClient(
                 NoSourceCookies
             }
             OkHttpClient.Builder()
-                .cookieJar(jar)
+                .cookieJar(TrackingSourceCookieJar(jar))
                 .connectTimeout(connectTimeoutSeconds, TimeUnit.SECONDS)
                 .readTimeout(readTimeoutSeconds, TimeUnit.SECONDS)
                 .writeTimeout(writeTimeoutSeconds, TimeUnit.SECONDS)
@@ -208,6 +220,7 @@ class OkHttpSourceRequestClient(
                 .followRedirects(true)
                 // Never downgrade an HTTPS source request to cleartext HTTP.
                 .followSslRedirects(false)
+                .addNetworkInterceptor(CookieHeaderMergeInterceptor)
                 .addNetworkInterceptor(SafeRedirectInterceptor)
                 .build()
         }
@@ -386,6 +399,81 @@ internal class MemorySourceCookieJar : CookieJar {
 private object NoSourceCookies : CookieJar {
     override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) = Unit
     override fun loadForRequest(url: HttpUrl): List<Cookie> = emptyList()
+}
+
+/** Explicit Cookie headers are held out of BridgeInterceptor until each exchange. */
+private data class ExplicitCookieHeader(
+    val value: String,
+    val originDomain: String?,
+)
+
+private object RequestCookieHeaderContext {
+    private val loadedJarHeader = ThreadLocal<String?>()
+
+    fun record(cookies: List<Cookie>) {
+        loadedJarHeader.set(cookies.joinToString("; ") { "${it.name}=${it.value}" })
+    }
+
+    fun consume(): String = loadedJarHeader.get().orEmpty().also { loadedJarHeader.remove() }
+}
+
+private class TrackingSourceCookieJar(
+    private val delegate: CookieJar,
+) : CookieJar {
+    override fun loadForRequest(url: HttpUrl): List<Cookie> =
+        delegate.loadForRequest(url).also(RequestCookieHeaderContext::record)
+
+    override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
+        delegate.saveFromResponse(url, cookies)
+    }
+}
+
+/**
+ * BridgeInterceptor may replace an explicit Cookie header with CookieJar output.
+ * Rebuild the header from both inputs on every network exchange; CookieStore
+ * values are merged last and therefore win same-name conflicts.
+ */
+private object CookieHeaderMergeInterceptor : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val request = chain.request()
+        val jarHeader = RequestCookieHeaderContext.consume()
+        val explicit = request.tag(ExplicitCookieHeader::class.java)
+            ?.takeIf { it.originDomain == null || it.originDomain == effectiveCookieDomain(request.url) }
+            ?.value
+        val merged = mergeCookieHeaders(explicit, jarHeader)
+        val builder = request.newBuilder().removeHeader("Cookie")
+        if (merged.isNotBlank()) builder.header("Cookie", merged)
+        return chain.proceed(builder.build())
+    }
+}
+
+private fun effectiveCookieDomain(url: HttpUrl): String {
+    val host = url.host
+    val ipv4Parts = host.split('.')
+    val isIpv4 = ipv4Parts.size == 4 && ipv4Parts.all { part ->
+        part.toIntOrNull()?.let { it in 0..255 } == true
+    }
+    if (host.contains(':') || isIpv4) return host
+    return runCatching { PublicSuffixDatabase.get().getEffectiveTldPlusOne(host) }
+        .getOrNull() ?: host
+}
+
+private fun mergeCookieHeaders(explicit: String?, cookieStore: String): String {
+    val merged = LinkedHashMap<String, String>()
+    fun append(raw: String?) {
+        if (raw.isNullOrBlank()) return
+        raw.split(';').forEach { part ->
+            val pair = part.trim()
+            val separator = pair.indexOf('=')
+            if (separator <= 0) return@forEach
+            val name = pair.substring(0, separator).trim()
+            val value = pair.substring(separator + 1).trim()
+            if (name.isNotBlank()) merged[name] = value
+        }
+    }
+    append(explicit)
+    append(cookieStore)
+    return merged.entries.joinToString("; ") { (name, value) -> "$name=$value" }
 }
 
 

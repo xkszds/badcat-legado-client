@@ -47,6 +47,68 @@ class OkHttpSourceRequestClientTest {
     }
 
     @Test
+    fun explicitCookieHeaderMergesWithCookieStoreOnEveryRedirectExchange() = runBlocking {
+        ServerSocket(0).use { server ->
+            server.soTimeout = 5_000
+            val receivedCookies = java.util.concurrent.CopyOnWriteArrayList<String>()
+            val worker = thread {
+                repeat(2) { index ->
+                    server.accept().use { socket ->
+                        socket.soTimeout = 5_000
+                        val reader = socket.getInputStream().bufferedReader(StandardCharsets.UTF_8)
+                        var cookie = ""
+                        while (true) {
+                            val line = reader.readLine() ?: break
+                            if (line.isEmpty()) break
+                            if (line.startsWith("Cookie:", ignoreCase = true)) {
+                                cookie = line.substringAfter(':').trim()
+                            }
+                        }
+                        receivedCookies += cookie
+                        val output = socket.getOutputStream()
+                        if (index == 0) {
+                            output.write(
+                                ("HTTP/1.1 302 Found\r\n" +
+                                    "Location: /final\r\n" +
+                                    "Set-Cookie: sid=jar; Path=/\r\n" +
+                                    "Content-Length: 0\r\n" +
+                                    "Connection: close\r\n\r\n")
+                                    .toByteArray(StandardCharsets.US_ASCII),
+                            )
+                        } else {
+                            val payload = "ok".toByteArray(StandardCharsets.UTF_8)
+                            output.write(
+                                ("HTTP/1.1 200 OK\r\nContent-Length: ${payload.size}\r\n" +
+                                    "Connection: close\r\n\r\n")
+                                    .toByteArray(StandardCharsets.US_ASCII),
+                            )
+                            output.write(payload)
+                        }
+                        output.flush()
+                    }
+                }
+            }
+            val jar = MemorySourceCookieJar()
+            val result = OkHttpSourceRequestClient(
+                cookieJarProvider = { jar },
+            ).execute(
+                SourceHttpRequest(
+                    sourceId = "http://127.0.0.1/source.json",
+                    url = "http://127.0.0.1:${server.localPort}/start",
+                    headers = mapOf("Cookie" to "sid=explicit; theme=dark"),
+                ),
+            )
+            worker.join(5_000)
+            assertTrue(!worker.isAlive, "redirect fixture server should finish")
+            assertEquals("ok", (result as EngineResult.Success).value.body)
+            assertEquals(
+                listOf("sid=explicit; theme=dark", "sid=jar; theme=dark"),
+                receivedCookies,
+            )
+        }
+    }
+
+    @Test
     fun rejectsOversizedUrlsWhenTransportIsCalledDirectly() = runBlocking {
         val result = OkHttpSourceRequestClient().execute(
             SourceHttpRequest(

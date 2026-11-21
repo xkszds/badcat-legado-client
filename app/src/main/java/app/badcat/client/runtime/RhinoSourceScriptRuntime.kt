@@ -201,6 +201,9 @@ class RhinoSourceScriptRuntime(
     },
     private val sourceLoginCookieRemover: (sourceId: String, sourceKey: String) -> Unit = { _, _ -> },
     private val sourceCookieClearer: (sourceId: String) -> Unit = { _ -> },
+    private val sourceCookieKeyRemover: (sourceId: String, url: String, key: String) -> Unit = { _, _, _ ->
+        throw UnsupportedOperationException("cookie.removeCookie(url, key) is not connected to the source cookie jar")
+    },
 ) : SourceScriptRuntime {
     private val javaExtensions = ConcurrentHashMap<String, RhinoSafeSourceJavaExtensions>()
     private val sourceExtensions = ConcurrentHashMap<String, RhinoSourceLoginExtensions>()
@@ -455,6 +458,7 @@ class RhinoSourceScriptRuntime(
                     cookieRemover = { url -> sourceCookieRemover(source.id, url) },
                     cookieWriter = { url, value -> sourceCookieWriter(source.id, url, value) },
                     cookieReplacer = { url, value -> sourceCookieReplacer(source.id, url, value) },
+                    cookieKeyRemover = { url, key -> sourceCookieKeyRemover(source.id, url, key) },
                 )
                 scope["source"] = sourceExtensions.computeIfAbsent(source.id) {
                     RhinoSourceLoginExtensions(

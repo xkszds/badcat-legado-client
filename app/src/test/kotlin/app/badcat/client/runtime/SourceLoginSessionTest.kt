@@ -114,6 +114,36 @@ class SourceLoginSessionTest {
     }
 
     @Test
+    fun loginCookieImportMergesIntoTheSharedDomainStoreAndLogoutClearsIt() {
+        val context = RuntimeEnvironment.getApplication()
+        val sourceUrl = "https://www.reader.example/source.json"
+        val cookieStore = SharedPreferencesSourceCookieJar(
+            context,
+            InMemorySourceCookieSessionStore(),
+        )
+        cookieStore.removeCookie(sourceUrl)
+        cookieStore.setCookie(sourceUrl, "sid=old; keep=yes")
+        val bridge = RhinoSourceLoginExtensions(
+            sourceId = sourceUrl,
+            store = InMemorySourceLoginSessionStore,
+            sourceKey = sourceUrl,
+            loginCookieWriter = { _, key, cookie ->
+                cookieStore.mergeLoginCookieHeader(key, cookie)
+            },
+            loginCookieRemover = { _, key -> cookieStore.removeCookie(key) },
+        )
+
+        bridge.putLoginHeader("""{"Cookie":"sid=login; theme=dark"}""")
+        assertEquals(
+            "sid=login; keep=yes; theme=dark",
+            cookieStore.getCookie("https://cdn.reader.example/book"),
+        )
+
+        bridge.removeLoginHeader()
+        assertEquals("", cookieStore.getCookie(sourceUrl))
+    }
+
+    @Test
     fun loginInfoCipherMatchesPinnedAndroidIdAesRoundTripAndRejectsBadKeyOrCiphertext() {
         val androidId = "0123456789abcdef"
         val plain = """{"username":"reader","token":"secret"}"""

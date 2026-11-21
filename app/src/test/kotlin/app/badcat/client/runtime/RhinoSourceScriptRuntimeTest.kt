@@ -868,6 +868,7 @@ text + re.test('aa}}')"""
         val writes = mutableListOf<String>()
         val replacements = mutableListOf<String>()
         val removals = mutableListOf<String>()
+        val keyRemovals = mutableListOf<String>()
         var cookieHeader = "sid=old; token=x=y"
         val runtime = RhinoSourceScriptRuntime(
             sourceCookieReader = { sourceId, url ->
@@ -883,12 +884,19 @@ text + re.test('aa}}')"""
             sourceCookieReplacer = { sourceId, url, value ->
                 assertEquals(source.id, sourceId)
                 replacements += "$url|$value"
-                cookieHeader = value
+                cookieHeader = "sid=replaced; token=keep"
             },
             sourceCookieRemover = { sourceId, url ->
                 assertEquals(source.id, sourceId)
                 removals += url
                 cookieHeader = ""
+            },
+            sourceCookieKeyRemover = { sourceId, url, key ->
+                assertEquals(source.id, sourceId)
+                keyRemovals += "$url|$key"
+                val values = parseLegadoCookieMap(cookieHeader)
+                values.remove(key)
+                cookieHeader = legadoCookieMapToHeader(values)
             },
         )
         val result = runtime.evaluate(
@@ -900,10 +908,16 @@ text + re.test('aa}}')"""
             source,
             """cookie.replaceCookie('https://cookie-mutation.example/book', 'sid=replaced'); cookie.getCookie('https://cookie-mutation.example/book')""",
         )
-        assertEquals("sid=replaced", (replaced as EngineResult.Success).value)
+        assertEquals("sid=replaced; token=keep", (replaced as EngineResult.Success).value)
+        val removedByKey = runtime.evaluate(
+            source,
+            """cookie.removeCookie('https://cookie-mutation.example/book', 'sid'); cookie.getCookie('https://cookie-mutation.example/book')""",
+        )
+        assertEquals("token=keep", (removedByKey as EngineResult.Success).value)
         runtime.evaluate(source, """cookie.removeCookie('https://cookie-mutation.example/book')""")
         assertEquals(listOf("https://cookie-mutation.example/book|sid=new"), writes)
         assertEquals(listOf("https://cookie-mutation.example/book|sid=replaced"), replacements)
+        assertEquals(listOf("https://cookie-mutation.example/book|sid"), keyRemovals)
         assertEquals(listOf("https://cookie-mutation.example/book"), removals)
         runtime.clearSourceState(source.id)
     }

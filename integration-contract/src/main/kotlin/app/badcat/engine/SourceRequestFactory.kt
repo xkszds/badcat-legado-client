@@ -157,7 +157,7 @@ object SourceRequestFactory {
                 method = normalizedMethod,
                 headers = merged,
                 body = prepared.body,
-                useCookieJar = source.enabledCookieJar != false,
+                useCookieJar = source.enabledCookieJar == true,
                 timeoutMillis = timeoutMillis,
                 followRedirects = followRedirects,
                 retryCount = retryCount,

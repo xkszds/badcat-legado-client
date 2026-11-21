@@ -62,6 +62,17 @@ class SourceRequestFactoryTest {
     }
 
     @Test
+    fun cookieJarRequiresAnExplicitTrueFlagAndNullDefaultsToDisabled() {
+        val enabled = SourceRequestFactory.create(source(cookieJar = true), "https://reader.example/")
+        val disabled = SourceRequestFactory.create(source(cookieJar = false), "https://reader.example/")
+        val unspecified = SourceRequestFactory.create(source(cookieJar = null), "https://reader.example/")
+
+        assertEquals(true, assertIs<EngineResult.Success<SourceHttpRequest>>(enabled).value.useCookieJar)
+        assertEquals(false, assertIs<EngineResult.Success<SourceHttpRequest>>(disabled).value.useCookieJar)
+        assertEquals(false, assertIs<EngineResult.Success<SourceHttpRequest>>(unspecified).value.useCookieJar)
+    }
+
+    @Test
     fun rejectsMethodsNotSupportedByTheTransportBeforeCreatingRequest() {
         val result = SourceRequestFactory.create(
             source = source(),
