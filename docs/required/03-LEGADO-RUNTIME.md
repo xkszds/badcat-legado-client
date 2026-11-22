@@ -3388,3 +3388,16 @@
 - **验收：** 两个目标测试编译并通过；完整第三类 App JVM suite 通过；API 28 与 API 35 instrumentation 实际执行通过；CI 结果与 exact HEAD 对齐并回写本节。
 - **明确排除：** 生产 Cookie 存储/桥接代码、HTTP request semantics、登录 WebView Host、manifest/权限、Reader/UI、第四类、第五类、schema/migration、上游 pin、`main`。
 - **状态：** 已 preregister；尚未修改代码。当前 CI #3155 已结束，不存在该 run 的活动 job。
+
+
+#### Runtime-3.2e.7 Cookie 策略迁移测试修复 — CI 结果闭环
+
+- **实现提交 / exact HEAD：** `f37a25cd27ce968c86a16a45ff413778f4f93e9d`；分支 `integration/legado-upstream-runtime`；固定上游 SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **实际变更：** 仅修改 preregister 的两个测试文件。JVM 断言改为验证确定性 header 顺序 `theme=dark; sid=webview; token=from-webview`，并额外断言解析后的键值与 WebView 同名值覆盖结果；Android instrumentation fixture 改用明确 source identity 与 `SESSION_ONLY` 策略调用现行导入 API。生产 Cookie 代码未改。
+- **CI：** [Run #3156](https://github.com/xkszds/badcat-legado-client/actions/runs/45065235457)，run ID `45065235457`；job `assemble-debug` / `137339789665`；状态 `completed / success`；run 的 head SHA 与实现提交完全一致。全部 87 个 job step（含收尾步骤）完成且 job success。
+- **JVM：** `:app:testDebugUnitTest` 执行成功（Gradle `BUILD SUCCESSFUL`）；第三类 App JVM suite 步骤成功。此 workflow 明确排除了第四类测试，不能将其表述为第四类通过。
+- **Android instrumentation：** API 28 与 API 35 两个 `:app:connectedDebugAndroidTest` 均实际在 emulator 上启动并结束 4 个测试；两个 Gradle 步骤均 `BUILD SUCCESSFUL`。API 28 WebView provider 报告的 string/number/null/undefined 四种桥接回调观察均为 `ok=true`。这是 CI 模拟器验证，不是用户实体设备验收。
+- **构建产物：** Debug APK assemble 与上传成功；artifact ID `14771023468`，SHA-256 `f5b669756e533e5c1590522d2d815435bb4fde71facece9577c190dd58592e22`。JUnit 报告 artifact ID `14771137975`，SHA-256 `868d9f58eeff326610a3ecbbbc91a4abd41f4fa264d8b58f13b8343e6d8fed92`。APK 仅证明 Debug 构建产物存在，未做实体设备安装验收。
+- **真实来源 smoke 遗留：** best-effort 上传语料端到端抽样仅 `1/4` 来源候选完成完整链路，`3/4` 失败；其中可见日志记录零零小说搜索阶段超时。相关报告 artifact ID `14771461933`。因此不能宣称真实来源覆盖全部通过，也不能据此判定第三类完整兼容。
+- **验收结论：** Runtime-3.2e.7 的登记范围（Cookie 测试迁移修复、第三类 JVM suite、API 28/35 instrumentation）**通过 CI 验收**。这只关闭本测试修复任务；第三类整体仍未完成，真实来源多源 E2E、完整 Legado API/JS/HTTP/登录生命周期差分和实体设备验证仍是独立遗留门槛。
+- **自审：** 本任务没有改生产 Cookie 存储/桥接、HTTP、登录 WebView Host、manifest、Reader/UI、第四类、第五类、schema 或上游 pin；`main` 未修改。
