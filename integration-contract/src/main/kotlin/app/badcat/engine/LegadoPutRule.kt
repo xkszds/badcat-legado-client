@@ -1,0 +1,211 @@
+package app.badcat.engine
+
+/**
+ * Resolves Legado's AnalyzeRule @put:{key:rule,...} directives.
+ * Upstream syntax is not necessarily JSON: keys and selector expressions are
+ * commonly unquoted (for example @put:{cid:chapter_id}).
+ */
+object LegadoPutRule {
+    data class Assignment(val key: String, val rule: String, val literal: Boolean)
+    data class Parsed(val expression: String, val assignments: List<Assignment>)
+
+    fun parse(expression: String): EngineResult<Parsed> {
+        val assignments = mutableListOf<Assignment>()
+        val ranges = mutableListOf<IntRange>()
+        var searchFrom = 0
+        while (searchFrom < expression.length) {
+            val marker = expression.indexOf("@put:", searchFrom, ignoreCase = true)
+            if (marker < 0) break
+            val start = marker + 5
+            if (start >= expression.length || expression[start] != '{') {
+                return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Malformed Legado @put directive")
+            }
+            val end = findClosingBrace(expression, start)
+                ?: return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Unclosed Legado @put directive")
+            val entries = splitTopLevel(expression.substring(start + 1, end), ',')
+            val parsedEntries = entries.mapNotNull { entry ->
+                val separator = findTopLevelColon(entry)
+                if (separator <= 0) null else {
+                    val key = unquote(entry.substring(0, separator).trim())
+                    val rawRule = entry.substring(separator + 1).trim()
+                    // Quotes delimit a rule value; they do not make it a literal.
+                    // Upstream AnalyzeRule evaluates quoted selectors through getString too.
+                    val rule = unquote(rawRule)
+                    if (key.isBlank() || rule.isBlank()) null else Assignment(key, rule, literal = false)
+                }
+            }
+            if (parsedEntries.isEmpty() || parsedEntries.size != entries.size) {
+                return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Invalid Legado @put assignments")
+            }
+            assignments += parsedEntries
+            ranges += marker..end
+            searchFrom = end + 1
+            if (assignments.size > MAX_VARIABLE_OPERATIONS) {
+                return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Too many Legado @put assignments in one rule")
+            }
+        }
+        var cleaned = expression
+        ranges.asReversed().forEach { cleaned = cleaned.removeRange(it) }
+        return EngineResult.Success(Parsed(cleaned.trim(), assignments))
+    }
+    /** A sole @get token yields a stored value, not another selector expression. */
+    fun isDirectGet(expression: String): Boolean {
+        val parsed = parse(expression.trim())
+        return parsed is EngineResult.Success && GET_PATTERN.matches(parsed.value.expression.trim())
+    }
+
+    suspend fun resolve(
+        source: BookSource,
+        expression: String,
+        document: SourceDocument,
+        runtime: SourceScriptRuntime,
+    ): EngineResult<String> {
+        val parsed = when (val result = parse(expression)) {
+            is EngineResult.Failure -> return result
+            is EngineResult.Success -> result.value
+        }
+        for (assignment in parsed.assignments) {
+            val value = when {
+                assignment.literal -> assignment.rule
+                assignment.rule.startsWith("@js:", true) ||
+                    assignment.rule.startsWith("javascript:", true) -> {
+                    val script = assignment.rule.substringAfter(':').trim()
+                    if (script.isBlank()) {
+                        return EngineResult.Failure(
+                            EngineErrorCode.UNSUPPORTED_RULE,
+                            "Legado @put JavaScript assignment '${assignment.key}' is blank",
+                        )
+                    }
+                    when (val evaluated = runtime.evaluate(
+                        source,
+                        script,
+                        mapOf(
+                            "result" to document.body,
+                            "baseUrl" to document.url,
+                            "sourceUrl" to source.id,
+                            "sourceId" to source.id,
+                            "sourceName" to source.name,
+                            "ruleName" to "put:${assignment.key}",
+                            "key" to document.key,
+                            "page" to document.page.toString(),
+                        ),
+                    )) {
+                        is EngineResult.Failure -> return evaluated
+                        is EngineResult.Success -> evaluated.value
+                    }
+                }
+                else -> {
+                    val rule = normalizeJsonRule(document.body, assignment.rule)
+                    when (val result = LegadoRuleExpressionDispatcher.evaluate(document, rule)) {
+                        is EngineResult.Failure -> return result
+                        is EngineResult.Success -> LegadoRuleExpressionDispatcher.firstScalarValue(rule, result.value)
+                            ?.trim()?.takeIf(String::isNotEmpty)
+                    } ?: continue
+                }
+            }
+            when (val stored = runtime.putString(source, assignment.key, value)) {
+                is EngineResult.Failure -> return stored
+                is EngineResult.Success -> Unit
+            }
+        }
+        var expanded = parsed.expression
+        val getMatches = GET_PATTERN.findAll(expanded).toList()
+        if (getMatches.size > MAX_VARIABLE_OPERATIONS) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Too many Legado @get operations in one rule")
+        }
+        for (match in getMatches.asReversed()) {
+            val key = match.groupValues[1].trim()
+            if (key.isBlank() || key.length > MAX_VARIABLE_KEY_CHARS) {
+                return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Invalid Legado @get variable name")
+            }
+            val value = when (val loaded = runtime.getString(source, key)) {
+                is EngineResult.Failure -> return loaded
+                is EngineResult.Success -> loaded.value.orEmpty()
+            }
+            expanded = expanded.replaceRange(match.range, value)
+        }
+        return EngineResult.Success(expanded)
+    }
+
+    private fun normalizeJsonRule(body: String, rule: String): String {
+        val value = rule.trim()
+        val json = body.trimStart().let { it.startsWith("{") || it.startsWith("[") }
+        val barePath = value.matches(Regex("[A-Za-z_$][A-Za-z0-9_$]*(\\.[A-Za-z_$][A-Za-z0-9_$]*)*"))
+        return if (json && barePath && !value.startsWith("$")) "$.$value" else value
+    }
+
+    private fun findClosingBrace(value: String, start: Int): Int? {
+        var depth = 0
+        var quote: Char? = null
+        var escaped = false
+        for (index in start until value.length) {
+            val char = value[index]
+            if (quote != null) {
+                if (escaped) escaped = false
+                else if (char == '\\') escaped = true
+                else if (char == quote) quote = null
+            } else when (char) {
+                '\'', '"' -> quote = char
+                '{' -> depth++
+                '}' -> {
+                    depth--
+                    if (depth == 0) return index
+                }
+            }
+        }
+        return null
+    }
+
+    private fun splitTopLevel(value: String, delimiter: Char): List<String> {
+        val parts = mutableListOf<String>()
+        var quote: Char? = null
+        var escaped = false
+        var depth = 0
+        var start = 0
+        value.forEachIndexed { index, char ->
+            if (quote != null) {
+                if (escaped) escaped = false
+                else if (char == '\\') escaped = true
+                else if (char == quote) quote = null
+            } else when (char) {
+                '\'', '"' -> quote = char
+                '{', '[', '(' -> depth++
+                '}', ']', ')' -> if (depth > 0) depth--
+                delimiter -> if (depth == 0) {
+                    parts += value.substring(start, index).trim()
+                    start = index + 1
+                }
+            }
+        }
+        parts += value.substring(start).trim()
+        return parts
+    }
+
+    private fun findTopLevelColon(value: String): Int {
+        var quote: Char? = null
+        var escaped = false
+        var depth = 0
+        value.forEachIndexed { index, char ->
+            if (quote != null) {
+                if (escaped) escaped = false
+                else if (char == '\\') escaped = true
+                else if (char == quote) quote = null
+            } else when (char) {
+                '\'', '"' -> quote = char
+                '{', '[', '(' -> depth++
+                '}', ']', ')' -> if (depth > 0) depth--
+                ':' -> if (depth == 0) return index
+            }
+        }
+        return -1
+    }
+
+    private const val MAX_VARIABLE_OPERATIONS = 32
+    private const val MAX_VARIABLE_KEY_CHARS = 256
+    private val GET_PATTERN = Regex("""@get:\{([^}]+?)\}""", RegexOption.IGNORE_CASE)
+
+    private fun unquote(value: String): String =
+        if (value.length >= 2 && (value.first() == '"' || value.first() == '\'') && value.last() == value.first()) {
+            value.substring(1, value.length - 1)
+        } else value
+}

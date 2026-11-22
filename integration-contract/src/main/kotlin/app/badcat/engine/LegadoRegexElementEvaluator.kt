@@ -1,0 +1,353 @@
+package app.badcat.engine
+
+import java.util.regex.Pattern
+
+/**
+ * Bounded port of Legado AnalyzeByRegex.getElements for all-in-one collection
+ * rules. Regex is available only for element collections, not guessed for scalar
+ * selectors. Each && stage consumes the concatenated full matches of the prior
+ * stage, matching the upstream multi-stage extraction shape.
+ */
+object LegadoRegexElementEvaluator {
+    const val DEFAULT_TIMEOUT_MILLISECONDS = 250L
+    const val MAX_INPUT_CHARACTERS = 8 * 1024 * 1024
+    const val MAX_PATTERN_CHARACTERS = 2_000
+    const val MAX_STAGES = 8
+    const val MAX_MATCHES = 10_000
+    const val MAX_OUTPUT_CHARACTERS = 8 * 1024 * 1024
+
+    fun evaluate(
+        input: String,
+        expression: String,
+        timeoutMilliseconds: Long = DEFAULT_TIMEOUT_MILLISECONDS,
+    ): EngineResult<List<String>> {
+        val rule = expression.trim()
+        if (rule.isEmpty()) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Legado regex collection rule is blank")
+        }
+        if (input.length > MAX_INPUT_CHARACTERS) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Regex input exceeds the configured limit")
+        }
+        if (timeoutMilliseconds !in 1..5_000) {
+            return EngineResult.Failure(EngineErrorCode.INVALID_SOURCE, "Regex timeout must be between 1 and 5000ms")
+        }
+        val stages = try {
+            splitRegexStages(rule)
+        } catch (error: Exception) {
+            return EngineResult.Failure(EngineErrorCode.PARSE, "Malformed regex collection rule", error)
+        }
+        if (stages.size > MAX_STAGES || stages.any { it.isBlank() || it.length > MAX_PATTERN_CHARACTERS }) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Regex rule exceeds stage or pattern limits")
+        }
+
+        val started = System.nanoTime()
+        val deadline = timeoutMilliseconds * 1_000_000L
+        var current = input
+        return try {
+            for ((stageIndex, sourcePattern) in stages.withIndex()) {
+                val pattern = Pattern.compile(sourcePattern)
+                val bounded = DeadlineCharSequence(current, started, deadline)
+                val matcher = pattern.matcher(bounded)
+                val matches = ArrayList<String>()
+                val nextInput = StringBuilder()
+                var count = 0
+                while (matcher.find()) {
+                    if (++count > MAX_MATCHES) {
+                        return EngineResult.Failure(
+                            EngineErrorCode.UNSUPPORTED_RULE,
+                            "Regex collection produced too many matches",
+                        )
+                    }
+                    val match = matcher.group()
+                    if (nextInput.length.toLong() + match.length > MAX_OUTPUT_CHARACTERS) {
+                        return EngineResult.Failure(
+                            EngineErrorCode.UNSUPPORTED_RULE,
+                            "Regex collection output exceeds the configured limit",
+                        )
+                    }
+                    if (stageIndex == stages.lastIndex) matches += match else nextInput.append(match)
+                }
+                if (stageIndex != stages.lastIndex) current = nextInput.toString()
+                else return EngineResult.Success(matches)
+            }
+            EngineResult.Success(emptyList())
+        } catch (timeout: RegexDeadlineExceeded) {
+            EngineResult.Failure(EngineErrorCode.RULE_TIMEOUT, "Legado regex collection rule exceeded its time budget", timeout)
+        } catch (error: Exception) {
+            EngineResult.Failure(EngineErrorCode.PARSE, "Legado regex collection rule could not be evaluated", error)
+        }
+    }
+
+
+    /**
+     * Bounded port of Legado AnalyzeByRegex.getElement for scalar rule fields.
+     * Intermediate stages concatenate full matches; the final stage returns
+     * capture group 0 and every capture group from the first matching result.
+     */
+    fun evaluateScalar(
+        input: String,
+        expression: String,
+        timeoutMilliseconds: Long = DEFAULT_TIMEOUT_MILLISECONDS,
+    ): EngineResult<List<String>> {
+        val rule = expression.trim()
+        if (rule.isEmpty()) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Legado regex scalar rule is blank")
+        }
+        if (input.length > MAX_INPUT_CHARACTERS) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Regex input exceeds the configured limit")
+        }
+        if (timeoutMilliseconds !in 1..5_000) {
+            return EngineResult.Failure(EngineErrorCode.INVALID_SOURCE, "Regex timeout must be between 1 and 5000ms")
+        }
+        val stages = try {
+            splitRegexStages(rule)
+        } catch (error: Exception) {
+            return EngineResult.Failure(EngineErrorCode.PARSE, "Malformed regex scalar rule", error)
+        }
+        if (stages.size > MAX_STAGES || stages.any { it.isBlank() || it.length > MAX_PATTERN_CHARACTERS }) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Regex rule exceeds stage or pattern limits")
+        }
+
+        val started = System.nanoTime()
+        val deadline = timeoutMilliseconds * 1_000_000L
+        var current = input
+        return try {
+            for ((stageIndex, sourcePattern) in stages.withIndex()) {
+                val matcher = Pattern.compile(sourcePattern).matcher(
+                    DeadlineCharSequence(current, started, deadline),
+                )
+                if (stageIndex == stages.lastIndex) {
+                    if (!matcher.find()) return EngineResult.Success(emptyList())
+                    return EngineResult.Success(
+                        (0..matcher.groupCount()).map { matcher.group(it).orEmpty() },
+                    )
+                }
+                val nextInput = StringBuilder()
+                var count = 0
+                while (matcher.find()) {
+                    if (++count > MAX_MATCHES) {
+                        return EngineResult.Failure(
+                            EngineErrorCode.UNSUPPORTED_RULE,
+                            "Regex scalar stage produced too many matches",
+                        )
+                    }
+                    val match = matcher.group()
+                    if (nextInput.length.toLong() + match.length > MAX_OUTPUT_CHARACTERS) {
+                        return EngineResult.Failure(
+                            EngineErrorCode.UNSUPPORTED_RULE,
+                            "Regex scalar intermediate output exceeds the configured limit",
+                        )
+                    }
+                    nextInput.append(match)
+                }
+                current = nextInput.toString()
+            }
+            EngineResult.Success(emptyList())
+        } catch (timeout: RegexDeadlineExceeded) {
+            EngineResult.Failure(EngineErrorCode.RULE_TIMEOUT, "Legado regex scalar rule exceeded its time budget", timeout)
+        } catch (error: Exception) {
+            EngineResult.Failure(EngineErrorCode.PARSE, "Legado regex scalar rule could not be evaluated", error)
+        }
+    }
+
+    /**
+     * Evaluate one regex predicate without the multi-stage AnalyzeRule syntax.
+     * Used by legacy URL matchers that call Pattern.matcher(url).find().
+     */
+    fun matches(
+        input: String,
+        expression: String,
+        timeoutMilliseconds: Long = DEFAULT_TIMEOUT_MILLISECONDS,
+    ): EngineResult<Boolean> {
+        if (input.length > MAX_INPUT_CHARACTERS) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Regex input exceeds the configured limit")
+        }
+        if (expression.isEmpty() || expression.length > MAX_PATTERN_CHARACTERS) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Regex predicate is blank or exceeds the configured limit")
+        }
+        if (timeoutMilliseconds !in 1..5_000) {
+            return EngineResult.Failure(EngineErrorCode.INVALID_SOURCE, "Regex timeout must be between 1 and 5000ms")
+        }
+        val pattern = try {
+            Pattern.compile(expression)
+        } catch (error: Exception) {
+            return EngineResult.Failure(EngineErrorCode.PARSE, "Regex predicate could not be compiled", error)
+        }
+        val started = System.nanoTime()
+        val deadline = timeoutMilliseconds * 1_000_000L
+        return try {
+            EngineResult.Success(pattern.matcher(DeadlineCharSequence(input, started, deadline)).find())
+        } catch (timeout: RegexDeadlineExceeded) {
+            EngineResult.Failure(EngineErrorCode.RULE_TIMEOUT, "Regex predicate exceeded its time budget", timeout)
+        } catch (error: Exception) {
+            EngineResult.Failure(EngineErrorCode.PARSE, "Regex predicate could not be evaluated", error)
+        }
+    }
+
+    /**
+     * Bounded implementation of AnalyzeRule's `##regex##replacement` suffix.
+     * The deadline-aware CharSequence prevents a pathological replacement
+     * expression from monopolizing the source parser thread.
+     */
+    fun replace(
+        input: String,
+        expression: String,
+        replacement: String,
+        replaceFirst: Boolean = false,
+        timeoutMilliseconds: Long = DEFAULT_TIMEOUT_MILLISECONDS,
+    ): EngineResult<String> {
+        if (input.length > MAX_INPUT_CHARACTERS) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Regex replacement input exceeds the configured limit")
+        }
+        if (expression.length > MAX_PATTERN_CHARACTERS) {
+            return EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "Regex replacement pattern exceeds the configured limit")
+        }
+        if (expression.isEmpty()) return EngineResult.Success(input)
+        if (timeoutMilliseconds !in 1..5_000) {
+            return EngineResult.Failure(EngineErrorCode.INVALID_SOURCE, "Regex timeout must be between 1 and 5000ms")
+        }
+        val compiled = try {
+            Pattern.compile(expression)
+        } catch (_: Exception) {
+            // Pinned AnalyzeRule.replaceRegex returns the replacement string
+            // directly when replaceFirst is requested but the regex is invalid.
+            val fallback = if (replaceFirst) replacement else input.replace(expression, replacement)
+            return if (fallback.length <= MAX_OUTPUT_CHARACTERS) {
+                EngineResult.Success(fallback)
+            } else {
+                EngineResult.Failure(
+                    EngineErrorCode.UNSUPPORTED_RULE,
+                    "Regex replacement output exceeds the configured limit",
+                )
+            }
+        }
+        val started = System.nanoTime()
+        val deadline = timeoutMilliseconds * 1_000_000L
+        return try {
+            if (replaceFirst) {
+                val matcher = compiled.matcher(DeadlineCharSequence(input, started, deadline))
+                // Upstream returns an empty string when the first-match rule
+                // does not match, rather than preserving the original input.
+                if (!matcher.find()) return EngineResult.Success("")
+                val matchedText = matcher.group(0).orEmpty()
+                // AnalyzeRule applies Regex.replaceFirst to group(0), not to
+                // the whole input. Prefix and suffix text are intentionally
+                // discarded; this odd behavior is part of source compatibility.
+                val replaced = compiled.matcher(
+                    DeadlineCharSequence(matchedText, started, deadline),
+                ).replaceFirst(replacement)
+                if (replaced.length > MAX_OUTPUT_CHARACTERS) {
+                    EngineResult.Failure(
+                        EngineErrorCode.UNSUPPORTED_RULE,
+                        "Regex replacement output exceeds the configured limit",
+                    )
+                } else {
+                    EngineResult.Success(replaced)
+                }
+            } else {
+                val matcher = compiled.matcher(DeadlineCharSequence(input, started, deadline))
+                val output = StringBuffer()
+                while (matcher.find()) {
+                    matcher.appendReplacement(output, replacement)
+                    if (output.length > MAX_OUTPUT_CHARACTERS) {
+                        return EngineResult.Failure(
+                            EngineErrorCode.UNSUPPORTED_RULE,
+                            "Regex replacement output exceeds the configured limit",
+                        )
+                    }
+                }
+                matcher.appendTail(output)
+                if (output.length > MAX_OUTPUT_CHARACTERS) {
+                    EngineResult.Failure(
+                        EngineErrorCode.UNSUPPORTED_RULE,
+                        "Regex replacement output exceeds the configured limit",
+                    )
+                } else {
+                    EngineResult.Success(output.toString())
+                }
+            }
+        } catch (timeout: RegexDeadlineExceeded) {
+            EngineResult.Failure(EngineErrorCode.RULE_TIMEOUT, "Legado regex replacement exceeded its time budget", timeout)
+        } catch (_: Exception) {
+            // Match AnalyzeRule: invalid replacement syntax falls back to the
+            // raw replacement string for replaceFirst, but literal replacement
+            // for the all-matches form.
+            EngineResult.Success(if (replaceFirst) replacement else input.replace(expression, replacement))
+        }
+    }
+
+    /** Split Legado regex stages without treating quote characters as tokenizer strings. */
+    private fun splitRegexStages(expression: String): List<String> {
+        val stages = ArrayList<String>()
+        var start = 0
+        var index = 0
+        var escaped = false
+        var characterClassDepth = 0
+        var groupDepth = 0
+        while (index < expression.length) {
+            val char = expression[index]
+            if (escaped) {
+                escaped = false
+                index++
+                continue
+            }
+            if (char == '\\') {
+                escaped = true
+                index++
+                continue
+            }
+            if (characterClassDepth > 0) {
+                when (char) {
+                    '[' -> characterClassDepth++
+                    ']' -> characterClassDepth--
+                }
+                index++
+                continue
+            }
+            when (char) {
+                '[' -> { characterClassDepth = 1; index++ }
+                '(' -> { groupDepth++; index++ }
+                ')' -> { if (groupDepth > 0) groupDepth--; index++ }
+                '&' -> if (groupDepth == 0 && expression.startsWith("&&", index)) {
+                    stages += expression.substring(start, index).trim()
+                    index += 2
+                    start = index
+                } else index++
+                else -> index++
+            }
+        }
+        stages += expression.substring(start).trim()
+        return stages
+    }
+
+
+    private class RegexDeadlineExceeded : RuntimeException("Regex evaluation deadline exceeded")
+
+    private class DeadlineCharSequence(
+        private val delegate: CharSequence,
+        private val startedAt: Long,
+        private val budgetNanos: Long,
+    ) : CharSequence {
+        override val length: Int
+            get() { checkDeadline(); return delegate.length }
+
+        override fun get(index: Int): Char {
+            checkDeadline()
+            return delegate[index]
+        }
+
+        override fun subSequence(startIndex: Int, endIndex: Int): CharSequence {
+            checkDeadline()
+            return DeadlineCharSequence(delegate.subSequence(startIndex, endIndex), startedAt, budgetNanos)
+        }
+
+        override fun toString(): String {
+            checkDeadline()
+            return delegate.toString()
+        }
+
+        private fun checkDeadline() {
+            if (System.nanoTime() - startedAt >= budgetNanos) throw RegexDeadlineExceeded()
+        }
+    }
+}

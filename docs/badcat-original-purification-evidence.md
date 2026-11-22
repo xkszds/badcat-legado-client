@@ -1,0 +1,208 @@
+# Badcat 1.5.0.5 original purification: DEX evidence and integration boundary
+
+## Reference inputs
+
+- Original APK: 坏坏猫_1.5.0.5.apk
+- Companion DEX archive: com.hhm.verticalsearch.zip
+- The APK and DEX archive are read-only reference inputs. Do not patch, resign, overwrite, or bypass native/signature checks.
+
+## Directly observed DEX symbols and strings
+
+A raw string-table scan of the companion DEX archive found the following symbols.
+
+### Web/ad-blocking path
+
+- ADBlockUtils
+- AdBlockPresenter
+- AdMarkDao
+- AdMarkHttpApi
+- AdMarkService
+- SettingAdBlockActivity
+- handleAdBlock, handleAdMark, handleInjectAdBlock
+- getAdBlockJsInject, key_ad_block_js_inject, key_is_ad_block, mIsAdBlock, splashAdBlock
+- Endpoint path strings: adMark/issued and adMark/report
+
+These are static symbol/string observations. They suggest a web ad-filtering path involving injected JavaScript and a separate ad-mark reporting/rule service. They do not reveal the full request schema, response semantics, injection timing, or DOM behavior.
+
+### sens.Pp.PPRule rule container
+
+The DEX string table contains protobuf field-name constants for:
+
+- chapterIsReverse
+- nextPageRule
+- pageJs
+- pageJsForSingleHtml
+- pageRule
+- ruleType
+- videoEpisodeRule
+- videoPathRule
+
+Related strings include transcode/ppRule and ppRuleVer.
+
+These names indicate page/chapter pagination and video/episode rule data. They must not be treated as ordinary novel-body replacement rules without method-level evidence.
+
+### sens.AdMark protobuf family
+
+The DEX contains generated message names including:
+
+- AdMarkIssuedRequest, AdMarkIssuedResponse
+- AdMarkReportRequest, AdMarkReportResponse
+- AdMarkItem, AdMarkRuleItem
+
+Field-name strings include markItems, markRules, isFilter, isBlock, host, and urlPattern in the broader generated protobuf pool. The exact owning message for each field still needs to be confirmed from generated descriptors or decompiled methods.
+
+## Integration boundary
+
+Keep these rule domains independent:
+
+| Domain | Input | Required adapter |
+|---|---|---|
+| Legado text replacement | Chapter title/body text | CatalogLegadoBookTextReplacement |
+| Badcat WebView ad filtering | WebView URL/DOM/script | A separately verified JS-injection adapter |
+| Badcat ad marks | URL/host/mark metadata | A separately verified AdMark repository and matcher |
+| Badcat page/catalog/video rules | Page HTML, chapter lists, video metadata | A separately verified PPRule adapter |
+
+Do not merge PPRule or AdMarkRuleItem into Legado ReplaceRule JSON. Do not silently disable the original ad-block toggle when importing Legado text rules.
+
+## Current implementation status
+
+- Legado rule JSON import/export and local persistence: implemented.
+- Legado title/body scope selection: implemented.
+- Literal replacement: implemented.
+- Bounded Java/Kotlin regex replacement: implemented with timeout detection; timed-out rules are disabled in the local catalog.
+- JavaScript @js replacement expressions: bounded Rhino execution is wired with result/book/chapter context and per-rule helper state (log, logType, get, put, MD5, digest and HMAC). This is a limited host, not full upstream RegexJsExtensions/JsEncodeUtils compatibility; Chinese conversion and symmetric/asymmetric crypto helpers are not yet ported.
+- Development-only rule manager screen: implemented; it is not the original Badcat settings UI.
+- Original Badcat WebView JS injection, AdMark service, and PPRule execution: not ported.
+- Original Badcat UI/resource reconstruction: not yet integrated into the host app.
+
+## Next verification tasks
+
+1. Obtain method-level disassembly/decompilation for ADBlockUtils, AdBlockPresenter, AdMarkService, AdMarkHttpApi, and SettingAdBlockActivity.
+2. Trace where getAdBlockJsInject, handleInjectAdBlock, handleAdMark, and transcode/ppRule are called.
+3. Decode the protobuf descriptors for PPRule and AdMarkRuleItem to establish field ownership, types, and defaults.
+4. Identify whether adMark/issued and adMark/report use public service contracts or app-private authenticated APIs. Do not copy private credentials or bypass access controls.
+5. Implement each verified domain behind a separate interface and test against captured, user-authorized fixtures.
+6. Rebuild the original purification settings/reader affordances only after the relevant layouts and event handlers are verified.
+
+## Safety and accuracy
+
+This document records string-table evidence only. It does not claim the original purification algorithm has been recovered, nor that the current Legado text replacement engine reproduces Badcat's ad filtering.
+
+
+## Method-level DEX verification (2026-11-17)
+
+The companion DEX archive was materialized read-only and the standard DEX method tables/code items were inspected for the relevant classes. This adds method-level evidence beyond the earlier string-table inventory; it is still not a complete source decompilation.
+
+### Confirmed WebView ad-block flow
+
+- `SettingAdBlockActivity.initView()` reads the persisted Boolean preference `key_is_ad_block` and applies it to the ad-block toggle.
+- The setting screen is titled “广告过滤”. Its empty-state text says “没有已标识的广告 / 可在网页中长按进行标记”, confirming that the list is a user-managed set of marked ads, not a generic text-replacement list.
+- `CustomWebChromeClient.onPageFinish()` calls `handleAdBlock()`.
+- `CustomWebChromeClient.handleAdBlock()` calls `WebViewInjectHelper.initWebViewGetAdUrlPatternList()`; the callback path ultimately passes the retrieved URL-pattern list into the helper that removes ad elements from the WebView.
+- `CustomWebChromeClient.onReceivedTitle()` conditionally calls `handleInjectAdBlock()`. That method reads `key_ad_block_js_inject` and, when non-empty, passes the stored JavaScript to `loadJS()`, which uses WebView JavaScript evaluation / URL loading.
+- `WebViewInjectHelper.initWebViewGetAdUrlPatternList()` first checks the local ad-pattern repository. If it has no patterns, it calls the WebView JavaScript bridge handler `getInfoFromJS` and persists the returned pattern list.
+- `WebViewInjectHelper.handleAdMark()` deserializes a `JsAdMarkInfo`, asks the user to confirm “确定标记该广告？”, then stores the mark and invokes the WebView callback that removes the selected ad.
+
+### Confirmed AdMark data flow
+
+- The issued response carries a JavaScript injection string (`adBlockJsInject`), a version, and `markItems`.
+- Each `AdMarkItem` has a `host` and a list of `AdMarkRuleItem` records.
+- Each `AdMarkRuleItem` has a `urlPattern` and repeated `markRules` string values. The host code converts these into local `DbAdMark` records; matching uses the URL pattern and the mark-rule data to identify a URL position/pattern.
+- A separate report response path exists. This confirms that original marked-ad handling has local persistence plus service synchronization; it must not be silently replaced by Legado text rules.
+
+### Confirmed PPRule schema boundary
+
+The generated protobuf message `sens.Pp.PPRule` has typed fields for:
+
+- `ruleType` (integer)
+- `pageRule`
+- `nextPageRule`
+- `pageJs`
+- `pageJsForSingleHtml`
+- `chapterIsReverse` (Boolean)
+- `videoPathRule`
+- `videoEpisodeRule`
+
+This is a page / pagination / chapter / video rule container. It is a distinct rule domain from AdMark and from Legado chapter-text replacement. Its field names alone do not establish the exact runtime semantics of every rule type.
+
+### Implementation consequences
+
+1. Keep three independent adapters: WebView injected ad filtering, AdMark URL/DOM marking, and PPRule page/catalog/video processing.
+2. Keep the original on/off preference separate from Legado replacement-rule enablement.
+3. Implement local, user-owned ad-mark CRUD and a safe WebView adapter before attempting any optional service synchronization.
+4. Do not hard-code or recreate the original private service endpoints/protocols from symbols alone. Any network integration requires a documented, authorized service contract.
+5. The current project still does not contain the original WebView injection script, the complete AdMark matching/removal implementation, or the PPRule runtime. The findings above are reverse-engineering evidence, not a claim that original purification has been ported.
+
+
+## Shared Legado + Badcat integration progress
+
+The Android host now exposes a shared purification coordinator from the same
+factory that builds the Legado reading engine. The two domains remain separate
+inside that shared lifecycle:
+
+- Legado source requests continue through the shared bounded HTTP gateway,
+  per-source Rhino runtime, and source-isolated persistent CookieJar.
+- Legado chapter title/body replacement continues through
+  CatalogLegadoBookTextReplacement and the Legado replacement-rule catalog.
+- Badcat WebView ad filtering has its own persisted original-style toggle
+  (key_is_ad_block) and bounded injection-script setting
+  (key_ad_block_js_inject). The reader WebView lifecycle calls the adapter
+  after the current document finishes loading; JavaScript stays disabled unless
+  the toggle is on and a non-empty bounded script is present.
+- Badcat AdMark records have a separate app-private catalog with local
+  upsert/remove/import/export. host, urlPattern and markRules are preserved
+  as distinct fields. The current safe lookup uses exact host matching plus the verified numeric URL-pattern matcher.
+
+This is integration plumbing, not a completed port of the original purifier.
+The original injected script has not been recovered; markRules-to-DOM selector
+application and deletion callback semantics remain incomplete; no original
+issue/report service is called; the current reader only has a verified injection hook and
+local AdMark storage. The local coordinator can select AdMark records by exact host and the verified
+urlPattern algorithm, but markRules are not yet applied to remove DOM nodes.
+The app must not claim full original Badcat ad filtering until the original
+matcher and callback contract are recovered and validated against authorized
+fixtures.
+
+Regression coverage added for toggle-gated injection selection, exact-host
+AdMark lookup, invalid record rejection and preservation of opaque rule data.
+
+
+### Additional AdMark matcher verification
+
+Inspection of the original DbAdMark and AdMarkPresenter methods established:
+
+- DbAdMark stores host, id, isServer, markRule, updateTime, urlPattern and version.
+- A DbAdMark created from JsAdMarkInfo derives host from the supplied URL using URI.getHost(), and preserves markRule and urlPattern.
+- Each server AdMarkRuleItem's markRules strings are expanded into individual DbAdMark records sharing that item's host and urlPattern.
+- The original URL matcher parses urlPattern as a JSON array of integers, joins the values with "/" and uses Pattern.matcher(url).find().
+
+The app-side BadcatAdMarkItem keeps the grouped protobuf shape for import/export,
+and its safe matcher now applies the verified JSON-integer-array pattern against
+the URL after exact host matching. markRules remain opaque and are not executed
+as CSS or JavaScript until their precise DOM contract is recovered.
+
+
+### WebView bridge callback contract (2026-11-17, read-only DEX recheck)
+
+The original APK and companion DEX ZIP were re-opened read-only from the user's Library. SHA-256 values observed in the analysis container:
+
+- Original APK `坏坏猫_1.5.0.5.apk`: `fb35e9e4c876e5cb99e00f7010a40c2f060d20b2aa392500983862ab7e91ff33`
+- Companion `com.hhm.verticalsearch.zip`: `f747fa1c684ef568e3da1d857dbebdcbb7687e2db4c58a4390282948f5681d10`
+
+Additional method-level observations from the business DEX:
+
+- `WebViewInjectHelper.registerWebViewHandler()` registers a JavaScript bridge handler named `adMark`.
+- `WebViewInjectHelper.handleAdMark()` deserializes the incoming payload as `JsAdMarkInfo`, rejects an empty `markRule`, asks the user to confirm “确定标记该广告？”, and then calls the AdMark presenter to persist the mark.
+- On successful save, the callback wraps that one `markRule` string in a one-element JSON array, serializes it, and calls `callWebViewOnDeleteAd()`.
+- `callWebViewOnDeleteAd()` invokes the WebView bridge handler named `onDeleteAd` with that serialized JSON string. The app-side code confirms the callback name and payload shape; it does not reveal the page-side DOM-removal implementation.
+- `initWebViewGetAdUrlPatternList()` first reads the local URL-pattern list. If empty, it calls the WebView bridge handler `getInfoFromJS` with an empty argument, parses the returned JSON string as a list of strings, persists the list, and passes it to the callback.
+- The existing client model now exposes a helper that builds the verified one-item JSON payload for each stored mark rule. This helper does not call JavaScript or remove DOM nodes.
+
+Implementation boundary remains unchanged: the client still lacks the original page-side `onDeleteAd` implementation and the full `getInfoFromJS` page script. Do not substitute guessed CSS selectors, `querySelector` deletion, or a fabricated JavaScript snippet. A faithful deletion adapter requires an authorized page-script fixture or further verified source evidence.
+
+
+### Synthetic reader-origin injection boundary (2026-11-19)
+
+The reader renders local chapter HTML through WebView `loadDataWithBaseURL` using the reserved synthetic origin `https://reader.invalid/<version>/`. Its page-finished callback also reaches the purification adapter. A stored remote-page injection script must not execute against this local document merely because the synthetic base URL uses HTTPS. The URL policy now rejects the reserved `.invalid` namespace, with regression coverage for the apex and subdomain forms.
+
+This closes only the synthetic-origin injection boundary. It does not implement the original page-side AdMark bridge, `getInfoFromJS`, or `onDeleteAd` DOM behavior.

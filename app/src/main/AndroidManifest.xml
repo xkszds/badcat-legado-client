@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application
+        android:allowBackup="false"
+        android:usesCleartextTraffic="true"
+        android:label="坏坏猫"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        <activity android:name=".MyActivity" android:exported="false" />
+        <activity android:name=".SettingsActivity" android:exported="false" />
+        <activity android:name=".LayoutSettingsActivity" android:exported="false" />
+        <activity android:name=".BadcatPurificationActivity" android:exported="false" />
+        <activity android:name=".ReaderSettingsActivity" android:exported="false" />
+        <activity android:name=".FavoriteSyncActivity" android:exported="false" />
+        <activity android:name=".MessageCenterActivity" android:exported="false" />
+        <activity android:name=".BookmarkActivity" android:exported="false" />
+        <activity android:name=".CatSpaceActivity" android:exported="false" />
+        <activity android:name=".ReaderCssActivity" android:exported="false" />
+        <activity android:name=".ReplaceRuleActivity" android:exported="false" />
+        <activity android:name=".FavoritesActivity" android:exported="false" />
+        <activity android:name=".ReadingHistoryActivity" android:exported="false" />
+        <activity android:name=".DownloadManagementActivity" android:exported="false" />
+        <activity android:name=".SourceCatalogActivity" android:exported="false" />
+        <activity android:name=".SourceLoginUiV2Activity" android:exported="false" />
+        <activity android:name=".SourceSearchActivity" android:exported="false" />
+        <activity android:name=".SourceBookActivity" android:exported="false" />
+        <activity android:name=".SourceChapterActivity" android:exported="false" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

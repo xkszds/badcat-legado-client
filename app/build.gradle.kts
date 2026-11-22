@@ -1,0 +1,101 @@
+import org.gradle.api.tasks.testing.Test
+
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.parcelize")
+}
+
+android {
+    namespace = "app.badcat.client"
+    compileSdk = 36
+
+    defaultConfig {
+        applicationId = "app.badcat.client"
+        minSdk = 28
+        targetSdk = 36
+        versionCode = 1
+        versionName = "0.1.0-integration"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    packaging {
+        resources {
+            // Hutool crypto and core both ship this non-runtime JAR index metadata.
+            excludes += "/META-INF/INDEX.LIST"
+            // Bouncy Castle modules embed the identical root LICENSE.md in every JAR.
+            pickFirsts += "/META-INF/LICENSE.md"
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+    }
+}
+
+// Temporary Runtime validation profile: keep Fourth-category tests out of the Third-category lane.
+// Omit -PbadcatThirdCategoryTestProfile=true to run every test again for Fourth-category validation.
+val badcatThirdCategoryTestProfile =
+    providers.gradleProperty("badcatThirdCategoryTestProfile").orNull == "true"
+
+tasks.withType<Test>().configureEach {
+    if (badcatThirdCategoryTestProfile) {
+        filter {
+            excludeTestsMatching("app.badcat.client.BadcatPurificationModelsTest")
+            excludeTestsMatching("app.badcat.client.BadcatAdMarkCatalogTest")
+            excludeTestsMatching("app.badcat.client.runtime.BadcatWebViewPurificationAdapterTest")
+        }
+    }
+}
+
+configurations.configureEach {
+    if (name == "debugUnitTestRuntimeClasspath") {
+        // Production and test compilation use the Android AAR; unit-test execution substitutes
+        // the same OkHttp release's JVM artifact so Robolectric can load its packaged PSL resource.
+        exclude(group = "com.squareup.okhttp3", module = "okhttp")
+    }
+}
+
+dependencies {
+    implementation(project(":integration-contract"))
+    // Compile and package the authentic pinned Legado rule-model slice; runtime orchestration is not wired yet.
+    implementation(project(":legado-runtime"))
+    implementation(project(":legado-rhino"))
+    // The login-form host validates JSON state and action envelopes with the same parser baseline.
+    implementation("com.google.code.gson:gson:2.14.0")
+    // Pinned Legado rule models use the upstream Flexbox style contract.
+    implementation("com.google.android.flexbox:flexbox:3.0.0")
+    // Pinned Legado crypto runtime dependencies (Hutool 5.8.22 / Bouncy Castle 1.86).
+    implementation("cn.hutool:hutool-crypto:5.8.22")
+    implementation("org.bouncycastle:bcprov-jdk18on:1.86")
+    implementation("org.bouncycastle:bcpkix-jdk18on:1.86")
+    // Parser dependencies match the pinned upstream Legado source revision.
+    implementation("org.jsoup:jsoup:1.23.2")
+    implementation("cn.wanghaomiao:JsoupXpath:2.5.3")
+    implementation("com.jayway.jsonpath:json-path:3.0.0")
+    implementation("androidx.annotation:annotation:1.10.0")
+    // The app hosts coroutine-based source catalog operations and background engine calls.
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+    // The Android host supplies a persistent CookieJar to the shared source HTTP client.
+    implementation("com.squareup.okhttp3:okhttp:5.4.0")
+    // Pinned upstream Legado uses libarchive for RAR and 7z source helpers.
+    implementation("me.zhanghai.android.libarchive:library:1.1.6")
+    // Legado uses this dictionary-backed converter for its @js t2s/s2t helpers.
+    implementation("com.github.liuyueyi:quick-transfer-core:0.2.17")
+    testImplementation("junit:junit:4.13.2")
+    // Android Base64 behavior in crypto bridge tests must run against real Android shadows.
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    // JVM unit tests need OkHttp's classpath-backed official PSL resource, not Android AAR assets.
+    testRuntimeOnly("com.squareup.okhttp3:okhttp-jvm:5.4.0")
+    androidTestImplementation("androidx.test:core:1.6.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+}
