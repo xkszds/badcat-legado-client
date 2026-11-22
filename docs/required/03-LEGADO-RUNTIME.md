@@ -4217,3 +4217,24 @@
 - **排除：** 本任务不改任何生产或测试逻辑，不改 cache key/TTL、不接线 BatchContentContext、不迁移 bookmark/history、不改变 Reader/UI、第四/第五类、上游 pin 或 `main`。
 - **依赖 / 并行：** 基于 #3177 失败和固定上游静态证据；只读审计不与 .22 cache report 冲突。后续代码实现必须另行 preregister，且先解决 TOC dedup 语义再继续 .21。
 - **状态：** 已登记，尚未开始；不授权改写 .10/.10.1 历史 CI 结论或直接修改去重算法。
+
+
+#### Runtime-3.2f.23 audit closeout — upstream TOC equality vs batch identity
+
+- **Audit HEAD：** `09fd5b04e3f55a334bd10b49d06a5abc422b6506`；report：`docs/audits/legado-runtime-3.2f.23-upstream-toc-equality-vs-batch-identity.md`。
+- **Upstream evidence：** `BookChapter.kt` blob `9798267c77c9e14d0a673a822930491cd6e44cc1` overrides equality/hashCode by URL only；`BookChapterList.kt` blob `dd2ae3950cee55a9c8e7880dc2c034d6f4c6f33d` sets per-page `baseUrl=redirectUrl` and merges via `LinkedHashSet`；`BatchContentContext.kt` blob `68cad877f048b171e4f0f6cf22b1e0dd1e6481f9` independently supports duplicate URL candidates by index；test blob `67207fecb4a96e8aae0a1bd7083d61cccbf657a9` exercises manually supplied twins.
+- **Host evidence：** `ReadingEngine.kt` blob `4777ceae6af13633c2561c7fc77c4cbde3a87480` uses generated data-class equality including baseUrl；`CssTocParser.kt` blob `29ac90c3fc74546d52839e2479424890f9619de1` stores each page finalUrl；`SourceTocService.kt` blob `0904d635be19ffd5de5ca56a5f06b258ed919d0b` dedups by all projection fields except index.
+- **决定：** .10/.10.1 CI history remains unchanged but cannot be cited as proof of upstream TOC merge parity. BatchContentContext twin support is a separate stage contract. GO for a narrow TOC URL-identity correction after representative-selection order is explicitly specified; NO-GO for global host equality override.
+- **未解决：** host currently lacks an explicit equivalent for upstream source-rule reverse and book reverse-TOC selection order. No production/test files changed; no CI run.
+
+### Runtime-3.2f.24 registration — align TOC URL identity without changing chapter object identity
+
+- **日期 / 分类：** 2026-11-23；第三类：TOC merge compatibility.
+- **起始 branch / HEAD：** `integration/legado-upstream-runtime` / `09fd5b04e3f55a334bd10b49d06a5abc422b6506`；固定上游 pin 不变。
+- **目标：** 仅对正常 TOC page merge 实现固定上游 URL-only dedup identity；保留 chapter data class 的 index/object equality语义，不影响将来 BatchContentContext 按 index 处理 duplicate URL twins。明确重复 URL 保留哪一个代表项，以及 host 是否能表达上游 reverse-rule / reverse-TOC 顺序；不能证明时必须把该项列为 unresolved，而非伪造 parity。
+- **允许修改文件：** `integration-contract/src/main/kotlin/app/badcat/engine/SourceTocService.kt`；`integration-contract/src/test/kotlin/app/badcat/engine/SourceTocServiceTest.kt`；本分类清单。若需要模型字段或 caller 改动，先追加登记。
+- **必须测试：** 同页同 URL 不同标题折叠；跨页同 URL 不同标题/baseUrl 折叠；不同 URL 保留各自 response finalUrl base；index 连续；增量 callback 与最终目录一致；重复 URL 代表项的保留顺序；reverse-rule/reverse-TOC 未实现路径必须明确测试/标记 unresolved。
+- **排除：** 不改 host BookChapter 全局 equals/hashCode、不删除 BatchContentContext twins contract、不接入 BatchContentContext、不改 ChapterCatalogQuery/Reader/history/bookmark/cache/UI、第四/第五类、上游 pin 或 `main`。
+- **依赖：** .23 audit GO；#3178 exact CI 先终结并记录；若代表项顺序要求扩展文件范围，先追加登记。
+- **验收：** focused integration-contract tests、完整第三类 App JVM suite、exact-SHA CI；diff 仅限登记文件；明确写出 host 与 upstream 可证明一致的部分及未实现的反向目录排序边界。
+- **状态：** 已登记，尚未实施；与 #3178 共享 `SourceTocServiceTest.kt`，必须等 #3178 终结后串行实施。
