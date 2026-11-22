@@ -4276,3 +4276,22 @@
 - **验收：** focused Robolectric tests、完整第三类 App JVM suite、exact-SHA CI；检查新增测试确实出现在 App JUnit XML；diff 只含登记的新测试文件与本清单；记录测试未覆盖的 AtomicFile 设备/进程死亡边界。
 - **并行边界：** 不与 .24 的 `SourceTocService.kt` / `SourceTocServiceTest.kt` 文件重叠，生产状态也独立；可在 #3178 仍运行时实施。分类清单由单一 CAS 提交顺序维护，CI 结果只对 exact SHA 生效。
 - **状态：** 已登记，尚未实施；本登记不授权任何生产代码或持久化格式变更。
+
+
+#### Runtime-3.2f.21 / #3178 terminal CI closeout — chapter-specific TOC base URL projection
+
+- **Exact tested SHA / run：** `4c71ef155094f70709891fd73a77be79a06d6e36` / #3178 / `45083056252`；终态 `completed / success`；`assemble-debug` job 47/47 steps success。
+- **实际修正：** `CssTocParser` 的普通与脚本解析路径均把当前 `response.finalUrl` 写入每个 `BookChapter.baseUrl`；多页不同 redirect finalUrl 的测试夹具验证每页章节保留各自 base。#3177 的失败 fixture 只作为历史记录保留，#3178 重新验证修订后的测试期望。
+- **测试证据：** workflow `:integration-contract:test` success；第三类 App JVM suite success。JUnit artifact `14778154322`，ZIP SHA-256 `5a6502a8dcf92675936232670da6935412d6a9e7ee0f31aeb92b59ec2ca977b2`；40 XML suites / 325 tests / 0 failures / 0 errors / 0 skipped。该 JUnit artifact 是 App suite；integration-contract 的成功以 workflow step 为证。
+- **Android / APK：** API 28 CookieManager 与 API 35 WebView provider instrumentation steps success。Debug APK artifact `14777959794`；ZIP SHA-256 `57a3398f4f269e62b1d71805e95a1b225e8f166c22445847b5dc66d75b882f7d`；解包 `app-debug.apk` SHA-256 `c495af88ff833050dd919b7a5e2c76dc3838b59e7f1227906b946ffa147f543e`。仅 Debug 构建，不是 Release/实体设备验收。
+- **联网样本边界：** uploaded-corpus best-effort artifact `14779180183`（ZIP SHA-256 `aaf3b6dec550b34936cd9ce98645aa9b38217fbdfdfc8621063ab4a26ff18b78`）显示 4 个候选 1/4 完整通过：精华书阁完成 search→detail→20 章 TOC→正文；唐三中文与零零小说搜索超时；笔趣阁fun 超时后 404。失败样本不计为 runtime 回归通过或失败，保留为联网覆盖缺口。
+- **结论：** .21 的 chapter-specific `baseUrl` parser projection 在 exact SHA CI 通过；但 TOC merge 对同 URL 的 representative/equality 与固定上游 URL-only equality 的差异由 .23/.25 审计明确，交由 .24 单独处理。此 closeout 不宣称 URL alias、reverse ordering、BatchContentContext 或完整 Legado parity。
+
+#### Runtime-3.2f.24 implementation addendum — bounded URL-only TOC merge identity
+
+- **依赖解除：** #3178 已于 2026-11-22 终结成功，exact SHA `4c71ef155094f70709891fd73a77be79a06d6e36`；其 `SourceTocServiceTest.kt` 不再处于活动 CI。
+- **本轮实际起始 HEAD：** `52db7a6d41177873f5f9facda4644ec6d760f6eb`（包含 .21 CI closeout 前的代码与 .26 AtomicFile test implementation）；固定 Legado pin 不变。
+- **行为边界：** 依据 .25，先在 host 正常 TOC merge 中按 `chapter.url` 做 URL-only dedup，明确保留按响应页追加顺序遇到的第一条作为代表；chapter 对象的 data-class equality 不改。该代表策略是确定的 host partial parity，不等于上游默认 `chapterList` reverse 的 representative selection。
+- **测试补充：** 同页/跨页同 URL、不同 title/baseUrl 均折叠为一条；不同 URL 的 baseUrl 分别保留；indexes 连续；增量 callback 与最终列表一致；代表项是首个追加对象。明确记录 `chapterList` leading `-`/`+` 语义和 per-book `reverseToc` 当前不可表达，不能以 UI `reverseCatalog` 代替，也不得宣称这些反向排序已兼容。
+- **允许文件不变：** `integration-contract/src/main/kotlin/app/badcat/engine/SourceTocService.kt`、`integration-contract/src/test/kotlin/app/badcat/engine/SourceTocServiceTest.kt`、本清单。若需新增 source rule parser/book config input 或 caller 文件，必须另行 preregister。
+- **状态：** 依赖已解除，可开始实施；URL-only merge 是局部兼容改进，source-rule reverse 与 per-book reverseToc 继续列为明确未实现项。
