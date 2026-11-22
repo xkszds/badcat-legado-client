@@ -21,11 +21,30 @@ class SharedPreferencesSourceScriptKeyValueStore(context: Context) : SourceScrip
         preferences.edit().remove(storageKey(sourceId, key)).apply()
     }
 
+    override fun removePrefix(sourceId: String, keyPrefix: String) {
+        val prefix = sourcePrefix(sourceId)
+        val editor = preferences.edit()
+        preferences.all.keys.filter { storedKey ->
+            if (!storedKey.startsWith(prefix)) return@filter false
+            val decoded = runCatching {
+                String(
+                    Base64.decode(
+                        storedKey.removePrefix(prefix),
+                        Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING,
+                    ),
+                    Charsets.UTF_8,
+                )
+            }.getOrNull()
+            decoded?.startsWith(keyPrefix) == true
+        }.forEach(editor::remove)
+        editor.apply()
+    }
+
     override fun clearSource(sourceId: String) {
         val prefix = sourcePrefix(sourceId)
-        preferences.edit().apply {
-            preferences.all.keys.filter { it.startsWith(prefix) }.forEach(::remove)
-        }.apply()
+        val editor = preferences.edit()
+        preferences.all.keys.filter { it.startsWith(prefix) }.forEach(editor::remove)
+        editor.apply()
     }
 
     private fun storageKey(sourceId: String, key: String): String =

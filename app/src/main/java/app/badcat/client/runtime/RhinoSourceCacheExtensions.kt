@@ -74,7 +74,9 @@ class RhinoSourceCacheExtensions(
 
     fun delete(key: String) {
         requireValidKey(key)
+        values.remove(key)
         store.remove(sourceId, storageKey(key))
+        fileStore.remove(sourceId, storageKey(key))
     }
 
     fun putFile(key: String, value: String): String = putFile(key, value, 0L)
@@ -115,8 +117,13 @@ class RhinoSourceCacheExtensions(
     /** Kept as a compatibility alias for callers that used the old in-memory API. */
     fun remove(key: String) = deleteMemory(key)
 
+    /**
+     * Clear this source's host cache namespace. This is a host lifecycle helper,
+     * not a method exposed by the pinned Legado CacheManager API.
+     */
     fun clear() {
         values.clear()
+        store.removePrefix(sourceId, STORAGE_PREFIX)
         fileStore.clearSource(sourceId)
     }
 
