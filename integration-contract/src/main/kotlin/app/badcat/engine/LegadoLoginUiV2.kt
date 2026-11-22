@@ -15,6 +15,48 @@ object LegadoLoginUiV2 {
 
     enum class RowType { TEXT, PASSWORD, LABEL, SELECT, TOGGLE, BUTTON }
 
+    /**
+     * Host invocation metadata for declarative Login UI v2.
+     *
+     * This is not the upstream Book/BookChapter object binding and does not
+     * enable the legacy java/browser/long-press login extension surface.
+     */
+    data class InvocationContext(
+        val sourceId: String,
+        val bookType: Int? = null,
+        val bookUrl: String? = null,
+        val chapterUrl: String? = null,
+    ) {
+        fun validationError(expectedSourceId: String): String? {
+            if (sourceId.isBlank() || sourceId.length > MAX_CONTEXT_CHARS) return "invalid source ID"
+            if (sourceId != expectedSourceId) return "source ID does not match the loaded source"
+            if (bookType != null &&
+                (bookType < 0 || (bookType and KNOWN_BOOK_TYPE_MASK.inv()) != 0)
+            ) return "bookType contains unknown flags"
+            if (bookUrl != null && (bookUrl.isBlank() || bookUrl.length > MAX_CONTEXT_CHARS)) {
+                return "invalid book identity"
+            }
+            if (chapterUrl != null && (chapterUrl.isBlank() || chapterUrl.length > MAX_CONTEXT_CHARS)) {
+                return "invalid chapter identity"
+            }
+            if (chapterUrl != null && bookUrl == null) return "chapter identity requires a book identity"
+            return null
+        }
+
+        /** Namespaced additive host metadata; never serialized as fake upstream models. */
+        fun toJson(): String = JsonObject().apply {
+            addProperty("sourceId", sourceId)
+            bookType?.let { addProperty("bookType", it) }
+            bookUrl?.let { addProperty("bookUrl", it) }
+            chapterUrl?.let { addProperty("chapterUrl", it) }
+        }.toString()
+    }
+
+    const val MAX_CONTEXT_CHARS = 4_096
+    /** Pinned BookType flags: video, text, updateError, audio, image, webFile, local, archive, notShelf. */
+    const val KNOWN_BOOK_TYPE_MASK = 0x7FC
+
+
     data class Row(
         val name: String,
         val type: RowType,

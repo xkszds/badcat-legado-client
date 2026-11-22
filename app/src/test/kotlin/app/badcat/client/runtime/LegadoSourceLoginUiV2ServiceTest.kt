@@ -69,6 +69,44 @@ class LegadoSourceLoginUiV2ServiceTest {
     }
 
     @Test
+    fun preservesSameTypedInvocationContextAcrossRenderAndActionDispatch() = runBlocking {
+        val invocation = LegadoLoginUiV2.InvocationContext(
+            sourceId = "https://login.example/",
+            bookType = 8 or 32,
+            bookUrl = "https://book.example/book",
+            chapterUrl = "https://book.example/chapter/1",
+        )
+        val renderRuntime = RecordingRuntime(ArrayDeque(listOf("""{"rows":[{"name":"继续","type":"button","action":"next"}]}""")))
+        val service = LegadoSourceLoginUiV2Service(renderRuntime)
+        assertTrue(service.render(source(), invocation = invocation) is EngineResult.Success)
+        val expected = invocation.toJson()
+        assertEquals(expected, renderRuntime.capturedBindings["__badcatLoginInvocation"])
+
+        val actionRuntime = RecordingRuntime(ArrayDeque(listOf("""{"state":{},"close":false}""")))
+        val actionResult = LegadoSourceLoginUiV2Service(actionRuntime)
+            .dispatchAction(source(), "next", "{}", "{}", invocation)
+        assertTrue(actionResult is EngineResult.Success)
+        assertEquals(expected, actionRuntime.capturedBindings["__badcatLoginInvocation"])
+    }
+
+    @Test
+    fun rejectsMismatchedOrInvalidInvocationContextBeforeRunningScript() = runBlocking {
+        val runtime = RecordingRuntime(ArrayDeque(emptyList()))
+        val service = LegadoSourceLoginUiV2Service(runtime)
+        val invalid = service.render(
+            source(),
+            invocation = LegadoLoginUiV2.InvocationContext(source().id, bookType = 1),
+        )
+        assertEquals(EngineErrorCode.INVALID_SOURCE, (invalid as EngineResult.Failure).code)
+        val mismatched = service.dispatchAction(
+            source(), "submit", "{}", "{}",
+            LegadoLoginUiV2.InvocationContext("https://other.example/"),
+        )
+        assertEquals(EngineErrorCode.INVALID_SOURCE, (mismatched as EngineResult.Failure).code)
+        assertEquals(null, runtime.capturedScript)
+    }
+
+    @Test
     fun validatesLoginCheckResultAndRejectsNonBooleanValues() = runBlocking {
         val trueRuntime = RecordingRuntime(ArrayDeque(listOf("true")))
         val invalidRuntime = RecordingRuntime(ArrayDeque(listOf("not-a-boolean")))

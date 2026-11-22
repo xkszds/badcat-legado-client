@@ -8,6 +8,37 @@ import kotlin.test.assertTrue
 
 class LegadoLoginUiV2Test {
     @Test
+    fun validatesTypedInvocationContextAndPreservesCombinedBookTypeFlags() {
+        val context = LegadoLoginUiV2.InvocationContext(
+            sourceId = "https://login.example/",
+            bookType = 8 or 32,
+            bookUrl = "https://book.example/book",
+            chapterUrl = "https://book.example/chapter/1",
+        )
+        assertNull(context.validationError("https://login.example/"))
+        assertEquals(
+            """{"sourceId":"https://login.example/","bookType":40,"bookUrl":"https://book.example/book","chapterUrl":"https://book.example/chapter/1"}""",
+            context.toJson(),
+        )
+        assertNull(LegadoLoginUiV2.InvocationContext("https://login.example/").validationError("https://login.example/"))
+    }
+
+    @Test
+    fun rejectsInvalidInvocationContextWithoutGuessingBookType() {
+        val sourceId = "https://login.example/"
+        assertTrue(LegadoLoginUiV2.InvocationContext(sourceId, bookType = 1).validationError(sourceId) != null)
+        assertTrue(LegadoLoginUiV2.InvocationContext(sourceId, bookType = -1).validationError(sourceId) != null)
+        assertTrue(LegadoLoginUiV2.InvocationContext(sourceId).validationError("https://other.example/") != null)
+        assertTrue(LegadoLoginUiV2.InvocationContext(" ").validationError(sourceId) != null)
+        assertTrue(LegadoLoginUiV2.InvocationContext(sourceId, chapterUrl = "chapter").validationError(sourceId) != null)
+        assertTrue(LegadoLoginUiV2.InvocationContext(sourceId, bookUrl = " ").validationError(sourceId) != null)
+        assertTrue(
+            LegadoLoginUiV2.InvocationContext(sourceId, bookUrl = "x".repeat(4_097))
+                .validationError(sourceId) != null
+        )
+    }
+
+    @Test
     fun identifiesV2LoginUiAndParsesSupportedRows() {
         val render = """{"rows":[
             {"name":"账号","type":"text","key":"username","hint":"请输入账号"},

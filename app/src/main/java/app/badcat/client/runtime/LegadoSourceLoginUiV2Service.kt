@@ -19,9 +19,13 @@ class LegadoSourceLoginUiV2Service(
     suspend fun render(
         source: BookSource,
         stateJson: String = "{}",
+        invocation: LegadoLoginUiV2.InvocationContext = LegadoLoginUiV2.InvocationContext(source.id),
     ): EngineResult<List<LegadoLoginUiV2.Row>> {
         if (!LegadoLoginUiV2.isV2(source.loginUi)) {
             return unsupported("Book source '${source.id}' does not declare Login UI v2")
+        }
+        invocation.validationError(source.id)?.let { reason ->
+            return EngineResult.Failure(EngineErrorCode.INVALID_SOURCE, "Invalid login invocation context: $reason")
         }
         if (!isJsonObject(stateJson)) {
             return EngineResult.Failure(EngineErrorCode.INVALID_SOURCE, "Login UI state must be a JSON object")
@@ -31,7 +35,10 @@ class LegadoSourceLoginUiV2Service(
         val evaluated = scriptRuntime.evaluate(
             source = source,
             script = "$loginScript\nloginUi(JSON.parse(String(__loginState)))",
-            bindings = mapOf("__loginState" to stateJson),
+            bindings = mapOf(
+                "__loginState" to stateJson,
+                "__badcatLoginInvocation" to invocation.toJson(),
+            ),
         )
         val renderJson = when (evaluated) {
             is EngineResult.Failure -> return evaluated
@@ -50,9 +57,13 @@ class LegadoSourceLoginUiV2Service(
         action: String,
         stateJson: String,
         formJson: String,
+        invocation: LegadoLoginUiV2.InvocationContext = LegadoLoginUiV2.InvocationContext(source.id),
     ): EngineResult<LegadoLoginUiV2.ActionResult> {
         if (!LegadoLoginUiV2.isV2(source.loginUi)) {
             return unsupported("Book source '${source.id}' does not declare Login UI v2")
+        }
+        invocation.validationError(source.id)?.let { reason ->
+            return EngineResult.Failure(EngineErrorCode.INVALID_SOURCE, "Invalid login invocation context: $reason")
         }
         if (action.isBlank() || action.length > LegadoLoginUiV2.MAX_TEXT_CHARS ||
             !isJsonObject(stateJson) || !isJsonObject(formJson)
@@ -71,6 +82,7 @@ class LegadoSourceLoginUiV2Service(
                 "__loginAction" to action,
                 "__loginState" to stateJson,
                 "__loginForm" to formJson,
+                "__badcatLoginInvocation" to invocation.toJson(),
             ),
         )
         val actionJson = when (evaluated) {
