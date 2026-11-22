@@ -4309,3 +4309,17 @@
 - **Implementation SHA / run：** `52db7a6d41177873f5f9facda4644ec6d760f6eb` / #3179 / `45084492186`；CI `in_progress` at checkpoint, active job `assemble-debug`, currently compiling the G2d stage-1 authentic rule/model source group; no failure step reported.
 - **Diff：** one new file only: `app/src/test/kotlin/app/badcat/client/runtime/FileChapterContentCacheAtomicFileTest.kt` (128 lines). It exercises real production `FileChapterContentCache` and Android `AtomicFile` under Robolectric for legacy URL round-trip, index round-trip/stale URL guard, index-only invalidation while legacy URL entry survives, and recovery of a previously committed value after an intentionally unfinished AtomicFile write.
 - **Validation pending：** focused Robolectric tests, complete third-category App JVM suite, exact-SHA CI and App JUnit XML inclusion. No production cache code or schema changed.
+
+
+### Runtime-3.2f.27 registration — source-scoped chapter-body cache purge design audit
+
+- **日期 / 分类：** 2026-11-23；第三类：chapter content cache lifecycle / source removal and replacement.
+- **登记起点：** `integration/legado-upstream-runtime` / `a240c4902e5aea4c8c9056e4da7b04867ecdcead`；固定 Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **原因：** .22 audit 确认书源删除/同 ID 替换目前只清 Rhino/KV/file/session/Cookie 状态，不清 `legado_chapter_cache`；.15 已有 source lifecycle callback，但明确排除 chapter-body purge。当前 chapter cache 文件名只由 sourceId/bookUrl/URL-or-index digest 生成，legacy JSON 无 chapterUrl，index JSON 有 chapterUrl；现有 API 的 `invalidate(sourceId,bookUrl,index)` 只能删一个 index 文件，不能按 sourceId 安全枚举并删除 legacy 与 index 两个命名空间。此项会影响删除/替换源后旧正文残留及同 ID 重导入的缓存复用。
+- **目标：** 只读设计 source-scoped chapter-body cache purge 的最小安全实现。检查所有 cache constructors/owners、文件布局、AtomicFile backup files、LRU pruner、catalog remove/replace callback、跨 runtime factory 实例、并发 save fence；确定 sourceId 范围 purge 是否可由现有 SHA 文件名反向判断（不得假设可逆），以及需要 sidecar manifest、目录分层、索引文件或其他可迁移元数据的取舍。设计必须覆盖并发写入/清理、AtomicFile backup、旧版 legacy/index 文件迁移、失败报告与幂等。
+- **允许变更：** 仅新增 `docs/audits/legado-runtime-3.2f.27-source-chapter-cache-purge-design.md` 与更新本分类清单；本任务只读，不修改生产代码、测试、Gradle、workflow、存储、UI 或其他分类。
+- **必须审查：** `FileChapterContentCache.kt`、`ChapterContentCache.kt`、`ChapterContentSaveFence.kt`、`BadcatReadingEngineFactory.kt`、`CacheFilePruner.kt`、`FileBookSourceCatalog.kt`、`SourceCatalogActivity.kt`、`RhinoSourceScriptRuntime.kt`、`FileChapterContentCacheTest.kt`、`FileChapterContentCacheAtomicFileTest.kt` 与相关 lifecycle tests；核对 .22/.15/.26 精确登记与结果，不借用未终结 CI。
+- **验收产物：** 当前 cache directory/filename/schema/key map；sourceId 是否可从现存文件安全识别；legacy/index/AtomicFile backup/prune 影响矩阵；purge 与 beginSave/put/invalidate 的并发时序图；旧缓存兼容/迁移方案；最小 production/API/test 文件列表；事务失败语义；GO/NO-GO。不能安全识别 sourceId 时必须明确说明，不能做模糊删除。
+- **依赖 / 并行：** .22 audit 与 .15 lifecycle implementation 已完成；.26 AtomicFile test（#3179）仍在运行，但本审计不修改其测试文件，允许只读并行。与 .24 TOC service 文件完全隔离。后续实现必须另行 preregister，且建议等 #3179 终态后再实施。
+- **排除：** 不在本任务内新增 purge API/callback，不改变 cache key/schema/TTL/LRU/fence，不改 BatchContentContext、Reader/history/bookmark/UI、HTTP/Cookie/login、第四/第五类、上游 pin 或 `main`。
+- **状态：** 已登记，尚未开始审计；本登记不授权生产实现或存储格式变更。
