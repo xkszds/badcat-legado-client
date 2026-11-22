@@ -33,7 +33,8 @@ class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
     override suspend fun all(): EngineResult<List<BookSource>> = withContext(Dispatchers.IO) {
         mutex.withLock {
             try {
-                readSources().map { source -> source.toEngineSource() }
+                orderBookSourcesForCatalog(readSources())
+                    .map { source -> source.toEngineSource() }
                     .let { EngineResult.Success(it) }
             } catch (error: Exception) {
                 if (error is CancellationException) throw error
@@ -130,7 +131,9 @@ class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
     suspend fun exportJson(): EngineResult<String> = withContext(Dispatchers.IO) {
         mutex.withLock {
             try {
-                EngineResult.Success(LegadoBookSourceCodec.encode(readSources()))
+                EngineResult.Success(
+                    LegadoBookSourceCodec.encode(orderBookSourcesForCatalog(readSources()))
+                )
             } catch (error: Exception) {
                 if (error is CancellationException) throw error
                 EngineResult.Failure(
@@ -179,3 +182,9 @@ class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
         }
     }
 }
+
+
+/** Matches the pinned Legado BookSourceDao.all() customOrder ASC query. */
+internal fun orderBookSourcesForCatalog(
+    sources: List<LegadoBookSource>,
+): List<LegadoBookSource> = sources.sortedBy { it.customOrder }
