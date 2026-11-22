@@ -3,7 +3,7 @@ package app.badcat.client.runtime
 import android.os.Build
 import android.webkit.CookieManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
+import android.app.InstrumentationRegistry
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
