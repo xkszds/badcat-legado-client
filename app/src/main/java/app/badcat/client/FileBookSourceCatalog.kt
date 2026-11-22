@@ -25,7 +25,10 @@ private val catalogFileMutex = Mutex()
  * fields unknown to this host survive import/export. This class stores metadata;
  * it does not execute source JavaScript or claim full Legado compatibility.
  */
-class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
+class FileBookSourceCatalog(
+    context: Context,
+    private val onSourceStateInvalidated: suspend (sourceId: String) -> Unit = {},
+) : BookSourceCatalog {
     private val file = AtomicFile(File(context.applicationContext.filesDir, "legado-book-sources.json"))
     // Activities create separate catalog instances; serialize access to the shared file process-wide.
     private val mutex = catalogFileMutex
@@ -62,10 +65,21 @@ class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
             }
 
             try {
+                val existing = readSources().associateBy { it.sourceId }
+                val replacedIds = imported
+                    .filter { incoming -> existing[incoming.sourceId]?.let { it != incoming } == true }
+                    .map { it.sourceId }
                 val merged = LinkedHashMap<String, LegadoBookSource>()
-                readSources().forEach { source -> merged[source.sourceId] = source }
+                existing.values.forEach { source -> merged[source.sourceId] = source }
                 imported.forEach { source -> merged[source.sourceId] = source }
                 writeSources(merged.values.toList())
+                val cleanupFailures = invalidateRuntimeSources(replacedIds)
+                if (cleanupFailures.isNotEmpty()) {
+                    return@withLock EngineResult.Failure(
+                        EngineErrorCode.UNKNOWN,
+                        "Book sources were imported, but runtime state cleanup failed for: ${cleanupFailures.joinToString()}",
+                    )
+                }
                 EngineResult.Success(imported.size)
             } catch (error: Exception) {
                 if (error is CancellationException) throw error
@@ -115,6 +129,13 @@ class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
                     return@withLock EngineResult.Success(false)
                 }
                 writeSources(remaining)
+                val cleanupFailures = invalidateRuntimeSources(listOf(sourceId))
+                if (cleanupFailures.isNotEmpty()) {
+                    return@withLock EngineResult.Failure(
+                        EngineErrorCode.UNKNOWN,
+                        "Book source was removed, but runtime state cleanup failed for: ${cleanupFailures.joinToString()}",
+                    )
+                }
                 EngineResult.Success(true)
             } catch (error: Exception) {
                 if (error is CancellationException) throw error
@@ -143,6 +164,19 @@ class FileBookSourceCatalog(context: Context) : BookSourceCatalog {
                 )
             }
         }
+    }
+
+    private suspend fun invalidateRuntimeSources(sourceIds: List<String>): List<String> {
+        val failures = mutableListOf<String>()
+        sourceIds.distinct().forEach { sourceId ->
+            try {
+                onSourceStateInvalidated(sourceId)
+            } catch (error: Exception) {
+                if (error is CancellationException) throw error
+                failures += sourceId
+            }
+        }
+        return failures
     }
 
     private fun readSources(): List<LegadoBookSource> {

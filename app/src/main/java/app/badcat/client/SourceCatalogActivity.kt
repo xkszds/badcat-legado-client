@@ -37,17 +37,21 @@ import kotlinx.coroutines.withContext
  */
 class SourceCatalogActivity : Activity() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    private val loginCheckService by lazy {
+    private val sourceScriptRuntime by lazy {
         val sessions = SharedPreferencesSourceLoginSessionStore(applicationContext)
-        LegadoSourceLoginUiV2Service(
-            RhinoSourceScriptRuntime(
-                sourceKeyValueStore = SharedPreferencesSourceScriptKeyValueStore(applicationContext),
-                sourceLoginSessionStore = sessions,
-                sourceCookieReader = { _, url ->
-                    SharedPreferencesSourceCookieJar(applicationContext).getCookie(url)
-                },
-            ),
+        val cookies = SharedPreferencesSourceCookieJar(applicationContext)
+        RhinoSourceScriptRuntime(
+            sourceKeyValueStore = SharedPreferencesSourceScriptKeyValueStore(applicationContext),
+            sourceFileCacheStore = FileSourceScriptCacheStore(applicationContext),
+            sourceFileRoot = externalCacheDir ?: cacheDir,
+            sourceLoginSessionStore = sessions,
+            sourceCookieReader = { _, url -> cookies.getCookie(url) },
+            sourceCookieRemover = { _, url -> cookies.removeCookie(url) },
+            sourceCookieClearer = { sourceId -> cookies.clearDomain(sourceId) },
         )
+    }
+    private val loginCheckService by lazy {
+        LegadoSourceLoginUiV2Service(sourceScriptRuntime)
     }
     private lateinit var catalog: FileBookSourceCatalog
     private lateinit var listContainer: LinearLayout
@@ -57,7 +61,9 @@ class SourceCatalogActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        catalog = FileBookSourceCatalog(this)
+        catalog = FileBookSourceCatalog(this) { sourceId ->
+            sourceScriptRuntime.clearSourceState(sourceId)
+        }
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -203,9 +209,7 @@ class SourceCatalogActivity : Activity() {
                                         when (val removed = catalog.remove(source.id)) {
                                             is app.badcat.engine.EngineResult.Success -> {
                                                 if (removed.value) {
-                                                    SharedPreferencesSourceLoginSessionStore(applicationContext).clearSource(source.id)
-                                                    SharedPreferencesSourceCookieJar(applicationContext).removeCookie(source.id)
-                                                    message.text = "已删除书源：${source.name}"
+                                                    message.text = "已删除书源及其运行态：${source.name}"
                                                 } else {
                                                     message.text = "书源已不存在：${source.name}"
                                                 }
