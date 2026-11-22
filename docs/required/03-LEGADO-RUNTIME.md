@@ -4295,3 +4295,17 @@
 - **测试补充：** 同页/跨页同 URL、不同 title/baseUrl 均折叠为一条；不同 URL 的 baseUrl 分别保留；indexes 连续；增量 callback 与最终列表一致；代表项是首个追加对象。明确记录 `chapterList` leading `-`/`+` 语义和 per-book `reverseToc` 当前不可表达，不能以 UI `reverseCatalog` 代替，也不得宣称这些反向排序已兼容。
 - **允许文件不变：** `integration-contract/src/main/kotlin/app/badcat/engine/SourceTocService.kt`、`integration-contract/src/test/kotlin/app/badcat/engine/SourceTocServiceTest.kt`、本清单。若需新增 source rule parser/book config input 或 caller 文件，必须另行 preregister。
 - **状态：** 依赖已解除，可开始实施；URL-only merge 是局部兼容改进，source-rule reverse 与 per-book reverseToc 继续列为明确未实现项。
+
+
+#### Runtime-3.2f.24 implementation checkpoint — URL-only TOC merge identity
+
+- **Implementation SHA / run：** `390a518b2549a30e36cc6586c890a4407db97ead` / #3180 / `45084667611`；CI `in_progress` at checkpoint; no pass claimed.
+- **Diff：** exactly two preregistered files. `SourceTocService.kt` changes both incremental and final merge projections from `distinctBy { it.copy(index = 0) }` to `distinctBy { it.url }`. `SourceTocServiceTest.kt` updates three fixtures: cross-page same-URL row collapses while distinct chapter URL remains and retains its page base; same-page same-URL/different-title rows collapse to first appended; incremental callbacks now equal the final URL-only merged list with continuous indexes.
+- **Explicit limit：** representative is first appended host row. This is deterministic but not exact pinned upstream default reverse representative selection. Source `chapterList` `-`/`+` prefix ordering and persistent per-book `reverseToc` remain unimplemented/unresolved; UI reverseCatalog is not used as a substitute. `BookChapter` data-class equality and BatchContentContext duplicate-twin contract remain unchanged.
+- **Validation pending：** focused `:integration-contract:test`, complete third-category App JVM suite, API 28/35 instrumentation and exact-SHA CI terminal result. No code or test result from #3178 is borrowed for this SHA.
+
+#### Runtime-3.2f.26 implementation checkpoint — real AtomicFile chapter-cache tests
+
+- **Implementation SHA / run：** `52db7a6d41177873f5f9facda4644ec6d760f6eb` / #3179 / `45084492186`；CI `in_progress` at checkpoint, active job `assemble-debug`, currently compiling the G2d stage-1 authentic rule/model source group; no failure step reported.
+- **Diff：** one new file only: `app/src/test/kotlin/app/badcat/client/runtime/FileChapterContentCacheAtomicFileTest.kt` (128 lines). It exercises real production `FileChapterContentCache` and Android `AtomicFile` under Robolectric for legacy URL round-trip, index round-trip/stale URL guard, index-only invalidation while legacy URL entry survives, and recovery of a previously committed value after an intentionally unfinished AtomicFile write.
+- **Validation pending：** focused Robolectric tests, complete third-category App JVM suite, exact-SHA CI and App JUnit XML inclusion. No production cache code or schema changed.
