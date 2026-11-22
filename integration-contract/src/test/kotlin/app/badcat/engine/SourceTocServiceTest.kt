@@ -262,7 +262,7 @@ class SourceTocServiceTest {
 
 
     @Test
-    fun removesDuplicateChapterUrlsAcrossPagesAndReindexesTheMergedToc() = runBlocking {
+    fun preservesDistinctChapterRowsSharingUrlAcrossPagesAndReindexesTheMergedToc() = runBlocking {
         val source = BookSource(
             id = "fixture",
             name = "Fixture",
@@ -303,10 +303,17 @@ class SourceTocServiceTest {
             listOf("https://reader.example/book/1", "https://reader.example/book/1?page=2"),
             requests,
         )
-        assertEquals(listOf("Chapter One", "Chapter Two"), result.value.map { it.title })
-        assertEquals(listOf(0, 1), result.value.map { it.index })
         assertEquals(
-            listOf("https://reader.example/chapter/1", "https://reader.example/chapter/2"),
+            listOf("Chapter One", "Chapter Two", "Chapter One (duplicate)"),
+            result.value.map { it.title },
+        )
+        assertEquals(listOf(0, 1, 2), result.value.map { it.index })
+        assertEquals(
+            listOf(
+                "https://reader.example/chapter/1",
+                "https://reader.example/chapter/2",
+                "https://reader.example/chapter/1",
+            ),
             result.value.map { it.url },
         )
     }
