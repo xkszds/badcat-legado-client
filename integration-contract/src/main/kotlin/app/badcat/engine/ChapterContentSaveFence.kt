@@ -10,6 +10,17 @@ package app.badcat.engine
 class ChapterContentSaveFence {
     private val versions = HashMap<ChapterContentCacheKey, Long>()
 
+    companion object {
+        /**
+         * Shared by every on-disk chapter cache instance in this process so an
+         * invalidation from one reader engine fences requests started by another.
+         *
+         * Generations are retained for the process lifetime; evicting one while
+         * a request token is in flight could allow a stale write to publish.
+         */
+        val processWide = ChapterContentSaveFence()
+    }
+
     @Synchronized
     fun token(key: ChapterContentCacheKey): ChapterContentSaveToken =
         ChapterContentSaveToken(key, versions[key] ?: 0L)

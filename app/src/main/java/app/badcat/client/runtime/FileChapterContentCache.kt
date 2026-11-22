@@ -18,7 +18,7 @@ import java.io.File
 import java.security.MessageDigest
 
 private val chapterCacheMutex = Mutex()
-private val chapterCacheSaveFence = ChapterContentSaveFence()
+private val chapterCacheSaveFence = ChapterContentSaveFence.processWide
 
 /**
  * Private, bounded on-disk chapter cache. It stores already parsed and
