@@ -4371,11 +4371,11 @@
 - **排除：** no sourceUrls wrapper or nested URL fetching; no JS-source import/export; no import selection/replacement workflow; no source catalog persistence or UI changes; no broad Gson coercion changes; no upstream pin, fourth/fifth category or `main` changes.
 - **依赖 / 并行：** .28 audit closed. File scope is disjoint from active .24 `SourceTocService.kt`/test and .26 AtomicFile test; independent exact-SHA CI required. Any need to change explicit-null semantics or add model/caller files requires a new preregistration.
 - **验收：** focused codec tests, complete `:integration-contract:test`, exact-SHA workflow and diff-scope verification. Record this as one import-acceptance correction, not full BookSource import parity.
-- **状态：** 已登记，尚未实施。
+- **状态：** 实现已提交，等待 exact-SHA CI 验证。
 
 
 #### Runtime-3.2f.29 implementation checkpoint — unnamed BookSource import acceptance
 
-- **Implementation SHA:** pending commit creation from preregistered baseline `f086fd282ae6a3ee2794b0beeccef51bd033c470`.
+- **Implementation SHA:** `e409492bed7288671f5ec7823b0181d136bcf954`.
 - **Actual scope:** only `LegadoBookSourceCodec.kt`, `LegadoBookSourceCodecTest.kt` and this checklist. Missing `bookSourceName` now maps to an empty host name; an empty string remains accepted; explicit JSON null remains rejected pending a separate pinned-Gson differential fixture. Nonblank source URL remains mandatory.
 - **Validation:** no test/build/CI result claimed yet. Exact-SHA workflow and focused/full integration-contract test results remain pending.
