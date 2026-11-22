@@ -114,7 +114,12 @@ class ChapterContentSaveFenceTest {
                 }
             }
             assertTrue(enteredPublish.await(5, java.util.concurrent.TimeUnit.SECONDS))
-            val invalidated = executor.submit { fence.invalidate(sharedKey) }
+            val invalidatingStarted = java.util.concurrent.CountDownLatch(1)
+            val invalidated = executor.submit {
+                invalidatingStarted.countDown()
+                fence.invalidate(sharedKey)
+            }
+            assertTrue(invalidatingStarted.await(5, java.util.concurrent.TimeUnit.SECONDS))
             assertFalse(invalidated.isDone)
             releasePublish.countDown()
             assertTrue(publish.get(5, java.util.concurrent.TimeUnit.SECONDS))
