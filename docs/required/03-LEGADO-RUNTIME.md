@@ -4302,13 +4302,13 @@
 - **Implementation SHA / run：** `390a518b2549a30e36cc6586c890a4407db97ead` / #3180 / `45084667611`；CI `in_progress` at checkpoint; no pass claimed.
 - **Diff：** exactly two preregistered files. `SourceTocService.kt` changes both incremental and final merge projections from `distinctBy { it.copy(index = 0) }` to `distinctBy { it.url }`. `SourceTocServiceTest.kt` updates three fixtures: cross-page same-URL row collapses while distinct chapter URL remains and retains its page base; same-page same-URL/different-title rows collapse to first appended; incremental callbacks now equal the final URL-only merged list with continuous indexes.
 - **Explicit limit：** representative is first appended host row. This is deterministic but not exact pinned upstream default reverse representative selection. Source `chapterList` `-`/`+` prefix ordering and persistent per-book `reverseToc` remain unimplemented/unresolved; UI reverseCatalog is not used as a substitute. `BookChapter` data-class equality and BatchContentContext duplicate-twin contract remain unchanged.
-- **Validation pending：** focused `:integration-contract:test`, complete third-category App JVM suite, API 28/35 instrumentation and exact-SHA CI terminal result. No code or test result from #3178 is borrowed for this SHA.
+- **Validation pending：** exact run #3180 / `45084667611` remains `in_progress` on this SHA. Latest job snapshot: 41 steps completed, currently active in `Live end-to-end sample of four uploaded-corpus sources (best effort)`; no failed step reported. App JUnit, API 28/35 reports, JVM ABI and Debug APK artifacts are uploaded, but terminal conclusion and report inspection remain pending. No result from #3178 is borrowed for this SHA.
 
 #### Runtime-3.2f.26 implementation checkpoint — real AtomicFile chapter-cache tests
 
 - **Implementation SHA / run：** `52db7a6d41177873f5f9facda4644ec6d760f6eb` / #3179 / `45084492186`；CI `in_progress` at checkpoint, active job `assemble-debug`, currently compiling the G2d stage-1 authentic rule/model source group; no failure step reported.
 - **Diff：** one new file only: `app/src/test/kotlin/app/badcat/client/runtime/FileChapterContentCacheAtomicFileTest.kt` (128 lines). It exercises real production `FileChapterContentCache` and Android `AtomicFile` under Robolectric for legacy URL round-trip, index round-trip/stale URL guard, index-only invalidation while legacy URL entry survives, and recovery of a previously committed value after an intentionally unfinished AtomicFile write.
-- **Validation pending：** focused Robolectric tests, complete third-category App JVM suite, exact-SHA CI and App JUnit XML inclusion. No production cache code or schema changed.
+- **Validation pending：** exact run #3179 / `45084492186` remains `in_progress` on this SHA. Latest job snapshot: 41 steps completed, currently active in `Live end-to-end sample of four uploaded-corpus sources (best effort)`; no failed step reported. App JUnit, API 28/35 reports, JVM ABI and Debug APK artifacts are uploaded, but terminal conclusion and report inspection remain pending. No production cache code or schema changed.
 
 
 ### Runtime-3.2f.27 registration — source-scoped chapter-body cache purge design audit
@@ -4378,4 +4378,4 @@
 
 - **Implementation SHA:** `e409492bed7288671f5ec7823b0181d136bcf954`.
 - **Actual scope:** only `LegadoBookSourceCodec.kt`, `LegadoBookSourceCodecTest.kt` and this checklist. Missing `bookSourceName` now maps to an empty host name; an empty string remains accepted; explicit JSON null remains rejected pending a separate pinned-Gson differential fixture. Nonblank source URL remains mandatory.
-- **Validation:** no test/build/CI result claimed yet. Exact-SHA workflow and focused/full integration-contract test results remain pending.
+- **Validation:** Run #3185 / `45085637262` targets exact implementation SHA `e409492bed7288671f5ec7823b0181d136bcf954`; latest snapshot is `in_progress`, 6 steps completed, currently `Set up Gradle`; no failure step or artifact yet. No test/build/CI pass claimed.
