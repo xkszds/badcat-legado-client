@@ -168,6 +168,8 @@ data class BookChapter(
     val isPay: Boolean = false,
     /** Upstream TocRule.updateTime, also used for chapter metadata labels. */
     val tag: String? = null,
+    /** Final URL of the TOC response page that supplied this chapter. */
+    val baseUrl: String = "",
 )
 
 data class ChapterContent(

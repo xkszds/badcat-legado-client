@@ -130,6 +130,7 @@ class CssTocParserTest {
             listOf("https://cdn.reader.example/novel/42/chapter/1.html"),
             page.chapters.map { it.url },
         )
+        assertEquals(response.finalUrl, page.chapters.single().baseUrl)
     }
 
     @Test

@@ -404,4 +404,69 @@ class SourceTocServiceTest {
         assertEquals(1, result.value.map { it.url }.distinct().size)
     }
 
+
+    @Test
+    fun retainsChapterSpecificBaseUrlForEachRedirectedTocPage() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"ul.chapters li",
+                "chapterName":"a@text",
+                "chapterUrl":"a@href",
+                "nextTocUrl":"a.next"
+            }""",
+        )
+        val requests = mutableListOf<String>()
+        val firstFinalUrl = "https://cdn-one.example/catalog/page1.html"
+        val secondFinalUrl = "https://cdn-two.example/novel/catalog/page2.html"
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                requests += request.url
+                return if (requests.size == 1) {
+                    EngineResult.Success(
+                        SourceHttpResponse(
+                            200,
+                            firstFinalUrl,
+                            body = """<ul class="chapters">
+                                <li><a href="../chapters/one.html">Chapter One</a></li>
+                            </ul><a class="next" href="page2.html">Next</a>""",
+                        ),
+                    )
+                } else {
+                    EngineResult.Success(
+                        SourceHttpResponse(
+                            200,
+                            secondFinalUrl,
+                            body = """<ul class="chapters">
+                                <li><a href="../chapters/two.html">Chapter Two</a></li>
+                            </ul>""",
+                        ),
+                    )
+                }
+            }
+        }
+
+        val result = assertIs<EngineResult.Success<List<BookChapter>>>(
+            SourceTocService(SourceHttpGateway(client)).load(source, "https://reader.example/book/1"),
+        )
+
+        assertEquals(
+            listOf(
+                "https://reader.example/book/1",
+                "https://cdn-one.example/catalog/page2.html",
+            ),
+            requests,
+        )
+        assertEquals(listOf(firstFinalUrl, secondFinalUrl), result.value.map { it.baseUrl })
+        assertEquals(
+            listOf(
+                "https://cdn-one.example/chapters/one.html",
+                "https://cdn-two.example/novel/chapters/two.html",
+            ),
+            result.value.map { it.url },
+        )
+    }
+
 }
