@@ -4347,3 +4347,14 @@
 - **排除：** 不修改 BookSource schema、迁移、Room、catalog lifecycle、chapter cache、Reader/UI、第四/第五类、上游 pin 或 `main`；不把只读审计结论写成兼容已实现。
 - **依赖 / 并行：** 与 .24 的 `SourceTocService.kt` / `SourceTocServiceTest.kt` 及 .26 的 `FileChapterContentCacheAtomicFileTest.kt` 文件范围隔离；允许只读并行。后续实现必须单独 preregister，且不得在 #3179/#3180 活动 CI 期间修改共享依赖文件。
 - **状态：** 已登记，尚未开始审计；本登记不授权生产或测试代码变更。
+
+
+#### Runtime-3.2f.28 audit closeout — BookSource import/export compatibility
+
+- **Audit HEAD:** `af316d65a5a7d7f68887ecdf4f4d2cdfc4bf97e3`; report: `docs/audits/legado-runtime-3.2f.28-booksource-import-export.md`; fixed upstream SHA unchanged.
+- **Exact upstream evidence:** BookSource model blob `7f63496ebf25c820b7d0c715d2fbce8e7bd29b9c`; Gson config/adapters `c0bebcb9bf072f04a680e269765bb5b2e76cd88d`; import parser `fe2ba68fd934571d6ea2949b2da86306c9406203`; import ViewModel `65ef5602476f145e1f95a95eead1ac0551378549`; API controller `cc5dccf4b38abf9c9d229e7753a712aa751ef391`; export ViewModel `f0d1230b2baef6573f958bbdf2bbfeac6c20a9d0`.
+- **Exact host evidence:** codec blob `2d6f22a65898a2eaa4a8ee6386dd8f71d116e0dd`; engine model blob `4777ceae6af13633c2561c7fc77c4cbde3a87480`; catalog blob `1f3c9cd879e58f533f57352e3074c667c06c664b`; activity blob `20ca409aa192ce4e2f7a7d6e41de9a8fac059e6b`; codec tests blob `e5958153e82aa980835c5d875260f3222c2ae736`.
+- **Confirmed gaps:** host rejects missing/blank source name although upstream parser requires only nonblank URL; host does not recognize `sourceUrls` wrapper, JS source text import or single-JS `.js` export; host replaces all incoming matching IDs immediately rather than upstream review/selection/timestamp/replacement workflow; host exports whole catalog rather than selected adapter rows. Upstream custom Gson coercion differs from host strict known-field validation; exact null/primitive differential behavior remains unresolved.
+- **Preservation strength:** host retains complete source JSON in `rawJson`, allowing unknown fields to survive catalog persistence, enabled toggle and export. This is metadata preservation, not proof the runtime understands those fields.
+- **Decision:** .28 read-only audit closed; full BookSource import/export parity is NO-GO. Recommended next small tasks are differential tests for empty-name acceptance and sourceUrls wrapper parsing, then separately bounded nested-fetch semantics; JS source import/export and user-facing selection behavior require separate registration/design.
+- **Scope:** no production/test/Gradle/workflow/UI change, no build/CI/device test. .24/#3180 and .26/#3179 evidence not borrowed.
