@@ -4,6 +4,8 @@ import android.content.Context
 import okhttp3.Cookie
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -131,27 +133,44 @@ class SharedPreferencesSourceCookieJarTest {
     }
 
     @Test
-    fun webViewCookieImportIsSessionOnlyAndDoesNotSurviveSessionStoreRecreation() {
+    fun webViewCookieImportLegadoCompatReplacesPersistentBucketAndSurvivesRestart() {
         val jar = SharedPreferencesSourceCookieJar(context, session)
         val url = "https://reader.example/login"
+        jar.setCookie(url, "sid=old; theme=dark")
+        session.write("reader.example", mapOf("sid" to "stale-session", "sessionOnly" to "memory"))
 
-        jar.mergeWebViewCookieHeader(url, "sid=webview; token=temporary")
+        jar.importWebViewCookieHeader(
+            sourceIdentity = "source-reader",
+            url = url,
+            cookieHeader = "sid=webview; token=durable",
+            importedAtEpochMillis = 1_234L,
+        )
 
-        assertEquals("sid=webview; token=temporary", jar.getCookie(url))
+        assertEquals("sid=webview; token=durable; sessionOnly=memory", jar.getCookie(url))
+        assertFalse(session.read("reader.example").containsKey("sid"))
         val afterProcessRestart = SharedPreferencesSourceCookieJar(
             context,
             InMemorySourceCookieSessionStore(),
         )
-        assertEquals("", afterProcessRestart.getCookie(url))
+        assertEquals("sid=webview; token=durable", afterProcessRestart.getCookie(url))
+        val metadata = afterProcessRestart.webViewCookieImportMetadata("source-reader", url)
+        assertEquals(WebViewCookiePersistencePolicy.LEGADO_COMPAT, metadata?.policy)
+        assertEquals(1_234L, metadata?.importedAtEpochMillis)
     }
 
     @Test
-    fun webViewCookieImportShadowsPersistentNamesOnlyForCurrentProcess() {
+    fun webViewCookieImportSessionOnlyMergesAndDoesNotSurviveRestart() {
         val jar = SharedPreferencesSourceCookieJar(context, session)
         val url = "https://reader.example/login"
         jar.setCookie(url, "sid=persistent; theme=dark")
 
-        jar.mergeWebViewCookieHeader(url, "sid=webview; token=temporary")
+        jar.importWebViewCookieHeader(
+            sourceIdentity = "source-reader",
+            url = url,
+            cookieHeader = "sid=webview; token=temporary",
+            policy = WebViewCookiePersistencePolicy.SESSION_ONLY,
+            importedAtEpochMillis = 2_345L,
+        )
 
         assertEquals("sid=webview; theme=dark; token=temporary", jar.getCookie(url))
         val afterProcessRestart = SharedPreferencesSourceCookieJar(
@@ -159,19 +178,34 @@ class SharedPreferencesSourceCookieJarTest {
             InMemorySourceCookieSessionStore(),
         )
         assertEquals("sid=persistent; theme=dark", afterProcessRestart.getCookie(url))
+        assertEquals(
+            WebViewCookiePersistencePolicy.SESSION_ONLY,
+            afterProcessRestart.webViewCookieImportMetadata("source-reader", url)?.policy,
+        )
     }
 
     @Test
-    fun webViewCookieImportMatchingPersistentValueDoesNotCreateSessionOverride() {
+    fun webViewImportMetadataIsHashedSourceScopedAndClearedWithDomain() {
         val jar = SharedPreferencesSourceCookieJar(context, session)
         val url = "https://reader.example/login"
-        jar.setCookie(url, "sid=persistent")
-        session.write("reader.example", mapOf("sid" to "stale-session"))
+        jar.importWebViewCookieHeader(
+            sourceIdentity = "source-reader",
+            url = url,
+            cookieHeader = "sid=private-secret-value",
+            policy = WebViewCookiePersistencePolicy.LEGADO_COMPAT,
+            importedAtEpochMillis = 9_876L,
+        )
 
-        jar.mergeWebViewCookieHeader(url, "sid=persistent")
-
-        assertTrue(session.read("reader.example").isEmpty())
-        assertEquals("sid=persistent", jar.getCookie(url))
+        val metadata = jar.webViewCookieImportMetadata("source-reader", url)
+        assertTrue(metadata?.sourceIdentityHash?.matches(Regex("[0-9a-f]{64}")) == true)
+        assertEquals("reader.example", metadata?.effectiveDomain)
+        assertEquals(9_876L, metadata?.importedAtEpochMillis)
+        assertNull(jar.webViewCookieImportMetadata("different-source", url))
+        val metadataValues = context.getSharedPreferences("badcat_legado_cookie_store", Context.MODE_PRIVATE)
+            .all.filterKeys { it.startsWith("webview_import_") }.values
+        assertFalse(metadataValues.any { it.toString().contains("private-secret-value") })
+        jar.removeCookie(url)
+        assertNull(jar.webViewCookieImportMetadata("source-reader", url))
     }
 
     @Test

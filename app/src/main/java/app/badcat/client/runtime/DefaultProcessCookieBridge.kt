@@ -136,11 +136,20 @@ internal class DefaultProcessCookieBridge(
         webCookies.flush()
     }
 
-    /** Import WebView-visible name/value pairs into the process-only session bucket. */
-    fun syncFromWebView(url: String) {
+    /**
+     * Import WebView-visible name/value pairs for an explicit source lifecycle.
+     * The default mirrors pinned Legado persistence; SESSION_ONLY is opt-in.
+     */
+    fun syncFromWebView(
+        sourceIdentity: String,
+        url: String,
+        policy: WebViewCookiePersistencePolicy = WebViewCookiePersistencePolicy.LEGADO_COMPAT,
+    ) {
+        require(sourceIdentity.isNotBlank() && sourceIdentity == sourceIdentity.trim() &&
+            sourceIdentity.length <= 512) { "Cookie import requires a bounded source identity" }
         observe(url)
         val header = webCookies.getCookie(url).orEmpty()
-        if (header.isNotBlank()) store.mergeWebViewCookieHeader(url, header)
+        if (header.isNotBlank()) store.importWebViewCookieHeader(sourceIdentity, url, header, policy)
     }
 
     /**

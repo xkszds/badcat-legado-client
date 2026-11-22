@@ -7,7 +7,20 @@ import okhttp3.CookieJar
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.json.JSONObject
+import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
+
+internal enum class WebViewCookiePersistencePolicy {
+    LEGADO_COMPAT,
+    SESSION_ONLY,
+}
+
+internal data class SourceWebViewCookieImportMetadata(
+    val sourceIdentityHash: String,
+    val effectiveDomain: String,
+    val policy: WebViewCookiePersistencePolicy,
+    val importedAtEpochMillis: Long,
+)
 
 /**
  * Session cookies deliberately live only in process memory. The persistent map
@@ -140,27 +153,92 @@ internal class SharedPreferencesSourceCookieJar(
     }
 
     /**
-     * WebView exposes only name/value pairs, not Set-Cookie persistence attributes.
-     * Import conservatively into process memory; never promote these values to disk.
-     * A pair equal to its persistent value removes a stale session shadow.
+     * Import WebView-visible name/value pairs. LEGADO_COMPAT follows the pinned
+     * CookieStore.setCookie behavior and replaces the persistent domain bucket.
+     * SESSION_ONLY merges into process memory without disk writes. WebView does
+     * not expose the original Set-Cookie expiry attributes.
      */
-    fun mergeWebViewCookieHeader(url: String, cookieHeader: String) {
-        if (cookieHeader.isBlank()) return
+    fun importWebViewCookieHeader(
+        sourceIdentity: String,
+        url: String,
+        cookieHeader: String,
+        policy: WebViewCookiePersistencePolicy = WebViewCookiePersistencePolicy.LEGADO_COMPAT,
+        importedAtEpochMillis: Long = System.currentTimeMillis(),
+    ) {
+        val identityHash = sourceIdentityHash(sourceIdentity)
         val domain = requireDomain(url)
+        require(cookieHeader.isNotBlank()) { "Cookie header must not be blank" }
         require(cookieHeader.length <= MAX_COOKIE_HEADER_CHARS) { "Cookie header exceeds the size limit" }
+        require(importedAtEpochMillis >= 0L) { "Import timestamp must not be negative" }
         val imported = parseLegadoCookieMap(cookieHeader)
         require(imported.isNotEmpty()) { "Cookie header contains no valid name=value pairs" }
         synchronized(lockFor(domain)) {
-            val persistent = readPersistentLocked(domain)
             val session = sessionStore.read(domain)
-            imported.forEach { (name, value) ->
-                if (persistent[name] == value) session.remove(name)
-                else session[name] = value
+            when (policy) {
+                WebViewCookiePersistencePolicy.LEGADO_COMPAT -> {
+                    trim(imported)
+                    writePersistentLocked(domain, imported)
+                    imported.keys.forEach(session::remove)
+                    sessionStore.write(domain, session)
+                }
+                WebViewCookiePersistencePolicy.SESSION_ONLY -> {
+                    val persistent = readPersistentLocked(domain)
+                    imported.forEach { (name, value) ->
+                        if (persistent[name] == value) session.remove(name)
+                        else session[name] = value
+                    }
+                    trim(session)
+                    sessionStore.write(domain, session)
+                }
             }
-            trim(session)
-            sessionStore.write(domain, session)
+            val metadata = JSONObject()
+                .put("sourceIdentityHash", identityHash)
+                .put("effectiveDomain", domain)
+                .put("policy", policy.name)
+                .put("importedAtEpochMillis", importedAtEpochMillis)
+            preferences.edit()
+                .putString(importMetadataKey(domain, identityHash), metadata.toString())
+                .apply()
         }
     }
+
+    /** Read non-secret metadata for one source/domain WebView import. */
+    fun webViewCookieImportMetadata(
+        sourceIdentity: String,
+        url: String,
+    ): SourceWebViewCookieImportMetadata? {
+        val identityHash = sourceIdentityHash(sourceIdentity)
+        val domain = requireDomain(url)
+        val raw = preferences.getString(importMetadataKey(domain, identityHash), null) ?: return null
+        return runCatching {
+            val json = JSONObject(raw)
+            require(json.optString("sourceIdentityHash") == identityHash)
+            require(json.optString("effectiveDomain") == domain)
+            val policy = WebViewCookiePersistencePolicy.valueOf(json.getString("policy"))
+            val importedAt = json.getLong("importedAtEpochMillis")
+            require(importedAt >= 0L)
+            SourceWebViewCookieImportMetadata(identityHash, domain, policy, importedAt)
+        }.getOrNull()
+    }
+
+    private fun sourceIdentityHash(sourceIdentity: String): String {
+        require(sourceIdentity.isNotBlank() && sourceIdentity == sourceIdentity.trim()) {
+            "Source identity must be non-blank and trimmed"
+        }
+        require(sourceIdentity.length <= MAX_SOURCE_IDENTITY_CHARS) {
+            "Source identity exceeds the size limit"
+        }
+        return MessageDigest.getInstance("SHA-256")
+            .digest(sourceIdentity.toByteArray(Charsets.UTF_8))
+            .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
+    }
+
+    private fun importMetadataKey(domain: String, identityHash: String): String =
+        "webview_import_${storageKey(domain).removePrefix("domain_")}_$identityHash"
+
+    private fun importMetadataPrefix(domain: String): String =
+        "webview_import_${storageKey(domain).removePrefix("domain_")}_"
+
 
     private fun mergePersistentCookieHeader(url: String, cookieHeader: String) {
         val domain = requireDomain(url)
@@ -180,7 +258,11 @@ internal class SharedPreferencesSourceCookieJar(
         val domain = domainFor(url.toHttpUrlOrNull() ?: return)
         synchronized(lockFor(domain)) {
             if (key.isNullOrBlank()) {
-                preferences.edit().remove(storageKey(domain)).apply()
+                val editor = preferences.edit().remove(storageKey(domain))
+                preferences.all.keys
+                    .filter { it.startsWith(importMetadataPrefix(domain)) }
+                    .forEach(editor::remove)
+                editor.apply()
                 sessionStore.clear(domain)
             } else {
                 val persistent = readPersistentLocked(domain)
@@ -281,6 +363,7 @@ internal class SharedPreferencesSourceCookieJar(
         private const val MAX_COOKIE_COUNT = 300
         private const val MAX_COOKIE_HEADER_CHARS = 4_096
         private const val MAX_STORAGE_CHARS = 256 * 1024
+        private const val MAX_SOURCE_IDENTITY_CHARS = 512
         private val locks = ConcurrentHashMap<String, Any>()
     }
 }

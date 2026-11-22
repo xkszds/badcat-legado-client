@@ -46,18 +46,22 @@ class DefaultProcessCookieBridgeTest {
         bridge.syncToWebView("https://reader.example/private/book")
         assertTrue(web.getCookie("https://reader.example/private/book").orEmpty().contains("sid=authoritative"))
         web.setCookieHeaderNow("https://reader.example/private/book", "sid=webview; token=from-webview")
-        bridge.syncFromWebView("https://reader.example/private/book")
+        bridge.syncFromWebView("source-reader", "https://reader.example/private/book")
         assertEquals("sid=webview; theme=dark; token=from-webview", store.getCookie("https://reader.example/"))
-        assertEquals(linkedMapOf("sid" to "webview", "token" to "from-webview"), session.read("reader.example"))
+        assertTrue(session.read("reader.example").isEmpty())
+        assertEquals(
+            WebViewCookiePersistencePolicy.LEGADO_COMPAT,
+            store.webViewCookieImportMetadata("source-reader", "https://reader.example/")?.policy,
+        )
     }
 
     @Test
-    fun syncFromWebViewKeepsImportedCookiesOutOfPersistentStorage() {
+    fun syncFromWebViewSupportsExplicitSessionOnlyPolicy() {
         val url = "https://reader.example/login"
         store.setCookie(url, "sid=persistent; theme=dark")
         web.setCookieHeaderNow(url, "sid=webview; token=from-webview")
 
-        bridge.syncFromWebView(url)
+        bridge.syncFromWebView("source-reader", url, WebViewCookiePersistencePolicy.SESSION_ONLY)
 
         assertEquals("sid=webview; theme=dark; token=from-webview", store.getCookie(url))
         val afterProcessRestart = SharedPreferencesSourceCookieJar(
@@ -65,6 +69,10 @@ class DefaultProcessCookieBridgeTest {
             InMemorySourceCookieSessionStore(),
         )
         assertEquals("sid=persistent; theme=dark", afterProcessRestart.getCookie(url))
+        assertEquals(
+            WebViewCookiePersistencePolicy.SESSION_ONLY,
+            afterProcessRestart.webViewCookieImportMetadata("source-reader", url)?.policy,
+        )
     }
 
     @Test
