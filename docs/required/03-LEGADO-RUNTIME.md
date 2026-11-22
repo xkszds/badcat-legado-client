@@ -4017,3 +4017,27 @@
 - **验证：** 新 exact-SHA CI 必须通过 `:app:compileDebugKotlin`、第三类 App JVM suite、API 28/35 instrumentation 和 `:app:assembleDebug`；重点确认 App test report 确实包含 app 测试而非只包含 `legado-runtime` 的 3 项测试。
 - **排除：** 不修改 FileBookSourceCatalog、Rhino runtime registry、cache extension、store、workflow、上游 pin、其他分类、UI/Reader 或 `main`。
 - **状态：** 已登记，尚未实施/验收；#3172/#3173 的失败记录保留，不回写成成功。
+
+
+#### Runtime-3.2f.14 / #3170 terminal CI closeout
+
+- **Exact SHA / run：** `370954cc9de3c3775200b027711ddaac211f3548` / #3170 / `45075626909`；终态 `completed / success`。
+- **验证：** workflow job 所有配置 step success；Legado runtime model tests、G2d stage-1 compile、第三类 App JVM suite、API 28 CookieManager instrumentation、API 35 WebView instrumentation、Debug APK assemble/upload 均完成。
+- **依赖诊断 artifact：** `14774762866`，SHA-256 `273da33c621950e375acb740078d4210912fc218e755f8cfd3e2e70a5f51a357`；其中 Central 与 Google Central mirror 的 Kotlin Parcelize 2.4.20 POM/JAR 均为 HTTP 200 且内容校验有效。注意本次诊断不能单独证明 Gradle 实际从哪个 endpoint 下载依赖；本次 run 成功证明该精确 SHA 的依赖解析/构建门禁已通过。
+- **Debug APK artifact：** `14774469629`，SHA-256 `c1961e1fc47b1184cf91b539389a1a999a2f18b11262306d925399170d92673f`；仅 CI Debug 构建产物，不是 Release/设备安装验收。
+- **结论：** .14 的 CI 阻断解除并通过其登记的 CI 门禁；不代表第三类完整兼容或 Runtime-3.2f.13 其他缓存生命周期项目完成。
+
+#### Runtime-3.2f.16 / #3171 terminal CI evidence and scope deviation
+
+- **Exact implementation SHA / run：** `45881bdcdec1dee633f4059f43a557ab0a95e1a7` / #3171 / `45076080102`；终态 `completed / success`。
+- **测试报告：** artifact `14774534857`，SHA-256 `07dd64c7039c089324a3374d1941d5cf2ebdfc8671302560493f3a2b221b222e`；实际解包核验 38 个 JUnit XML suites、316 tests、0 failures、0 errors、0 skipped，其中 app 313 tests、legado-runtime 3 tests。报告确实包含 `app/build/test-results/testDebugUnitTest`，不是仅有上游模块的 3 项测试。
+- **Android instrumentation / APK：** API 28 CookieManager 与 API 35 WebView instrumentation steps 均 success；Debug APK artifact `14774794325`，SHA-256 `69d5bf69da6fc12d73e8c1b03dc2ca2d062252d7459fe87b29a8c021a7dd7920`。
+- **重要范围偏差：** 原 .16 registration 的“允许修改文件”只列 `RhinoSourceCacheExtensions.kt` 与其测试；实现提交实际还修改 `SourceScriptKeyValueStore.kt`、`SharedPreferencesSourceScriptKeyValueStore.kt` 和 `SourceScriptKeyValueStoreTest.kt`，共 5 个文件。虽然这些新增文件用于实现精确的 cache namespace prefix clearing，且 exact-SHA CI 全绿，但它们未在实施前 preregister，违反本清单的文件范围门禁。
+- **状态修正：** .16 的技术测试/CI 已通过；因 preregistration 文件范围不一致，暂不标记任务完全关闭。需另行登记并审查该范围扩展的设计与 diff，保留原始记录，不追溯伪称事前授权。不得把该 CI 结果借给其他 SHA。
+
+#### Runtime-3.2f.17 / #3174 verification checkpoint
+
+- **Implementation SHA / run：** `05acbb9984b47aee150905e5b71a2f3e1a97476f` / #3174 / `45077256688`。
+- **Diff 核验：** 相对 preregistration 起始 HEAD `5cd67064f4cf6d69ff8bf1c71d2d40007bb97428`，代码只新增 `SourceCatalogActivity.kt` 的 `FileSourceScriptCacheStore` import；另有本清单登记，共 2 个文件，符合 .17 登记范围。
+- **CI 截至本记录：** run `in_progress`；contract tests、pinned Legado model contract tests、G2d stage-1 compile 均 success；第三类 App JVM suite 正在运行；API 28/35 instrumentation 与 Debug APK 尚未开始/完成。不得宣称 .17 通过。
+- **历史根因保留：** #3172/#3173 的 exact SHA 仍为 failure，日志已确认 `:app:compileDebugKotlin` 因缺失该 import 失败；修复只在 #3174 exact SHA 上验证。
