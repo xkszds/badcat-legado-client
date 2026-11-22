@@ -3921,3 +3921,39 @@
 - **风险与回滚：** 镜像仅限一个精确 group/artifact，不允许扩成全量 Central mirror；若镜像内容或 Gradle metadata/variant 不匹配，恢复该 allowlist 即可。无数据、缓存格式或 schema 变更。
 - **明确排除：** 不升级 Kotlin/AGP、不添加全局 init script、不镜像全部 Maven Central、不更改 workflow、测试、源代码、数据库、UI/Reader、其他分类、上游 pin 或 `main`。
 - **验收 / 状态：** 登记完成后方可修改 settings；任务仅在 exact-head CI 全部目标通过后关闭。它只解除 #3169 的外部依赖解析阻断，不代表 Runtime-3.2f.13 的 cache lifecycle、BatchContentContext 或第三类完整兼容已完成。
+
+
+### Runtime-3.2f.15 registration — source removal/replacement invalidates source-scoped runtime state
+
+- **日期 / 分类：** 2026-11-23；第三类：BookSource mutation lifecycle / source-scoped Rhino state.
+- **起始分支 / HEAD：** `integration/legado-upstream-runtime` / `370954cc9de3c3775200b027711ddaac211f3548`；固定上游 `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **审计依据：** Runtime-3.2f.12 audit 已确认 `RhinoSourceScriptRuntime.clearSourceState(sourceId)` 能在 source mutex 下清理 source scope、shared globals、JS bridge、KV/file cache、物理目录、login session 和 Cookie；但 `FileBookSourceCatalog.remove()` 与同 ID `importJson()` replace 当前没有调用该生命周期。管理页删除只独立清理登录 session/Cookie，未清除 Rhino global/cache state。
+- **目标：** 在书源 catalog 成功删除或以相同 sourceId 替换配置后，调用类型明确的 suspend lifecycle callback 清理该 source 的运行态；新导入 source 不清理；无变化/不存在的 source 不重复清理。catalog 文件提交成功后才触发回调；清理失败必须显式返回可诊断的部分成功错误，不能伪报完全成功。
+- **允许修改文件：**
+  - `app/src/main/java/app/badcat/client/FileBookSourceCatalog.kt`
+  - `app/src/main/java/app/badcat/client/SourceCatalogActivity.kt`
+  - 新增 `app/src/test/java/app/badcat/client/FileBookSourceCatalogLifecycleTest.kt`
+- **调用方/依赖：** `SourceCatalogActivity` 的删除、本地 JSON 导入、网络 JSON 导入；callback 接入同一管理页持有的 `RhinoSourceScriptRuntime` 实例。保留 `FileBookSourceCatalog(context)` 默认构造兼容，不把 UI callback 变成全局 singleton。
+- **数据/事务：** AtomicFile catalog 仍是 BookSource 唯一事实源。先完成 catalog AtomicFile commit，再对发生 replace/remove 的 sourceId 执行幂等清理；不得清理新增 source 或其他 source。若 callback 抛错，返回明确说明 catalog 已提交但运行态清理失败的错误，禁止回滚/伪装未写入。
+- **测试：** Robolectric catalog 测试覆盖 remove 成功/不存在、同 ID replace、全新导入、混合数组只清理已有 ID、解码失败不触发、callback 异常准确报告；管理页共享 runtime 的配置需使用与生产一致的 KV/file/session/Cookie stores，并验证删除不再重复做不完整的手工清理。
+- **验收：** focused lifecycle tests、完整第三类 JVM suite 和新 exact-SHA CI 通过；diff 只触及登记文件；确认 catalog commit 顺序、callback sourceId 集合及 source isolation。
+- **明确排除：** 不清除书籍/章节/阅读进度/书签；不实现章节正文缓存 source-wide purge（当前 cache 接口没有该操作，需另行设计）；不改 cache.delete/clear 语义（由 .16 处理）；不接 BatchContentContext、不改 Room/schema/UI 设计、不触碰第四/第五类、上游 pin 或 `main`。
+- **并行边界：** 与 .16 仅共用本清单登记文件；生产/测试文件完全不重叠，且 .16 不改变 catalog callback。登记完成后可并行实现，清单 closeout 仍按提交顺序串行更新。
+- **状态：** 已登记，尚未实施/验收。
+
+### Runtime-3.2f.16 registration — source cache delete/clear covers every owned storage domain
+
+- **日期 / 分类：** 2026-11-23；第三类：Rhino source cache API storage parity.
+- **起始分支 / HEAD：** `integration/legado-upstream-runtime` / `370954cc9de3c3775200b027711ddaac211f3548`；固定上游 `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **上游语义边界：** pinned `CacheManager.delete(key)` is synchronized and deletes Room CacheDao row, in-memory LRU entry, and same-key ACache file. `WebCacheManager` exposes `delete(key)` and `deleteMemory(key)`; pinned `CacheManager` does not expose a source-wide `clear()`. Therefore this task must not claim the host-only `clear()` method is a pinned upstream API.
+- **当前差异：** `RhinoSourceCacheExtensions.delete(key)` only removes the KV entry; same-key file cache and memory entry remain. Host `clear()` clears memory and file store but leaves the source KV namespace.
+- **目标：** make `delete(key)` remove same-key KV, file-cache and memory entries; make the existing host-only `clear()` clear all three source-owned domains (KV, file, memory) while preserving other source IDs; retain `deleteMemory/remove` as memory-only operations.
+- **允许修改文件：**
+  - `app/src/main/java/app/badcat/client/runtime/RhinoSourceCacheExtensions.kt`
+  - `app/src/test/kotlin/app/badcat/client/runtime/RhinoSourceCacheExtensionsTest.kt`
+- **调用方/数据 owner：** Rhino source cache bridge; sourceId-scoped `SourceScriptKeyValueStore`, `SourceScriptFileCacheStore` and local memory map remain their respective stores. No schema or key namespace change.
+- **测试：** same-key delete removes KV/file/memory; delete preserves unrelated keys and other source IDs; clear removes all three domains for only the selected source; deleteMemory/remove do not delete durable/file entries; put/get and TTL behavior remain unchanged.
+- **验收：** focused cache tests and complete third-category JVM suite pass on exact implementation SHA; inspect diff to ensure no upstream-only clear API is invented or exposed as Legado parity.
+- **明确排除：** no catalog lifecycle callback or source removal wiring (.15); no chapter content cache/fence; no Room/CacheManager migration; no new JS method names, no broad source runtime rewrite, no UI/Reader, fourth/fifth category, upstream pin or `main`.
+- **并行边界：** 与 .15 的生产/测试文件不重叠；两任务只在本清单登记/closeout 时串行编辑。不得互相借用 CI 结果。
+- **状态：** 已登记，尚未实施/验收。
