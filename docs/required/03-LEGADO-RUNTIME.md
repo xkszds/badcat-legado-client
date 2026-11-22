@@ -3387,7 +3387,7 @@
 - **测试要求：** JVM 测试需明确验证 WebView 同名值覆盖优先级、未被导入的持久值保留/替换语义，以及确定性序列化顺序；instrumentation 必须显式使用稳定 source identity 和 `SESSION_ONLY`，验证会话 Cookie 导入/域失效，不得把测试改为只编译不执行。不得重新引入旧方法或放宽生产 API。
 - **验收：** 两个目标测试编译并通过；完整第三类 App JVM suite 通过；API 28 与 API 35 instrumentation 实际执行通过；CI 结果与 exact HEAD 对齐并回写本节。
 - **明确排除：** 生产 Cookie 存储/桥接代码、HTTP request semantics、登录 WebView Host、manifest/权限、Reader/UI、第四类、第五类、schema/migration、上游 pin、`main`。
-- **状态：** 实现已提交（`24da0bb4b5ed303ea8267f281383445e50296a8c`）；CI #3159 in progress，等待 exact-HEAD 验证。当前 CI #3155 已结束，不存在该 run 的活动 job。
+- **状态：** 实现已提交（`24da0bb4b5ed303ea8267f281383445e50296a8c`）；#3159 已因继承的 .3 测试夹具失败；#3160 exact SHA 同时包含 .3 夹具修正与本实现，正在重验。当前 CI #3155 已结束，不存在该 run 的活动 job。
 
 
 #### Runtime-3.2e.7 Cookie 策略迁移测试修复 — CI 结果闭环
@@ -3481,7 +3481,7 @@
 
 - **实现提交：** `fc5e94c84d65ee0e9c640f382cf55df751a91d4a`；只修改登记的 `LegadoUrlResolverTest.kt`。
 - **实际修正：** 正数 retry 的 Kotlin raw string 改为有效 JSON `{"retry":3}`；重新读取文件确认送入 parser 的 raw string 不再含转义反斜杠。
-- **CI：** Run #3160，run ID `45068057722`，exact head SHA 与实现提交一致；当前 in progress，已通过 contract unit tests，正在编译 G2d stage-1 source group。
+- **CI：** Run #3160，run ID `45068057722`，exact head SHA 与实现提交一致；当前 in progress，contract unit tests 与 G2d stage-1 compiler probe 已通过，正在运行第三类 App JVM suite。
 - **状态：** 实现已提交、待 exact-HEAD CI；不得提前验收。
 
 #### Runtime-3.2f.4 ReplaceRule missing order default parity — implementation checkpoint
@@ -3513,7 +3513,7 @@
 
 - **实现提交：** `99d62c709722047cf421a0ef0adb16b350564b2a`；只修改登记的 `LegadoLoginUiV2.kt` 与 `LegadoLoginUiV2Test.kt`。
 - **实际修正：** `intOrNull` 从 `JsonPrimitive.asInt` 改为 `asBigDecimal.intValueExact()`；非整数和 Int 越界变为无效值，整值小数仍可精确接受。测试覆盖 version/countdown 小数、整值小数和溢出。
-- **CI：** Run #3161，run ID `45068211350`，exact head SHA 与实现提交一致；当前 in progress，正在执行 contract unit tests。
+- **CI：** Run #3161，run ID `45068211350`，exact head SHA 与实现提交一致；已 completed / failure，504 tests 中 1 项失败，具体根因与 .6 任务登记一致。
 - **状态：** 实现已提交，待 exact-HEAD CI；不代表登录 UI 或登录 WebView 完整兼容。
 
 
@@ -3543,5 +3543,5 @@
 
 - **实现提交：** `e21f7d4ed405f407fb108368fe3f85b1c125a64d`；只修改登记的 `LegadoLoginUiV2.kt` 与 `LegadoLoginUiV2Test.kt`。
 - **实际修正：** parseRows 现在区分 countdown 缺失/null 与存在但不能精确解析的值；非法小数、字符串、boolean、溢出、负数和超过 86400 的值拒绝整行；缺失/null 仍接受。
-- **CI：** Run #3162，run ID `45068414758`，exact head SHA 与实现提交一致；当前 queued。
+- **CI：** Run #3162，run ID `45068414758`，exact head SHA 与实现提交一致；当前 in progress，等待 contract unit tests 终态。
 - **状态：** 实现已提交，待 exact-HEAD CI；不代表登录 UI 或登录 WebView 完整兼容。
