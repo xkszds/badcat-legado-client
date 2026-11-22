@@ -43,8 +43,8 @@ class SourceCatalogActivity : Activity() {
             RhinoSourceScriptRuntime(
                 sourceKeyValueStore = SharedPreferencesSourceScriptKeyValueStore(applicationContext),
                 sourceLoginSessionStore = sessions,
-                sourceCookieReader = { sourceId, url ->
-                    SharedPreferencesSourceCookieJar(applicationContext, sourceId).getCookie(url)
+                sourceCookieReader = { _, url ->
+                    SharedPreferencesSourceCookieJar(applicationContext).getCookie(url)
                 },
             ),
         )
@@ -204,7 +204,7 @@ class SourceCatalogActivity : Activity() {
                                             is app.badcat.engine.EngineResult.Success -> {
                                                 if (removed.value) {
                                                     SharedPreferencesSourceLoginSessionStore(applicationContext).clearSource(source.id)
-                                                    SharedPreferencesSourceCookieJar(applicationContext, source.id).clear()
+                                                    SharedPreferencesSourceCookieJar(applicationContext).removeCookie(source.id)
                                                     message.text = "已删除书源：${source.name}"
                                                 } else {
                                                     message.text = "书源已不存在：${source.name}"
@@ -247,7 +247,7 @@ class SourceCatalogActivity : Activity() {
                                     .setNegativeButton("取消", null)
                                     .setPositiveButton("清除") { _, _ ->
                                         SharedPreferencesSourceLoginSessionStore(applicationContext).clearSource(source.id)
-                                        SharedPreferencesSourceCookieJar(applicationContext, source.id).clear()
+                                        SharedPreferencesSourceCookieJar(applicationContext).removeCookie(source.id)
                                         message.text = source.name + "：本机登录信息和 Cookie 已清除"
                                     }
                                     .show()

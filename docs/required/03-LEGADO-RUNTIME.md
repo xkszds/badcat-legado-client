@@ -2774,3 +2774,16 @@
 - **Current task status at registration:** the scope amendment and implementation patch are being prepared against the exact HEAD above; focused tests and the next exact-HEAD CI are pending. Do not claim the Cookie adapter PoC passed until the new code has compiled, focused tests have passed, the diff/callers have been reviewed, and the exact-HEAD JUnit/CI reports are inspected.
 - **Fourth-category boundary:** no Fourth-category source, test, assertion, workflow profile or production behavior is part of this task. Keep the three Fourth-category test classes excluded from this Third-category lane. Do not inspect or repair Fourth-category failures.
 - **Checklist self-review:** this task remains Third-category HTTP/JS Cookie compatibility only. No WebView/process/manifest/IPC, Room/schema migration, UI/Reader, Fourth-category AdMark, PPRule, upstream pin or `main` change is authorized.
+
+
+### 2026-11-22 Runtime-3.0 Cookie adapter — compile-failure caller-scope amendment
+
+- **Observed exact HEAD / CI:** `424665a0946e8806c21816984d38045db3aca8a8`; run #3128, ID `44959299318`, job `137014326072`, terminal `failure`. The app JVM test lane failed while compiling `:app:compileDebugKotlin`; the same six Kotlin diagnostics repeated in the instrumentation and APK assemble attempts. No Fourth-category test assertion ran or failed in this run.
+- **Single root cause:** the adapter primary constructor changed from `(Context, sourceId: String)` to `(Context, SourceCookieSessionStore)`, and the new API uses `removeCookie(sourceUrl)` instead of `clear()`. Two existing production callers were missed in the original implementation registration:
+  1. `app/src/main/java/app/badcat/client/SourceCatalogActivity.kt` — Cookie reader callback and source-delete / clear-login actions.
+  2. `app/src/main/java/app/badcat/client/SourceLoginUiV2Activity.kt` — Login UI v2 Cookie reader callback.
+- **Scope amendment before fix:** add only those two caller files to the Runtime-3.0 Cookie adapter compatibility patch. Update the callbacks to construct the shared domain-map adapter without a sourceId partition; replace source-specific `.clear()` calls with `removeCookie(source.id)`, where `source.id` is the BookSource URL. Preserve the existing UI, button labels, navigation and login workflow. Do not add a backwards-compatibility sourceId partition or restore source-isolated storage.
+- **Acceptance for this one root cause:** app main Kotlin compilation, the Third-category app JVM suite under `-PbadcatThirdCategoryTestProfile=true`, integration-contract tests, and final exact-HEAD CI; inspect JUnit reports to verify the Fourth-category classes remain excluded. No Fourth-category tests or production files are touched.
+- **Explicit exclusions unchanged:** no WebView/process/manifest/IPC, Room/schema migration, UI redesign/Reader behavior, Fourth-category AdMark, PPRule, upstream pin or `main`.
+- **Status:** the two call-site edits have been prepared but are not yet committed or tested. The branch remains at `424665a0946e8806c21816984d38045db3aca8a8` until this atomic caller-fix commit is created. The Cookie adapter PoC remains unaccepted.
+- **Checklist self-review:** this is a narrowly scoped compile compatibility repair within Third-category Cookie integration; it does not alter Fourth-category test isolation or any fourth-category behavior.

@@ -42,8 +42,8 @@ class SourceLoginUiV2Activity : Activity() {
             RhinoSourceScriptRuntime(
                 sourceKeyValueStore = SharedPreferencesSourceScriptKeyValueStore(applicationContext),
                 sourceLoginSessionStore = loginSessions,
-                sourceCookieReader = { sourceId, url ->
-                    SharedPreferencesSourceCookieJar(applicationContext, sourceId).getCookie(url)
+                sourceCookieReader = { _, url ->
+                    SharedPreferencesSourceCookieJar(applicationContext).getCookie(url)
                 },
             ),
         )
