@@ -3449,3 +3449,20 @@
 - **验收：** focused `:integration-contract:test` 与完整第三类 App JVM suite 通过；精确 diff 只包含该测试文件；正数 retry fixture 确认为有效 JSON；CI 对应实现 SHA。
 - **排除：** `LegadoUrlResolver.kt` 生产逻辑、HTTP retry policy、其他 URL option、Cookie/WebView/login、UI/Reader、第四/第五类、上游 pin、`main`。
 - **状态：** 已登记，等待 #3158 结束后实施；未修改代码。
+
+
+#### Runtime-3.2f.4 ReplaceRule missing order default parity — preregistration
+
+- **日期 / 分类：** 2026-11-23；第三类：Legado 运行时。
+- **起始 HEAD：** `d4a5029f32e0245122d0322e35f6e96b1faafb0a`；分支 `integration/legado-upstream-runtime`；固定上游 SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **源码差异：** 固定上游 `ReplaceRule.kt` 将 `order` 声明为 `Int.MIN_VALUE` 默认值；`ReplaceRuleDao.findEnabledByContentScope/findEnabledByTitleScope/findEnabledBySourceScope` 按 `sortOrder ASC` 排序。当前 `LegadoReplaceRuleCodec.decodeObject` 对缺失 `order` 使用 `0`，会改变缺失排序字段的规则相对位置。
+- **目标：** 缺失 `order` 时投影为 `Int.MIN_VALUE`；显式整数保持原值；非整数和越界值继续 fail closed；selector 的升序结果应让缺失 order 的规则按上游默认位置参与排序。不得改变 scope 匹配、启用状态、regex、timeout 或未知字段保留。
+- **允许修改文件：**
+  - `integration-contract/src/main/kotlin/app/badcat/engine/LegadoReplaceRuleCodec.kt`
+  - `integration-contract/src/test/kotlin/app/badcat/engine/LegadoReplaceRuleCodecTest.kt`
+- **调用方/行为链：** codec decode → `LegadoReplaceRuleRecord.scopeRule.order` → `LegadoReplaceRuleSelector.forContent/forTitle/forSource` 升序排序；DAO 源证据为固定 SHA 的 `ReplaceRuleDao.kt` 三个 scope 查询均 `ORDER BY sortOrder`。
+- **测试要求：** 新增缺失 order 默认值测试；新增缺失 order 与显式 order 混合后 selector 排序测试；保留显式 order、非法类型/越界和未知字段 round-trip 覆盖。
+- **验收：** `:integration-contract:test` 通过；完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限上述两个文件；核对固定 SHA entity/DAO 证据；不得借用 #3157/#3158 的结果。
+- **明确排除：** ReplaceRule UI/DAO/数据库迁移、规则执行器/regex runtime、scope matching 算法、HTTP/Cookie/WebView/login、JS ABI、BookSource codec、Reader/UI、第四/第五类、上游 pin、`main`。
+- **并行安全：** 文件范围与 Runtime-3.2f.1/.2/.3 完全不重叠，无共享可变状态；允许与 #3157/#3158 的固定 SHA CI 并行。清单仍由单一 CAS 提交顺序更新。
+- **状态：** 已 preregister；尚未修改代码。注册文档提交使用 `[skip ci]`。
