@@ -4188,3 +4188,32 @@
 #### Runtime-3.2f.22 storage-schema clarification
 
 - **补充发现：** legacy/index 两类 JSON payload 均不存 `sourceId/bookUrl`；index payload 只额外存 `chapterUrl`，仍无 chapterIndex。文件名只有身份元组的单向 SHA-256。现有目录不能安全地按 source 枚举其文件；全目录删除会破坏其他 source 离线章节。后续 source-wide purge 必须先设计带身份元数据的 manifest/版本化文件格式及迁移，不能直接按哈希文件名猜测。
+
+
+#### Runtime-3.2f.13 descendant verification — dependency-routing fix validated the fence changes
+
+- **Implementation lineage：** shared-fence implementation `1dae6c3c3abebbab43bd7965a929fc6d4d5e6034`；deterministic test correction `d8fa0af7db0e05a28147cd31a0ad5b3142ad8986`。#3168 / `45072082788` passed for the initial implementation; #3169 / `45072157903` failed before tests because Maven Central returned HTTP 403 for Kotlin Parcelize.
+- **Descendant proof：** .14 SHA `370954cc9de3c3775200b027711ddaac211f3548` is a descendant of `d8fa0af...`. The compare diff from `d8fa0af...` to `370954cc...` touches only .14 build/dependency routing, inventory/audit and checklist files; it does not change `ChapterContentSaveFence.kt`, `FileChapterContentCache.kt` or `ChapterContentSaveFenceTest.kt`.
+- **Exact descendant CI：** #3170 / run `45075626909`, head `370954cc...`, `completed / success`. All 47 steps succeeded, including `:integration-contract:test`, pinned model contract, third-category App JVM suite, G2d stage-1 compile, API 28 CookieManager instrumentation, API 35 WebView provider instrumentation and Debug APK build/upload.
+- **JUnit artifact：** `badcat-unit-test-reports` artifact `14774993531`, ZIP SHA-256 `f22a8ebf76c920f15318eb88b8b95d7c153cfb532a837e3759f0d57d0a5d6629`；App report 38 suites / 312 tests / 0 failures / 0 errors / 0 skipped. The fence tests live in `:integration-contract:test`, whose workflow step passed; they are not part of the App XML artifact.
+- **结论：** .13 implementation and deterministic test correction are validated on descendant exact SHA `370954cc...`; #3169's external dependency failure remains historical and is not rewritten. .13 registered concurrency/fence scope is closed only; no source removal invalidation, legacy URL cache cleanup, TTL cleanup, AtomicFile recovery or BatchContentContext is implied.
+
+#### Runtime-3.2f.21 upstream equality counter-evidence — do not accept #3178 as parity yet
+
+- **Pinned source evidence：** `BookChapter.kt` blob `9798267c77c9e14d0a673a822930491cd6e44cc1` explicitly overrides `equals/hashCode` to compare `url` only; `BookChapterList.kt` blob `dd2ae3950cee55a9c8e7880dc2c034d6f4c6f33d` merges pages and applies `LinkedHashSet(chapterList)`. Its per-page constructor sets `baseUrl = redirectUrl`, but that field does not participate in equality.
+- **Separate batch contract：** `BatchContentContext.kt` blob `68cad877f048b171e4f0f6cf22b1e0dd1e6481f9` accepts duplicate URL chapters in its supplied list, indexes candidates by raw/absolute/normalized URL, resolves a chapter object by index, and rejects ambiguous URL-only input. Its tests include same-URL chapter twins.
+- **Implication：** normal upstream TOC merge URL-deduplicates via the overridden equality, while BatchContentContext is independently capable of handling same-URL chapter objects if such a list is supplied. These are different pipeline contracts. Host `BookChapter` is a Kotlin data class whose generated equality includes `baseUrl`; `distinctBy { it.copy(index = 0) }` therefore retains same-URL rows from different page bases. The current #3178 test-only correction expects that retention, but it has not yet been proven to match the pinned upstream TOC merge.
+- **Status：** counter-evidence registered for .23 differential audit below. Keep #3177 failure and #3178 pending/terminal result as separate immutable records; do not rewrite .10/.10.1 history until the audit concludes.
+
+### Runtime-3.2f.23 registration — reconcile upstream TOC equality and duplicate-URL batch semantics
+
+- **日期 / 分类：** 2026-11-23；第三类：TOC merge / chapter identity / upstream differential correction.
+- **起始 branch / HEAD：** `integration/legado-upstream-runtime` / `5f79ace8285040d071a51faa4a751bf08ab9ab77`；固定上游 SHA 不变。
+- **触发原因：** #3177 失败暴露 host data-class equality 把新 chapter `baseUrl` 纳入去重；固定上游 `BookChapter.kt` override `equals/hashCode` 为 URL-only，`BookChapterList.analyzeChapterList` 通过 `LinkedHashSet` 按该 equality 去重。与此同时 `BatchContentContext` 明确支持同 URL 多章节对象，并要求 URL-only 输入在候选歧义时 fail closed。此前 .10/.10.1 记录的 host “完整投影 equality” 与固定上游真实实现存在语义冲突。
+- **目标：** 只读追踪固定上游 BookChapter equality/hashCode、BookChapterList 单页/多页 merge、chapter baseUrl 赋值、BatchContentContext URL 候选索引及其重复 URL tests；对照 Badcat .10/.10.1 的 dedup 改动、当前 `distinctBy { it.copy(index = 0) }`、.21 新增 baseUrl 对 equality 的影响。形成“TOC merge identity”与“batch content identity”两个独立契约的语义矩阵，明确哪些重复 URL 在上游 TOC merge 会折叠、哪些可在 BatchContentContext 输入列表中并存。
+- **允许变更：** 新增 `docs/audits/legado-runtime-3.2f.23-upstream-toc-equality-vs-batch-identity.md`；更新本清单。只读任务不得修改生产代码、测试、Gradle、workflow、存储或 UI。
+- **必须检查：** 固定 SHA `BookChapter.kt`、`BookChapterList.kt`、`BatchContentContext.kt`、`BatchContentContextTest.kt`；host `ReadingEngine.kt`、`CssTocParser.kt`、`SourceTocService.kt`、`SourceTocServiceTest.kt`、`ChapterCatalogQuery.kt` 及相关 caller。检查精确 blob 和行为，不把“data class”误认为默认 equality。
+- **验收产物：** equals/hashCode 实际语义；上游 TOC page merge / LinkedHashSet 行为；redirect finalUrl 对 baseUrl 的赋值及是否影响 equality；BatchContentContext duplicate URL candidate union / object/index/string resolution；host 与 upstream 对照矩阵；对 .10/.10.1 的历史结论修正建议；最小后续实现 preregistration 建议与 GO/NO-GO。
+- **排除：** 本任务不改任何生产或测试逻辑，不改 cache key/TTL、不接线 BatchContentContext、不迁移 bookmark/history、不改变 Reader/UI、第四/第五类、上游 pin 或 `main`。
+- **依赖 / 并行：** 基于 #3177 失败和固定上游静态证据；只读审计不与 .22 cache report 冲突。后续代码实现必须另行 preregister，且先解决 TOC dedup 语义再继续 .21。
+- **状态：** 已登记，尚未开始；不授权改写 .10/.10.1 历史 CI 结论或直接修改去重算法。
