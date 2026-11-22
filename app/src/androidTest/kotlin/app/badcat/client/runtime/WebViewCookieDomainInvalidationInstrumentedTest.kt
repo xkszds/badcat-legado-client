@@ -183,7 +183,12 @@ class WebViewCookieDomainInvalidationInstrumentedTest {
             store.removeCookie(sourceUrl)
             store.removeCookie(unrelatedUrl)
             store.setCookie(sourceUrl, "bc_authoritative=source")
-            store.mergeWebViewCookieHeader(sourceUrl, "bc_session=temporary")
+            store.importWebViewCookieHeader(
+                sourceIdentity = "instrumented-source-$nonce",
+                url = sourceUrl,
+                cookieHeader = "bc_session=temporary",
+                policy = WebViewCookiePersistencePolicy.SESSION_ONLY,
+            )
             store.setCookie(unrelatedUrl, "unrelated_auth=keep")
 
             setCookie(instrumentation, manager, trackedUrl, "bc_track_host=one; Path=/")

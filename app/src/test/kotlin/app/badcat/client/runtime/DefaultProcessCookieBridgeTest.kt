@@ -47,7 +47,12 @@ class DefaultProcessCookieBridgeTest {
         assertTrue(web.getCookie("https://reader.example/private/book").orEmpty().contains("sid=authoritative"))
         web.setCookieHeaderNow("https://reader.example/private/book", "sid=webview; token=from-webview")
         bridge.syncFromWebView("source-reader", "https://reader.example/private/book")
-        assertEquals("sid=webview; theme=dark; token=from-webview", store.getCookie("https://reader.example/"))
+        val importedHeader = store.getCookie("https://reader.example/")
+        assertEquals("theme=dark; sid=webview; token=from-webview", importedHeader)
+        assertEquals(
+            linkedMapOf("theme" to "dark", "sid" to "webview", "token" to "from-webview"),
+            parseLegadoCookieMap(importedHeader),
+        )
         assertTrue(session.read("reader.example").isEmpty())
         assertEquals(
             WebViewCookiePersistencePolicy.LEGADO_COMPAT,
