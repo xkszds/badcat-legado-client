@@ -3474,7 +3474,7 @@
 - **结果：** `completed / failure`。固定 SHA 验证、依赖编译前置步骤成功；`:integration-contract:test` 共 502 tests，501 passed、1 failed。唯一失败为 `LegadoUrlResolverTest.defaultsToZeroRetriesButHonorsExplicitRetrySettings`，定位 `LegadoUrlResolverTest.kt:267`，测试期望 Success 但实际 Failure。
 - **根因：** 正数 retry 测试 JSON 在 Kotlin raw string 中保留反斜杠转义，输入不是有效 JSON。生产 resolver 默认值变更已在本 run 的其余测试中通过；但由于唯一目标的正数显式值测试失败，Runtime-3.2f.2 不得验收通过，需先完成 Runtime-3.2f.3 夹具修复再重跑 exact HEAD CI。
 - **其他步骤：** 后续部分证据上传步骤因前置测试失败未生成对应文件而失败；不能把它们解读为额外生产逻辑故障。Debug APK / 真源 E2E 未构成本次验收证据。
-- **状态：** 实现已提交，验收失败；等待 .3 测试夹具修正和新 exact-HEAD CI。
+- **历史状态：** 初次 #3158 因 .3 测试夹具错误失败；该错误已由 .3 修正，后续 exact-HEAD CI #3160 已通过，最终验收结论以本节 .2 closeout 为准。
 
 
 #### Runtime-3.2f.3 URL retry 正数选项测试夹具修正 — implementation checkpoint
