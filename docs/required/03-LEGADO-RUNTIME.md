@@ -3576,3 +3576,21 @@
 - **排除：** HTTP redirect transport 实现、安全策略、retry/timeout/charset、WebView host implementation、Cookie/login、JS ABI、source UI、第四/第五类、上游 pin、`main`。
 - **依赖与并行：** 与 #3160 同一 resolver 文件范围重叠；必须等 #3160 终态并完成清单回写后才可实施。#3162 文件范围不重叠。
 - **状态：** 已 preregister；当前等待 #3160 释放同文件依赖；尚未修改代码。
+
+
+#### Runtime-3.2f.8 TOC chapter metadata parity — preregistration
+
+- **日期 / 分类：** 2026-11-23；第三类：Legado TOC parsing / model projection。
+- **起始 HEAD：** `c43e3e40300396d25d6ce1fd53a5243f8b5e638b`；分支 `integration/legado-upstream-runtime`；固定上游 SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **源码差异：** 固定 SHA 的 `BookChapterList.analyzeChapterList` 会从 `TocRule.isVip`、`isPay`、`updateTime` 提取章节附加信息，分别写入 `BookChapter.isVip`、`isPay`、`tag`；`String?.isTrue()` 仅把 null/blank/"null"/false/no/not/0/0.0 判为 false，其余非空字符串为 true。当前 host `BookChapter` 仅有 index/title/url，`CssTocParser` 丢弃这三个规则字段。
+- **目标：** 为 host `BookChapter` 增加默认兼容的 `isVip`、`isPay`、`tag` 字段；同步与 script-enabled TOC parser 均按固定上游规则提取并投影；缺失规则维持 false/null；不改变现有三参数构造调用、chapter URL、索引或分页。
+- **允许修改文件：**
+  - `integration-contract/src/main/kotlin/app/badcat/engine/ReadingEngine.kt`
+  - `integration-contract/src/main/kotlin/app/badcat/engine/CssTocParser.kt`
+  - `integration-contract/src/test/kotlin/app/badcat/engine/CssTocParserTest.kt`
+- **调用链：** imported `ruleTocJson` → `SourceRuleResolver(TOC)` → `CssTocParser.parse/parseWithScripts` → `BookChapter` → `SourceTocService` / incremental callback / host chapter catalog。
+- **测试要求：** 同步和 script-enabled parser 覆盖 VIP/pay true、false-like、缺失规则与 updateTime/tag；验证分页重排/复制后元数据保留；保持现有 URL、章节标题、索引测试通过。
+- **验收：** focused `:integration-contract:test` 与完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限三个允许文件；上游 true/false 转换与字段映射逐项核对。
+- **明确排除：** volume row / 空 URL 卷标题合成、formatJs、word-count extraction、章节 identity/dedup policy、TOC DB persistence、UI display changes、HTTP/Cookie/WebView/login、第四/第五类、上游 pin、`main`。
+- **并行安全：** 文件与 Runtime-3.2f.1-.7 完全不重叠，无共享可变状态；可与 #3160/#3162 的 exact-SHA CI 并行。清单由单一 CAS 提交顺序更新。
+- **状态：** 已 preregister；尚未修改代码。
