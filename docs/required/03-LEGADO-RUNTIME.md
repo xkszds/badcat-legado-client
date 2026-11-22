@@ -3896,3 +3896,12 @@
 - **CI：** Run #3168 / run ID `45072082788` 验证初始实现 SHA `1dae6c3c3abebbab43bd7965a929fc6d4d5e6034`，当前 in_progress；Run #3169 / run ID `45072157903` 验证最新 SHA `d8fa0af7db0e05a28147cd31a0ad5b3142ad8986`，当前 in_progress。两条均无失败 step，但尚无终态，不宣称测试通过。
 - **保留风险：** process-wide generation map 对已 invalidated 的 chapter key 保留至进程结束；当前 token API 没有 release 生命周期，不能随意淘汰可能仍被 in-flight token 引用的 generation。
 - **状态：** 实现已提交，待 #3169 exact-HEAD CI；不包含 source removal/replace 的 invalidation 接线、AtomicFile 真机恢复、TTL 删除、rule revision invalidation 或 BatchContentContext 接入。
+
+
+#### Runtime-3.2f.13 CI closeout — #3168 success, #3169 infrastructure blocked
+
+- **#3167:** Run ID `45070912141`, exact SHA `4a9549a980f375a86717578d8212088ca504a33d`, `completed / success`. This validates only the TOC dedup fixture correction on that SHA.
+- **#3168:** Run ID `45072082788`, exact SHA `1dae6c3c3abebbab43bd7965a929fc6d4d5e6034`, `completed / success`. The shared process-wide chapter fence implementation passed this run's configured CI.
+- **#3169:** Run ID `45072157903`, exact SHA `d8fa0af7db0e05a28147cd31a0ad5b3142ad8986`, `completed / failure`. Failure occurs before the authentic Legado model tests execute: Gradle task `:legado-runtime:checkDebugUnitTestAarMetadata` cannot resolve `org.jetbrains.kotlin:kotlin-parcelize-runtime:2.4.20` because Maven Central returns HTTP 403 for the POM. The workflow's endpoint diagnostic confirms Google Central mirror returns HTTP 200 and valid artifact content; Maven Central returns 403. This is an external dependency-resolution failure, not evidence of a Kotlin test assertion failure. Subsequent ABI/instrumentation/APK steps are skipped, so #3169 does not validate the latest SHA.
+- **Current task status:** implementation #3168 has a successful CI on its exact implementation SHA; the deterministic test-only follow-up SHA has no successful CI yet due to repository endpoint failure. Do not describe #3169 as success or mark the latest task SHA verified. Retry after repairing/overriding repository resolution in workflow/dependency configuration under a separately preregistered scope.
+- **Scope:** this closeout changes only this checklist. It does not claim source removal invalidation, AtomicFile recovery, TTL cleanup, CacheManager parity, BatchContentContext wiring, or full third-category acceptance.
