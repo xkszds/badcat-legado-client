@@ -3733,3 +3733,26 @@
 - **GO/NO-GO：** **GO** 进入单独的 host chapter-baseUrl 投影与纯 JVM differential fixture 设计；**NO-GO** 直接修改当前 `ChapterCatalogQuery` 并宣称上游 alias parity。需要先明确每章 baseUrl 如何从 TOC parser 传到 catalog、旧 URL-only 记录如何安全恢复，以及 duplicate URL 时是否必须继续 fail closed。后续生产实现须另行 preregister，且依赖 .10 的 exact-SHA 验收结论。
 - **实际范围：** 仅新增审计报告并更新本清单；无生产代码、测试、Gradle、workflow、数据库、UI/Reader 或 `main` 修改。只读审计未运行构建/测试/CI。
 - **状态：** 审计结果已完成；alias normalization 实现仍未登记/未通过；BatchContentContext 生产 JS/rule 双路径仍未接入，继续作为第三类阻断项。
+
+
+#### Runtime-3.2f.10 CI failure evidence — legacy TOC dedup assertion
+
+- **实现 exact SHA：** `123f1e5476d5ffd26be54be317f46092fcf6f92d`；Run #3166 / run ID `45070591519`；job `assemble-debug` / `137356433631`；`completed / failure`。
+- **失败阶段：** `:integration-contract:test`，511 tests completed / 1 failed；没有继续进入后续验证。job log 中唯一测试失败为 `SourceTocServiceTest.removesDuplicateChapterUrlsAcrossPagesAndReindexesTheMergedToc`。
+- **精确断言：** 旧测试期望 `[Chapter One, Chapter Two]`，实际为 `[Chapter One, Chapter Two, Chapter One (duplicate)]`。旧夹具把同 URL、不同标题当成重复；这与本任务按 host chapter 投影 equality 保留不同章节的目标冲突，不是生产实现回归。
+- **其他证据：** 两项新增重复 URL 测试未出现在失败列表；由于当前 run 在 contract test 阶段失败，未执行 G2d 上传、Android instrumentation、ABI、Debug APK 和真实源 smoke，相关 artifact 均不存在。
+- **结论：** .10 尚未通过；需要先迁移旧测试夹具，再对新 exact SHA 重跑全 CI。禁止把旧测试失败隐藏或仅删除断言。
+
+
+### Runtime-3.2f.10.1 migrate legacy URL-only TOC dedup test expectation — preregistration
+
+- **日期 / 分类：** 2026-11-23；第三类：TOC merge / chapter identity test migration.
+- **起始 HEAD：** `e12c4d1a59a0cec231210f2297f5870f9df53ef8`；分支 `integration/legado-upstream-runtime`；固定上游 `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **依赖 / 根因：** Runtime-3.2f.10 实现已提交，但 #3166（run ID `45070591519`，exact SHA `123f1e5476d5ffd26be54be317f46092fcf6f92d`）在 `:integration-contract:test` 失败。旧测试 `removesDuplicateChapterUrlsAcrossPagesAndReindexesTheMergedToc` 仍期望按 URL 去重，实际目标已经改为按当前章节投影 equality 去重；同 URL 不同标题是不同章节，必须保留。
+- **目标：** 将该旧测试改成明确验证“跨页同 URL、不同标题保留并按合并顺序连续重排”；精确重复投影折叠由 .10 新增的 `preservesDifferentChaptersSharingUrlAndCollapsesOnlyEqualProjectedRows` 覆盖。不得删除测试或回退生产逻辑。
+- **唯一允许修改文件：** `integration-contract/src/test/kotlin/app/badcat/engine/SourceTocServiceTest.kt`。
+- **测试要求：** 旧测试重命名并期望三条不同标题记录按上游语义保留；验证索引连续、重复 URL 保留、跨页顺序稳定；保留 .10 的同页/跨页新测试和其他分页测试。
+- **验收：** focused `:integration-contract:test` 与完整第三类 App JVM suite 在新 exact SHA CI 通过；diff 只允许修改指定测试文件；重新检查所有断言没有残留“URL 唯一即章节唯一”的旧假设。
+- **排除：** 生产 SourceTocService、parser/model、ChapterCatalogQuery、URL alias、BatchContentContext、缓存/持久化、Reader/UI、HTTP/Cookie/login、第四/第五类、上游 pin、`main`。
+- **并行与依赖：** 同一测试文件串行修复；依赖 .10 的实现提交 `123f1e5476d5ffd26be54be317f46092fcf6f92d`。不借用 #3163/#3164/#3165 的 CI 结果。
+- **状态：** 已登记，尚未实施；本注册提交仅更新必读清单并使用 `[skip ci]`。
