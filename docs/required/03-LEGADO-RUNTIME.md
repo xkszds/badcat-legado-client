@@ -3417,4 +3417,4 @@
 - **Focused tests：** 缺失字段得到 true；显式 null 得到 null；显式 true/false 保持原值；host `BookSource.enabledCookieJar` 保留 null；encode 导出仍为 JSON null；畸形字符串/数字仍 fail closed。
 - **验收：** `:integration-contract:test` 通过；完整第三类 App JVM suite 在 exact HEAD CI 通过；检查 diff 只涉及上述两个允许文件；新 CI 的 head SHA 必须等于实现提交 SHA。
 - **明确排除：** 其他 BookSource 字段/规则模型扩展、Book/BookChapter/ReadConfig/ParagraphAnchor、Cookie 生产行为、HTTP、登录 WebView、JS ABI、业务链、缓存、Android manifest/UI、第四/第五类、上游 pin、`main`。
-- **状态：** 已 preregister，尚未实施。该任务不依赖其他在途任务，文件范围独立；实现提交后单独验证并回写闭环。
+- **实现状态：** 已按登记范围提交实现，代码 HEAD `b1b4b8326205223cbc0e3efced2a8ba2a3aedf2c`；只修改上述两个允许文件。`:integration-contract:test` 与完整第三类 JVM CI 正在 Run #3157（run ID `45067267739`）验证，exact head SHA 与实现提交一致；尚未取得终态，当前不得标记通过。
