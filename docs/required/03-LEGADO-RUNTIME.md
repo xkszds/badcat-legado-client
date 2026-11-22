@@ -3969,3 +3969,28 @@
 - **补充测试：** runtime A 写入 cache memory，runtime B 执行 clearSourceState，runtime A 再读必须得到空值；同时验证两个实例的 source cleanup callback 都执行，且其他 source 不受影响。
 - **范围修正：** .15 的原“callback 接入同一管理页持有实例”保留为入口，但仅清理该实例不构成验收；必须验证跨所有存活 runtime 实例的清理。章节正文缓存 source-wide purge 仍排除。
 - **状态：** 这是实现前源码审查发现的必要范围补全；尚未实施/验收。原始 preregistration 与历史记录保留。
+
+
+#### Runtime-3.2f.14 / #3170 CI progress
+
+- **Exact SHA：** `370954cc9de3c3775200b027711ddaac211f3548`；Run #3170 / `45075626909`。
+- **状态：** Maven mirror allowlist 修复后的 authentic model contract、G2d stage-1 编译及第三类 App JVM suite 已通过；当前 API 28 CookieManager instrumentation 仍在运行，API 35/Debug APK 与终态尚未完成。
+- **结论：** 不关闭 .14，不把中间步骤通过写成整条 CI 成功。
+
+#### Runtime-3.2f.16 implementation checkpoint — cache delete/clear storage parity
+
+- **实现提交 / exact CI SHA：** `45881bdcdec1dee633f4059f43a557ab0a95e1a7`；Run #3171 / `45076080102`。
+- **实际变更：** `cache.delete(key)` 同时清除同 key 内存、KV 与 file cache；宿主专用 `clear()` 通过 KV store 的 prefix removal 只清 `__legado_cache__:` 命名空间，再清该 source 的 file cache 和 memory，不误删 loginHeader/source variable；`deleteMemory/remove` 保持 memory-only。
+- **范围：** 修改 `RhinoSourceCacheExtensions.kt`、`SourceScriptKeyValueStore.kt`、`SharedPreferencesSourceScriptKeyValueStore.kt` 与两份对应 JVM 测试。上游 `CacheManager.delete` 的 Room+memory+ACache 语义已核对；上游没有 source-wide `clear()`，宿主方法未冒称上游 API。
+- **测试：** contract tests、固定上游 model contract、G2d stage-1 compile、第三类 App JVM suite 均已通过；API 28 instrumentation 正在运行，API 35、APK 和 run terminal state 尚待验证。
+- **状态：** 实现局部测试通过，整条 exact-SHA CI 待完成；不代表完整 CacheManager parity。
+
+#### Runtime-3.2f.15 implementation checkpoint — source lifecycle and cross-runtime invalidation
+
+- **初始实现提交：** `9bb55c8243ecee3aaea3108e40106a4cf09f712a`；Run #3172 / `45076164070`。
+- **范围补充：** 复查发现 Rhino runtime 的 source scope/lock 是 process-wide，但 cache/bridge/store holders 是 per-instance；只清管理页持有实例不足以清理其他 engine factory 的内存缓存。已按 scope addendum 增加弱引用 runtime registry，避免强引用泄漏，并在 source mutex 内对所有存活 runtime 清理实例级状态。
+- **跨实例实现提交：** `eca7b58031a6be06bf841f7b786e0c6f92e61c4a`；Run #3173 / `45076385050`，exact SHA 与跨实例实现一致。
+- **实际变更：** catalog 删除/同 ID 配置变化后，在 AtomicFile commit 成功后调用 suspend lifecycle callback；新导入/未变化/不存在 source 不清理。管理页复用同一 Rhino runtime 配置，清理错误会明确报告“catalog 已变更但运行态清理失败”。runtime registry 使用弱键追踪存活实例，并在共享 source mutex 下清理每个实例的 bridge/cache/KV/file/session/Cookie/物理缓存。
+- **测试：** 新增 Robolectric catalog lifecycle tests（remove、replace、new source、unchanged source、malformed import、cleanup failure after commit）及跨 runtime cache-memory invalidation test。#3172 已通过 contract/model/G2d 编译，App JVM suite 当时仍在运行；该 run 不包含后来跨 runtime 补强。#3173 当前 contract unit tests 正在运行，尚无通过结论。
+- **排除仍有效：** 不清理章节正文 cache、书籍/进度/书签；不接 BatchContentContext；不代表第三类完成。
+
