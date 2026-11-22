@@ -57,7 +57,7 @@ class SourceTocService(
                 is EngineResult.Success -> result.value
             }
             chapters.addAll(page.chapters)
-            val partial = chapters.distinctBy { it.copy(index = 0) }
+            val partial = chapters.distinctBy { it.url }
                 .mapIndexed { index, chapter -> chapter.copy(index = index) }
             if (partial.isNotEmpty()) onChapters(partial)
             for (next in page.nextPageUrls) {
@@ -83,7 +83,7 @@ class SourceTocService(
             return EngineResult.Failure(EngineErrorCode.NOT_FOUND, "No chapters found for source '${source.id}'")
         }
         return EngineResult.Success(
-            chapters.distinctBy { it.copy(index = 0) }.mapIndexed { index, chapter -> chapter.copy(index = index) },
+            chapters.distinctBy { it.url }.mapIndexed { index, chapter -> chapter.copy(index = index) },
         )
     }
 }

@@ -262,7 +262,7 @@ class SourceTocServiceTest {
 
 
     @Test
-    fun preservesDistinctChapterRowsSharingUrlAcrossPagesAndReindexesTheMergedToc() = runBlocking {
+    fun collapsesSameUrlRowsAcrossPagesAndReindexesTheMergedToc() = runBlocking {
         val source = BookSource(
             id = "fixture",
             name = "Fixture",
@@ -303,24 +303,21 @@ class SourceTocServiceTest {
             listOf("https://reader.example/book/1", "https://reader.example/book/1?page=2"),
             requests,
         )
+        assertEquals(listOf("Chapter One", "Chapter Two"), result.value.map { it.title })
+        assertEquals(listOf(0, 1), result.value.map { it.index })
         assertEquals(
-            listOf("Chapter One", "Chapter Two", "Chapter One (duplicate)"),
-            result.value.map { it.title },
-        )
-        assertEquals(listOf(0, 1, 2), result.value.map { it.index })
-        assertEquals(
-            listOf(
-                "https://reader.example/chapter/1",
-                "https://reader.example/chapter/2",
-                "https://reader.example/chapter/1",
-            ),
+            listOf("https://reader.example/chapter/1", "https://reader.example/chapter/2"),
             result.value.map { it.url },
+        )
+        assertEquals(
+            listOf("https://reader.example/book/1", "https://reader.example/book/1?page=2"),
+            result.value.map { it.baseUrl },
         )
     }
 
 
     @Test
-    fun preservesDifferentChaptersSharingUrlAndCollapsesOnlyEqualProjectedRows() = runBlocking {
+    fun collapsesSamePageDuplicateUrlsAndKeepsTheFirstAppendedRepresentative() = runBlocking {
         val source = BookSource(
             id = "fixture",
             name = "Fixture",
@@ -350,16 +347,13 @@ class SourceTocServiceTest {
             SourceTocService(SourceHttpGateway(client)).load(source, "https://reader.example/book/1"),
         )
 
-        assertEquals(listOf("Chapter One", "Chapter Two"), result.value.map { it.title })
-        assertEquals(listOf(0, 1), result.value.map { it.index })
-        assertEquals(
-            listOf("https://reader.example/chapter/shared", "https://reader.example/chapter/shared"),
-            result.value.map { it.url },
-        )
+        assertEquals(listOf("Chapter One"), result.value.map { it.title })
+        assertEquals(listOf(0), result.value.map { it.index })
+        assertEquals(listOf("https://reader.example/chapter/shared"), result.value.map { it.url })
     }
 
     @Test
-    fun incrementalCallbacksPreserveDuplicateUrlsAcrossTocPages() = runBlocking {
+    fun incrementalCallbacksUseTheSameUrlOnlyMergeAsTheFinalToc() = runBlocking {
         val source = BookSource(
             id = "fixture",
             name = "Fixture",
@@ -397,16 +391,12 @@ class SourceTocServiceTest {
         )
 
         assertEquals(2, callbacks.size)
-        assertEquals(listOf("Chapter One", "Chapter Two", "Chapter One"), callbacks.last().map { it.title })
-        assertEquals(listOf(0, 1, 2), callbacks.last().map { it.index })
+        assertEquals(listOf("Chapter One"), callbacks.last().map { it.title })
+        assertEquals(listOf(0), callbacks.last().map { it.index })
         assertEquals(result.value, callbacks.last())
-        assertEquals(3, result.value.size)
+        assertEquals(1, result.value.size)
         assertEquals(1, result.value.map { it.url }.distinct().size)
-        assertEquals(
-            listOf("https://reader.example/book/1", "https://reader.example/book/1?page=2",
-                "https://reader.example/book/1?page=2"),
-            result.value.map { it.baseUrl },
-        )
+        assertEquals(listOf("https://reader.example/book/1"), result.value.map { it.baseUrl })
     }
 
 
