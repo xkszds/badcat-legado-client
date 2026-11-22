@@ -3530,4 +3530,18 @@
 - **验收：** `:integration-contract:test` 与完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限上述两个文件；不借用 #3161 失败结果。
 - **排除：** Login UI schema/UI、登录 WebView、Cookie/HTTP、Rhino ABI、登录会话持久化、Reader/UI、第四/第五类、上游 pin、`main`。
 - **依赖与并行：** #3161 已终止，同文件串行依赖解除；与 #3160 的文件范围不重叠，可并行 CI。
-- **状态：** 已 preregister；尚未修改代码。注册文档提交使用 `[skip ci]`。
+- **状态：** 实现已提交（`e21f7d4ed405f407fb108368fe3f85b1c125a64d`）；CI #3162 queued，等待 exact-HEAD 验证。
+
+
+#### Runtime-3.2f.5 Login UI v2 strict integer parsing — CI failure evidence
+
+- **实现提交 / exact HEAD：** `99d62c709722047cf421a0ef0adb16b350564b2a`；Run #3161，run ID `45068211350`，job `assemble-debug` / `137349042357`。
+- **结果：** `completed / failure`；`:integration-contract:test` 共 504 tests，503 passed、1 failed。`requiresExactIntegerValuesForVersionAndCountdown` 中 fractional countdown 被 `intOrNull` 映射为 null，`parseRows` 将其误当作可选字段缺失，最终仍返回无 countdown 的 row。
+- **结论：** 精确整数转换本身生效（fractional version/overflow 不再通过），但 parseRows 对“字段缺失”与“字段存在但非法”尚未区分，任务不能验收通过。Runtime-3.2f.6 已登记并修正该边界，等待 #3162。
+
+#### Runtime-3.2f.6 Login UI v2 reject malformed countdown values — implementation checkpoint
+
+- **实现提交：** `e21f7d4ed405f407fb108368fe3f85b1c125a64d`；只修改登记的 `LegadoLoginUiV2.kt` 与 `LegadoLoginUiV2Test.kt`。
+- **实际修正：** parseRows 现在区分 countdown 缺失/null 与存在但不能精确解析的值；非法小数、字符串、boolean、溢出、负数和超过 86400 的值拒绝整行；缺失/null 仍接受。
+- **CI：** Run #3162，run ID `45068414758`，exact head SHA 与实现提交一致；当前 queued。
+- **状态：** 实现已提交，待 exact-HEAD CI；不代表登录 UI 或登录 WebView 完整兼容。
