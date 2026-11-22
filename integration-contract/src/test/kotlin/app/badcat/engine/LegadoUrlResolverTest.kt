@@ -265,7 +265,7 @@ class LegadoUrlResolverTest {
         ).value
         assertEquals(0, disabled.retryCount)
         val enabled = assertIs<EngineResult.Success<LegadoResolvedUrl>>(
-            LegadoUrlResolver.resolve("https://example.com/", """/search,{\"retry\":3}"""),
+            LegadoUrlResolver.resolve("https://example.com/", """/search,{"retry":3}"""),
         ).value
         assertEquals(3, enabled.retryCount)
     }
