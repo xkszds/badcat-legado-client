@@ -3543,8 +3543,20 @@
 
 - **实现提交：** `e21f7d4ed405f407fb108368fe3f85b1c125a64d`；只修改登记的 `LegadoLoginUiV2.kt` 与 `LegadoLoginUiV2Test.kt`。
 - **实际修正：** parseRows 现在区分 countdown 缺失/null 与存在但不能精确解析的值；非法小数、字符串、boolean、溢出、负数和超过 86400 的值拒绝整行；缺失/null 仍接受。
-- **CI：** Run #3162，run ID `45068414758`，exact head SHA 与实现提交一致；API 28/35 instrumentation 已通过，当前执行上传源样本 smoke（41/46 steps），尚无终态。
-- **状态：** 实现已提交，待 exact-HEAD CI；不代表登录 UI 或登录 WebView 完整兼容。
+- **CI：** Run #3162，run ID `45068414758`，exact head SHA 与实现提交一致；已 completed / success，job `137349672654` 全部 steps 成功。详见下方 closeout。
+- **状态：** 已验收通过；仅关闭倒计时非法值解析契约，不代表登录 UI 或登录 WebView 完整兼容。
+
+
+#### Runtime-3.2f.6 Login UI v2 malformed countdown — closeout
+
+- **实现 SHA / exact CI HEAD：** `e21f7d4ed405f407fb108368fe3f85b1c125a64d`；Run #3162 / run ID `45068414758`；job `assemble-debug` / `137349672654`；`completed / success`，所有 job steps 均成功。
+- **允许文件核验：** commit diff 仅包含登记的 `integration-contract/src/main/kotlin/app/badcat/engine/LegadoLoginUiV2.kt` 与 `integration-contract/src/test/kotlin/app/badcat/engine/LegadoLoginUiV2Test.kt`。
+- **测试：** `:integration-contract:test`、固定上游 runtime model contract tests、第三类 App JVM suite 均成功；JUnit 汇总 311 tests、0 failures、0 errors、0 skipped。API 28 与 API 35 的 `:app:connectedDebugAndroidTest` 均执行成功；这是 CI emulator 验证，不是用户实体设备验收。
+- **构建产物：** Debug APK artifact `14772572762`（`badcat-legado-debug`），解包后 APK SHA-256 `7001c4a2b58401c02e08e96ecf5836f8ddb5c28e5b3ab581fb32486f76f46a47`；只证明该 exact SHA 的 Debug APK 已构建，不代表 Release 或实体设备安装通过。JUnit artifact `14772498019`。
+- **真实来源 smoke：** Bixiange GBK POST search → detail → AJAX TOC → content 通过（artifact `14771754904`）；Pinshuzhai search → detail → 1650 chapters TOC → content 通过（artifact `14771919331`）；上传语料抽样 1/4 完成全链路，另 3 个候选在 search 阶段因 2 个网络超时、1 个 HTTP 404 失败（artifact `14772054169`）。不能据此声称多源覆盖完成。
+- **自审与范围：** exact SHA、job/steps、JUnit、Android emulator steps、真实来源报告、APK 哈希均已核验；未改上游 pin、`main` 或未登记生产文件。
+- **遗留边界：** 本任务不验收登录 UI schema/UI、登录 WebView、Cookie/HTTP 会话或完整 BaseSource 登录生命周期。
+- **状态：** 已验收通过。
 
 
 #### Runtime-3.2f.1 nullable enabledCookieJar — closeout
