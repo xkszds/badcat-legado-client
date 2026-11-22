@@ -32,7 +32,7 @@ internal data class CookieBridgeInvalidationResult(
     val attemptedExpiryCount: Int,
     val remainingNamesByUrl: Map<String, Set<String>>,
 ) {
-    val cleared: Boolean get() = remainingNamesByUrl.values.all(Set<String>::isEmpty)
+    val cleared: Boolean get() = remainingNamesByUrl.values.all { it.isEmpty() }
 }
 
 /**
