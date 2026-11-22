@@ -3435,7 +3435,7 @@
 - **验收：** `:integration-contract:test` 通过；完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限上述三个文件；核对上游固定 SHA 与 caller 传递链；不得把正在执行的 #3157 结果借用为本任务通过证据。
 - **明确排除：** HTTP transport retry policy、请求方法映射、headers/body/timeout/redirect/charset、Cookie/CookieBridge、WebView/login、JS ABI、业务链、缓存、Android manifest/UI、第四/第五类、上游 pin、`main`。
 - **并行安全：** 与 Runtime-3.2f.1 的 codec 文件范围完全不重叠，且无共享可变状态；可在 #3157 仍运行时独立实施。分支更新须使用 expected SHA/CAS。
-- **状态：** 实现已提交（`28898d573ec3a56fcd95187df4139d40fb1c78e6`）；#3158 已失败，唯一失败是正数 retry 测试夹具 JSON 转义错误；已 preregister .3 并在 `fc5e94c84d65ee0e9c640f382cf55df751a91d4a` 修正，等待 #3160 exact-HEAD 重验。
+- **状态：** 已由 CI #3160 exact-HEAD 验收通过；关闭记录见下方 .2 closeout。
 
 
 #### Runtime-3.2f.3 URL retry 正数选项测试夹具修正 — preregistration
@@ -3448,7 +3448,7 @@
 - **依赖：** Runtime-3.2f.2 的 CI #3158 必须先终止；同一测试文件在 #3158 的 exact SHA 验证期间不得修改。若 #3158 失败，先取得失败日志并记录，再实施本修复。
 - **验收：** focused `:integration-contract:test` 与完整第三类 App JVM suite 通过；精确 diff 只包含该测试文件；正数 retry fixture 确认为有效 JSON；CI 对应实现 SHA。
 - **排除：** `LegadoUrlResolver.kt` 生产逻辑、HTTP retry policy、其他 URL option、Cookie/WebView/login、UI/Reader、第四/第五类、上游 pin、`main`。
-- **状态：** 测试夹具修正已提交（`fc5e94c84d65ee0e9c640f382cf55df751a91d4a`）；CI #3160 in progress。
+- **状态：** 已由 CI #3160 exact-HEAD 验收通过；关闭记录见下方 .3 closeout。
 
 
 #### Runtime-3.2f.4 ReplaceRule missing order default parity — preregistration
@@ -3465,7 +3465,7 @@
 - **验收：** `:integration-contract:test` 通过；完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限上述两个文件；核对固定 SHA entity/DAO 证据；不得借用 #3157/#3158 的结果。
 - **明确排除：** ReplaceRule UI/DAO/数据库迁移、规则执行器/regex runtime、scope matching 算法、HTTP/Cookie/WebView/login、JS ABI、BookSource codec、Reader/UI、第四/第五类、上游 pin、`main`。
 - **并行安全：** 文件范围与 Runtime-3.2f.1/.2/.3 完全不重叠，无共享可变状态；允许与 #3157/#3158 的固定 SHA CI 并行。清单仍由单一 CAS 提交顺序更新。
-- **状态：** 实现已提交（`fc5e94c84d65ee0e9c640f382cf55df751a91d4a`）；CI #3160 queued，等待 exact-HEAD 验证。
+- **状态：** 已由 CI #3160 exact-HEAD 验收通过；关闭记录见下方 .4 closeout。
 
 
 #### Runtime-3.2f.2 AnalyzeUrl retry default parity — CI failure evidence
@@ -3481,15 +3481,15 @@
 
 - **实现提交：** `fc5e94c84d65ee0e9c640f382cf55df751a91d4a`；只修改登记的 `LegadoUrlResolverTest.kt`。
 - **实际修正：** 正数 retry 的 Kotlin raw string 改为有效 JSON `{"retry":3}`；重新读取文件确认送入 parser 的 raw string 不再含转义反斜杠。
-- **CI：** Run #3160，run ID `45068057722`，exact head SHA 与实现提交一致；当前 in progress，contract unit tests 与 G2d stage-1 compiler probe 已通过，正在运行第三类 App JVM suite。
-- **状态：** 实现已提交、待 exact-HEAD CI；不得提前验收。
+- **CI：** Run #3160，run ID `45068057722`，exact head SHA 与实现提交一致；`completed / success`。完整 job 无失败 step；311 个 App JUnit tests 全部通过。
+- **状态：** 已由 CI #3160 exact-HEAD 验收通过；详见 .3 closeout。
 
 #### Runtime-3.2f.4 ReplaceRule missing order default parity — implementation checkpoint
 
 - **实现提交：** `24da0bb4b5ed303ea8267f281383445e50296a8c`；只修改登记的 `LegadoReplaceRuleCodec.kt` 与 `LegadoReplaceRuleCodecTest.kt`。
 - **实际修正：** 缺失 `order` 从默认 `0` 改为固定上游实体的 `Int.MIN_VALUE`；测试覆盖缺失值、默认排序优先级与显式 `order:0`。
-- **CI：** Run #3159，run ID `45067975908`，exact head SHA 与实现提交一致；已 completed / failure。失败发生在继承的 Runtime-3.2f.3 正数 retry 测试夹具（`:integration-contract:test` 503 tests / 1 failed），并非 ReplaceRule 断言；#3160 的 exact SHA 同时包含 .3 夹具修正与本任务实现，正在重新验证。
-- **状态：** 实现已提交、待 exact-HEAD CI；不得提前验收。
+- **CI：** Run #3159 曾因继承的 .3 夹具失败；其后代 exact SHA `fc5e94c84d65ee0e9c640f382cf55df751a91d4a` 的 CI #3160 已 `completed / success`，验证本任务实现和修正后的夹具。
+- **状态：** 已由 CI #3160 exact-HEAD 验收通过；详见 .4 closeout。
 
 
 #### Runtime-3.2f.5 Login UI v2 strict integer parsing — preregistration
@@ -3530,7 +3530,7 @@
 - **验收：** `:integration-contract:test` 与完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限上述两个文件；不借用 #3161 失败结果。
 - **排除：** Login UI schema/UI、登录 WebView、Cookie/HTTP、Rhino ABI、登录会话持久化、Reader/UI、第四/第五类、上游 pin、`main`。
 - **依赖与并行：** #3161 已终止，同文件串行依赖解除；与 #3160 的文件范围不重叠，可并行 CI。
-- **状态：** 实现已提交（`e21f7d4ed405f407fb108368fe3f85b1c125a64d`）；CI #3162 queued，等待 exact-HEAD 验证。
+- **状态：** 实现已提交（`e21f7d4ed405f407fb108368fe3f85b1c125a64d`）；CI #3162 in progress，当前执行公开 Legado 源仓库探测，尚无终态。
 
 
 #### Runtime-3.2f.5 Login UI v2 strict integer parsing — CI failure evidence
@@ -3543,7 +3543,7 @@
 
 - **实现提交：** `e21f7d4ed405f407fb108368fe3f85b1c125a64d`；只修改登记的 `LegadoLoginUiV2.kt` 与 `LegadoLoginUiV2Test.kt`。
 - **实际修正：** parseRows 现在区分 countdown 缺失/null 与存在但不能精确解析的值；非法小数、字符串、boolean、溢出、负数和超过 86400 的值拒绝整行；缺失/null 仍接受。
-- **CI：** Run #3162，run ID `45068414758`，exact head SHA 与实现提交一致；当前 in progress，等待 contract unit tests 终态。
+- **CI：** Run #3162，run ID `45068414758`，exact head SHA 与实现提交一致；API 28/35 instrumentation 已通过，当前执行公开 Legado 源仓库探测，尚无终态。
 - **状态：** 实现已提交，待 exact-HEAD CI；不代表登录 UI 或登录 WebView 完整兼容。
 
 
@@ -3575,7 +3575,7 @@
 - **验收：** focused `:integration-contract:test` 与完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限上述两个文件；确认与固定 SHA 上游转换逻辑逐项一致；不得借用 #3160/#3162 的 CI 结果。
 - **排除：** HTTP redirect transport 实现、安全策略、retry/timeout/charset、WebView host implementation、Cookie/login、JS ABI、source UI、第四/第五类、上游 pin、`main`。
 - **依赖与并行：** 与 #3160 同一 resolver 文件范围重叠；必须等 #3160 终态并完成清单回写后才可实施。#3162 文件范围不重叠。
-- **状态：** 已 preregister；当前等待 #3160 释放同文件依赖；尚未修改代码。
+- **状态：** 实现已提交（`b0fcd0621ab8391cfa451cfbd663b2505b84fe57`）；CI #3165 in progress，等待 exact-HEAD 验证。
 
 
 #### Runtime-3.2f.8 TOC chapter metadata parity — preregistration
@@ -3593,14 +3593,14 @@
 - **验收：** focused `:integration-contract:test` 与完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限三个允许文件；上游 true/false 转换与字段映射逐项核对。
 - **明确排除：** volume row / 空 URL 卷标题合成、formatJs、word-count extraction、章节 identity/dedup policy、TOC DB persistence、UI display changes、HTTP/Cookie/WebView/login、第四/第五类、上游 pin、`main`。
 - **并行安全：** 文件与 Runtime-3.2f.1-.7 完全不重叠，无共享可变状态；可与 #3160/#3162 的 exact-SHA CI 并行。清单由单一 CAS 提交顺序更新。
-- **状态：** 实现已提交（`cc992331ec9c1c6e94525dca63c94949eeced0b7`）；CI #3163 queued/in progress，等待 exact-HEAD 验证。
+- **状态：** 实现已提交（`cc992331ec9c1c6e94525dca63c94949eeced0b7`）；CI #3163 in progress，第三类 App JVM suite 正在执行，尚无终态。
 
 
 #### Runtime-3.2f.8 TOC chapter metadata parity — implementation checkpoint
 
 - **实现提交：** `cc992331ec9c1c6e94525dca63c94949eeced0b7`；仅修改登记的 `ReadingEngine.kt`、`CssTocParser.kt`、`CssTocParserTest.kt`。
 - **实现内容：** host `BookChapter` 新增默认 false 的 `isVip` / `isPay` 与 nullable `tag`；同步和 script-enabled TOC parser 均提取 `isVip`、`isPay`、`updateTime`，按固定上游 `String?.isTrue(nullIsTrue=false)` 规则转换布尔值；新增同步、脚本、跨页合并重排测试。
-- **CI：** Run #3163，run ID `45069144574`，exact head SHA 与实现提交一致；当前在 `Run contract unit tests`，尚无终态。
+- **CI：** Run #3163，run ID `45069144574`，exact head SHA 与实现提交一致；contract/model/dependency closure 阶段已通过，当前执行第三类 App JVM suite，尚无终态。
 - **状态：** 实现已提交，待 exact-HEAD CI；不包含 volume、formatJs 或 UI 展示。
 
 
@@ -3618,4 +3618,38 @@
 - **验收：** focused 排序测试与完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限两个登记文件；上游 DAO 查询排序与 Badcat 两个目录输出路径逐项核对。
 - **明确排除：** customOrder 自动重排/写入、导入去重或覆盖策略、目录数据库迁移、书源执行/搜索/探索、BookSource 字段映射、HTTP/Cookie/login、UI 样式/交互、第四/第五类、上游 pin、`main`。
 - **并行安全：** 不与 #3160 的 `LegadoUrlResolver`、#3162 的 `LegadoLoginUiV2`、#3163 的 TOC parser/model 文件重叠；只涉及目录文件和新增纯 JVM 测试。清单仍由单一 CAS 顺序提交。
-- **状态：** 已 preregister；尚未修改代码。
+- **状态：** 实现已提交（`566836f57a55148977d1593a9ba87aa4b2e15d2e`）；CI #3164 in progress，等待 exact-HEAD 验证。
+
+
+#### Runtime-3.2f.2 AnalyzeUrl retry default parity — closeout
+
+- **实现链：** 初始实现 `28898d573ec3a56fcd95187df4139d40fb1c78e6`；正数 retry 测试夹具修正 `fc5e94c84d65ee0e9c640f382cf55df751a91d4a`。CI #3160 / run ID `45068057722` exact head SHA 为 `fc5e94c84d65ee0e9c640f382cf55df751a91d4a`，`completed / success`。
+- **结果：** contract tests、固定上游 runtime model tests、第三类 App JVM suite、API 28/35 instrumentation、Debug APK build 全部通过；311 个 App JUnit tests，0 failure/error。job 无失败 step。
+- **真源边界：** Bixiange GBK POST search→detail→AJAX TOC→content 与 Pinshuzhai search→detail→1650 章 TOC→content 均通过；上传样本 1/4 全链路通过，另 3 个因网络超时/HTTP 404 失败。不得扩大为多源覆盖通过。
+- **状态：** 已验收通过。
+
+#### Runtime-3.2f.3 URL retry 正数选项测试夹具修正 — closeout
+
+- **实现 SHA：** `fc5e94c84d65ee0e9c640f382cf55df751a91d4a`；仅修正登记的 `LegadoUrlResolverTest.kt` raw JSON 字符串，不改变生产逻辑。
+- **CI：** #3160 / run ID `45068057722` 对 exact SHA `completed / success`；contract tests 与完整第三类 App JVM suite 均通过。
+- **状态：** 测试夹具修正已验收；作为 .2/.4 通过所依赖的测试基础一并关闭。
+
+#### Runtime-3.2f.4 ReplaceRule missing order default parity — closeout
+
+- **实现 SHA：** `24da0bb4b5ed303ea8267f281383445e50296a8c`；缺失 `order` 使用固定上游 `Int.MIN_VALUE`，显式 order 保持原值。
+- **CI：** 初次 #3159 因继承 .3 测试夹具失败；后续 #3160 的 exact SHA `fc5e94c84d65ee0e9c640f382cf55df751a91d4a` 包含本实现及 .3 夹具修正，且 contract tests、完整第三类 App JVM suite 均通过。
+- **状态：** 已验收通过。
+
+#### Runtime-3.2f.7 AnalyzeUrl boolean option parity — implementation checkpoint
+
+- **实现提交：** `b0fcd0621ab8391cfa451cfbd663b2505b84fe57`；仅修改登记的 `LegadoUrlResolver.kt` 与 `LegadoUrlResolverTest.kt`。
+- **实际修正：** followRedirects 与 webView 分别按固定上游不同语义解析；followRedirects 只接受精确 0/1 numeric 与允许的字符串，null/非法值保留 null；webView 复刻上游 false 集合，其余值触发既有 UNSUPPORTED_RULE。
+- **CI：** Run #3165，run ID `45069444884`，exact head SHA 与实现提交一致；当前执行 Gradle setup，尚无测试结果。
+- **状态：** 实现已提交，待 exact-HEAD CI。
+
+#### Runtime-3.2f.9 BookSource customOrder catalog ordering parity — implementation checkpoint
+
+- **实现提交：** `566836f57a55148977d1593a9ba87aa4b2e15d2e`；仅修改登记的 `FileBookSourceCatalog.kt` 与新增的 `FileBookSourceCatalogOrderTest.kt`。
+- **实际修正：** `all()` 与 `exportJson()` 统一使用 `orderBookSourcesForCatalog`，按 `customOrder ASC` 稳定排序；测试覆盖负数/零/正数与相同 customOrder 保序。
+- **CI：** Run #3164，run ID `45069377255`，exact head SHA 与实现提交一致；当前执行 contract unit tests，尚无终态。
+- **状态：** 实现已提交，待 exact-HEAD CI。
