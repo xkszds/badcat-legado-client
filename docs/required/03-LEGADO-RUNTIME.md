@@ -3530,7 +3530,7 @@
 - **验收：** `:integration-contract:test` 与完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限上述两个文件；不借用 #3161 失败结果。
 - **排除：** Login UI schema/UI、登录 WebView、Cookie/HTTP、Rhino ABI、登录会话持久化、Reader/UI、第四/第五类、上游 pin、`main`。
 - **依赖与并行：** #3161 已终止，同文件串行依赖解除；与 #3160 的文件范围不重叠，可并行 CI。
-- **状态：** 实现已提交（`e21f7d4ed405f407fb108368fe3f85b1c125a64d`）；CI #3162 in progress，当前执行公开 Legado 源仓库探测，尚无终态。
+- **状态：** 实现已提交（`e21f7d4ed405f407fb108368fe3f85b1c125a64d`）；CI #3162 in progress，上传源样本 smoke 已完成到第 41/46 步，尚无终态。
 
 
 #### Runtime-3.2f.5 Login UI v2 strict integer parsing — CI failure evidence
@@ -3543,7 +3543,7 @@
 
 - **实现提交：** `e21f7d4ed405f407fb108368fe3f85b1c125a64d`；只修改登记的 `LegadoLoginUiV2.kt` 与 `LegadoLoginUiV2Test.kt`。
 - **实际修正：** parseRows 现在区分 countdown 缺失/null 与存在但不能精确解析的值；非法小数、字符串、boolean、溢出、负数和超过 86400 的值拒绝整行；缺失/null 仍接受。
-- **CI：** Run #3162，run ID `45068414758`，exact head SHA 与实现提交一致；API 28/35 instrumentation 已通过，当前执行公开 Legado 源仓库探测，尚无终态。
+- **CI：** Run #3162，run ID `45068414758`，exact head SHA 与实现提交一致；API 28/35 instrumentation 已通过，当前执行上传源样本 smoke（41/46 steps），尚无终态。
 - **状态：** 实现已提交，待 exact-HEAD CI；不代表登录 UI 或登录 WebView 完整兼容。
 
 
@@ -3600,7 +3600,7 @@
 
 - **实现提交：** `cc992331ec9c1c6e94525dca63c94949eeced0b7`；仅修改登记的 `ReadingEngine.kt`、`CssTocParser.kt`、`CssTocParserTest.kt`。
 - **实现内容：** host `BookChapter` 新增默认 false 的 `isVip` / `isPay` 与 nullable `tag`；同步和 script-enabled TOC parser 均提取 `isVip`、`isPay`、`updateTime`，按固定上游 `String?.isTrue(nullIsTrue=false)` 规则转换布尔值；新增同步、脚本、跨页合并重排测试。
-- **CI：** Run #3163，run ID `45069144574`，exact head SHA 与实现提交一致；contract/model/dependency closure 阶段已通过，当前执行第三类 App JVM suite，尚无终态。
+- **CI：** Run #3163，run ID `45069144574`，exact head SHA 与实现提交一致；contract/model/dependency closure 与第三类 App JVM suite 已通过，当前执行 Android API 28 CookieManager instrumentation（24/46 steps），尚无终态。
 - **状态：** 实现已提交，待 exact-HEAD CI；不包含 volume、formatJs 或 UI 展示。
 
 
@@ -3644,12 +3644,12 @@
 
 - **实现提交：** `b0fcd0621ab8391cfa451cfbd663b2505b84fe57`；仅修改登记的 `LegadoUrlResolver.kt` 与 `LegadoUrlResolverTest.kt`。
 - **实际修正：** followRedirects 与 webView 分别按固定上游不同语义解析；followRedirects 只接受精确 0/1 numeric 与允许的字符串，null/非法值保留 null；webView 复刻上游 false 集合，其余值触发既有 UNSUPPORTED_RULE。
-- **CI：** Run #3165，run ID `45069444884`，exact head SHA 与实现提交一致；当前执行 Gradle setup，尚无测试结果。
+- **CI：** Run #3165，run ID `45069444884`，exact head SHA 与实现提交一致；第三类 App JVM suite 已通过，当前执行后续验证步骤（21/46 steps），尚无终态。
 - **状态：** 实现已提交，待 exact-HEAD CI。
 
 #### Runtime-3.2f.9 BookSource customOrder catalog ordering parity — implementation checkpoint
 
 - **实现提交：** `566836f57a55148977d1593a9ba87aa4b2e15d2e`；仅修改登记的 `FileBookSourceCatalog.kt` 与新增的 `FileBookSourceCatalogOrderTest.kt`。
 - **实际修正：** `all()` 与 `exportJson()` 统一使用 `orderBookSourcesForCatalog`，按 `customOrder ASC` 稳定排序；测试覆盖负数/零/正数与相同 customOrder 保序。
-- **CI：** Run #3164，run ID `45069377255`，exact head SHA 与实现提交一致；当前执行 contract unit tests，尚无终态。
+- **CI：** Run #3164，run ID `45069377255`，exact head SHA 与实现提交一致；第三类 App JVM suite 已通过，当前执行后续验证步骤（21/46 steps），尚无终态。
 - **状态：** 实现已提交，待 exact-HEAD CI。
