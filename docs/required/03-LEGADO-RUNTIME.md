@@ -3435,7 +3435,7 @@
 - **验收：** `:integration-contract:test` 通过；完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限上述三个文件；核对上游固定 SHA 与 caller 传递链；不得把正在执行的 #3157 结果借用为本任务通过证据。
 - **明确排除：** HTTP transport retry policy、请求方法映射、headers/body/timeout/redirect/charset、Cookie/CookieBridge、WebView/login、JS ABI、业务链、缓存、Android manifest/UI、第四/第五类、上游 pin、`main`。
 - **并行安全：** 与 Runtime-3.2f.1 的 codec 文件范围完全不重叠，且无共享可变状态；可在 #3157 仍运行时独立实施。分支更新须使用 expected SHA/CAS。
-- **状态：** 实现已提交（`28898d573ec3a56fcd95187df4139d40fb1c78e6`）；CI #3158 queued/in progress，尚未验收。提交 diff 限于登记的三个文件；自审发现正数 retry 测试使用 Kotlin raw string 却保留了 JSON 转义反斜杠，需待 #3158 终态后按独立修复任务校正；不得将该测试视为已通过。
+- **状态：** 实现已提交（`28898d573ec3a56fcd95187df4139d40fb1c78e6`）；#3158 已失败，唯一失败是正数 retry 测试夹具 JSON 转义错误；已 preregister .3 并在 `fc5e94c84d65ee0e9c640f382cf55df751a91d4a` 修正，等待 #3160 exact-HEAD 重验。
 
 
 #### Runtime-3.2f.3 URL retry 正数选项测试夹具修正 — preregistration
@@ -3448,7 +3448,7 @@
 - **依赖：** Runtime-3.2f.2 的 CI #3158 必须先终止；同一测试文件在 #3158 的 exact SHA 验证期间不得修改。若 #3158 失败，先取得失败日志并记录，再实施本修复。
 - **验收：** focused `:integration-contract:test` 与完整第三类 App JVM suite 通过；精确 diff 只包含该测试文件；正数 retry fixture 确认为有效 JSON；CI 对应实现 SHA。
 - **排除：** `LegadoUrlResolver.kt` 生产逻辑、HTTP retry policy、其他 URL option、Cookie/WebView/login、UI/Reader、第四/第五类、上游 pin、`main`。
-- **状态：** #3158 已终止，依赖解除；修复可开始。
+- **状态：** 测试夹具修正已提交（`fc5e94c84d65ee0e9c640f382cf55df751a91d4a`）；CI #3160 in progress。
 
 
 #### Runtime-3.2f.4 ReplaceRule missing order default parity — preregistration
@@ -3481,14 +3481,14 @@
 
 - **实现提交：** `fc5e94c84d65ee0e9c640f382cf55df751a91d4a`；只修改登记的 `LegadoUrlResolverTest.kt`。
 - **实际修正：** 正数 retry 的 Kotlin raw string 改为有效 JSON `{"retry":3}`；重新读取文件确认送入 parser 的 raw string 不再含转义反斜杠。
-- **CI：** Run #3160，run ID `45068057722`，exact head SHA 与实现提交一致；当前 queued，尚无测试结果。
+- **CI：** Run #3160，run ID `45068057722`，exact head SHA 与实现提交一致；当前 in progress，已通过 contract unit tests，正在编译 G2d stage-1 source group。
 - **状态：** 实现已提交、待 exact-HEAD CI；不得提前验收。
 
 #### Runtime-3.2f.4 ReplaceRule missing order default parity — implementation checkpoint
 
 - **实现提交：** `24da0bb4b5ed303ea8267f281383445e50296a8c`；只修改登记的 `LegadoReplaceRuleCodec.kt` 与 `LegadoReplaceRuleCodecTest.kt`。
 - **实际修正：** 缺失 `order` 从默认 `0` 改为固定上游实体的 `Int.MIN_VALUE`；测试覆盖缺失值、默认排序优先级与显式 `order:0`。
-- **CI：** Run #3159，run ID `45067975908`，exact head SHA 与实现提交一致；当前 in progress，尚无终态。
+- **CI：** Run #3159，run ID `45067975908`，exact head SHA 与实现提交一致；已 completed / failure。失败发生在继承的 Runtime-3.2f.3 正数 retry 测试夹具（`:integration-contract:test` 503 tests / 1 failed），并非 ReplaceRule 断言；#3160 的 exact SHA 同时包含 .3 夹具修正与本任务实现，正在重新验证。
 - **状态：** 实现已提交、待 exact-HEAD CI；不得提前验收。
 
 
@@ -3513,5 +3513,5 @@
 
 - **实现提交：** `99d62c709722047cf421a0ef0adb16b350564b2a`；只修改登记的 `LegadoLoginUiV2.kt` 与 `LegadoLoginUiV2Test.kt`。
 - **实际修正：** `intOrNull` 从 `JsonPrimitive.asInt` 改为 `asBigDecimal.intValueExact()`；非整数和 Int 越界变为无效值，整值小数仍可精确接受。测试覆盖 version/countdown 小数、整值小数和溢出。
-- **CI：** Run #3161，run ID `45068211350`，exact head SHA 与实现提交一致；当前 queued。
+- **CI：** Run #3161，run ID `45068211350`，exact head SHA 与实现提交一致；当前 in progress，正在执行 contract unit tests。
 - **状态：** 实现已提交，待 exact-HEAD CI；不代表登录 UI 或登录 WebView 完整兼容。
