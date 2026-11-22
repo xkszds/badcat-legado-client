@@ -3905,3 +3905,19 @@
 - **#3169:** Run ID `45072157903`, exact SHA `d8fa0af7db0e05a28147cd31a0ad5b3142ad8986`, `completed / failure`. Failure occurs before the authentic Legado model tests execute: Gradle task `:legado-runtime:checkDebugUnitTestAarMetadata` cannot resolve `org.jetbrains.kotlin:kotlin-parcelize-runtime:2.4.20` because Maven Central returns HTTP 403 for the POM. The workflow's endpoint diagnostic confirms Google Central mirror returns HTTP 200 and valid artifact content; Maven Central returns 403. This is an external dependency-resolution failure, not evidence of a Kotlin test assertion failure. Subsequent ABI/instrumentation/APK steps are skipped, so #3169 does not validate the latest SHA.
 - **Current task status:** implementation #3168 has a successful CI on its exact implementation SHA; the deterministic test-only follow-up SHA has no successful CI yet due to repository endpoint failure. Do not describe #3169 as success or mark the latest task SHA verified. Retry after repairing/overriding repository resolution in workflow/dependency configuration under a separately preregistered scope.
 - **Scope:** this closeout changes only this checklist. It does not claim source removal invalidation, AtomicFile recovery, TTL cleanup, CacheManager parity, BatchContentContext wiring, or full third-category acceptance.
+
+
+### Runtime-3.2f.14 registration — narrowly route Kotlin Parcelize runtime through verified Central mirror
+
+- **日期 / 分类：** 2026-11-23；第三类：CI dependency resolution unblock for authentic Legado model contract tests.
+- **起始分支 / HEAD：** `integration/legado-upstream-runtime` / `cb9a9d639681d806d04b6a1af19cc9bd6f786333`。固定上游仍为 `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **触发证据：** CI #3169 / run `45072157903` 在 `:legado-runtime:checkDebugUnitTestAarMetadata` 解析 `org.jetbrains.kotlin:kotlin-parcelize-runtime:2.4.20` 时失败。精确日志显示 Maven Central POM HTTP 403。该 run 同一 endpoint diagnostic 已证明 Google Central mirror 的同版本 POM HTTP 200 且 GAV 正确、JAR HTTP 200 且 ZIP 中有 20 个 class；当前 `settings.gradle.kts` 已有该 mirror，但 content filter 只允许 `me.zhanghai.android.libarchive:library`，因此 Parcelize 依赖不能使用它。
+- **目标：** 只把 `org.jetbrains.kotlin:kotlin-parcelize-runtime` 加入现有 Google Central mirror 的 module allowlist，使 Gradle 在访问 Maven Central 前可从已验证镜像解析该单一模块。保留原版本、原依赖声明、原仓库顺序和其他依赖的 Maven Central 路由。
+- **允许修改文件：**
+  - `settings.gradle.kts`：仅扩展现有 mirror 的 `content { includeModule(...) }` allowlist。
+  - `docs/required/03-LEGADO-RUNTIME.md`：本登记和实际验证 closeout。
+- **调用方 / 依赖边界：** `:legado-runtime:debugUnitTestRuntimeClasspath` 间接需要该 Kotlin Gradle Parcelize runtime；不修改 runtime module、Kotlin/AGP 版本或任何生产调用方。
+- **验证：** 新 exact HEAD CI 必须执行并通过 `:legado-runtime:testDebugUnitTest`、`:app:testDebugUnitTest -PbadcatThirdCategoryTestProfile=true`、API 28/API 35 已配置 instrumentation 和 `:app:assembleDebug`；核对实际解析日志/依赖报告确认该模块来自 Google Central mirror，JUnit 报告、instrumentation 报告和 APK artifact 均绑定新 exact SHA。若后续失败，按实际首个失败点记录，不把依赖修复本身当成 runtime 兼容验收。
+- **风险与回滚：** 镜像仅限一个精确 group/artifact，不允许扩成全量 Central mirror；若镜像内容或 Gradle metadata/variant 不匹配，恢复该 allowlist 即可。无数据、缓存格式或 schema 变更。
+- **明确排除：** 不升级 Kotlin/AGP、不添加全局 init script、不镜像全部 Maven Central、不更改 workflow、测试、源代码、数据库、UI/Reader、其他分类、上游 pin 或 `main`。
+- **验收 / 状态：** 登记完成后方可修改 settings；任务仅在 exact-head CI 全部目标通过后关闭。它只解除 #3169 的外部依赖解析阻断，不代表 Runtime-3.2f.13 的 cache lifecycle、BatchContentContext 或第三类完整兼容已完成。
