@@ -3363,3 +3363,28 @@
 - **明确排除：** source-WebView 登录界面/Host Port；Application/manifest/权限；WebView 生命周期和 CookieBridge 生产调用接线；后台规则 WebView、JS bridge、交互浏览器/验证码；HTTP gateway/factory；SSL 回调与证书策略；Reader/UI；第四类 AdMark/AdBlock；第五类 PPRule；数据库 schema 迁移；上游 pin；`main`。
 - **后续顺序：** 本任务通过后，再独立登记 source-scoped login WebView host，将来源身份、登录完成、Cookie 导入/导出、登出失效和生命周期接入；背景规则 WebView/JS bridge 与交互浏览器/验证码继续分项登记。
 - **状态：** 已注册，尚未实施；注册文档提交使用 `[skip ci]`。
+
+
+#### Runtime-3.2e.6 WebView Cookie 持久化策略决策与策略化导入 — CI 结果闭环
+
+- **实现 HEAD：** `e8bd3df06f01567a21c31abaf1bdc235c307b6ef`；分支 `integration/legado-upstream-runtime`；上游固定 SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **实际变更：** 在 `SharedPreferencesSourceCookieJar.kt` 增加 `LEGADO_COMPAT` / `SESSION_ONLY` 策略、WebView 导入元数据（仅 source identity SHA-256、域、策略、时间）；在 `DefaultProcessCookieBridge.kt` 增加显式 source identity 和默认 `LEGADO_COMPAT` 的导入 API；更新两个登记的 JVM 测试文件。没有改动 UI、Reader、manifest、HTTP factory、第四类或上游 pin。
+- **CI：** Run #3155，run ID `45063982635`；job `assemble-debug`，job ID `137335922218`；exact HEAD 与实现 HEAD 一致；最终 `failure`。
+- **JVM 结果：** `:app:testDebugUnitTest` 共 308 tests，307 通过、1 失败。失败为 `DefaultProcessCookieBridgeTest.syncToWebViewAndBackUsesDeterministicStorePrecedence`。下载的 `badcat-unit-test-reports` artifact（artifact ID `14770634463`）XML 明确显示 expected `sid=webview; theme=dark; token=from-webview`，actual `theme=dark; sid=webview; token=from-webview`。根因是同名键覆盖保留了 LinkedHashMap 中原键的插入位置；实际值符合当前实现的确定性顺序，测试期望顺序过时。此失败不表示 Cookie 值优先级错误，但必须修正断言并保留明确优先级验证。
+- **Android instrumentation：** API 28 与 API 35 两次执行均在 `:app:compileDebugAndroidTestKotlin` 失败；编译器定位 `WebViewCookieDomainInvalidationInstrumentedTest.kt:186`，调用已删除的 `SharedPreferencesSourceCookieJar.mergeWebViewCookieHeader`，当前 API 已替换为必须带 source identity 和 policy 的 `importWebViewCookieHeader`。因此 instrumentation 未运行，不能记为设备通过。ADB `device offline` 日志是启动期间另一个环境信号，但明确的编译阻断是未更新的测试调用。
+- **其他 CI 步骤：** pinned source verification、contract tests、Legado runtime model contract tests、G2d stage-1 source compile、JS ABI/dependency inventory 和 Debug APK assemble/upload 步骤成功；Debug APK artifact ID `14770459889` 已上传，但没有安装/真机验收；实时来源 smoke 步骤 skipped。整个 workflow 仍为失败，不能据此宣称发布通过。
+- **验收结论：** Runtime-3.2e.6 **未通过**。策略化生产实现已提交，但完整第三类 JVM suite 与 API 28/35 instrumentation 门禁失败。禁止把单独 Debug APK assemble 成功表述为任务通过。
+- **证据与遗留：** workflow job log 显示 JVM 断言失败及 AndroidTest 未解析引用；unit XML artifact 已下载核对。后续必须先修复两个测试入口并重新运行完整 CI；本任务不得改写成通过。
+
+#### Runtime-3.2e.7 Cookie 策略迁移测试修复 — preregistration
+
+- **日期 / 分类：** 2026-11-23；第三类：Legado Runtime。
+- **起始 HEAD：** `e8bd3df06f01567a21c31abaf1bdc235c307b6ef`；固定上游 SHA：`330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **目标：** 修复 Runtime-3.2e.6 引入的新 Cookie 导入策略与既有测试夹具之间的迁移不一致；确保 JVM 断言准确表达 name/value 覆盖和稳定顺序，并让 API 28/35 instrumentation 使用显式 source identity 与 `SESSION_ONLY` 策略，而不是恢复已删除的旧 API。
+- **允许修改文件：**
+  - `app/src/test/kotlin/app/badcat/client/runtime/DefaultProcessCookieBridgeTest.kt`
+  - `app/src/androidTest/kotlin/app/badcat/client/runtime/WebViewCookieDomainInvalidationInstrumentedTest.kt`
+- **测试要求：** JVM 测试需明确验证 WebView 同名值覆盖优先级、未被导入的持久值保留/替换语义，以及确定性序列化顺序；instrumentation 必须显式使用稳定 source identity 和 `SESSION_ONLY`，验证会话 Cookie 导入/域失效，不得把测试改为只编译不执行。不得重新引入旧方法或放宽生产 API。
+- **验收：** 两个目标测试编译并通过；完整第三类 App JVM suite 通过；API 28 与 API 35 instrumentation 实际执行通过；CI 结果与 exact HEAD 对齐并回写本节。
+- **明确排除：** 生产 Cookie 存储/桥接代码、HTTP request semantics、登录 WebView Host、manifest/权限、Reader/UI、第四类、第五类、schema/migration、上游 pin、`main`。
+- **状态：** 已 preregister；尚未修改代码。当前 CI #3155 已结束，不存在该 run 的活动 job。
