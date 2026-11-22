@@ -3490,3 +3490,20 @@
 - **实际修正：** 缺失 `order` 从默认 `0` 改为固定上游实体的 `Int.MIN_VALUE`；测试覆盖缺失值、默认排序优先级与显式 `order:0`。
 - **CI：** Run #3159，run ID `45067975908`，exact head SHA 与实现提交一致；当前 in progress，尚无终态。
 - **状态：** 实现已提交、待 exact-HEAD CI；不得提前验收。
+
+
+#### Runtime-3.2f.5 Login UI v2 strict integer parsing — preregistration
+
+- **日期 / 分类：** 2026-11-23；第三类：Legado 运行时（Badcat declarative login extension）。
+- **起始 HEAD：** `349fd847080fb79ddaca2de10e49c4217c5bd602`；分支 `integration/legado-upstream-runtime`；固定上游 SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`（此扩展是 Badcat host contract，不声称为上游 Login UI API）。
+- **发现：** `LegadoLoginUiV2.intOrNull` 使用 Gson `JsonPrimitive.asInt`；非整数数值可能被窄化为整数，使 `version:2.5` 被识别为 v2，或 `countdown:60.5` 被接受为 60。版本号和倒计时均应为整数语义。
+- **目标：** 只接受数学上精确且处于 Int 范围内的 JSON 整数值；小数、溢出、非数字、null 均按无效值处理。保留有效整数及整值小数表示（如 2.0）的数值兼容性；倒计时原有 0..86400 限制不变。
+- **允许修改文件：**
+  - `integration-contract/src/main/kotlin/app/badcat/engine/LegadoLoginUiV2.kt`
+  - `integration-contract/src/test/kotlin/app/badcat/engine/LegadoLoginUiV2Test.kt`
+- **调用方：** `isV2` 用于 `LegadoSourceLoginUiV2Service.render/dispatchAction` 的协议入口门禁；`parseRows` 将 countdown 交给宿主 UI。错误接受小数可能导致错误协议分派或计时器值偏移。
+- **测试要求：** `version:2.5`、`version:2.0`、`countdown:60.5`、`countdown:60.0`、Int 溢出和边界值覆盖；有效整数行为不回归。
+- **验收：** `:integration-contract:test` 通过；完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限上述两个文件；不得借用 #3157/#3159/#3160 的结果。
+- **排除：** Login UI row schema 扩展、Activity/UI、登录 WebView、Cookie/HTTP、Rhino ABI、登录会话持久化、Reader/UI、第四/第五类、上游 pin、`main`。
+- **并行安全：** 与当前 Runtime-3.2f.1/.2/.3/.4 文件范围不重叠，无共享可变状态；允许并行 CI。
+- **状态：** 已 preregister；尚未修改代码。注册文档提交使用 `[skip ci]`。
