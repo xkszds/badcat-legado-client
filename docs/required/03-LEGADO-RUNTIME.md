@@ -3665,3 +3665,48 @@
 - **实际修正：** `all()` 与 `exportJson()` 统一使用 `orderBookSourcesForCatalog`，按 `customOrder ASC` 稳定排序；测试覆盖负数/零/正数与相同 customOrder 保序。
 - **CI：** Run #3164，run ID `45069377255`，exact head SHA 与实现提交一致；第三类 App JVM suite 已通过，当前执行后续验证步骤（21/46 steps），尚无终态。
 - **状态：** 实现已提交，待 exact-HEAD CI。
+
+
+### Runtime-3.2f.10 TOC duplicate-URL chapter preservation — preregistration
+
+- **日期 / 分类：** 2026-11-23；第三类：Legado TOC merge / chapter identity.
+- **起始 HEAD：** `78b91b77fe62e4d314d539e798b03e9a3387de55`；分支 `integration/legado-upstream-runtime`；固定上游 `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **已核实差异：** Badcat `SourceTocService.load` 在增量回调和最终返回两处都使用 `distinctBy { it.url }`，会把同 URL、不同标题/元数据的合法章节合并掉。固定上游 `BookChapterList.analyzeChapterList` 使用 `LinkedHashSet(chapterList)`，依据完整章节对象相等性稳定去重；固定上游 `BookChapter` 是 data class，URL 不是唯一身份。上游 `BatchContentContext` 明确允许同 URL 多章节，并要求 URL 回传存在歧义时拒绝解析。
+- **上游证据路径：**
+  - `app/src/main/java/io/legado/app/model/webBook/BookChapterList.kt`（固定 SHA；TOC merge 使用 LinkedHashSet）
+  - `app/src/main/java/io/legado/app/data/entities/BookChapter.kt`（固定 SHA；data class 字段与对象相等性）
+  - `app/src/main/java/io/legado/app/model/BatchContentContext.kt`（固定 SHA；重复 URL 身份约定）
+  - `app/src/test/java/io/legado/app/model/BatchContentContextTest.kt`（固定 SHA；重复 URL 与 ambiguity 契约）
+- **Badcat callers：** `SourceTocService.load` 的增量 `onChapters` 与最终 `EngineResult.Success<List<BookChapter>>`；调用者 `SourceReadingEngine.chaptersIncrementalWithFallback`、`SourceBookActivity.showChapters/loadBook`。本任务不改变调用者 UI。
+- **目标：** 两处合并均改为按当前 host `BookChapter` 投影的 data-class equality 稳定去重；保留 URL 相同但 title、VIP/pay 或 tag 不同的章节；只折叠当前投影字段完全相等的重复记录；最终按合并顺序重新分配 index。明确记录 host 投影不含 upstream BookChapter 全部字段，因此本任务只承诺当前投影可见字段的等价性，不声称完整模型 equality 已覆盖。
+- **允许修改文件：**
+  - `integration-contract/src/main/kotlin/app/badcat/engine/SourceTocService.kt`
+  - `integration-contract/src/test/kotlin/app/badcat/engine/SourceTocServiceTest.kt`
+- **测试要求：** 同一页和跨页同 URL 不同标题均保留；同 URL 不同 VIP/pay/tag 元数据保留；完全相同的 host chapter 投影只保留首次出现项且顺序稳定；增量 callback 与最终列表一致保留重复 URL；最终 index 连续且不受去重前页序影响；原有分页/重定向/cycle/maxPages 测试通过。
+- **验收：** focused `:integration-contract:test` 与完整第三类 App JVM suite 在本任务 exact implementation SHA 通过；diff 仅限两个登记文件；以固定 SHA 的 LinkedHashSet 去重与上游 BatchContentContext 重复 URL 契约交叉核对。
+- **排除：** URL alias normalization 算法、chapter URL 身份策略、BatchContentContext 生产接线、章节持久化/缓存、Reader/UI、HTTP/Cookie/login、第四/第五类、上游 pin、`main`。
+- **并行与依赖：** 文件范围不与 #3163（TOC parser/model）、#3164（source catalog）、#3165（URL resolver）重叠；使用当前分支已有的 BookChapter VIP/pay/tag 投影。任务清单由单一 CAS 文档提交更新。
+- **状态：** 已登记，尚未实施；注册提交只改本清单，使用 `[skip ci]`。
+
+
+### Runtime-3.2f.11 chapter URL alias normalization — read-only differential audit preregistration
+
+- **日期 / 分类：** 2026-11-23；第三类：chapter identity / URL alias resolution.
+- **起始 HEAD：** `78b91b77fe62e4d314d539e798b03e9a3387de55`；分支 `integration/legado-upstream-runtime`；固定上游 `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **目标：** 只读对比固定 SHA 的 `BookChapter.getAbsoluteURL`、`NetworkUtils.getAbsoluteURL`、`AnalyzeUrl.paramPattern` 与 `BatchContentContext.chaptersByUrl/resolveByUrl/normalize`，再对照 Badcat `ChapterCatalogQuery.findByUrl/findByIdentity` 和历史续读/书签/深链 callers。明确 raw/absolute/relative/protocol-relative URL、逗号 options suffix、query/fragment、空白、data/javascript、无效 base、同 URL twins 与 normalized alias collision 的精确行为；区分上游直接 URL 匹配与归一化 alias 匹配，不以 RFC URI 直觉替代上游事实。
+- **允许变更：** 仅新增 `docs/audits/legado-runtime-3.2f.11-chapter-url-alias-differential.md` 与本清单的结果记录；不修改生产代码、测试、Gradle、workflow、数据存储或 UI。
+- **必须检查的上游路径：**
+  - `app/src/main/java/io/legado/app/data/entities/BookChapter.kt`
+  - `app/src/main/java/io/legado/app/utils/NetworkUtils.kt`
+  - `app/src/main/java/io/legado/app/model/analyzeRule/AnalyzeUrl.kt`
+  - `app/src/main/java/io/legado/app/model/BatchContentContext.kt`
+  - `app/src/test/java/io/legado/app/model/BatchContentContextTest.kt`
+- **必须检查的 host 路径：**
+  - `integration-contract/src/main/kotlin/app/badcat/engine/ChapterCatalogQuery.kt`
+  - `integration-contract/src/main/kotlin/app/badcat/engine/ReadingEngine.kt`
+  - `app/src/main/java/app/badcat/client/SourceBookActivity.kt`
+  - `integration-contract/src/test/kotlin/app/badcat/engine/ChapterCatalogQueryTest.kt`
+- **验收产物：** 逐分支语义矩阵、精确 source line/blob 证据、当前所有已确认 callers、差异与风险、建议的纯 JVM differential test matrix、需要传入的 base URL / chapter metadata 及安全限制；明确 GO/NO-GO。任何未从源码证明的 URL 规范化行为标记 unresolved。
+- **排除：** 本任务不授权任何生产实现或 caller 修改；不接入 BatchContentContext、不修改 URL transport、不改变 HTTP 安全策略、不做缓存/持久化迁移、不做 Reader/UI、第四/第五类或 `main`。
+- **依赖：** Runtime-3.2f.10 目录重复 URL 保真任务的实现已在当前代码树登记并先行；本审计可只读进行，但后续 alias 实现必须等 .10 任务的 exact-SHA 验收结论，并另行 preregister。
+- **状态：** 已登记，只读审计尚未完成；本次注册不代表 URL alias parity 通过。
