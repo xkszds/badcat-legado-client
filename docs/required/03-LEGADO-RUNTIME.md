@@ -2787,3 +2787,15 @@
 - **Explicit exclusions unchanged:** no WebView/process/manifest/IPC, Room/schema migration, UI redesign/Reader behavior, Fourth-category AdMark, PPRule, upstream pin or `main`.
 - **Status:** the two call-site edits have been prepared but are not yet committed or tested. The branch remains at `424665a0946e8806c21816984d38045db3aca8a8` until this atomic caller-fix commit is created. The Cookie adapter PoC remains unaccepted.
 - **Checklist self-review:** this is a narrowly scoped compile compatibility repair within Third-category Cookie integration; it does not alter Fourth-category test isolation or any fourth-category behavior.
+
+
+### 2026-11-22 Runtime-3.0 Cookie adapter — unit-test compile-failure scope amendment
+
+- **Observed exact HEAD / CI:** `505f1897b6596b0c6b132f0dd7c8fe93f182b631`; run #3129, ID `44987981563`, job `137102639012`, terminal `failure`. The workflow reached `:app:compileDebugUnitTestKotlin`; production `:app:compileDebugKotlin` completed successfully.
+- **Single root cause:** `app/src/test/kotlin/app/badcat/client/runtime/SourceLoginSessionTest.kt:118` references Robolectric `RuntimeEnvironment` but omitted its import. CI diagnostic: `Unresolved reference 'RuntimeEnvironment'`. This is a test-source compile error, not a Cookie behavior assertion failure. The unit-test report artifact contains only the separate `:legado-runtime:testDebugUnitTest` report (3 tests, 0 failures); no App JUnit suite ran.
+- **Scope amendment before fix:** add the missing `org.robolectric.RuntimeEnvironment` import in that one existing Third-category test file. No production code change is needed for this root cause. Keep the test's Robolectric runner/configuration and cookie assertions unchanged.
+- **Acceptance:** app test Kotlin compilation and Third-category app JVM suite with `-PbadcatThirdCategoryTestProfile=true`; inspect exact-HEAD JUnit XML and verify Fourth-category test classes remain excluded. Do not count excluded Fourth-category tests as passed.
+- **Other CI evidence:** fixed upstream pin, integration contract, authentic Legado model contract, G2d stage-1 compile passed; WebView Provider instrumentation passed 1 API 35 fixture test (not production hidden-WebView acceptance). Debug APK artifact `14741090806` was assembled from the same source tree but is diagnostic only because the app unit-test lane failed. Live-source E2E steps were skipped and no live smoke log files were produced.
+- **Fourth-category boundary:** no Fourth-category source, tests, assertions or behavior touched. No WebView implementation, process/manifest/IPC, DB/schema migration, UI/Reader, PPRule, upstream pin or `main` change.
+- **Status:** one-line test import fix preregistered; Cookie adapter PoC remains unaccepted pending focused and exact-HEAD validation.
+- **Checklist self-review:** this is solely a Third-category test compilation fix; no Fourth-category work is included.
