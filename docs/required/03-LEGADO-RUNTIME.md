@@ -2902,7 +2902,7 @@
 
 ### 2026-11-22 Runtime-3.2a default-process dual-store CookieBridge — registered
 
-- **Status:** `registered`; implementation not started. Start branch `integration/legado-upstream-runtime`, exact HEAD `f4ae778e2d9c26885bb7580789a8234cb7774c35`; pinned Legado remains `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Status:** `in_progress`; platform invalidation probe added, awaiting exact-HEAD API 35 instrumentation/CI evidence. Code baseline before this probe: `f4ae778e2d9c26885bb7580789a8234cb7774c35`; pinned Legado remains `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
 - **Goal:** close the mandatory cookie prerequisite before any hidden-WebView process/service/IPC implementation. The default app process remains the only authority for the HTTP/JS CookieStore and the foreground WebView `CookieManager`.
 - **Allowed scope:** add a main-process bridge abstraction and Android `CookieManager` adapter; add bounded persistent tracking of observed URL/host/path values; add explicit snapshot, writeback, URL registration and domain/name invalidation operations; extend the existing CookieJar only through narrow internal APIs; add fake-port JVM tests and API 28/API 35 instrumentation. A later Binder service may wrap this contract but is out of scope here.
 - **Required semantics:** (1) snapshot merges the existing domain-bucket CookieStore with the default-process WebView cookie header for the requested URL, with a documented deterministic same-name precedence; (2) hidden/visible WebView response cookie writeback merges name/value pairs into the authoritative CookieStore and mirrors them to the default WebView CookieManager; (3) every top-level, redirect and subresource URL observed by the WebView path is registered by effective registrable domain; (4) logout/remove invalidates the CookieStore and all known WebView URL mirrors without clearing unrelated domains; (5) session-vs-persistent CookieStore behavior remains unchanged; (6) no cookie values are written to logs; (7) all URL/header/domain/registry sizes are bounded and invalid schemes fail closed.
@@ -2911,3 +2911,10 @@
 - **Explicit exclusions:** no custom Application, process suffix, service, Binder/AIDL, hidden WebView pool, Rhino JS ABI wiring, visible reader/UI changes, Fourth-category source/tests, Room/schema migration, PPRule, upstream pin change or `main` change. Fourth-category tests remain excluded from Third-category CI.
 - **Stop condition:** if Android WebView cookie deletion cannot meet domain isolation with a provable readback, do not weaken the assertion. Document the exact platform limitation and propose a separately reviewed architecture decision.
 - **Checklist self-review:** this registration authorizes only the default-process dual-store bridge prerequisite. Runtime-3.2 hidden process implementation remains blocked until this task, login-dialog metadata mapping and SSL error policy are separately completed and reviewed.
+
+
+#### Runtime-3.2a initial platform probe
+
+- Added `app/src/androidTest/kotlin/app/badcat/client/runtime/WebViewCookieDomainInvalidationInstrumentedTest.kt` to exercise real Android `CookieManager` without network access or global cookie clearing.
+- The fixture creates one root-path cookie and one `/private` path cookie under a unique subdomain, then emulates the pinned upstream domain-root/host-root expiry algorithm. It checks whether the path-scoped cookie remains visible on `/private/book`, and then verifies it can be expired when the path is explicitly known.
+- This is a platform behavior probe, not a CookieBridge implementation. The exact outcome must come from API 35 instrumentation; API 28 coverage remains outstanding. No production source, manifest, WebView process, IPC, UI or Fourth-category file is changed by this probe.
