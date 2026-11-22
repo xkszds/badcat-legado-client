@@ -3506,7 +3506,7 @@
 - **验收：** `:integration-contract:test` 通过；完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限上述两个文件；不得借用 #3157/#3159/#3160 的结果。
 - **排除：** Login UI row schema 扩展、Activity/UI、登录 WebView、Cookie/HTTP、Rhino ABI、登录会话持久化、Reader/UI、第四/第五类、上游 pin、`main`。
 - **并行安全：** 与当前 Runtime-3.2f.1/.2/.3/.4 文件范围不重叠，无共享可变状态；允许并行 CI。
-- **状态：** 实现已提交（`99d62c709722047cf421a0ef0adb16b350564b2a`）；CI #3161 queued，等待 exact-HEAD 验证。
+- **状态：** 实现已提交（`99d62c709722047cf421a0ef0adb16b350564b2a`）；#3161 已失败：fractional countdown 被当作缺失值而非非法值；已 preregister .6 进行边界修复。
 
 
 #### Runtime-3.2f.5 Login UI v2 strict integer parsing — implementation checkpoint
@@ -3515,3 +3515,19 @@
 - **实际修正：** `intOrNull` 从 `JsonPrimitive.asInt` 改为 `asBigDecimal.intValueExact()`；非整数和 Int 越界变为无效值，整值小数仍可精确接受。测试覆盖 version/countdown 小数、整值小数和溢出。
 - **CI：** Run #3161，run ID `45068211350`，exact head SHA 与实现提交一致；当前 in progress，正在执行 contract unit tests。
 - **状态：** 实现已提交，待 exact-HEAD CI；不代表登录 UI 或登录 WebView 完整兼容。
+
+
+#### Runtime-3.2f.6 Login UI v2 reject malformed countdown values — preregistration
+
+- **日期 / 分类：** 2026-11-23；第三类：Legado 运行时（Badcat declarative login extension）。
+- **起始 HEAD：** `9d3f2e7d474419b585bd012f275d6a9d35f4aa3d`；分支 `integration/legado-upstream-runtime`；固定上游 SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **依赖结果：** Runtime-3.2f.5 CI #3161（run ID `45068211350`，exact SHA `99d62c709722047cf421a0ef0adb16b350564b2a`）已 completed / failure。504 tests 中 1 个失败：fractional countdown 的 `intOrNull` 返回 null，`parseRows` 将其误当作可选字段缺失，仍接受该行。
+- **目标：** 当 countdown 字段缺失或显式 null 时允许无倒计时；字段存在且非 null 时必须是精确 Int 且在 0..86400，否则整行文档无效。保留 .5 的精确整数解析（version/countdown 小数、溢出不允许窄化）。
+- **允许修改文件：**
+  - `integration-contract/src/main/kotlin/app/badcat/engine/LegadoLoginUiV2.kt`
+  - `integration-contract/src/test/kotlin/app/badcat/engine/LegadoLoginUiV2Test.kt`
+- **测试要求：** 缺失/null countdown 接受；整数/整值小数接受；fractional、字符串、boolean、溢出、负数和大于 86400 拒绝；version 精确整数测试保留。
+- **验收：** `:integration-contract:test` 与完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限上述两个文件；不借用 #3161 失败结果。
+- **排除：** Login UI schema/UI、登录 WebView、Cookie/HTTP、Rhino ABI、登录会话持久化、Reader/UI、第四/第五类、上游 pin、`main`。
+- **依赖与并行：** #3161 已终止，同文件串行依赖解除；与 #3160 的文件范围不重叠，可并行 CI。
+- **状态：** 已 preregister；尚未修改代码。注册文档提交使用 `[skip ci]`。
