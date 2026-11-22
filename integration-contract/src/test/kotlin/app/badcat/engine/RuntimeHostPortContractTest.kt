@@ -121,6 +121,45 @@ class RuntimeHostPortContractTest {
     }
 
     @Test
+    fun sslCertificateFailuresAreTypedBoundedAndDistinctFromCancellation() {
+        val details = SslCertificateFailure(
+            host = "reader.example",
+            category = SslCertificateErrorCategory.UNTRUSTED,
+        )
+        val result = HostPortResult.Failure(
+            HostPortError(
+                code = HostPortErrorCode.SSL_CERTIFICATE,
+                message = "Source WebView certificate validation failed",
+                sslFailure = details,
+            )
+        )
+        val failure = assertIs<HostPortResult.Failure>(result)
+        assertEquals(HostPortErrorCode.SSL_CERTIFICATE, failure.error.code)
+        assertEquals(details, failure.error.sslFailure)
+        assertIs<HostPortResult.Cancelled>(HostPortResult.Cancelled(HostCancellationReason.HOST_SHUTDOWN))
+
+        assertFailsWith<IllegalArgumentException> {
+            SslCertificateFailure(" ", SslCertificateErrorCategory.OTHER)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            SslCertificateFailure("reader.example/path", SslCertificateErrorCategory.OTHER)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            SslCertificateFailure("x".repeat(SslCertificateFailure.MAX_HOST_CHARS + 1), SslCertificateErrorCategory.OTHER)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            HostPortError(HostPortErrorCode.SSL_CERTIFICATE, "missing typed SSL metadata")
+        }
+        assertFailsWith<IllegalArgumentException> {
+            HostPortError(
+                HostPortErrorCode.EXECUTION_FAILED,
+                "unexpected SSL metadata",
+                sslFailure = details,
+            )
+        }
+    }
+
+    @Test
     fun productRefreshEventsRemainIndependent() {
         assertEquals(
             listOf("BOOK_INFO", "BOOK_TOC", "CURRENT_CONTENT"),
@@ -134,6 +173,8 @@ class RuntimeHostPortContractTest {
             SourceIdentity::class.java,
             SourceExecutionContext::class.java,
             HostPortError::class.java,
+            SslCertificateFailure::class.java,
+            SslCertificateErrorCategory::class.java,
             HostPortResult::class.java,
             HiddenWebViewRequest::class.java,
             HiddenWebViewResult::class.java,

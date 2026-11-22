@@ -57,13 +57,53 @@ enum class HostPortErrorCode {
     EXECUTION_FAILED,
     RESOURCE_EXHAUSTED,
     INTERRUPTED,
+    SSL_CERTIFICATE,
+}
+
+enum class SslCertificateErrorCategory {
+    UNTRUSTED,
+    EXPIRED,
+    NOT_YET_VALID,
+    HOSTNAME_MISMATCH,
+    DATE_INVALID,
+    INVALID,
+    OTHER,
+}
+
+/** Safe, platform-neutral summary; never carries a certificate or Android WebView object. */
+data class SslCertificateFailure(
+    /** Normalized host only (no scheme, path, query, fragment, credentials or certificate data). */
+    val host: String,
+    val category: SslCertificateErrorCategory,
+) {
+    init {
+        require(host.isNotBlank() && host.length <= MAX_HOST_CHARS) { "SSL failure host is invalid or oversized" }
+        require(host == host.trim() && host.none { it.isWhitespace() || it.code < 0x20 || it.code == 0x7f }) {
+            "SSL failure host must be a normalized host value"
+        }
+        require(!host.contains("://") && !host.contains('/') && !host.contains('?') &&
+            !host.contains('#') && !host.contains('@')) {
+            "SSL failure host must not contain URL components"
+        }
+    }
+
+    companion object {
+        const val MAX_HOST_CHARS = 253
+    }
 }
 
 data class HostPortError(
     val code: HostPortErrorCode,
     val message: String,
     val cause: Throwable? = null,
-)
+    val sslFailure: SslCertificateFailure? = null,
+) {
+    init {
+        require((code == HostPortErrorCode.SSL_CERTIFICATE) == (sslFailure != null)) {
+            "SSL certificate failures require typed SSL metadata, and other errors must not carry it"
+        }
+    }
+}
 
 enum class HostCancellationReason {
     USER_DISMISSED,
