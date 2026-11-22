@@ -3710,3 +3710,26 @@
 - **排除：** 本任务不授权任何生产实现或 caller 修改；不接入 BatchContentContext、不修改 URL transport、不改变 HTTP 安全策略、不做缓存/持久化迁移、不做 Reader/UI、第四/第五类或 `main`。
 - **依赖：** Runtime-3.2f.10 目录重复 URL 保真任务的实现已在当前代码树登记并先行；本审计可只读进行，但后续 alias 实现必须等 .10 任务的 exact-SHA 验收结论，并另行 preregister。
 - **状态：** 已登记，只读审计尚未完成；本次注册不代表 URL alias parity 通过。
+
+
+#### Runtime-3.2f.10 TOC duplicate-URL chapter preservation — implementation checkpoint
+
+- **实现提交 / CI exact SHA：** `123f1e5476d5ffd26be54be317f46092fcf6f92d`；CI Run #3166 / run ID `45070591519`，job `assemble-debug` / `137356433631`，当前 `in_progress`（截至本记录尚无终态）。
+- **实际变更：** `SourceTocService.load` 的增量回调和最终结果均从 URL-only 去重改为 `distinctBy { it.copy(index = 0) }`，即忽略 parser 局部临时 index，保留相同 URL 但不同 host 投影字段的章节，且稳定折叠相同投影记录。
+- **新增测试：** 同页同 URL 不同标题保留、重复完全相同投影折叠；跨页同 URL 章节在增量回调和最终结果中均保留并连续重排 index。
+- **范围核验：** 实现 diff 仅修改登记的 `SourceTocService.kt` 与 `SourceTocServiceTest.kt`。没有改 URL alias 解析、ChapterCatalogQuery、Reader/UI、缓存或 BatchContentContext 接线。
+- **验证状态：** 已核对 exact commit diff、两个修改路径和新增测试存在；尚未取得 focused/完整 JVM suite、Android instrumentation 或 CI 终态证据，不宣称测试通过。
+- **状态：** 实现已提交，待 #3166 exact-HEAD CI；当前 host 去重等价仅覆盖现有 BookChapter 投影字段，不代表完整 upstream BookChapter 模型闭包。
+
+
+#### Runtime-3.2f.11 chapter URL alias normalization — audit result
+
+- **审计 HEAD：** `123f1e5476d5ffd26be54be317f46092fcf6f92d`；固定上游 `330e606c4d57e08adc056ff8ab7a4132c784da9a`。报告：`docs/audits/legado-runtime-3.2f.11-chapter-url-alias-differential.md`。
+- **已核实：** 固定上游 `BookChapter.getAbsoluteURL` 先处理卷章节，再用 `AnalyzeUrl.paramPattern = \\s*,\\s*(?=\\{)` 拆分逗号 options suffix；URL 前缀由 `NetworkUtils.getAbsoluteURL` 解析并在返回时重新拼接 options。上游 `NetworkUtils` 使用 `java.net.URL(base, relative)`，有 null/invalid base、HTTP(S)、data URL 和 javascript 特殊分支。BatchContentContext 的 URL 索引同时保存原始 URL、chapter.getAbsoluteURL() 和基于 `book.tocUrl.ifBlank { bookSource.bookSourceUrl }` 的 normalize URL；输入先 trim，原始命中与 normalize 命中合并后按 chapter.index 去重，只允许唯一候选。章节对象按 index 解析，数字标识拒绝。
+- **Badcat 差异：** `ChapterCatalogQuery.findByUrl` 仅做字符串精确相等；`findByIdentity` 仅以 index 定位并用原始 URL 精确校验，没有 base URL 或 alias normalize。Host `BookChapter` 没有 upstream `baseUrl/isVolume` 等字段。SourceBookActivity 的续读按钮、开始阅读续读及 URL-only reader launch 都走 URL 查找；BookmarkActivity/ReadingHistoryActivity 仍只传 chapterUrl/title，不传 index；BadcatReadingStateRepository 的 last chapter/bookmark/history 记录也未保存 TOC base URL 或 chapter index。
+- **关键风险：** 上游 `BookChapter.getAbsoluteURL` 的 base 是每章 `chapter.baseUrl`，而 BatchContentContext.normalize 的 base 是 `book.tocUrl`（空时退回 source URL）；分页目录中的每章 base 可能不同。当前 host parser 已将章节链接解析为绝对 URL，但没有保留每章响应 finalUrl/baseUrl，因此仅给 `findByUrl` 增加一个 book-level baseUrl 参数，不能证明所有分页相对 URL 与逗号 options 的等价性。URL 归一化仅用于身份匹配，不能绕过 WebUrlResolver 的 HTTP(S)/credential 安全限制。
+- **调用点证据：** `SourceBookActivity.kt` 中开始阅读和“继续上次阅读”按钮的 URL 恢复、`SourceChapterActivity.loadInitial` 的 URL-only 旧 intent 解析；`BookmarkActivity.kt`、`ReadingHistoryActivity.kt` 发出的 intent 仅包含 URL/title；`BadcatReadingStateRepository.kt` 的持久化 key 以 sourceId/bookUrl/chapterUrl 编码。代码搜索接口没有返回可用完整索引，因此报告只声明上述直接静态确认的调用点，不宣称形式化全仓 call graph。
+- **测试矩阵建议：** chapter-specific base URL、TOC base fallback、分页 redirect finalUrl、relative/absolute/protocol-relative、dot segments、query/fragment、options suffix 空白与 JSON、HTTP(S)大小写、data/javascript、invalid base fallback、同 alias 多 chapter、同 URL twins、chapter object/index identity、数字/空/未知标识、旧 URL-only bookmark/history。所有未由上游源码或固定样本证明的边界保持 unresolved。
+- **GO/NO-GO：** **GO** 进入单独的 host chapter-baseUrl 投影与纯 JVM differential fixture 设计；**NO-GO** 直接修改当前 `ChapterCatalogQuery` 并宣称上游 alias parity。需要先明确每章 baseUrl 如何从 TOC parser 传到 catalog、旧 URL-only 记录如何安全恢复，以及 duplicate URL 时是否必须继续 fail closed。后续生产实现须另行 preregister，且依赖 .10 的 exact-SHA 验收结论。
+- **实际范围：** 仅新增审计报告并更新本清单；无生产代码、测试、Gradle、workflow、数据库、UI/Reader 或 `main` 修改。只读审计未运行构建/测试/CI。
+- **状态：** 审计结果已完成；alias normalization 实现仍未登记/未通过；BatchContentContext 生产 JS/rule 双路径仍未接入，继续作为第三类阻断项。
