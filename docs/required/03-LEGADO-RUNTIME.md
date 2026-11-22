@@ -3843,3 +3843,12 @@
 
 - **实现 exact SHA：** `4a9549a980f375a86717578d8212088ca504a33d`；Run #3167 / run ID `45070912141`；job `137357408769`。
 - **当前状态：** `in_progress`，active step 为 `Compile G2d stage-1 authentic rule/model source group`，无失败 step、无终态结论。不要将当前编译步骤解释为整体通过。
+
+
+#### Runtime-3.2f.12 audit scope addendum — backing stores and adjacent chapter cache
+
+- **依据：** 只读初查发现，固定上游 `CacheManager` 的数据库/文件后端和章节缓存 caller 还涉及其 backing store 与独立 `CacheBook` 域；Badcat 通用源缓存的实际 key-value store 也必须纳入，否则无法验证 TTL、删除和 source clear 的闭环。
+- **追加上游只读路径：** `app/src/main/java/io/legado/app/data/AppDatabase.kt`、`app/src/main/java/io/legado/app/data/dao/CacheDao.kt`、`app/src/main/java/io/legado/app/data/entities/Cache.kt`、`app/src/main/java/io/legado/app/utils/ACache.kt`、`app/src/main/java/io/legado/app/model/CacheBook.kt`、`app/src/main/java/io/legado/app/service/CacheBookService.kt`。
+- **追加 Badcat 只读路径：** `app/src/main/java/app/badcat/client/runtime/SourceScriptKeyValueStore.kt`、`app/src/main/java/app/badcat/client/runtime/SharedPreferencesSourceScriptKeyValueStore.kt`、`app/src/test/kotlin/app/badcat/client/runtime/SourceScriptKeyValueStoreTest.kt`。
+- **范围澄清：** `CacheBook` 的目录/章节内存缓存是独立域，只用于定位其 mutation/invalidation 与章节正文缓存的关系；不扩展到音频/视频离线缓存或 RSS/图片媒体缓存。新增路径仍只读，允许变更路径不变。
+- **状态：** 任务范围已补全；审计仍未开始，后续实现仍需单独 preregister。
