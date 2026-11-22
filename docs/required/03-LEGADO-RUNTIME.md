@@ -4095,3 +4095,34 @@
 - **实际变更：** 仅新增 `app/src/test/kotlin/app/badcat/client/runtime/SharedPreferencesSourceScriptKeyValueStoreTest.kt`，包含两个 Robolectric 测试并配置 API 28/API 35：验证同 source cache prefix 删除、loginHeader/source variable 与近似前缀保留、其他 source 隔离，以及畸形/无关 key 不误删。生产实现未改。
 - **CI 截至本记录：** run `in_progress`，exact head SHA 匹配；已完成 checkout、pin 校验、JDK/Android SDK/Gradle setup，当前 `:integration-contract:test` 正在运行；后续测试、Android instrumentation、APK 和报告均待执行。没有失败步骤，也没有终态。
 - **状态：** 测试已提交、等待 #3175 exact-SHA CI；不得将运行中标记为通过。#3175 结果只验证 SHA `1a8af52...`，后续 docs-only commit 不继承该 CI 结论。
+
+#### Runtime-3.2f.19 / #3175 terminal CI closeout — SharedPreferences cache-prefix contract
+
+- **Exact implementation SHA / run：** `1a8af52cd27455c1a1c7310750627045c97566e6` / #3175 / `45079609266`；run `completed / success`，job `assemble-debug` 全部 47 个步骤 success。
+- **范围核验：** implementation commit 仅新增登记的 `app/src/test/kotlin/app/badcat/client/runtime/SharedPreferencesSourceScriptKeyValueStoreTest.kt`，79 行；生产实现未改。
+- **JUnit：** artifact `14776823314`，下载 ZIP SHA-256 `1adfb4ad47ede9ea24aee75dd85c93877ac82bbcc097a1e309cbcc2d6664e7a0`。解包解析 40 个 XML suites、325 tests、0 failures、0 errors、0 skipped；新增 SharedPreferences suite 在 app report 内，4 tests（API 28/35 配置各运行两项）。
+- **行为覆盖：** 同 source cache prefix 删除；同 source loginHeader/source variable/近似前缀保留；其他 source 同名 cache key 隔离；畸形与无关 key 不误删。
+- **Android / APK：** API 28 CookieManager instrumentation、API 35 WebView provider instrumentation 均 success。Debug APK artifact `14776972901`；ZIP SHA-256 `9cafb2721bae0837269c5c0e04568caa36c5cf754a13d55a3b53af9b2bd660f0`；解包 `app-debug.apk` SHA-256 `8e2ea13059ad63b7012cd2d9a05ecbb08959b5ec07d745a314ca9d0811c349f7`。仅 Debug 构建，不是 Release 或实体设备验收。
+- **结论：** .19 的登记验收关闭；测试直接覆盖真实 SharedPreferences store。此 CI 只绑定 SHA `1a8af52...`，不外推到后续 HEAD。
+
+#### Runtime-3.2f.16 scope-deviation audit — final correction after .19
+
+- **历史偏差保持：** .16 原始 preregistration 只列 2 个文件，实施实际修改 5 个文件；此事仍是事前范围门禁偏差，不追溯改写为已预登记。
+- **设计审查：** .18 对 5 文件 diff 的逐层审查确认 prefix 删除被限制在 `__legado_cache__:` 命名空间；InMemory 实现按 sourceId/key 的长度前缀隔离；SharedPreferences 实现按 source-specific encoded prefix 限定，再解码 key 并过滤目标 cache prefix；没有触碰 loginHeader/source variables、其他 source、上游 CacheManager API 或数据 schema。
+- **补齐的生产实现测试：** .19 exact SHA `1a8af52...` 的新增 Robolectric tests 直接执行 SharedPreferences 生产实现，覆盖 source 隔离、非 cache key 保留、畸形 key 保留和目标前缀删除；#3175 终态成功，完整报告 325/0/0/0。
+- **原 .16 exact CI：** #3171 / `45076080102`，实现 SHA `45881bdcdec1dee633f4059f43a557ab0a95e1a7`，38 suites / 316 tests 全绿，API 28/35 instrumentation 与 Debug APK 成功。
+- **审计结论：** .16 技术行为、范围扩展设计与两个 KV store 实现的直接测试证据现已齐全；将 .16 标记为“技术验收通过，历史 preregistration scope deviation 已审计并透明保留”。不表示该流程偏差从未发生，也不提升为完整 CacheManager parity 或第三类整体完成。
+
+### Runtime-3.2f.20 registration — chapter-specific baseUrl propagation and URL-alias differential design audit
+
+- **日期 / 分类：** 2026-11-23；第三类：chapter identity / URL alias / BatchContentContext prerequisite.
+- **起始 branch / HEAD：** `integration/legado-upstream-runtime` / `d0a0833242c1f6913bb631b58f5a8ad7f6613df4`；固定上游 `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **背景：** .11 只读审计确认上游 BatchContentContext 索引 raw URL、chapter absolute URL 与 normalized URL；但 `BookChapter.getAbsoluteURL` 使用 chapter-specific `baseUrl`，分页目录可能有不同响应 finalUrl。当前 host chapter projection 未保留 `baseUrl`，不能只给 `ChapterCatalogQuery.findByUrl` 添加 book-level base URL。
+- **目标：** 只读追踪固定上游 BookChapter baseUrl/getAbsoluteURL、TOC parser 分页/redirect final URL、BatchContentContext raw/absolute/normalized candidate index；对照 Badcat parser response、chapter projection、catalog storage、reader/history/bookmark URL-only callers。产出 chapter-baseUrl 数据流图、typed projection/facade 边界、URL-only ambiguity fail-closed 规则及 differential fixture matrix。
+- **允许变更：** 新增 `docs/audits/legado-runtime-3.2f.20-chapter-baseurl-propagation.md`；更新本清单结果。只读审计不得改生产代码、测试、Gradle、workflow、持久化或 UI。
+- **必须检查上游路径：** BookChapter.kt、NetworkUtils.kt、AnalyzeUrl.kt、BatchContentContext.kt、相关 TOC parser 与 BatchContentContextTest；固定 SHA 不变。
+- **必须检查 host 路径：** ChapterCatalogQuery.kt、ReadingEngine.kt、SourceTocService.kt、TOC parser/response model、SourceBookActivity.kt、SourceChapterActivity.kt、BookmarkActivity.kt、ReadingHistoryActivity.kt 与对应 JVM tests。
+- **验收产物：** 每章 baseUrl 从 HTTP final URL 到持久化/查找的逐层调用图；raw/absolute/normalized URL 语义表；query/fragment/options suffix 与相对链接固定样本；同 URL twins/alias collision/缺失 base/分页 redirect 场景预期；所需类型化字段和 caller 迁移方案；安全约束与 GO/NO-GO。未证明路径列 unresolved。
+- **排除：** 不实现 alias normalization、不接 BatchContentContext、不改旧历史/书签 schema、不做 cache key 迁移、不改 Reader/UI、第四/第五类、上游 pin 或 `main`。
+- **依赖：** .10/.10.1 duplicate-URL 保真已在 exact CI SHA `4a9549a...` 通过；.11 read-only alias audit 已完成。后续实现必须等本审计 GO，并另行 preregister。
+- **状态：** 已登记；只读审计尚未开始。本登记不授权生产实现，也不代表 alias parity 或 BatchContentContext 已完成。
