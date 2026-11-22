@@ -3418,3 +3418,21 @@
 - **验收：** `:integration-contract:test` 通过；完整第三类 App JVM suite 在 exact HEAD CI 通过；检查 diff 只涉及上述两个允许文件；新 CI 的 head SHA 必须等于实现提交 SHA。
 - **明确排除：** 其他 BookSource 字段/规则模型扩展、Book/BookChapter/ReadConfig/ParagraphAnchor、Cookie 生产行为、HTTP、登录 WebView、JS ABI、业务链、缓存、Android manifest/UI、第四/第五类、上游 pin、`main`。
 - **实现状态：** 已按登记范围提交实现，代码 HEAD `b1b4b8326205223cbc0e3efced2a8ba2a3aedf2c`；只修改上述两个允许文件。`:integration-contract:test` 与完整第三类 JVM CI 正在 Run #3157（run ID `45067267739`）验证，exact head SHA 与实现提交一致；尚未取得终态，当前不得标记通过。
+
+
+#### Runtime-3.2f.2 AnalyzeUrl retry default parity — preregistration
+
+- **日期 / 分类：** 2026-11-23；第三类：Legado 运行时。
+- **起始 HEAD：** `290ad69094159e14115f46a391a977917ac4bea6`；分支 `integration/legado-upstream-runtime`；固定上游 SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **源码差异：** 固定上游 `AnalyzeUrl.kt` 将 `retry` 初始化为 `0`，只有 URL option 明确提供 `retry` 时才调用 `option.getRetry()` 覆盖；当前 `LegadoUrlResolver.resolve` 却在字段缺失时默认 `1`，并有测试明确锁定该偏差。这样普通 GET/HEAD 请求会额外重试瞬态网络/HTTP 错误，改变上游默认请求次数。
+- **调用链：** `SourceHttpGateway.execute` → `LegadoUrlResolver.resolve` → `SourceRequestFactory.create(source, resolved)` → `SourceRequestClient.execute`；`retryCount` 原样传入 transport，`OkHttpSourceRequestClient` 按该值重试符合条件的 GET/HEAD 请求。故修正 resolver 默认值即可恢复默认调用次数，不改 transport 重试策略。
+- **目标：** 缺少 `retry` 时解析为 `0`；显式 `retry:0` 仍为 `0`；显式正整数原样保留；非法/负数/超上限仍 fail closed。不得改变 IOException/HTTP 状态可重试判定、延迟、最大值或非幂等请求保护。
+- **允许修改文件：**
+  - `integration-contract/src/main/kotlin/app/badcat/engine/LegadoUrlResolver.kt`
+  - `integration-contract/src/test/kotlin/app/badcat/engine/LegadoUrlResolverTest.kt`
+  - `integration-contract/src/test/kotlin/app/badcat/engine/SourceRequestFactoryTest.kt`
+- **测试要求：** 更新默认 retry 契约断言为 0；保留显式 0/正数测试；增加从 URL resolver 产物经 `SourceRequestFactory` 传递到 `SourceHttpRequest.retryCount` 的默认值验证；既有上限和显式配置测试继续通过。
+- **验收：** `:integration-contract:test` 通过；完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限上述三个文件；核对上游固定 SHA 与 caller 传递链；不得把正在执行的 #3157 结果借用为本任务通过证据。
+- **明确排除：** HTTP transport retry policy、请求方法映射、headers/body/timeout/redirect/charset、Cookie/CookieBridge、WebView/login、JS ABI、业务链、缓存、Android manifest/UI、第四/第五类、上游 pin、`main`。
+- **并行安全：** 与 Runtime-3.2f.1 的 codec 文件范围完全不重叠，且无共享可变状态；可在 #3157 仍运行时独立实施。分支更新须使用 expected SHA/CAS。
+- **状态：** 已 preregister；尚未修改实现代码。注册文档提交使用 `[skip ci]`。
