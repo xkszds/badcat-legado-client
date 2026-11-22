@@ -3506,4 +3506,12 @@
 - **验收：** `:integration-contract:test` 通过；完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限上述两个文件；不得借用 #3157/#3159/#3160 的结果。
 - **排除：** Login UI row schema 扩展、Activity/UI、登录 WebView、Cookie/HTTP、Rhino ABI、登录会话持久化、Reader/UI、第四/第五类、上游 pin、`main`。
 - **并行安全：** 与当前 Runtime-3.2f.1/.2/.3/.4 文件范围不重叠，无共享可变状态；允许并行 CI。
-- **状态：** 已 preregister；尚未修改代码。注册文档提交使用 `[skip ci]`。
+- **状态：** 实现已提交（`99d62c709722047cf421a0ef0adb16b350564b2a`）；CI #3161 queued，等待 exact-HEAD 验证。
+
+
+#### Runtime-3.2f.5 Login UI v2 strict integer parsing — implementation checkpoint
+
+- **实现提交：** `99d62c709722047cf421a0ef0adb16b350564b2a`；只修改登记的 `LegadoLoginUiV2.kt` 与 `LegadoLoginUiV2Test.kt`。
+- **实际修正：** `intOrNull` 从 `JsonPrimitive.asInt` 改为 `asBigDecimal.intValueExact()`；非整数和 Int 越界变为无效值，整值小数仍可精确接受。测试覆盖 version/countdown 小数、整值小数和溢出。
+- **CI：** Run #3161，run ID `45068211350`，exact head SHA 与实现提交一致；当前 queued。
+- **状态：** 实现已提交，待 exact-HEAD CI；不代表登录 UI 或登录 WebView 完整兼容。
