@@ -3756,3 +3756,37 @@
 - **排除：** 生产 SourceTocService、parser/model、ChapterCatalogQuery、URL alias、BatchContentContext、缓存/持久化、Reader/UI、HTTP/Cookie/login、第四/第五类、上游 pin、`main`。
 - **并行与依赖：** 同一测试文件串行修复；依赖 .10 的实现提交 `123f1e5476d5ffd26be54be317f46092fcf6f92d`。不借用 #3163/#3164/#3165 的 CI 结果。
 - **状态：** 已登记，尚未实施；本注册提交仅更新必读清单并使用 `[skip ci]`。
+
+
+#### Runtime-3.2f.8 TOC chapter metadata parity — exact CI closeout
+
+- **实现 SHA / CI exact HEAD：** `cc992331ec9c1c6e94525dca63c94949eeced0b7`；Run #3163 / run ID `45069144574`；job `assemble-debug` / `137351954548`；`completed / success`，47 个 job steps 全部 success。
+- **测试：** `:integration-contract:test`、固定上游 model contract、完整第三类 App JVM suite 均成功。JUnit artifact `14772569192` 解包统计 App JUnit 311 tests、0 failures、0 errors、0 skipped。
+- **Android / APK：** API 28 CookieManager 与 API 35 WebView provider instrumentation steps 均成功；Debug APK artifact `14773315449` 已上传（不代表实体设备安装或 Release 验收）。
+- **真实来源：** Bixiange GBK POST search→detail→AJAX TOC→content 通过（artifact `14772204220`）；Pinshuzhai search→detail→1650 chapters TOC→content 通过（artifact `14773255489`）；上传语料 1/4 全链路通过，另外 3 个候选在 search 阶段因 2 次超时和 1 次 HTTP 404 失败（artifact `14773535839`）；Nyasama 样本 3/5 search 可用，不能作为完整阅读覆盖证据。
+- **额外构建证据：** G2d stage-1 authentic rule/model source group 编译成功，状态标记为 `COMPILED_REQUIRES_CONTRACT_REVIEW`，不能提升为完整上游闭包通过。
+- **结论：** .8 章节 VIP/pay/tag 元数据投影的限定实现验收通过；不包含 volume/formatJs/word-count、UI 展示、全量上游模型或第三类整体验收。
+
+
+#### Runtime-3.2f.9 BookSource customOrder catalog ordering parity — exact CI closeout
+
+- **实现 SHA / CI exact HEAD：** `566836f57a55148977d1593a9ba87aa4b2e15d2e`；Run #3164 / run ID `45069377255`；job `assemble-debug` / `137352690349`；`completed / success`，47 个 job steps 全部 success。
+- **允许文件核验：** 只修改 `FileBookSourceCatalog.kt` 并新增 `FileBookSourceCatalogOrderTest.kt`；`all()` 与 `exportJson()` 共用 stable `customOrder ASC` 排序。
+- **测试：** contract/model contract/完整第三类 App JVM suite 均成功；JUnit artifact `14772971467` 解包统计 312 tests、0 failures、0 errors、0 skipped。
+- **Android / APK：** API 28 与 API 35 instrumentation steps 成功；Debug APK artifact `14772544794` 已上传，不代表实体设备安装或 Release 验收。
+- **真实来源：** Bixiange search→detail→AJAX TOC→content 通过（artifact `14773660155`）；Pinshuzhai search→detail→1650 chapters TOC→content 通过（artifact `14773505805`）；上传语料 1/4 全链路通过，另 3 个候选在 search 阶段因网络超时/HTTP 404 失败（artifact `14772932307`）。这些 smoke 是运行时环境抽样，不扩大本排序任务的验收范围。
+- **状态：** 已验收通过；不包含 customOrder 自动写入、导入策略或目录数据库迁移。
+
+
+#### Runtime-3.2f.10.1 legacy TOC dedup test migration — implementation checkpoint
+
+- **实现提交：** `4a9549a980f375a86717578d8212088ca504a33d`；仅修改登记的 `integration-contract/src/test/kotlin/app/badcat/engine/SourceTocServiceTest.kt`。
+- **实际修正：** 将旧的 URL-only 去重测试重命名为 `preservesDistinctChapterRowsSharingUrlAcrossPagesAndReindexesTheMergedToc`；断言跨页同 URL、不同标题保留三条记录并按 0/1/2 连续编号。未改生产逻辑，也未删除测试。
+- **CI：** Run #3167 / run ID `45070912141`，exact head SHA 与实现提交一致；当前 `in_progress`，active step 为 `Run contract unit tests`，尚无测试结论。
+- **状态：** 测试夹具修正已提交，待 #3167 exact-HEAD CI；.10 主任务仍未通过，不能提前关闭。
+
+
+#### Runtime-3.2f.7 AnalyzeUrl boolean option parity — CI progress update
+
+- **Run #3165 / run ID `45069444884`，exact SHA `b0fcd0621ab8391cfa451cfbd663b2505b84fe57` 当前仍为 `in_progress`；API 28/35 instrumentation、host ABI、Debug APK 等前置步骤已完成，当前 active step 为 `Live end-to-end sample of four uploaded-corpus sources (best effort)`。
+- **状态：** 没有失败 step，也没有终态结论；继续 pending，不得因长时间运行或其他 run 成功而推断通过。
