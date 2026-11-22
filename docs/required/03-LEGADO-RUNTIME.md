@@ -3957,3 +3957,15 @@
 - **明确排除：** no catalog lifecycle callback or source removal wiring (.15); no chapter content cache/fence; no Room/CacheManager migration; no new JS method names, no broad source runtime rewrite, no UI/Reader, fourth/fifth category, upstream pin or `main`.
 - **并行边界：** 与 .15 的生产/测试文件不重叠；两任务只在本清单登记/closeout 时串行编辑。不得互相借用 CI 结果。
 - **状态：** 已登记，尚未实施/验收。
+
+
+#### Runtime-3.2f.15 scope addendum — clear every live runtime instance
+
+- **发现：** 代码复查确认 `RhinoSourceScriptRuntime` 的 `sourceScopes/sourceGlobals/sourceLocks` 是 companion process-wide 状态，但 `javaExtensions/sourceExtensions/cacheExtensions` 和各实例注入的 stores 是实例字段。管理页新建的 runtime 调用 `clearSourceState` 只能直接清理自身的 cacheExtensions；其他 `BadcatReadingEngineFactory.create()` 创建的 runtime 仍可能持有旧的内存 cache extension。
+- **补充允许修改文件：**
+  - `app/src/main/java/app/badcat/client/runtime/RhinoSourceScriptRuntime.kt`
+  - `app/src/test/kotlin/app/badcat/client/runtime/RhinoSourceScriptRuntimeTest.kt`
+- **补充目标：** 用弱引用/弱键的进程级 runtime registry 发现仍存活的 runtime 实例；在既有 source mutex 内，对所有存活实例清除该 source 的 bridge/cache/store/session/Cookie/物理缓存。registry 不得强引用 runtime 造成 Activity/Factory 泄漏；实例创建与 clear 的并发必须安全。
+- **补充测试：** runtime A 写入 cache memory，runtime B 执行 clearSourceState，runtime A 再读必须得到空值；同时验证两个实例的 source cleanup callback 都执行，且其他 source 不受影响。
+- **范围修正：** .15 的原“callback 接入同一管理页持有实例”保留为入口，但仅清理该实例不构成验收；必须验证跨所有存活 runtime 实例的清理。章节正文缓存 source-wide purge 仍排除。
+- **状态：** 这是实现前源码审查发现的必要范围补全；尚未实施/验收。原始 preregistration 与历史记录保留。
