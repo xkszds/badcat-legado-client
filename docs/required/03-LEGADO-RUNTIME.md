@@ -3448,7 +3448,7 @@
 - **依赖：** Runtime-3.2f.2 的 CI #3158 必须先终止；同一测试文件在 #3158 的 exact SHA 验证期间不得修改。若 #3158 失败，先取得失败日志并记录，再实施本修复。
 - **验收：** focused `:integration-contract:test` 与完整第三类 App JVM suite 通过；精确 diff 只包含该测试文件；正数 retry fixture 确认为有效 JSON；CI 对应实现 SHA。
 - **排除：** `LegadoUrlResolver.kt` 生产逻辑、HTTP retry policy、其他 URL option、Cookie/WebView/login、UI/Reader、第四/第五类、上游 pin、`main`。
-- **状态：** 已登记，等待 #3158 结束后实施；未修改代码。
+- **状态：** #3158 已终止，依赖解除；修复可开始。
 
 
 #### Runtime-3.2f.4 ReplaceRule missing order default parity — preregistration
@@ -3466,3 +3466,12 @@
 - **明确排除：** ReplaceRule UI/DAO/数据库迁移、规则执行器/regex runtime、scope matching 算法、HTTP/Cookie/WebView/login、JS ABI、BookSource codec、Reader/UI、第四/第五类、上游 pin、`main`。
 - **并行安全：** 文件范围与 Runtime-3.2f.1/.2/.3 完全不重叠，无共享可变状态；允许与 #3157/#3158 的固定 SHA CI 并行。清单仍由单一 CAS 提交顺序更新。
 - **状态：** 已 preregister；尚未修改代码。注册文档提交使用 `[skip ci]`。
+
+
+#### Runtime-3.2f.2 AnalyzeUrl retry default parity — CI failure evidence
+
+- **实现提交 / exact HEAD：** `28898d573ec3a56fcd95187df4139d40fb1c78e6`；CI Run #3158，run ID `45067827100`，job `assemble-debug` / `137347852024`。
+- **结果：** `completed / failure`。固定 SHA 验证、依赖编译前置步骤成功；`:integration-contract:test` 共 502 tests，501 passed、1 failed。唯一失败为 `LegadoUrlResolverTest.defaultsToZeroRetriesButHonorsExplicitRetrySettings`，定位 `LegadoUrlResolverTest.kt:267`，测试期望 Success 但实际 Failure。
+- **根因：** 正数 retry 测试 JSON 在 Kotlin raw string 中保留反斜杠转义，输入不是有效 JSON。生产 resolver 默认值变更已在本 run 的其余测试中通过；但由于唯一目标的正数显式值测试失败，Runtime-3.2f.2 不得验收通过，需先完成 Runtime-3.2f.3 夹具修复再重跑 exact HEAD CI。
+- **其他步骤：** 后续部分证据上传步骤因前置测试失败未生成对应文件而失败；不能把它们解读为额外生产逻辑故障。Debug APK / 真源 E2E 未构成本次验收证据。
+- **状态：** 实现已提交，验收失败；等待 .3 测试夹具修正和新 exact-HEAD CI。
