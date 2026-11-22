@@ -133,10 +133,33 @@ internal class SharedPreferencesSourceCookieJar(
         mergePersistentCookieHeader(url, cookieHeader)
     }
 
-    /** Login header import merges Cookie pairs by name into the same domain bucket. */
+    /** Login header import merges Cookie pairs by name into the persistent domain bucket. */
     fun mergeLoginCookieHeader(url: String, cookieHeader: String) {
         if (cookieHeader.isBlank()) return
         mergePersistentCookieHeader(url, cookieHeader)
+    }
+
+    /**
+     * WebView exposes only name/value pairs, not Set-Cookie persistence attributes.
+     * Import conservatively into process memory; never promote these values to disk.
+     * A pair equal to its persistent value removes a stale session shadow.
+     */
+    fun mergeWebViewCookieHeader(url: String, cookieHeader: String) {
+        if (cookieHeader.isBlank()) return
+        val domain = requireDomain(url)
+        require(cookieHeader.length <= MAX_COOKIE_HEADER_CHARS) { "Cookie header exceeds the size limit" }
+        val imported = parseLegadoCookieMap(cookieHeader)
+        require(imported.isNotEmpty()) { "Cookie header contains no valid name=value pairs" }
+        synchronized(lockFor(domain)) {
+            val persistent = readPersistentLocked(domain)
+            val session = sessionStore.read(domain)
+            imported.forEach { (name, value) ->
+                if (persistent[name] == value) session.remove(name)
+                else session[name] = value
+            }
+            trim(session)
+            sessionStore.write(domain, session)
+        }
     }
 
     private fun mergePersistentCookieHeader(url: String, cookieHeader: String) {

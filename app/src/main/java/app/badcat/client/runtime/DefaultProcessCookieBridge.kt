@@ -89,11 +89,11 @@ internal class DefaultProcessCookieBridge(
         webCookies.flush()
     }
 
-    /** Import WebView-visible name/value pairs into the authoritative persistent bucket. */
+    /** Import WebView-visible name/value pairs into the process-only session bucket. */
     fun syncFromWebView(url: String) {
         observe(url)
         val header = webCookies.getCookie(url).orEmpty()
-        if (header.isNotBlank()) store.mergeLoginCookieHeader(url, header)
+        if (header.isNotBlank()) store.mergeWebViewCookieHeader(url, header)
     }
 
     /**

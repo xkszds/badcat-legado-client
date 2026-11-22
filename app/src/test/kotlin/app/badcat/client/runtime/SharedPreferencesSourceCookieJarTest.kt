@@ -131,6 +131,50 @@ class SharedPreferencesSourceCookieJarTest {
     }
 
     @Test
+    fun webViewCookieImportIsSessionOnlyAndDoesNotSurviveSessionStoreRecreation() {
+        val jar = SharedPreferencesSourceCookieJar(context, session)
+        val url = "https://reader.example/login"
+
+        jar.mergeWebViewCookieHeader(url, "sid=webview; token=temporary")
+
+        assertEquals("sid=webview; token=temporary", jar.getCookie(url))
+        val afterProcessRestart = SharedPreferencesSourceCookieJar(
+            context,
+            InMemorySourceCookieSessionStore(),
+        )
+        assertEquals("", afterProcessRestart.getCookie(url))
+    }
+
+    @Test
+    fun webViewCookieImportShadowsPersistentNamesOnlyForCurrentProcess() {
+        val jar = SharedPreferencesSourceCookieJar(context, session)
+        val url = "https://reader.example/login"
+        jar.setCookie(url, "sid=persistent; theme=dark")
+
+        jar.mergeWebViewCookieHeader(url, "sid=webview; token=temporary")
+
+        assertEquals("sid=webview; theme=dark; token=temporary", jar.getCookie(url))
+        val afterProcessRestart = SharedPreferencesSourceCookieJar(
+            context,
+            InMemorySourceCookieSessionStore(),
+        )
+        assertEquals("sid=persistent; theme=dark", afterProcessRestart.getCookie(url))
+    }
+
+    @Test
+    fun webViewCookieImportMatchingPersistentValueDoesNotCreateSessionOverride() {
+        val jar = SharedPreferencesSourceCookieJar(context, session)
+        val url = "https://reader.example/login"
+        jar.setCookie(url, "sid=persistent")
+        session.write("reader.example", mapOf("sid" to "stale-session"))
+
+        jar.mergeWebViewCookieHeader(url, "sid=persistent")
+
+        assertTrue(session.read("reader.example").isEmpty())
+        assertEquals("sid=persistent", jar.getCookie(url))
+    }
+
+    @Test
     fun removeCookieCanDeleteOneNameOrTheWholeEffectiveDomain() {
         val jar = SharedPreferencesSourceCookieJar(context, session)
         jar.setCookie("https://reader.example/", "sid=one; theme=dark")

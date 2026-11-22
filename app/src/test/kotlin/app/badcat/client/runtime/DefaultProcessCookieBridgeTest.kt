@@ -45,6 +45,23 @@ class DefaultProcessCookieBridgeTest {
         web.setCookieHeaderNow("https://reader.example/private/book", "sid=webview; token=from-webview")
         bridge.syncFromWebView("https://reader.example/private/book")
         assertEquals("sid=webview; theme=dark; token=from-webview", store.getCookie("https://reader.example/"))
+        assertEquals(linkedMapOf("sid" to "webview", "token" to "from-webview"), session.read("reader.example"))
+    }
+
+    @Test
+    fun syncFromWebViewKeepsImportedCookiesOutOfPersistentStorage() {
+        val url = "https://reader.example/login"
+        store.setCookie(url, "sid=persistent; theme=dark")
+        web.setCookieHeaderNow(url, "sid=webview; token=from-webview")
+
+        bridge.syncFromWebView(url)
+
+        assertEquals("sid=webview; theme=dark; token=from-webview", store.getCookie(url))
+        val afterProcessRestart = SharedPreferencesSourceCookieJar(
+            context,
+            InMemorySourceCookieSessionStore(),
+        )
+        assertEquals("sid=persistent; theme=dark", afterProcessRestart.getCookie(url))
     }
 
     @Test
