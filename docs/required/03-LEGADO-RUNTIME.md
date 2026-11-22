@@ -4238,3 +4238,17 @@
 - **依赖：** .23 audit GO；#3178 exact CI 先终结并记录；若代表项顺序要求扩展文件范围，先追加登记。
 - **验收：** focused integration-contract tests、完整第三类 App JVM suite、exact-SHA CI；diff 仅限登记文件；明确写出 host 与 upstream 可证明一致的部分及未实现的反向目录排序边界。
 - **状态：** 已登记，尚未实施；与 #3178 共享 `SourceTocServiceTest.kt`，必须等 #3178 终结后串行实施。
+
+
+### Runtime-3.2f.25 registration — read-only TOC reverse-order representative selection audit
+
+- **日期 / 分类：** 2026-11-23；第三类：TOC merge compatibility / ordering.
+- **起始 branch / HEAD：** `integration/legado-upstream-runtime` / `e50a35d8ad7074c417bcb5366748c64332b68729`；固定 Legado pin 不变。
+- **触发原因：** .23 已确认上游 `BookChapterList` 在 `LinkedHashSet` 去重前后可能执行 source-rule reverse 与 book reverse-TOC；host `SourceTocService` 尚未证明等价的代表项选择与最终顺序。该差异是 .24 实现 URL-only identity 前必须明确的行为边界。
+- **目标：** 只读核对固定上游 `BookChapterList` 的完整 reverse/merge/dedup 执行顺序、source rule 中 reverse 的解析入口与默认值、book reverse-TOC 状态来源；对照 host `SourceTocService`、源规则模型/调用方、书籍目录调用方，给出最小差异矩阵，说明 URL duplicate 最终保留哪个对象、index 如何重排、哪些 host 状态当前不可表达。
+- **允许变更：** 新增 `docs/audits/legado-runtime-3.2f.25-toc-reverse-order.md`；更新本分类清单。只读任务不修改生产代码、测试、Gradle、workflow、存储或 UI。
+- **必须检查：** 固定 SHA `BookChapterList.kt` 相关完整函数及调用方；source rule 对应字段/解析/default；book reverse-TOC 字段与实际 reader/catalog caller；host `SourceTocService.kt`、`SourceTocServiceTest.kt`、`BookSource`/book 模型与 catalog caller。必须用精确源码证据，不凭命名推断。
+- **验收产物：** 上游执行顺序图；source reverse 与 book reverse-TOC 的独立语义；去重代表项的保留规则（含重复项先后排列）；host 是否有等价状态/caller；.24 的可实现范围与 unresolved 项；GO/NO-GO 建议。
+- **排除：** 不改 .24 生产/测试文件，不改 chapter equality、BatchContentContext、cache、Reader/history/bookmark/UI、其他分类、上游 pin 或 `main`。不修改 .21/#3178 测试结论。
+- **依赖 / 并行：** .23 audit 已关闭；与 #3178 活动 CI 文件范围隔离。允许只读审计并行，但不得修改 `SourceTocServiceTest.kt`；.24 代码实施仍必须等 #3178 终结并记录。
+- **状态：** 已登记，尚未实施。
