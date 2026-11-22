@@ -71,6 +71,22 @@ class LegadoLoginUiV2Test {
             """{"rows":[{"name":"Wait","type":"button","action":"wait","countdown":60.5}]}"""
         )
         assertEquals(null, fractionalCountdown)
+        listOf("\"60\"", "true", "2147483648", "-1", "86401").forEach { invalid ->
+            assertEquals(
+                null,
+                LegadoLoginUiV2.parseRows(
+                    """{"rows":[{"name":"Wait","type":"button","action":"wait","countdown":$invalid}]}"""
+                ),
+            )
+        }
+        assertEquals(
+            1,
+            LegadoLoginUiV2.parseRows("""{"rows":[{"name":"Wait","type":"button","action":"wait"}]}""")?.size,
+        )
+        assertEquals(
+            1,
+            LegadoLoginUiV2.parseRows("""{"rows":[{"name":"Wait","type":"button","action":"wait","countdown":null}]}""")?.size,
+        )
         assertEquals(
             null,
             LegadoLoginUiV2.parseRows(

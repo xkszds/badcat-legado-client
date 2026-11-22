@@ -102,6 +102,8 @@ object LegadoLoginUiV2 {
             val hint = obj.stringOrNull("hint")
             val value = obj.stringOrNull("value")
             val countdown = obj.intOrNull("countdown")
+            val countdownElement = obj.get("countdown")
+            if (countdownElement != null && !countdownElement.isJsonNull && countdown == null) return null
             if (countdown != null && countdown !in 0..86_400) return null
             if (listOfNotNull(key, action, hint, value).any { it.length > MAX_TEXT_CHARS }) return null
             val optionsElement = obj.get("options")
