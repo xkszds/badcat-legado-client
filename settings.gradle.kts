@@ -18,6 +18,7 @@ dependencyResolutionManagement {
             url = uri("https://maven-central.storage-download.googleapis.com/maven2/")
             content {
                 includeModule("me.zhanghai.android.libarchive", "library")
+                includeModule("org.jetbrains.kotlin", "kotlin-parcelize-runtime")
             }
         }
         mavenCentral()
