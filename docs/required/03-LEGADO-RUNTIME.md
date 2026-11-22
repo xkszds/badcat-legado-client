@@ -3867,3 +3867,21 @@
 - **GO/NO-GO：** NO-GO 声称正文缓存 fence/失效闭环与 upstream BookHelp 等价；NO-GO 声称 Rhino cache.delete/clear 与 upstream CacheManager.delete 语义等价。GO 进入独立实现任务设计：先做 process-wide、线程安全的 chapter fence + 真正的跨实例/AtomicFile instrumentation；再登记 source remove/replace 的 cache lifecycle hook 和 KV/file 双域 delete/clear 修正。不得一次性混入 UI、数据库迁移或其他类别。
 - **范围核验：** 本审计仅新增报告与清单结果；未修改生产代码、测试、Gradle、workflow、数据库、UI/Reader 或 main；未运行构建、测试、CI、APK 或设备验证。
 - **状态：** 审计已完成；实现项仍未登记/未通过。第三类 BatchContentContext 的 JS/rule 批量正文生产接线仍未完成。
+
+
+### Runtime-3.2f.13 process-wide thread-safe chapter save fence — preregistration
+
+- **日期 / 分类：** 2026-11-23；第三类：chapter content cache concurrency / stale-write fencing.
+- **起始 HEAD：** `1ac35ff0dbcf097b03515347cf70f4db780ff111`；分支 `integration/legado-upstream-runtime`；固定上游 `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **依据：** Runtime-3.2f.12 audit confirmed `FileChapterContentCache` shares a process-wide file Mutex but constructs a per-instance `ChapterContentSaveFence`; the fence itself uses an unsynchronized HashMap. `BadcatReadingEngineFactory.create()` constructs a new cache instance each invocation. The pinned upstream `BookHelp.ContentSaveFence` serializes state and write/replace operations.
+- **目标：** make fence operations linearizable and thread-safe; use one process-wide fence instance for all FileChapterContentCache instances; preserve key identity `(sourceId,bookUrl,chapterIndex)`; preserve semantics that replace advances generation before running write and remains advanced even if write throws; a token captured by one engine must be rejected after another engine invalidates/replaces the same chapter.
+- **允许修改文件：**
+  - `integration-contract/src/main/kotlin/app/badcat/engine/ChapterContentSaveFence.kt`
+  - `app/src/main/java/app/badcat/client/runtime/FileChapterContentCache.kt`
+  - `integration-contract/src/test/kotlin/app/badcat/engine/ChapterContentSaveFenceTest.kt`
+- **测试要求：** shared process-wide fence used by two logical cache instances; cross-instance stale token rejected; invalidate-before-publish rejects callback; publish/replace/invalidate are serialized under contention; concurrent token/invalidate operations do not corrupt state; failed replace still advances generation; invalidating one key leaves other source/book/chapter keys unchanged.
+- **验收：** focused fence tests and complete third-category JVM suite pass on exact implementation SHA; CI compiles Android app and executes API 28/API 35 instrumentation; diff only touches the three registered files. Report the shared map's lifetime/memory tradeoff explicitly; do not claim disk invalidation callers were wired.
+- **排除：** no new invalidate caller, source remove/reimport lifecycle, rule revision key, legacy URL cache cleanup, generic CacheManager delete/clear semantics, AtomicFile migration, BatchContentContext, UI/Reader, database/Room, fourth/fifth category, upstream pin or `main`.
+- **并行与依赖：** based on .12 audit; file scope does not overlap #3167 test migration (`SourceTocServiceTest.kt`). #3167 remains independent and its CI result must not be reused.
+- **风险：** process-wide version map may retain invalidated chapter keys for process lifetime; do not evict a generation while any in-flight token may still reference it. This task deliberately does not add token-release lifecycle.
+- **状态：** 已登记，尚未实施；注册提交仅修改本清单并使用 `[skip ci]`。
