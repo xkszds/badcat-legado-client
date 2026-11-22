@@ -3387,7 +3387,7 @@
 - **测试要求：** JVM 测试需明确验证 WebView 同名值覆盖优先级、未被导入的持久值保留/替换语义，以及确定性序列化顺序；instrumentation 必须显式使用稳定 source identity 和 `SESSION_ONLY`，验证会话 Cookie 导入/域失效，不得把测试改为只编译不执行。不得重新引入旧方法或放宽生产 API。
 - **验收：** 两个目标测试编译并通过；完整第三类 App JVM suite 通过；API 28 与 API 35 instrumentation 实际执行通过；CI 结果与 exact HEAD 对齐并回写本节。
 - **明确排除：** 生产 Cookie 存储/桥接代码、HTTP request semantics、登录 WebView Host、manifest/权限、Reader/UI、第四类、第五类、schema/migration、上游 pin、`main`。
-- **状态：** 已 preregister；尚未修改代码。当前 CI #3155 已结束，不存在该 run 的活动 job。
+- **状态：** 实现已提交（`24da0bb4b5ed303ea8267f281383445e50296a8c`）；CI #3159 in progress，等待 exact-HEAD 验证。当前 CI #3155 已结束，不存在该 run 的活动 job。
 
 
 #### Runtime-3.2e.7 Cookie 策略迁移测试修复 — CI 结果闭环
@@ -3465,7 +3465,7 @@
 - **验收：** `:integration-contract:test` 通过；完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限上述两个文件；核对固定 SHA entity/DAO 证据；不得借用 #3157/#3158 的结果。
 - **明确排除：** ReplaceRule UI/DAO/数据库迁移、规则执行器/regex runtime、scope matching 算法、HTTP/Cookie/WebView/login、JS ABI、BookSource codec、Reader/UI、第四/第五类、上游 pin、`main`。
 - **并行安全：** 文件范围与 Runtime-3.2f.1/.2/.3 完全不重叠，无共享可变状态；允许与 #3157/#3158 的固定 SHA CI 并行。清单仍由单一 CAS 提交顺序更新。
-- **状态：** 已 preregister；尚未修改代码。注册文档提交使用 `[skip ci]`。
+- **状态：** 实现已提交（`fc5e94c84d65ee0e9c640f382cf55df751a91d4a`）；CI #3160 queued，等待 exact-HEAD 验证。
 
 
 #### Runtime-3.2f.2 AnalyzeUrl retry default parity — CI failure evidence
@@ -3475,3 +3475,18 @@
 - **根因：** 正数 retry 测试 JSON 在 Kotlin raw string 中保留反斜杠转义，输入不是有效 JSON。生产 resolver 默认值变更已在本 run 的其余测试中通过；但由于唯一目标的正数显式值测试失败，Runtime-3.2f.2 不得验收通过，需先完成 Runtime-3.2f.3 夹具修复再重跑 exact HEAD CI。
 - **其他步骤：** 后续部分证据上传步骤因前置测试失败未生成对应文件而失败；不能把它们解读为额外生产逻辑故障。Debug APK / 真源 E2E 未构成本次验收证据。
 - **状态：** 实现已提交，验收失败；等待 .3 测试夹具修正和新 exact-HEAD CI。
+
+
+#### Runtime-3.2f.3 URL retry 正数选项测试夹具修正 — implementation checkpoint
+
+- **实现提交：** `fc5e94c84d65ee0e9c640f382cf55df751a91d4a`；只修改登记的 `LegadoUrlResolverTest.kt`。
+- **实际修正：** 正数 retry 的 Kotlin raw string 改为有效 JSON `{"retry":3}`；重新读取文件确认送入 parser 的 raw string 不再含转义反斜杠。
+- **CI：** Run #3160，run ID `45068057722`，exact head SHA 与实现提交一致；当前 queued，尚无测试结果。
+- **状态：** 实现已提交、待 exact-HEAD CI；不得提前验收。
+
+#### Runtime-3.2f.4 ReplaceRule missing order default parity — implementation checkpoint
+
+- **实现提交：** `24da0bb4b5ed303ea8267f281383445e50296a8c`；只修改登记的 `LegadoReplaceRuleCodec.kt` 与 `LegadoReplaceRuleCodecTest.kt`。
+- **实际修正：** 缺失 `order` 从默认 `0` 改为固定上游实体的 `Int.MIN_VALUE`；测试覆盖缺失值、默认排序优先级与显式 `order:0`。
+- **CI：** Run #3159，run ID `45067975908`，exact head SHA 与实现提交一致；当前 in progress，尚无终态。
+- **状态：** 实现已提交、待 exact-HEAD CI；不得提前验收。
