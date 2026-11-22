@@ -1,6 +1,8 @@
 package app.badcat.client.runtime
 
 import android.webkit.CookieManager
+import android.os.Handler
+import android.os.Looper
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -15,7 +17,7 @@ import kotlin.coroutines.resumeWithException
  */
 internal interface WebCookieManagerPort {
     fun getCookie(url: String): String?
-    fun setCookie(url: String, value: String, callback: (Boolean) -> Unit)
+    fun setCookie(url: String, value: String, callback: (Result<Boolean>) -> Unit)
     fun flush()
 }
 
@@ -268,8 +270,13 @@ internal class DefaultProcessCookieBridge(
         withTimeoutOrNull(callbackTimeoutMillis) {
             suspendCancellableCoroutine { continuation ->
                 try {
-                    webCookies.setCookie(url, value) { accepted ->
-                        if (continuation.isActive) continuation.resume(accepted)
+                    webCookies.setCookie(url, value) { result ->
+                        if (continuation.isActive) {
+                            result.fold(
+                                onSuccess = continuation::resume,
+                                onFailure = continuation::resumeWithException,
+                            )
+                        }
                     }
                 } catch (cancelled: CancellationException) {
                     throw cancelled

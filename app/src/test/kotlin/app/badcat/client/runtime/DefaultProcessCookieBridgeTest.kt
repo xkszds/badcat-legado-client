@@ -191,12 +191,12 @@ class DefaultProcessCookieBridgeTest {
             return legadoCookieMapToHeader(visible).ifBlank { null }
         }
 
-        override fun setCookie(url: String, value: String, callback: (Boolean) -> Unit) {
+        override fun setCookie(url: String, value: String, callback: (Result<Boolean>) -> Unit) {
             if (neverCallback) return
             val isExpiry = value.contains("Max-Age=0", ignoreCase = true)
             val accepted = !rejectWrites && !(isExpiry && rejectExpiryWrites)
             if (accepted && !(isExpiry && ignoreExpiryWrites)) setCookieNow(url, value)
-            callback(accepted)
+            callback(Result.success(accepted))
         }
 
         fun setCookieHeaderNow(url: String, header: String) {
