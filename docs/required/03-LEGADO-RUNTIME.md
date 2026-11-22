@@ -4139,7 +4139,7 @@
 ### Runtime-3.2f.21 registration — preserve per-chapter TOC response base URL
 
 - **日期 / 分类：** 2026-11-23；第三类：chapter identity / URL alias prerequisite.
-- **起始 branch / HEAD：** `integration/legado-upstream-runtime` / `22f7d358369d244f0db47c0922f368ecc822a24e`（.20 audit registration commit）；固定上游 pin 不变。
+- **起始 branch / HEAD：** `integration/legado-upstream-runtime` / `0950abfc31dd5071d6c9d8bbc7c65e80d298a6c0`（.20 audit closeout + .21 preregistration commit）；固定上游 pin 不变。
 - **目标：** 在 host chapter projection 增加尾部、默认空字符串的可选 `baseUrl`；`CssTocParser` 从当前 TOC page 的 `response.finalUrl` 填入该字段，同时保持现有 `url` 仍是经 `WebUrlResolver` 安全解析的绝对 HTTP(S) URL。验证跨页 redirect 后每章保留各自来源页面 base。
 - **允许修改文件：** `integration-contract/src/main/kotlin/app/badcat/engine/ReadingEngine.kt`（仅 BookChapter 字段）；`integration-contract/src/main/kotlin/app/badcat/engine/CssTocParser.kt`；`integration-contract/src/test/kotlin/app/badcat/engine/CssTocParserTest.kt`；`integration-contract/src/test/kotlin/app/badcat/engine/SourceTocServiceTest.kt`；本分类清单。
 - **必须测试：** 单页 finalUrl base 保存；多页不同 finalUrl 分别保存；相对链接仍解析成相同安全绝对 URL；同 URL 不同 chapter projection 保真；完全相同 projection 的去重/连续 index 行为不意外改变；默认 baseUrl 对既有 positional callers/source compatibility 保持兼容。
