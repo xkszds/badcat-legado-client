@@ -3602,3 +3602,20 @@
 - **实现内容：** host `BookChapter` 新增默认 false 的 `isVip` / `isPay` 与 nullable `tag`；同步和 script-enabled TOC parser 均提取 `isVip`、`isPay`、`updateTime`，按固定上游 `String?.isTrue(nullIsTrue=false)` 规则转换布尔值；新增同步、脚本、跨页合并重排测试。
 - **CI：** Run #3163，run ID `45069144574`，exact head SHA 与实现提交一致；当前在 `Run contract unit tests`，尚无终态。
 - **状态：** 实现已提交，待 exact-HEAD CI；不包含 volume、formatJs 或 UI 展示。
+
+
+#### Runtime-3.2f.9 BookSource customOrder catalog ordering parity — preregistration
+
+- **日期 / 分类：** 2026-11-23；第三类：Legado 书源目录与排序语义。
+- **起始 HEAD：** `c763c84c0d499bcf9195b153c0ac11493cdb8995`；分支 `integration/legado-upstream-runtime`；固定上游 SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **源码差异：** 固定 SHA 的 `BookSourceDao.all` 使用 `select * from book_sources order by customOrder asc`；当前 `FileBookSourceCatalog.all()` 直接按 JSON 文件插入顺序返回，`exportJson()` 也按文件顺序导出。书源列表与导出顺序因此可能偏离 Legado 的 `customOrder` 排序行为。
+- **调用方审查：** `SourceCatalogActivity.refreshCatalog()` 使用 `catalog.all()` 构建书源管理列表；导出入口使用 `catalog.exportJson()`。本任务只统一目录读取/导出的顺序，不改变导入覆盖策略、source identity、启停、删除、存储格式或 UI。
+- **目标：** `all()` 与 `exportJson()` 均按 `customOrder ASC` 输出；相同 `customOrder` 保持文件中的相对顺序（稳定排序），不额外按名称或 URL 二次排序。
+- **允许修改文件：**
+  - `app/src/main/java/app/badcat/client/FileBookSourceCatalog.kt`
+  - `app/src/test/java/app/badcat/client/FileBookSourceCatalogOrderTest.kt`（新增纯 JVM 排序契约测试）
+- **测试要求：** 覆盖乱序 customOrder、负数/零/正数排序、相同 customOrder 稳定保持原始相对顺序；审查 `all()` 与 `exportJson()` 两个调用点均使用同一排序函数。
+- **验收：** focused 排序测试与完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限两个登记文件；上游 DAO 查询排序与 Badcat 两个目录输出路径逐项核对。
+- **明确排除：** customOrder 自动重排/写入、导入去重或覆盖策略、目录数据库迁移、书源执行/搜索/探索、BookSource 字段映射、HTTP/Cookie/login、UI 样式/交互、第四/第五类、上游 pin、`main`。
+- **并行安全：** 不与 #3160 的 `LegadoUrlResolver`、#3162 的 `LegadoLoginUiV2`、#3163 的 TOC parser/model 文件重叠；只涉及目录文件和新增纯 JVM 测试。清单仍由单一 CAS 顺序提交。
+- **状态：** 已 preregister；尚未修改代码。
