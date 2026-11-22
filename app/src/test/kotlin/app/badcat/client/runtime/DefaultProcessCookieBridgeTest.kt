@@ -42,7 +42,7 @@ class DefaultProcessCookieBridgeTest {
         store.setCookie("https://reader.example/login", "sid=authoritative; theme=dark")
         bridge.syncToWebView("https://reader.example/private/book")
         assertTrue(web.getCookie("https://reader.example/private/book").orEmpty().contains("sid=authoritative"))
-        web.setCookieNow("https://reader.example/private/book", "sid=webview; token=from-webview; Path=/")
+        web.setCookieHeaderNow("https://reader.example/private/book", "sid=webview; token=from-webview")
         bridge.syncFromWebView("https://reader.example/private/book")
         assertEquals("sid=webview; theme=dark; token=from-webview", store.getCookie("https://reader.example/"))
     }
@@ -101,6 +101,16 @@ class DefaultProcessCookieBridgeTest {
             val accepted = !rejectWrites
             if (accepted) setCookieNow(url, value)
             callback(accepted)
+        }
+
+        fun setCookieHeaderNow(url: String, header: String) {
+            val parsed = url.toHttpUrl()
+            val bucket = cookies.getOrPut(parsed.host) { mutableListOf() }
+            parseLegadoCookieMap(header).forEach { (name, cookieValue) ->
+                val identity = "${parsed.host}|/|host"
+                bucket.removeAll { (id, raw) -> id == identity && raw.substringBefore('=').trim() == name }
+                bucket += identity to "$name=$cookieValue; Path=/"
+            }
         }
 
         fun setCookieNow(url: String, value: String) {
