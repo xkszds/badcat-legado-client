@@ -3790,3 +3790,56 @@
 
 - **Run #3165 / run ID `45069444884`，exact SHA `b0fcd0621ab8391cfa451cfbd663b2505b84fe57` 当前仍为 `in_progress`；API 28/35 instrumentation、host ABI、Debug APK 等前置步骤已完成，当前 active step 为 `Live end-to-end sample of four uploaded-corpus sources (best effort)`。
 - **状态：** 没有失败 step，也没有终态结论；继续 pending，不得因长时间运行或其他 run 成功而推断通过。
+
+
+#### Runtime-3.2f.7 AnalyzeUrl boolean option parity — exact CI closeout
+
+- **实现 SHA / CI exact HEAD：** `b0fcd0621ab8391cfa451cfbd663b2505b84fe57`；Run #3165 / run ID `45069444884`；job `assemble-debug` / `137352901392`；`completed / success`，47 个 job steps 全部 success。
+- **测试：** `:integration-contract:test`、固定上游 model contract、完整第三类 App JVM suite 均成功；JUnit artifact `14772509749` 中 App 测试 309 项、Legado runtime 测试 3 项，合计 312 tests、0 failures、0 ignored。API 28 CookieManager 与 API 35 WebView provider instrumentation steps 成功。
+- **APK / ABI：** Debug APK artifact `14773420694`；host JVM ABI artifact `14773181523`；JS API inventory `14773065167`；G2d stage-1 probe `14773055791`。G2d 状态仍是 `COMPILED_REQUIRES_CONTRACT_REVIEW`，不代表完整上游规则闭包。
+- **真实来源：** Bixiange GBK POST search→detail→AJAX TOC→content 通过（artifact `14772941801`）；Pinshuzhai search→detail→1650 chapters TOC→content 通过（artifact `14772897039`）；上传语料 1/4 全链路通过，其余 3 个 search 阶段因超时/HTTP 404 失败（artifact `14773481720`）。
+- **结论：** `AnalyzeUrl.followRedirects/webView` 当前已登记边界的布尔/数值/字符串/null/无效值语义实现通过此 exact-SHA CI；不等于整个 AnalyzeUrl 规则解析器、HTTP 重定向、WebView 安全策略或第三类完整兼容通过。
+
+
+### Runtime-3.2f.12 cache mutation callers and invalidation closure — read-only audit preregistration
+
+- **日期 / 分类：** 2026-11-23；第三类：chapter cache / generic CacheManager / mutation lifecycle.
+- **起始 HEAD：** `142e2e4c28e73fb2cc5aeb7fe3e37c775e0721b6`；分支 `integration/legado-upstream-runtime`；固定上游 `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **目标：** 只读建立两种缓存域的 mutation/caller/失效闭环：A) 章节正文缓存与 ContentSaveFence（key、token、put/replace/delete/invalidate、TOC/content 更新、并发旧写、LRU/pruning、AtomicFile 崩溃恢复）；B) 固定上游通用 CacheManager（source/runtime key、TTL、memory LRU、DB 持久化、清理、BaseSource 与 JS bridge callers）。必须区分两域，不能将文件正文缓存当成 CacheManager 的等价实现。
+- **允许变更：** 仅新增 `docs/audits/legado-runtime-3.2f.12-cache-mutation-invalidation-audit.md` 与本清单结果记录；不修改生产代码、测试、Gradle、workflow、数据库、持久化或 UI。
+- **固定上游必须检查：**
+  - `app/src/main/java/io/legado/app/help/CacheManager.kt`
+  - `app/src/main/java/io/legado/app/help/book/BookHelp.kt`
+  - `app/src/main/java/io/legado/app/model/BatchContentContext.kt`
+  - `app/src/test/java/io/legado/app/help/CacheManagerTtlContractTest.kt`
+  - `app/src/test/java/io/legado/app/help/book/BookHelpChapterIndexContractTest.kt`
+  - `app/src/test/java/io/legado/app/help/book/BookHelpChapterMatchTest.kt`
+  - `app/src/test/java/io/legado/app/help/book/ResourceCacheFilesTest.kt`
+  - `app/src/test/java/io/legado/app/help/storage/RuntimeSourceCacheBackupTest.kt`
+  - `app/src/test/java/io/legado/app/help/webView/WebJsExtensionsResultCacheTest.kt`
+- **Badcat 必须检查：**
+  - `integration-contract/src/main/kotlin/app/badcat/engine/ChapterContentCache.kt`
+  - `integration-contract/src/main/kotlin/app/badcat/engine/ChapterContentSaveFence.kt`
+  - `integration-contract/src/main/kotlin/app/badcat/engine/SourceChapterContentService.kt`
+  - `app/src/main/java/app/badcat/client/runtime/FileChapterContentCache.kt`
+  - `app/src/main/java/app/badcat/client/runtime/CacheFilePruner.kt`
+  - `app/src/main/java/app/badcat/client/runtime/RhinoSourceCacheExtensions.kt`
+  - `app/src/main/java/app/badcat/client/runtime/SourceScriptFileCacheStore.kt`
+  - `app/src/main/java/app/badcat/client/runtime/BadcatReadingEngineFactory.kt`
+  - `integration-contract/src/test/kotlin/app/badcat/engine/ChapterContentSaveFenceTest.kt`
+  - `integration-contract/src/test/kotlin/app/badcat/engine/SourceChapterContentServiceTest.kt`
+  - `app/src/test/kotlin/app/badcat/client/runtime/FileChapterContentCacheTest.kt`
+  - `app/src/test/kotlin/app/badcat/client/runtime/CacheFilePrunerTest.kt`
+  - `app/src/test/kotlin/app/badcat/client/runtime/RhinoSourceCacheExtensionsTest.kt`
+  - `app/src/test/kotlin/app/badcat/client/runtime/SourceScriptFileCacheStoreTest.kt`
+- **验收产物：** 逐个 mutation API 的精确上游路径/签名/语义；全量可静态发现的生产 caller 与触发条件；key/namespace/TTL/atomicity/fence/invalidator 对照表；被遗漏的 mutation→invalidate 路径；测试证据与未验证项；分域 GO/NO-GO 和下一项最小可实现 task。Code-search 不完整时不得宣称全仓调用图闭包。
+- **风险：** URL key 与 chapter-index key 不一致；进程内 fence 不等于跨进程 token；replace 与 put/delete 并发；TOC refresh 与 cache 内容失效错序；source/runtime key namespace 冲突；TTL/内存 LRU/持久化层不一致；备份/恢复时缓存丢失或过期数据复活。
+- **排除：** 本任务不实现 cache API、不改变缓存 key、不迁移旧文件、不引入 Room/DAO、不修改 UI/Reader、不接入 BatchContentContext、不处理第四/第五类或 `main`。
+- **并行与依赖：** 只读审计不修改 .10/.10.1 的源文件；后续实现必须另行 preregister。章节正文缓存与通用 CacheManager 分域给出结论。
+- **状态：** 已登记，只读审计尚未开始；本注册提交仅改清单并使用 `[skip ci]`。
+
+
+#### Runtime-3.2f.10.1 / #3167 CI progress update
+
+- **实现 exact SHA：** `4a9549a980f375a86717578d8212088ca504a33d`；Run #3167 / run ID `45070912141`；job `137357408769`。
+- **当前状态：** `in_progress`，active step 为 `Compile G2d stage-1 authentic rule/model source group`，无失败 step、无终态结论。不要将当前编译步骤解释为整体通过。
