@@ -4154,3 +4154,15 @@
 - **Root cause:** first .21 patch populated `baseUrl` only in `parseWithScripts`; production `SourceTocService` without a script runtime calls `CssTocParser.parse`, whose separate non-script construction path still used the default empty base.
 - **Correction:** append `baseUrl = response.finalUrl` to the non-script `parse()` BookChapter construction. No service production file or scope expansion is required; this remains within the preregistered `CssTocParser.kt` path.
 - **Status:** correction committed in the current follow-up SHA; exact-SHA CI pending. #3176 remains a failed historical run and is not rewritten.
+
+### Runtime-3.2f.22 registration — legacy URL-keyed chapter-cache caller and invalidation audit
+
+- **日期 / 分类：** 2026-11-23；第三类：chapter content cache compatibility / invalidation.
+- **起始 branch / HEAD：** `integration/legado-upstream-runtime` / `fd1c4b9f608106874de207823d7ed62c0a9b0bec`；固定 Legado SHA 不变。
+- **目标：** 只读核实 `ChapterContentCache` 保留的 legacy URL-keyed `get/put` 与 index-keyed `get/put/invalidate` 的全部生产调用方、迁移用途和实际文件命名空间；追踪 TOC refresh、章节替换、source removal/reimport、cache prune 与旧缓存回退的失效路径；明确 index invalidation 是否会留下 URL-keyed legacy 文件、这些方法是否仍被生产使用，以及删除/迁移的安全前提。
+- **允许变更：** 新增 `docs/audits/legado-runtime-3.2f.22-legacy-chapter-cache-callers.md`；更新本清单。只读审计不得修改生产代码、测试、Gradle、workflow、持久化格式或 UI。
+- **必须检查：** `ChapterContentCache.kt`、`FileChapterContentCache.kt`、`SourceChapterContentService.kt`、`ChapterContentSaveFence.kt`、所有 cache 实现与调用方、BadcatReadingEngineFactory/SourceCatalogActivity/SourceBookActivity 中相关生命周期入口，以及对应 cache/service tests。使用可用代码搜索和完整文件树核实 caller，明确索引覆盖限制，不把搜索未命中当作全仓无调用。
+- **验收产物：** legacy/index 两种 key 的精确 digest/文件路径和读写 schema；所有已确认生产/test callers；index invalidate 对 legacy key 的实际影响；TOC/source mutation 与 cache 清理的调用链；重复/过期/孤儿文件风险；可执行的最小后续任务建议及 GO/NO-GO。
+- **排除：** 不改 cache key、API、数据文件、TTL/prune、AtomicFile、source lifecycle、BatchContentContext、Reader/UI、其他分类、上游 pin 或 `main`。
+- **依赖 / 并行：** 以 .12 cache mutation audit 与 .13 shared fence、.15 source lifecycle、.16 cache namespace、.19 SharedPreferences test 的已记录结果为背景；只读文件范围不与 .21 的生产改动重叠。任何实现必须另行 preregister。
+- **状态：** 已登记，审计尚未开始；本登记不授权删除 legacy API/缓存文件。
