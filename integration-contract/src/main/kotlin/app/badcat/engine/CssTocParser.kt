@@ -397,7 +397,7 @@ class CssTocParser {
                 is EngineResult.Failure -> return result
                 is EngineResult.Success -> result.value
             }
-            chapters += BookChapter(index = chapters.size, title = title, url = url, isVip = isVip, isPay = isPay, tag = tag)
+            chapters += BookChapter(index = chapters.size, title = title, url = url, isVip = isVip, isPay = isPay, tag = tag, baseUrl = response.finalUrl)
         }
 
         if (chapters.isEmpty() && items.isNotEmpty()) {

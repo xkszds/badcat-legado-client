@@ -4147,3 +4147,10 @@
 - **验收：** focused integration-contract tests、完整第三类 App JVM suite 和 exact-SHA CI 通过；diff 严格在登记文件；对 data class equality/dedup 的变化进行审查并明确记录。
 - **依赖：** .20 审计 GO；.10/.10.1 duplicate URL 保真已在 exact SHA `4a9549a...` 通过。若发现 data class equality 或调用兼容风险需扩展文件范围，先追加登记。
 - **状态：** 已登记，尚未实施；本登记只授权保存 chapter-specific base URL，不授权 alias matching 或 BatchContentContext 接线。
+
+#### Runtime-3.2f.21 implementation correction — preserve baseUrl in non-script parser path
+
+- **Failed exact CI:** implementation SHA `e79e817a6a8645b55363f0dd8133ee1c89bb45da` / #3176 / run `45082328633` = failure. `:integration-contract:test` ran 515 tests; 2 failed. Both failures showed `baseUrl == ""`: `CssTocParserTest.resolvesRelativeChapterLinksAgainstRedirectedTocResponseUrl` and `SourceTocServiceTest.retainsChapterSpecificBaseUrlForEachRedirectedTocPage`.
+- **Root cause:** first .21 patch populated `baseUrl` only in `parseWithScripts`; production `SourceTocService` without a script runtime calls `CssTocParser.parse`, whose separate non-script construction path still used the default empty base.
+- **Correction:** append `baseUrl = response.finalUrl` to the non-script `parse()` BookChapter construction. No service production file or scope expansion is required; this remains within the preregistered `CssTocParser.kt` path.
+- **Status:** correction committed in the current follow-up SHA; exact-SHA CI pending. #3176 remains a failed historical run and is not rewritten.
