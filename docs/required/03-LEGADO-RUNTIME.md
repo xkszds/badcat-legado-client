@@ -4079,3 +4079,19 @@
 - **验证范围：** 使用 app-private SharedPreferences 与真实 `SharedPreferencesSourceScriptKeyValueStore`；验证同一 source 的 `__legado_cache__:` 项被删、同 source loginHeader/source variable 保留、其他 source 同名 cache key 保留、无关/畸形键不误删；测试 API 28 与 API 35 配置。随后跑 focused test、第三类完整 App JVM suite 和 exact-SHA CI。
 - **排除：** 不改 `SourceScriptKeyValueStore` 接口/生产实现、cache TTL/格式、Room/schema、source lifecycle、UI/Reader、第四/第五类、上游 pin 或 `main`。
 - **验收：** 直接覆盖生产 SharedPreferences 实现；focused 与完整 app suite 通过；diff 仅限登记文件；CI/报告绑定 exact SHA。此项只补测试，不自动消除原始 preregistration 文件范围偏差，最终仍需人工审查 .16 的 5 文件 diff。
+
+
+#### Runtime-3.2f.10 / .10.1 terminal closeout — duplicate URL chapter identity
+
+- **原实现 SHA：** .10 `123f1e5476d5ffd26be54be317f46092fcf6f92d`，CI #3166 / `45070591519`。该 run 因旧测试仍假设 URL 唯一而失败；失败记录保留。
+- **测试迁移 SHA：** .10.1 `4a9549a980f375a86717578d8212088ca504a33d`，提交 `test(runtime): align TOC dedup fixture with chapter identity`。diff 仅修改登记的 `integration-contract/src/test/kotlin/app/badcat/engine/SourceTocServiceTest.kt`：将旧 URL-only 去重测试改为“不同章节投影共享 URL 时保留”，期望三条章节、索引连续为 0/1/2，且重复 URL 仍保留。
+- **Exact CI：** Run #3167 / `45070912141`，head SHA 与 .10.1 提交完全一致，终态 `completed / success`；job 所有步骤成功，包含 `:integration-contract:test`、第三类 App JVM、API 28/API 35 instrumentation、Debug APK 和 G2d stage-1 compile。
+- **报告：** JUnit artifact `14773737433`，SHA-256 `7cad25166dbd4fecdea7f5ab1b533d16e5e707d44fcd325e81a724d213299295`；解包为 38 suites、312 tests、0 failures、0 errors、0 skipped。此 artifact 主要包含 app 与 legado-runtime XML；integration-contract 测试通过以 workflow step 为准。
+- **结论：** .10 的生产去重语义与 .10.1 旧夹具迁移在 descendant exact SHA `4a9549a...` 上通过登记验收，两个任务均关闭。仍只证明当前 host BookChapter 投影 equality 的稳定去重，不代表 upstream 完整 BookChapter 模型或 BatchContentContext 已接入。
+
+#### Runtime-3.2f.19 implementation checkpoint — SharedPreferences removePrefix regression tests
+
+- **实现提交 / exact CI SHA：** `1a8af52cd27455c1a1c7310750627045c97566e6`；Run #3175 / `45079609266`。
+- **实际变更：** 仅新增 `app/src/test/kotlin/app/badcat/client/runtime/SharedPreferencesSourceScriptKeyValueStoreTest.kt`，包含两个 Robolectric 测试并配置 API 28/API 35：验证同 source cache prefix 删除、loginHeader/source variable 与近似前缀保留、其他 source 隔离，以及畸形/无关 key 不误删。生产实现未改。
+- **CI 截至本记录：** run `in_progress`，exact head SHA 匹配；已完成 checkout、pin 校验、JDK/Android SDK/Gradle setup，当前 `:integration-contract:test` 正在运行；后续测试、Android instrumentation、APK 和报告均待执行。没有失败步骤，也没有终态。
+- **状态：** 测试已提交、等待 #3175 exact-SHA CI；不得将运行中标记为通过。#3175 结果只验证 SHA `1a8af52...`，后续 docs-only commit 不继承该 CI 结论。
