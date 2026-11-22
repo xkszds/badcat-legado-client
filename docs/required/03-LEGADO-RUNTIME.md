@@ -4323,3 +4323,13 @@
 - **依赖 / 并行：** .22 audit 与 .15 lifecycle implementation 已完成；.26 AtomicFile test（#3179）仍在运行，但本审计不修改其测试文件，允许只读并行。与 .24 TOC service 文件完全隔离。后续实现必须另行 preregister，且建议等 #3179 终态后再实施。
 - **排除：** 不在本任务内新增 purge API/callback，不改变 cache key/schema/TTL/LRU/fence，不改 BatchContentContext、Reader/history/bookmark/UI、HTTP/Cookie/login、第四/第五类、上游 pin 或 `main`。
 - **状态：** 已登记，尚未开始审计；本登记不授权生产实现或存储格式变更。
+
+
+#### Runtime-3.2f.27 audit closeout — source-scoped chapter cache purge
+
+- **Audit HEAD：** `e0a1f0b62548361ffcabba98944da295441ccb3e`；report `docs/audits/legado-runtime-3.2f.27-source-chapter-cache-purge-design.md`。
+- **Exact source evidence：** `FileChapterContentCache.kt` blob `585b3fb...` uses flat SHA-256 filenames from length-prefixed sourceId/bookUrl/identity; legacy JSON has no owner fields, index JSON stores chapterUrl only. `CacheFilePruner.kt` blob `e7931b7...` prunes `.json` files only. `FileBookSourceCatalog.kt` blob `1f3c9cd...` invokes source runtime cleanup after catalog commit; `SourceCatalogActivity.kt` blob `20ca409...` calls Rhino clear but does not clear chapter body cache.
+- **关键结论：** 现有 flat digest filename 不可逆，现存 JSON 也没有足够 source ownership metadata。不能安全按 sourceId 清理旧 legacy/index entries；不得清空整个目录、按 hostname 猜测、或推导 index。
+- **GO/NO-GO：** GO for separately registered versioned ownership manifest for new writes, crash-safe reconciliation and purge of entries with verified ownership. NO-GO for claiming old pre-manifest entries are source-purged. Legacy entries remain unowned and may only age out via global LRU unless safely migrated during verified reads.
+- **并发/恢复要求：** manifest must serialize with writes/prune/purge; advance shared save-fence generations before deletion; cover content-without-manifest orphan, manifest-without-content, AtomicFile backup sidecars, process restart, concurrent old save and purge, partial failure reporting.
+- **范围：** read-only static audit; no production/test/build/CI/device changes. .26 test CI is not borrowed. 后续 manifest/purge implementation requires its own preregistration and exact-SHA CI.
