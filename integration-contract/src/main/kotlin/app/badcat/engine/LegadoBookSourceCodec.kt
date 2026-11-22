@@ -203,8 +203,11 @@ object LegadoBookSourceCodec {
             ?.takeIf(String::isNotBlank)
             ?: throw IllegalArgumentException("Book source at index $index has no bookSourceUrl")
         val name = source.stringOrNull("bookSourceName")
-            ?.takeIf(String::isNotBlank)
-            ?: throw IllegalArgumentException("Book source '$sourceId' has no bookSourceName")
+            ?: if (!source.has("bookSourceName")) {
+                ""
+            } else {
+                throw IllegalArgumentException("Book source '$sourceId' has a null bookSourceName")
+            }
 
         return LegadoBookSource(
             sourceId = sourceId,

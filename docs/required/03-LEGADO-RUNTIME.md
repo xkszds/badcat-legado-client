@@ -4251,7 +4251,7 @@
 - **验收产物：** 上游执行顺序图；source reverse 与 book reverse-TOC 的独立语义；去重代表项的保留规则（含重复项先后排列）；host 是否有等价状态/caller；.24 的可实现范围与 unresolved 项；GO/NO-GO 建议。
 - **排除：** 不改 .24 生产/测试文件，不改 chapter equality、BatchContentContext、cache、Reader/history/bookmark/UI、其他分类、上游 pin 或 `main`。不修改 .21/#3178 测试结论。
 - **依赖 / 并行：** .23 audit 已关闭；与 #3178 活动 CI 文件范围隔离。允许只读审计并行，但不得修改 `SourceTocServiceTest.kt`；.24 代码实施仍必须等 #3178 终结并记录。
-- **状态：** 已登记，尚未实施。
+- **状态：** 已登记；实现已提交，等待 exact-SHA CI 验证。
 
 
 #### Runtime-3.2f.25 audit closeout — TOC reverse order and duplicate representative
@@ -4372,3 +4372,10 @@
 - **依赖 / 并行：** .28 audit closed. File scope is disjoint from active .24 `SourceTocService.kt`/test and .26 AtomicFile test; independent exact-SHA CI required. Any need to change explicit-null semantics or add model/caller files requires a new preregistration.
 - **验收：** focused codec tests, complete `:integration-contract:test`, exact-SHA workflow and diff-scope verification. Record this as one import-acceptance correction, not full BookSource import parity.
 - **状态：** 已登记，尚未实施。
+
+
+#### Runtime-3.2f.29 implementation checkpoint — unnamed BookSource import acceptance
+
+- **Implementation SHA:** pending commit creation from preregistered baseline `f086fd282ae6a3ee2794b0beeccef51bd033c470`.
+- **Actual scope:** only `LegadoBookSourceCodec.kt`, `LegadoBookSourceCodecTest.kt` and this checklist. Missing `bookSourceName` now maps to an empty host name; an empty string remains accepted; explicit JSON null remains rejected pending a separate pinned-Gson differential fixture. Nonblank source URL remains mandatory.
+- **Validation:** no test/build/CI result claimed yet. Exact-SHA workflow and focused/full integration-contract test results remain pending.

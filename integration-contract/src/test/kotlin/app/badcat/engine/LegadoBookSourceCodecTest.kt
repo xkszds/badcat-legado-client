@@ -196,12 +196,30 @@ class LegadoBookSourceCodecTest {
     }
 
     @Test
-    fun rejectsMissingIdentityFields() {
+    fun rejectsMissingSourceUrlButAcceptsMissingSourceName() {
         assertFailsWith<IllegalArgumentException> {
             LegadoBookSourceCodec.decode("""{"bookSourceName":"missing url"}""")
         }
+
+        val source = LegadoBookSourceCodec.decode(
+            """{"bookSourceUrl":"https://missing-name.example"}"""
+        ).single()
+        assertEquals("", source.name)
+        assertEquals("", source.toEngineSource().name)
+        assertEquals("https://missing-name.example", source.toEngineSource().id)
+    }
+
+    @Test
+    fun acceptsEmptySourceNameButRejectsExplicitNull() {
+        val source = LegadoBookSourceCodec.decode(
+            """{"bookSourceUrl":"https://empty-name.example","bookSourceName":""}"""
+        ).single()
+        assertEquals("", source.name)
+
         assertFailsWith<IllegalArgumentException> {
-            LegadoBookSourceCodec.decode("""{"bookSourceUrl":"https://a.example"}""")
+            LegadoBookSourceCodec.decode(
+                """{"bookSourceUrl":"https://null-name.example","bookSourceName":null}"""
+            )
         }
     }
 
