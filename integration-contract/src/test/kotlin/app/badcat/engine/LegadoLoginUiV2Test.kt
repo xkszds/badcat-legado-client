@@ -57,6 +57,29 @@ class LegadoLoginUiV2Test {
     }
 
     @Test
+    fun requiresExactIntegerValuesForVersionAndCountdown() {
+        assertTrue(LegadoLoginUiV2.isV2("""{"version":2.0}"""))
+        assertFalse(LegadoLoginUiV2.isV2("""{"version":2.5}"""))
+        assertFalse(LegadoLoginUiV2.isV2("""{"version":2147483648}"""))
+
+        val integralCountdown = LegadoLoginUiV2.parseRows(
+            """{"rows":[{"name":"Wait","type":"button","action":"wait","countdown":60.0}]}"""
+        )
+        assertEquals(60, integralCountdown?.single()?.countdown)
+
+        val fractionalCountdown = LegadoLoginUiV2.parseRows(
+            """{"rows":[{"name":"Wait","type":"button","action":"wait","countdown":60.5}]}"""
+        )
+        assertEquals(null, fractionalCountdown)
+        assertEquals(
+            null,
+            LegadoLoginUiV2.parseRows(
+                """{"rows":[{"name":"Wait","type":"button","action":"wait","countdown":2147483648}]}"""
+            ),
+        )
+    }
+
+    @Test
     fun rejectsDuplicateKeysActionsAndMalformedRows() {
         assertNull(LegadoLoginUiV2.parseRows("""{"rows":[
             {"name":"A","type":"text","key":"same"},

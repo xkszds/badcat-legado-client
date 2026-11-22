@@ -179,7 +179,8 @@ object LegadoLoginUiV2 {
         val value = get(key) ?: return null
         if (value.isJsonNull) return null
         return runCatching {
-            if (!value.isJsonPrimitive || !value.asJsonPrimitive.isNumber) null else value.asInt
+            if (!value.isJsonPrimitive || !value.asJsonPrimitive.isNumber) null
+            else value.asBigDecimal.intValueExact()
         }.getOrNull()
     }
 }
