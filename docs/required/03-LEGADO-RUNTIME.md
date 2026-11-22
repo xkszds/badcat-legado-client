@@ -4252,3 +4252,12 @@
 - **排除：** 不改 .24 生产/测试文件，不改 chapter equality、BatchContentContext、cache、Reader/history/bookmark/UI、其他分类、上游 pin 或 `main`。不修改 .21/#3178 测试结论。
 - **依赖 / 并行：** .23 audit 已关闭；与 #3178 活动 CI 文件范围隔离。允许只读审计并行，但不得修改 `SourceTocServiceTest.kt`；.24 代码实施仍必须等 #3178 终结并记录。
 - **状态：** 已登记，尚未实施。
+
+
+#### Runtime-3.2f.25 audit closeout — TOC reverse order and duplicate representative
+
+- **Audit HEAD：** `3d67219516145d665087cf556b3ae43178068aaa`；report：`docs/audits/legado-runtime-3.2f.25-toc-reverse-order.md`。
+- **Pinned evidence：** `BookChapterList.kt` blob `dd2ae3950cee55a9c8e7880dc2c034d6f4c6f33d`；`TocRule.kt` blob `f525e912340257125059b6ad87d0cf7e73d6a1dc`；`Book.kt` blob `05024a6c71404eb49c23cd1df0482df365bc63fe`。`chapterList` leading `-` disables pre-dedup reverse; default/`+` reverses accumulated rows before `LinkedHashSet`; URL-only equality means first in that reversed sequence wins. `Book.getReverseToc()` is a separate per-book `ReadConfig` flag controlling only the post-dedup reverse.
+- **Host evidence：** `SourceTocService.kt` appends pages then dedups by all projected fields except index; it does not implement `-`/`+` prefix semantics and has no book-config input. `SourceReadingEngine` passes source/book URL/toc URL/key only. `SourceBookActivity.reverseCatalog` is transient display-only ordering, not the upstream persisted book reverse flag.
+- **决定：** .24 may implement URL-only identity as a partial parity improvement, but must not claim exact representative parity until source-rule reverse and page ordering are handled; must not claim book reverseToc parity without a separately registered typed book-config input/owner design. Do not use UI reverse toggle as a substitute.
+- **边界：** read-only; no tests/build/CI/device run. .24 remains blocked on #3178 terminal exact-SHA result because it shares `SourceTocServiceTest.kt`.
