@@ -4346,7 +4346,7 @@
 - **验收产物：** 上游导入/导出调用图；逐字段 type/default/null/serialization/unknown-field 对照；单条/批量/重复 ID/无效 JSON/部分失败语义矩阵；现有 fixture 覆盖与缺口；最小后续实现/测试登记建议；GO/NO-GO。没有证据的字段必须列 unresolved。
 - **排除：** 不修改 BookSource schema、迁移、Room、catalog lifecycle、chapter cache、Reader/UI、第四/第五类、上游 pin 或 `main`；不把只读审计结论写成兼容已实现。
 - **依赖 / 并行：** 与 .24 的 `SourceTocService.kt` / `SourceTocServiceTest.kt` 及 .26 的 `FileChapterContentCacheAtomicFileTest.kt` 文件范围隔离；允许只读并行。后续实现必须单独 preregister，且不得在 #3179/#3180 活动 CI 期间修改共享依赖文件。
-- **状态：** 已登记，尚未开始审计；本登记不授权生产或测试代码变更。
+- **状态：** 只读审计已完成并由下方 closeout 关闭；未修改生产或测试代码。
 
 
 #### Runtime-3.2f.28 audit closeout — BookSource import/export compatibility
