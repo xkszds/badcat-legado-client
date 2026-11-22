@@ -3435,4 +3435,17 @@
 - **验收：** `:integration-contract:test` 通过；完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限上述三个文件；核对上游固定 SHA 与 caller 传递链；不得把正在执行的 #3157 结果借用为本任务通过证据。
 - **明确排除：** HTTP transport retry policy、请求方法映射、headers/body/timeout/redirect/charset、Cookie/CookieBridge、WebView/login、JS ABI、业务链、缓存、Android manifest/UI、第四/第五类、上游 pin、`main`。
 - **并行安全：** 与 Runtime-3.2f.1 的 codec 文件范围完全不重叠，且无共享可变状态；可在 #3157 仍运行时独立实施。分支更新须使用 expected SHA/CAS。
-- **状态：** 已 preregister；尚未修改实现代码。注册文档提交使用 `[skip ci]`。
+- **状态：** 实现已提交（`28898d573ec3a56fcd95187df4139d40fb1c78e6`）；CI #3158 queued/in progress，尚未验收。提交 diff 限于登记的三个文件；自审发现正数 retry 测试使用 Kotlin raw string 却保留了 JSON 转义反斜杠，需待 #3158 终态后按独立修复任务校正；不得将该测试视为已通过。
+
+
+#### Runtime-3.2f.3 URL retry 正数选项测试夹具修正 — preregistration
+
+- **日期 / 分类：** 2026-11-23；第三类：Legado 运行时。
+- **登记起始 HEAD：** `28898d573ec3a56fcd95187df4139d40fb1c78e6`；分支 `integration/legado-upstream-runtime`；固定上游 SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **发现：** Runtime-3.2f.2 的正数 retry 测试将 JSON 片段写在 Kotlin raw string 中，却保留了 `\\"` 转义，导致送入 JSON parser 的文本包含反斜杠，不能验证预期的显式 `retry:3` 行为。
+- **目标：** 仅修正测试输入为有效 JSON raw string；确认 `retry:3` 被解析为 3。不得改生产实现、默认 retry 语义、transport 或其他 URL 选项。
+- **允许修改文件：** `integration-contract/src/test/kotlin/app/badcat/engine/LegadoUrlResolverTest.kt`。
+- **依赖：** Runtime-3.2f.2 的 CI #3158 必须先终止；同一测试文件在 #3158 的 exact SHA 验证期间不得修改。若 #3158 失败，先取得失败日志并记录，再实施本修复。
+- **验收：** focused `:integration-contract:test` 与完整第三类 App JVM suite 通过；精确 diff 只包含该测试文件；正数 retry fixture 确认为有效 JSON；CI 对应实现 SHA。
+- **排除：** `LegadoUrlResolver.kt` 生产逻辑、HTTP retry policy、其他 URL option、Cookie/WebView/login、UI/Reader、第四/第五类、上游 pin、`main`。
+- **状态：** 已登记，等待 #3158 结束后实施；未修改代码。
