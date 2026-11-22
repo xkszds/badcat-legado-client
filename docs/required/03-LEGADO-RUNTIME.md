@@ -2918,3 +2918,14 @@
 - Added `app/src/androidTest/kotlin/app/badcat/client/runtime/WebViewCookieDomainInvalidationInstrumentedTest.kt` to exercise real Android `CookieManager` without network access or global cookie clearing.
 - The fixture creates one root-path cookie and one `/private` path cookie under a unique subdomain, then emulates the pinned upstream domain-root/host-root expiry algorithm. It checks whether the path-scoped cookie remains visible on `/private/book`, and then verifies it can be expired when the path is explicitly known.
 - This is a platform behavior probe, not a CookieBridge implementation. The exact outcome must come from API 35 instrumentation; API 28 coverage remains outstanding. No production source, manifest, WebView process, IPC, UI or Fourth-category file is changed by this probe.
+
+
+#### Runtime-3.2a probe CI #3134 — terminal infrastructure failure
+
+- **Exact branch / HEAD:** `integration/legado-upstream-runtime` / `f3b714961eec6ae07a8e60fb7fe66ab2e5a5a4e4`; this commit adds the CookieManager instrumentation probe and updates this task's progress note. `main` remains `65b1a271a887b494f88c7e09277c5fb9367c6381`.
+- **CI:** Android debug build #3134, run ID `44993754493`, job ID `137120259340`, terminal `failure`.
+- **Exact failure:** the first Gradle step `:integration-contract:test` could not resolve plugin marker `org.jetbrains.kotlin.plugin.parcelize:org.jetbrains.kotlin.plugin.parcelize.gradle.plugin:2.4.20` from Google, Maven Central or Gradle Plugin Portal. The log reports plugin artifact not found at root `build.gradle.kts:1`; this is dependency resolution before project compilation.
+- **Execution impact:** authentic Legado model tests, G2d compile, App unit tests and API 35 WebView instrumentation were skipped. No JUnit test result, WebView CookieManager behavior result or APK was produced for this HEAD. Later upload steps with no input files do not count as artifacts. The Parcelize endpoint diagnostic itself was skipped by the workflow after the first failure; no diagnostic report artifact exists.
+- **Probe status:** the new instrumentation test is committed but **not executed**. The statically visible helper parameter type should be checked against AndroidX test APIs before the next build; do not infer compile success from this CI.
+- **Root-cause handling:** no production or test assertion failure was observed. Do not modify product dependencies or tests to hide a Maven/plugin resolution outage. Retry only after recording this result and confirming no active CI.
+- **Fourth-category boundary:** no Fourth-category source/test file changed. No Fourth-category tests ran or passed.
