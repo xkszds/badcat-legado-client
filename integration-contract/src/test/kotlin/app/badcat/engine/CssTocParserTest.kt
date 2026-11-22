@@ -595,4 +595,115 @@ class CssTocParserTest {
         assertEquals(listOf("https://reader.example/chapter/c-19"), page.chapters.map { it.url })
     }
 
+    @Test
+    fun projectsVipPayAndUpdateTimeFieldsFromSynchronousTocRules() {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"ul.chapters li",
+                "chapterName":"a@text",
+                "chapterUrl":"a@href",
+                "isVip":"a@attr(data-vip)",
+                "isPay":"a@attr(data-pay)",
+                "updateTime":"span@text"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/catalog",
+            body = """<ul class="chapters"><li><a href="/chapter/1" data-vip="true" data-pay="no">Chapter One</a><span>Updated today</span></li></ul>""",
+        )
+
+        val chapter = assertIs<EngineResult.Success<ParsedTocPage>>(
+            CssTocParser().parse(source, response, "https://reader.example/book"),
+        ).value.chapters.single()
+
+        assertEquals(true, chapter.isVip)
+        assertEquals(false, chapter.isPay)
+        assertEquals("Updated today", chapter.tag)
+        assertEquals(false, chapter.copy(index = 1).isVip.not())
+    }
+
+    @Test
+    fun projectsVipPayAndUpdateTimeFieldsThroughScriptEnabledTocRules() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"ul.chapters li",
+                "chapterName":"a@text",
+                "chapterUrl":"a@href",
+                "isVip":"@js:vip(result)",
+                "isPay":"@js:pay(result)",
+                "updateTime":"@js:time(result)"
+            }""",
+        )
+        val response = SourceHttpResponse(
+            200,
+            "https://reader.example/catalog",
+            body = """<ul class="chapters"><li><a href="/chapter/1">Chapter One</a></li></ul>""",
+        )
+        val runtime = object : SourceScriptRuntime {
+            override suspend fun evaluate(
+                source: BookSource,
+                script: String,
+                bindings: Map<String, String>,
+            ): EngineResult<String> = when (script) {
+                "vip(result)" -> EngineResult.Success("0")
+                "pay(result)" -> EngineResult.Success("yes")
+                "time(result)" -> EngineResult.Success("Yesterday")
+                else -> EngineResult.Failure(EngineErrorCode.UNSUPPORTED_RULE, "unexpected script")
+            }
+        }
+
+        val chapter = assertIs<EngineResult.Success<ParsedTocPage>>(
+            CssTocParser().parseWithScripts(source, response, "https://reader.example/book", runtime),
+        ).value.chapters.single()
+
+        assertEquals(false, chapter.isVip)
+        assertEquals(true, chapter.isPay)
+        assertEquals("Yesterday", chapter.tag)
+    }
+
+    @Test
+    fun sourceTocPaginationPreservesMetadataWhenMergedAndReindexed() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"ul.chapters li",
+                "chapterName":"a@text",
+                "chapterUrl":"a@href",
+                "isVip":"a@attr(data-vip)",
+                "isPay":"a@attr(data-pay)",
+                "updateTime":"span@text",
+                "nextTocUrl":"a.next"
+            }""",
+        )
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                val second = request.url.endsWith("page=2")
+                val body = if (second) {
+                    """<ul class="chapters"><li><a href="/chapter/2" data-vip="0" data-pay="true">Chapter Two</a><span>New</span></li></ul>"""
+                } else {
+                    """<ul class="chapters"><li><a href="/chapter/1" data-vip="true" data-pay="false">Chapter One</a><span>Old</span></li></ul><a class="next" href="?page=2">Next</a>"""
+                }
+                return EngineResult.Success(SourceHttpResponse(200, request.url, body = body))
+            }
+        }
+
+        val chapters = assertIs<EngineResult.Success<List<BookChapter>>>(
+            SourceTocService(SourceHttpGateway(client)).load(source, "https://reader.example/book"),
+        ).value
+
+        assertEquals(listOf(0, 1), chapters.map { it.index })
+        assertEquals(listOf(true, false), chapters.map { it.isVip })
+        assertEquals(listOf(false, true), chapters.map { it.isPay })
+        assertEquals(listOf("Old", "New"), chapters.map { it.tag })
+    }
+
 }

@@ -162,6 +162,12 @@ data class BookChapter(
     val index: Int,
     val title: String,
     val url: String,
+    /** Upstream TocRule.isVip; appended with a default to preserve existing callers. */
+    val isVip: Boolean = false,
+    /** Upstream TocRule.isPay; appended with a default to preserve existing callers. */
+    val isPay: Boolean = false,
+    /** Upstream TocRule.updateTime, also used for chapter metadata labels. */
+    val tag: String? = null,
 )
 
 data class ChapterContent(

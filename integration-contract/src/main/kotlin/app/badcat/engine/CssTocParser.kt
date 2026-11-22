@@ -198,7 +198,19 @@ class CssTocParser {
             val url = runCatching { WebUrlResolver.resolve(response.finalUrl, rawUrl) }.getOrElse {
                 return unsupported(source, "chapterUrl must resolve to a credential-free HTTP(S) URL")
             }
-            chapters += BookChapter(chapters.size, title, url)
+            val isVip = when (val result = extract(item, "isVip")) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            }.toLegadoTocFlag()
+            val isPay = when (val result = extract(item, "isPay")) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            }.toLegadoTocFlag()
+            val tag = when (val result = extract(item, "updateTime")) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            }
+            chapters += BookChapter(chapters.size, title, url, isVip, isPay, tag)
         }
 
         if (chapters.isEmpty() && items.isNotEmpty()) {
@@ -373,7 +385,19 @@ class CssTocParser {
             val url = runCatching { WebUrlResolver.resolve(response.finalUrl, rawUrl) }.getOrElse {
                 return unsupported(source, "chapterUrl must resolve to a credential-free HTTP(S) URL")
             }
-            chapters += BookChapter(index = chapters.size, title = title, url = url)
+            val isVip = when (val result = extract(item, rules["isVip"])) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            }.toLegadoTocFlag()
+            val isPay = when (val result = extract(item, rules["isPay"])) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            }.toLegadoTocFlag()
+            val tag = when (val result = extract(item, rules["updateTime"])) {
+                is EngineResult.Failure -> return result
+                is EngineResult.Success -> result.value
+            }
+            chapters += BookChapter(index = chapters.size, title = title, url = url, isVip = isVip, isPay = isPay, tag = tag)
         }
 
         if (chapters.isEmpty() && items.isNotEmpty()) {
@@ -463,4 +487,11 @@ class CssTocParser {
             EngineErrorCode.UNSUPPORTED_RULE,
             "Source '${source.id}' TOC rule requires unsupported behavior: $reason",
         )
+}
+
+
+/** Mirrors the pinned Legado String?.isTrue(nullIsTrue = false) conversion. */
+private fun String?.toLegadoTocFlag(): Boolean {
+    if (isNullOrBlank() || this == "null") return false
+    return !trim().matches(Regex("(?i)^(?:false|no|not|0|0.0)$"))
 }
