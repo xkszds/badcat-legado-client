@@ -34,6 +34,31 @@ class RhinoSourceScriptRuntimeTest {
     }
 
     @Test
+    fun clearingSourceStateFromOneRuntimeInvalidatesEveryLiveRuntimeInstance() = runBlocking {
+        val source = BookSource(
+            id = "https://cross-runtime-clear.example/",
+            name = "Cross runtime clear",
+            baseUrl = "https://cross-runtime-clear.example/",
+        )
+        val firstClears = mutableListOf<String>()
+        val secondClears = mutableListOf<String>()
+        val first = RhinoSourceScriptRuntime(sourceCookieClearer = { firstClears += it })
+        val second = RhinoSourceScriptRuntime(sourceCookieClearer = { secondClears += it })
+
+        val written = first.evaluate(source, "cache.putMemory('cross-runtime', 'cached')")
+        assertTrue(written is EngineResult.Success)
+        val beforeClear = first.evaluate(source, "String(cache.getFromMemory('cross-runtime'))")
+        assertEquals("cached", (beforeClear as EngineResult.Success).value)
+
+        second.clearSourceState(source.id)
+
+        val afterClear = first.evaluate(source, "String(cache.getFromMemory('cross-runtime'))")
+        assertEquals("null", (afterClear as EngineResult.Success).value)
+        assertEquals(listOf(source.id), firstClears)
+        assertEquals(listOf(source.id), secondClears)
+    }
+
+    @Test
     fun sourceRuleDocumentPreservesAnalyzeRuleKeywordAndPage() {
         val document = sourceRuleDocument(
             url = "https://reader.example/chapter",

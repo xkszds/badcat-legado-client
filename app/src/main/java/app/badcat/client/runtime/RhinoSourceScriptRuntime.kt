@@ -23,6 +23,8 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.security.MessageDigest
+import java.util.Collections
+import java.util.WeakHashMap
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -211,6 +213,7 @@ class RhinoSourceScriptRuntime(
 
     init {
         require(timeoutMillis in 1L..MAX_TIMEOUT_MILLIS)
+        synchronized(runtimeInstances) { runtimeInstances.add(this) }
     }
 
     override suspend fun evaluate(
@@ -563,14 +566,37 @@ class RhinoSourceScriptRuntime(
             sourceJsLibHashes.remove(sourceId)
             sourceMainJsHashes.remove(sourceId)
             ScriptBindings.removeSharedGlobalStates(GLOBAL_KEY_PREFIX + sourceId)
-            javaExtensions.remove(sourceId)
-            sourceExtensions.remove(sourceId)
-            cacheExtensions.remove(sourceId)?.clear()
-            sourceKeyValueStore.clearSource(sourceId)
-            sourceFileCacheStore.clearSource(sourceId)
-            clearPhysicalSourceCache(sourceId)
-            sourceLoginSessionStore.clearSource(sourceId)
-            sourceCookieClearer(sourceId)
+
+            // A source can be evaluated by several independently-created engine
+            // factories. Clear every live runtime's instance-owned bridge/cache
+            // state while holding the same process-wide source mutex.
+            val failures = mutableListOf<Exception>()
+            liveRuntimeInstances().forEach { runtime ->
+                fun clear(action: () -> Unit) {
+                    try {
+                        action()
+                    } catch (error: Exception) {
+                        if (error is CancellationException) throw error
+                        failures += error
+                    }
+                }
+                clear { runtime.javaExtensions.remove(sourceId) }
+                clear { runtime.sourceExtensions.remove(sourceId) }
+                clear { runtime.cacheExtensions.remove(sourceId)?.clear() }
+                clear { runtime.sourceKeyValueStore.clearSource(sourceId) }
+                clear { runtime.sourceFileCacheStore.clearSource(sourceId) }
+                clear { runtime.clearPhysicalSourceCache(sourceId) }
+                clear { runtime.sourceLoginSessionStore.clearSource(sourceId) }
+                clear { runtime.sourceCookieClearer(sourceId) }
+            }
+            if (failures.isNotEmpty()) {
+                throw IllegalStateException(
+                    "Unable to fully clear runtime state for source '$sourceId' (${failures.size} cleanup failure(s))",
+                    failures.first(),
+                ).also { aggregate ->
+                    failures.drop(1).forEach(aggregate::addSuppressed)
+                }
+            }
         }
     }
 
@@ -763,6 +789,13 @@ class RhinoSourceScriptRuntime(
 
         const val GLOBAL_KEY_PREFIX = "badcat-source:"
         val BINDING_NAME = Regex("[A-Za-z_$][A-Za-z0-9_$]{0,63}")
+        private val runtimeInstances = Collections.synchronizedSet(
+            Collections.newSetFromMap(WeakHashMap<RhinoSourceScriptRuntime, Boolean>()),
+        )
+
+        private fun liveRuntimeInstances(): List<RhinoSourceScriptRuntime> =
+            synchronized(runtimeInstances) { runtimeInstances.toList() }
+
         val sourceScopes = ConcurrentHashMap<String, ScriptBindings>()
         val sourceGlobals = ConcurrentHashMap<String, com.script.SharedGlobalStateHandle>()
         val sourceLocks = ConcurrentHashMap<String, Mutex>()
