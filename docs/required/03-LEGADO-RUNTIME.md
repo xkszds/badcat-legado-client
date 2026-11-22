@@ -4358,3 +4358,17 @@
 - **Preservation strength:** host retains complete source JSON in `rawJson`, allowing unknown fields to survive catalog persistence, enabled toggle and export. This is metadata preservation, not proof the runtime understands those fields.
 - **Decision:** .28 read-only audit closed; full BookSource import/export parity is NO-GO. Recommended next small tasks are differential tests for empty-name acceptance and sourceUrls wrapper parsing, then separately bounded nested-fetch semantics; JS source import/export and user-facing selection behavior require separate registration/design.
 - **Scope:** no production/test/Gradle/workflow/UI change, no build/CI/device test. .24/#3180 and .26/#3179 evidence not borrowed.
+
+
+### Runtime-3.2f.29 registration — accept upstream-valid unnamed BookSource records
+
+- **日期 / 分类：** 2026-11-23；第三类：BookSource import compatibility.
+- **起始 branch / HEAD：** `integration/legado-upstream-runtime` / `bd4cb4c08f321bdf7ba93f96e9e73ab5cf30be91`；固定 Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **触发依据：** .28 audit confirmed the pinned upstream `BookSource.bookSourceName` defaults to empty and `parseBookSourceJson` validates only nonblank `bookSourceUrl`; the host codec currently rejects a missing/blank name. This is a narrow, deterministic import-acceptance mismatch.
+- **目标：** allow a missing or empty-string `bookSourceName` to decode as an empty host name, while continuing to require a nonblank `bookSourceUrl`. Keep explicit JSON null for the non-null host name rejected until its pinned-Gson runtime behavior is separately differential-tested.
+- **允许修改文件：** `integration-contract/src/main/kotlin/app/badcat/engine/LegadoBookSourceCodec.kt`; `integration-contract/src/test/kotlin/app/badcat/engine/LegadoBookSourceCodecTest.kt`; this checklist. No other files.
+- **必须测试：** missing name accepted as `""`; empty-string name accepted; resulting engine projection retains empty name and source ID; missing/blank URL still rejected; explicit null name remains rejected; existing object/array/unknown-field/null-cookie/legacy-rule and malformed-type fixtures continue passing.
+- **排除：** no sourceUrls wrapper or nested URL fetching; no JS-source import/export; no import selection/replacement workflow; no source catalog persistence or UI changes; no broad Gson coercion changes; no upstream pin, fourth/fifth category or `main` changes.
+- **依赖 / 并行：** .28 audit closed. File scope is disjoint from active .24 `SourceTocService.kt`/test and .26 AtomicFile test; independent exact-SHA CI required. Any need to change explicit-null semantics or add model/caller files requires a new preregistration.
+- **验收：** focused codec tests, complete `:integration-contract:test`, exact-SHA workflow and diff-scope verification. Record this as one import-acceptance correction, not full BookSource import parity.
+- **状态：** 已登记，尚未实施。
