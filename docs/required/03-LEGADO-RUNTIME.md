@@ -3994,3 +3994,12 @@
 - **测试：** 新增 Robolectric catalog lifecycle tests（remove、replace、new source、unchanged source、malformed import、cleanup failure after commit）及跨 runtime cache-memory invalidation test。#3172 已通过 contract/model/G2d 编译，App JVM suite 当时仍在运行；该 run 不包含后来跨 runtime 补强。#3173 当前 contract unit tests 正在运行，尚无通过结论。
 - **排除仍有效：** 不清理章节正文 cache、书籍/进度/书签；不接 BatchContentContext；不代表第三类完成。
 
+
+
+#### Runtime-3.2f.15 / .16 CI status correction
+
+- **#3171 / .16** exact SHA `45881bdcdec1dee633f4059f43a557ab0a95e1a7`: contract tests、pinned model tests、G2d stage-1 compile、Third-category App JVM suite 均 success；API 28 CookieManager instrumentation success；API 35 WebView instrumentation 当前 in_progress，run 尚未终态。
+- **#3172 / .15 初始实现** exact SHA `9bb55c8243ecee3aaea3108e40106a4cf09f712a`: contract tests、pinned model tests、G2d stage-1 compile success；Third-category App JVM suite step completed failure。该 SHA 不含后来跨 runtime registry 补强。API 28 instrumentation 仍 in_progress；未取得 JUnit 报告或可读 job log，失败根因尚未确认。
+- **#3173 / .15 跨实例补强** exact SHA `eca7b58031a6be06bf841f7b786e0c6f92e61c4a`: contract tests、pinned model tests、G2d stage-1 compile success；Third-category App JVM suite step completed failure。API 28 instrumentation 仍 in_progress；未取得 JUnit 报告或可读 job log，失败根因尚未确认。
+- **#3170 / .14** exact SHA `370954cc9de3c3775200b027711ddaac211f3548`: contract/model/G2d/App JVM、API 28/35 instrumentation、Debug APK build/upload 均 success；当前仍在 best-effort public source repository probe，run 未终态。
+- **处理原则：** 不把 .15 的 App JVM suite failure 忽略，也不猜测失败原因。等 report/log 可读取后定位并修复；.16 仍只标局部测试通过，待 API 35 与终态。
