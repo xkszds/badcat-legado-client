@@ -4166,3 +4166,14 @@
 - **排除：** 不改 cache key、API、数据文件、TTL/prune、AtomicFile、source lifecycle、BatchContentContext、Reader/UI、其他分类、上游 pin 或 `main`。
 - **依赖 / 并行：** 以 .12 cache mutation audit 与 .13 shared fence、.15 source lifecycle、.16 cache namespace、.19 SharedPreferences test 的已记录结果为背景；只读文件范围不与 .21 的生产改动重叠。任何实现必须另行 preregister。
 - **状态：** 已登记，审计尚未开始；本登记不授权删除 legacy API/缓存文件。
+
+#### Runtime-3.2f.22 audit closeout — legacy URL-keyed chapter-cache callers
+
+- **审计 HEAD：** `63ed3919778a0e7bf75a90d50e7abd25b547f553`；报告：`docs/audits/legado-runtime-3.2f.22-legacy-chapter-cache-callers.md`。
+- **接口/实现证据：** `ChapterContentCache.kt` blob `95135a2cdd2b79ee0994b328012f25000ba07ad5`；`FileChapterContentCache.kt` blob `585b3fb96b70d2d84536d507dd67112b5a0d312c`；`SourceChapterContentService.kt` blob `8e2da87c300784fe4a0ca96e161c9597590e6e0f`；`BadcatReadingEngineFactory.kt` blob `cd8946aaaffacef3d2a748a537736cf2798c96c8`。
+- **结果：** production service 只走 index-keyed fenced API；legacy URL-keyed get/put 留在 interface 与 FileChapterContentCache 实现中，当前 inspected production path 未调用。URL digest 与 index digest 是不同文件；`invalidate(sourceId,bookUrl,index)` 只删除 index 文件，无法删除 legacy URL 文件。legacy orphan 仅可能在后续 LRU pressure 时被回收。Source cache lifecycle (.15) 未覆盖 `legado_chapter_cache` 目录。
+- **测试边界：** FileChapterContentCache tests 只覆盖 digest/bounded reader；SourceChapterContentService tests 使用 fake cache，未验证真实 AtomicFile 文件读写/失效。
+- **搜索限制：** GitHub code-search index 对当前仓库未返回结果；报告限定为直接检查路径与递归树发现，不将未命中说成全仓无调用。
+- **决定：** .22 只读审计关闭；后续可单独登记“完整 branch-aware legacy caller scan + 移除/迁移决策”或“typed source-wide chapter cache invalidation”。未改生产代码，不清理旧文件，不声称 cache lifecycle parity。
+- **状态：** audit-only；第三类仍部分实现。
+
