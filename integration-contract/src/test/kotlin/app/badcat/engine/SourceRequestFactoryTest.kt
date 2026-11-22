@@ -292,6 +292,19 @@ class SourceRequestFactoryTest {
     }
 
     @Test
+    fun resolverDefaultRetryCountIsPassedThroughAsZero() {
+        val resolved = assertIs<EngineResult.Success<LegadoResolvedUrl>>(
+            LegadoUrlResolver.resolve("https://reader.example/", "/search"),
+        ).value
+
+        val request = assertIs<EngineResult.Success<SourceHttpRequest>>(
+            SourceRequestFactory.create(source(), resolved),
+        ).value
+
+        assertEquals(0, request.retryCount)
+    }
+
+    @Test
     fun resolvedUrlOptionsArePassedIntoTransportRequest() {
         val resolved = LegadoResolvedUrl(
             url = "https://reader.example/search",

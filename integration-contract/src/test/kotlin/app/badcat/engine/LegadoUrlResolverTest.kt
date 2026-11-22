@@ -255,14 +255,18 @@ class LegadoUrlResolverTest {
         assertEquals("https://example.com/search#%E2%99%A4%23Qyc", value.url)
     }
     @Test
-    fun defaultsToOneRetryButHonorsExplicitRetryZero() {
+    fun defaultsToZeroRetriesButHonorsExplicitRetrySettings() {
         val default = assertIs<EngineResult.Success<LegadoResolvedUrl>>(
             LegadoUrlResolver.resolve("https://example.com/", "/search"),
         ).value
-        assertEquals(1, default.retryCount)
+        assertEquals(0, default.retryCount)
         val disabled = assertIs<EngineResult.Success<LegadoResolvedUrl>>(
             LegadoUrlResolver.resolve("https://example.com/", """/search,{"retry":0}"""),
         ).value
         assertEquals(0, disabled.retryCount)
+        val enabled = assertIs<EngineResult.Success<LegadoResolvedUrl>>(
+            LegadoUrlResolver.resolve("https://example.com/", """/search,{\"retry\":3}"""),
+        ).value
+        assertEquals(3, enabled.retryCount)
     }
 }
