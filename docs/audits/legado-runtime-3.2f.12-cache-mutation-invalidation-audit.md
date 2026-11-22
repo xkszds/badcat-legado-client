@@ -58,7 +58,7 @@ Pinned BookHelp.ContentSaveFence maintains versioned state by ContentSaveKey(boo
 ### Proven invalidation and concurrency gaps
 
 1. **Fence scope is per instance.** FileChapterContentCache creates ChapterContentSaveFence() as an instance field, while BadcatReadingEngineFactory.create() constructs a new FileChapterContentCache each time. File operations share a top-level mutex, but save generations do not. A request started by cache instance A is not invalidated by an invalidate/replace performed through instance B.
-2. **Fence map is not thread-safe.** ChapterContentSaveFence uses a plain HashMap without synchronization. beginSave and isCurrent are not protected by the file mutex; only file operations and the indexed put/invalidate critical sections hold that mutex. The current fence tests are serial and do not cover this race.
+2. **Fence scope is per instance, not a same-instance data race.** ChapterContentSaveFence methods are annotated `@Synchronized`, so the plain HashMap is protected by that instance's monitor. beginSave/isCurrent are not protected by the file Mutex, but they are protected by the fence's own monitor. The actual gap is that each FileChapterContentCache instance has a different fence map and monitor, so invalidation through another engine instance cannot advance the first instance's generation. The tests present at the audit HEAD were serial and did not cover cross-instance sharing.
 3. **No production invalidation caller was confirmed.** ChapterContentCache.invalidate exists, but SourceChapterContentService only calls beginSave/get/isCurrent/put. The inspected source catalog remove/import paths do not clear the chapter cache. Source removal can therefore leave files under the old sourceId; reusing the same sourceId/bookUrl/index/URL can make old content eligible for reuse.
 4. **Rule changes do not participate in the cache key.** The service caches content after scoped replacement. The key has sourceId/bookUrl/index but no replacement-rule revision, so changing a replacement rule can leave already-replaced content visible until cache expiry or an explicit invalidation.
 5. **Refresh/edit lifecycle is incomplete.** The host service has no counterpart for upstream BookHelp's saveText/reverseContent/commitResources/delContent mutation family or the BatchContentContext batch save-token pipeline. No TOC refresh/content edit invalidation wiring was found in the inspected host production paths.
@@ -95,13 +95,13 @@ There is no verified multi-engine race test, real AtomicFile interruption/recove
 |---|---|---|
 | Generic upstream CacheManager API | NOT MET in Badcat | Room+memory+ACache semantics and WebCacheManager/JS bindings are not a drop-in match for the host source KV/file stores |
 | Chapter-content cache storage | PARTIAL | AtomicFile, index key, TTL check and LRU exist, but legacy URL namespace and persistent invalidation closure are incomplete |
-| Chapter save fence | NO-GO | per-instance, unsynchronized fence can fail across engine instances |
+| Chapter save fence | NO-GO | fence is synchronized per instance but not shared across engines |
 | Source cache lifecycle | NO-GO | delete/clear semantics differ and source removal/replacement is not wired to full runtime clear |
 | BatchContentContext | NOT MET | upstream batch JS/rule content-save context is not connected to host production runtime |
 
 Recommended next implementation order, each separately preregistered:
 
-1. Make chapter save generations process-wide and thread-safe; test two cache instances sharing one app directory, concurrent begin/invalidate/publish, and stale write suppression.
+1. Share the existing synchronized chapter fence process-wide; test two cache instances sharing one app directory, concurrent begin/invalidate/publish, and stale write suppression.
 2. Add real Android/Robolectric AtomicFile tests for write interruption, backup recovery, indexed invalidation, pruning and restart.
 3. Add explicit source lifecycle hooks for remove/reimport/replacement that clear source KV, source file cache and chapter content cache without deleting unrelated book progress.
 4. Align cache.delete and cache.clear across KV and file stores, then test TTL, clear, restart and source isolation.
@@ -109,7 +109,13 @@ Recommended next implementation order, each separately preregistered:
 
 No implementation is authorized by this audit. The follow-up must be registered with exact paths and acceptance criteria before source edits.
 
-## 6. Audit closeout
+
+
+## 7. Audit correction — fence synchronization scope
+
+A source re-check of the exact pinned host blob found that every ChapterContentSaveFence method (token, isCurrent, publishIfCurrent, replace, invalidate) already had @Synchronized. The earlier wording that called the HashMap unsynchronized was incorrect and is corrected above. The verified defect is narrower: the monitor and map are per fence instance, while FileChapterContentCache created one fence per instance. Sharing one process-wide fence fixes the cross-instance generation gap; it does not introduce the original per-instance synchronization.
+
+## 8. Audit closeout
 
 - Pinned upstream code search: CacheManager 43 files (complete index); delContent 11, saveText 17, reverseContent 9, commitResources 2. This is symbol search evidence, not a formal compiler-generated call graph.
 - Host code search index is incomplete; only direct inspected callsites are claimed.
