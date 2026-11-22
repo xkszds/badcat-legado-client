@@ -3,7 +3,8 @@ package app.badcat.client.runtime
 import android.os.Build
 import android.webkit.CookieManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import android.app.InstrumentationRegistry
+import androidx.test.platform.app.InstrumentationRegistry
+import android.app.Instrumentation
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -95,7 +96,7 @@ class WebViewCookieDomainInvalidationInstrumentedTest {
     }
 
     private fun setCookie(
-        instrumentation: androidx.test.platform.app.Instrumentation,
+        instrumentation: Instrumentation,
         manager: CookieManager,
         url: String,
         value: String,
@@ -114,7 +115,7 @@ class WebViewCookieDomainInvalidationInstrumentedTest {
     }
 
     private fun readCookie(
-        instrumentation: androidx.test.platform.app.Instrumentation,
+        instrumentation: Instrumentation,
         manager: CookieManager,
         url: String,
     ): String {

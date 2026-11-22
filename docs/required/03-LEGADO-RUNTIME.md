@@ -2929,3 +2929,14 @@
 - **Probe status:** the new instrumentation test is committed but **not executed**. The statically visible helper parameter type should be checked against AndroidX test APIs before the next build; do not infer compile success from this CI.
 - **Root-cause handling:** no production or test assertion failure was observed. Do not modify product dependencies or tests to hide a Maven/plugin resolution outage. Retry only after recording this result and confirming no active CI.
 - **Fourth-category boundary:** no Fourth-category source/test file changed. No Fourth-category tests ran or passed.
+
+
+#### Runtime-3.2a probe CI #3135 — instrumentation test compile failure and bounded correction
+
+- **Exact branch / HEAD:** `integration/legado-upstream-runtime` / `045f57be136ebbebef40d28b6b604a01b369ecd8`; `main` remains `65b1a271a887b494f88c7e09277c5fb9367c6381`.
+- **CI:** Android debug build #3135, run ID `44993887444`, job ID `137120671457`, terminal `failure`. Pinned upstream verification, contract tests, authentic Legado model contract, G2d stage-1 compile, Third-category App JVM suite, host ABI capture and Debug APK assembly succeeded. API 35 WebView instrumentation did not run because `:app:compileDebugAndroidTestKotlin` failed.
+- **Exact compiler diagnostics:** the probe imported nonexistent `android.app.InstrumentationRegistry`; its helper parameters used nonexistent `androidx.test.platform.app.Instrumentation`, which also caused unresolved `runOnMainSync`. These are test-source type/import errors, not CookieManager runtime assertions or dependency-resolution failures.
+- **Artifact boundary:** Debug APK artifact ID `14743197434` was assembled successfully from this exact HEAD, but it is diagnostic only. No WebView instrumentation report or CookieManager behavior result exists for this run. Live-source probes were skipped. No Fourth-category test was run or passed.
+- **Bounded correction registered:** change only `WebViewCookieDomainInvalidationInstrumentedTest.kt`: restore AndroidX `InstrumentationRegistry` and use framework `android.app.Instrumentation` for both helper parameters. No production source, manifest, UI, IPC, Fourth-category file/test, PPRule, upstream pin or `main` change.
+- **Acceptance:** Android test Kotlin compilation succeeds; then API 35 instrumentation executes and reports the root-vs-path cookie behavior. API 28 coverage remains required. The correction is not accepted until exact-HEAD CI and the actual instrumentation report are inspected.
+- **Checklist self-review:** #3135 is recorded as a compile failure; no test outcome is inferred. This correction remains pending CI verification.
