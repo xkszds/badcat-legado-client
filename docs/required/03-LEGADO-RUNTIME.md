@@ -4261,3 +4261,18 @@
 - **Host evidence：** `SourceTocService.kt` appends pages then dedups by all projected fields except index; it does not implement `-`/`+` prefix semantics and has no book-config input. `SourceReadingEngine` passes source/book URL/toc URL/key only. `SourceBookActivity.reverseCatalog` is transient display-only ordering, not the upstream persisted book reverse flag.
 - **决定：** .24 may implement URL-only identity as a partial parity improvement, but must not claim exact representative parity until source-rule reverse and page ordering are handled; must not claim book reverseToc parity without a separately registered typed book-config input/owner design. Do not use UI reverse toggle as a substitute.
 - **边界：** read-only; no tests/build/CI/device run. .24 remains blocked on #3178 terminal exact-SHA result because it shares `SourceTocServiceTest.kt`.
+
+
+### Runtime-3.2f.26 registration — real Android AtomicFile chapter-cache contract tests
+
+- **日期 / 分类：** 2026-11-23；第三类：chapter content cache persistence / crash recovery.
+- **起始 branch / HEAD：** `integration/legado-upstream-runtime` / `9e37edaf4c996d56d8dbbdfa91014ab8446f0837`；固定 Legado pin `330e606c4d57e08adc056ff8ab7a4132c784da9a` 不变。
+- **触发依据：** .22 只读审计确认当前 `FileChapterContentCache` 使用真实 Android `AtomicFile`，但现有 `FileChapterContentCacheTest` 只覆盖纯 JVM bounded reader 和 digest；没有验证 Android 文件写入/读取、索引 stale-URL guard、invalidate 对两种 key namespace 的边界，或 interrupted-write backup recovery。
+- **目标：** 新增 Robolectric tests 直接运行生产 `FileChapterContentCache`，验证 legacy URL-keyed 与 index-keyed真实 AtomicFile round-trip；索引读取拒绝不同 chapter URL 的旧条目；index invalidate 只删 index digest 文件并保留 legacy URL digest 文件；模拟一次未 finish 的 AtomicFile 写入后，`openRead()` 恢复之前已提交的章节内容。
+- **允许修改文件：** 仅新增 `app/src/test/kotlin/app/badcat/client/runtime/FileChapterContentCacheAtomicFileTest.kt`；更新本分类清单登记/closeout。若测试暴露生产实现问题，必须先另行 preregister，不能在本任务内改生产代码。
+- **调用方/数据 owner：** 直接构造生产 `FileChapterContentCache`；使用 app-private `filesDir/legado_chapter_cache` 与真实 Android `AtomicFile`；不接入新的 production caller，不改变缓存 owner。
+- **测试要求：** 使用 Robolectric Android `Context` + `runBlocking`；每项测试独立清理缓存目录；验证 JSON 数据回读字段与 savedAt；确认 index 与 legacy digest 不别名；interrupted-write 测试必须先经 cache 正常提交旧内容，再通过 AtomicFile.startWrite 写入不完整替代数据且不调用 finish/fail，随后经 cache.get 证明旧提交被恢复。不得用 mock AtomicFile 或 fake cache 代替生产实现。
+- **排除：** 不修改 `FileChapterContentCache.kt`、`ChapterContentCache` API、key/digest/schema、TTL/LRU/prune、source-wide purge、manifest/migration、source lifecycle、BatchContentContext、Reader/UI、第四/第五类、workflow、上游 pin 或 `main`。不宣称 CacheManager 完整 parity。
+- **验收：** focused Robolectric tests、完整第三类 App JVM suite、exact-SHA CI；检查新增测试确实出现在 App JUnit XML；diff 只含登记的新测试文件与本清单；记录测试未覆盖的 AtomicFile 设备/进程死亡边界。
+- **并行边界：** 不与 .24 的 `SourceTocService.kt` / `SourceTocServiceTest.kt` 文件重叠，生产状态也独立；可在 #3178 仍运行时实施。分类清单由单一 CAS 提交顺序维护，CI 结果只对 exact SHA 生效。
+- **状态：** 已登记，尚未实施；本登记不授权任何生产代码或持久化格式变更。
