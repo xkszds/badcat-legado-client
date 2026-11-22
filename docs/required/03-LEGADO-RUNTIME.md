@@ -4177,3 +4177,10 @@
 - **决定：** .22 只读审计关闭；后续可单独登记“完整 branch-aware legacy caller scan + 移除/迁移决策”或“typed source-wide chapter cache invalidation”。未改生产代码，不清理旧文件，不声称 cache lifecycle parity。
 - **状态：** audit-only；第三类仍部分实现。
 
+
+#### Runtime-3.2f.21 dedup identity correction — exact CI #3177 finding
+
+- **Exact CI:** #3177 / run `45082689532`, SHA `fd1c4b9f608106874de207823d7ed62c0a9b0bec`, terminal `completed / failure`. The non-script baseUrl omission was fixed, but the full contract suite ran 515 tests with one failure: `SourceTocServiceTest.incrementalCallbacksPreserveDuplicateUrlsAcrossTocPages` expected 2 rows and observed 3.
+- **Cause/decision:** the repeated row had the same title and URL but came from a different TOC page final URL. Since chapter-specific `baseUrl` is now part of the chapter projection and is needed to preserve per-page resolution provenance, these rows are not equal projections. Preserving both is consistent with .10 duplicate chapter identity. The same-page test `preservesDifferentChaptersSharingUrlAndCollapsesOnlyEqualProjectedRows` continues to prove exact equal projections are collapsed.
+- **Correction:** update only the already preregistered `SourceTocServiceTest.kt` fixture expectations: the cross-page duplicate URL row with distinct baseUrl is retained, indexes remain continuous, and the baseUrl list records the page that supplied each row. No production dedup implementation change and no scope expansion.
+- **Status:** test-only correction committed in follow-up SHA; exact-SHA CI pending. #3177 failure remains historical evidence.

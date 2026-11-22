@@ -397,11 +397,16 @@ class SourceTocServiceTest {
         )
 
         assertEquals(2, callbacks.size)
-        assertEquals(listOf("Chapter One", "Chapter Two"), callbacks.last().map { it.title })
-        assertEquals(listOf(0, 1), callbacks.last().map { it.index })
+        assertEquals(listOf("Chapter One", "Chapter Two", "Chapter One"), callbacks.last().map { it.title })
+        assertEquals(listOf(0, 1, 2), callbacks.last().map { it.index })
         assertEquals(result.value, callbacks.last())
-        assertEquals(2, result.value.size)
+        assertEquals(3, result.value.size)
         assertEquals(1, result.value.map { it.url }.distinct().size)
+        assertEquals(
+            listOf("https://reader.example/book/1", "https://reader.example/book/1?page=2",
+                "https://reader.example/book/1?page=2"),
+            result.value.map { it.baseUrl },
+        )
     }
 
 
