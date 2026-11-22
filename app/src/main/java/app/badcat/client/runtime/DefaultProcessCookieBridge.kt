@@ -1,8 +1,8 @@
 package app.badcat.client.runtime
 
-import android.webkit.CookieManager
 import android.os.Handler
 import android.os.Looper
+import android.webkit.CookieManager
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -24,10 +24,29 @@ internal interface WebCookieManagerPort {
 internal class AndroidWebCookieManagerPort(
     private val manager: CookieManager = CookieManager.getInstance(),
 ) : WebCookieManagerPort {
+    private val mainLooper = Looper.getMainLooper()
+    private val mainHandler = Handler(mainLooper)
+
     override fun getCookie(url: String): String? = manager.getCookie(url)
-    override fun setCookie(url: String, value: String, callback: (Boolean) -> Unit) {
-        manager.setCookie(url, value, callback)
+
+    override fun setCookie(url: String, value: String, callback: (Result<Boolean>) -> Unit) {
+        val operation = Runnable {
+            try {
+                manager.setCookie(url, value) { accepted ->
+                    callback(Result.success(accepted))
+                }
+            } catch (error: Exception) {
+                callback(Result.failure(error))
+            }
+        }
+
+        if (Looper.myLooper() == mainLooper) {
+            operation.run()
+        } else if (!mainHandler.post(operation)) {
+            callback(Result.failure(IllegalStateException("WebView CookieManager main Looper is unavailable")))
+        }
     }
+
     override fun flush() = manager.flush()
 }
 
@@ -273,8 +292,8 @@ internal class DefaultProcessCookieBridge(
                     webCookies.setCookie(url, value) { result ->
                         if (continuation.isActive) {
                             result.fold(
-                                onSuccess = continuation::resume,
-                                onFailure = continuation::resumeWithException,
+                                onSuccess = { accepted -> continuation.resume(accepted) },
+                                onFailure = { error -> continuation.resumeWithException(error) },
                             )
                         }
                     }
