@@ -269,4 +269,63 @@ class LegadoUrlResolverTest {
         ).value
         assertEquals(3, enabled.retryCount)
     }
+    @Test
+    fun followsPinnedFollowRedirectsBooleanOptionParsing() {
+        val cases = listOf(
+            "true" to true,
+            "false" to false,
+            "0" to false,
+            "1" to true,
+            "0.0" to false,
+            "1.0" to true,
+            "\" TRUE \"" to true,
+            "\" 0 \"" to false,
+            "null" to null,
+            "0.5" to null,
+            "1.5" to null,
+            "\"yes\"" to null,
+            "[]" to null,
+            "{}" to null,
+        )
+        cases.forEach { (raw, expected) ->
+            val resolved = assertIs<EngineResult.Success<LegadoResolvedUrl>>(
+                LegadoUrlResolver.resolve(
+                    "https://example.com/",
+                    """/search, {"followRedirects":$raw}""",
+                ),
+            ).value
+            assertEquals(expected, resolved.followRedirects, "followRedirects=$raw")
+        }
+
+        val missing = assertIs<EngineResult.Success<LegadoResolvedUrl>>(
+            LegadoUrlResolver.resolve("https://example.com/", "/search"),
+        ).value
+        assertEquals(null, missing.followRedirects)
+    }
+
+    @Test
+    fun followsPinnedWebViewFalseSetAndFailsClosedForEveryOtherPresentValue() {
+        val falseValues = listOf("null", "\"\"", "false", "\"false\"")
+        falseValues.forEach { raw ->
+            val resolved = assertIs<EngineResult.Success<LegadoResolvedUrl>>(
+                LegadoUrlResolver.resolve(
+                    "https://example.com/",
+                    """/search, {"webView":$raw}""",
+                ),
+            ).value
+            assertEquals("https://example.com/search", resolved.url)
+        }
+
+        val trueValues = listOf("0", "\"0\"", "\"true\"", "true", "\"FALSE\"", "\" false \"", "[]", "{}")
+        trueValues.forEach { raw ->
+            val failure = assertIs<EngineResult.Failure>(
+                LegadoUrlResolver.resolve(
+                    "https://example.com/",
+                    """/search, {"webView":$raw}""",
+                ),
+            )
+            assertEquals(EngineErrorCode.UNSUPPORTED_RULE, failure.code, "webView=$raw")
+        }
+    }
+
 }

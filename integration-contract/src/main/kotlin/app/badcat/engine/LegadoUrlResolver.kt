@@ -75,7 +75,7 @@ object LegadoUrlResolver {
             } ?: "GET"
             val body = options?.get("body")?.let(::bodyValue)
             val timeout = options?.get("timeout")?.let(::positiveLong)
-            val redirects = options?.get("followRedirects")?.let(::booleanValue)
+            val redirects = options?.get("followRedirects")?.let(::followRedirectsOption)
             // Pinned AnalyzeUrl defaults to zero retries; only an explicit URL option enables retries.
             val retry = options?.get("retry")?.let(::nonNegativeInt) ?: 0
             require(retry <= 5) { "URL option retry must be between 0 and 5" }
@@ -87,7 +87,7 @@ object LegadoUrlResolver {
                     "URL options dnsIp, resolveIp and type are not implemented by the current HTTP transport",
                 )
             }
-            val webView = options?.get("webView")?.let(::booleanValue) ?: false
+            val webView = options?.get("webView")?.let(::useWebViewOption) ?: false
             val js = options?.string("js")
             val bodyJs = options?.string("bodyJs")
             if (options?.has("webJs") == true || webView) {
@@ -251,20 +251,35 @@ object LegadoUrlResolver {
         return number
     }
 
-    private fun booleanValue(value: JsonElement): Boolean = when {
+    /** Mirrors pinned AnalyzeUrl.UrlOption.getFollowRedirects()/parseBooleanOption(). */
+    private fun followRedirectsOption(value: JsonElement): Boolean? {
+        if (value.isJsonNull || !value.isJsonPrimitive) return null
+        val primitive = value.asJsonPrimitive
+        return when {
+            primitive.isBoolean -> primitive.asBoolean
+            primitive.isNumber -> when (primitive.asBigDecimal.compareTo(java.math.BigDecimal.ZERO)) {
+                0 -> false
+                else -> when (primitive.asBigDecimal.compareTo(java.math.BigDecimal.ONE)) {
+                    0 -> true
+                    else -> null
+                }
+            }
+            primitive.isString -> when (primitive.asString.trim().lowercase()) {
+                "true", "1" -> true
+                "false", "0" -> false
+                else -> null
+            }
+            else -> null
+        }
+    }
+
+    /** Mirrors the pinned upstream false set; all other present values request WebView. */
+    private fun useWebViewOption(value: JsonElement): Boolean = when {
         value.isJsonNull -> false
-        value.isJsonPrimitive && value.asJsonPrimitive.isBoolean -> value.asBoolean
-        value.isJsonPrimitive && value.asJsonPrimitive.isNumber -> when (value.asInt) {
-            0 -> false
-            1 -> true
-            else -> throw IllegalArgumentException("Boolean URL option must be 0 or 1")
-        }
-        value.isJsonPrimitive && value.asJsonPrimitive.isString -> when (value.asString.trim().lowercase()) {
-            "true", "1" -> true
-            "false", "0", "" -> false
-            else -> throw IllegalArgumentException("Invalid boolean URL option")
-        }
-        else -> throw IllegalArgumentException("Invalid boolean URL option")
+        value.isJsonPrimitive && value.asJsonPrimitive.isBoolean && !value.asBoolean -> false
+        value.isJsonPrimitive && value.asJsonPrimitive.isString &&
+            (value.asString.isEmpty() || value.asString == "false") -> false
+        else -> true
     }
 
     private fun scalarString(value: JsonElement): String {
