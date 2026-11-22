@@ -3401,3 +3401,20 @@
 - **真实来源 smoke 遗留：** best-effort 上传语料端到端抽样仅 `1/4` 来源候选完成完整链路，`3/4` 失败；其中可见日志记录零零小说搜索阶段超时。相关报告 artifact ID `14771461933`。因此不能宣称真实来源覆盖全部通过，也不能据此判定第三类完整兼容。
 - **验收结论：** Runtime-3.2e.7 的登记范围（Cookie 测试迁移修复、第三类 JVM suite、API 28/35 instrumentation）**通过 CI 验收**。这只关闭本测试修复任务；第三类整体仍未完成，真实来源多源 E2E、完整 Legado API/JS/HTTP/登录生命周期差分和实体设备验证仍是独立遗留门槛。
 - **自审：** 本任务没有改生产 Cookie 存储/桥接、HTTP、登录 WebView Host、manifest、Reader/UI、第四类、第五类、schema 或上游 pin；`main` 未修改。
+
+
+#### Runtime-3.2f.1 nullable enabledCookieJar import semantics — preregistration
+
+- **日期 / 分类：** 2026-11-23；第三类：Legado Runtime。
+- **起始 HEAD：** `1ccfe229c2892bee6dbec939fb3da7460503a2d4`；分支 `integration/legado-upstream-runtime`；固定上游 SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **审查发现：** 固定 SHA 的 `BookSource.enabledCookieJar` 声明为 `Boolean? = true`。Gson 构造时缺失字段采用默认 `true`，显式 JSON `null` 则保留 null。当前 `LegadoBookSourceCodec.decodeObject` 对该字段调用 `booleanOrDefault`，显式 null 会因读取失败退回 true，造成导入/host projection 语义改变。
+- **目标：** 区分字段缺失、显式 null、true 和 false；缺失仍用上游默认 true，显式 null 保留 null，并通过 `toEngineSource()` 与原始 JSON 导出保持该区别。不得改变其他布尔字段的默认或 null 处理。
+- **允许修改文件：**
+  - `integration-contract/src/main/kotlin/app/badcat/engine/LegadoBookSourceCodec.kt`
+  - `integration-contract/src/test/kotlin/app/badcat/engine/LegadoBookSourceCodecTest.kt`
+- **调用方审查：** `FileBookSourceCatalog.importJson/all/exportJson/setEnabled` 使用 codec decode/encode 与 `toEngineSource`；本任务只修正 typed projection，不改变 AtomicFile、目录合并/去重、启停或导出流程。
+- **实现边界：** 对 nullable Boolean 字段使用显式缺失/null 分支；已存在的 known-field type validation 继续拒绝非布尔非 null 值。不要改上游模型、Room/schema、HTTP CookieJar、CookieBridge 或 UI。
+- **Focused tests：** 缺失字段得到 true；显式 null 得到 null；显式 true/false 保持原值；host `BookSource.enabledCookieJar` 保留 null；encode 导出仍为 JSON null；畸形字符串/数字仍 fail closed。
+- **验收：** `:integration-contract:test` 通过；完整第三类 App JVM suite 在 exact HEAD CI 通过；检查 diff 只涉及上述两个允许文件；新 CI 的 head SHA 必须等于实现提交 SHA。
+- **明确排除：** 其他 BookSource 字段/规则模型扩展、Book/BookChapter/ReadConfig/ParagraphAnchor、Cookie 生产行为、HTTP、登录 WebView、JS ABI、业务链、缓存、Android manifest/UI、第四/第五类、上游 pin、`main`。
+- **状态：** 已 preregister，尚未实施。该任务不依赖其他在途任务，文件范围独立；实现提交后单独验证并回写闭环。
