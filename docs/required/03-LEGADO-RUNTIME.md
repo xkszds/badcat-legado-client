@@ -4184,3 +4184,7 @@
 - **Cause/decision:** the repeated row had the same title and URL but came from a different TOC page final URL. Since chapter-specific `baseUrl` is now part of the chapter projection and is needed to preserve per-page resolution provenance, these rows are not equal projections. Preserving both is consistent with .10 duplicate chapter identity. The same-page test `preservesDifferentChaptersSharingUrlAndCollapsesOnlyEqualProjectedRows` continues to prove exact equal projections are collapsed.
 - **Correction:** update only the already preregistered `SourceTocServiceTest.kt` fixture expectations: the cross-page duplicate URL row with distinct baseUrl is retained, indexes remain continuous, and the baseUrl list records the page that supplied each row. No production dedup implementation change and no scope expansion.
 - **Status:** test-only correction committed in follow-up SHA; exact-SHA CI pending. #3177 failure remains historical evidence.
+
+#### Runtime-3.2f.22 storage-schema clarification
+
+- **补充发现：** legacy/index 两类 JSON payload 均不存 `sourceId/bookUrl`；index payload 只额外存 `chapterUrl`，仍无 chapterIndex。文件名只有身份元组的单向 SHA-256。现有目录不能安全地按 source 枚举其文件；全目录删除会破坏其他 source 离线章节。后续 source-wide purge 必须先设计带身份元数据的 manifest/版本化文件格式及迁移，不能直接按哈希文件名猜测。

@@ -44,3 +44,7 @@ Read-only audit of the current host chapter-cache interface, its production impl
 ## Evidence boundary
 
 Static source audit only; no tests, CI, APK, Android instrumentation, device filesystem inspection or migration execution was run. This does not close chapter cache lifecycle parity, BatchContentContext, or full third-category compatibility.
+
+## Follow-up storage-schema clarification
+
+Inspection of the complete `FileChapterContentCache.put` payloads confirms that neither storage form writes `sourceId`, `bookUrl`, or `chapterIndex` into the JSON body. The legacy payload stores title/text/page URLs/savedAt; the index payload additionally stores chapterUrl, but still not source/book/index identity. The filename is only a one-way SHA-256 digest of the identity tuple. Therefore, the current directory cannot safely enumerate a single source's chapter files from file contents or filenames. A per-source purge cannot be implemented safely by filename parsing; it requires an explicit metadata index/manifest or a versioned file format with identity metadata, plus migration and privacy review. Clearing the whole directory would delete unrelated sources' offline chapters and is not acceptable.
