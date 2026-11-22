@@ -3417,7 +3417,7 @@
 - **Focused tests：** 缺失字段得到 true；显式 null 得到 null；显式 true/false 保持原值；host `BookSource.enabledCookieJar` 保留 null；encode 导出仍为 JSON null；畸形字符串/数字仍 fail closed。
 - **验收：** `:integration-contract:test` 通过；完整第三类 App JVM suite 在 exact HEAD CI 通过；检查 diff 只涉及上述两个允许文件；新 CI 的 head SHA 必须等于实现提交 SHA。
 - **明确排除：** 其他 BookSource 字段/规则模型扩展、Book/BookChapter/ReadConfig/ParagraphAnchor、Cookie 生产行为、HTTP、登录 WebView、JS ABI、业务链、缓存、Android manifest/UI、第四/第五类、上游 pin、`main`。
-- **实现状态：** 已按登记范围提交实现，代码 HEAD `b1b4b8326205223cbc0e3efced2a8ba2a3aedf2c`；只修改上述两个允许文件。`:integration-contract:test` 与完整第三类 JVM CI 正在 Run #3157（run ID `45067267739`）验证，exact head SHA 与实现提交一致；尚未取得终态，当前不得标记通过。
+- **实现状态：** 已按登记范围提交实现，代码 SHA `b1b4b8326205223cbc0e3efced2a8ba2a3aedf2c`；只修改上述两个允许文件。Run #3157（run ID `45067267739`）已对该 exact SHA `completed / success`；验收记录见下方 closeout。
 
 
 #### Runtime-3.2f.2 AnalyzeUrl retry default parity — preregistration
@@ -3545,3 +3545,16 @@
 - **实际修正：** parseRows 现在区分 countdown 缺失/null 与存在但不能精确解析的值；非法小数、字符串、boolean、溢出、负数和超过 86400 的值拒绝整行；缺失/null 仍接受。
 - **CI：** Run #3162，run ID `45068414758`，exact head SHA 与实现提交一致；当前 in progress，等待 contract unit tests 终态。
 - **状态：** 实现已提交，待 exact-HEAD CI；不代表登录 UI 或登录 WebView 完整兼容。
+
+
+#### Runtime-3.2f.1 nullable enabledCookieJar — closeout
+
+- **实现 SHA：** `b1b4b8326205223cbc0e3efced2a8ba2a3aedf2c`；CI Run #3157 / run ID `45067267739`，run head SHA 与实现 SHA 完全一致；结论 `completed / success`。
+- **允许文件核验：** 实现 diff 仅修改登记的 `LegadoBookSourceCodec.kt` 与 `LegadoBookSourceCodecTest.kt`；未触及 Cookie 生产存储、HTTP、WebView、UI、上游 pin 或 `main`。
+- **测试：** `Run contract unit tests`、固定上游模型契约测试、完整第三类 App JVM unit suite 均成功；JUnit 报告 artifact `14771968965`。
+- **Android instrumentation：** API 28 与 API 35 WebView provider / CookieManager instrumentation steps 均成功；provider runtime reports artifacts `14771902408`、`14772466153`，ADB diagnostics artifacts `14771757893`、`14772391410`。
+- **APK：** Debug APK artifact `14771829600` 已成功上传；只记录构建产物存在，不宣称真机安装或 Release 签名验收。
+- **真源 smoke：** Bixiange GBK POST search → detail → AJAX TOC → content 通过（artifact `14772446430`）；Pinshuzhai search → detail → 1650 chapters TOC → content 通过（artifact `14772178039`）；上传源样本 1/4 完成全链路，另 3 个候选因两个网络超时和一个 HTTP 404 失败（artifact `14771989617`）。不能据此声称多源覆盖完成。
+- **范围结论：** 仅关闭 nullable `enabledCookieJar` 字段的缺失/null/true/false 投影与序列化契约；不代表 Cookie bridge、会话持久化或第三类整体完成。
+- **自审：** exact SHA、job 全部步骤成功、JUnit 与真源报告已核对；`main` 保持原 SHA `65b1a271a887b494f88c7e09277c5fb9367c6381`。
+- **状态：** 已验收通过。
