@@ -6,6 +6,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import kotlin.test.assertNull
 
 class LegadoBookSourceCodecTest {
 
@@ -139,6 +140,41 @@ class LegadoBookSourceCodecTest {
         assertFalse(sources[1].enabled)
         assertEquals(4, sources[1].sourceType)
         assertEquals(0, sources[1].toEngineSource().customOrder)
+    }
+
+
+    @Test
+    fun preservesNullableEnabledCookieJarMissingNullAndBooleanValues() {
+        val missing = LegadoBookSourceCodec.decode(
+            """{"bookSourceUrl":"https://missing-cookie-jar.example","bookSourceName":"Missing"}"""
+        ).single()
+        val explicitNull = LegadoBookSourceCodec.decode(
+            """{"bookSourceUrl":"https://null-cookie-jar.example","bookSourceName":"Null","enabledCookieJar":null}"""
+        ).single()
+        val explicitTrue = LegadoBookSourceCodec.decode(
+            """{"bookSourceUrl":"https://true-cookie-jar.example","bookSourceName":"True","enabledCookieJar":true}"""
+        ).single()
+        val explicitFalse = LegadoBookSourceCodec.decode(
+            """{"bookSourceUrl":"https://false-cookie-jar.example","bookSourceName":"False","enabledCookieJar":false}"""
+        ).single()
+
+        assertEquals(true, missing.enabledCookieJar)
+        assertNull(explicitNull.enabledCookieJar)
+        assertNull(explicitNull.toEngineSource().enabledCookieJar)
+        assertEquals(true, explicitTrue.enabledCookieJar)
+        assertEquals(false, explicitFalse.enabledCookieJar)
+
+        val exportedNull = JsonParser.parseString(
+            LegadoBookSourceCodec.encode(listOf(explicitNull))
+        ).asJsonArray.single().asJsonObject
+        assertTrue(exportedNull.get("enabledCookieJar").isJsonNull)
+
+        listOf(
+            """{"bookSourceUrl":"https://bad-cookie-jar.example","bookSourceName":"Bad","enabledCookieJar":"true"}""",
+            """{"bookSourceUrl":"https://bad-cookie-jar.example","bookSourceName":"Bad","enabledCookieJar":1}""",
+        ).forEach { malformed ->
+            assertFailsWith<IllegalArgumentException> { LegadoBookSourceCodec.decode(malformed) }
+        }
     }
 
     @Test
