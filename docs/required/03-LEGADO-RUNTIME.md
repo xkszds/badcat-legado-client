@@ -3331,3 +3331,35 @@
 - **Blocking decision before CookieBridge login import is changed:** pinned upstream persists WebView-login name/value pairs via `CookieStore.setCookie`; the current host intentionally imports them session-only. These behaviors conflict. The fixed-SHA compatibility rule points toward upstream persistence, while the current security boundary avoids persisting cookies whose attributes cannot be observed. No implementation may silently choose between them. Obtain an explicit project decision and add a differential contract test before changing this behavior.
 - **Next bounded task:** register a cookie import persistence decision first. After that decision, register the additive source-login WebView host implementation with exact files, manifest entry, lifecycle and API 28/35 tests. The broader background rule-WebView/JS bridge and interactive browser/captcha host should be separate tasks.
 - **Self-review:** reviewed the three existing host audits, pinned upstream login fragment/viewmodel, CookieStore and CookieManager, BackstageWebView, WebJsExtensions, SourceLoginJsExtensions, SourceVerificationHelp, WebViewPool, WebViewRequestConfig, BottomWebViewDialog and relevant tests; compared them with current host bridge, factory, login UI, source session and reader WebView. No CI was run because this is a read-only audit and its documentation record uses `[skip ci]`.
+
+#### Runtime-3.2e.6 WebView Cookie 持久化策略决策与策略化导入 — preregistration
+
+- **日期 / 分类：** 2026-11-23；第三类：Legado 运行时。
+- **用户决策：** 用户明确选择方案 C（分层策略）。
+- **决策状态：** 已决定；本节同时登记下一项实现任务。注册提交不包含生产代码。
+- **起始 HEAD：** `0eee49982e3ba41af8d4627527bc4c56ca5b9ff7`；分支：`integration/legado-upstream-runtime`；固定上游：`LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **正式策略：**
+  1. `LEGADO_COMPAT` 是默认策略。显式源登录/WebView 完成时，将 CookieManager 可见的 name/value 对按固定 SHA 的 `CookieStore.setCookie` 兼容语义写入持久化 Cookie 域桶；进程重启后仍可读取。
+  2. `SESSION_ONLY` 是可选策略。相同导入只进入进程内 session map，进程重启后消失，不提升为磁盘持久化。
+  3. HTTP 响应 `Set-Cookie` 的现有持久/会话分类、过期处理和同名覆盖规则保持不变。
+  4. 每次 WebView 导入记录稳定来源身份的不可逆摘要、有效域、策略和导入时间；元数据不得包含 Cookie 名称/值、完整 Cookie Header、认证头或其他秘密。原始来源标识不得为了审计而新增明文持久化。
+  5. `LEGADO_COMPAT` 的持久化只承诺与上游 WebView-login 的 name/value 持久化行为对齐；CookieManager 不暴露原始 `Expires`/`Max-Age` 等属性，不能声称保留或还原浏览器原始过期语义。
+  6. 策略只在显式 source-WebView 生命周期回调中应用；禁止每次 HTTP 请求前自动导入 WebView Cookie，禁止跨来源推断身份，禁止全局 Cookie 清空。
+- **上游差异依据：** 固定 SHA 的 `WebViewLoginFragment` 与 `BackstageWebView` 在页面完成后读取 `CookieManager.getCookie(url)` 并调用 `CookieStore.setCookie(sourceKey, cookie)`；`CookieStore.setCookie` 将可见 name/value header 写入持久化 CookieDao。当前 Badcat `mergeWebViewCookieHeader` 则只写进程 session map，属于已确认的兼容差异。HTTP `CookieManager.saveResponse` 对服务端 Cookie 仍区分持久与 session，不能把两种来源混为一谈。
+- **允许修改的生产文件：**
+  - `app/src/main/java/app/badcat/client/runtime/SharedPreferencesSourceCookieJar.kt`：增加明确的 WebView 导入策略分支和不含 Cookie 明文的导入元数据读写；保持 HTTP CookieJar 路径语义。
+  - `app/src/main/java/app/badcat/client/runtime/DefaultProcessCookieBridge.kt`：为显式导入 API 增加必需的稳定 source identity 与策略参数，默认 `LEGADO_COMPAT`；不添加 HTTP 请求前自动同步。
+- **允许修改的测试文件：**
+  - `app/src/test/kotlin/app/badcat/client/runtime/SharedPreferencesSourceCookieJarTest.kt`
+  - `app/src/test/kotlin/app/badcat/client/runtime/DefaultProcessCookieBridgeTest.kt`
+- **实现要求：**
+  - 以枚举/封闭类型表达 `LEGADO_COMPAT` 与 `SESSION_ONLY`，不得使用字符串魔法值或 Any/Map 通用桥接。
+  - `LEGADO_COMPAT` 必须通过进程重建测试；并用固定上游语义测试证明导入结果、持久化覆盖/合并边界及同名优先级。不得只把现有 session-only 测试改成通过而不验证持久化。
+  - `SESSION_ONLY` 必须验证同进程可见、重建 session store 后不可见，且不会写入持久化区。
+  - 元数据必须按 source identity + effective domain 隔离；验证来源摘要稳定、不同来源隔离、策略与时间准确、Cookie 明文/头部不出现在元数据中；域清理必须一并清理该域元数据。
+  - HTTP persistent/session response-cookie 分类、删除/过期行为和现有请求读取行为不得回归。
+  - WebView 导入必须显式带 source identity；空/非法来源身份、非法 URL、超长 Header 和无有效 name/value 对均 fail closed；不记录 Cookie 值。
+- **验收：** 两个指定 JVM 测试文件通过；完整第三类 App JVM suite 在 exact HEAD CI 通过；检查 diff 确认没有第四类、Reader/UI、manifest、HTTP factory、隐藏进程/IPC、SSL 策略或 schema 改动。若策略引入的存储边界无法证明，停止并记录阻断，不得降级为无来源身份导入。
+- **明确排除：** source-WebView 登录界面/Host Port；Application/manifest/权限；WebView 生命周期和 CookieBridge 生产调用接线；后台规则 WebView、JS bridge、交互浏览器/验证码；HTTP gateway/factory；SSL 回调与证书策略；Reader/UI；第四类 AdMark/AdBlock；第五类 PPRule；数据库 schema 迁移；上游 pin；`main`。
+- **后续顺序：** 本任务通过后，再独立登记 source-scoped login WebView host，将来源身份、登录完成、Cookie 导入/导出、登出失效和生命周期接入；背景规则 WebView/JS bridge 与交互浏览器/验证码继续分项登记。
+- **状态：** 已注册，尚未实施；注册文档提交使用 `[skip ci]`。
