@@ -2,10 +2,12 @@ package app.badcat.client.runtime
 
 import android.webkit.CookieManager
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.LinkedHashSet
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 /**
  * Narrow default-process port around Android's WebView cookie provider.
@@ -27,12 +29,36 @@ internal class AndroidWebCookieManagerPort(
     override fun flush() = manager.flush()
 }
 
-internal data class CookieBridgeInvalidationResult(
-    val trackedUrlCount: Int,
-    val attemptedExpiryCount: Int,
-    val remainingNamesByUrl: Map<String, Set<String>>,
-) {
-    val cleared: Boolean get() = remainingNamesByUrl.values.all { it.isEmpty() }
+internal enum class CookieBridgeInvalidationFailureReason {
+    CALLBACK_REJECTED,
+    CALLBACK_TIMEOUT,
+    CALLBACK_ERROR,
+    WEBVIEW_COOKIES_REMAIN,
+    AUTHORITATIVE_STORE_COOKIES_REMAIN,
+    AUTHORITATIVE_STORE_CLEAR_ERROR,
+}
+
+internal sealed interface CookieBridgeInvalidationResult {
+    val trackedUrlCount: Int
+    val attemptedExpiryCount: Int
+    val cleared: Boolean
+
+    data class Cleared(
+        override val trackedUrlCount: Int,
+        override val attemptedExpiryCount: Int,
+    ) : CookieBridgeInvalidationResult {
+        override val cleared: Boolean = true
+    }
+
+    data class Failed(
+        val reason: CookieBridgeInvalidationFailureReason,
+        override val trackedUrlCount: Int,
+        override val attemptedExpiryCount: Int,
+        val remainingWebViewNamesByUrl: Map<String, Set<String>>,
+        val remainingStoreNamesByUrl: Map<String, Set<String>>,
+    ) : CookieBridgeInvalidationResult {
+        override val cleared: Boolean = false
+    }
 }
 
 /**
@@ -84,7 +110,7 @@ internal class DefaultProcessCookieBridge(
         observe(url)
         val header = store.getCookie(url)
         parseLegadoCookieMap(header).forEach { (name, value) ->
-            setAndAwait(url, "$name=$value; Path=/")
+            check(setAndAwait(url, "$name=$value; Path=/") == true) { "WebView CookieManager rejected or timed out a scoped cookie update" }
         }
         webCookies.flush()
     }
@@ -122,48 +148,136 @@ internal class DefaultProcessCookieBridge(
         }
 
         var attempts = 0
-        targets.forEach { url ->
+        for (url in targets) {
             val parsed = requireNotNull(url.toHttpUrlOrNull())
             val names = namesByUrl[url].orEmpty()
             val domains = domainCandidates(parsed.host, root)
             val paths = pathCandidates(parsed.encodedPath)
-            names.forEach { name ->
-                paths.forEach { path ->
-                    setAndAwait(url, "$name=; Max-Age=0; Path=$path")
+            for (name in names) {
+                for (path in paths) {
                     attempts++
-                    domains.forEach { domain ->
-                        setAndAwait(url, "$name=; Max-Age=0; Path=$path; Domain=$domain")
+                    val failure = awaitExpiry(url, "$name=; Max-Age=0; Path=$path")
+                    if (failure != null) return invalidationFailure(failure, targets, attempts)
+                    for (domain in domains) {
                         attempts++
+                        val domainFailure = awaitExpiry(
+                            url,
+                            "$name=; Max-Age=0; Path=$path; Domain=$domain",
+                        )
+                        if (domainFailure != null) {
+                            return invalidationFailure(domainFailure, targets, attempts)
+                        }
                     }
                 }
             }
         }
-        webCookies.flush()
 
-        // Clear the authoritative domain bucket only after all targeted expiry
-        // callbacks have completed; preserve unrelated registrable domains.
-        store.removeCookie(sourceUrl)
-        val remaining = targets.associateWith { url ->
-            parseLegadoCookieMap(webCookies.getCookie(url).orEmpty()).keys
+        try {
+            webCookies.flush()
+        } catch (error: Exception) {
+            return invalidationFailure(
+                CookieBridgeInvalidationFailureReason.CALLBACK_ERROR,
+                targets,
+                attempts,
+            )
         }
-        return CookieBridgeInvalidationResult(targets.size, attempts, remaining)
+
+        // Preserve the authoritative bucket unless every targeted WebView URL
+        // has been read back clean after all expiry callbacks have completed.
+        val remainingWebView = webViewNamesByUrl(targets)
+        if (remainingWebView.values.any { it.isNotEmpty() }) {
+            return CookieBridgeInvalidationResult.Failed(
+                reason = CookieBridgeInvalidationFailureReason.WEBVIEW_COOKIES_REMAIN,
+                trackedUrlCount = targets.size,
+                attemptedExpiryCount = attempts,
+                remainingWebViewNamesByUrl = remainingWebView,
+                remainingStoreNamesByUrl = storeNamesByUrl(targets),
+            )
+        }
+
+        try {
+            store.removeCookie(sourceUrl)
+        } catch (error: Exception) {
+            return CookieBridgeInvalidationResult.Failed(
+                reason = CookieBridgeInvalidationFailureReason.AUTHORITATIVE_STORE_CLEAR_ERROR,
+                trackedUrlCount = targets.size,
+                attemptedExpiryCount = attempts,
+                remainingWebViewNamesByUrl = remainingWebView,
+                remainingStoreNamesByUrl = storeNamesByUrl(targets),
+            )
+        }
+
+        val remainingStore = storeNamesByUrl(targets)
+        if (remainingStore.values.any { it.isNotEmpty() }) {
+            return CookieBridgeInvalidationResult.Failed(
+                reason = CookieBridgeInvalidationFailureReason.AUTHORITATIVE_STORE_COOKIES_REMAIN,
+                trackedUrlCount = targets.size,
+                attemptedExpiryCount = attempts,
+                remainingWebViewNamesByUrl = remainingWebView,
+                remainingStoreNamesByUrl = remainingStore,
+            )
+        }
+
+        return CookieBridgeInvalidationResult.Cleared(
+            trackedUrlCount = targets.size,
+            attemptedExpiryCount = attempts,
+        )
     }
 
-    private suspend fun setAndAwait(url: String, value: String) {
-        withTimeout(callbackTimeoutMillis) {
+    private suspend fun awaitExpiry(
+        url: String,
+        value: String,
+    ): CookieBridgeInvalidationFailureReason? {
+        return try {
+            when (setAndAwait(url, value)) {
+                null -> CookieBridgeInvalidationFailureReason.CALLBACK_TIMEOUT
+                false -> CookieBridgeInvalidationFailureReason.CALLBACK_REJECTED
+                true -> null
+            }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            CookieBridgeInvalidationFailureReason.CALLBACK_ERROR
+        }
+    }
+
+    private fun invalidationFailure(
+        reason: CookieBridgeInvalidationFailureReason,
+        targets: List<String>,
+        attempts: Int,
+    ): CookieBridgeInvalidationResult.Failed =
+        CookieBridgeInvalidationResult.Failed(
+            reason = reason,
+            trackedUrlCount = targets.size,
+            attemptedExpiryCount = attempts,
+            remainingWebViewNamesByUrl = webViewNamesByUrl(targets),
+            remainingStoreNamesByUrl = storeNamesByUrl(targets),
+        )
+
+    private fun webViewNamesByUrl(targets: List<String>): Map<String, Set<String>> =
+        targets.associateWith { url ->
+            parseLegadoCookieMap(webCookies.getCookie(url).orEmpty()).keys
+        }
+
+    private fun storeNamesByUrl(targets: List<String>): Map<String, Set<String>> =
+        targets.associateWith { url ->
+            parseLegadoCookieMap(store.getCookie(url)).keys
+        }
+
+    private suspend fun setAndAwait(url: String, value: String): Boolean? =
+        withTimeoutOrNull(callbackTimeoutMillis) {
             suspendCancellableCoroutine { continuation ->
                 try {
                     webCookies.setCookie(url, value) { accepted ->
                         if (continuation.isActive) continuation.resume(accepted)
                     }
-                } catch (error: Throwable) {
-                    if (continuation.isActive) continuation.cancel(error)
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    if (continuation.isActive) continuation.resumeWithException(error)
                 }
             }
-        }.also { accepted ->
-            check(accepted) { "WebView CookieManager rejected a scoped cookie update" }
         }
-    }
 
     private fun domainCandidates(host: String, registrableDomain: String): List<String> {
         val normalizedHost = host.lowercase()

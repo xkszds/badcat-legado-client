@@ -2,6 +2,7 @@ package app.badcat.client.runtime
 
 import android.os.Build
 import android.webkit.CookieManager
+import kotlinx.coroutines.runBlocking
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import android.app.Instrumentation
@@ -153,16 +154,21 @@ class WebViewCookieDomainInvalidationInstrumentedTest {
     }
 
     @Test
-    fun trackedDomainAndPathCandidatesClearVisibleCookiesWithoutTouchingOtherDomains() {
+    fun productionBridgeClearsTrackedDomainAndPathCandidatesWithoutTouchingOtherDomains() = runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val managerRef = AtomicReference<CookieManager>()
         val nonce = System.nanoTime().toString()
-        val rootDomain = "badcat-$nonce.example.com"
+        val rootDomain = "badcat-$nonce.co.uk"
         val intermediateDomain = "branch.$rootDomain"
         val host = "leaf.$intermediateDomain"
+        val sourceUrl = "https://$rootDomain/source.json"
         val trackedUrl = "https://$host/private/deep/chapter"
         val unrelatedHost = "outside-$nonce.otherexample.net"
         val unrelatedUrl = "https://$unrelatedHost/private/deep/chapter"
+        val store = SharedPreferencesSourceCookieJar(
+            instrumentation.targetContext,
+            InMemorySourceCookieSessionStore(),
+        )
 
         instrumentation.runOnMainSync {
             managerRef.set(CookieManager.getInstance())
@@ -170,15 +176,21 @@ class WebViewCookieDomainInvalidationInstrumentedTest {
         }
         val manager = managerRef.get()
         assertNotNull("Android WebView CookieManager must be available", manager)
+        val bridge = DefaultProcessCookieBridge(store, AndroidWebCookieManagerPort(manager))
 
         try {
-            // One host-only cookie and three Domain-scoped variants exercise
-            // host, intermediate suffix, registrable-domain and path identity.
+            store.removeCookie(sourceUrl)
+            store.removeCookie(unrelatedUrl)
+            store.setCookie(sourceUrl, "bc_authoritative=source")
+            store.mergeWebViewCookieHeader(sourceUrl, "bc_session=temporary")
+            store.setCookie(unrelatedUrl, "unrelated_auth=keep")
+
             setCookie(instrumentation, manager, trackedUrl, "bc_track_host=one; Path=/")
             setCookie(instrumentation, manager, trackedUrl, "bc_track_intermediate=two; Domain=$intermediateDomain; Path=/private")
             setCookie(instrumentation, manager, trackedUrl, "bc_track_root=three; Domain=$rootDomain; Path=/private/deep")
             setCookie(instrumentation, manager, trackedUrl, "bc_track_host_domain=four; Domain=$host; Path=/private/deep/chapter")
             setCookie(instrumentation, manager, unrelatedUrl, "bc_unrelated=keep; Domain=otherexample.net; Path=/private")
+            bridge.observe(trackedUrl)
 
             val expectedNames = setOf(
                 "bc_track_host",
@@ -188,25 +200,25 @@ class WebViewCookieDomainInvalidationInstrumentedTest {
             )
             val before = readCookie(instrumentation, manager, trackedUrl)
             expectedNames.forEach { name ->
-                assertTrue("Expected $name to be visible at the tracked URL", before.contains("$name="))
+                assertTrue("Expected $name to be visible before production invalidation", before.contains("$name="))
             }
             assertTrue(
                 "Unrelated control cookie should be visible before invalidation",
                 readCookie(instrumentation, manager, unrelatedUrl).contains("bc_unrelated=keep"),
             )
 
-            expireTrackedCookieVariants(
-                instrumentation = instrumentation,
-                manager = manager,
-                trackedUrls = listOf(trackedUrl),
-            )
+            val result = bridge.invalidateDomain(sourceUrl)
 
+            assertTrue("Production bridge should return typed success: $result", result is CookieBridgeInvalidationResult.Cleared)
+            assertTrue(result.cleared)
             val after = readCookie(instrumentation, manager, trackedUrl)
             expectedNames.forEach { name ->
-                assertFalse("Tracked cookie $name must be absent after candidate invalidation; remaining=$after", after.contains("$name="))
+                assertFalse("Tracked cookie $name must be absent after production invalidation; remaining=$after", after.contains("$name="))
             }
+            assertEquals("", store.getCookie(sourceUrl))
+            assertEquals("unrelated_auth=keep", store.getCookie(unrelatedUrl))
             assertTrue(
-                "Invalidating example.com must not clear a cookie from another registrable domain",
+                "Invalidating the tracked eTLD+1 must not clear an unrelated registrable domain",
                 readCookie(instrumentation, manager, unrelatedUrl).contains("bc_unrelated=keep"),
             )
         } finally {
@@ -215,76 +227,9 @@ class WebViewCookieDomainInvalidationInstrumentedTest {
             setCookie(instrumentation, manager, trackedUrl, "bc_track_root=; Max-Age=0; Path=/private/deep; Domain=$rootDomain")
             setCookie(instrumentation, manager, trackedUrl, "bc_track_host_domain=; Max-Age=0; Path=/private/deep/chapter; Domain=$host")
             setCookie(instrumentation, manager, unrelatedUrl, "bc_unrelated=; Max-Age=0; Path=/private; Domain=otherexample.net")
+            store.removeCookie(sourceUrl)
+            store.removeCookie(unrelatedUrl)
         }
-    }
-
-    /**
-     * CookieManager exposes only the name/value pairs visible at a URL. Probe
-     * the bounded candidate cross-product for each observed URL: host-only and
-     * every DNS suffix down to the effective registrable domain, combined with
-     * root and every valid path prefix (including slash-terminated variants).
-     * Each candidate is a targeted expiry; no global CookieManager clear is used.
-     */
-    private fun expireTrackedCookieVariants(
-        instrumentation: Instrumentation,
-        manager: CookieManager,
-        trackedUrls: List<String>,
-    ) {
-        trackedUrls.forEach { url ->
-            val visibleNames = parseNames(readCookie(instrumentation, manager, url))
-            if (visibleNames.isEmpty()) return@forEach
-
-            val parsed = URL(url)
-            val registrableDomain = requireNotNull(legadoSourceDomain(url)) {
-                "Tracked URL must have a registrable domain"
-            }
-            val domains = domainSuffixCandidates(parsed.host, registrableDomain)
-            val paths = pathPrefixCandidates(parsed.path)
-
-            visibleNames.forEach { name ->
-                paths.forEach { path ->
-                    setCookie(
-                        instrumentation,
-                        manager,
-                        url,
-                        "$name=; Max-Age=0; Path=$path",
-                    )
-                    domains.forEach { domain ->
-                        setCookie(
-                            instrumentation,
-                            manager,
-                            url,
-                            "$name=; Max-Age=0; Path=$path; Domain=$domain",
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    private fun domainSuffixCandidates(host: String, registrableDomain: String): List<String> {
-        val normalizedHost = host.lowercase()
-        val normalizedRoot = registrableDomain.lowercase()
-        require(normalizedHost == normalizedRoot || normalizedHost.endsWith(".$normalizedRoot")) {
-            "Registrable domain must be a suffix of the tracked host"
-        }
-        val labels = normalizedHost.split('.')
-        val rootLabelCount = normalizedRoot.split('.').size
-        return (0..(labels.size - rootLabelCount))
-            .map { offset -> labels.drop(offset).joinToString(".") }
-    }
-
-    private fun pathPrefixCandidates(rawPath: String): List<String> {
-        val path = rawPath.ifBlank { "/" }
-        val result = linkedSetOf("/")
-        var prefix = ""
-        path.split('/').filter(String::isNotEmpty).forEach { segment ->
-            prefix += "/$segment"
-            result += prefix
-            result += "$prefix/"
-        }
-        if (path.startsWith("/") && path != "/") result += path
-        return result.toList()
     }
 
     private fun setCookie(

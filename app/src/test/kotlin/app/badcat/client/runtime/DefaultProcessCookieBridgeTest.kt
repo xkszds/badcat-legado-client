@@ -1,5 +1,8 @@
 package app.badcat.client.runtime
 
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import okhttp3.Cookie
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -78,7 +81,8 @@ class DefaultProcessCookieBridgeTest {
 
         val result = bridge.invalidateDomain("https://reader.example/source.json")
 
-        assertTrue("Expected all tracked cookie names to be gone: ${result.remainingNamesByUrl}", result.cleared)
+        assertTrue("Expected a typed successful invalidation result", result is CookieBridgeInvalidationResult.Cleared)
+        assertTrue(result.cleared)
         assertTrue(web.getCookie(unrelated).orEmpty().contains("unrelated=keep"))
         assertEquals("", store.getCookie("https://reader.example/"))
     }
@@ -92,9 +96,82 @@ class DefaultProcessCookieBridgeTest {
         assertEquals("sid=keep", store.getCookie("https://reader.example/"))
     }
 
+    @Test
+    fun rejectedExpiryReturnsTypedFailureAndPreservesAuthoritativeStore() = runBlocking {
+        val url = "https://reader.example/private/book"
+        store.setCookie(url, "sid=authoritative")
+        web.setCookieNow(url, "sid=webview; Path=/")
+        web.rejectExpiryWrites = true
+
+        val result = bridge.invalidateDomain(url)
+
+        assertTrue(result is CookieBridgeInvalidationResult.Failed)
+        val failure = result as CookieBridgeInvalidationResult.Failed
+        assertEquals(CookieBridgeInvalidationFailureReason.CALLBACK_REJECTED, failure.reason)
+        assertTrue(failure.remainingStoreNamesByUrl.values.any { "sid" in it })
+        assertEquals("sid=authoritative", store.getCookie(url))
+    }
+
+    @Test
+    fun acceptedButIneffectiveExpiryReturnsWebViewResidueAndPreservesStore() = runBlocking {
+        val url = "https://reader.example/private/book"
+        store.setCookie(url, "sid=authoritative")
+        web.setCookieNow(url, "sid=webview; Path=/")
+        web.ignoreExpiryWrites = true
+
+        val result = bridge.invalidateDomain(url)
+
+        assertTrue(result is CookieBridgeInvalidationResult.Failed)
+        val failure = result as CookieBridgeInvalidationResult.Failed
+        assertEquals(CookieBridgeInvalidationFailureReason.WEBVIEW_COOKIES_REMAIN, failure.reason)
+        assertTrue(failure.remainingWebViewNamesByUrl.values.any { "sid" in it })
+        assertTrue(failure.remainingStoreNamesByUrl.values.any { "sid" in it })
+        assertEquals("sid=authoritative", store.getCookie(url))
+    }
+
+    @Test
+    fun expiryCallbackTimeoutReturnsTypedFailureAndPreservesAuthoritativeStore() = runBlocking {
+        val url = "https://reader.example/private/book"
+        store.setCookie(url, "sid=authoritative")
+        web.setCookieNow(url, "sid=webview; Path=/")
+        web.neverCallback = true
+        val shortTimeoutBridge = DefaultProcessCookieBridge(
+            store = store,
+            webCookies = web,
+            callbackTimeoutMillis = 100L,
+        )
+
+        val result = shortTimeoutBridge.invalidateDomain(url)
+
+        assertTrue(result is CookieBridgeInvalidationResult.Failed)
+        assertEquals(
+            CookieBridgeInvalidationFailureReason.CALLBACK_TIMEOUT,
+            (result as CookieBridgeInvalidationResult.Failed).reason,
+        )
+        assertEquals("sid=authoritative", store.getCookie(url))
+    }
+
+    @Test
+    fun callerCancellationDuringExpiryIsNotConvertedToInvalidationResult() = runBlocking {
+        val url = "https://reader.example/private/book"
+        store.setCookie(url, "sid=authoritative")
+        web.setCookieNow(url, "sid=webview; Path=/")
+        web.neverCallback = true
+
+        val pending = launch { bridge.invalidateDomain(url) }
+        delay(25)
+        pending.cancelAndJoin()
+
+        assertTrue(pending.isCancelled)
+        assertEquals("sid=authoritative", store.getCookie(url))
+    }
+
     private class FakeWebCookieManager : WebCookieManagerPort {
         private val cookies = LinkedHashMap<String, MutableList<Pair<String, String>>>()
         var rejectWrites = false
+        var rejectExpiryWrites = false
+        var ignoreExpiryWrites = false
+        var neverCallback = false
 
         override fun getCookie(url: String): String? {
             val host = url.toHttpUrl().host
@@ -115,8 +192,10 @@ class DefaultProcessCookieBridgeTest {
         }
 
         override fun setCookie(url: String, value: String, callback: (Boolean) -> Unit) {
-            val accepted = !rejectWrites
-            if (accepted) setCookieNow(url, value)
+            if (neverCallback) return
+            val isExpiry = value.contains("Max-Age=0", ignoreCase = true)
+            val accepted = !rejectWrites && !(isExpiry && rejectExpiryWrites)
+            if (accepted && !(isExpiry && ignoreExpiryWrites)) setCookieNow(url, value)
             callback(accepted)
         }
 
