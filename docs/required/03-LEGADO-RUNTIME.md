@@ -4126,3 +4126,24 @@
 - **排除：** 不实现 alias normalization、不接 BatchContentContext、不改旧历史/书签 schema、不做 cache key 迁移、不改 Reader/UI、第四/第五类、上游 pin 或 `main`。
 - **依赖：** .10/.10.1 duplicate-URL 保真已在 exact CI SHA `4a9549a...` 通过；.11 read-only alias audit 已完成。后续实现必须等本审计 GO，并另行 preregister。
 - **状态：** 已登记；只读审计尚未开始。本登记不授权生产实现，也不代表 alias parity 或 BatchContentContext 已完成。
+
+
+#### Runtime-3.2f.20 audit closeout — chapter-specific baseUrl propagation
+
+- **审计 HEAD：** `22f7d358369d244f0db47c0922f368ecc822a24e`；固定上游 SHA 不变；报告：`docs/audits/legado-runtime-3.2f.20-chapter-baseurl-propagation.md`。
+- **关键上游证据：** `BookChapter.kt` blob `9798267c77c9e14d0a673a822930491cd6e44cc1`；`NetworkUtils.kt` blob `517f63c18998be2f57087486069df9f67281d642`；`BatchContentContext.kt` blob `68cad877f048b171e4f0f6cf22b1e0dd1e6481f9`。确认上游同时使用 chapter-specific `baseUrl` 与 book-level TOC/source base，两者不能混为一个规范化基准。
+- **关键 host 证据：** `CssTocParser.kt` blob `4e30082fb654719ffe7cf1605dba91d3898a1f9f` 使用每页 `response.finalUrl` 解析章节链接，但 host `BookChapter` 未保存该 base；`SourceTocService.kt` 保留 finalUrl 仅用于重定向/循环识别；`ChapterCatalogQuery.kt` 仍 exact URL match；阅读历史/书签仍 URL-only。
+- **决定：** GO 仅限下一任务追加可选 chapter `baseUrl` 投影、由 TOC parser 保存每页 finalUrl，并新增分页 redirect differential fixtures；NO-GO 同步实现 alias lookup、替换严格 WebUrlResolver、修改旧书签/历史 schema 或声称 BatchContentContext parity。
+- **状态：** .20 只读审计关闭；未运行代码测试/CI，未改生产代码。
+
+### Runtime-3.2f.21 registration — preserve per-chapter TOC response base URL
+
+- **日期 / 分类：** 2026-11-23；第三类：chapter identity / URL alias prerequisite.
+- **起始 branch / HEAD：** `integration/legado-upstream-runtime` / `22f7d358369d244f0db47c0922f368ecc822a24e`（.20 audit registration commit）；固定上游 pin 不变。
+- **目标：** 在 host chapter projection 增加尾部、默认空字符串的可选 `baseUrl`；`CssTocParser` 从当前 TOC page 的 `response.finalUrl` 填入该字段，同时保持现有 `url` 仍是经 `WebUrlResolver` 安全解析的绝对 HTTP(S) URL。验证跨页 redirect 后每章保留各自来源页面 base。
+- **允许修改文件：** `integration-contract/src/main/kotlin/app/badcat/engine/ReadingEngine.kt`（仅 BookChapter 字段）；`integration-contract/src/main/kotlin/app/badcat/engine/CssTocParser.kt`；`integration-contract/src/test/kotlin/app/badcat/engine/CssTocParserTest.kt`；`integration-contract/src/test/kotlin/app/badcat/engine/SourceTocServiceTest.kt`；本分类清单。
+- **必须测试：** 单页 finalUrl base 保存；多页不同 finalUrl 分别保存；相对链接仍解析成相同安全绝对 URL；同 URL 不同 chapter projection 保真；完全相同 projection 的去重/连续 index 行为不意外改变；默认 baseUrl 对既有 positional callers/source compatibility 保持兼容。
+- **排除：** 不改 `ChapterCatalogQuery`、Reader intent/history/bookmark schema、缓存 key、BatchContentContext、HTTP/WebUrlResolver 安全策略、其他分类、上游 pin 或 `main`。不宣称 URL alias parity。
+- **验收：** focused integration-contract tests、完整第三类 App JVM suite 和 exact-SHA CI 通过；diff 严格在登记文件；对 data class equality/dedup 的变化进行审查并明确记录。
+- **依赖：** .20 审计 GO；.10/.10.1 duplicate URL 保真已在 exact SHA `4a9549a...` 通过。若发现 data class equality 或调用兼容风险需扩展文件范围，先追加登记。
+- **状态：** 已登记，尚未实施；本登记只授权保存 chapter-specific base URL，不授权 alias matching 或 BatchContentContext 接线。
