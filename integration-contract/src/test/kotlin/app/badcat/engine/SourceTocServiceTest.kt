@@ -311,4 +311,90 @@ class SourceTocServiceTest {
         )
     }
 
+
+    @Test
+    fun preservesDifferentChaptersSharingUrlAndCollapsesOnlyEqualProjectedRows() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"ul.chapters li",
+                "chapterName":"a@text",
+                "chapterUrl":"a@href"
+            }""",
+        )
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> =
+                EngineResult.Success(
+                    SourceHttpResponse(
+                        200,
+                        request.url,
+                        body = """<ul class="chapters">
+                            <li><a href="/chapter/shared">Chapter One</a></li>
+                            <li><a href="/chapter/shared">Chapter Two</a></li>
+                            <li><a href="/chapter/shared">Chapter One</a></li>
+                        </ul>""",
+                    ),
+                )
+        }
+
+        val result = assertIs<EngineResult.Success<List<BookChapter>>>(
+            SourceTocService(SourceHttpGateway(client)).load(source, "https://reader.example/book/1"),
+        )
+
+        assertEquals(listOf("Chapter One", "Chapter Two"), result.value.map { it.title })
+        assertEquals(listOf(0, 1), result.value.map { it.index })
+        assertEquals(
+            listOf("https://reader.example/chapter/shared", "https://reader.example/chapter/shared"),
+            result.value.map { it.url },
+        )
+    }
+
+    @Test
+    fun incrementalCallbacksPreserveDuplicateUrlsAcrossTocPages() = runBlocking {
+        val source = BookSource(
+            id = "fixture",
+            name = "Fixture",
+            baseUrl = "https://reader.example/",
+            ruleTocJson = """{
+                "chapterList":"ul.chapters li",
+                "chapterName":"a@text",
+                "chapterUrl":"a@href",
+                "nextTocUrl":"a.next"
+            }""",
+        )
+        val client = object : SourceRequestClient {
+            override suspend fun execute(request: SourceHttpRequest): EngineResult<SourceHttpResponse> {
+                val secondPage = request.url.contains("page=2")
+                val body = if (secondPage) {
+                    """<ul class="chapters">
+                        <li><a href="/chapter/shared">Chapter Two</a></li>
+                        <li><a href="/chapter/shared">Chapter One</a></li>
+                    </ul>"""
+                } else {
+                    """<ul class="chapters">
+                        <li><a href="/chapter/shared">Chapter One</a></li>
+                    </ul><a class="next" href="?page=2">Next</a>"""
+                }
+                return EngineResult.Success(SourceHttpResponse(200, request.url, body = body))
+            }
+        }
+        val callbacks = mutableListOf<List<BookChapter>>()
+        val result = assertIs<EngineResult.Success<List<BookChapter>>>(
+            SourceTocService(SourceHttpGateway(client)).load(
+                source,
+                "https://reader.example/book/1",
+                onChapters = { callbacks += it },
+            ),
+        )
+
+        assertEquals(2, callbacks.size)
+        assertEquals(listOf("Chapter One", "Chapter Two"), callbacks.last().map { it.title })
+        assertEquals(listOf(0, 1), callbacks.last().map { it.index })
+        assertEquals(result.value, callbacks.last())
+        assertEquals(2, result.value.size)
+        assertEquals(1, result.value.map { it.url }.distinct().size)
+    }
+
 }
