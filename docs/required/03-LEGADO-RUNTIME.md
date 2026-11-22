@@ -4003,3 +4003,17 @@
 - **#3173 / .15 跨实例补强** exact SHA `eca7b58031a6be06bf841f7b786e0c6f92e61c4a`: contract tests、pinned model tests、G2d stage-1 compile success；Third-category App JVM suite step completed failure。API 28 instrumentation 仍 in_progress；未取得 JUnit 报告或可读 job log，失败根因尚未确认。
 - **#3170 / .14** exact SHA `370954cc9de3c3775200b027711ddaac211f3548`: contract/model/G2d/App JVM、API 28/35 instrumentation、Debug APK build/upload 均 success；当前仍在 best-effort public source repository probe，run 未终态。
 - **处理原则：** 不把 .15 的 App JVM suite failure 忽略，也不猜测失败原因。等 report/log 可读取后定位并修复；.16 仍只标局部测试通过，待 API 35 与终态。
+
+
+### Runtime-3.2f.17 registration — import the concrete file-cache store in source catalog activity
+
+- **日期 / 分类：** 2026-11-23；第三类：source catalog runtime cleanup wiring compile repair.
+- **起始分支 / HEAD：** `integration/legado-upstream-runtime` / `5cd67064f4cf6d69ff8bf1c71d2d40007bb97428`；固定上游仍为 `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **触发证据：** Run #3173 / `45076385050`，exact SHA `eca7b58031a6be06bf841f7b786e0c6f92e61c4a`。真实 Gradle 日志显示 `:app:compileDebugKotlin` 因 `SourceCatalogActivity.kt:45:36 Unresolved reference 'FileSourceScriptCacheStore'` 失败；该类定义在 `app/src/main/java/app/badcat/client/runtime/SourceScriptFileCacheStore.kt`，Activity 漏掉 import。#3172 使用同一 Activity 改动，也需视为同一根因待复验。
+- **目标：** 仅补充 `import app.badcat.client.runtime.FileSourceScriptCacheStore`，不改 store 实现、构造参数、缓存行为或 lifecycle 逻辑。
+- **允许修改文件：**
+  - `app/src/main/java/app/badcat/client/SourceCatalogActivity.kt`：仅增加上述 import。
+  - `docs/required/03-LEGADO-RUNTIME.md`：本登记与 closeout。
+- **验证：** 新 exact-SHA CI 必须通过 `:app:compileDebugKotlin`、第三类 App JVM suite、API 28/35 instrumentation 和 `:app:assembleDebug`；重点确认 App test report 确实包含 app 测试而非只包含 `legado-runtime` 的 3 项测试。
+- **排除：** 不修改 FileBookSourceCatalog、Rhino runtime registry、cache extension、store、workflow、上游 pin、其他分类、UI/Reader 或 `main`。
+- **状态：** 已登记，尚未实施/验收；#3172/#3173 的失败记录保留，不回写成成功。
