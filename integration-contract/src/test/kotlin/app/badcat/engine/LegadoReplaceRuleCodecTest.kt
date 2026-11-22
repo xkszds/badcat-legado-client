@@ -60,6 +60,27 @@ class LegadoReplaceRuleCodecTest {
         assertFalse(decoded.scopeRule.scopeSource)
         assertTrue(decoded.isRegex)
         assertEquals(3000L, decoded.validTimeoutMillisecond())
+        assertEquals(Int.MIN_VALUE, decoded.scopeRule.order)
+    }
+
+    @Test
+    fun missingOrderSortsBeforeExplicitZeroLikePinnedLegadoDefault() {
+        val missingOrder = LegadoReplaceRuleCodec.decode(
+            """{"id":41,"pattern":"x","replacement":"y"}"""
+        ).single()
+        val explicitOrder = LegadoReplaceRuleCodec.decode(
+            """{"id":42,"pattern":"x","replacement":"y","order":0}"""
+        ).single()
+
+        assertEquals(Int.MIN_VALUE, missingOrder.scopeRule.order)
+        assertEquals(
+            listOf(41L, 42L),
+            LegadoReplaceRuleSelector.forContent(
+                listOf(explicitOrder.scopeRule, missingOrder.scopeRule),
+                bookName = "",
+                bookOrigin = "",
+            ).map { it.id },
+        )
     }
 
     @Test

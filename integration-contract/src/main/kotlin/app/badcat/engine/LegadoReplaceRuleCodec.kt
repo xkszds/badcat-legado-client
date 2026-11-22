@@ -116,7 +116,7 @@ object LegadoReplaceRuleCodec {
         val scopeContent = json.booleanOrDefault("scopeContent", true)
         val isRegex = json.booleanOrDefault("isRegex", true)
         val timeout = json.longOrDefault("timeoutMillisecond", DEFAULT_TIMEOUT_MILLISECOND)
-        val order = json.intOrDefault("order", 0)
+        val order = json.intOrDefault("order", Int.MIN_VALUE)
 
         return LegadoReplaceRuleRecord(
             scopeRule = LegadoReplaceRuleScope(
