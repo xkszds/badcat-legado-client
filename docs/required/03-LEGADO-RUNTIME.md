@@ -3558,3 +3558,21 @@
 - **范围结论：** 仅关闭 nullable `enabledCookieJar` 字段的缺失/null/true/false 投影与序列化契约；不代表 Cookie bridge、会话持久化或第三类整体完成。
 - **自审：** exact SHA、job 全部步骤成功、JUnit 与真源报告已核对；`main` 保持原 SHA `65b1a271a887b494f88c7e09277c5fb9367c6381`。
 - **状态：** 已验收通过。
+
+
+#### Runtime-3.2f.7 AnalyzeUrl boolean option parity — preregistration
+
+- **日期 / 分类：** 2026-11-23；第三类：Legado 运行时 URL / HTTP request options。
+- **起始 HEAD：** `2ffc89196263d4238d749876ab333178b308fab4`；分支 `integration/legado-upstream-runtime`；固定上游 SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **源码依据：** 固定 SHA `AnalyzeUrl.kt` 的 `UrlOption.useWebView()` 仅将 `null`、空字符串、Boolean false、字符串 `"false"` 判为 false，其余值为 true；`getFollowRedirects()` 调用 `parseBooleanOption`，后者只接受 Boolean、数值精确等于 0.0/1.0、字符串 true/false/1/0，其余返回 null。
+- **发现：** 当前 resolver 共用 `booleanValue` 处理两个不同语义字段；followRedirects 的显式 null 被转换成 false，数值 0.5/1.5 经 `asInt` 可能被截断，webView 的字符串 `"0"` / 数值 0 被当作 false，且其他非空值直接报错。这与固定上游两个字段的不同转换规则不一致。
+- **目标：** 分离两个字段的解析规则。followRedirects：missing/null/无效类型返回 null；Boolean 原值；Number 仅 0.0/1.0 有效；字符串按 trim + lowercase 接受 true/1/false/0，其他返回 null。webView：严格复刻固定上游 false 集合（null、空字符串、Boolean false、精确小写字符串 `"false"`）；其余值表示 true，随后按既有规则因当前宿主未实现 WebView URL option 而返回 UNSUPPORTED_RULE。
+- **允许修改文件：**
+  - `integration-contract/src/main/kotlin/app/badcat/engine/LegadoUrlResolver.kt`
+  - `integration-contract/src/test/kotlin/app/badcat/engine/LegadoUrlResolverTest.kt`
+- **调用链：** URL option JSON → resolver `followRedirects` / `webView` → `LegadoResolvedUrl.followRedirects` → `SourceRequestFactory` → `SourceHttpRequest.followRedirects` → OkHttp client redirect policy。
+- **测试要求：** followRedirects Boolean、整数/整值小数 0/1、0.5/1.5、null、合法字符串、无效字符串；webView null/empty/false/"false" 与 0/"0"/"true"/true/其他非空值；确认 true 最终 fail closed 为 UNSUPPORTED_RULE，且 false 不触发 WebView。
+- **验收：** focused `:integration-contract:test` 与完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限上述两个文件；确认与固定 SHA 上游转换逻辑逐项一致；不得借用 #3160/#3162 的 CI 结果。
+- **排除：** HTTP redirect transport 实现、安全策略、retry/timeout/charset、WebView host implementation、Cookie/login、JS ABI、source UI、第四/第五类、上游 pin、`main`。
+- **依赖与并行：** 与 #3160 同一 resolver 文件范围重叠；必须等 #3160 终态并完成清单回写后才可实施。#3162 文件范围不重叠。
+- **状态：** 已 preregister；当前等待 #3160 释放同文件依赖；尚未修改代码。
