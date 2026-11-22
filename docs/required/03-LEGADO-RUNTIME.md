@@ -2977,3 +2977,13 @@
 - **Conclusion:** API 35 evidence confirms that a root-only observed-name expiry does not cover an unobserved path cookie or the tested Domain-scoped cookie. Do not ship a logout/clear adapter based only on the upstream helper. Runtime-3.2a remains in progress; API 28 platform behavior, exact scoped invalidation design/readback, login-dialog metadata mapping and SSL error policy remain outstanding. Hidden WebView process remains blocked.
 - **Next registered task (not started):** add a bounded API 28 emulator run for the same CookieManager identity probe, preserving the API 35 run and all existing assertions. Allowed files: `.github/workflows/android-build.yml`, `.github/scripts/runtime-webview-provider-probe.sh` only if API-specific report separation is required, and this checklist. Acceptance: API 28 connected instrumentation executes the same host-only root/path and Domain-scoped tests; reports exact SDK/provider identity and terminal test outcome; no global cookie clearing; API 35 remains intact. No production source, Fourth-category source/tests, UI, IPC, schema, upstream pin or `main` changes.
 - **Checklist self-review:** recorded exact run/job/HEAD, API 35 task-level instrumentation evidence, JVM counts, artifact IDs and limitations. Explicitly distinguishes the provider callback fixture and separate live-source scripts from CookieManager and production-runtime validation. API 28 task is registered only; not started.
+
+
+#### Runtime-3.2a API 28 platform probe implementation
+
+- **Status:** implementation committed; CI verification pending. Started from `eb1b9afdf5fc2c515918371304a4bd3e4d3d4d0e` after API 35 probe outcomes were recorded.
+- **Scope:** add an API 28 Android emulator run of the existing CookieManager instrumentation suite while preserving API 35 coverage. Separate report/diagnostic directories and artifact names prevent one emulator run from overwriting the other. The probe script checks the reported SDK against the expected SDK.
+- **Changed files:** `.github/workflows/android-build.yml`, `.github/scripts/runtime-webview-provider-probe.sh`, this checklist.
+- **Acceptance:** exact-HEAD CI must show API 28 and API 35 connected instrumentation tasks each completing the host-only root/path and Domain-scoped cases; reports must identify SDK/provider; existing API 35 behavior remains intact. No global cookie clearing.
+- **Exclusions:** no production CookieBridge, CookieStore, Application, process, Service, Binder/IPC, UI, Fourth-category source/tests, PPRule, schema, upstream pin or `main` changes.
+- **Self-review pending CI:** YAML/script diff and task-level logs must be checked before accepting the API 28 gate. This change does not claim either emulator result in advance.

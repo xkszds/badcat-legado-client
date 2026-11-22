@@ -4,7 +4,7 @@
 # individual shell commands, so stateful logic belongs in this checked-in file.
 set +e
 
-diagnostics_dir="build/runtime-2.3-webview"
+diagnostics_dir="${RUNTIME_WEBVIEW_REPORT_DIR:-build/runtime-2.3-webview}"
 mkdir -p "$diagnostics_dir"
 
 adb version > "$diagnostics_dir/adb-version.txt" 2>&1
@@ -42,12 +42,12 @@ if [ "$capture_status" -ne 0 ] || [ ! -s "$diagnostics_dir/adb-report-logcat.txt
   echo "WebView instrumentation report logcat capture failed"
   report_status=1
 else
-  python3 - "$diagnostics_dir/adb-report-logcat.txt" "$diagnostics_dir/runtime-2.3-webview-report.json" <<'PY'
+  python3 - "$diagnostics_dir/adb-report-logcat.txt" "$diagnostics_dir/runtime-2.3-webview-report.json" "${EXPECTED_WEBVIEW_SDK:-}" <<'PY'
 import base64
 import json
 import sys
 
-log_path, report_path = sys.argv[1:]
+log_path, report_path, expected_sdk = sys.argv[1:]
 with open(log_path, encoding="utf-8", errors="replace") as stream:
     encoded = [
         line.split("REPORT_BASE64=", 1)[1].strip()
@@ -60,6 +60,8 @@ payload = base64.b64decode(encoded[-1], validate=True)
 report = json.loads(payload)
 if report.get("task") != "Runtime-2.3":
     raise SystemExit("Unexpected WebView report task marker")
+if expected_sdk and report.get("sdkInt") != int(expected_sdk):
+    raise SystemExit("WebView report SDK does not match expected emulator API")
 observations = report.get("observations")
 expected = {"string", "number", "null", "undefined"}
 if not isinstance(observations, list) or {item.get("case") for item in observations} != expected:

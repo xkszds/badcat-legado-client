@@ -348,6 +348,36 @@ jobs:
           ls -l /dev/kvm
           test -r /dev/kvm && test -w /dev/kvm
 
+      - name: Run real Android CookieManager instrumentation (API 28)
+        if: ${{ always() && steps.enable_kvm.outcome == 'success' && (steps.bounded_rhino_tests.outcome == 'success' || steps.bounded_rhino_tests.outcome == 'failure') }}
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 28
+          target: google_apis
+          arch: x86_64
+          disable-animations: false
+          disable-linux-hw-accel: false
+          pre-emulator-launch-script: $ANDROID_HOME/emulator/emulator -accel-check
+          script: RUNTIME_WEBVIEW_REPORT_DIR=build/runtime-2.3-webview-api28 EXPECTED_WEBVIEW_SDK=28 bash .github/scripts/runtime-webview-provider-probe.sh
+
+      - name: Upload API 28 WebView emulator ADB diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: legado-webview-emulator-diagnostics-api28
+          path: build/runtime-2.3-webview-api28/adb-*.txt
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload API 28 WebView provider instrumentation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: legado-webview-provider-runtime-2.3-api28
+          path: build/runtime-2.3-webview-api28/runtime-2.3-webview-report.json
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Run real Android WebView provider instrumentation (API 35)
         if: ${{ always() && steps.enable_kvm.outcome == 'success' && (steps.bounded_rhino_tests.outcome == 'success' || steps.bounded_rhino_tests.outcome == 'failure') }}
         uses: reactivecircus/android-emulator-runner@v2
@@ -361,24 +391,23 @@ jobs:
           disable-animations: false
           disable-linux-hw-accel: false
           pre-emulator-launch-script: $ANDROID_HOME/emulator/emulator -accel-check
-          # Keep shell state in the checked-in script; the action dispatches inline lines separately.
-          script: bash .github/scripts/runtime-webview-provider-probe.sh
+          script: RUNTIME_WEBVIEW_REPORT_DIR=build/runtime-2.3-webview-api35 EXPECTED_WEBVIEW_SDK=35 bash .github/scripts/runtime-webview-provider-probe.sh
 
-      - name: Upload WebView emulator ADB diagnostics
+      - name: Upload API 35 WebView emulator ADB diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: legado-webview-emulator-diagnostics
-          path: build/runtime-2.3-webview/adb-*.txt
+          name: legado-webview-emulator-diagnostics-api35
+          path: build/runtime-2.3-webview-api35/adb-*.txt
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Upload real WebView provider instrumentation report
+      - name: Upload API 35 WebView provider instrumentation report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: legado-webview-provider-runtime-2.3
-          path: build/runtime-2.3-webview/runtime-2.3-webview-report.json
+          name: legado-webview-provider-runtime-2.3-api35
+          path: build/runtime-2.3-webview-api35/runtime-2.3-webview-report.json
           if-no-files-found: error
           retention-days: 14
 
