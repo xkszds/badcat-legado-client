@@ -4041,3 +4041,41 @@
 - **Diff 核验：** 相对 preregistration 起始 HEAD `5cd67064f4cf6d69ff8bf1c71d2d40007bb97428`，代码只新增 `SourceCatalogActivity.kt` 的 `FileSourceScriptCacheStore` import；另有本清单登记，共 2 个文件，符合 .17 登记范围。
 - **CI 截至本记录：** run `in_progress`；contract tests、pinned Legado model contract tests、G2d stage-1 compile 均 success；第三类 App JVM suite 正在运行；API 28/35 instrumentation 与 Debug APK 尚未开始/完成。不得宣称 .17 通过。
 - **历史根因保留：** #3172/#3173 的 exact SHA 仍为 failure，日志已确认 `:app:compileDebugKotlin` 因缺失该 import 失败；修复只在 #3174 exact SHA 上验证。
+
+
+#### Runtime-3.2f.17 / #3174 terminal CI closeout
+
+- **Exact implementation SHA / run：** `05acbb9984b47aee150905e5b71a2f3e1a97476f` / #3174 / `45077256688`；终态 `completed / success`，branch `integration/legado-upstream-runtime`。43 个 workflow 主步骤及 job 收尾步骤全部 success；失败数为 0。
+- **范围核验：** 相对登记起始 HEAD `5cd67064f4cf6d69ff8bf1c71d2d40007bb97428`，代码仅在 `SourceCatalogActivity.kt` 增加 `FileSourceScriptCacheStore` import；另修改本分类清单登记/结果，共 2 个文件，符合 .17 文件边界。
+- **JUnit：** artifact `14775738728`，GitHub artifact SHA-256 `f56b0c6d86c604fc041719e50a5217d3e1b138bf5b329b9f39b9dc6254893987`。已下载并解析 39 个 XML suites：321 tests、0 failures、0 errors、0 skipped；其中 app 38 suites / 318 tests，legado-runtime 1 suite / 3 tests。报告包含 `FileBookSourceCatalogLifecycleTest` 4 项和 `RhinoSourceScriptRuntimeTest` 96 项，验证 .15 的 catalog lifecycle 与跨 runtime 清理测试确实进入 app suite。
+- **Android：** API 28 instrumentation report artifact `14776121925` 与 API 35 report artifact `14775529593` 均显示 string/number/null/undefined 四种回调 case 全部 ok；对应 instrumentation steps success。该证据是 WebView provider/runtime instrumentation，不等于完整真机书源 E2E。
+- **Debug APK：** artifact `14776161255`，ZIP SHA-256 `0ff25f30ebc0cb3d93b7f41ee7f9de012de83250a893b0403aee299edb3bdc4d`；已解包 APK SHA-256 `26fd3819f3862916ed41f8a730c71e84f9a02657add308f66d06ff2e38edeffc`。仅 Debug 构建证据，不是 Release 或用户设备安装验收。
+- **真实源 best-effort：** Pinshuzhai `斗破苍穹` 完成 search→detail→1650 章目录→正文；Bixiange `斗罗大陆` 完成 GBK POST search→detail→AJAX TOC→正文。上传语料 4 个候选仅 1/4 完整通过（精华书阁）；唐三中文与零零小说超时，笔趣阁fun 返回 HTTP 404。此步骤在 workflow 标记为 best effort，失败不能归因于 runtime，也不能把 1/4 说成四源全过；保留为联网样本覆盖缺口。
+- **结论：** .17 编译修复已在 exact SHA 上通过登记的 CI；同时 #3174 作为包含 .15 实现的后续提交，完成 .15 catalog/runtime lifecycle JVM 验证。#3172/#3173 的历史失败仍保留，不能改写为成功。该结论不代表完整 Legado 兼容、全源 E2E 或 Release 就绪。
+
+#### Runtime-3.2f.15 terminal verification correction — validated on descendant SHA
+
+- **Implementation lineage：** .15 跨 runtime 实现提交 `eca7b58031a6be06bf841f7b786e0c6f92e61c4a`；其后 .17 仅补齐 `SourceCatalogActivity.kt` 漏掉的 `FileSourceScriptCacheStore` import，最终验证 SHA 为 `05acbb9984b47aee150905e5b71a2f3e1a97476f`（#3174 / `45077256688`）。
+- **测试证据：** #3174 的 321 项 JUnit 全绿；其中 catalog lifecycle 4 项、Rhino runtime 96 项均在 app report 中。该 descendant SHA 包含 .15 所有实现文件，且除 .17 import 外没有改变 .15 生产逻辑；故 .15 的登记验收在该 descendant exact SHA 上通过。
+- **状态：** .15 的实现/测试验证关闭。历史 #3172/#3173 的 compile failure 仍按各自 SHA 保留；不声称那些 SHA 曾通过。source-wide chapter content cache purge 仍未实现，且不在 .15 原范围内。
+
+#### Runtime-3.2f.18 registration and audit — .16 preregistration scope deviation
+
+- **日期 / 分类：** 2026-11-23；第三类：审计 Runtime-3.2f.16 未预登记的文件范围扩展。
+- **起始 HEAD：** `integration/legado-upstream-runtime` / `43e17ff33736f9915adf1da92dc391e2fb7f3962`；上游 pin 不变。
+- **审计目标：** 对 .16 实际 5 文件 diff 做事后透明审计；核对新增 `removePrefix(sourceId,keyPrefix)` 的 key namespace 解析、source isolation、生产实现、所有实现类、测试和 CI；不追溯伪称事前授权。
+- **允许修改文件：** 仅 `docs/required/03-LEGADO-RUNTIME.md`，记录审计结论及后续登记；本任务不改生产/测试代码。
+- **已完成审查：** `RhinoSourceCacheExtensions.clear()` 只删除 `__legado_cache__:` 前缀，保留 loginHeader/source variables；InMemory store 以 sourceId length-prefix 与 key length-prefix 限定删除；SharedPreferences store 先限定 source-specific encoded prefix，再 Base64 解码 key 并按 cache prefix 过滤。实际 diff 未触碰其他 source、上游 CacheManager API 或数据 schema。#3171 exact SHA CI 全绿（38 suites/316 tests）。
+- **发现的缺口：** 当前 `SourceScriptKeyValueStoreTest` 只直接覆盖 InMemory 实现；仓库没有 `SharedPreferencesSourceScriptKeyValueStore` 的直接 Robolectric 测试。生产 SharedPreferences `removePrefix` 的 URL-safe Base64 解码、source prefix 隔离和保留非 cache 键尚未有独立行为测试。因此不能仅凭 InMemory 测试与 compile success 关闭 .16。
+- **后续任务：** Runtime-3.2f.19，增加真实 SharedPreferences store 的 Robolectric 测试；覆盖同 source cache prefix 删除、同 source 非 cache key 保留、其他 source 隔离、畸形/非匹配 key 不误删，并在 API 28/35 Robolectric 配置下验证。完成后再综合审查 .16。
+- **状态：** .18 审计完成，发现上述测试缺口；.16 技术 CI 通过但分类任务仍未完全关闭。原 preregistration 与范围偏差记录保留。
+
+#### Runtime-3.2f.19 registration — SharedPreferences cache-prefix deletion contract tests
+
+- **日期 / 分类：** 2026-11-23；第三类：.16 scope deviation follow-up / production KV store regression coverage。
+- **登记基线：** 当前 integration branch HEAD `43e17ff33736f9915adf1da92dc391e2fb7f3962`（先提交本登记，再开始代码修改）；固定 Legado SHA 不变。
+- **目标：** 为 `SharedPreferencesSourceScriptKeyValueStore.removePrefix` 增加直接 Robolectric 行为测试，补齐 .18 审计发现的生产存储覆盖缺口。
+- **允许修改文件：** 新增 `app/src/test/kotlin/app/badcat/client/runtime/SharedPreferencesSourceScriptKeyValueStoreTest.kt`；以及本分类清单登记/closeout。若测试暴露生产 bug，必须先追加独立 preregistration，不能在本任务内顺手改生产实现。
+- **验证范围：** 使用 app-private SharedPreferences 与真实 `SharedPreferencesSourceScriptKeyValueStore`；验证同一 source 的 `__legado_cache__:` 项被删、同 source loginHeader/source variable 保留、其他 source 同名 cache key 保留、无关/畸形键不误删；测试 API 28 与 API 35 配置。随后跑 focused test、第三类完整 App JVM suite 和 exact-SHA CI。
+- **排除：** 不改 `SourceScriptKeyValueStore` 接口/生产实现、cache TTL/格式、Room/schema、source lifecycle、UI/Reader、第四/第五类、上游 pin 或 `main`。
+- **验收：** 直接覆盖生产 SharedPreferences 实现；focused 与完整 app suite 通过；diff 仅限登记文件；CI/报告绑定 exact SHA。此项只补测试，不自动消除原始 preregistration 文件范围偏差，最终仍需人工审查 .16 的 5 文件 diff。
