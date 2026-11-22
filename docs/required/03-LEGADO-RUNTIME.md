@@ -4333,3 +4333,17 @@
 - **GO/NO-GO：** GO for separately registered versioned ownership manifest for new writes, crash-safe reconciliation and purge of entries with verified ownership. NO-GO for claiming old pre-manifest entries are source-purged. Legacy entries remain unowned and may only age out via global LRU unless safely migrated during verified reads.
 - **并发/恢复要求：** manifest must serialize with writes/prune/purge; advance shared save-fence generations before deletion; cover content-without-manifest orphan, manifest-without-content, AtomicFile backup sidecars, process restart, concurrent old save and purge, partial failure reporting.
 - **范围：** read-only static audit; no production/test/build/CI/device changes. .26 test CI is not borrowed. 后续 manifest/purge implementation requires its own preregistration and exact-SHA CI.
+
+
+### Runtime-3.2f.28 registration — BookSource import/export compatibility audit
+
+- **日期 / 分类：** 2026-11-23；第三类：BookSource import/export and source-catalog boundary.
+- **登记起点：** `integration/legado-upstream-runtime` / `2f6901bc9f20132dc9e767b64beb6ff0983cbe17`；固定 Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a` 不变。
+- **触发原因：** 总目标要求完整书源导入/导出、字段/default/null/序列化和未知字段语义。现有 source catalog lifecycle 与 JSON import path 已有局部实现，但尚需明确 host 与固定上游 BookSource 导入/导出契约是否逐字段等价，避免把“能导入一个 JSON”误判为完整兼容。
+- **目标：** 只读审计固定上游 BookSource 模型、序列化配置、导入/导出入口与批量/单条处理语义；对照 host BookSource DTO、catalog import/export、文件/剪贴板/UI 调用链和现有 contract fixtures。形成字段映射矩阵，标出字段缺失、默认值/null/缺失差异、未知字段保留/丢弃、规则 JSON 形态、错误/部分成功语义、排序与去重差异。
+- **允许变更：** 仅新增 `docs/audits/legado-runtime-3.2f.28-booksource-import-export.md` 与更新本分类清单；本任务只读，不修改生产代码、测试、Gradle、workflow、存储格式或 UI。
+- **必须审查：** 固定上游 `BookSource` 模型及相关 Gson/序列化 adapter、导入/导出 utility 与 caller；host BookSource 模型、`FileBookSourceCatalog`、source import/export service/activity、所有相关测试与 fixture。必须从 exact tree 和 caller 引用确认完整审查路径，不能仅依赖文件名搜索。
+- **验收产物：** 上游导入/导出调用图；逐字段 type/default/null/serialization/unknown-field 对照；单条/批量/重复 ID/无效 JSON/部分失败语义矩阵；现有 fixture 覆盖与缺口；最小后续实现/测试登记建议；GO/NO-GO。没有证据的字段必须列 unresolved。
+- **排除：** 不修改 BookSource schema、迁移、Room、catalog lifecycle、chapter cache、Reader/UI、第四/第五类、上游 pin 或 `main`；不把只读审计结论写成兼容已实现。
+- **依赖 / 并行：** 与 .24 的 `SourceTocService.kt` / `SourceTocServiceTest.kt` 及 .26 的 `FileChapterContentCacheAtomicFileTest.kt` 文件范围隔离；允许只读并行。后续实现必须单独 preregister，且不得在 #3179/#3180 活动 CI 期间修改共享依赖文件。
+- **状态：** 已登记，尚未开始审计；本登记不授权生产或测试代码变更。
