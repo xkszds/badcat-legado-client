@@ -3593,4 +3593,12 @@
 - **验收：** focused `:integration-contract:test` 与完整第三类 App JVM suite 在 exact implementation SHA CI 通过；diff 仅限三个允许文件；上游 true/false 转换与字段映射逐项核对。
 - **明确排除：** volume row / 空 URL 卷标题合成、formatJs、word-count extraction、章节 identity/dedup policy、TOC DB persistence、UI display changes、HTTP/Cookie/WebView/login、第四/第五类、上游 pin、`main`。
 - **并行安全：** 文件与 Runtime-3.2f.1-.7 完全不重叠，无共享可变状态；可与 #3160/#3162 的 exact-SHA CI 并行。清单由单一 CAS 提交顺序更新。
-- **状态：** 已 preregister；尚未修改代码。
+- **状态：** 实现已提交（`cc992331ec9c1c6e94525dca63c94949eeced0b7`）；CI #3163 queued/in progress，等待 exact-HEAD 验证。
+
+
+#### Runtime-3.2f.8 TOC chapter metadata parity — implementation checkpoint
+
+- **实现提交：** `cc992331ec9c1c6e94525dca63c94949eeced0b7`；仅修改登记的 `ReadingEngine.kt`、`CssTocParser.kt`、`CssTocParserTest.kt`。
+- **实现内容：** host `BookChapter` 新增默认 false 的 `isVip` / `isPay` 与 nullable `tag`；同步和 script-enabled TOC parser 均提取 `isVip`、`isPay`、`updateTime`，按固定上游 `String?.isTrue(nullIsTrue=false)` 规则转换布尔值；新增同步、脚本、跨页合并重排测试。
+- **CI：** Run #3163，run ID `45069144574`，exact head SHA 与实现提交一致；当前在 `Run contract unit tests`，尚无终态。
+- **状态：** 实现已提交，待 exact-HEAD CI；不包含 volume、formatJs 或 UI 展示。
