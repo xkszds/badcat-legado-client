@@ -4522,3 +4522,14 @@
 - **排除：** no BaseSource implementation or API additions; no Cookie/login/HTTP behavior changes; no schema/data migration; no JS runtime expansion; no BookSource UI/catalog changes; no upstream pin, fourth/fifth category or `main` changes.
 - **并行 / CI：** .30 parser run `45089612632` validates only implementation SHA `41f95a6b72149d0ba6d00c2cf1dff7119a97d9f6` and remains independent. This read-only audit modifies only new audit documentation and this checklist; it does not touch .30 codec/test files. No CI evidence is borrowed.
 - **状态：** 已 preregister；尚未开始审计。只读范围，不授权生产实现。
+
+
+#### Runtime-3.2f.34 audit closeout — BaseSource inherited API and host parity
+
+- **Audit start HEAD:** `0971ddbe86eb534d4ee891984eb7870da3960a15`; report: `docs/audits/legado-runtime-3.2f.34-basesource-host-parity.md`.
+- **Pinned source evidence:** BaseSource 9f5174d7ad6cb74a7e6b2d1f9260d90e3e8e6baa; JsExtensions f6808edd2a0d312e8bd13649935dea444cb82581 (118 signatures); JsEncodeUtils c75b61650db2abdd64a09d2bd8340ef14c2947b3 (28 signatures); CookieStore 09720d79f7009db052c080b54fc5fa2805257b64; ConcurrentRateLimiter 312ab0c8e0952a40d4f6997e898efe4e57f85d17; SharedJsScope dab7770d746c851c06ad05c08a35a2866a6100b3; LoginUiV2 fd4fca1baa694a821400a46d08ff20d6607f4b96.
+- **Result:** meaningful partial host adapters exist for identity, login/session, variables, HTTP, cookie persistence, rate limiting, Rhino, cache, file/archive and many utility methods. Dynamic header JS/default UA, full upstream CookieStore/WebView behavior, BookSource mainJs login selection, exact shared-scope lifecycle, refresh callbacks and UI-bound browser/WebView/verification APIs remain mismatched or unproven.
+- **Decision:** GO for the existing adapters as partial support; NO-GO for BaseSource/JsExtensions/JsEncodeUtils parity and full runtime acceptance.
+- **Scope review:** only the audit report and this category checklist changed. No production/test/Gradle/workflow/UI/storage files; no build/CI/device/network evidence claimed. .30 CI evidence was not borrowed.
+- **Next:** register differential header/login, rate-limit, cookie and lifecycle slices independently; inventory the full inherited API surface before claiming coverage.
+- **Acceptance level:** read-only audit closed; third category remains partially implemented.
