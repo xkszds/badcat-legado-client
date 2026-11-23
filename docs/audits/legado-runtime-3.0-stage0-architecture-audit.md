@@ -766,3 +766,22 @@ The copied RhinoClassShutter retains upstream protected class names and package 
 ### 24.4 Slice conclusion
 
 This closes a further **source-level inventory slice only**: inheritance and inherited data ownership, six rule model relationships/defaults, source serializer entry points, selected overload annotations and the existence of compiler-generated/reflection-visible members are now explicit. It does **not** close Stage-0 ordered item 1: exact compiled JVM/Rhino ABI descriptors, full annotation/visibility/nullability matrix, all serializer edge fixtures and complete caller/reflection reachability remain open. Stage-0 remains in progress; Stage-1 remains **NO-GO**. No production, build, test, workflow, fixture, UI/Reader, database/schema or release file was changed.
+
+
+### 24.5 Actions #3301 compiled host JVM ABI artifact — exact-SHA evidence
+
+- **Run:** #3301 / run ID `45264329252`; **job:** `assemble-debug` / job ID `138007096785`; exact SHA `4ea24ef01c7c9fa7f8414ec9d3a50e0b0b1c6a68`; run and job both `completed / success`.
+- The job's step 37 (`Capture compiled host JavaScript bridge JVM ABI`) and step 38 (artifact upload) completed successfully. Artifact: `legado-host-jvm-abi`, artifact ID `14863685695`, 165,211 bytes. ZIP contents: `RhinoSafeSourceJavaExtensions.javap.txt` (1,361,755 bytes) and `SHA256SUMS.txt`.
+- The manifest records SHA-256 `7b711a33145eaea1a49a7e693c04ab4b16033bdde75ea0fcac2618fee2a355b2` for the javap report. The javap header records classfile SHA-256 `596cfa2a538f8d77c106058303b815d52601e28ebe7ffa0625d8c9325fd4d14d`, classfile major version 65 (Java 21), and `RhinoSafeSourceJavaExtensions` as the compiled source.
+- **Compiled class facts:** `public final class app.badcat.client.runtime.RhinoSafeSourceJavaExtensions`; zero implemented interfaces; 70 fields; 234 classfile methods. The report includes 156 public and 76 private method declarations, one package-visible method, synthetic methods and annotation attributes. It confirms this is a standalone host bridge class, not a compiled implementation of upstream `JsExtensions` / `JsEncodeUtils`.
+- **Exact descriptors observed:**
+  - `getSource()`: `()Ljava/util/Map;` (generic signature Map<String,Object>), not upstream `BaseSource?`.
+  - `getBatchContext()`: `()Ljava/lang/Object;`, with the host implementation returning null.
+  - `getSourceNavigationContext()`: `()Lkotlin/coroutines/CoroutineContext;`.
+  - `getTag()`: `()Ljava/lang/String;`.
+  - `ajaxAll(Object, boolean)`: `(Ljava/lang/Object;Z)[Lapp/badcat/client/runtime/RhinoSourceHttpResponse;`; a one-argument Object overload is also emitted.
+  - `ajaxTestAll(Object, int, boolean)`: `(Ljava/lang/Object;IZ)[Lapp/badcat/client/runtime/RhinoSourceHttpResponse;`; a two-argument Object/int overload is also emitted.
+- The javap output shows 14 `JavascriptInterface` annotation occurrences on this class. It does not expose public `webView`, `startBrowser`, or `getVerificationCode` methods. The 18-name upstream gap list and broader overload differences in section 22 therefore remain valid.
+- **Scope limitation:** this artifact proves only the compiled Badcat host bridge at #3301's exact SHA. It does not compile or prove the pinned upstream `BaseSource`, `BookSource`, `Book`, `BookChapter`, `AnalyzeRule`, `AnalyzeUrl`, or `JsExtensions` JVM ABI. Do not use this artifact as upstream ABI evidence or as a full compatibility pass.
+- **Run closeout:** #3301 completed successfully, including API 35 WebView provider instrumentation, JVM ABI capture, debug APK assembly/DEX verification and the best-effort public-source probe steps. A successful best-effort probe step is not a blanket pass for every remote source. Each claim remains bound to SHA `4ea24ef...`; the newer documentation commits have separate CI snapshots.
+
