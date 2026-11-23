@@ -431,3 +431,44 @@ No row is marked complete. “Authentic slice” describes source provenance/pre
 | C. Hybrid source reuse with strict API/behavior parity | Can reuse proven parser/Rhino slices while retaining existing host transport/storage/UI; lowest short-term migration cost | Current hybrid already has semantic gaps: host projection DTOs, manual JsExtensions bridge, null batch context, no authentic BaseSource/AnalyzeRule/AnalyzeUrl, and multiple independent data owners | Only acceptable if every method/field/default/error/cancel/callback/lifecycle gap is enumerated and differential tests prove equivalence; unsupported APIs must remain explicit blockers |
 
 **Provisional conclusion:** none of A/B/C is approved. Current evidence rules out treating the existing hybrid as complete; it does not yet prove that A or B can satisfy the full closure with acceptable module boundaries. Complete the caller/reflection graph, resolved Gradle/resource/native/R8 closure, Badcat all-caller/data-owner scan, and behavior matrix before registering a boundary decision. Stage 1 remains **NO-GO**.
+
+
+## 18. Rhino Java-object exposure and reflection-sensitive ABI — caller scan slice 2 (2026-11-24)
+
+### 18.1 Dynamic Java object wrapping is part of the public source ABI
+
+- Pinned `modules/rhino/.../RhinoWrapFactory.kt` overrides both `wrapAsJavaObject` and `wrapJavaClass`. It selects custom factories by exact runtime Java class, otherwise wraps Lists/Maps/arrays/objects using HtmlUnit CoreJS native wrappers. This means source-visible properties and method overload behavior are not determined solely by `@JavascriptInterface`.
+- Pinned `app/.../App.kt:initRhino()` registers custom wrappers:
+  - `BookSource` → `NativeBaseSource.factory`
+  - `RssSource` and `HttpTTS` → `NativeBaseSource.factory`
+  - `ExploreRule`, `SearchRule`, `BookInfoRule`, `ContentRule`, `BookChapter`, and `Book.ReadConfig` → `ReadOnlyJavaObject.factory`
+- `NativeBaseSource` exposes JavaBean-style setters as property assignment (hides `setX` when a corresponding property exists), special-cases `setVariable`, and only permits direct assignment to `variable`. `ReadOnlyJavaObject` hides setters and ignores all property writes. These wrapper policies affect script behavior and must be reproduced or proven equivalent.
+- The observed wrapper registration does not list every rule type (for example TocRule/ReviewRule are not in this registration block); their JS exposure must be traced through actual binding paths rather than inferred from model existence.
+
+### 18.2 Rhino execution/security configuration is behavioral contract
+
+- Pinned `RhinoScriptEngine` initializes HtmlUnit CoreJS with ES6 language version, interpreted mode, `RhinoClassShutter`, `RhinoWrapFactory`, instruction observer threshold 10,000 and maximum interpreter stack depth 1,000.
+- Its feature overrides enable E4X, Java Map access, Legado dynamic default `this`, and dynamic eval/Function realm behavior. Top-level calls require `allowScriptRun` and check coroutine cancellation; instruction observation calls `ensureActive()`.
+- `RhinoContext` carries coroutine context, allow-run flag and recursion count; initializes E4X/XML support and forces JSON initialization before shared scopes. Compatibility source rewriting for legacy const/let/with behavior is part of the pinned engine.
+- `RhinoClassShutter` blocks sensitive class names and types, including Class/ClassLoader/Runtime/ProcessBuilder, File and file streams, reflection/invoke, Android Context/Intent/Activity internals, Room/DAO/AppDatabase, filesystem APIs and internal engine packages. System `load`, `loadLibrary` and `exit` are protected. This is not a generic allow-list that can be approximated by hiding `java` from the JS global object.
+- Pinned `SharedJsScope` plus `ScriptBindings` implement compiled shared scopes, source/library state handles, locks, weak-reference cache and removal/generation behavior. A per-source Rhino scope alone is not proof of equivalence.
+
+### 18.3 Reflection and call-search results
+
+Exact pinned code-search discovery:
+- `RhinoWrapFactory.register`: 4 files (App registration plus compatibility/capability tests).
+- `NativeBaseSource.factory`: 3 files (App registration plus source compatibility tests).
+- `ClassNameMatcher`: 2 files (matcher and class shutter).
+- `setClassShutter`: 1 file (RhinoScriptEngine).
+- `java.lang.reflect`: 7 files (RhinoClassShutter, Gson extensions, app utilities/tests and license diff).
+- `getDeclaredMethod`: 6 files, primarily menu helpers and lifecycle/UI tests; no evidence yet that these are source-rule dispatch points.
+- `getMethod(`: 7 files, including AnalyzeUrl and app/UI helpers; most observed AnalyzeUrl matches are UrlOption getter calls, not reflective invocation.
+- `Class.forName`: 5 files, including RhinoWrapFactory security commentary, Rhino tests and app file utilities. A comment mentioning Class.forName is not itself a call edge.
+
+### 18.4 Badcat parity implications
+
+- Badcat's `RhinoSafeSourceJavaExtensions` is a manually implemented class rather than the pinned `JsExtensions` interface + dynamic wrapper path. Its methods/overloads, property naming, object types, exception conversion and source-visible object wrappers need explicit comparison.
+- Badcat has a local `LegadoRhinoSandbox`; its policy must be compared class-by-class with the pinned RhinoClassShutter and ProtectedNativeJavaClass behavior. A stricter policy may be a deliberate security restriction, but any source API it blocks must be registered as an incompatibility unless a differential contract proves otherwise.
+- No exhaustive reflection/string-dispatch graph is closed by this slice. It narrows the critical JS ABI from “48 annotations” to a combined contract of interface methods, wrapper registration, JavaBean property conversion, object type factories, class shutter, context/feature flags and scope lifecycle.
+
+**Status:** Rhino ABI/reflection inventory remains partial. Stage-0 is not accepted; stage-1 remains **NO-GO**.
