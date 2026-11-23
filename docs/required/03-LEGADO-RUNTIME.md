@@ -4406,3 +4406,18 @@
 - **Scope review:** implementation diff contains only the two preregistered production/test files plus this checklist update. No upstream pin, `main`, UI, catalog persistence, or other category changes.
 - **Remaining compatibility gaps:** `sourceUrls` wrapper parsing is next separately registered item; nested URL fetch, JS source text import/export, user-facing source selection/replacement, full Gson null/primitive differential behavior and full upstream BookSource import/export semantics remain open.
 - **Acceptance level:** this one compatibility correction is closed. Third category remains partially implemented; full Legado runtime acceptance and release readiness are not achieved.
+
+
+### Runtime-3.2f.30 registration — parse upstream `sourceUrls` import manifests without fetching
+
+- **日期 / 分类：** 2026-11-23；第三类：BookSource JSON import contract.
+- **起始 branch / HEAD：** `integration/legado-upstream-runtime` / `8532853b2fb804d11e8312d6c10d0fdb6e80b041`；固定 Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **依赖：** Runtime-3.2f.29 已在 exact implementation SHA `e409492bed7288671f5ec7823b0181d136bcf954` 通过 run #3185 attempt 3 并关闭；共享 codec 文件可开始下一项，但本任务仍须独立 exact-SHA 验证。
+- **触发依据：** .28 audit 和 pinned upstream `BookSourceImport.kt` 已确认 `parseBookSourceJson` 接受 `sourceUrls` object wrapper，并返回独立的 `SourceUrls(List<String>)` 结果；当前 host codec 只支持 source object/array，会把 wrapper 当成普通 BookSource 并因缺少 URL/name 而拒绝。
+- **目标：** 在纯 JSON codec 层增加显式、类型化的导入文档解析结果，区分 `Sources` 与 `SourceUrls`；识别 `{"sourceUrls":[...]}`，保留空列表合法性，并验证 URL 项非空白。既有 `decode(json): List<LegadoBookSource>` 只接受真正 source object/array，不得把 URL manifest 伪装成 source 或静默返回空 sources。
+- **必须差分核验：** 对照固定上游 `parseBookSourceJson(text, allowSourceUrls=true/false)` 和其 Gson 行为，覆盖有效多 URL、空数组、null wrapper、缺失/非数组 wrapper、null/空字符串/空白 URL 项、非字符串 primitive、object/array item、同时存在 `sourceUrls` 与 source fields 的对象，以及 `allowSourceUrls=false`。若上游 Gson 对 primitive-to-string 有宽松转换，必须由固定 SHA 可执行 fixture 明确记录，不凭猜测扩大 host 接受范围。
+- **允许修改文件：** `integration-contract/src/main/kotlin/app/badcat/engine/LegadoBookSourceCodec.kt`；`integration-contract/src/test/kotlin/app/badcat/engine/LegadoBookSourceCodecTest.kt`；本清单。不得改 `FileBookSourceCatalog.kt`、`SourceCatalogActivity.kt` 或其他 caller。
+- **验收：** pinned upstream differential fixture；host typed-result focused tests；原有 source object/array/unknown-field/duplicate-ID/limits tests 全通过；`:integration-contract:test`；完整 exact-SHA CI 与 diff-scope review。
+- **明确排除：** 不请求/下载/解压 manifest 中的 URL；不递归处理嵌套 `sourceUrls`；不做 redirect/SSRF/HTTP allowlist/timeout/size/recursion/cycle/partial-failure 策略；不接入 catalog 或 UI，不改变现有 import/export UX；不做 JS-source text import/export、selection/replacement workflow、schema/存储、上游 pin、第四/第五类或 `main`。
+- **风险与边界：** 这是 parser/contract 阶段，不代表用户可以通过当前 catalog UI 导入远端 manifest。后续 URL fetching 必须另行登记，定义 HTTPS/HTTP、私网/loopback/IP literal、DNS rebinding、redirect downgrade、内容长度/解压炸弹、重复/循环 URL、并发、取消、缓存和部分失败事务。
+- **状态：** 已 preregister，尚未实施；不得在本登记之外扩展生产路径或网络行为。
