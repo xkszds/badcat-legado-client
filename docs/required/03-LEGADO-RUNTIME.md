@@ -5123,3 +5123,72 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 - **Sandbox paths:** LegadoRhinoSandbox accepts bounded primitive string bindings/results and explicitly is not the complete AnalyzeUrl adapter. Production RhinoSourceScriptRuntime uses persistent source scopes and injects custom Java/Cookie/source/cache bridges; these are separate paths.
 - **Limit:** Badcat code-search index incomplete; no global assertion that there are zero registration call sites. Production factory and tree are the evidence boundary.
 - **State:** security source slice verified, JS object/API wiring still partial; stage-0 in progress; stage-1 **NO-GO**. No security policy or production code changed; four paused sources/preflight untouched.
+
+
+---
+
+## 24. Runtime-3.2f.49 audit continuation and Actions #3279–#3300 closeout (2026-11-23)
+
+### 24.1 What #3279–#3300 actually represent
+
+These numbers are **GitHub Actions run numbers**, not GitHub Issues and not 22 separate feature implementations. All 22 runs belong to workflow **Android debug build**, event `push`, branch `integration/legado-upstream-runtime`; each run was triggered by a separate documentation-only commit. The 22 commits alternate between adding an audit slice to `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md` and recording that slice / CI evidence in this required checklist.
+
+The 11 paired audit topics are:
+
+1. **#3279–#3280 — pinned model/rule/API inventory.** Inventoried BookSource, Book, BookChapter, six rule models, BaseSource lifecycle, AnalyzeRule, AnalyzeUrl and JsExtensions. Recorded identity, constructor defaults/nullability, serialization/converters, batch support and JS bridge responsibilities. This is a declaration/source inventory, not proof that Badcat has integrated the full model or API.
+2. **#3281–#3282 — upstream caller graph.** Mapped the WebBook search/explore/detail/TOC/content/batch chain through BookList, BookInfo, BookChapterList and BookContent; traced AnalyzeRule/AnalyzeUrl, JsSourceEngine, SourceNavigationBridge, BackstageWebView, CookieStore and CacheManager edges. Search counts are discovery evidence only; reflection, dynamic dispatch and complete caller closure remain open.
+3. **#3283–#3284 — Gradle and packaging closure.** Audited upstream module topology, direct dependencies, Android/Room/KSP/Glide setup, Cronet/native libraries, manifests, resources and shrinker rules. This is static declaration evidence only: no resolved variant runtimeClasspath/compileClasspath, merged manifest/resources, generated outputs, native transitive graph or final R8/APK closure was established.
+4. **#3285–#3286 — Badcat callers and data owners.** Inspected the Badcat production graph and ownership of source catalog, book/chapter projections, progress, favorites/bookmarks/history, chapter cache, Cookie/session, JS variables/files and replacement rules. The current implementation remains host-projection based; the seven authentic rule-model sources in `:legado-runtime` do not amount to authentic BookSource/Book/BookChapter/BaseSource/AnalyzeRule/AnalyzeUrl/JsExtensions integration.
+5. **#3287–#3288 — semantic parity and architecture comparison.** Built a first-pass matrix across models, analyzers, Rhino, JS ABI, shared scope, BaseSource, HTTP, Cookie/login, WebView/browser/verification, cache/variables and business/batch flows. No capability row was marked complete. Candidates A/B/C were compared provisionally; none was selected. Stage-1 remains **NO-GO**.
+6. **#3289–#3290 — Rhino Java-object exposure and reflection ABI.** Audited RhinoWrapFactory custom factories, NativeBaseSource/ReadOnlyJavaObject registration, JavaBean property mapping, Rhino execution context/features, cancellation, class shutter and reflection-sensitive exposure. The scan is partial and does not close all reflection/string-dispatch callers.
+7. **#3291–#3292 — pinned Rhino source provenance.** Compared exact Git blob identities: RhinoClassShutter, RhinoWrapFactory, RhinoContext, ScriptBindings, ReadOnlyJavaObject and JavaObjectWrapFactory match pinned upstream blobs. RhinoScriptEngine is modified locally (including callSourceFunction and globalThis resolution); this divergence requires explicit differential tests and provenance, not a claim of a byte-identical engine.
+8. **#3293–#3294 — pinned source-facing property/API inventory.** Expanded BaseSource, BookSource, six rule models, Book/ReadConfig/ParagraphAnchor, BookChapter, AnalyzeRule/AnalyzeUrl/UrlOption and JsExtensions field/constructor contracts. Remaining inherited/generated accessors, serializer edge cases, overloads and callers are not closed.
+9. **#3295–#3296 — inherited data, batch and shared-scope contracts.** Recorded RuleDataInterface's 10,000 UTF-16-code-unit inline/big-value threshold; BatchContentContext's chapter-index identity, duplicate-URL handling, save tokens, cancellation and close fence; SharedJsScope's weak-reference LRU(16), locks, thread/owner scope and invalidation; and JsEncodeUtils crypto/hash ABI. Badcat differential parity remains unproven.
+10. **#3297–#3298 — JavaScript bridge name/overload diff.** Compared pinned JsExtensions + JsEncodeUtils against RhinoSafeSourceJavaExtensions. The lexical scan found 108 unique upstream names; 18 upstream names have no same-name Badcat declaration, including WebView/browser/verification, refresh and reader/theme methods. Selected overload counts differ (ajaxAll/ajaxTestAll, WebView/browser families and get). This is a lexical declaration comparison, not complete JVM/Rhino ABI proof.
+11. **#3299–#3300 — Rhino sandbox policy parity.** Verified exact upstream blob matches for RhinoClassShutter, ProtectedNativeJavaClass and RhinoWrapFactory, plus execution limits in the inspected engine path. Important distinction: identical security classes do not restore upstream NativeBaseSource/BaseSource object exposure; Badcat still injects its custom bridge, with getSource returning a Map and batch context remaining null. Security-source parity is a partial positive result, not full source ABI parity.
+
+### 24.2 Exact Actions run / commit / job register
+
+Each row binds one run to its own immutable commit SHA and its single `assemble-debug` job. All listed runs report `completed / success`; all listed jobs report `completed / success`. Job IDs are included to make the evidence directly traceable.
+
+| Actions run | Run ID | Exact commit SHA | Job | Job ID | Commit purpose |
+|---:|---:|---|---|---:|---|
+| #3279 | 45256546654 | `7751292328a955ae70a3437804b4517f31d3e5c0` | assemble-debug | 137979760490 | Audit: model/rule/API inventory |
+| #3280 | 45256616555 | `14af4fa4cbd48717f9c79e2c9eca8dc429217b40` | assemble-debug | 137979994925 | Record API inventory and CI evidence |
+| #3281 | 45256891932 | `3f4ce7bbd4fa30d295c1fa008fbac726b45a4b56` | assemble-debug | 137980956618 | Audit: source execution caller graph |
+| #3282 | 45256935124 | `e0ad5d788b78b1cc22dee86e9add484ac09bb60e` | assemble-debug | 137981102465 | Record source caller graph |
+| #3283 | 45257312904 | `3564a5e91551f0580ba137c8569cc3afb588f203` | assemble-debug | 137982417572 | Audit: Gradle/packaging closure |
+| #3284 | 45257351042 | `dc2a88330a3fcacf4ee26b656cff477bfd13bf5f` | assemble-debug | 137982557901 | Record static dependency closure |
+| #3285 | 45257655249 | `7b3e9a1698a1b014bc242bfcdab72ae8290ac931` | assemble-debug | 137983597074 | Audit: Badcat callers/data owners |
+| #3286 | 45257710335 | `f37b0a22aa040dcdbce0fe18fc397f67d4f5f258` | assemble-debug | 137983796268 | Record Badcat host boundary |
+| #3287 | 45257866956 | `5d21cac66a4c712ea317ae12998db39817a2fef5` | assemble-debug | 137984330091 | Audit: semantic parity matrix/options |
+| #3288 | 45257906970 | `0a204f0d7d21fa9f0867d58007a12c50b3aea9e6` | assemble-debug | 137984474447 | Record parity matrix and boundary options |
+| #3289 | 45258251108 | `b0f24c45d431c3e331657c64df7f95882cebc977` | assemble-debug | 137985687008 | Audit: Rhino object exposure/reflection ABI |
+| #3290 | 45258320473 | `3f8d2aa715db7e539a9434ad7720d7619c973c28` | assemble-debug | 137985928866 | Record Rhino ABI audit |
+| #3291 | 45258593943 | `509822c476e67eaa403ad0e4997a9e741f9305ab` | assemble-debug | 137986900454 | Audit: pinned Rhino source blob provenance |
+| #3292 | 45258629832 | `b13cbbb1093a4dafe4f09311df1d8ea0bbc7502e` | assemble-debug | 137987026837 | Record Rhino provenance evidence |
+| #3293 | 45259412916 | `0a2d829d5057b39b79e3fa7b5030d282ea2baa4e` | assemble-debug | 137989817136 | Audit: pinned source API/property inventory |
+| #3294 | 45259468055 | `15d0580ec221bc850e3fedc467723ddeba787388` | assemble-debug | 137990009814 | Record pinned API field inventory |
+| #3295 | 45259643432 | `57990d809e0e8b9d45661d82c46122f46c6d74ea` | assemble-debug | 137990644478 | Audit: inherited data/batch/shared-scope contracts |
+| #3296 | 45259691094 | `fe003c0b1c5d62076e267d33da64df18311c4201` | assemble-debug | 137990814048 | Record inherited contracts |
+| #3297 | 45259878926 | `a2abd8e932ce1b62197bbc462416bc472f3849d9` | assemble-debug | 137991497850 | Audit: JS bridge API diff |
+| #3298 | 45259919200 | `fd5f357b9f1c38d604a9487a4f1374b214ef8a83` | assemble-debug | 137991644831 | Record JS bridge API diff |
+| #3299 | 45260226309 | `e9f9c116cd2a79269b9a055a994e35b9dcf7ca6c` | assemble-debug | 137992689049 | Audit: Rhino sandbox parity |
+| #3300 | 45260273525 | `8033558bef7e53b2cdf3239b4f1723a78f1e7abd` | assemble-debug | 137992854191 | Record Rhino sandbox comparison |
+
+### 24.3 What the green CI proves — and does not prove
+
+- The workflow job is `assemble-debug`. Its successful pipeline includes pinned-upstream verification, contract unit tests, authentic Legado runtime model contract tests, JS API/dependency inventory generation, Rhino artifact/source verification, Android runtime-classpath checks, G2d source compile probe, third-category app unit suite, API 28 and API 35 CookieManager/WebView instrumentation, JVM bridge ABI capture, debug APK assembly and APK DEX verification.
+- The inspected job records for #3279–#3300 all show a successful job conclusion and no failed steps. The first eight jobs' step lists were also inspected and each reported success.
+- The workflow includes best-effort live source smoke/probe steps. A successful best-effort step means the workflow step completed; it is not, by itself, a blanket assertion that every remote source endpoint or all book-source types passed. Consult the run artifacts/reports for per-source outcomes before making that claim.
+- These are 22 separate exact-SHA CI snapshots of documentation commits. Because the commits in this range modify the audit/checklist documentation rather than production Kotlin/Java, Gradle, UI, database or source fixtures, they are not 22 separate runtime feature implementations.
+- A green `assemble-debug` job proves the checks in that workflow passed for that exact SHA. It does **not** prove full Legado compatibility, complete source caller/dependency closure, a selected/approved Runtime architecture, release readiness or stage-0 acceptance.
+
+### 24.4 Closeout and next gate
+
+- **#3279–#3300:** audit/documentation continuation and exact-SHA CI evidence — recorded complete for this documentation scope.
+- **Runtime-3.0 stage-0:** still in progress / not accepted; the audit has useful partial source, caller, packaging, data-owner, API and Rhino evidence, but unresolved reflection/caller closure, resolved dependency/resource/native/R8 closure, semantic differential contracts and final architecture selection remain.
+- **Stage-1:** **NO-GO**; no production runtime expansion is authorized by these documentation-only runs.
+- **Unchanged exclusions:** no Room/schema v1, no main-branch writes, no Badcat UI/Reader redesign, no production runtime wiring from this audit, and no re-test/change/unpause of the four paused source cases or security preflight.
+- The historical audit detail remains in `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md`; this section is the required checklist index and run register, not a replacement for the underlying audit report.
+
