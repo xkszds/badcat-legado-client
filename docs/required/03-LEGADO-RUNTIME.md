@@ -4610,3 +4610,6 @@
 - **依赖 / 并行：** 无前置依赖；与 .35 Cookie、.36 rate-limit 的生产/测试文件完全隔离。与 .37 只读审计已完成，不重叠。
 - **排除：** 不实现 legacy Login UI v1、WebView/验证码 UI、登录网络提交、Cookie 行为、header provider、Rhino 执行能力扩展、schema、Gradle、UI、其他类别、上游 SHA 或 `main`。
 - **状态：** 已登记；待实施和 exact-SHA CI 验证。
+
+
+- **Runtime-3.2f.38 implementation design correction (before acceptance):** review of `RhinoSourceScriptRuntime.evaluate` at blob `879d6ed978894b16271cf5207348176fd040eda7` confirms the host runtime already initializes nonblank `source.mainJs` once per source scope before evaluating the requested script. Therefore the Login UI v2 service must not prepend `mainJs` a second time (which could redeclare top-level lexical bindings). The service should rely on the runtime's source initialization and execute only the `loginUi`/`loginAction` invocation; tests must prove this using the real Rhino runtime plus recording-runtime assertions that loginUrl is not substituted. This narrows the implementation to preserving upstream selection semantics without duplicate mainJs evaluation; no scope expansion.
