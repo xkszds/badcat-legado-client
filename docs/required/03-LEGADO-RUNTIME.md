@@ -5252,7 +5252,7 @@ Each row binds one run to its own immutable commit SHA and its single `assemble-
 
 - **Corrected public API gap:** the earlier 18-name lexical list counted private helper `canOpenSourceUi` (JsExtensions.kt line 1299). It is private and is not a public source API. The corrected count is **17 missing public names**, and the exact list is recorded in audit report section 24.8.
 - **Independent confirmation:** #3301 `legado-js-abi-inventory` (artifact ID `14862965256`) reports 17 missing names; #3301 `legado-host-rhino-surface` (artifact ID `14862647140`) confirms those same 17 names are absent from the measured `java` Rhino callable names and from the union of the four `java/cookie/source/cache` host bindings. The host object remains a standalone class with no implemented upstream interface.
-- **Executed unit evidence:** #3301 `badcat-unit-test-reports` (artifact ID `14863755557`) has 40 JUnit XML files, 332 tests, 0 failures/errors/skips. Relevant passing suites: PinnedLegadoRuleModelsTest 6/6; LegadoGsonCompatibilityTest 6/6; RhinoSourceJsAbiBytecodeTest 3/3. Exact run SHA remains `4ea24ef01c7c9fa7f8414ec9d3a50e0b0b1c6a68`.
+- **Executed unit evidence:** #3301 `badcat-unit-test-reports` (artifact ID `14863755557`) has **41 JUnit XML suite files and 335 tests**, 0 failures/errors/skips. Direct ZIP enumeration and XML parsing verified the corrected totals; archive SHA-256 remains `94243c86c72cf91b15f0d7c59771d4cb55b61c8b4bbcb95e390cb5f12ff3e787`. Relevant passing suites: PinnedLegadoRuleModelsTest 6/6; LegadoGsonCompatibilityTest 6/6; RhinoSourceJsAbiBytecodeTest 3/3. Exact run SHA remains `4ea24ef01c7c9fa7f8414ec9d3a50e0b0b1c6a68`.
 - **Serializer test correction:** the six-model GSON test named `allSixRuleConvertersAcceptObjectAndStringEncodedObject` tests GSON object/string parsing, not direct invocation of the 12 `BookSource$Converters` methods. Additional passing coverage includes selected array/null cases, unknown fields, coercion, LocalDate, HTML escaping and ContentRule round-trip. Remaining gaps are listed in audit report section 24.8.
 - **Task state:** Runtime-3.2f.50 remains `in_progress`. The 17-name gap and test evidence are now reconciled; serializer differential and complete pre-R8 metadata/caller mapping remain open. Stage-0 ordered item 1 remains open; Stage-1 remains **NO-GO**. No production or test source changed.
 
@@ -5263,3 +5263,21 @@ Each row binds one run to its own immutable commit SHA and its single `assemble-
 - The corrected 17-name gap applies only to the base JsExtensions + JsEncodeUtils scope. It is not a complete count for Web/SourceLogin/Regex/Rss contexts.
 - Open context differences: WebJsExtensions has `upConfig` and `request` with no direct host equivalents; SourceLoginJsExtensions has six callback methods not mapped by name to the host source object; RegexJsExtensions has `t2s`/`s2t` absent from the replacement evaluator's actual binding; RssJsExtensions remains excluded unless caller evidence proves a book-source dependency.
 - **Task state:** Runtime-3.2f.50 remains `in_progress`. A full caller/context graph is now a required remaining dependency before these additional scopes can be classified. Stage-0 ordered item 1 remains open; Stage-1 remains **NO-GO**. No runtime code or tests changed.
+
+
+## 25.7 Actions #3303–#3310 exact-SHA polling checkpoint (2026-11-24)
+
+- **Polling scope:** read-only inspection of each run and its `assemble-debug` job; no reruns, workflow edits, branch changes or build triggers.
+- **Completed/success snapshots:**
+  - #3303 / run `45266539225` / job `138014821331` / SHA `63a67c8dc03fb0fd1c0d97de7e35d117733f2310`.
+  - #3304 / run `45266574029` / job `138014945808` / SHA `28bc8dddbc2209cf373784e7b5d28ee11d003383`.
+  - #3305 / run `45266840521` / job `138015893093` / SHA `6c2f13733f74a26acd259a232f5fae4bfc0a0c7d`.
+  - #3306 / run `45266878610` / job `138016024383` / SHA `bbf7b9e87338f40b43e42a869ddba3d719b2abf9`.
+  - Each listed run and job was `completed / success` at this poll. Results are separate immutable SHA snapshots; no one run validates another.
+- **Still in progress at this poll:**
+  - #3307 / run `45267740780` / job `138019034381` / SHA `5e19d7cdb6f77f066d3bc0a1c9f9e21122e6b674`; API 35 WebView provider instrumentation running.
+  - #3308 / run `45267786798` / job `138019187866` / SHA `4079e292e43e18c79a3264c7b078d08b7cb63175`; API 35 WebView provider instrumentation running.
+  - #3309 / run `45267971825` / job `138019829298` / SHA `858b8b4b614e19d19aedbd9ad256a06fa2e15032`; API 35 WebView provider instrumentation running.
+  - #3310 / run `45268003806` / job `138019946729` / SHA `7f406dff373fac60da9545bd63861a0c6a4989f7`; API 28 CookieManager instrumentation running.
+- **Interpretation:** #3303–#3306 have completed successfully as documentation/evidence snapshots, not functional compatibility acceptance. #3307–#3310 remain pending and must be polled independently on their own SHAs. Latest branch HEAD at this checkpoint was `a1eb412c00419ae6e0941224811158181bd498ea`; no pending run's result is transferred to it.
+- **Task state:** Runtime-3.2f.50 remains `in_progress`; Stage-0 ordered item 1 remains open and Stage-1 remains **NO-GO**. The 17 base public API gap and six-scope callback inventory are recorded, but the full caller/context graph, unminified ABI/nullability metadata and serializer differential evidence remain open. Four paused source cases and security preflight remain untouched.
