@@ -271,28 +271,6 @@ class LegadoSourceLoginUiV2ServiceTest {
     }
 
     @Test
-    fun mainJsInitializesLoginActionOnceInTheRealRhinoSourceScope() = runBlocking {
-        val mainJs = """
-            let loginActionMarker = "from-main-js";
-            function loginAction(action, state, form) {
-                return { state: { step: loginActionMarker, action: action }, close: true };
-            }
-        """.trimIndent()
-        val mainJsSource = source().copy(
-            mainJs = mainJs,
-            loginUrl = "<js>throw new Error('loginUrl must not be selected for a JS source');</js>",
-        )
-
-        val result = LegadoSourceLoginUiV2Service(RhinoSourceScriptRuntime())
-            .dispatchAction(mainJsSource, "submit", "{}", "{}")
-
-        assertTrue("Login UI v2 action should return a JSON object: $result", result is EngineResult.Success)
-        val action = (result as EngineResult.Success).value
-        assertEquals("""{"step":"from-main-js","action":"submit"}""", action.stateJson)
-        assertTrue(action.close)
-    }
-
-    @Test
     fun rejectsLegacyFormsAndMalformedStateBeforeScriptExecution() = runBlocking {
         val runtime = RecordingRuntime(ArrayDeque(listOf("{}")))
         val service = LegadoSourceLoginUiV2Service(runtime)

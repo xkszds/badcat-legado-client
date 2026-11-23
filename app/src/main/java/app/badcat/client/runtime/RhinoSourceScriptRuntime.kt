@@ -16,13 +16,6 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
 import com.script.ScriptBindings
 import com.script.rhino.RhinoScriptEngine
-import com.script.rhino.RhinoContext
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.currentCoroutineContext
-import org.htmlunit.corejs.javascript.Context
-import org.htmlunit.corejs.javascript.NativeJSON
-import org.htmlunit.corejs.javascript.Scriptable
-import org.htmlunit.corejs.javascript.ScriptableObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
@@ -499,16 +492,7 @@ class RhinoSourceScriptRuntime(
                             RhinoScriptEngine.evalSuspend(RhinoRegexCompatibility.normalize(mainJs), scope)
                             sourceMainJsHashes[source.id] = mainJsHash
                         }
-                        val evaluated = RhinoScriptEngine.evalSuspend(
-                            RhinoRegexCompatibility.normalize(script),
-                            scope,
-                        )
-                        if (evaluated is Scriptable && evaluated.className != "Array") {
-                            stringifyScriptableResult(evaluated)
-                                ?: scriptableObjectToJson(evaluated, 0).toString()
-                        } else {
-                            evaluated
-                        }
+                        RhinoScriptEngine.evalSuspend(RhinoRegexCompatibility.normalize(script), scope)
                     }
                 } finally {
                     // Request bindings must not leak into the persistent source scope.
@@ -546,42 +530,6 @@ class RhinoSourceScriptRuntime(
                     error,
                 )
             }
-        }
-    }
-
-    /**
-     * Match pinned JsSourceEngine.normalizeJsResult for root Scriptable objects.
-     * Keep JSON.stringify inside the same source lock and timeout as the script
-     * evaluation, because source-defined toJSON/getters may execute JavaScript.
-     */
-    private suspend fun stringifyScriptableResult(value: Scriptable): String? {
-        val topScope = value.parentScope?.let { ScriptableObject.getTopLevelScope(it) }
-            ?: return null
-        val coroutineContext = currentCoroutineContext()
-        val cx = Context.enter() as RhinoContext
-        val previousCoroutineContext = cx.coroutineContext
-        val previousAllowScriptRun = cx.allowScriptRun
-        cx.coroutineContext = coroutineContext
-        cx.allowScriptRun = true
-        cx.recursiveCount++
-        try {
-            cx.checkRecursive()
-            val raw = try {
-                NativeJSON.stringify(cx, topScope, value, null, null)
-            } catch (error: CancellationException) {
-                throw error
-            } catch (error: Exception) {
-                throw IllegalArgumentException(
-                    "JavaScript object result JSON.stringify failed: ${error.message}",
-                    error,
-                )
-            }
-            return RhinoScriptEngine.unwrapReturnValue(raw) as? String
-        } finally {
-            cx.recursiveCount--
-            cx.allowScriptRun = previousAllowScriptRun
-            cx.coroutineContext = previousCoroutineContext
-            Context.exit()
         }
     }
 
