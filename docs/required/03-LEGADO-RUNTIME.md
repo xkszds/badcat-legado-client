@@ -4985,3 +4985,16 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 - **Decision:** stage-0 audit is **in progress / partial evidence only**; Runtime-3.0 stage 1 is **NO-GO** until the exact API/field/overload inventory, all-caller/reflection graph, resolved Gradle/transitive/resource/native/proguard closure, and host data-owner/behavior matrix are complete. No complete Legado compatibility claim.
 - **Execution boundary:** documentation-only. No build/test/CI/APK/device or public-source run. No production code, Gradle, dependencies, workflow, fixtures/rules, UI/Reader, schema/database or release files changed. The four paused public-source cases and security preflight remain untouched.
 - **Next ordered audit work:** (1) exact symbol/field/overload extraction for all source-facing models/rules/AnalyzeRule/AnalyzeUrl/JsExtensions; (2) exhaustive caller + reflection/string lookup graph; (3) resolved pinned Gradle dependency/resources/manifest/native/R8 closure; (4) all Badcat production callers/data owners; (5) side-by-side semantic matrix and evidence-based architecture comparison. Stage 1 remains blocked until these are independently reproducible.
+
+#### Runtime-3.2f.49 API inventory slice 1 — exact declaration counts
+
+- Pinned SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`; source-level lexical declaration scan (includes overloads/helpers; not a JS ABI coverage percentage):
+  - `JsExtensions.kt`: 1,390 lines, 118 function declarations, 48 `@JavascriptInterface` annotations.
+  - `BaseSource.kt`: 436 lines / 30 functions.
+  - `BookSource.kt`: 358 lines / 37 functions.
+  - `Book.kt`: 548 lines / 57 functions.
+  - `BookChapter.kt`: 210 lines / 14 functions.
+  - `AnalyzeRule.kt`: 1,060 lines / 29 functions.
+  - `AnalyzeUrl.kt`: 1,053 lines / 53 functions.
+- Exact method groups and limitations are recorded in `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md`, section 11. The 48 annotations are not the full JavaScript ABI: Rhino wrapping, overload resolution, inherited/generated members and reflected lookups still require inspection.
+- **State unchanged:** Runtime-3.2f.49 stage-0 remains in progress; stage-1 remains NO-GO. This is a declaration inventory slice only; no caller graph, behavior parity, build/test/CI/APK/device or compatibility acceptance is implied.
