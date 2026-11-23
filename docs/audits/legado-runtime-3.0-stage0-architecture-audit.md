@@ -472,3 +472,25 @@ Exact pinned code-search discovery:
 - No exhaustive reflection/string-dispatch graph is closed by this slice. It narrows the critical JS ABI from “48 annotations” to a combined contract of interface methods, wrapper registration, JavaBean property conversion, object type factories, class shutter, context/feature flags and scope lifecycle.
 
 **Status:** Rhino ABI/reflection inventory remains partial. Stage-0 is not accepted; stage-1 remains **NO-GO**.
+
+
+## 19. Badcat Rhino source provenance comparison — exact blob evidence (2026-11-24)
+
+The following files in Badcat `:legado-rhino` have byte-identical Git blob SHA values to the pinned upstream source files at `330e606c4d57e08adc056ff8ab7a4132c784da9a`:
+
+| Source file | Upstream blob SHA | Badcat blob SHA | Result |
+|---|---|---|---|
+| `RhinoClassShutter.kt` | `e9033fa47753038751191926a4f898bf5680c05b` | `e9033fa47753038751191926a4f898bf5680c05b` | identical |
+| `RhinoWrapFactory.kt` | `4a3d8c30329664e725cb64ae89a88a5dfe4ebc6a` | `4a3d8c30329664e725cb64ae89a88a5dfe4ebc6a` | identical |
+| `RhinoContext.kt` | `41344c930e6050248f53dea6eddebd1e0af9da16` | `41344c930e6050248f53dea6eddebd1e0af9da16` | identical |
+| `ScriptBindings.kt` | `2b34712e911cc941b56f16257cbd560e1d31f64f` | `2b34712e911cc941b56f16257cbd560e1d31f64f` | identical |
+| `ReadOnlyJavaObject.kt` | `80095eca8d810c9fc0ac016076f21cb512f29870` | `80095eca8d810c9fc0ac016076f21cb512f29870` | identical |
+| `JavaObjectWrapFactory.kt` | `283cff7b6e0d778cd6348a467382765c8cc7c274` | `283cff7b6e0d778cd6348a467382765c8cc7c274` | identical |
+
+`RhinoScriptEngine.kt` is not byte-identical:
+- Upstream blob: `19951c27c861af6815f43e4756935634135ac1f7`
+- Badcat blob: `84552db27cfff78d52905377fa6774dbc5dea34e`
+- Both retain the main eval/compile/context setup method set, while Badcat adds `callSourceFunction(action, scope)` and changes `topLevelThis(scope)` to read the JS-visible `globalThis` property before falling back to `TopLevel.globalThis`. The added callback method requires an active RhinoContext and invokes the supplied Function with the resolved top-level this object.
+- This is a real local divergence, not a byte-for-byte upstream copy. It may be intentional for the Badcat source-scoped shared-global model, but its callback/this semantics require a pinned differential contract and an explicit provenance note. A symbol search in the Badcat code index was incomplete, so no claim is made here that all call sites were found.
+
+**Conclusion:** the Rhino core contains a substantial exact upstream slice, but exact-file identity for six engine files does not imply full Rhino ABI parity. The modified engine entry point, custom Badcat extensions, missing upstream BaseSource/JsExtensions wrapper registrations and different source-scope wiring remain part of the compatibility blocker.
