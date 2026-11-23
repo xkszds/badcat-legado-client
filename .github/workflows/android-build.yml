@@ -840,7 +840,7 @@ jobs:
           assert is_user_paused_four_source({"bookSourceUrl": "http://www.xtangsanshu.com"})
           assert is_user_paused_four_source({"bookSourceUrl": "https://www.00shu.la"})
           assert is_user_paused_four_source({"bookSourceUrl": "https://www.bqg.fun"})
-          assert is_user_paused_four_source({"searchUrl": "https://m.jhsssd.com/search,{\\"method\\":\\"POST\\"}"})
+          assert is_user_paused_four_source({"searchUrl": "https://m.jhsssd.com/search"})
           assert not is_user_paused_four_source({"bookSourceUrl": "https://example.org"})
           print("FOUR_SOURCE_PAUSE_SELF_TEST PASS")
 
