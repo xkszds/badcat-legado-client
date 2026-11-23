@@ -4643,7 +4643,7 @@
 - 必须新增/更新的测试：真实 Rhino + mainJs 顶层 lexical binding 的 render 对象返回；真实 Rhino action 对象返回；JSON 字符串返回保持原始 JSON 文本；mainJs 仍只由 Rhino source runtime 初始化一次；使用唯一 source ID 并在 finally 中清理 source runtime state，避免 static source scope 跨测试污染。现有 RecordingRuntime、非 JS @js:/<js> 回退、错误和 invocation context 测试保持。
 - 验收：focused LegadoSourceLoginUiV2ServiceTest 通过；完整 app JVM suite 通过；新 exact-HEAD CI 运行终结成功并检查 JUnit；随后更新 .38 closeout。Debug APK 产出或其他旧 SHA 通过均不能代替该验收。
 - 依赖 / 排除：先完成本修正，再关闭 .38；不启动依赖 Login UI V2 的下一项。不得扩展为通用 Rhino 对象结果支持，不改 pinned upstream SHA，不写 main，不改原版 APK/用户数据。
-- 状态：registered → in_progress；当前 CI 失败已定位，尚未修正、尚未重跑。
+- 状态：registered → in_progress → closed；修正代码已提交，最终 exact-HEAD CI 与 JUnit/APK/设备探针产物均在下方 terminal closeout 中核验。
 
 
 #### Runtime-3.2f.35/.36 terminal CI closeout
@@ -4660,7 +4660,7 @@
 - **Changed files:** app/src/main/java/app/badcat/client/runtime/LegadoSourceLoginUiV2Service.kt and app/src/test/kotlin/app/badcat/client/runtime/LegadoSourceLoginUiV2ServiceTest.kt only.
 - **Actual code change:** Login UI v2 render/action calls now normalize return values at the service boundary using an isolated IIFE: object/array results become JSON text via JSON.stringify; JSON strings remain unchanged; primitive values pass through; null/undefined/function-like no-document results become null. No mainJs is prepended or re-evaluated; RhinoSourceScriptRuntime remains the owner of once-per-source mainJs initialization. No generic Rhino runtime or UI code changed.
 - **Added real-Rhino regressions:** mainJs lexical binding render (including repeated invocation); object-valued loginAction; JSON-string loginUi return remains parseable without double encoding. Recording-runtime tests assert the normalizer is used and loginUrl is not substituted for nonblank mainJs.
-- **Exact CI:** run 45102448235, head 80b0b93e2d25d133f27cfeac905b484d5a7e74ae, is still IN_PROGRESS at the API 28 CookieManager/WebView instrumentation step. Confirmed successful so far: contract unit tests; authentic Legado model contract tests; pinned JS ABI/source-closure generation; G2d stage-1 authentic rule/model compile; app JVM suite. The app JVM suite step itself is SUCCESS, but its JUnit artifact has not yet been uploaded/inspected. API 28 instrumentation, API 35 instrumentation, Debug APK assembly/upload and best-effort live-source probes remain pending.
-- **Acceptance:** not yet accepted. Do not claim full CI, JUnit report review, APK generation for this SHA, installation, or device testing until run 45102448235 reaches a terminal result and its artifacts are inspected.
-- **Next check:** continue polling run 45102448235; inspect the JUnit artifact and APK/report artifacts after upload; if any failure occurs, register and isolate its root cause before another code change.
-- **Current state:** correction implemented; app JVM suite step passed; overall exact-HEAD CI pending.
+- **Exact CI checkpoint (historical):** when this note was written, run 45102448235 was still IN_PROGRESS at the API 28 CookieManager/WebView instrumentation step. The terminal result and all uploaded artifacts are recorded in the closeout below.
+- **Acceptance at checkpoint:** pending at the time of this checkpoint; see the terminal closeout below for the final scope decision. The CI debug artifact is not a release APK or a user-device installation result.
+- **Next check:** completed; run 45102448235 reached terminal SUCCESS and its JUnit, APK, API 28/35 and live-source artifacts were downloaded and inspected as recorded below.
+- **Current state at checkpoint:** correction implemented; app JVM suite step passed; overall exact-HEAD CI was pending at that moment; terminal status is recorded below.
