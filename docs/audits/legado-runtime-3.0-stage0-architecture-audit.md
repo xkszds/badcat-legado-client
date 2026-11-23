@@ -1508,3 +1508,145 @@ Do not transplant Legado's BottomWebViewDialog, BackstageWebView, SourceVerifica
 ### Decision
 
 The 17 missing names cannot be treated as 17 equally unused methods. Six have direct public BookSource callers and require Badcat-native UI/browser/captcha adapters for broad source compatibility. This remains a **read-only audit finding**: no UI, runtime, Activity, WebView, or source implementation was changed. Stage-0 remains in progress; Stage-1 remains NO-GO.
+
+
+## 24.31 Normalized 104-name method matrix + compiled ABI and response-object mismatches (2026-11-24)
+
+### Scope and counts
+
+- This table covers the direct public method declarations in pinned `JsExtensions.kt` + `JsEncodeUtils.kt` against direct public declarations in the host's `RhinoSafeSourceJavaExtensions` class body. It does **not** claim to be the entire upstream source-object surface: `AnalyzeRule`, `BaseSource`, `WebJsExtensions`, returned Java/Jsoup objects and nested host facades add further members.
+- Direct source declaration counts: upstream **148 declarations / 104 distinct names**; host **150 declarations / 110 distinct names**. Host has **17 upstream names missing** and **23 additional direct names**. Some additional names belong to AnalyzeRule-style or safe host helper APIs; they must not be counted as 23 upstream parity gains.
+- The `jsHelp` flag is a lexical presence check for `java.<name>` in the complete pinned help file. “no” means the method is not named that way in help; it does not mean it is not dynamically callable or used by real sources.
+- Caller status is intentionally conservative: only methods with inspected source examples are called active; internal methods and fixture-only methods are labelled; remaining methods stay “caller scan pending” rather than being assumed unused.
+- Host overload counts below are Kotlin source declarations. The host bytecode test `RhinoSourceJsAbiBytecodeTest` blob `f3dc5c9d0d2b8edeaffa9b8500110f4e716439fd` verifies that `@JvmOverloads` creates Java-visible overloads for ajaxAll and ajaxTestAll. The test explicitly says it does not claim upstream bytecode parity.
+
+### Complete name/caller matrix
+
+| Method | Upstream declarations | Host direct declarations / ABI note | jsHelp `java.*` | Caller classification |
+|---|---:|---:|:---:|---|
+| `HMacBase64` | 1 | 1 | yes | caller scan pending |
+| `HMacHex` | 1 | 1 | yes | active source HmacSHA1 caller (4 search hits) |
+| `aesBase64DecodeToByteArray` | 1 | 1 | no | caller scan pending |
+| `aesBase64DecodeToString` | 1 | 1 | no | active AES content callers (70) |
+| `aesDecodeArgsBase64Str` | 1 | 1 | no | caller scan pending |
+| `aesDecodeToByteArray` | 1 | 1 | no | caller scan pending |
+| `aesDecodeToString` | 1 | 1 | no | caller scan pending |
+| `aesEncodeArgsBase64Str` | 1 | 1 | no | caller scan pending |
+| `aesEncodeToBase64ByteArray` | 1 | 1 | no | caller scan pending |
+| `aesEncodeToBase64String` | 1 | 1 | no | caller scan pending |
+| `aesEncodeToByteArray` | 1 | 1 | no | caller scan pending |
+| `aesEncodeToString` | 1 | 1 | no | no exact public-source caller found in this pass |
+| `ajax` | 2 | 2 | yes | caller scan pending |
+| `ajaxAll` | 2 | 1 source declaration + @JvmOverloads JVM overload | yes | caller scan pending |
+| `ajaxTestAll` | 2 | 1 source declaration + @JvmOverloads JVM overload | yes | caller scan pending |
+| `androidId` | 1 | 1 | yes | caller scan pending |
+| `base64Decode` | 3 | 3 | yes | caller scan pending |
+| `base64DecodeToByteArray` | 2 | 2 | yes | caller scan pending |
+| `base64Encode` | 2 | 2 | yes | caller scan pending |
+| `bytesToStr` | 2 | 2 | yes | caller scan pending |
+| `cacheContent` | 1 | 1 | yes | caller scan pending |
+| `cacheFile` | 2 | 2 | yes | caller scan pending |
+| `connect` | 3 | 3 | yes | caller scan pending |
+| `createAsymmetricCrypto` | 1 | 1 | yes | caller scan pending |
+| `createSign` | 1 | 1 | yes | caller scan pending |
+| `createSymmetricCrypto` | 4 | 4 | yes | caller scan pending |
+| `deleteFile` | 1 | 1 | yes | caller scan pending |
+| `desBase64DecodeToString` | 1 | 1 | no | caller scan pending |
+| `desDecodeToString` | 1 | 1 | no | no exact public-source caller found in this pass |
+| `desEncodeToBase64String` | 1 | 1 | no | caller scan pending |
+| `desEncodeToString` | 1 | 1 | no | caller scan pending |
+| `digestBase64Str` | 1 | 1 | yes | caller scan pending |
+| `digestHex` | 1 | 1 | yes | caller scan pending |
+| `downloadFile` | 2 | 2 | yes | caller scan pending |
+| `encodeURI` | 2 | 2 | yes | caller scan pending |
+| `get` | 2 | 3 (2 JsExtensions + 1 AnalyzeRule-style key/URL get) | yes | caller scan pending |
+| `get7zByteArrayContent` | 1 | 1 | no | no exact public-source caller found in this pass |
+| `get7zStringContent` | 2 | 2 | no | no exact public-source caller found in this pass |
+| `getBatchContext` | 1 | 1 | no | internal batch context; no external source hit |
+| `getCookie` | 2 | 2 | no | active login/search callers (89 search hits) |
+| `getFile` | 1 | 1 | no | test/compatibility fixtures only |
+| `getRarByteArrayContent` | 1 | 1 | no | no exact public-source caller found in this pass |
+| `getRarStringContent` | 2 | 2 | no | no exact public-source caller found in this pass |
+| `getReadBookConfig` | 1 | 0 | yes | no exact public-source caller found in this pass |
+| `getReadBookConfigMap` | 1 | 0 | yes | no exact public-source caller found in this pass |
+| `getSource` | 1 | 1 | no | internal source-context object; no external source hit |
+| `getSourceNavigationContext` | 1 | 1 | no | internal navigation coroutine context; no external source hit |
+| `getTag` | 1 | 1 | no | internal source tag; only backup fixtures found |
+| `getThemeConfig` | 1 | 0 | yes | test fixture only |
+| `getThemeConfigMap` | 1 | 0 | yes | no exact public-source caller found in this pass |
+| `getThemeMode` | 1 | 0 | no | test fixture only |
+| `getTxtInFolder` | 1 | 1 | yes | caller scan pending |
+| `getVerificationCode` | 1 | 0 | yes | active explore/login captcha callers (70) |
+| `getWebViewUA` | 1 | 1 | yes | caller scan pending |
+| `getZipByteArrayContent` | 1 | 1 | no | coverage fixture only; used internally by active getZipStringContent |
+| `getZipStringContent` | 2 | 2 | no | active ZIP detail.json caller (16) |
+| `head` | 2 | 2 | yes | caller scan pending |
+| `hexDecodeToByteArray` | 1 | 1 | yes | caller scan pending |
+| `hexDecodeToString` | 1 | 1 | yes | caller scan pending |
+| `hexEncodeToString` | 1 | 1 | yes | caller scan pending |
+| `htmlFormat` | 2 | 2 | yes | caller scan pending |
+| `importScript` | 1 | 1 | yes | caller scan pending |
+| `lock` | 2 | 2 | yes | caller scan pending |
+| `log` | 1 | 1 | yes | caller scan pending |
+| `logType` | 1 | 1 | yes | caller scan pending |
+| `longToast` | 1 | 1 | yes | caller scan pending |
+| `md5Encode` | 1 | 1 | yes | caller scan pending |
+| `md5Encode16` | 1 | 1 | yes | caller scan pending |
+| `openUrl` | 2 | 0 | yes | active login/jsLib caller (10) |
+| `openVideoPlayer` | 2 | 0 | yes | no exact public-source caller found in this pass |
+| `post` | 2 | 2 | yes | caller scan pending |
+| `queryBase64TTF` | 1 | 1 | no | no exact public-source caller found in this pass |
+| `queryTTF` | 2 | 2 | no | active remote-font caller (3); local-path example invalid upstream |
+| `randomUUID` | 1 | 1 | yes | caller scan pending |
+| `readFile` | 1 | 1 | no | no exact public-source caller found in this pass |
+| `readTxtFile` | 2 | 2 | yes | caller scan pending |
+| `refreshBookInfo` | 1 | 0 | yes | research dataset only |
+| `refreshBookToc` | 1 | 0 | yes | no exact public-source caller found in this pass |
+| `refreshContent` | 1 | 0 | yes | research dataset only |
+| `replaceFont` | 2 | 2 | no | active font glyph mapping caller (3) |
+| `s2t` | 1 | 1 | yes | caller scan pending |
+| `showBrowser` | 4 | 0 | yes | active explore browser caller (4) |
+| `singleFlight` | 2 | 2 | yes | caller scan pending |
+| `startBrowser` | 2 | 0 | yes | active jsLib/login/content callers (125) |
+| `startBrowserAwait` | 3 | 0 | yes | active login/content/TOC callers (217) |
+| `strToBytes` | 2 | 2 | yes | caller scan pending |
+| `t2s` | 1 | 1 | yes | caller scan pending |
+| `tick` | 1 | 1 | yes | caller scan pending |
+| `timeFormat` | 1 | 2 | yes | caller scan pending |
+| `timeFormatUTC` | 1 | 2 | yes | caller scan pending |
+| `toNumChapter` | 1 | 1 | no | active chapter normalization caller (44) |
+| `toURL` | 2 | 2 | yes | caller scan pending |
+| `toast` | 1 | 1 | yes | caller scan pending |
+| `tripleDESDecodeArgsBase64Str` | 1 | 1 | no | no exact public-source caller found in this pass |
+| `tripleDESDecodeStr` | 1 | 1 | no | no exact public-source caller found in this pass |
+| `tripleDESEncodeArgsBase64Str` | 1 | 1 | no | no exact public-source caller found in this pass |
+| `tripleDESEncodeBase64Str` | 1 | 1 | no | no exact public-source caller found in this pass |
+| `un7zFile` | 1 | 1 | yes | caller scan pending |
+| `unArchiveFile` | 1 | 1 | yes | caller scan pending |
+| `unrarFile` | 1 | 1 | yes | caller scan pending |
+| `unzipFile` | 1 | 1 | yes | caller scan pending |
+| `webView` | 2 | 0 | yes | active search/login/content callers (94) |
+| `webViewGetOverrideUrl` | 3 | 0 | yes | no exact public-source caller found in this pass |
+| `webViewGetSource` | 3 | 0 | yes | no exact public-source caller found in this pass |
+
+### Confirmed signature, return-type and object-shape deltas
+
+1. **ajax timeout overload is missing.** Pinned upstream exposes `ajax(url: Any)` and `ajax(url: Any, callTimeout: Long?)`. Host exposes two one-argument methods (`ajax(urlAndOptions: String)` and `ajax(url: Any?)`) and no two-argument callTimeout overload. This remains a real method-signature gap even though the declaration counts match.
+2. **ajaxAll/ajaxTestAll compiled overloads are present.** Host Kotlin source uses `@JvmOverloads`; its ABI test confirms `ajaxAll` parameter counts {1,2} and `ajaxTestAll` {2,3}. Do not misclassify these as missing just because the source contains one declaration with a default parameter.
+3. **get overload is a union of two upstream surfaces.** Host has one-argument `get(keyOrUrl)` from AnalyzeRule-style persistent-variable/URL behavior plus the two JsExtensions HTTP-response overloads. The extra one-argument form is not an accidental conflict; preserve its dual key/URL semantics.
+4. **timeFormat/timeFormatUTC:** upstream takes Long; host additionally exposes String overloads alongside Number overloads. These extra coercion forms are host conveniences, not evidence of exact upstream ABI. Keep numeric timestamp behavior and timezone/format defaults under differential tests.
+5. **cacheContent return value:** pinned upstream `cacheContent(chapter, content)` has Unit/undefined script semantics; the host ABI test asserts the host method returns Boolean. This is a return-value mismatch and can be observed by scripts that test the result.
+6. **getSource return type:** upstream returns its BaseSource object; host ABI test asserts the host returns a Map. This intentionally avoids exposing the full Legado object, but it is not object-identity/API parity. Internal-only/no-current-source-caller status does not remove the dynamic surface difference.
+7. **getBatchContext:** upstream exposes the batch content context; host ABI test only establishes a generic Any return. Exact runtime type, nullability and methods are not matched/proven.
+8. **getFile:** upstream returns java.io.File, which is denied by the pinned ClassShutter. Host returns a source-scoped `RhinoSourceFileHandle`; keep the safe facade and test the allowed file operations rather than exposing File.
+9. **HTTP response shape:** upstream JsExtensions `get/head/post` return Jsoup `Connection.Response`; host returns `RhinoSourceHttpResponse`. The host wrapper has body, code/statusCode, message, callTime, url, header, headers, raw, parse, select and charset. A public source caller in `yuedu520/yuedu@b5524f41d80fe4071c3d695fd1d6990cd6de97aa`, `250427.json` blob `6d2fef386052ef35d1eebeae374e6efb3476aee0`, calls `bodyAsBytes()` in ruleContent; the host wrapper has no `bodyAsBytes()`. The transport response retains original `bodyBytes` in `SourceHttpResponse` (SourceRuntime.kt blob `c99001865c1c4eaeae7979af7d5c85daabe9f09c`, lines 27–39), so the byte data exists below the wrapper but is not exposed to Rhino. This is an active source-compatibility gap.
+10. **Response header map shape:** host `headers()` currently returns `Map<String,List<String>>`, while Jsoup Response distinguishes single-value `headers()` from `multiHeaders()`. The host wrapper does not expose `multiHeaders()`; exact return shape and duplicate-header behavior need to be mapped before claiming Response parity.
+11. **NativeBaseSource reachability:** pinned `NativeBaseSource` blob `8313dedf737fe42cb4381535f6e74760c4f31786` wraps a Java object through `CatchableNativeJavaObject` and delegates property/method lookup to Rhino's Java wrapper; it is not restricted to `@JavascriptInterface` methods. Therefore public, non-annotated methods and overloads are part of the dynamic compatibility surface. The host's direct-object ABI test likewise invokes methods without requiring Android WebView annotations.
+
+### Matrix result
+
+- 17 absent methods include six active source-facing UI/browser/captcha callers from §24.30; these require Badcat-native adapters, not Legado UI imports.
+- Active undocumented helper callers remain: getCookie, getZipStringContent, toNumChapter, queryTTF, replaceFont, aesBase64DecodeToString. HMacHex is documented and active.
+- Response `bodyAsBytes()` is a new confirmed active missing member.
+- The method-name matrix is now complete for the 104 JsExtensions/JsEncodeUtils names; exact parameter/return/nullability and dynamic returned-object method matrix is still **incomplete**. Do not infer completion from the name table.
+- No application source or tests changed; no tests were run. Stage-0 remains in_progress/not accepted; Stage-1 remains NO-GO.
