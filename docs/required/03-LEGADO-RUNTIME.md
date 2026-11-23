@@ -4595,3 +4595,18 @@
 - **Scope review:** only this read-only audit report and this category checklist closeout changed. No production/test/Gradle/workflow/UI/storage code or CI/device results claimed.
 - **Acceptance:** read-only audit closed; implementation remains unstarted and must receive a separate preregistration.
 
+
+
+### Runtime-3.2f.38 registration — JS BookSource mainJs login script selection
+
+- **日期 / 分类：** 2026-11-23；第三类：BookSource login script selection parity。
+- **起始 branch / HEAD：** `integration/legado-upstream-runtime` / `fea64118ed997e49f09de006bb9f81be2ce8811b`；固定 Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **触发依据：** .34 审计发现宿主 Login UI v2 service 仅从 `loginUrl` 选择脚本；固定上游 `BookSource.getLoginJs()` 在 JS source（`mainJs` 非空）时优先返回 `mainJs`，否则才调用 BaseSource 的 loginUrl 解析。
+- **目标：** 使宿主 Login UI v2 render/action 的 login script 选择与 pinned BookSource 一致；mainJs source 使用原始 mainJs，非 JS source 继续使用 loginUrl 的 `@js:`/`<js>`/静态脚本提取行为。
+- **上游证据：** `app/src/main/java/io/legado/app/data/entities/BookSource.kt` blob `7f63496ebf25c820b7d0c715d2fbce8e7bd29b9c`，`override fun getLoginJs(): String? = if (isJsSource()) mainJs else super.getLoginJs()`；BaseSource blob `9f5174d7ad6cb74a7e6b2d1f9260d90e3e8e6baa`。
+- **宿主证据：** `app/src/main/java/app/badcat/client/runtime/LegadoSourceLoginUiV2Service.kt` blob `22c9bdf88f46f20dcc592d921a3db2c305ee4aae`；当前 `loginScript(source)` 只读取 `source.loginUrl`。测试 blob `f1f97a09c2ff293c7a80685f356bb743096b4231` 中已有 mainJs 用例，但只验证 source 传递，未验证执行脚本选择。
+- **允许变更：** 仅上述 Login UI v2 service 文件及其对应测试文件。
+- **验收：** render 与 dispatchAction 在 mainJs source 下均将 mainJs 放在被执行脚本前部，且不执行 loginUrl 脚本；非 JS source 仍正确解析 `<js>` 和 `@js:`；mainJs 空/blank 时按上游回退 loginUrl；错误/状态/InvocationContext 现有行为保持。
+- **依赖 / 并行：** 无前置依赖；与 .35 Cookie、.36 rate-limit 的生产/测试文件完全隔离。与 .37 只读审计已完成，不重叠。
+- **排除：** 不实现 legacy Login UI v1、WebView/验证码 UI、登录网络提交、Cookie 行为、header provider、Rhino 执行能力扩展、schema、Gradle、UI、其他类别、上游 SHA 或 `main`。
+- **状态：** 已登记；待实施和 exact-SHA CI 验证。
