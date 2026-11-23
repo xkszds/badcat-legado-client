@@ -1,3 +1,5 @@
+import java.util.zip.ZipFile
+
 plugins {
     id("org.jetbrains.kotlin.jvm")
 }
@@ -74,7 +76,7 @@ val verifyPinnedLegadoRuntimeJar = tasks.register("verifyPinnedLegadoRuntimeJar"
         val archive = tasks.named<org.gradle.api.tasks.bundling.Jar>("jar")
             .get().archiveFile.get().asFile
         val requiredClass = "io/legado/app/model/analyzeRule/RuleAnalyzer.class"
-        java.util.zip.ZipFile(archive).use { zip ->
+        ZipFile(archive).use { zip ->
             check(zip.getEntry(requiredClass) != null) {
                 "Pinned Legado runtime JAR is missing $requiredClass: $archive"
             }
