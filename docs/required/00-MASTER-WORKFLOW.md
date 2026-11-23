@@ -328,7 +328,7 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 - CI 全量账本：`docs/required/CI-3300-3349-AUDIT.md`。
 - 已核对 3300–3349 共 50 次 Actions：42 success、5 failure、3 in_progress（补充轮询后快照；3346 已成功，3347–3349 仍运行）。
 - 五次失败已按日志归类：3315/3343/3345 为 Kotlin Parcelize 2.4.20 插件工件无法解析；3317/3319 为 Robolectric nativeruntime-dist-compat 1.0.16 转换失败，并伴随 Emulator/ADB 启动问题。
-- 3346–3349 在核查快照仍运行中，必须继续轮询并回写最终结论，不得提前标记成功。
+- 3348–3349 在补充轮询时仍运行中，必须继续轮询并回写最终结论，不得提前标记成功。
 - CI 成功只代表对应 SHA 的工作流结论，不代表完整 Legado 兼容验收；Runtime-3.0 已知阻断仍按第三类清单和 Stage-0 审计执行。
 - 本轮仅登记 CI 证据，无应用源码、测试源码、Gradle 或 UI 变更。
 
