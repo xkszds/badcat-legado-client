@@ -4237,7 +4237,7 @@
 - **排除：** 不改 host BookChapter 全局 equals/hashCode、不删除 BatchContentContext twins contract、不接入 BatchContentContext、不改 ChapterCatalogQuery/Reader/history/bookmark/cache/UI、第四/第五类、上游 pin 或 `main`。
 - **依赖：** .23 audit GO；#3178 exact CI 先终结并记录；若代表项顺序要求扩展文件范围，先追加登记。
 - **验收：** focused integration-contract tests、完整第三类 App JVM suite、exact-SHA CI；diff 仅限登记文件；明确写出 host 与 upstream 可证明一致的部分及未实现的反向目录排序边界。
-- **状态：** 已登记，尚未实施；与 #3178 共享 `SourceTocServiceTest.kt`，必须等 #3178 终结后串行实施。
+- **状态：** 已完成局部验收；source-rule reverse 与 per-book reverseToc 仍未实现。
 
 
 ### Runtime-3.2f.25 registration — read-only TOC reverse-order representative selection audit
@@ -4275,7 +4275,7 @@
 - **排除：** 不修改 `FileChapterContentCache.kt`、`ChapterContentCache` API、key/digest/schema、TTL/LRU/prune、source-wide purge、manifest/migration、source lifecycle、BatchContentContext、Reader/UI、第四/第五类、workflow、上游 pin 或 `main`。不宣称 CacheManager 完整 parity。
 - **验收：** focused Robolectric tests、完整第三类 App JVM suite、exact-SHA CI；检查新增测试确实出现在 App JUnit XML；diff 只含登记的新测试文件与本清单；记录测试未覆盖的 AtomicFile 设备/进程死亡边界。
 - **并行边界：** 不与 .24 的 `SourceTocService.kt` / `SourceTocServiceTest.kt` 文件重叠，生产状态也独立；可在 #3178 仍运行时实施。分类清单由单一 CAS 提交顺序维护，CI 结果只对 exact SHA 生效。
-- **状态：** 已登记，尚未实施；本登记不授权任何生产代码或持久化格式变更。
+- **状态：** 已完成局部验收；仅新增测试，生产缓存实现与 schema 未改。
 
 
 #### Runtime-3.2f.21 / #3178 terminal CI closeout — chapter-specific TOC base URL projection
@@ -4383,11 +4383,11 @@
 - **排除：** no sourceUrls wrapper or nested URL fetching; no JS-source import/export; no import selection/replacement workflow; no source catalog persistence or UI changes; no broad Gson coercion changes; no upstream pin, fourth/fifth category or `main` changes.
 - **依赖 / 并行：** .28 audit closed. File scope is disjoint from active .24 `SourceTocService.kt`/test and .26 AtomicFile test; independent exact-SHA CI required. Any need to change explicit-null semantics or add model/caller files requires a new preregistration.
 - **验收：** focused codec tests, complete `:integration-contract:test`, exact-SHA workflow and diff-scope verification. Record this as one import-acceptance correction, not full BookSource import parity.
-- **状态：** 实现已提交，等待 exact-SHA CI 验证。
+- **状态：** 实现已提交；首次 exact-SHA CI 的 App JVM suite 遭 Maven Central HTTP 429，已请求仅重跑失败 job，等待第二次结果。
 
 
 #### Runtime-3.2f.29 implementation checkpoint — unnamed BookSource import acceptance
 
 - **Implementation SHA:** `e409492bed7288671f5ec7823b0181d136bcf954`.
 - **Actual scope:** only `LegadoBookSourceCodec.kt`, `LegadoBookSourceCodecTest.kt` and this checklist. Missing `bookSourceName` now maps to an empty host name; an empty string remains accepted; explicit JSON null remains rejected pending a separate pinned-Gson differential fixture. Nonblank source URL remains mandatory.
-- **Validation:** Run #3185 / `45085637262` targets exact implementation SHA `e409492bed7288671f5ec7823b0181d136bcf954`; latest snapshot is `in_progress`, 6 steps completed, currently `Set up Gradle`; no failure step or artifact yet. No test/build/CI pass claimed.
+- **Validation:** Run #3185 / `45085637262`, attempt 1, exact implementation SHA `e409492bed7288671f5ec7823b0181d136bcf954`, completed `failure`: `:integration-contract:test` succeeded; App JUnit artifact `14779391713` has 41 XML suites / 329 tests, 2 failures, both in the pre-existing `SharedPreferencesSourceScriptKeyValueStoreTest` because Robolectric could not fetch `android-all-instrumented:9-robolectric-4913185-2-i7` from Maven Central (HTTP 429). No codec test failure was reported; this is an external dependency-rate-limit failure, not evidence the App suite passed. Debug APK artifact `14779675473` was produced (Debug only). Failed-job-only rerun was requested; attempt 2 is queued. No CI pass claimed.
