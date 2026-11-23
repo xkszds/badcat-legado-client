@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -uo pipefail
+set -euo pipefail
 
 apk="${1:-app/build/outputs/apk/debug/app-debug.apk}"
 output_dir="build/runtime-rule-analyzer-apk-dex"
@@ -39,7 +39,7 @@ payload = {
     "smaliBytes": int(smali_bytes),
     "definitionCheck": "apkanalyzer dex packages --defined-only",
 }
-Path(report).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+Path(report).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
 print(json.dumps(payload, ensure_ascii=False, indent=2))
 PY
 }
@@ -73,27 +73,7 @@ if ! "$analyzer" dex packages --defined-only "$apk" > "$defined_classes"; then
 fi
 
 apk_sha256="$(sha256sum "$apk" | awk '{print $1}')"
-
-# apkanalyzer separates DEX tree columns with tabs, not fixed spaces.
-class_definition="$(grep -E '^C d[[:space:]]+[0-9]+[[:space:]]+[0-9]+[[:space:]]+[0-9]+[[:space:]]+io\.legado\.app\.model\.analyzeRule\.RuleAnalyzer$' "$defined_classes" | head -n 1 || true)"
-  error="pinned RuleAnalyzer class definition is absent from APK DEX; references alone do not satisfy this gate"
-  exit 1
-fi
-
-if ! "$analyzer" dex code --class io.legado.app.model.analyzeRule.RuleAnalyzer "$apk" > "$smali_file"; then
-  error="apkanalyzer could not decompile the defined RuleAnalyzer class"
-  exit 1
-fi
-
-smali_bytes="$(wc -c < "$smali_file" | tr -d ' ')"
-if [ "$smali_bytes" -le 0 ]; then
-  error="RuleAnalyzer DEX class produced an empty code listing"
-  exit 1
-fi
-
-status="pass"
-error=""
- "$defined_classes" | head -n 1 || true)"
+class_definition="$(grep -E '^C d[[:space:]]+[0-9]+[[:space:]]+[0-9]+[[:space:]]+[0-9]+[[:space:]]+io\\.legado\\.app\\.model\\.analyzeRule\\.RuleAnalyzer$' "$defined_classes" | head -n 1 || true)"
 if [ -z "$class_definition" ]; then
   error="pinned RuleAnalyzer class definition is absent from APK DEX; references alone do not satisfy this gate"
   exit 1
@@ -110,6 +90,5 @@ if [ "$smali_bytes" -le 0 ]; then
   exit 1
 fi
 
-apk_sha256="$(sha256sum "$apk" | awk '{print $1}')"
 status="pass"
 error=""
