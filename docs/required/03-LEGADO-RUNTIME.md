@@ -5114,3 +5114,12 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 - **Overload gaps:** ajaxAll and ajaxTestAll each 2 upstream vs 1 Badcat; webView/browser/UI callback families have no Badcat same-name method; get has 2 upstream vs 3 Badcat; other selected methods match counts only, not necessarily signatures or return types.
 - **Caveat:** lexical declaration-name diff only; it does not resolve JVM bridges, inherited/generated methods, visibility, annotations, exact parameter/default/nullability/return signatures, Rhino wrappers or runtime dispatch. Badcat bridge returns Map from getSource, null batch context and EmptyCoroutineContext navigation context.
 - **State:** explicit ABI gap list recorded; stage-0 remains partial and stage-1 **NO-GO**. No production changes; four paused sources and security preflight untouched.
+
+
+#### Runtime-3.2f.49 Rhino sandbox policy parity slice 5
+
+- **Audit report:** section 23. At Badcat HEAD inspected, RhinoClassShutter, ProtectedNativeJavaClass and RhinoWrapFactory have exact pinned-upstream Git blob SHA matches. The copied class shutter retains blocked class/package/object types and System.load/loadLibrary/exit restrictions; Rhino engine config uses the shutter/wrap factory and pinned execution limits.
+- **Important distinction:** upstream App.initRhino registers NativeBaseSource for BookSource and ReadOnlyJavaObject for selected models. Badcat tree has ReadOnlyJavaObject but no NativeBaseSource; inspected production wiring injects RhinoSafeSourceJavaExtensions and separate cookie/source/cache bridges. Identical security classes do not restore BaseSource object identity or missing JS API.
+- **Sandbox paths:** LegadoRhinoSandbox accepts bounded primitive string bindings/results and explicitly is not the complete AnalyzeUrl adapter. Production RhinoSourceScriptRuntime uses persistent source scopes and injects custom Java/Cookie/source/cache bridges; these are separate paths.
+- **Limit:** Badcat code-search index incomplete; no global assertion that there are zero registration call sites. Production factory and tree are the evidence boundary.
+- **State:** security source slice verified, JS object/API wiring still partial; stage-0 in progress; stage-1 **NO-GO**. No security policy or production code changed; four paused sources/preflight untouched.
