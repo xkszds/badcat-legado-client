@@ -4654,13 +4654,16 @@
 - **Artifacts:** badcat-legado-debug artifact 14782468149 (13,431,967 bytes) is a CI debug artifact from this exact implementation SHA, not a release-signed final package and not a user-device installation result.
 - **Acceptance:** .35 Cookie parsing and .36 initial rate-setting parser are closed for their preregistered scope. Waiting/window strategy, updateConcurrentRate, broader CookieStore parity, and full upstream runtime compatibility remain outside these tasks.
 
-#### Runtime-3.2f.38 post-correction implementation checkpoint
 
-- **Correction implementation commit / exact SHA:** 80b0b93e2d25d133f27cfeac905b484d5a7e74ae; branch integration/legado-upstream-runtime.
-- **Changed files:** app/src/main/java/app/badcat/client/runtime/LegadoSourceLoginUiV2Service.kt and app/src/test/kotlin/app/badcat/client/runtime/LegadoSourceLoginUiV2ServiceTest.kt only.
-- **Actual code change:** Login UI v2 render/action calls now normalize return values at the service boundary using an isolated IIFE: object/array results become JSON text via JSON.stringify; JSON strings remain unchanged; primitive values pass through; null/undefined/function-like no-document results become null. No mainJs is prepended or re-evaluated; RhinoSourceScriptRuntime remains the owner of once-per-source mainJs initialization. No generic Rhino runtime or UI code changed.
-- **Added real-Rhino regressions:** mainJs lexical binding render (including repeated invocation); object-valued loginAction; JSON-string loginUi return remains parseable without double encoding. Recording-runtime tests assert the normalizer is used and loginUrl is not substituted for nonblank mainJs.
-- **Exact CI checkpoint (historical):** when this note was written, run 45102448235 was still IN_PROGRESS at the API 28 CookieManager/WebView instrumentation step. The terminal result and all uploaded artifacts are recorded in the closeout below.
-- **Acceptance at checkpoint:** pending at the time of this checkpoint; see the terminal closeout below for the final scope decision. The CI debug artifact is not a release APK or a user-device installation result.
-- **Next check:** completed; run 45102448235 reached terminal SUCCESS and its JUnit, APK, API 28/35 and live-source artifacts were downloaded and inspected as recorded below.
-- **Current state at checkpoint:** correction implemented; app JVM suite step passed; overall exact-HEAD CI was pending at that moment; terminal status is recorded below.
+#### Runtime-3.2f.38 terminal closeout and Runtime-3.2f.39 registration
+
+- Exact code SHA: 80b0b93e2d25d133f27cfeac905b484d5a7e74ae; exact Actions run 45102448235 / job 137456145163: terminal SUCCESS, 47/47 steps success.
+- JUnit: 41 suites / 335 tests / 0 failures / 0 errors / 0 skipped; focused Login UI v2 service tests 12/12 pass.
+- API 28 and API 35 instrumentation: all four callback-result cases passed on both emulators.
+- CI Debug APK artifact 14786128724 was verified (app-debug.apk 32,024,734 bytes; SHA-256 1753f6c62d8dae6ccc5f659dfa81344307379ae177976d16aaeee9a8bf15399b). This is not a release APK or a user-device installation result.
+- Live Bixiange and Pinshuzhai search→detail→TOC→content flows passed. Uploaded corpus: 1/4 passed; two upstream hosts timed out and one returned HTTP 404.
+- Runtime-3.2f.38 is closed only for its preregistered Login UI v2 mainJs selection/result-normalization scope. Full Legado, Login UI v1, dynamic headers, release packaging and real-device installation remain open.
+- Original APK was not mounted in this run; no fresh scan or modification was performed.
+- Detailed artifact IDs/hashes and the complete next-task preregistration are in [the terminal closeout and Runtime-3.2f.39 audit registration](../audits/legado-runtime-3.2f.38-terminal-closeout-and-3.2f.39-registration.md).
+
+Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order audit. It must resolve the per-source Rhino Mutex risk, exact header/login/URL-option precedence, default-UA mapping, cancellation/error behavior and every request caller. No production or test code is authorized until a separate implementation preregistration.
