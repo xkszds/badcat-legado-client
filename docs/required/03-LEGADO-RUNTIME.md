@@ -4826,3 +4826,28 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 - **Validation:** compile/run the instrumentation on configured emulator API levels; preserve unit and existing instrumentation suites; verify report artifact and redaction; record exact run IDs, job IDs, commit SHAs, JUnit counts and artifact hashes. A site/network failure is recorded as such, not suppressed or converted to pass.
 - **Explicit qualification:** this tests four community source snapshots against the current partial host-integrated runtime. It cannot establish complete fixed-upstream Legado API/rule/lifecycle parity. Any production behavior fix requires a separately preregistered task.
 - **State:** registered; test implementation pending.
+
+
+#### Runtime-3.2f.45 closeout — Android public-source E2E failed
+
+- **Commits:** `269ef42590d60f817071ba2f7951f40cbc9f2257` (initial test/workflow); `3daebdec11e426c24376a9e603a0daee70e724f2` (chunked report logs).
+- **CI:** #3239 / run `45208786938`, job `137811633095`, exact SHA `269ef42590d60f817071ba2f7951f40cbc9f2257`, failure. #3240 / run `45209463958`, job `137814017415`, exact SHA `3daebdec11e426c24376a9e603a0daee70e724f2`, failure.
+- **#3240:** assembleDebug success; API28 existing CookieManager instrumentation step success; API35 existing WebView provider four observations success, but new E2E test failed (TestRunner 5 tests, 1 failed, 0 ignored).
+- **Sources:** 唐三中文 import pass/search network timeout; 笔趣阁fun import pass/security blocked due unreviewed obfuscated remote-code JS; 精华书阁 import pass then `NoClassDefFoundError: io.legado.app.model.analyzeRule.RuleAnalyzer`; 零零小说 not reached. 0/4 E2E pass.
+- **Artifacts:** diagnostics artifact `14837045578`, ZIP SHA-256 `6d944cb70520919e3d3fc394e0e2d1adf929a4a5ec706fe755dd8399ba5f0047`; debug artifact `14837280203`, ZIP SHA-256 `b14c837d4afa588ddf62e2da2918196b9a9a7df788336bfc98a6bfb87010e7f8`; APK SHA-256 `21c2689f7b649299391700cdcd93fe29429414fea33fa8449ea34e69dcd5f781` (32,024,734 bytes). DEX class-definition scan confirms RuleAnalyzer absent.
+- **Report caveat:** sanitized E2E report was reconstructed from diagnostic Logcat; separate report artifact was not created because missing-file handling was warning-only.
+- **Scope:** no production Kotlin, source rules, UI, storage, Gradle, dependency or fixture changes in .45. Debug APK only; no release/device install claim.
+- **Conclusion:** .45 executed but failed acceptance; fixture imports passed, no source completed the full reading chain. Third-category compatibility remains partial.
+- **Next dependency:** .46 resolves Android runtime DEX packaging of pinned RuleAnalyzer and proves class definition/device loading before source E2E is retried.
+
+### Runtime-3.2f.46 registration — package pinned RuleAnalyzer into Android runtime
+
+- **Date/category:** 2026-11-24; third category, pinned Legado runtime packaging.
+- **Starting HEAD:** `3daebdec11e426c24376a9e603a0daee70e724f2`; branch `integration/legado-upstream-runtime`; pinned Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Dependency:** .45 API35 failed with `NoClassDefFoundError: io.legado.app.model.analyzeRule.RuleAnalyzer`; APK DEX has a reference but no class definition. Exact Gradle artifact/variant stage is not yet proven.
+- **Goal:** trace upstream `RuleAnalyzer.kt` from custom Kotlin source-set compile output → `:integration-contract` runtime JAR/project variant → app runtime classpath → D8/DEX; fix the narrow artifact/variant packaging so the authentic upstream class is in the app APK.
+- **Allowed changes:** `integration-contract/build.gradle.kts`; `app/build.gradle.kts` only if artifact/variant evidence proves necessary; focused packaging tests under `integration-contract/src/test/` or `app/src/androidTest/kotlin/app/badcat/client/runtime/`; minimal workflow/report wiring; one audit report under `docs/audits/`; this checklist. No new dependency unless separately preregistered.
+- **Required tests:** (1) exact upstream RuleAnalyzer class exists in produced `:integration-contract` runtime JAR; (2) final APK DEX class-definition table contains it, not just a string reference; (3) API35 `Class.forName("io.legado.app.model.analyzeRule.RuleAnalyzer")` and `PinnedLegadoRuleAnalyzer.split` smoke pass; (4) existing unit/API28/API35 suites preserved; (5) missing required report artifact fails CI.
+- **Acceptance:** pinned class definition present in final app DEX; device class loading and analyzer smoke pass; pre-existing tests pass; sanitized report artifact exists; exact SHA/run/job/JUnit/APK hashes recorded. Gradle build success alone is insufficient.
+- **Exclusions:** no upstream Legado source, rule semantics, parser algorithm, HTTP/network behavior, source fixtures, Rhino/Header, UI, bookshelf, reader, storage or release signing changes. Do not remove BQG JS security block.
+- **State:** registered; artifact/variant trace and packaging fix pending.
