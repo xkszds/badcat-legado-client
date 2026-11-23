@@ -785,3 +785,55 @@ This closes a further **source-level inventory slice only**: inheritance and inh
 - **Scope limitation:** this artifact proves only the compiled Badcat host bridge at #3301's exact SHA. It does not compile or prove the pinned upstream `BaseSource`, `BookSource`, `Book`, `BookChapter`, `AnalyzeRule`, `AnalyzeUrl`, or `JsExtensions` JVM ABI. Do not use this artifact as upstream ABI evidence or as a full compatibility pass.
 - **Run closeout:** #3301 completed successfully, including API 35 WebView provider instrumentation, JVM ABI capture, debug APK assembly/DEX verification and the best-effort public-source probe steps. A successful best-effort probe step is not a blanket pass for every remote source. Each claim remains bound to SHA `4ea24ef...`; the newer documentation commits have separate CI snapshots.
 
+
+
+### 24.6 Pinned upstream compiled DEX ABI — exact revision artifact evidence
+
+- **Upstream workflow:** `LegadoTeam/legado` Test Release #487; run ID `41291314673`; exact head SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`; run completed/success. Jobs `prepare` (`124802981352`), `build (app, release)` (`124803029014`), `build (app, releaseA)` (`124803029075`) and `publish` (`124805234209`) all completed/success.
+- **Artifact:** `legado.test.release`, artifact ID `13077223975`. The inspected universal APK is `legado_app_3.26110117_universal_新包名.apk`, SHA-256 `31e5a1db1ea47508a1c8193e8e9c1b5aeb49b585317e1e8466d2851e7038e0b3`. Its `META-INF/version-control-info.textproto` explicitly records revision `330e606c4d57e08adc056ff8ab7a4132c784da9a`; AGP metadata records 8.13.2. This binds the APK to the pinned source revision rather than merely relying on its version label.
+- **Inspection method:** parsed the APK's three DEX files (`classes.dex`, `classes2.dex`, `classes3.dex`, DEX 035) for class definitions, interfaces, method IDs/prototypes, class-data access flags, generated methods and runtime-visible `JavascriptInterface` annotations. This is final release DEX evidence after R8, not an unminified pre-R8 JVM class dump.
+
+#### Core compiled type and method inventory
+
+| Pinned source type | Final DEX relationship / method evidence | Interpretation |
+|---|---|---|
+| `BaseSource` | Interface; 71 public methods; extends `JsExtensions`. | The source lifecycle interface is present in the release DEX. |
+| `BookSource` | Implements `Parcelable` and `BaseSource`; 306 methods total / 304 public; 33 data-class components; 33-parameter primary constructor plus no-arg and synthetic default constructor. | Real upstream entity and inherited source API are present, not a host DTO. |
+| `Book` | Implements `Parcelable` and `BaseBook`; 192 methods / 188 public; 34 components; 34-parameter primary constructor plus synthetic default constructor. | Real upstream book model and generated accessors/data-class ABI are present. |
+| `BookChapter` | Implements `Parcelable` and the R8-obfuscated `RuleDataInterface`; 88 methods / 85 public; 17 components; 17-parameter primary constructor plus synthetic default constructor. | Real chapter identity/data model and inherited variable contract are present. |
+| `BaseBook` / `RuleDataInterface` | BaseBook is an interface extending the obfuscated RuleDataInterface descriptor; the latter has five public abstract methods: getVariable, putVariable, getBigVariable, putBigVariable and getVariableMap. | Confirms the inherited variable-map and large-value hooks at the compiled type boundary. |
+| `AnalyzeRule` | Implements `JsExtensions`; 213 methods / 199 public, including 140 bridge and 20 synthetic methods. | The parser class inherits a large concrete source-JS bridge surface; it is not selector-only. |
+| `AnalyzeUrl` | Implements `JsExtensions`; 209 methods / 189 public, including 142 bridge and 12 synthetic methods. | Request parsing, synchronous/suspending response methods and JS bridge are in the compiled class. |
+| `JsExtensions` | Interface; 148 public methods, including 30 synthetic bridge methods; extends the R8-obfuscated `JsEncodeUtils` descriptor. | The compiled JS bridge includes inherited methods, not only the 48 direct source annotations. |
+| `JsEncodeUtils` | R8-obfuscated interface descriptor has 22 methods in this release DEX; source-to-DEX optimization/bridge mapping is not one-to-one. | Do not equate minified DEX interface count with source declaration count. |
+| `BookListRule` | Interface with 20 public getters/setters for its ten inherited nullable properties. | Confirms ExploreRule/SearchRule inherited property ABI. |
+
+#### Rule data-class generated ABI
+
+| Rule model | DEX methods / public methods | Components | Primary constructor parameters |
+|---|---:|---:|---:|
+| ExploreRule | 44 / 42 | 10 | 10 |
+| SearchRule | 47 / 45 | 11 | 11 |
+| BookInfoRule | 50 / 48 | 12 | 12 |
+| TocRule | 44 / 42 | 10 | 10 |
+| ContentRule | 53 / 51 | 13 | 13 |
+| ReviewRule | 105 / 103 | 30 | 30 |
+
+All six rule classes are Parcelable in the inspected DEX and expose data-class component/copy/copy$default and synthetic default-constructor machinery. The ContentRule constructor uses `Integer` for nullable `maxBatchSize`; ReviewRule's `enabled` is a primitive boolean. These compiled types corroborate the source defaults already recorded in section 20; they do not replace null/missing/malformed JSON differential tests.
+
+#### Exact compiled descriptors and annotation evidence
+
+- Upstream `JsExtensions.getSource()`, `BaseSource.getSource()`, `BookSource.getSource()`, `AnalyzeRule.getSource()` and `AnalyzeUrl.getSource()` resolve to `io.legado.app.data.entities.BaseSource` (DEX descriptor `()Lio/legado/app/data/entities/BaseSource;`). This directly contrasts with Badcat's compiled `()Ljava/util/Map;`.
+- Upstream `JsExtensions.getBatchContext()`, `AnalyzeRule.getBatchContext()` and `AnalyzeUrl.getBatchContext()` return the DEX descriptor `Lkp/d0;` (the R8-obfuscated type corresponding structurally to source `BatchContentContext`). Badcat's compiled method returns `Object` and its host implementation returns null.
+- Upstream `BookSource.ajaxAll(String[])` and `ajaxAll(String[], boolean)` both return `StrResponse[]`; `ajaxTestAll(String[], int)` and `ajaxTestAll(String[], int, boolean)` also return `StrResponse[]`. Badcat's compiled bridge instead takes `Object` and returns `RhinoSourceHttpResponse[]`.
+- Upstream DEX confirms `AnalyzeUrl.getStrResponse()` overloads with zero, one, two and three explicit arguments; `AnalyzeRule.getString` and `getStringList` likewise emit multiple Java-visible overloads from Kotlin defaults/`@JvmOverloads`. This validates why source-level function-name counts are insufficient.
+- DEX annotation parsing found 68 `JavascriptInterface` method annotations on `JsExtensions`, 29 on `BaseSource` and 77 on `BookSource`. The 68 on JsExtensions reconcile with the 48 direct annotations in JsExtensions.kt plus 20 inherited annotations in JsEncodeUtils.kt; the additional nine BaseSource annotations account for the BaseSource/BookSource increase. The compiled Badcat bridge artifact has 14 such annotations.
+- The R8 release obfuscates `RuleDataInterface` as `Llp/i0;`, `JsEncodeUtils` as `Lio/e1;` and the batch-context return type as `Lkp/d0;`. These mappings are inferred from the pinned source inheritance plus DEX relationships; the artifact did not include `mapping.txt`. The DEX descriptors are exact for this release artifact, but they are not a substitute for unminified source-name JVM descriptors.
+
+#### Serializer entry points and limits
+
+- The compiled `BookSource$Converters` has 13 public methods: constructor plus all 12 conversion methods for ExploreRule, SearchRule, BookInfoRule, TocRule, ContentRule and ReviewRule. `Book$Converters` has constructor plus the two ReadConfig conversion methods.
+- This establishes that the converter surface is present in the pinned release APK. It does not prove edge-case parity for JSON null, missing fields, primitive-string payloads, malformed input or default preservation; fixed-SHA serializer differential fixtures remain outstanding.
+- The DEX evidence proves final release runtime class/method presence and overloads after R8. It does not expose all pre-R8 generic signatures, Kotlin metadata, source nullability annotations or the exact unminified interface mapping. An unminified build or matching R8 mapping file is still needed to close those remaining compile-time ABI details.
+
+**Assessment:** the pinned upstream release artifact supplies a strong, exact-SHA compiled runtime ABI reference for the core source/model/rule/JS classes. It confirms the authentic upstream inheritance and generated method surface and makes the host-vs-upstream return/overload differences concrete. Stage-0 ordered item 1 is materially advanced but remains open for the complete unminified ABI/nullability and serializer differential matrix; stage-0 remains in progress and stage-1 remains **NO-GO**.
