@@ -77,7 +77,50 @@ PY
 fi
 
 adb devices -l > "$diagnostics_dir/adb-devices-after.txt" 2>&1
-if [ "$test_status" -ne 0 ] || [ "$report_status" -ne 0 ]; then
+legado_report_status=0
+if [ "${EXPECTED_WEBVIEW_SDK:-}" = "35" ]; then
+  adb -s "$ANDROID_SERIAL" logcat -d -s BadcatLegadoE2E:I \
+    > "$diagnostics_dir/adb-legado-e2e-report-logcat.txt" 2>&1
+  if [ ! -s "$diagnostics_dir/adb-legado-e2e-report-logcat.txt" ]; then
+    echo "Legado public-source E2E report logcat capture is empty"
+    legado_report_status=1
+  else
+    python3 - "$diagnostics_dir/adb-legado-e2e-report-logcat.txt" \
+      "$diagnostics_dir/legado-runtime-3.2f.45-report.json" <<'PY'
+import base64
+import json
+import re
+import sys
+
+log_path, report_path = sys.argv[1:]
+with open(log_path, encoding="utf-8", errors="replace") as stream:
+    encoded = [
+        line.split("REPORT_BASE64=", 1)[1].strip()
+        for line in stream
+        if "REPORT_BASE64=" in line
+    ]
+if not encoded:
+    raise SystemExit("No sanitized Legado E2E report payload found")
+report = json.loads(base64.b64decode(encoded[-1], validate=True))
+if report.get("task") != "Runtime-3.2f.45" or report.get("sdkInt") != 35:
+    raise SystemExit("Unexpected task or emulator API in Legado E2E report")
+sources = report.get("sources")
+if not isinstance(sources, list) or len(sources) != 4:
+    raise SystemExit("Legado E2E report must contain exactly four source outcomes")
+for source in sources:
+    if not re.fullmatch(r"[0-9a-f]{64}", source.get("fixtureSha256", "")):
+        raise SystemExit("Fixture SHA-256 is missing or malformed")
+    if not isinstance(source.get("stages"), list) or not source.get("e2eStatus"):
+        raise SystemExit("A source outcome is missing stages or e2eStatus")
+with open(report_path, "w", encoding="utf-8") as stream:
+    json.dump(report, stream, ensure_ascii=False, indent=2)
+print(json.dumps(report, ensure_ascii=False, indent=2))
+PY
+    legado_report_status=$?
+  fi
+fi
+
+if [ "$test_status" -ne 0 ] || [ "$report_status" -ne 0 ] || [ "$legado_report_status" -ne 0 ]; then
   adb -s "$ANDROID_SERIAL" logcat -d -b all -t 4000 \
     > "$diagnostics_dir/adb-post-test-logcat.txt" 2>&1
 fi
@@ -85,4 +128,7 @@ fi
 if [ "$test_status" -ne 0 ]; then
   exit "$test_status"
 fi
-exit "$report_status"
+if [ "$report_status" -ne 0 ]; then
+  exit "$report_status"
+fi
+exit "$legado_report_status"

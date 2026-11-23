@@ -411,6 +411,15 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Upload Runtime-3.2f.45 public-source Android E2E report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: legado-runtime-3.2f.45-public-source-e2e-api35
+          path: build/runtime-2.3-webview-api35/legado-runtime-3.2f.45-report.json
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Capture compiled host JavaScript bridge JVM ABI
         if: always()
         run: |
