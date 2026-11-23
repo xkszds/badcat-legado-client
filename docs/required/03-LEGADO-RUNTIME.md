@@ -4710,3 +4710,17 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 - **Decision:** audit closed; **NO-GO** for a standalone update helper. Next bounded implementation must connect strict update semantics to the real `source.putConcurrent` object, stop per-acquire config refresh, invalidate records on source replacement/removal, and add differential tests. Wait/cancellation remains excluded. Ordinary AnalyzeUrl request-path rate limiting is separate.
 - **Scope:** only audit report and this checklist changed. No production/test/build/CI/APK/device evidence claimed. Actions #3200+ remain reserved for unified inspection; none were inspected individually.
 - **Third-category status:** partially implemented; this audit does not close complete concurrent-rate or full Legado compatibility.
+
+
+#### Runtime-3.2f.41 CI unified inspection — Actions #3201–#3225
+
+- **日期 / 分类：** 2026-11-23；第三类 CI/验收状态核对。
+- **分支 / 检查时 HEAD：** integration/legado-upstream-runtime / 06b9284379c6fbaa559724e5df23216d3bd1c349。固定 Legado SHA 不变：330e606c4d57e08adc056ff8ab7a4132c784da9a。
+- **检查范围：** 严格大于 #3200 的全部 25 次运行（#3201–#3225）。逐项核对 run exact SHA、job/step；所有已完成 run #3201–#3222 的 JUnit ZIP 均下载并解析（每次 41 XML suites）；#3213–#3216 失败日志已核对；#3217/#3221/#3222 Debug APK 已抽取并校验；#3221/#3222 API 28/35 WebView callback reports、live source 和 uploaded-corpus reports 已检查。
+- **状态汇总：** 18 success（#3201–#3212、#3217–#3222）；4 failure（#3213–#3216）；3 in_progress（#3223–#3225，最后刷新时仍运行，尚无终结 JUnit/产物）。
+- **JUnit：** #3201–#3206 每次 329 tests、0 fail/error/skip；#3207–#3209 每次 331、全 0；#3210–#3212 每次 332、全 0；#3213–#3216 每次 333、各 1 failure；#3217–#3222 每次 335、0 fail/error/skip。#3213–#3216 唯一失败均为 LegadoSourceLoginUiV2ServiceTest.mainJsInitializesLoginUiOnceInTheRealRhinoSourceScope 的 ClassCastException（EngineResult.Failure 被 cast 为 Success），发生在 app JVM unit suite step 22。四次 run 的后续 instrumentation、debug APK assemble/upload 仍成功，但整体 run 结论仍为 failure。
+- **APK：** #3217 artifact 14786128724，32,024,734 bytes，SHA-256 1753f6c62d8dae6ccc5f659dfa81344307379ae177976d16aaeee9a8bf15399b；#3221 artifact 14827776140，32,024,734 bytes，SHA-256 338fb1ec82578b72f607b8986daaa2894f8c8bd4ebdb46b2c67134e982d498bf；#3222 artifact 14827378900，32,024,734 bytes，SHA-256 5c4e5258a7ac09250693986b030c75c53b4cee0324a9f640c9291be7c8cc2376。均为 CI Debug APK，不是 release package，也非用户设备安装结果。
+- **Android / live：** #3221/#3222 API 28 与 API 35 provider report 的 string/number/null/undefined 四种 callback case 均 ok=true；Bixiange、Pinshuzhai search→detail→TOC→content 通过。uploaded corpus 均为 1/4 完整通过（精华书阁通过；唐三中文/零零小说超时；笔趣阁fun HTTP 404）。
+- **结论：** #3217–#3222 已连续 335/335 JVM tests 通过，但不代表完整 Legado 兼容或 Release 就绪。#3223–#3225 必须等终结后按各自 exact SHA 核对 JUnit/产物，不能借用早期成功 run 的结果。
+- **报告：** docs/audits/legado-runtime-3.2f.41-ci-runs-3201-3225-inspection.md；检查报告提交 ade513ecc1e1864f9396e0cb50a0289b80e910fa。
+- **任务约束：** 本轮只做 CI 检查与文档记录，未启动其他开发任务；必须先完成 #3223–#3225 的终结检查，再继续第三类其他任务。记录提交自身可能触发新的 Actions run，该 run 也需单独按 exact SHA 核验。
