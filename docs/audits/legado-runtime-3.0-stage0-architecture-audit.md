@@ -347,3 +347,43 @@ The following is a static inspection of the exact pinned Gradle and packaging so
 **Stage-0 blocker:** obtain exact pinned resolved runtimeClasspath and compileClasspath reports for relevant variants, artifact coordinates/versions/checksums, transitive native libraries, generated source/schema outputs, merged manifest, resource merge inputs, R8 configuration and kept/reflected class inventory. Static declarations alone cannot determine what the APK actually packages.
 
 **Status:** dependency closure slice 1 is partial. It confirms that the current upstream app module is not a safe minimal runtime boundary and that `:modules:book` is local-file product functionality rather than demonstrated source-rule core. It does not establish the final boundary or allow stage 1.
+
+
+## 15. Badcat production callers and data owners — exact HEAD snapshot (2026-11-24)
+
+- **Badcat inspected HEAD:** `dc2a88330a3fcacf4ee26b656cff477bfd13bf5f` (documentation-only descendants of the registered source baseline); recursive tree returned 551 entries, `truncated=false`.
+- **Current modules and source inventories:** `:legado-runtime` contains README/build/consumer rules/manifest and a test, but no production Kotlin/Java source. `:integration-contract` contains host models/services, parsers, transport, selector/URL adapters and candidate ports. `:legado-rhino` contains copied Rhino engine sources plus a few local sandbox extensions. App runtime adapters are under `app/src/main/java/app/badcat/client/runtime/`; rule-model copies also exist under app's `io/legado/app/data/entities/rule` tree.
+- **Dedicated runtime build script:** `legado-runtime/build.gradle.kts` declares Gson and AndroidX annotation, then injects exactly seven upstream rule model sources plus `GsonExtensions.kt` into Debug/Release Kotlin compilation. It does not inject upstream BookSource, Book, BookChapter, BaseSource, AnalyzeRule, AnalyzeUrl, JsExtensions, SharedJsScope, CookieStore or CacheManager. README explicitly calls this only the Runtime-0.1 first compile/contract gate and lists those areas as blockers.
+- **Host contract boundary:** `integration-contract/.../RuntimeHostPort.kt` contains typed context/error/cancellation, hidden WebView and browser/verification request/result shapes. These are useful candidate Host Ports; the report does not treat their declarations as proof that every upstream API has a production implementation.
+- **Host execution architecture:** `SourceRuntime.kt` defines host `SourceRequestClient`, request/response DTOs, six `SourceRuleStage` values, a `LegadoRuleRuntime.evaluate(...): EngineResult<List<Map<String,String>>>` contract and a separate `SourceScriptRuntime`. Its default script runtime returns `UNSUPPORTED_RULE` for script evaluation and persistent variables. This is explicit fail-closed behavior, not full upstream execution.
+- **Projection boundary:** `LegadoBookSourceCodec.kt` retains `rawJson` to avoid dropping unknown imported fields, but `LegadoBookSource.toEngineSource()` maps to host `BookSource` and assigns `sourceId` to host `baseUrl`. It is not an authentic upstream `io.legado.app.data.entities.BookSource` instance or its BaseSource lifecycle.
+- **Rhino bridge evidence:** `RhinoSafeSourceJavaExtensions.kt` has a large hand-authored surface. It returns `Map<String, Any?>` for `getSource()`, returns null for `getBatchContext()`, and returns `EmptyCoroutineContext` for `getSourceNavigationContext()`; these differ in type/semantics from the pinned upstream interface contract. The runtime constructor also has fail-closed defaults for unconnected HTTP/Cookie/Android UI operations. These are deliberate safety boundaries, but must be classified as unsupported rather than counted as parity.
+- **Production graph:** `BadcatReadingEngineFactory.kt` constructs the host FileBookSourceCatalog, OkHttpSourceRequestClient, SourceLoginSessionRequestClient, RhinoSourceScriptRuntime, BadcatSourceHttpGatewayFactory, and the five host search/explore/detail/TOC/content services. Search and book screens call this factory. They do not show an end-to-end instantiation of upstream WebBook/BookList/BookInfo/BookChapterList/BookContent with authentic BookSource/BaseSource.
+- **Request semantics to verify:** the factory supplies custom HTTP callbacks and applies bounded timeout/retry/response-size policies; `BadcatSourceHttpGatewayFactory` explicitly documents that full bodyJs, WebView and upstream Java host APIs remain unsupported. These safeguards must not be confused with equivalence to upstream AnalyzeUrl/JsExtensions semantics.
+- **Temporary catalog UI:** `SourceCatalogActivity.kt` is explicitly labeled a temporary source-catalog utility screen; it directly creates its own RhinoSourceScriptRuntime, SharedPreferences cookie/session/variable stores and FileBookSourceCatalog. This is separate from Badcat's original UI boundary and requires product/UI acceptance outside this audit before any release claim.
+
+### 15.1 Badcat data ownership matrix — observed writers
+
+| Domain | Observed Badcat implementation | Owner/writer evidence | Remaining parity issue |
+|---|---|---|---|
+| BookSource catalog | `FileBookSourceCatalog` | app-private JSON file/AtomicFile; import/export/enable/remove operations | Host projection/rawJson, no upstream entity/DAO semantics or transactional cross-domain proof |
+| Book/Book detail | host `BookCandidate`/`BookDetail` and source service results | host service pipeline; no complete upstream Book entity owner shown | missing upstream model fields, ReadConfig and DAO helpers |
+| BookChapter/TOC | host `BookChapter` and `SourceTocService` | service result/projection and host chapter identity helpers | upstream metadata, URL alias/duplicate semantics and persistence not proven equivalent |
+| Reading progress | `BadcatReadingStateRepository` | SharedPreferences-backed last chapter/scroll state | upstream Book.ReadConfig/ReadBookConfig/ParagraphAnchor semantics differ; no migration proof |
+| Favorites/bookmarks/history | same reading-state repository and separate favorite stores | host JSON/SharedPreferences ownership | product ownership should remain Badcat; parity with source runtime not established |
+| Chapter body cache | `FileChapterContentCache` | app-private file cache, digest-based key and save token/fence | not upstream CacheManager/content-save lifecycle; persistence/restart/eviction parity unproven |
+| Cookie/session | `SharedPreferencesSourceCookieJar`, login session store | app-private SharedPreferences and OkHttp CookieJar adapter | upstream CookieStore/DAO/WebView session merge/restore semantics require differential tests |
+| Source JS variables/files | `SharedPreferencesSourceScriptKeyValueStore`, `SourceScriptFileCacheStore` | app-private source-scoped stores and bounded file root | not upstream AppCacheManager/RuleBigDataHelp semantics; large variable behavior unresolved |
+| Replacement rules | `FileReplaceRuleCatalog` | separate Badcat-owned catalog | preserve Badcat ownership; verify rule serialization/application parity independently |
+
+**Assessment:** Badcat currently has explicit host-owned data stores and typed service contracts, but the source runtime remains projection-based and has several fail-closed API gaps. There is no evidence of a single-source migration or full data-owner/transaction parity with upstream.
+
+### 15.2 Remaining Badcat audit work
+
+1. Trace every production call from Badcat activities/view models to SourceReadingEngine services and adapters, including alternate construction paths and legacy stores.
+2. Inventory the exact host model fields against upstream fields and all reader/UI consumers; identify values silently dropped, recomputed or synthesized.
+3. Trace all writes/readers for source catalog, progress, chapter cache, Cookie/session, JS variables/files, bookmarks/history/favorites and replacement rules; identify transaction and cache invalidation boundaries.
+4. Determine whether any current adapter API is used as a substitute for an upstream public method with different signature, return type, default, nullability or error behavior.
+5. Establish a per-symbol semantic parity matrix before selecting Host Port signatures.
+
+**Status:** Badcat production caller/data-owner slice is partial but identifies the current architecture as host-projection based. Stage-0 remains incomplete; stage-1 remains **NO-GO**.
