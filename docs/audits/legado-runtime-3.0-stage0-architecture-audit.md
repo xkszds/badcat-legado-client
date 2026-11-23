@@ -702,3 +702,28 @@ These missing names include browser/WebView/verification callbacks, product refr
 - The absence of UI/WebView/browser methods may be a deliberate host safety choice, but without a complete source caller graph and a supported host implementation, it is not full upstream source compatibility. A typed Host Port may implement the behavior without copying Legado UI; silently omitting the methods is not equivalent.
 
 **Status:** this diff provides a reproducible method-name blocker list and selected overload counts, not full signature parity. Stage-0 remains partial; stage-1 remains **NO-GO**.
+
+
+## 23. Rhino sandbox policy parity — exact class-shutter evidence and bridge wiring (2026-11-24)
+
+### 23.1 Exact upstream security implementation reuse
+
+At Badcat HEAD `fd5f357b9f1c38d604a9487a4f1374b214ef8a83`, these Badcat files have the exact same Git blob SHA as the pinned upstream files:
+- `legado-rhino/.../RhinoClassShutter.kt`: `e9033fa47753038751191926a4f898bf5680c05b`
+- `legado-rhino/.../ProtectedNativeJavaClass.kt`: `b9105612cad4830c2bcae93a1ff8731501cd4bda`
+- `legado-rhino/.../RhinoWrapFactory.kt`: `4a3d8c30329664e725cb64ae89a88a5dfe4ebc6a`
+- `legado-rhino/.../ClassNameMatcher.kt`: Badcat implementation is present; exact pinned blob comparison is a separate provenance item.
+
+The copied RhinoClassShutter retains upstream protected class names and package prefixes, protected runtime object types, Android/IO/reflection/Room/DAO/Okio restrictions and System.load/loadLibrary/exit restrictions. ProtectedNativeJavaClass retains blocked-member lookup/write behavior and invocation exception conversion. RhinoScriptEngine configures ES6 interpreted mode, that class shutter, the wrap factory, instruction observer threshold 10,000 and stack depth 1,000. This is positive evidence for this security slice; do not claim that the sandbox security core was replaced by a weaker custom policy.
+
+### 23.2 Important difference: identical policy does not mean identical exposed ABI
+
+- Upstream `RhinoWrapFactory` has a custom-factory registry keyed by exact Java class and falls back to typed wrappers for List/Map/arrays/objects. Upstream `App.initRhino()` registers NativeBaseSource for BookSource and ReadOnlyJavaObject for selected rule/entity types.
+- Badcat tree contains ReadOnlyJavaObject but no `NativeBaseSource` source file. The inspected Badcat production path directly places `RhinoSafeSourceJavaExtensions` into the JS scope as `java`, and separately exposes custom `cookie`, `source` and `cache` objects. The source object is a host login extension; it is not the upstream BaseSource entity lifecycle.
+- The custom `getSource(): Map<String,Any?>` and null `getBatchContext()` remain concrete API divergences. The fact that the same ClassShutter/WrapFactory classes are present does not restore missing object factories, model methods, properties, callback contracts or upstream service ownership.
+- `LegadoRhinoSandbox` itself only accepts bounded primitive string bindings and primitive results; it documents that it is not the complete AnalyzeUrl adapter. The inspected production `RhinoSourceScriptRuntime` instead creates persistent per-source scopes and injects the custom Java/Cookie/source/cache bridges directly. These are distinct execution paths and must not be conflated.
+- Code-search index for Badcat remains incomplete, so absence of registration calls across the whole repository is not asserted. The production factory wiring and source tree are the bounded evidence here.
+
+**Assessment:** upstream Rhino class-shutter/wrap-factory security code has a verified exact-source slice, while source-visible API wiring and object identity remain host-projection based. Security-source reuse is not proof of complete JS ABI compatibility.
+
+**Status:** sandbox parity slice partial; stage-0 remains incomplete and stage-1 remains **NO-GO**.
