@@ -87,6 +87,11 @@ data class LegadoBookSource(
     )
 }
 
+sealed interface LegadoBookSourceImportDocument {
+    data class Sources(val items: List<LegadoBookSource>) : LegadoBookSourceImportDocument
+    data class SourceUrls(val items: List<String>) : LegadoBookSourceImportDocument
+}
+
 object LegadoBookSourceCodec {
 
     const val MAX_IMPORT_BYTES = 5 * 1024 * 1024
@@ -106,17 +111,69 @@ object LegadoBookSourceCodec {
             .toString()
     }
 
-    fun decode(json: String): List<LegadoBookSource> {
+    /** Decode a document containing BookSource objects only; URL manifests are not sources. */
+    fun decode(json: String): List<LegadoBookSource> =
+        when (val document = decodeImportDocument(json, allowSourceUrls = false)) {
+            is LegadoBookSourceImportDocument.Sources -> document.items
+            is LegadoBookSourceImportDocument.SourceUrls ->
+                throw IllegalArgumentException("sourceUrls manifest is not a BookSource object")
+        }
+
+    /**
+     * Parse the two JSON document shapes accepted by pinned Legado's
+     * parseBookSourceJson: source object/array or a sourceUrls manifest.
+     *
+     * This method only parses the manifest. It never fetches its URLs.
+     */
+    fun decodeImportDocument(
+        json: String,
+        allowSourceUrls: Boolean = true,
+    ): LegadoBookSourceImportDocument {
         require(json.toByteArray(Charsets.UTF_8).size <= MAX_IMPORT_BYTES) {
             "Book-source JSON exceeds the 5 MiB import limit"
         }
         validateJsonNesting(json)
         val root = JsonParser.parseString(json)
+
+        if (root.isJsonObject && root.asJsonObject.has("sourceUrls")) {
+            require(allowSourceUrls) {
+                "sourceUrls manifests are not allowed in this import context"
+            }
+            val sourceUrlsElement = root.asJsonObject.get("sourceUrls")
+            require(sourceUrlsElement != null && !sourceUrlsElement.isJsonNull) {
+                "sourceUrls must be a non-null array"
+            }
+            require(sourceUrlsElement.isJsonArray) {
+                "sourceUrls must be an array"
+            }
+            val urls = sourceUrlsElement.asJsonArray.mapIndexed { index, element ->
+                require(!element.isJsonNull) {
+                    "sourceUrls item at index $index must not be null"
+                }
+                // Match the pinned StringJsonDeserializer: primitives become asString;
+                // arrays/objects become their compact JSON text.
+                val value = if (element.isJsonPrimitive) {
+                    element.asJsonPrimitive.asString
+                } else {
+                    element.toString()
+                }
+                require(value.isNotBlank()) {
+                    "sourceUrls item at index $index must not be blank"
+                }
+                value
+            }
+            return LegadoBookSourceImportDocument.SourceUrls(urls)
+        }
+
         val entries = when {
             root.isJsonArray -> root.asJsonArray.toList()
             root.isJsonObject -> listOf(root)
             else -> throw IllegalArgumentException("Book source JSON must be an object or array")
         }
+        return LegadoBookSourceImportDocument.Sources(decodeSourceEntries(entries))
+    }
+
+    private fun decodeSourceEntries(entries: List<JsonElement>): List<LegadoBookSource> {
         require(entries.size <= MAX_SOURCES) {
             "Book-source document exceeds the $MAX_SOURCES source limit"
         }

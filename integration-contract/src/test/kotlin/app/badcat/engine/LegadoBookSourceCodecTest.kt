@@ -1,6 +1,9 @@
 package app.badcat.engine
 
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonDeserializer
 import com.google.gson.JsonParser
+import com.google.gson.reflect.TypeToken
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -193,6 +196,101 @@ class LegadoBookSourceCodecTest {
         assertEquals(27, exported.get("customOrder").asInt)
         assertEquals(7, exported.getAsJsonObject("future").get("x").asInt)
         assertEquals("main", exported.getAsJsonObject("ruleSearch").get("bookList").asString)
+    }
+
+    @Test
+    fun parsesSourceUrlsManifestWithPinnedUpstreamGsonStringSemantics() {
+        val cases = listOf(
+            """{"sourceUrls":["https://one.example/sources.json","https://two.example/sources.json"]}""" to
+                listOf("https://one.example/sources.json", "https://two.example/sources.json"),
+            """{"sourceUrls":[]}""" to emptyList(),
+            """{"sourceUrls":[123,true,{"url":"https://nested.example"},["nested"]]}""" to
+                listOf("123", "true", """{"url":"https://nested.example"}""", """["nested"]"""),
+            // Upstream checks sourceUrls first, even if ordinary source fields are also present.
+            """{"sourceUrls":["https://manifest.example/list.json"],"bookSourceUrl":"https://ignored.example","bookSourceName":"Ignored"}""" to
+                listOf("https://manifest.example/list.json"),
+        )
+
+        cases.forEach { (json, expected) ->
+            assertEquals(expected, parsePinnedSourceUrls(json))
+            val parsed = LegadoBookSourceCodec.decodeImportDocument(json)
+            assertTrue(parsed is LegadoBookSourceImportDocument.SourceUrls)
+            assertEquals(expected, (parsed as LegadoBookSourceImportDocument.SourceUrls).items)
+        }
+    }
+
+    @Test
+    fun rejectsInvalidSourceUrlsManifestShapesAndEntriesLikePinnedUpstream() {
+        val invalid = listOf(
+            """{"sourceUrls":null}""",
+            """{"sourceUrls":""}""",
+            """{"sourceUrls":{}}""",
+            """{"sourceUrls":1}""",
+            """{"sourceUrls":[null]}""",
+            """{"sourceUrls":[""]}""",
+            """{"sourceUrls":["   "]}""",
+        )
+        invalid.forEach { json ->
+            assertFailsWith<Exception> { parsePinnedSourceUrls(json) }
+            assertFailsWith<IllegalArgumentException> {
+                LegadoBookSourceCodec.decodeImportDocument(json)
+            }
+        }
+
+        val validManifest = """{"sourceUrls":["https://one.example/list.json"]}"""
+        assertFailsWith<Exception> { parsePinnedSourceUrls(validManifest, allowSourceUrls = false) }
+        assertFailsWith<IllegalArgumentException> {
+            LegadoBookSourceCodec.decodeImportDocument(validManifest, allowSourceUrls = false)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            LegadoBookSourceCodec.decode(validManifest)
+        }
+    }
+
+    @Test
+    fun keepsOrdinaryBookSourceDocumentsDistinctFromSourceUrlsManifests() {
+        val parsed = LegadoBookSourceCodec.decodeImportDocument(
+            """{"bookSourceUrl":"https://ordinary.example","bookSourceName":"Ordinary"}"""
+        )
+        assertTrue(parsed is LegadoBookSourceImportDocument.Sources)
+        assertEquals(
+            listOf("https://ordinary.example"),
+            (parsed as LegadoBookSourceImportDocument.Sources).items.map { it.sourceId },
+        )
+    }
+
+    /**
+     * Executable source-derived fixture for the pinned upstream StringJsonDeserializer
+     * and Gson.fromJsonArray<String> null/blank checks in GsonExtensions.kt.
+     */
+    private fun parsePinnedSourceUrls(
+        json: String,
+        allowSourceUrls: Boolean = true,
+    ): List<String>? {
+        val root = JsonParser.parseString(json)
+        if (!root.isJsonObject || !root.asJsonObject.has("sourceUrls")) return null
+        if (!allowSourceUrls) throw IllegalArgumentException("不是书源")
+        val element = root.asJsonObject.get("sourceUrls")
+        if (element == null || element.isJsonNull) throw IllegalArgumentException("不是书源")
+        val type = TypeToken.getParameterized(List::class.java, String::class.java).type
+        val adapter = GsonBuilder()
+            .registerTypeAdapter(
+                String::class.java,
+                JsonDeserializer<String?> { value, _, _ ->
+                    when {
+                        value.isJsonPrimitive -> value.asString
+                        value.isJsonNull -> null
+                        else -> value.toString()
+                    }
+                },
+            )
+            .create()
+        @Suppress("UNCHECKED_CAST")
+        val values = adapter.fromJson(element, type) as List<String?>
+        if (values.any { it == null }) throw IllegalArgumentException("列表不能存在null元素")
+        val urls = values.filterNotNull()
+        if (urls.any { it.isBlank() }) throw IllegalArgumentException("不是书源")
+        return urls
     }
 
     @Test
