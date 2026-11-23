@@ -32,13 +32,13 @@ Therefore 1/4 measures this CI runner's ability to reach and scrape four hardcod
 
 ### 唐三中文 — repeated search-stage network timeout
 
-URL: http://www.xtangsanshu.com/s.php?ie=utf-8&s=&q=%E5%89%91%E来
+URL: http://www.xtangsanshu.com/s.php?ie=utf-8&s=&q=%E5%89%91%E6%9D%A5
 
 Across #3223, #3224 and #3225 the probe records three attempts per run, each around 25 seconds, all URLError timed out. Failure occurs at search before rule parsing. This is consistent with endpoint/runner reachability or HTTP connection/read timeout; logs do not separate DNS, TCP connect, server wait or proxy causes. This is not evidence of a Badcat rule-engine defect.
 
 ### 零零小说 — repeated search-stage network timeout
 
-URL: https://www.00shu.la/modules/article/search.php?q=%E5%89%91%E来
+URL: https://www.00shu.la/modules/article/search.php?q=%E5%89%91%E6%9D%A5
 
 Across #3223, #3224 and #3225 the probe records three attempts per run, each around 26 seconds, all URLError timed out. Failure occurs before HTML parsing. The artifact does not reveal whether the timeout is DNS, TCP/TLS establishment, response headers or body read. This is not evidence of a Badcat rule-engine defect.
 
@@ -50,7 +50,7 @@ Results vary by run: #3223 has two read timeouts around 25 seconds, then HTTP 40
 
 ### 精华书阁 — successful control
 
-URL: https://m.jhsssd.com/search.html?ie=utf-8&word=%E5%89%91%E来&page=1
+URL: https://m.jhsssd.com/search.html?ie=utf-8&word=%E5%89%91%E6%9D%A5&page=1
 
 Across #3223–#3225, search, detail, TOC and chapter content all pass. Responses are fast (typically below 0.5 seconds), status 200. This validates the Python probe path for this one site only.
 
