@@ -4430,3 +4430,18 @@
 - **Upstream differential basis:** exact pinned `BookSourceImport.kt` and `GsonExtensions.kt` at `330e606c4d57e08adc056ff8ab7a4132c784da9a` were inspected. The parser source is not part of the selected `pinnedLegado` compilation source set, so tests use a source-derived executable fixture for the exact upstream `StringJsonDeserializer` + `GSON.fromJsonArray<String>` conversion/null/blank behavior; this is not represented as executing the full upstream import UI function.
 - **Behavior encoded:** wrapper presence takes precedence over BookSource fields; empty URL list is accepted; null wrapper, non-array wrapper, null list items and blank strings reject; primitive values stringify through Gson `asString`; object/array list items stringify to compact JSON text, matching the pinned StringJsonDeserializer. `allowSourceUrls=false` rejects wrappers. No URL syntax validation or network activity occurs.
 - **Validation:** exact-SHA CI run `45089612632`, attempt 1, head SHA `41f95a6b72149d0ba6d00c2cf1dff7119a97d9f6`; status pending at this checkpoint. No test/build pass claimed yet.
+
+
+### Runtime-3.2f.31 registration — read-only JS source import/export compatibility audit
+
+- **日期 / 分类：** 2026-11-23；第三类：BookSource JS source import/export.
+- **起始 branch / HEAD：** `integration/legado-upstream-runtime` / `4ff6b663d62b1b9eae762d068d7f16cc975e97b2`；固定 Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **并行依据：** .30 `sourceUrls` parser 实现 SHA `41f95a6b72149d0ba6d00c2cf1dff7119a97d9f6` 的 CI run #3192 / `45089612632` 正在运行；本审计只读，不改 .30 共用的 codec/test 文件，也不改任何运行时或 catalog caller，允许并行。CI 结果只对其 exact SHA 有效。
+- **触发依据：** .28 audit 已确认上游 `JsSourceConfig.extract` 支持 JS 配置文本导入，单个 JS source export 写出 `mainJs` 为 `.js`；host catalog UI 仅提供 JSON 文件/URL 导入和整个 catalog JSON 导出。尚未逐项核对 JS 配置语法、字段归一化、脚本内容保留、错误行为、导入调用链和单源导出边界。
+- **目标：** 只读审计固定上游 JS source config parser、JS source import caller、单个 JS source export caller/格式，与 host codec/model/catalog/activity 的可表达字段和现有文件选择/导出能力，形成可执行的差异矩阵和后续最小任务建议。
+- **必须审查的上游路径：** `app/src/main/java/io/legado/app/model/jsSource/JsSourceConfig.kt`；`app/src/main/java/io/legado/app/ui/association/ImportBookSourceViewModel.kt`；`app/src/main/java/io/legado/app/ui/book/source/manage/BookSourceViewModel.kt`；`app/src/test/java/io/legado/app/model/jsSource/JsSourceConfigTest.kt`；`app/src/test/java/io/legado/app/ui/association/ImportBookSourceStateTest.kt`；`app/src/main/assets/js_source_template.js`。
+- **必须审查的 host 路径：** `integration-contract/src/main/kotlin/app/badcat/engine/LegadoBookSourceCodec.kt`；`integration-contract/src/main/kotlin/app/badcat/engine/ReadingEngine.kt`；`app/src/main/java/app/badcat/client/FileBookSourceCatalog.kt`；`app/src/main/java/app/badcat/client/SourceCatalogActivity.kt`；相关 codec/catalog tests 与全部直接 caller。确认是否有 JS runtime 对字段/脚本的真实消费，不把 rawJson 保留误称为脚本可执行。
+- **允许变更：** 仅新增 `docs/audits/legado-runtime-3.2f.31-js-source-import-export.md` 与更新本分类清单；不改生产代码、测试、Gradle、workflow、资源或 UI。
+- **验收：** 固定 SHA 源码/测试证据；JS config 输入语法与解析字段矩阵；`mainJs`/source URL/type/default/null/unknown fields 映射；错误与失败语义；单 JS source export 格式和多源 JSON export 差异；host 当前能力与 caller 图；最小后续实现登记建议及安全边界。未能从源码确认的行为列为 unresolved。
+- **排除：** 不实现 JS parser/import/export，不执行脚本，不引入 Rhino/JS 运行时，不改 source catalog schema/persistence、UI、sourceUrls fetching、书源替换工作流、上游 pin、第四/第五类或 `main`。
+- **状态：** 已 preregister，尚未审计；只读并行任务，不得扩展为生产实现。
