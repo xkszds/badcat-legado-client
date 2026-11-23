@@ -4457,3 +4457,17 @@
 - **Scope review:** only the preregistered audit report and this checklist changed. .30 codec/test files were untouched. No upstream pin, `main`, catalog persistence, or other category changed.
 - **Next:** separately preregister a pinned JS source fixture/normalization task or controlled Runtime-3.0 integration design; separately register Badcat import-review/selected-export UX if approved. Do not add a simplified parser or execute arbitrary scripts in the metadata catalog.
 - **Acceptance level:** this read-only audit is closed; JS import/export remains unimplemented in the host catalog workflow. Third category remains partially implemented.
+
+
+### Runtime-3.2f.32 registration — read-only BookSource model field coverage matrix
+
+- **日期 / 分类：** 2026-11-23；第三类：fixed-upstream BookSource model/serialization compatibility.
+- **起始 branch / HEAD：** `integration/legado-upstream-runtime` / `5518804ad7b2e827212844de410aa878d336d911`；固定 Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **并行依据：** .30 `sourceUrls` parser exact-SHA CI run #3192 / `45089612632` remains active. This is read-only and only writes a new audit report plus this checklist; it does not modify the .30 codec/test files or any production caller, so it is path-disjoint.
+- **触发依据：** 总清单要求对固定上游书源相关公开能力、字段/default/null/序列化逐项清点；.28 audit established that host `rawJson` preserves unknown fields but does not prove the runtime understands or executes them. The host typed projection is a selected subset and needs an explicit per-property coverage map.
+- **目标：** Compare every property of pinned upstream `BookSource.kt` and its converters/Gson adapters against host `LegadoBookSource`, `toEngineSource()`, codec validation/default/null behavior, engine-facing `BookSource`, and actual runtime consumers. Classify each field as typed+consumed, typed+not consumed, raw-only, intentionally excluded with evidence, or missing; record type/default/null/coercion and serialization differences.
+- **必须审查：** pinned upstream `app/src/main/java/io/legado/app/data/entities/BookSource.kt`, `GsonExtensions.kt`, six rule adapters/converters; host `LegadoBookSourceCodec.kt`, `ReadingEngine.kt`, runtime source consumers and catalog persistence; search all direct references for each field where practical.
+- **允许变更：** only `docs/audits/legado-runtime-3.2f.32-booksource-field-coverage.md` and this category checklist. No code, tests, Gradle, workflow, UI, storage or schema changes.
+- **验收：** complete upstream property list; per-field mapping with host type/default/null/serialization; raw-only vs runtime-consumed distinction; rule model conversion coverage; exact source evidence and unresolved entries; minimum separately preregistered implementation/test slices.
+- **排除：** no field mapping implementation, schema changes, data migration, rule execution changes, sourceUrls fetching, JS parser, catalog/UI workflow, upstream pin, fourth/fifth category or `main`.
+- **状态：** 已 preregister，尚未审计；只读任务。
