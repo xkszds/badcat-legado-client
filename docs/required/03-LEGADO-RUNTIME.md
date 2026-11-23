@@ -5446,3 +5446,20 @@ Each row binds one run to its own immutable commit SHA and its single `assemble-
 - **Current branch HEAD:** `99f1f1ef2031dbb70bf936bc28a8198c0f2af0e5`. The latest documentation commit has no terminal CI conclusion at this checkpoint.
 - **Next action:** poll #3324–#3333 independently to terminal state; then record the outcomes against each exact SHA. Keep Stage-0 in progress and Stage-1 NO-GO. No production/build/test/workflow/UI/Reader/database/source-fixture change is included in these audit commits.
 
+### 26.8 Actions #3324–#3333 terminal closeout — exact-SHA Debug workflow results (2026-11-24)
+
+- **#3324:** run `45274787713` / job `138043642477` / SHA `52f5581fefe5b6c7852a85ea8c4e782c81af498b` — completed / success.
+- **#3325:** run `45275189577` / job `138045055918` / SHA `6d756dd78d570a74a473a58776af59358c2ec3ec` — completed / success.
+- **#3326:** run `45275230218` / job `138045206052` / SHA `2a20653e7decad1c9d476c6587e523e4ad86b9ee` — completed / success.
+- **#3327:** run `45275545205` / job `138046260404` / SHA `dbd9f9cf89a5402d549221acf93b979dba628416` — completed / success.
+- **#3328:** run `45275587810` / job `138046408599` / SHA `70fd76cd1db07b448f3492594d5b9338f0b2003b` — completed / success.
+- **#3329:** run `45275997333` / job `138047828349` / SHA `411fdfd61e4637aa4925cea7070f3d1bc0ed68cc` — completed / success.
+- **#3330:** run `45276241142` / job `138048665029` / SHA `d2682b4e1be9b0a79b21d23beb04fa763bf5038d` — completed / success.
+- **#3331:** run `45276283385` / job `138048812028` / SHA `ec6e987cbea6582c760570a274dd3c3343f135b0` — completed / success.
+- **#3332:** run `45276506951` / job `138049574300` / SHA `765f4edc4ae831fbd1140322464181515f43beba` — completed / success.
+- **#3333:** run `45276545937` / job `138049708231` / SHA `99f1f1ef2031dbb70bf936bc28a8198c0f2af0e5` — completed / success.
+- **Verification method:** queried each workflow run and its latest-attempt jobs. All ten runs report `status=completed`, `conclusion=success`; each has one `assemble-debug` job with `status=completed`, `conclusion=success`. No failed job conclusion was observed.
+- **Current branch snapshot:** `integration/legado-upstream-runtime` HEAD is `24cb9a97e338a9edb8c468dc94ccad224d670e76`. Compare from #3333 SHA `99f1f1ef2031dbb70bf936bc28a8198c0f2af0e5` to current HEAD is 1 commit ahead / 0 behind; the only changed path is this checklist (+14 lines). Thus these ten workflow results are exact-SHA historical snapshots and are not being represented as CI on the current documentation HEAD.
+- **Acceptance boundary:** these are successful Debug build workflow runs, not evidence of Stage-0 completion, complete Legado API/lifecycle parity, a release APK, or device acceptance. Stage-0 remains `in_progress/not accepted`; Stage-1 remains **NO-GO**.
+- **Next ordered action:** with the #3324–#3333 CI gate terminal and recorded, resume the registered Runtime-3.2f.50 caller/reflection/source-help closure. Keep serializer differential fixtures, exact pre-R8 JVM ABI/nullability and complete dependency closure as separate open gates.
+- **Change boundary:** documentation-only; no production code, tests, Gradle, workflow, database/schema, UI/Reader or source fixtures changed.
