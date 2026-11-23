@@ -17,8 +17,8 @@ internal object LegadoConcurrentRateLimiter {
     private val records = ConcurrentHashMap<String, Record>()
 
     fun acquire(sourceId: String, setting: String?, skipRateLimit: Boolean = false) {
-        if (skipRateLimit || setting.isNullOrBlank() || setting == "0") return
-        val parsed = parse(setting) ?: return
+        if (skipRateLimit) return
+        val parsed = parseInitial(setting) ?: return
         val (accessLimit, interval) = parsed
         val record = records.computeIfAbsent(sourceId) {
             Record(System.currentTimeMillis(), accessLimit, interval, 1)
@@ -58,17 +58,20 @@ internal object LegadoConcurrentRateLimiter {
         }
     }
 
-    private fun parse(value: String): Pair<Int, Int>? {
+    /**
+     * Matches the pinned BaseSource initial fetchStart parser. Unlike
+     * updateConcurrentRate, malformed imported settings still create a record
+     * with the upstream fallback values; only null, empty, and exact "0" skip.
+     */
+    internal fun parseInitial(value: String?): Pair<Int, Int>? {
+        if (value.isNullOrEmpty() || value == "0") return null
         val slash = value.indexOf('/')
-        val accessLimit: Int
-        val interval: Int
-        if (slash > 0) {
-            accessLimit = value.substring(0, slash).toIntOrNull() ?: return null
-            interval = value.substring(slash + 1).toIntOrNull() ?: return null
+        return if (slash > 0) {
+            val accessLimit = value.substring(0, slash).toIntOrNull() ?: 1
+            val interval = value.substring(slash + 1).toIntOrNull() ?: 0
+            accessLimit to interval
         } else {
-            accessLimit = 1
-            interval = value.toIntOrNull() ?: return null
+            1 to (value.toIntOrNull() ?: 0)
         }
-        return if (accessLimit > 0 && interval > 0) accessLimit to interval else null
     }
 }

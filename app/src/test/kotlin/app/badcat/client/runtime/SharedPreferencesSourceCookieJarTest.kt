@@ -236,10 +236,25 @@ class SharedPreferencesSourceCookieJarTest {
     }
 
     @Test
-    fun cookieMapParserPreservesEqualsAndIgnoresPairsWithoutValues() {
+    fun cookieMapParserMatchesPinnedNullBlankAndFirstEqualsSemantics() {
         assertEquals(
-            linkedMapOf("token" to "a=b==", "theme" to "dark"),
-            parseLegadoCookieMap("token=a=b==; invalid; theme=dark"),
+            linkedMapOf(
+                "nil" to "null",
+                "token" to "a=b==",
+                "duplicate" to "second",
+                "spaced" to "value",
+            ),
+            parseLegadoCookieMap(
+                "sid=; blank=   ; nil=null; token=a=b==; duplicate=first; duplicate=second; no-value; =ignored; spaced = value ",
+            ),
+        )
+    }
+
+    @Test
+    fun cookieMapParserTrimsAsciiControlWhitespaceLikePinnedCookieStore() {
+        assertEquals(
+            linkedMapOf("sid" to "value", "literalNull" to "null"),
+            parseLegadoCookieMap("\tsid\t=\tvalue\t; literalNull= null "),
         )
     }
 

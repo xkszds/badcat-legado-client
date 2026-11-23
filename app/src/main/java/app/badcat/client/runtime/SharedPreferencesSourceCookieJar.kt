@@ -56,9 +56,12 @@ internal fun parseLegadoCookieMap(raw: String): LinkedHashMap<String, String> {
         val pair = item.trim()
         val separator = pair.indexOf('=')
         if (separator <= 0) return@forEach
-        val name = pair.substring(0, separator).trim()
-        val value = pair.substring(separator + 1).trim()
+        val name = pair.substring(0, separator).trim { it <= ' ' }
+        val value = pair.substring(separator + 1).trim { it <= ' ' }
+        // Pinned CookieStore.cookieToMap drops empty values but intentionally
+        // preserves the literal "null" value used by some imported sources.
         if (name.isBlank() || name.length > 256 || value.length > 4_096) return@forEach
+        if (value.isBlank() && value != "null") return@forEach
         val valid = runCatching {
             Cookie.Builder().name(name).value(value).hostOnlyDomain("cookie.invalid").path("/").build()
         }.isSuccess

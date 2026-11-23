@@ -1,5 +1,7 @@
 package app.badcat.client.runtime
 
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -25,10 +27,28 @@ class LegadoConcurrentRateLimiterTest {
     }
 
     @Test
-    fun ignoresInvalidAndZeroValues() {
+    fun initialSettingParserMatchesPinnedFallbackAndSkipRules() {
+        assertNull(LegadoConcurrentRateLimiter.parseInitial(null))
+        assertNull(LegadoConcurrentRateLimiter.parseInitial(""))
+        assertNull(LegadoConcurrentRateLimiter.parseInitial("0"))
+
+        assertEquals(1 to 100, LegadoConcurrentRateLimiter.parseInitial("100"))
+        assertEquals(2 to 100, LegadoConcurrentRateLimiter.parseInitial("2/100"))
+        assertEquals(0 to 10, LegadoConcurrentRateLimiter.parseInitial("0/10"))
+        assertEquals(-1 to 100, LegadoConcurrentRateLimiter.parseInitial("-1/100"))
+        assertEquals(1 to 100, LegadoConcurrentRateLimiter.parseInitial("x/100"))
+        assertEquals(2 to 0, LegadoConcurrentRateLimiter.parseInitial("2/x"))
+        assertEquals(1 to 0, LegadoConcurrentRateLimiter.parseInitial("invalid"))
+        assertEquals(1 to 0, LegadoConcurrentRateLimiter.parseInitial(" "))
+        assertEquals(1 to -5, LegadoConcurrentRateLimiter.parseInitial("-5"))
+        assertEquals(1 to 0, LegadoConcurrentRateLimiter.parseInitial("/10"))
+    }
+
+    @Test
+    fun malformedInitialSettingStillCreatesAndCanAcquireTheFirstRecord() {
         val sourceId = "rate-limit-invalid-" + System.nanoTime()
         LegadoConcurrentRateLimiter.acquire(sourceId, "invalid")
         LegadoConcurrentRateLimiter.acquire(sourceId, "0")
-        LegadoConcurrentRateLimiter.acquire(sourceId, "0/10")
+        LegadoConcurrentRateLimiter.acquire(sourceId, "2/0")
     }
 }
