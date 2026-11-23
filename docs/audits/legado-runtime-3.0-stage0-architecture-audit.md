@@ -647,3 +647,58 @@ Method groups include MD5 full/16-character digest, symmetric crypto factory ove
 This expands the JS compatibility surface beyond the JsExtensions declarations. Every inherited method, overload, helper object and nullable/byte-array conversion must be included in the source ABI inventory.
 
 **Status:** inherited data, batch and scope contracts are now described at source level, but Badcat implementation-by-implementation differential evidence is still incomplete. Stage-0 remains partial; stage-1 remains **NO-GO**.
+
+
+## 22. JsExtensions / JsEncodeUtils name-and-overload comparison — static declaration diff slice 4 (2026-11-24)
+
+A lexical declaration diff was run against pinned upstream `JsExtensions.kt` + inherited `JsEncodeUtils.kt` and Badcat `RhinoSafeSourceJavaExtensions.kt`. This counts Kotlin `fun name(` declarations in the fetched source text; it does not resolve inherited JVM bridges, generated methods, visibility, overload signatures, annotations, Rhino wrapping or runtime dispatch.
+
+| Inventory | Declarations | Unique names |
+|---|---:|---:|
+| Upstream JsExtensions | 122 | 81 |
+| Upstream JsEncodeUtils | 30 | 27 |
+| Combined upstream names (union) | — | 108 |
+| Badcat RhinoSafeSourceJavaExtensions | 225 | 179 |
+
+### 22.1 Upstream names with no same-name declaration in Badcat bridge
+
+`canOpenSourceUi`, `getReadBookConfig`, `getReadBookConfigMap`, `getThemeConfig`, `getThemeConfigMap`, `getThemeMode`, `getVerificationCode`, `openUrl`, `openVideoPlayer`, `refreshBookInfo`, `refreshBookToc`, `refreshContent`, `showBrowser`, `startBrowser`, `startBrowserAwait`, `webView`, `webViewGetOverrideUrl`, `webViewGetSource`.
+
+These missing names include browser/WebView/verification callbacks, product refresh events, reader/theme APIs and UI dispatch. Some may be intentionally unavailable in a host runtime, but each absence must be explicitly classified and source-rule reachability demonstrated before it can be excluded. For a complete Legado source API claim, unimplemented source-facing methods remain blockers.
+
+### 22.2 Representative overload-count differences
+
+| Method | Upstream declarations | Badcat bridge declarations |
+|---|---:|---:|
+| ajax | 2 | 2 |
+| ajaxAll | 2 | 1 |
+| ajaxTestAll | 2 | 1 |
+| connect | 3 | 3 |
+| webView | 2 | 0 |
+| webViewGetSource | 3 | 0 |
+| webViewGetOverrideUrl | 3 | 0 |
+| startBrowser | 2 | 0 |
+| startBrowserAwait | 3 | 0 |
+| get | 2 | 3 |
+| head | 2 | 2 |
+| post | 2 | 2 |
+| downloadFile | 2 | 2 |
+| readTxtFile | 2 | 2 |
+| getZipStringContent | 2 | 2 |
+| queryTTF | 2 | 2 |
+| replaceFont | 2 | 2 |
+| openUrl | 2 | 0 |
+| showBrowser | 4 | 0 |
+| singleFlight | 2 | 2 |
+| lock | 2 | 2 |
+| tick | 1 | 1 |
+| createSymmetricCrypto | 4 | 4 |
+
+### 22.3 Interpretation
+
+- Badcat has many extra helper declarations, most of which are private implementation utilities and must not be counted as source ABI parity.
+- Same-name methods do not imply signature compatibility. For example, Badcat ajaxAll/ajaxTestAll have fewer overloads, while HTTP get has a different count; request/response types also differ (RhinoSourceHttpResponse vs upstream StrResponse/Jsoup Connection.Response).
+- The bridge exposes a custom `getSource(): Map<String, Any?>` rather than `BaseSource?`; `getBatchContext()` returns null and navigation context is EmptyCoroutineContext. These are concrete return-value/behavior differences even where method names match.
+- The absence of UI/WebView/browser methods may be a deliberate host safety choice, but without a complete source caller graph and a supported host implementation, it is not full upstream source compatibility. A typed Host Port may implement the behavior without copying Legado UI; silently omitting the methods is not equivalent.
+
+**Status:** this diff provides a reproducible method-name blocker list and selected overload counts, not full signature parity. Stage-0 remains partial; stage-1 remains **NO-GO**.
