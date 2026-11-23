@@ -973,3 +973,44 @@ All six rule classes are Parcelable in the inspected DEX and expose data-class c
 - **Required typed-port semantics (inventory only):** carry the operation CoroutineContext/suppression marker through the Rhino execution and WebView callback; preserve opt-in behavior, source identity and UI callback ownership; gate only the current operation; propagate context through nested login; keep storage/network work alive; preserve cancellation and exception behavior. A global boolean checked without operation identity is not equivalent.
 - **Scope guard:** this is the pinned source-navigation behavior within the Runtime API/caller audit. It does not reopen or modify the separately paused security preflight. No security preflight, production code, tests, Gradle, workflow, UI/Reader, database/schema or source fixture was changed.
 - **Conclusion:** source-navigation policy and its WebView thread bridge are a confirmed upstream runtime contract with Android instrumentation evidence. The current Badcat EmptyCoroutineContext path is a concrete semantic gap. Stage-0 ordered items 1 and 2 remain open; Stage-1 remains **NO-GO**.
+
+
+## 24.15 WebJsExtensions dynamic-dispatch contract and Badcat host-scope gap (2026-11-24)
+
+- **Pinned baseline:** `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`. This is a source-level closure slice; it does not claim a complete external script-corpus scan.
+- **Exact upstream source identities:**
+  - `app/src/main/java/io/legado/app/help/webView/WebJsExtensions.kt` — blob `dd6532396b8f02e37376885aa2c6c1e430af1ad9`.
+  - `app/src/main/java/io/legado/app/help/http/BackstageWebView.kt` — blob `285f229ff2f9f00e7588b221a8543a2879bafe86`.
+  - `app/src/main/java/io/legado/app/ui/rss/read/RssJsExtensions.kt` — blob `8e01035e8d5802ed931ac46050cd45cfb0254701`.
+  - `app/src/main/java/io/legado/app/ui/login/SourceLoginJsExtensions.kt` — blob `a14f01b3774998d09619a79ce977fc593b6a28f1`.
+- **WebView injection is a real source execution path:** pinned `BackstageWebView.load` creates the source-rule WebView with three distinct JavaScript interfaces: a BaseSource wrapped by `withSourceNavigationContext(navigationContext)` as `source`, `WebJsExtensions` as `java`, and `WebCacheManager` as `cache`. The captured operation navigation context is passed into WebJsExtensions. This is not the ordinary Rhino source-script binding and must not be collapsed into it.
+- **Direct WebJsExtensions API and dispatch:**
+  - `upConfig(config)` is an annotated JavaScript interface callback; it de-duplicates the last forwarded config and invokes the weak callback reference (WebJsExtensions.kt:38–43).
+  - `request(funName, jsParam, id)` is the annotated asynchronous dispatcher (lines 48–59). It normalizes six string parameters, dispatches the following **16 exact operation names**, and settles success/error by placing the result in CacheManager memory and invoking `window.$JSBridgeResult(id, success)` (lines 59–167):
+    1. `run`
+    2. `ajaxAwait`
+    3. `connectAwait`
+    4. `getAwait`
+    5. `headAwait`
+    6. `postAwait`
+    7. `webViewAwait`
+    8. `webViewGetSourceAwait`
+    9. `decryptStrAwait`
+    10. `encryptBase64Await`
+    11. `encryptHexAwait`
+    12. `createSignHexAwait`
+    13. `downloadFileAwait`
+    14. `readTxtFileAwait`
+    15. `importScriptAwait`
+    16. `getStringAwait`
+  - The pinned injected JavaScript shim defines Promise wrappers for these operations, generates request IDs, stores resolve/reject callbacks, invokes `java.request`, then consumes/deletes the CacheManager result in `window.$JSBridgeResult` (WebJsExtensions.kt:241–375). This proves the string dispatch names are actively called by the upstream-generated source-WebView helper, not merely hypothetical reflection names.
+- **Related inherited callback boundary:** SourceLoginJsExtensions extends RssJsExtensions and is injected into BookSource Rhino callbacks, while WebJsExtensions extends RssJsExtensions and is injected into rule WebViews. The Rss `open(name,...)` dispatcher has five route labels: `login`, `sort`, `rss`, `search`, `explore`; `login/search/explore` resolve or preserve BookSource origin/bookType, while `sort/rss` enter RssSource product flows. The BookSource `searchBook(key, BookSource)` overload is a distinct Rhino callback route, not the annotated WebView search-scope overload. This reinforces method/route-specific scope classification rather than wholesale Rss inclusion/exclusion.
+- **Badcat exact host comparison at inspected branch HEAD `52f5581fefe5b6c7852a85ea8c4e782c81af498b`:**
+  - `app/src/main/java/app/badcat/client/runtime/RhinoSafeSourceJavaExtensions.kt` — blob `6a00e649895c4c1d223b768c6b288632ec033de9`.
+  - `RhinoSourceScriptRuntime.kt` — blob `879d6ed978894b16271cf5207348176fd040eda7`.
+  - `RhinoLegadoJsReplacementEvaluator.kt` — blob `bc20e8b378ce65c8455b6d2763c881c66979dc47`.
+  - Production Rhino source scope binds the custom `RhinoSafeSourceJavaExtensions` as `java`, plus separate `cookie`, `source` and `cache` objects. Replacement rules bind a distinct `LegadoRegexJsExtensions`. The inspected host tree contains no `WebJsExtensions` implementation or WebView `request(funName, params, id)` dispatcher.
+  - The host bridge contains a no-argument `RhinoSourceRawResponse.request()` that returns raw request metadata; this is **not** the upstream three-argument WebJsExtensions dispatcher. There is no `upConfig` callback or matching `webViewAwait/webViewGetSourceAwait` operation family in the inspected host source runtime.
+- **Compatibility consequence:** a generic host HTTP `ajax/get/post` method is not equivalent to the WebView bridge's 16-operation contract. In particular, the WebView-backed extraction, async Promise result/error settlement, temporary CacheManager result lifecycle, imported-script/text-file/download operations and config callback are distinct observable behaviors. They need explicit typed host ports or a source-faithful retained implementation; silently omitting the Web scope cannot be called full BookSource compatibility.
+- **Boundary:** do not import Legado's WebView UI/product screens wholesale. Preserve the WebView rule-execution/callback semantics only where source execution reaches them, with operation context, source identity, lifecycle, cancellation, error and callback behavior explicitly mapped.
+- **Status:** this closes one concrete dynamic-dispatch inventory slice and independently confirms the WebJsExtensions host gap. It does not close all inherited method callers, arbitrary external source scripts, reflection/generated ABI, serializer differential fixtures or complete dependency closure. Stage-0 remains in progress; Stage-1 remains **NO-GO**. No production code, tests, Gradle, workflow, database/schema, UI/Reader or source fixtures changed.
