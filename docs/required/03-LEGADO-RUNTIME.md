@@ -4915,3 +4915,12 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 - **Acceptance/exit:** all tests actually execute and pass on one exact SHA; no test is skipped by the helper; API 28/API 35 class-load + split call pass; APK DEX class definition is present; required sanitized reports exist; record run/job/SHA, JUnit counts and APK/report hashes. If Maven 429 persists after three attempts, fail and report external dependency blocking; do not call the suite passed.
 - **Explicit exclusions:** no Runtime-3.2f.45 four-source rerun or edits; no remote-source security bypass; no new Maven dependency or repository mirror; no change to RuleAnalyzer behavior or upstream sources; no release APK claim.
 - **State:** registered; implementation and exact-SHA verification pending.
+
+
+#### Runtime-3.2f.47 scope amendment — honor the four-source pause
+
+- The user explicitly asked to leave the four public-source cases alone for now. The two Actions runs already in flight before that instruction are historical/in-flight snapshots and cannot be retroactively changed; do not launch another four-source E2E run.
+- Extend the .47 allowed files to include `.github/scripts/runtime-webview-provider-probe.sh` and a focused result-verification helper under `.github/scripts/`.
+- On subsequent CI runs, exclude only `PublicLegadoSourcesEndToEndInstrumentedTest` from the generic API 28/API 35 instrumentation command, and skip its report capture/upload requirement. Preserve the four fixture JSON files, source rules, security preflight, prior reports, and failure ledger byte-for-byte.
+- Continue API 28/API 35 execution of the RuleAnalyzer packaging test and unrelated existing instrumentation tests. Require a machine-readable test result proving the exact packaging test method passed on both APIs.
+- No source E2E, source-rule, fixture, or source-security changes are in scope.
