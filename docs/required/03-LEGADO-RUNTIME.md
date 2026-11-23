@@ -4864,3 +4864,8 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 
 
 - #3244 run `45230159003`, job `137887209500`, exact SHA `1e57729b60ac5e95fd60da321aff12fd4782eeb8`: failed at app Gradle script compilation before contract verification or Android instrumentation; `java.util.zip.ZipFile` unresolved in `app/build.gradle.kts`. No runtime-classpath result. Corrected by explicitly importing `java.util.zip.ZipFile` in the follow-up commit.
+
+
+- #3245 / run `45230453615`, job `137888252481`, exact SHA `9b7c030ac9eb8deffe5d332c3ea5b49cb0c71b85`: contract JAR check passed; app runtime-classpath guard failed because direct `debugRuntimeClasspath.files` resolution did not request AGP artifact type and Gradle reported ambiguous `:legado-runtime:debugRuntimeElements` variants. Android instrumentation and APK assembly were skipped; this is not a new APK result.
+- Follow-up correction: resolve `debugRuntimeClasspath` via `incoming.artifactView` with artifact type `android-classes-jar`, then scan the class-bearing artifact files for `io/legado/app/model/analyzeRule/RuleAnalyzer.class`. This only fixes the guard's variant selection; final DEX and device checks remain required.
+- Follow-up commit/CI pending at this closeout point. .46 remains in progress and unaccepted.

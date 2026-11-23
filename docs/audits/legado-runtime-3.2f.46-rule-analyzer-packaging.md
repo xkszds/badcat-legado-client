@@ -35,3 +35,12 @@
 
 - #3244 / run `45230159003`, job `137887209500`, exact SHA `1e57729b60ac5e95fd60da321aff12fd4782eeb8`, failed before Gradle task execution because Kotlin DSL resolves `java.util` as an unresolved script receiver in the unqualified expression `java.util.zip.ZipFile` in `app/build.gradle.kts`. No runtime classpath or emulator result was produced on that SHA.
 - The next commit imports `java.util.zip.ZipFile` explicitly and uses `ZipFile(artifact)`, matching the working import pattern in `integration-contract/build.gradle.kts`. This is a build-script syntax correction only; it does not alter runtime behavior.
+
+
+## Follow-up after #3245 — resolve Android classpath through AGP class-JAR artifact view
+
+- #3245 / run `45230453615`, job `137888252481`, exact SHA `9b7c030ac9eb8deffe5d332c3ea5b49cb0c71b85`: the contract JAR verification passed, but the new app runtime-classpath guard failed before inspecting files. Gradle could not select among `:legado-runtime:debugRuntimeElements` artifacts because direct `Configuration.files` resolution did not request an artifact type; AGP exposed AAR metadata, art-profile, assets, classes-directory, classes-JAR and other variants as ambiguous.
+- This is a validation-task artifact-selection bug, not new evidence that the RuleAnalyzer class is absent from the APK. The existing #3243 DEX class_def result remains the latest direct APK evidence.
+- Narrow correction: request AGP's `android-classes-jar` artifact type through `debugRuntimeClasspath.incoming.artifactView`, then scan the resolved class JARs for the exact class definition. This makes the guard inspect the class-bearing artifacts rather than asking Gradle to materialize an unqualified multi-variant configuration.
+- No new dependency, production Kotlin behavior, upstream source, source fixture, UI, reader, bookshelf or storage change.
+- **Status:** correction committed for exact-SHA CI; not yet verified. APK DEX and API 28/35 class-loading/split tests remain mandatory.

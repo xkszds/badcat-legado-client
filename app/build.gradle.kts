@@ -1,4 +1,5 @@
 import org.gradle.api.tasks.testing.Test
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition
 import java.util.zip.ZipFile
 
 plugins {
@@ -72,7 +73,19 @@ val verifyPinnedLegadoRuleAnalyzerRuntimeClasspath =
         dependsOn(":integration-contract:verifyPinnedLegadoRuntimeJar")
         doLast {
             val classEntry = "io/legado/app/model/analyzeRule/RuleAnalyzer.class"
-            val runtimeFiles = configurations.getByName("debugRuntimeClasspath").files
+            // Resolve the Android classpath as the same transformed class-JAR artifact
+            // type consumed by D8. Reading Configuration.files directly leaves AGP's
+            // multiple debugRuntimeElements artifact variants ambiguous.
+            val runtimeFiles = configurations.getByName("debugRuntimeClasspath")
+                .incoming.artifactView {
+                    attributes {
+                        attribute(
+                            ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE,
+                            "android-classes-jar",
+                        )
+                    }
+                }
+                .artifacts.artifactFiles.files
             val containing = runtimeFiles.filter { artifact ->
                 when {
                     artifact.isDirectory -> artifact.resolve(classEntry).isFile
