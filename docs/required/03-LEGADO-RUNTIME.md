@@ -5093,3 +5093,14 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 - **JsExtensions:** 1,390 lines, 118 Kotlin functions, 48 explicit JavascriptInterface annotations; families include HTTP overloads, WebView/browser/verification, file/archive, Cookie/cache, conversion/crypto/font, UI/logging/locks and reader/theme getters. Annotation count alone is not the ABI.
 - **Still open:** inherited BaseBook/RuleDataInterface/JsEncodeUtils contracts, all overload signatures/defaults/nullability, converter behavior, per-method Rhino object exposure, and exact caller graph.
 - **State:** inventory slice 2 partial; stage-0 in progress; stage-1 **NO-GO**. No production, Gradle, dependency, workflow, test fixture, source rule, UI/Reader, DB/schema or release changes; four paused sources and security preflight untouched.
+
+
+#### Runtime-3.2f.49 inherited data/batch/shared-scope contract slice 3
+
+- **Audit report:** section 21; pinned source paths are BaseBook.kt, RuleDataInterface.kt, BatchContentContext.kt, SharedJsScope.kt and JsEncodeUtils.kt.
+- **RuleDataInterface:** inline HashMap stores values with String.length < 10,000; null deletes inline and big value; values >=10,000 UTF-16 code units move to big-value storage. Reads inline → big store → empty. BaseBook persists variable map JSON and scopes big values through RuleBigDataHelp keyed by bookUrl.
+- **BatchContentContext:** bound to source/book/chapter list/coroutine context/per-index ContentSaveTokens. Chapter identity is index; duplicate URLs require chapter object; URL-only identifiers must uniquely resolve; numeric identifiers are rejected. Locked callbacks check cancellation/closed state, apply replacement/formatting, require request-start token and save through BookHelp; missing chapters fall back to normal single-chapter flow.
+- **SharedJsScope:** jsLib MD5 key, weak-reference LRU(16), separate owner+thread crypto scope, per-key creation locks, CryptoJS/jsLib initialization, preventExtensions, remote library cache cleanup and shared-global-state removal. Scope lifetime/eviction/thread/reset are compatibility behavior.
+- **Inherited JsEncodeUtils:** MD5, symmetric/asymmetric crypto and signing factories, legacy AES/DES/TripleDES, digest and HMAC methods; overloads return helper objects/byte arrays as well as strings. This expands the JS ABI beyond JsExtensions.
+- **Still open:** prove each Badcat KV, batch, scope and crypto implementation against these exact contracts; inventory all inherited interface methods and helper-object semantics.
+- **State:** slice 3 partial; stage-0 in progress; stage-1 **NO-GO**. No production/Gradle/dependency/workflow/test fixture/rule/UI/Reader/DB/schema/release changes; four paused sources and security preflight untouched.
