@@ -4998,3 +4998,23 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
   - `AnalyzeUrl.kt`: 1,053 lines / 53 functions.
 - Exact method groups and limitations are recorded in `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md`, section 11. The 48 annotations are not the full JavaScript ABI: Rhino wrapping, overload resolution, inherited/generated members and reflected lookups still require inspection.
 - **State unchanged:** Runtime-3.2f.49 stage-0 remains in progress; stage-1 remains NO-GO. This is a declaration inventory slice only; no caller graph, behavior parity, build/test/CI/APK/device or compatibility acceptance is implied.
+
+
+#### Runtime-3.2f.49 API inventory slice 2 — model/rule field contracts
+
+- **Pinned source:** `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`; exact paths, constructor field groups, observed defaults, six rule groups, converters, and blob SHAs are recorded in `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md`, section 12.
+- **Model contracts now inventoried:** `BookSource` primary identity, Room key/index, source behavior methods and six serialized rule groups; `Book` Room identity/index, metadata/progress fields and nested `ReadConfig`/`ParagraphAnchor`; `BookChapter` fields and URL-based equality; `BaseBook` and `RuleDataInterface` variable ownership semantics including the 10,000-character normal-vs-big-value threshold.
+- **Rule groups:** ExploreRule, SearchRule, BookInfoRule, TocRule, ContentRule and ReviewRule. Each custom Gson deserializer accepts JSON object or JSON primitive containing serialized JSON; ContentRule custom `toString()` has legacy compatibility-sensitive output.
+- **Runtime surfaces:** BaseSource login/header/variable/concurrency/JS lifecycle; AnalyzeRule parser/context/JS/batch state; AnalyzeUrl request option and response state; JsExtensions host bridge and its HTTP/WebView/browser/verification/Cookie/cache/file/archive/helper groups.
+- **Important contract findings:** BookSource `enabledCookieJar` is nullable with default `true`; several Book fields use dynamic current-time defaults; Book/BookChapter identity semantics are not interchangeable with simplistic display projections; RuleDataInterface routes values at 10,000 characters to big-value storage; AnalyzeRule/AnalyzeUrl/BaseSource all implement or inherit JsExtensions, so host API is cross-cutting.
+- **Limitations:** source declaration inventory only; JVM-generated accessors/overloads, all reflection and Rhino wrapping, all caller edges, malformed serialization behavior, and resolved dependency/resource/native/R8 closure remain open. This does not close stage 0 or imply ABI/behavior parity.
+- **State:** Runtime-3.2f.49 remains in progress; stage 1 remains **NO-GO**. No production code, Gradle, dependency, workflow, fixture/rule, UI/Reader, database/schema or release files changed; four paused public-source cases and security preflight remain untouched.
+
+#### Runtime-3.2f.49 CI evidence update — Actions #3275–#3278
+
+- Verified on 2026-11-24 against each immutable run and latest-attempt job:
+  - #3275 / run `45252693575` / exact SHA `9616c2828b99e5df4f235afcfd6da1fdf8c3f23a` — completed/success; job `assemble-debug` completed/success (job `137966241114`).
+  - #3276 / run `45252767883` / exact SHA `86688612605df5f582da1bfb28571f29a9823674` — completed/success; job `assemble-debug` completed/success (job `137966504293`).
+  - #3277 / run `45252929738` / exact SHA `9a4f0aa070da05f0a4c89ede245eac02edbc1cb4` — completed/success; job `assemble-debug` completed/success (job `137967073454`).
+  - #3278 / run `45252974500` / exact SHA `fdf1a44c283400664ed369d60c7db0e2def31ace` — completed/success; job `assemble-debug` completed/success (job `137967239401`).
+- These are four separate documentation commits and four exact-SHA CI snapshots. The result establishes the recorded `assemble-debug` job outcomes only; it does not establish complete tests, APK release acceptance, source compatibility, or stage-0 completion. The runs do not substitute for the API/caller/dependency audit.
