@@ -5294,3 +5294,23 @@ Each row binds one run to its own immutable commit SHA and its single `assemble-
 - **Rss method-level rule:** `searchBook(key, BookSource)` is confirmed book-source reachable. `put/get`, AnalyzeRule helpers and navigation/photo/add-book functions are inherited into Web/SourceLogin contexts, but each must be classified by annotations and real callsites. This does not authorize importing the unrelated RSS product UI/module wholesale.
 - **Task state:** Runtime-3.2f.50 remains `in_progress`. The previous assumption that the Rss family could be excluded wholesale is superseded. Stage-0 ordered item 1 and item 2 remain open; Stage-1 remains **NO-GO**. No runtime/test/build/workflow/UI/Reader/database/schema/source-fixture changes.
 - **Next action:** continue the exhaustive caller/reflection/dynamic-dispatch map for these inherited methods and their source/login/WebView callback contexts; separately keep serializer differential and pre-R8 Kotlin/JVM metadata as open item-1 evidence.
+
+
+### 25.9 Method-level callback route audit and Actions #3310–#3318 checkpoint
+
+- **Pinned method-route evidence:** architecture audit sections 24.12–24.13. `RssJsExtensions.open` is method/route mixed: `login/search/explore` have real BookSource paths and carry source origin/bookType; `sort/rss` are RssSource product routes. `addBook/showPhoto` remain inherited UI methods with unresolved minimum BookSource use. Do not include or exclude the entire Rss family as one unit.
+- **Runtime-3.2f.50 state:** inherited callback scopes are now mapped to concrete Rhino/WebView bindings, and `searchBook(key, BookSource)` plus `open(login/search/explore)` are confirmed BookSource-reachable. The full transitive/reflection/script-corpus graph, serializer differential fixtures and unminified Kotlin/JVM metadata remain open. Stage-0 ordered items 1 and 2 remain open; Stage-1 remains **NO-GO**.
+- **Completed CI snapshots:**
+  - #3310 / run `45268003806` / job `138019946729` / SHA `7f406dff373fac60da9545bd63861a0c6a4989f7` — completed/success.
+  - #3311 / run `45268586822` / job `138022020352` / SHA `6013dff6180c80a0834033e6cd629dfdfb048225` — completed/success.
+  - #3312 / run `45268631339` / job `138022172204` / SHA `1732fbe296e6ee8843c4c018424cb7e5b970bc4a` — completed/success.
+  - #3313 / run `45268918965` / job `138023185381` / SHA `fb939ec78ef9baf26d4a28077dd8cb5cb3ddc7d8` — completed/success.
+  - #3314 / run `45268962341` / job `138023330801` / SHA `024f2cb3413a25153760123a286230b7f6a7d487` — completed/success.
+  - These are separate exact-SHA CI snapshots. Their green status does not establish source API or callback semantic parity.
+- **#3315 terminal failure diagnosis:** run `45269310020`, job `138024550673`, exact SHA `a1eb412c00419ae6e0941224811158181bd498ea`, completed/failure. Step 8 `Run contract unit tests` failed during Gradle configuration before tests executed: root `build.gradle.kts:1` could not resolve plugin `org.jetbrains.kotlin.plugin.parcelize:2.4.20` from Google, MavenRepo or Gradle Plugin Portal. The `:integration-contract:verifyPinnedLegadoRuntimeJar` / `:integration-contract:test` command therefore did not run to task execution. Step 9 endpoint diagnosis was skipped; later missing-artifact upload errors are downstream consequences, not independent failures. This is a dependency/plugin-resolution blocker, **not evidence of a failing contract assertion**. Do not change Kotlin version, remove Parcelize or alter runtime to mask it; endpoint diagnosis remains unresolved.
+- **Still in progress at this poll:**
+  - #3316 / run `45269422935` / job `138024946955` / SHA `d85e571068391298a30352a2d6f4062dbaa0b813`; active at authentic pinned RuleAnalyzer APK DEX class-definition verification.
+  - #3317 / run `45269978912` / job `138026892939` / SHA `e848c55eb359b933d7dc2a003c34c3c7c8d54b9d`; active at API 28 CookieManager instrumentation. Step 25 third-category app unit suite is marked failure, but job/run are still in progress; its log was not yet retrievable, so root cause and final run conclusion are pending.
+  - #3318 / run `45271096019` / job `138030791760` / SHA `0a46282668ea414a9c61dacbc22be6b79fdace67`; active at contract unit tests, no failed step at this poll.
+- **Next action:** continue polling #3316–#3318 independently, retrieve #3317's terminal job log/JUnit and diagnose the step-25 failure before recording its cause. Do not rerun jobs or transfer results across SHAs.
+- **Restrictions unchanged:** no production/test/Gradle/workflow changes; no Room/schema v1; no Stage-1; no main writes; four paused source cases and security preflight remain untouched.
