@@ -5214,3 +5214,13 @@ Each row binds one run to its own immutable commit SHA and its single `assemble-
 - **Not yet accepted:** this is not a complete JVM/Rhino ABI inventory. Exact compiled descriptors, synthetic/default/bridge members, full annotations/visibility/nullability and serializer edge fixtures remain pending. The #3301 JVM ABI capture step is not yet reached.
 - **State:** Runtime-3.2f.50 remains `in_progress`; Stage-0 ordered item 1 remains open; Stage-1 remains **NO-GO**. No production or build/test/workflow files changed. Four paused source cases and security preflight remain untouched.
 - **Next action:** poll Actions #3301 on exact SHA `4ea24ef01c7c9fa7f8414ec9d3a50e0b0b1c6a68`; after its JVM ABI/artifacts are available, inspect those reports and continue the compiled ABI gap list without treating a host-only ABI report as upstream ABI proof.
+
+
+### 25.2 Compiled host ABI and #3301 closeout
+
+- **#3301:** run `45264329252`, job `138007096785`, exact SHA `4ea24ef01c7c9fa7f8414ec9d3a50e0b0b1c6a68` — completed/success. All 53 job steps completed successfully. This result applies only to that exact documentation commit.
+- **ABI artifact:** `legado-host-jvm-abi`, artifact ID `14863685695`; javap report SHA-256 `7b711a33145eaea1a49a7e693c04ab4b16033bdde75ea0fcac2618fee2a355b2`. Full evidence and exact descriptors are recorded in audit report section 24.5.
+- **Key finding:** compiled `RhinoSafeSourceJavaExtensions` is a standalone class with zero implemented interfaces, 70 fields and 234 methods. Its compiled `getSource()` descriptor returns `java.util.Map`; `getBatchContext()` returns `Object`; `ajaxAll` / `ajaxTestAll` use host-specific `Object` inputs and `RhinoSourceHttpResponse[]` outputs. The report does not contain compiled pinned-upstream class descriptors.
+- **CI interpretation:** API 35 WebView instrumentation, host JVM ABI capture, debug APK assembly/DEX verification and the best-effort source probe steps completed in #3301. The best-effort steps are not blanket proof of all public sources or all source types.
+- **Task state:** Runtime-3.2f.50 remains `in_progress`. Badcat host ABI is now evidenced; pinned-upstream compiled ABI, complete method/annotation/nullability matrix, serializer edge fixtures and reflection/caller closure remain open. Stage-0 ordered item 1 is not closed; Stage-1 remains **NO-GO**.
+- **Other CI snapshots:** documentation-only runs #3302 / run `45266158690` / SHA `bfca5f67584522199240588740adbdcbb7152562`, #3303 / run `45266539225` / SHA `63a67c8dc03fb0fd1c0d97de7e35d117733f2310`, and #3304 / run `45266574029` / SHA `28bc8dddbc2209cf373784e7b5d28ee11d003383` are separate active CI snapshots and must be polled independently. No result may be transferred between these SHAs.
