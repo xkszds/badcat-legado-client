@@ -4810,3 +4810,19 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 - **Changes:** four fixture files plus this audit and checklist closeout only. No production/test/workflow/Gradle/Python/UI/storage changes.
 - **CI:** #3232–#3234 remained in progress at last check on their own SHAs; this report commit's run must be checked separately.
 - **State:** .44 closed; four public fixtures available for a separately preregistered Android runtime instrumentation task. Third-category status remains partial, not full Legado compatibility.
+
+
+### Runtime-3.2f.45 registration — Android instrumentation with public source fixtures
+
+- **Date/category:** 2026-11-23; third category, production-integrated Legado source execution.
+- **Starting HEAD:** `f0bb26e1469bb80d3e875fe9c84e8c728822ff79`; branch remains `integration/legado-upstream-runtime`; pinned Legado remains `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Prerequisite:** .44 added four immutable, license-attributed community BookSource fixtures with SHA-256 and upstream commit/blob provenance. They are public snapshots, not the user's original uploaded corpus.
+- **Goal:** import each fixture through `BadcatReadingEngineFactory.sourceCatalog().importJson()` and exercise the same factory-created production-integrated `ReadingEngine` for Search → Detail → TOC → Content. Do not create a parallel/mock engine or simplify rules.
+- **Source IDs:** `http://www.xtangsanshu.com`; `https://www.bqg.fun`; `https://m.jhsssd.com/`; `https://www.00shu.la/#喜静`. Use each fixture's exact `bookSourceUrl` as the catalog/source ID.
+- **Test behavior:** serial execution by source; search keyword `剑来` where supported; assert structurally valid non-empty results, detail identity, non-empty TOC and at least two non-empty chapter bodies. Keep source/session state isolated between sources using the app's existing source IDs and durable test app sandbox; never modify production source logic. Use bounded per-host timeouts and conservative request spacing. No CAPTCHA bypass, auth injection or aggressive retries.
+- **Diagnostics:** emit a sanitized machine-readable report with fixture SHA-256, source ID/name, stage, status, elapsed time and classified error. Never log full response bodies, cookies, Authorization, tokens or personal data. If transport timing phases are unavailable, mark unavailable.
+- **Result classes:** pass; network/DNS/TLS timeout; HTTP/site response; source-rule failure; runtime/JS/session failure; unsupported search keyword; blocked/credential-required; undetermined. Only all four stages passing counts as that source's E2E pass. A CI process launch or HTTP 200 is not a pass.
+- **Allowed changes:** this registration/closeout; one audit/test report under `docs/audits/`; new Android instrumentation test(s) only under `app/src/androidTest/kotlin/app/badcat/client/runtime/`; report assets only under `app/src/androidTest/assets/legado-sources/` (fixtures are already present); minimal workflow wiring solely to run the instrumentation and upload its sanitized report. No production Kotlin/runtime, source rules, Gradle/dependencies, Python smoke, UI, bookshelf, reader or storage changes.
+- **Validation:** compile/run the instrumentation on configured emulator API levels; preserve unit and existing instrumentation suites; verify report artifact and redaction; record exact run IDs, job IDs, commit SHAs, JUnit counts and artifact hashes. A site/network failure is recorded as such, not suppressed or converted to pass.
+- **Explicit qualification:** this tests four community source snapshots against the current partial host-integrated runtime. It cannot establish complete fixed-upstream Legado API/rule/lifecycle parity. Any production behavior fix requires a separately preregistered task.
+- **State:** registered; test implementation pending.
