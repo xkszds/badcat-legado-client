@@ -302,3 +302,48 @@ The result sets include the core business classes listed above plus RSS, diction
 6. Repeat caller search for Badcat at exact HEAD using a complete repository tree plus source retrieval; GitHub code search returned zero with incomplete index for the Badcat repository, so that zero is not evidence of no callers.
 
 **Status:** caller graph slice 1 is partial discovery evidence only. It does not close the caller/reflection blocker, does not establish dependency closure, and does not change the stage-1 NO-GO decision.
+
+
+## 14. Gradle, resource, manifest and shrinker closure slice 1 — static declarations only (2026-11-24)
+
+The following is a static inspection of the exact pinned Gradle and packaging source. No Gradle configuration or dependency-resolution task was executed during this read-only audit; therefore this is **not** a resolved runtimeClasspath graph.
+
+### 14.1 Project topology and module edges
+
+- `settings.gradle` includes exactly `:app`, `:modules:book`, and `:modules:rhino`. The repository tree at the pinned SHA is complete (3,298 entries, `truncated=false`).
+- `:modules:rhino` is an Android library (namespace `com.script`, minSdk 21, Java/Kotlin toolchain 21). Its direct declared dependencies are `api org.htmlunit:htmlunit-core-js`, plus implementation dependencies for coroutines-core, OkHttp and AndroidX collection. Its consumer rules keep the `org.htmlunit.corejs.javascript.**` runtime package and suppress several optional JDK-linked warnings. The old local `rhino-1.7.14.jar` exists in the tree, but the fileTree dependency is commented out; the declared API is the HtmlUnit CoreJS artifact.
+- `:modules:book` has only AndroidX annotation as a declared dependency and its source tree is EPUB/Umd plus supporting ZIP/PFD classes. Code search for EpubReader/UmdReader finds app-side local-book consumers (`model/localBook/EpubFile.kt`, `UmdFile.kt`) and no source-rule/analyzer caller in the result set. This is positive evidence for excluding this module from the source-runtime closure, subject to the remaining exhaustive caller and reflection scan.
+- The app module depends on both modules and directly declares a much broader product classpath. It also owns Room/KSP, source parser libraries (Jsoup, JsonPath, JsoupXPath), OkHttp/Brotli/Cronet, Gson, Hutool crypto, BouncyCastle, archive, Glide, AndroidX WebKit, media/audio/video, app UI, and other product features. Reusing app classes wholesale therefore risks importing the entire product graph into Runtime.
+
+### 14.2 Source-facing dependency pressure
+
+- Pinned `AnalyzeRule.kt` imports AndroidX Keep, Jsoup nodes, HtmlUnit CoreJS Scriptable/NativeArray/NativeObject/TopLevel, Apache Commons Text, Rhino engine/bindings, Gson, URL/regex and coroutine context/timeout helpers; it constructs XPath, Jsoup and JSONPath analyzers and calls BackstageWebView.
+- Pinned `AnalyzeUrl.kt` imports Android Base64, Media3 MediaItem, GlideUrl, Hutool codecs, Rhino bindings, OkHttp request/response/body types, Cronet and request helpers, CookieManager/CookieStore, BackstageWebView, Glide headers, ExoPlayer helper and multiple AppConfig/NetworkUtils helpers. The class therefore has media/image and app-service references even though its primary role is URL parsing/request execution.
+- Pinned `JsExtensions.kt` imports AppCompatActivity, WebSettings, app source-verification/import/open-url UI, bottom WebView dialog, app config/theme, archive/file utilities, CookieStore, BackstageWebView, event bus, font helpers, Android context and other app-scoped facilities. This interface is not currently an isolated platform-neutral ABI.
+- Pinned `BaseSource.kt` imports Android JavascriptInterface, Hutool AES, ScriptBindings/Rhino, AppConst/AppLog/AppConfig, CacheManager, CookieStore, crypto helpers, shared scope, LoginUiV2 and Gson. Its lifecycle methods directly touch app-owned services.
+- These imports demonstrate why copying only the model/analyzer files into a fresh module cannot satisfy closure. A candidate runtime must either bring authentic source groups and their actual transitive behavior or replace each platform dependency with a typed Host Port while preserving behavior; deleting imports/methods is not acceptable.
+
+### 14.3 Variants, generated code, resources and native packaging
+
+- App build uses compile SDK from root configuration, minSdk 23, targetSdk 36, Java/Kotlin 21, Room KSP schema generation, Glide KSP, view binding and BuildConfig. The only declared product flavor in the inspected block is `app`; debug disables minification, release enables R8 and resource shrinking.
+- `app/build.gradle` applies `download.gradle` and `cronet-loader.gradle`. The latter uses ASM 9.8 at build time and rewrites a pinned Cronet implementation JAR into a build output; it validates exact Cronet version and original JAR SHA before adapting dynamic native-library loading. The download script defines Cronet Java JARs and ABI-specific native libraries; the tree includes seven Cronet JARs under `app/cronetlib`. These are a separate network/native packaging closure and cannot be assumed to be unnecessary without examining the selected runtime request stack.
+- App packaging excludes selected META-INF/proto/source/kotlin-builtins resources and preserves selected JNI symbols; it also sets test schema assets. The app manifest has many product activities/services/providers/permissions, including source login, browser, verification, file import, media/audio/video, book cache/export and MCP services. It must not be copied wholesale into Badcat; only source-runtime-required services/permissions/manifest metadata should be represented through explicit host integration.
+- App ProGuard rules explicitly keep subclasses of JsExtensions, all data entities, CookieStore, CacheManager and StrResponse; parser libraries and selected serialization/reflection targets are also preserved. The Rhino module's consumer rules separately keep HtmlUnit CoreJS JavaScript classes. This is concrete evidence that reflection/JS exposure and model serialization depend on shrinker configuration.
+- The tree contains separate `app/src/cronetRuntime` and `app/src/pdfRuntime` instrumentation manifests; these are test/runtime verification source sets, not ordinary production app manifest components. The app's `cronet-loader.gradle`, Cronet jars, native libraries and proguard rules require a dedicated runtime dependency decision.
+
+### 14.4 Static closure inventory and unresolved items
+
+| Area | Evidence at pinned SHA | Current conclusion |
+|---|---|---|
+| Gradle modules | settings.gradle; app, modules/book, modules/rhino build.gradle | Topology known; source runtime still app-coupled |
+| Rhino engine | modules/rhino/build.gradle, consumer-rules.pro, source tree | Direct dependency surface identified; resolved transitives not generated |
+| Rule parsers | app build deps: Jsoup, JsonPath, JsoupXPath; analyzer imports | Direct declarations identified; transitive graph unresolved |
+| HTTP/Cronet | OkHttp, Brotli, local Cronet JARs, dynamic adapted JAR, native .so and proguard | Packaging closure complex; selected runtime graph not resolved |
+| Persistence | Room runtime/ktx/KSP, generated schemas, entities/converters | App database is not automatically a source-runtime dependency; DAO caller closure still open |
+| JS/reflection | JsExtensions keep rules, Rhino consumer rules, entity keeps | Shrinker requirements visible; all reflective names and generated accessors not inventoried |
+| Resources/manifest | app main manifest, app packaging excludes, assets, Cronet scripts | Product manifest/resources too broad for wholesale reuse; exact minimal runtime resources not yet isolated |
+| Build variants | debug/release, app flavor, instrumentation source sets | Exact selected variant dependency resolution and merged manifest not obtained |
+
+**Stage-0 blocker:** obtain exact pinned resolved runtimeClasspath and compileClasspath reports for relevant variants, artifact coordinates/versions/checksums, transitive native libraries, generated source/schema outputs, merged manifest, resource merge inputs, R8 configuration and kept/reflected class inventory. Static declarations alone cannot determine what the APK actually packages.
+
+**Status:** dependency closure slice 1 is partial. It confirms that the current upstream app module is not a safe minimal runtime boundary and that `:modules:book` is local-file product functionality rather than demonstrated source-rule core. It does not establish the final boundary or allow stage 1.
