@@ -202,6 +202,10 @@ class PublicLegadoSourcesEndToEndInstrumentedTest {
             null
         } catch (cancelled: CancellationException) {
             throw cancelled
+        } catch (error: LinkageError) {
+            addStage(stages, stageName, "fail", SystemClock.elapsedRealtime() - started,
+                "runtime_missing_class_" + error.javaClass.simpleName)
+            null
         } catch (error: Exception) {
             addStage(stages, stageName, "fail", SystemClock.elapsedRealtime() - started,
                 "runtime_js_session_failure_" + error.javaClass.simpleName)

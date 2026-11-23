@@ -55,8 +55,35 @@ dependencies {
 
 // The app consumes this module as a project dependency. Package the separately
 // compiled pinned Legado classes into the published module JAR as well.
+val pinnedLegadoKotlinCompile =
+    tasks.named<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>("compilePinnedLegadoKotlin")
+
 tasks.named<org.gradle.api.tasks.bundling.Jar>("jar") {
+    dependsOn(pinnedLegadoKotlinCompile)
+    // SourceSetOutput does not reliably expose the custom Kotlin destination to
+    // Android's project runtime variant. Add the actual KotlinCompile output
+    // directory explicitly so the pinned upstream classes enter the JAR.
+    from(pinnedLegadoKotlinCompile.map { it.destinationDirectory })
     from(pinnedLegado.output)
+    duplicatesStrategy = org.gradle.api.file.DuplicatesStrategy.EXCLUDE
+}
+
+val verifyPinnedLegadoRuntimeJar = tasks.register("verifyPinnedLegadoRuntimeJar") {
+    dependsOn(tasks.named("jar"))
+    doLast {
+        val archive = tasks.named<org.gradle.api.tasks.bundling.Jar>("jar")
+            .get().archiveFile.get().asFile
+        val requiredClass = "io/legado/app/model/analyzeRule/RuleAnalyzer.class"
+        java.util.zip.ZipFile(archive).use { zip ->
+            check(zip.getEntry(requiredClass) != null) {
+                "Pinned Legado runtime JAR is missing $requiredClass: $archive"
+            }
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn(verifyPinnedLegadoRuntimeJar)
 }
 
 tasks.test {
