@@ -5419,3 +5419,16 @@ Each row binds one run to its own immutable commit SHA and its single `assemble-
 - **Change boundary:** audit/checklist documentation only; no production, tests, Gradle, workflow, UI/Reader, DB/schema or source fixtures changed.
 - **Next ordered action:** continue the remaining documented `JsExtensions` and `AnalyzeRule/AnalyzeUrl` method families, classify their source/JS/WebView caller contexts and host gaps, then complete serializer and compiled ABI gates. Do not begin Stage-1.
 
+
+
+### 26.6 Runtime-3.2f.50 caller-closure continuation — AnalyzeUrl login-check request scope (2026-11-24)
+
+- **Detailed evidence:** architecture audit section 24.18; fixed upstream remains `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Closed in this slice:** mapped the documented login-check JS methods `initUrl`, `getHeaderMap`, `getStrResponse` and `getResponse` to the active AnalyzeUrl instance and the BookSource WebBook TOC request/error-recovery caller path.
+- **Behavior captured:** login-check JS receives `java = AnalyzeUrl`, current `result`, source/book/cookie/cache context; it can update request headers, reconstruct a dynamic URL, retry and return either StrResponse or raw OkHttp Response. The error path also runs the script and preserves original failures when the script returns status 500.
+- **Host gap:** Badcat's source Java bridge is not an AnalyzeUrl object and exposes none of these four methods; generic HTTP methods and raw-response metadata do not reproduce same-request header mutation/replay or the upstream response object contracts.
+- **Scope guard:** only the BookSource WebBook login-check path is included here. Similar loginCheckJs fields in RSS/TTS product flows do not authorize importing those product modules/UI.
+- **Task state:** Runtime-3.2f.50 remains `in_progress`; this closes four documented AnalyzeUrl methods and one BookSource caller path only. Remaining AnalyzeUrl/JsExtensions methods, dynamic callers, compiled ABI/nullability, serializer differential and full dependency closure remain open. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**.
+- **Change boundary:** audit/checklist documentation only; no production, tests, Gradle, workflow, UI/Reader, DB/schema or source fixtures changed.
+- **Next ordered action:** continue the remaining documented AnalyzeRule/AnalyzeUrl and JsExtensions methods/callers; then complete serializer differential fixtures and exact pre-R8 JVM ABI/nullability. Keep Stage-1 blocked until Stage-0 gates close.
+
