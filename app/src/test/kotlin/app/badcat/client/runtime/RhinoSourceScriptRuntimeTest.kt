@@ -1038,6 +1038,28 @@ text + re.test('aa}}')"""
         runtime.clearSourceState(source.id)
     }
     @Test
+    fun normalizesRootScriptableObjectsWithRhinoJsonStringify() = runBlocking {
+        val runtime = RhinoSourceScriptRuntime()
+        val source = BookSource(
+            id = "https://scriptable-result.example/",
+            name = "Scriptable result",
+            baseUrl = "https://scriptable-result.example/",
+        )
+
+        val result = runtime.evaluate(
+            source,
+            """({ label: 'from-' + 'main', nested: { enabled: true }, rows: [{ key: 'account', name: '账号' }] })""",
+        )
+
+        assertTrue("Root JavaScript object should normalize to JSON: $result", result is EngineResult.Success)
+        assertEquals(
+            """{"label":"from-main","nested":{"enabled":true},"rows":[{"key":"account","name":"账号"}]}""",
+            (result as EngineResult.Success).value,
+        )
+        runtime.clearSourceState(source.id)
+    }
+
+    @Test
     fun clearsSourceGlobalsUnderTheEvaluationLock() = runBlocking {
         val runtime = RhinoSourceScriptRuntime()
         val source = BookSource(
