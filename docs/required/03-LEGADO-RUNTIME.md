@@ -4544,3 +4544,44 @@
 - **Live source evidence:** Bixiange GBK POST search → detail → AJAX TOC page → chapter content passed (artifact `14781043263`); Pinshuzhai search → detail → 1,650 TOC chapters → chapter content passed (artifact `14781670055`). Uploaded-corpus sample passed 1/4: 精华书阁 completed search/detail/20 TOC entries/content; 唐三中文 and 零零小说 timed out during search; 笔趣阁fun returned HTTP 404 (artifact `14781700359`). External timeouts/404 are not counted as engine passes. Nyasama smoke and public repository probe steps completed, but do not establish full source coverage.
 - **Scope / behavior:** `decodeImportDocument` distinguishes Sources and SourceUrls; source-only `decode` continues to reject manifest wrappers. Empty URL list is accepted; null wrapper, non-array wrapper, null/blank URL item reject; Gson primitive/object/array coercion is fixture-based from the pinned adapter. No manifest URL was requested or fetched; no catalog/UI caller was changed.
 - **Decision:** the registered parser contract item is closed. This is not remote manifest fetching, catalog UI import, JS source import/export, full BookSource import/export parity, or complete Legado runtime acceptance. Third category remains partially implemented.
+
+
+
+### Runtime-3.2f.35 registration — CookieStore cookieToMap exact parsing parity
+
+- **日期 / 分类：** 2026-11-23；第三类：CookieStore name/value parsing semantics。
+- **起始 branch / HEAD：** `integration/legado-upstream-runtime` / `c13c0fdc0c048a8ce8c3e7a4d601c149788bcc2f`；固定 Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **目标：** 对齐 pinned `CookieStore.cookieToMap` 的分号/等号拆分、空白裁剪、空值过滤、字面 `null` 保留、重复 key 覆盖顺序和 map/header round-trip；只修正已证实的 name/value 解析差异。
+- **上游证据：** `app/src/main/java/io/legado/app/help/http/CookieStore.kt` blob `09720d79f7009db052c080b54fc5fa2805257b64`；`cookieToMap` 使用首个等号拆分，保留非空值或 trim 后为 `null` 的值，key/value 均按上游规则裁剪。
+- **宿主证据：** `app/src/main/java/app/badcat/client/runtime/SharedPreferencesSourceCookieJar.kt` blob `e33895ff829006d5d6fa2fec34c0b5cab885695a`；`parseLegadoCookieMap` 当前会保留空值，且对 value trim 的行为与上游不同。测试：`app/src/test/kotlin/app/badcat/client/runtime/SharedPreferencesSourceCookieJarTest.kt` blob `ee7980c7a79a6cfadc6a9d7fe3f64113095a6bf7`。
+- **允许变更：** 仅上述宿主 CookieJar 文件及其对应测试文件。
+- **验收：** 增加固定差分夹具覆盖空字符串、空白、`null`、多个等号、缺少等号、重复名称、前后空格、分号边界；预期值逐项对应 pinned upstream；既有 persistent/session/WebView 和域桶测试保持通过。
+- **依赖 / 并行：** 无前置依赖。与 .36 限流任务文件完全隔离；不得并行写本分类清单，实施完成后统一顺序 closeout。
+- **排除：** 不改 Cookie 存储结构、域名算法、路径/secure 过滤、WebView 桥接、登录流程、Room/数据库、HTTP client、Gradle、UI、其他类别、上游 SHA 或 `main`。
+- **状态：** 已登记；待实施和 exact-SHA CI 验证。
+
+### Runtime-3.2f.36 registration — initial concurrentRate parsing parity
+
+- **日期 / 分类：** 2026-11-23；第三类：BaseSource concurrentRate initial request contract。
+- **起始 branch / HEAD：** `integration/legado-upstream-runtime` / `c13c0fdc0c048a8ce8c3e7a4d601c149788bcc2f`；固定 Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **目标：** 只对齐首次创建限流记录时 pinned `ConcurrentRateLimiter.fetchStart` 对空值、`0`、正整数、`N/M`、非法数字和非正数的解析/默认行为；保持现有宿主阻塞等待和取消语义不在本任务扩大范围。
+- **上游证据：** `app/src/main/java/io/legado/app/help/ConcurrentRateLimiter.kt` blob `312ab0c8e0952a40d4f6997e898efe4e57f85d17`。初始记录对 `N/M` 的非法 accessLimit fallback 为 1、非法 interval fallback 为 0；纯整数非法时 fallback interval 为 0；空值和精确字符串 `0` 不建记录。后续 `updateConcurrentRate` 是独立语义，不纳入本项。
+- **宿主证据：** `app/src/main/java/app/badcat/client/runtime/LegadoConcurrentRateLimiter.kt` blob `ae1522e0c2db9a883d3fa29b50d004f19bd9c9d8`；当前 parse 失败返回 null 并直接绕过限流。测试：`app/src/test/kotlin/app/badcat/client/runtime/LegadoConcurrentRateLimiterTest.kt` blob `5eb3923fe3e0d4efc8696e3e758ab46442291476`。
+- **允许变更：** 仅上述宿主限流器文件及其对应测试文件。
+- **验收：** 用可确定的解析/记录观察测试覆盖 null、空白、`0`、`0/10`、`2/100`、`x/100`、`2/x`、`x`、`-1/100`、`2/0`；明确哪些值跳过、哪些建立 record、各字段的上游值；原有节流/skip 测试保持通过。
+- **依赖 / 并行：** 无前置依赖。与 .35 Cookie 任务文件完全隔离；不得并行写本分类清单，实施完成后统一顺序 closeout。
+- **排除：** 不实现 `updateConcurrentRate`、不改变窗口算法/等待策略/线程与协程模型、不改 SourceRequestFactory、Rhino、Cookie、Gradle、UI、其他类别、上游 SHA 或 `main`。
+- **状态：** 已登记；待实施和 exact-SHA CI 验证。
+
+### Runtime-3.2f.37 registration — dynamic header request path and login-header caller audit
+
+- **日期 / 分类：** 2026-11-23；第三类：BaseSource dynamic header and login-header behavior。
+- **起始 branch / HEAD：** `integration/legado-upstream-runtime` / `c13c0fdc0c048a8ce8c3e7a4d601c149788bcc2f`；固定 Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **目标：** read-only 追踪 pinned `BaseSource.getHeaderMap(hasLoginHeader)`、inline `@js:`/`<js>` 执行、默认 User-Agent、login header 合并、Cookie 同步的完整上游 caller；对照宿主 `SourceRequestFactory`、`SourceReadingEngine`、请求客户端、Rhino/login ports，确定正确的薄适配位置和差分夹具。
+- **上游证据：** `BaseSource.kt` blob `9f5174d7ad6cb74a7e6b2d1f9260d90e3e8e6baa`；`NativeBaseSource.kt` blob `8313dedf737fe42cb4381535f6e74760c4f31786`；固定 Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **宿主初步证据：** `SourceRequestFactory.kt` blob `cd70c32bc933a6716692e6043d9634dbcbf10e7e` 仅解析静态 JSON header；`SourceLoginSession.kt` blob `47707cce281d9cdaf79da53d16237334261f69a0` 提供单独 login-header wrapper。必须追踪所有 request factory callers，不能仅凭这两个文件下结论。
+- **允许变更：** 仅新增 `docs/audits/legado-runtime-3.2f.37-dynamic-header-caller-audit.md` 和本分类清单本项 closeout。只读审计，不授权生产代码或测试代码修改。
+- **验收：** pinned header 语法/执行/异常/默认 UA/login merge/Cookie 副作用矩阵；全部宿主 caller 图；推荐实现层、文件范围、差分测试与安全限制；GO/NO-GO 和后续独立实现登记。
+- **依赖 / 并行：** 与 .35 Cookie parser 和 .36 rate limiter 的生产/测试文件完全隔离，可并行只读审计；本分类清单更新必须串行。
+- **排除：** 不执行用户书源 JS，不改请求行为、Cookie/login 实现、Rhino API、Gradle、UI、其他类别、上游 SHA 或 `main`。
+- **状态：** 已登记；待审计。
