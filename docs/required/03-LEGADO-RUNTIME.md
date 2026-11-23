@@ -4667,3 +4667,17 @@
 - Detailed artifact IDs/hashes and the complete next-task preregistration are in [the terminal closeout and Runtime-3.2f.39 audit registration](../audits/legado-runtime-3.2f.38-terminal-closeout-and-3.2f.39-registration.md).
 
 Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order audit. It must resolve the per-source Rhino Mutex risk, exact header/login/URL-option precedence, default-UA mapping, cancellation/error behavior and every request caller. No production or test code is authorized until a separate implementation preregistration.
+
+
+#### Runtime-3.2f.39 read-only audit closeout — dynamic header re-entrancy and ordering
+
+- **Audit HEAD:** `249f72c4334df993e6125fff7448cc9e1c0ec962`; report: `docs/audits/legado-runtime-3.2f.39-dynamic-header-reentrancy-order-audit.md`.
+- **Pinned baseline:** `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Result:** `RhinoSourceScriptRuntime.evaluate()` holds the process-wide per-source non-reentrant Mutex while JS bridge callbacks invoke synchronous host HTTP callbacks. A header provider that recursively calls `evaluate()` for the same source can deadlock. Spawning a second runtime is not equivalent because it splits source globals and can repeat `mainJs`. Current APIs do not prove safe same-active-scope evaluation.
+- **Upstream contract:** full-match `<js>...</js>` / `@js:...` inline syntax; normalize JS result before parsing; ordinary header exceptions logged/swallowed, cancellation propagated; configurable `AppConfig.userAgent` (desktop Chrome-style fallback, not WebView UA); eligible same-site login headers; URL-option headers applied last.
+- **Host gaps:** all identified rule-gateway and JS ajax/get/head/post/connect request paths use static `SourceRequestFactory` header parsing; dynamic header JS and default UA are absent. `SourceLoginSessionRequestClient` merges login headers after URL-option/request headers, reversing upstream precedence. Same-site and Cookie callbacks currently receive `source.id` as source key, but equivalence to the pinned source URL/key was not established.
+- **Cookie/login:** host write/remove callbacks exist, but exact source-key identity and case/merge parity remain unproven; no production behavior was changed.
+- **Decision:** audit closed; **NO-GO** for dynamic-header provider implementation. A separate preregistration must prove same active Rhino scope execution without recursive Mutex acquisition, duplicate mainJs, scope leakage or cross-source contamination; centralize all callers; preserve exact precedence, UA preference, same-site decision, cancellation, cookie lifecycle and secret redaction.
+- **Scope:** only the new audit report and this checklist changed. No production/test/Gradle/workflow/UI/storage changes. No CI/JUnit/APK/device result is claimed for this audit.
+- **CI inspection scheduling:** per user instruction, Actions runs numbered 3200 and later are reserved for a unified inspection pass; no individual run numbered 3200 or later was inspected as part of this audit.
+- **Third-category status:** partially implemented; full Legado compatibility remains blocked. The audit does not authorize implementation or close any runtime capability.
