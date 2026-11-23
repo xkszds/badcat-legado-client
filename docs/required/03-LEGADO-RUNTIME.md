@@ -5079,3 +5079,17 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 - **Known divergence:** RhinoScriptEngine differs from pinned upstream blob. Badcat adds callSourceFunction(action, scope) and changes topLevelThis() to resolve the JS-visible globalThis property before falling back to TopLevel.globalThis. Record as local behavior change; require differential callback/this tests and provenance. Badcat code-search index is incomplete, so all call sites remain to be confirmed.
 - **Conclusion:** substantial exact Rhino source slice, not full ABI parity. Custom bridge, changed engine entry point, source-scope wiring and missing authentic BaseSource/JsExtensions remain blockers.
 - **State:** stage-0 remains in progress; stage-1 **NO-GO**. No production source or security policy was changed; four paused source cases and preflight untouched.
+
+
+#### Runtime-3.2f.49 pinned source API/property inventory slice 2
+
+- **Audit report:** section 20; exact pinned Kotlin paths and constructor/property groups are enumerated there.
+- **BaseSource:** source identity/tag, shared JS scope, login URL/UI/v2 callbacks, header/Cookie, encrypted login info, source variables/key-value storage, explore/JS-library refresh, concurrency and evalJS are lifecycle behavior.
+- **BookSource:** all identity/config fields and six rule groups (Explore/Search/BookInfo/TOC/Content/Review), mainJs, eventListener/customButton, login/check/cover JS, serializers, source group mutation, batch support/size and error-comment helpers are inventoried.
+- **Rule models:** nullable field sets for all six models recorded; ContentRule.maxBatchSize=null means batch unsupported; ReviewRule.enabled defaults false. Custom Gson deserializers and BookSource converters require differential JSON tests.
+- **Book/ReadConfig:** full core metadata/progress/config field groups recorded; ParagraphAnchor is (chapterUrl,itemId,chapterPosition), distinct from URL/scrollY. Book methods include lazy config, migration, bookmark, save/delete and converters.
+- **BookChapter:** url/title/isVolume/baseUrl/bookUrl/index/isVip/isPay plus nullable resourceUrl/tag/wordCount/start/end/fragment IDs/variable/imgUrl; equality/hash and chapter identity require explicit tests.
+- **AnalyzeRule:** constructor takes RuleDataInterface, BaseSource, preUpdateJs and isFromBookInfo; owns parser caches, JS scope/bindings, coroutine context, chapter/next URL and BatchContentContext. AnalyzeUrl takes request/source/data/chapter/timeouts/context/header/info/extra parameters and owns request, response, WebView, DNS, cookie and rate-limit behavior. UrlOption has dnsIp alias resolveIp and URL/body JS options.
+- **JsExtensions:** 1,390 lines, 118 Kotlin functions, 48 explicit JavascriptInterface annotations; families include HTTP overloads, WebView/browser/verification, file/archive, Cookie/cache, conversion/crypto/font, UI/logging/locks and reader/theme getters. Annotation count alone is not the ABI.
+- **Still open:** inherited BaseBook/RuleDataInterface/JsEncodeUtils contracts, all overload signatures/defaults/nullability, converter behavior, per-method Rhino object exposure, and exact caller graph.
+- **State:** inventory slice 2 partial; stage-0 in progress; stage-1 **NO-GO**. No production, Gradle, dependency, workflow, test fixture, source rule, UI/Reader, DB/schema or release changes; four paused sources and security preflight untouched.
