@@ -5359,3 +5359,16 @@ Each row binds one run to its own immutable commit SHA and its single `assemble-
 - **Next ordered work:** continue the already-recorded Stage-0 caller/reflection/dynamic-dispatch and source-context closure, then close serializer differential fixtures and unminified ABI/nullability metadata. Do not begin Stage-1, Room/schema v1, production runtime wiring, UI/Reader changes, workflow/Gradle changes, the four paused source cases or security preflight as part of this closeout.
 - **Change boundary:** this closeout changes documentation/evidence only; no production code, tests, Gradle, workflow, database/schema, UI/Reader or source fixtures changed.
 
+
+
+### 26.2 Runtime-3.2f.50 caller-closure continuation — WebView dynamic dispatch slice (2026-11-24)
+
+- **Detailed evidence:** `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md`, section 24.15; pinned Legado SHA remains `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Closed in this slice:** verified exact pinned source blobs and caller path for `WebJsExtensions` and `BackstageWebView`; recorded its `upConfig` callback and 16-name `request(funName, jsParam, id)` dispatch table, plus the injected Promise wrappers and CacheManager/evaluateJavascript success/error settlement. Reconfirmed three separate WebView interfaces (`source`, `java`, `cache`) and operation navigation-context propagation.
+- **Host gap independently confirmed:** Badcat's production Rhino source scope still injects custom `RhinoSafeSourceJavaExtensions` plus separate cookie/source/cache bridges; replacement JS uses a distinct `LegadoRegexJsExtensions`. No equivalent WebJsExtensions implementation, three-argument request dispatcher, upConfig callback or WebView await operation family was found in the inspected host tree. The host raw-response `request()` method is a different no-argument metadata accessor and is not parity.
+- **Rss route boundary reconfirmed:** BookSource-reachable `login/search/explore` routes remain distinct from RssSource-only `sort/rss`; the BookSource `searchBook(key, BookSource)` overload is Rhino callback scope. Do not include/exclude the entire Rss family as one unit.
+- **Interpretation:** generic host HTTP methods do not implement the WebView callback/Promise/config/extraction/file/import behavior. These remain explicit typed-port or faithful-source integration requirements; no Legado WebView product UI import is authorized.
+- **Task state:** Runtime-3.2f.50 remains `in_progress`; this closes one dynamic-dispatch inventory slice only. Full transitive/reflection/script-corpus callers, exact compiled ABI/nullability, serializer differential fixtures and dependency closure remain open. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**.
+- **Change boundary:** audit/checklist documentation only; no production code, tests, Gradle, workflow, UI/Reader, database/schema or source fixtures changed.
+- **Next ordered action:** continue caller/reflection/script-corpus reachability for inherited `RssJsExtensions` helpers and remaining `JsExtensions` source-facing methods; then close all-12 converter differential fixtures and pre-R8 JVM metadata. Do not start Stage-1 or any production integration while these gates remain open.
+
