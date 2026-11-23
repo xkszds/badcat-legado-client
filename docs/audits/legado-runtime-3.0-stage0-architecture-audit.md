@@ -494,3 +494,108 @@ The following files in Badcat `:legado-rhino` have byte-identical Git blob SHA v
 - This is a real local divergence, not a byte-for-byte upstream copy. It may be intentional for the Badcat source-scoped shared-global model, but its callback/this semantics require a pinned differential contract and an explicit provenance note. A symbol search in the Badcat code index was incomplete, so no claim is made here that all call sites were found.
 
 **Conclusion:** the Rhino core contains a substantial exact upstream slice, but exact-file identity for six engine files does not imply full Rhino ABI parity. The modified engine entry point, custom Badcat extensions, missing upstream BaseSource/JsExtensions wrapper registrations and different source-scope wiring remain part of the compatibility blocker.
+
+
+## 20. Core source-facing API/property inventory — pinned declarations slice 2 (2026-11-24)
+
+This section records constructor and property-level evidence from the exact pinned Kotlin declarations. It is a source inventory, not a statement that Badcat has integrated these declarations.
+
+### 20.1 BaseSource lifecycle contract
+
+Pinned path: `app/src/main/java/io/legado/app/data/entities/BaseSource.kt`.
+
+- `BaseSource : JsExtensions` and exposes mutable nullable `concurrentRate`, `loginUrl`, `loginUi`, `header`, `enabledCookieJar`, and `jsLib`.
+- It requires `getTag(): String` and `getKey(): String`; `getSource()` returns the BaseSource itself.
+- Lifecycle helpers include login UI v2 detection/evaluation, login action evaluation, login form/check, login header and login info read/write/clear, encrypted login info, source variables, key/value storage, explore refresh, JS library refresh, concurrency configuration and `evalJS`.
+- `evalJS` builds source ScriptBindings, resolves `getSharedGlobalStateKey()`, and selects/reuses a SharedJsScope or a fresh top-level scope. Therefore source lifecycle includes login state, variable persistence, rate limiting, JS library and scope identity, not only source metadata.
+
+### 20.2 BookSource constructor/property inventory
+
+Pinned path: `app/src/main/java/io/legado/app/data/entities/BookSource.kt`; `BookSource : Parcelable, BaseSource`.
+
+| Field | Type/default | Compatibility significance |
+|---|---|---|
+| bookSourceUrl | String = "" | primary source identity/key |
+| bookSourceName | String = "" | display name |
+| bookSourceGroup | String? = null | grouping |
+| bookSourceType | Int = 0 | text/audio/image/download/video mode |
+| bookUrlPattern | String? = null | detail URL matching |
+| customOrder | Int = 0 | order |
+| enabled / enabledExplore | Boolean = true | source and explore enablement |
+| jsLib | String? = null | inherited source library |
+| enabledCookieJar | Boolean? = true | automatic CookieJar behavior |
+| concurrentRate | String? = null | request concurrency/rate policy |
+| header | String? = null | common headers |
+| loginUrl / loginUi | String? = null | login lifecycle |
+| loginCheckJs / coverDecodeJs | String? = null | login and image decoding JS |
+| bookSourceComment / variableComment | String? = null | metadata |
+| lastUpdateTime | Long = 0 | ordering/update |
+| respondTime | Long = 180000L | response-time ordering |
+| weight | Int = 0 | smart ordering |
+| exploreUrl / exploreScreen | String? = null | discovery |
+| ruleExplore | ExploreRule? = null | explore stage |
+| searchUrl | String? = null | search request |
+| ruleSearch | SearchRule? = null | search stage |
+| ruleBookInfo | BookInfoRule? = null | detail stage |
+| ruleToc | TocRule? = null | TOC stage |
+| ruleContent | ContentRule? = null | content and batch stage |
+| ruleReview | ReviewRule? = null | paragraph review stage |
+| mainJs | String? = null | JS-only source entry point |
+| eventListener / customButton | Boolean = false | event callbacks/custom source buttons |
+
+Important methods beyond data properties: `getSearchRule`, `getExploreRule`, `getBookInfoRule`, `getTocRule`, `getContentRule`, display/group mutation, error comment normalization, JS-source detection, `supportContentBatch()`, `contentBatchSize()`, login JS override, equality and per-rule Gson converters. These methods are behavior and serializer contract, not merely fields.
+
+### 20.3 Rule model field inventory
+
+Pinned paths under `app/src/main/java/io/legado/app/data/entities/rule/`:
+
+- `ExploreRule`: nullable `bookList, name, author, intro, kind, lastChapter, updateTime, bookUrl, coverUrl, wordCount`.
+- `SearchRule`: nullable `checkKeyWord` plus the same ten explore result fields.
+- `BookInfoRule`: nullable `init, name, author, intro, kind, lastChapter, updateTime, coverUrl, tocUrl, wordCount, canReName, downloadUrls`.
+- `TocRule`: nullable `preUpdateJs, chapterList, chapterName, chapterUrl, formatJs, isVolume, isVip, isPay, updateTime, nextTocUrl`.
+- `ContentRule`: nullable `content, subContent, title, nextContentUrl, webJs, sourceRegex, replaceRegex, imageStyle, imageDecode, payAction, callBackJs, contentBatch, maxBatchSize`. `maxBatchSize` is nullable Int; null is explicitly the “batch unsupported” state.
+- `ReviewRule`: nullable URL/rule fields for review URL, avatar/content/time, quote, vote up/down, post/delete, summary URL/list/paragraph/index/count, detail URL/pagination/list/id/avatar/name/badge/content, reply list/id/avatar/name/badge/content; `enabled: Boolean = false`.
+- The rule models use custom Gson deserializers; the six model groups are serialized/deserialized through BookSource.Converters. JSON null/missing/default behavior therefore needs differential fixtures, not just Kotlin property-name matching.
+
+### 20.4 Book and reading configuration inventory
+
+Pinned path: `app/src/main/java/io/legado/app/data/entities/Book.kt`; `Book : Parcelable, BaseBook`.
+
+Core persisted fields include bookUrl, tocUrl, origin, originName, name, author, kind, customTag, coverUrl/customCoverUrl, intro/customIntro, charset, type, group, latestChapterTitle/time, lastCheckTime/count, totalChapterNum, durChapterTitle/index, durVolumeIndex, chapterInVolumeIndex, durChapterPos, durChapterTime, wordCount, canUpdate, order, originOrder, variable, readConfig, syncTime and persistedCoverUrl. Many are nullable; others have meaningful constructor defaults and Room column defaults.
+
+- `ReadConfig` includes reverseToc=false, reverseTocDisplay=false, tocExpanded=true, nullable pageAnim, reSegment=false, nullable imageStyle/useReplaceRule, delTag=0, nullable ttsEngine, splitLongChapter=true, readSimulating=false, nullable startDate/startChapter, dailyChapters=3, openCredits/closeCredits/playMode=0, playSpeed=1.0f, useGlobalAudioSkip=false, manualReplaceRuleIds=emptyList(), nullable paragraphAnchor.
+- `ParagraphAnchor(chapterUrl, itemId, chapterPosition)` is a structured location anchor. A URL/scrollY-only Badcat state is not a field-for-field substitute.
+- Book methods include lazy/default config behavior, display/custom metadata, read settings getters/setters, simulation/unread counts, bookmark creation, migration, save/delete and serialization converters. These are part of the model lifecycle and may trigger DAO/cache side effects.
+
+### 20.5 BookChapter inventory
+
+Pinned path: `app/src/main/java/io/legado/app/data/entities/BookChapter.kt`.
+
+Constructor fields: `url, title, isVolume, baseUrl, bookUrl, index, isVip, isPay` with empty/false/zero defaults; nullable `resourceUrl, tag, wordCount, start, end, startFragmentId, endFragmentId, variable, imgUrl`. The entity also has lazy variable map, big-variable storage, update, equality/hash identity, display title, absolute URL and filename helpers. The URL equality/hash behavior and chapter index/book ownership are separate identity concerns that need explicit tests.
+
+### 20.6 AnalyzeRule and AnalyzeUrl constructor/state contract
+
+- `AnalyzeRule(ruleData: RuleDataInterface? = null, source: BaseSource? = null, preUpdateJs: Boolean = false, isFromBookInfo: Boolean = false)` owns mutable content/baseUrl/redirectUrl, parser instances for XPath/Jsoup/JSONPath, source-rule and regex caches, compiled script cache, local bindings, weak top-scope reference, eval call count, coroutine context, chapter, nextChapterUrl and BatchContentContext. Its API includes string/list/element extraction, rule splitting/modes, JS evaluation, source variable get/put, AJAX, book/TOC refresh and fluent context/data/chapter/batch setters.
+- `AnalyzeUrl` constructor accepts URL, key, page, speak text/speed, base URL, BaseSource, RuleDataInterface, BookChapter, read/call timeout, coroutine context, optional header map/login-header flag, info map and extra parameters. It owns parsed URL/ruleUrl/header/body/method/proxy/timeout/redirect/retry/WebView/WebJS/bodyJS/DNS/cookie/rate-limit state. Its response APIs include string response, raw Response, byte array, input stream, upload, Glide URL and media item helpers.
+- `UrlOption` supports method, charset, headers, body, origin, retry, type, WebView, WebJS, timeout, followRedirects, dnsIp (JSON alias `resolveIp`), URL JS, body JS, serverID and WebView delay. The URL parser's defaults/nullability and serialized alias are compatibility-sensitive.
+- `AnalyzeRule` and `AnalyzeUrl` both implement JsExtensions; their actual JS-visible methods include context-specific overrides (source, tag, batch context, navigation context) and must be compared as a combined interface + wrapper contract.
+
+### 20.7 JsExtensions source-facing method families
+
+Pinned path: `app/src/main/java/io/legado/app/help/JsExtensions.kt`; 1,390 lines, 118 Kotlin function declarations, 48 explicit `@JavascriptInterface` annotations. Method families observed:
+
+1. source/tag/navigation/batch context, cacheContent and refresh callbacks;
+2. ajax/ajaxAll/ajaxTestAll/connect overloads;
+3. hidden WebView, get-source/override-URL, browser start/await and video player;
+4. verification code and source script import;
+5. file cache/download, cookie access, HTTP GET/HEAD/POST overloads;
+6. string/byte/base64/hex/URI/time/HTML/traditional-Chinese conversions;
+7. safe file read/write/delete and ZIP/7z/RAR archive extraction;
+8. ZIP/7z/RAR content access and TTF/font query/replacement;
+9. URL construction, toast/log/type/random UUID/Android ID;
+10. open URL, browser UI, singleFlight/lock/tick;
+11. reader config/theme getters.
+
+This is a broad host surface. The exact overload signatures, default parameters, nullable returns, thrown errors, thread/coroutine behavior and object return types must be inventoried per method. The 48 annotation count is not an ABI count because RhinoWrapFactory also wraps ordinary Java objects and applies custom property/setter policies.
+
+**Status:** property/constructor inventory slice 2 is recorded. It does not yet close every inherited BaseBook/RuleDataInterface/JsEncodeUtils/RuleData/UrlOption field, every Gson converter/default, or every JsExtensions overload signature. Stage-0 remains partial; stage-1 remains **NO-GO**.
