@@ -4697,3 +4697,16 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 - **状态：** 已 preregister，待只读审计。
 
 详细登记见 `docs/audits/legado-runtime-3.2f.40-concurrent-rate-update-lifecycle-audit.md`。
+
+
+#### Runtime-3.2f.40 audit closeout — concurrent-rate update and lifecycle
+
+- **Audit HEAD:** `a45faf2104b220fe6712c9ab10f952abc2e76b3d`; report `docs/audits/legado-runtime-3.2f.40-concurrent-rate-update-lifecycle-audit.md`.
+- **Pinned evidence:** `ConcurrentRateLimiter.kt` `312ab0c8e0952a40d4f6997e898efe4e57f85d17`; `BaseSource.kt` `9f5174d7ad6cb74a7e6b2d1f9260d90e3e8e6baa`; `BookSource.kt` `7f63496ebf25c820b7d0c715d2fbce8e7bd29b9c`; `AnalyzeUrl.kt` `d898c88dfd844d73f06d9396d0b46f39939f7e6c`.
+- **Host evidence:** limiter `5b839d1b08f40879b913e39d9f1ecf4de2052fa7`; tests `e2cc111e33e67804bf23eea252ef90cd001127ba`; Rhino runtime `879d6ed978894b16271cf5207348176fd040eda7`; source extension `47707cce281d9cdaf79da53d16237334261f69a0`; catalog `1f3c9cd879e58f533f57352e3074c667c06c664b`; codec `bee3d5c79049613894f2251f085bb9beff6a45c6`.
+- **Pinned contract:** `BaseSource.putConcurrent` delegates to `updateConcurrentRate(getKey(), value)`; BookSource.getKey is bookSourceUrl. Strict positive `N/M` and positive integer updates preserve record time/frequency; invalid/zero/negative/blank/malformed values preserve the existing record unchanged. New valid records start frequency 0. This differs from .36's first-fetch parser.
+- **Host gaps:** imported bookSourceUrl maps to host source.id, so key identity aligns; however `scope.source` is `RhinoSourceLoginExtensions` and has no `putConcurrent`. Host `acquire` rewrites access/interval from source.concurrentRate on every call rather than applying explicit script updates. Host limiter has no record removal; source catalog replacement/removal clears script runtime state but not rate records, unlike pinned edit/upsert invalidation callers.
+- **Separate gap:** rate-limit callback is wired into selected JS helper calls only; pinned AnalyzeUrl wraps ordinary request execution in withLimit. Full rule-gateway caller coverage must be separately registered.
+- **Decision:** audit closed; **NO-GO** for a standalone update helper. Next bounded implementation must connect strict update semantics to the real `source.putConcurrent` object, stop per-acquire config refresh, invalidate records on source replacement/removal, and add differential tests. Wait/cancellation remains excluded. Ordinary AnalyzeUrl request-path rate limiting is separate.
+- **Scope:** only audit report and this checklist changed. No production/test/build/CI/APK/device evidence claimed. Actions #3200+ remain reserved for unified inspection; none were inspected individually.
+- **Third-category status:** partially implemented; this audit does not close complete concurrent-rate or full Legado compatibility.
