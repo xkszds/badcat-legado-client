@@ -4584,7 +4584,7 @@
 - **验收：** pinned header 语法/执行/异常/默认 UA/login merge/Cookie 副作用矩阵；全部宿主 caller 图；推荐实现层、文件范围、差分测试与安全限制；GO/NO-GO 和后续独立实现登记。
 - **依赖 / 并行：** 与 .35 Cookie parser 和 .36 rate limiter 的生产/测试文件完全隔离，可并行只读审计；本分类清单更新必须串行。
 - **排除：** 不执行用户书源 JS，不改请求行为、Cookie/login 实现、Rhino API、Gradle、UI、其他类别、上游 SHA 或 `main`。
-- **状态：** 已登记；待审计。
+- **状态：** 只读审计已关闭；动态 Header 实现待单独登记。
  
 #### Runtime-3.2f.37 audit closeout — dynamic header and login-header caller audit
 
