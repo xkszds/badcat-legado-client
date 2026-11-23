@@ -64,6 +64,36 @@ configurations.configureEach {
     }
 }
 
+// Verify the Android runtime variant itself, not only integration-contract:jar.
+// This catches project-variant selection that omits custom pinned upstream outputs.
+val verifyPinnedLegadoRuleAnalyzerRuntimeClasspath =
+    tasks.register("verifyPinnedLegadoRuleAnalyzerRuntimeClasspath") {
+        dependsOn(":integration-contract:verifyPinnedLegadoRuntimeJar")
+        doLast {
+            val classEntry = "io/legado/app/model/analyzeRule/RuleAnalyzer.class"
+            val runtimeFiles = configurations.getByName("debugRuntimeClasspath").files
+            val containing = runtimeFiles.filter { artifact ->
+                when {
+                    artifact.isDirectory -> artifact.resolve(classEntry).isFile
+                    artifact.isFile && artifact.extension.equals("jar", ignoreCase = true) ->
+                        java.util.zip.ZipFile(artifact).use { it.getEntry(classEntry) != null }
+                    else -> false
+                }
+            }
+            check(containing.isNotEmpty()) {
+                val projectArtifacts = runtimeFiles.filter {
+                    it.name.contains("integration-contract", ignoreCase = true) ||
+                        it.path.contains("integration-contract", ignoreCase = true)
+                }.joinToString { it.absolutePath }
+                "Android debugRuntimeClasspath is missing $classEntry; " +
+                    "integration-contract artifacts: [$projectArtifacts]"
+            }
+            containing.forEach {
+                logger.lifecycle("PINNED_RULE_ANALYZER_RUNTIME_CLASSPATH=${it.absolutePath}")
+            }
+        }
+    }
+
 dependencies {
     implementation(project(":integration-contract"))
     // Compile and package the authentic pinned Legado rule-model slice; runtime orchestration is not wired yet.

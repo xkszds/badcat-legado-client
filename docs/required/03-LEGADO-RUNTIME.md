@@ -4851,3 +4851,13 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 - **Acceptance:** pinned class definition present in final app DEX; device class loading and analyzer smoke pass; pre-existing tests pass; sanitized report artifact exists; exact SHA/run/job/JUnit/APK hashes recorded. Gradle build success alone is insufficient.
 - **Exclusions:** no upstream Legado source, rule semantics, parser algorithm, HTTP/network behavior, source fixtures, Rhino/Header, UI, bookshelf, reader, storage or release signing changes. Do not remove BQG JS security block.
 - **State:** registered; artifact/variant trace and packaging fix pending.
+
+#### Runtime-3.2f.46 progress — JAR pass but Android runtime variant still omits RuleAnalyzer
+
+- #3241 run `45226036896`, job `137872657857`, exact SHA `54607dfb3aa0e6baa43c469dfdd3df71de917710`: contract JAR verification passed; API35 target class loading failed with `ClassNotFoundException`.
+- #3242 run `45226425208`, job `137874040705`, exact SHA `027eb9f5f62d1c767b26adb5af8dcec3da2914bc`: workflow stopped at Kotlin DSL script compilation because `java.util.zip.ZipFile` was unresolved in the build script.
+- #3243 run `45226755463`, job `137875189373`, exact SHA `fb05284d711f3475f3f36010ed1a3336987651aa`: corrected contract JAR check passed, but API28/API35 target APK still failed to load RuleAnalyzer. Downloaded debug APK artifact `14847140711` was inspected across all 14 DEX class_def tables: only `app.badcat.engine.PinnedLegadoRuleAnalyzer` is defined; `io.legado.app.model.analyzeRule.RuleAnalyzer` is absent.
+- Root cause narrowed: adding the custom Kotlin output to the `:integration-contract:jar` task does not ensure Android's selected project runtime variant contains that output.
+- Next patch adds the output directory to the `:integration-contract` main SourceSetOutput and adds an explicit `:app:verifyPinnedLegadoRuleAnalyzerRuntimeClasspath` check before emulator tests. Final acceptance still requires APK DEX class definition and target class loading/callability.
+- Report: `docs/audits/legado-runtime-3.2f.46-rule-analyzer-packaging.md`.
+- **State:** diagnosis confirmed; variant fix submitted for CI, not yet verified. Do not close .46 until exact-SHA CI and APK DEX/device checks pass.

@@ -60,6 +60,13 @@ dependencies {
 val pinnedLegadoKotlinCompile =
     tasks.named<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>("compilePinnedLegadoKotlin")
 
+// Publish the custom upstream Kotlin output as part of the main source-set
+// output. Android project dependencies may consume the classes-directory
+// variant instead of the custom Jar task; Jar-only inclusion is insufficient.
+sourceSets.named("main") {
+    output.dir(pinnedLegadoKotlinCompile.map { it.destinationDirectory })
+}
+
 tasks.named<org.gradle.api.tasks.bundling.Jar>("jar") {
     dependsOn(pinnedLegadoKotlinCompile)
     // SourceSetOutput does not reliably expose the custom Kotlin destination to

@@ -189,6 +189,9 @@ jobs:
       - name: Run authentic Legado runtime model contract tests
         run: gradle --no-daemon :legado-runtime:testDebugUnitTest
 
+      - name: Verify pinned RuleAnalyzer on Android runtime classpath
+        run: gradle --no-daemon :app:verifyPinnedLegadoRuleAnalyzerRuntimeClasspath
+
       - name: Generate pinned Legado JavaScript API inventory
         run: |
           python3 -m py_compile .github/scripts/legado-js-abi-inventory.py
