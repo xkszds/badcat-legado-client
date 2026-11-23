@@ -63,3 +63,10 @@
 - **New diagnosis:** the attempted publication used `SourceSetOutput.dir(...)`, which registers an additional output/resource directory, not an additional `classesDirs` entry. The explicit JAR assembly and JAR-level check can therefore pass while the classes-directory variant consumed by Android omits the compiled custom Kotlin output. This is the leading concrete explanation consistent with the APK evidence; the next exact-SHA device test must prove it.
 - **Narrow correction submitted next:** register the pinned Kotlin compile destination with `SourceSetOutput.classesDirs.from(...)`, and strengthen the contract verifier to assert that the exact `RuleAnalyzer.class` file is present in the published main classes directories as well as the JAR. No production source, dependency, source fixture, UI, reader, storage, or rule behavior is changed.
 - .46 remains **in progress / not accepted** until contract classesDirs + JAR checks, app runtime classpath check, API 28/API 35 `Class.forName` and actual `split` call, and APK DEX class-definition inspection all pass on the same exact SHA.
+
+
+## Follow-up after #3248 — use the Gradle ConfigurableFileCollection contract
+
+- #3248 / run `45235395096`, exact SHA `3525c6928eabc1dd80cda5bc1b034919c464a2e9`: Gradle stopped during Kotlin DSL script compilation at `output.classesDirs.from(...)`; `classesDirs` is exposed as a read-only `FileCollection`, so direct `.from()` is not available. No tests, APK assembly, DEX or device result ran on this SHA.
+- Gradle's `SourceSetOutput` API documents that `classesDirs` may safely be cast to `ConfigurableFileCollection`. Correct the registration by casting to `org.gradle.api.file.ConfigurableFileCollection` before adding the pinned Kotlin compile destination. The intent and task scope are unchanged.
+- **Status:** DSL correction committed for a new exact-SHA run; .46 remains in progress and unaccepted.

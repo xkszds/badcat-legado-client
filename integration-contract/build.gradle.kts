@@ -65,7 +65,8 @@ val pinnedLegadoKotlinCompile =
 // as output.dir(...) would classify the .class files as resources and leave the
 // Android classes-directory variant without the pinned RuleAnalyzer definition.
 sourceSets.named("main") {
-    output.classesDirs.from(pinnedLegadoKotlinCompile.map { it.destinationDirectory })
+    (output.classesDirs as org.gradle.api.file.ConfigurableFileCollection)
+        .from(pinnedLegadoKotlinCompile.map { it.destinationDirectory })
 }
 
 tasks.named<org.gradle.api.tasks.bundling.Jar>("jar") {
