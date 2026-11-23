@@ -122,7 +122,7 @@ class LegadoSourceLoginUiV2ServiceTest {
     fun rendersLoginUiV2ForSourcesWithMainJsInitialization() = runBlocking {
         val runtime = RecordingRuntime(ArrayDeque(listOf("""{"rows":[{"name":"账号","type":"text","key":"username"}]}""")))
         val service = LegadoSourceLoginUiV2Service(runtime)
-        val mainJs = "function sharedLoginHelper(){ return true; }\\nfunction loginUi(state){ return {rows:[]}; }"
+        val mainJs = "function sharedLoginHelper(){ return true; }\nfunction loginUi(state){ return {rows:[]}; }"
         val mainJsSource = source().copy(
             mainJs = mainJs,
             loginUrl = "<js>function legacyLoginUi(){ return 'must-not-run'; }</js>",
@@ -140,7 +140,7 @@ class LegadoSourceLoginUiV2ServiceTest {
     fun dispatchesLoginActionsForSourcesWithMainJsInitialization() = runBlocking {
         val runtime = RecordingRuntime(ArrayDeque(listOf("""{"state":{"step":2},"close":true}""")))
         val service = LegadoSourceLoginUiV2Service(runtime)
-        val mainJs = "function sharedLoginHelper(){ return true; }\\nfunction loginAction(action,state,form){ return {state:state,close:true}; }"
+        val mainJs = "function sharedLoginHelper(){ return true; }\nfunction loginAction(action,state,form){ return {state:state,close:true}; }"
         val mainJsSource = source().copy(
             mainJs = mainJs,
             loginUrl = "<js>function legacyLoginAction(){ return 'must-not-run'; }</js>",
