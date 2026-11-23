@@ -4508,3 +4508,17 @@
 - **Acceptance level:** read-only audit closed; third category remains partially implemented.
 
 - **Audit correction (2026-11-23):** clarified that upstream ContentRuleCompatibilityTest is not a Badcat host test and that :legado-runtime currently compiles only the selected rule model/Gson source slice, not BookSource.kt/BookSource.Converters. The .33 follow-up now requires an architecture decision before host converter tests can be registered. No production/test code changed.
+
+
+### Runtime-3.2f.34 registration — read-only BaseSource inherited API and host parity audit
+
+- **日期 / 分类：** 2026-11-23；第三类：BookSource inherited BaseSource contract.
+- **起始 branch / HEAD：** `integration/legado-upstream-runtime` / `aad72671de37bf9104d1b605786a5a55009b2ae0`；固定 Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **触发依据：** .32/.33 confirmed that host BookSource projection duplicates selected BaseSource fields, but field presence does not prove inherited method behavior, request/cookie/login semantics, or lifecycle compatibility. The master gate explicitly requires inherited methods and host ports to be audited.
+- **目标：** read-only inventory of the pinned BaseSource interface/default methods/extensions and all BookSource-relevant callers; compare each property/method with host BookSource DTO, SourceRequestFactory, request client, cookie jar, login/session services and Rhino bridge. Classify exact parity, adapted behavior, unsupported behavior, or unresolved items; identify smallest independently testable follow-ups.
+- **必须审查：** resolve exact pinned BaseSource path and blob SHA from fixed tree; inspect all declared properties/methods, implementers and direct callers (tag/key/login JS, headers, cookies, concurrency/rate, script library, variables, request helpers and callbacks where present). Host: ReadingEngine.BookSource, SourceRuntime, SourceRequestFactory, OkHttpSourceRequestClient, SourceLoginSessionRequestClient, SharedPreferencesSourceCookieJar, RhinoSourceScriptRuntime, BadcatReadingEngineFactory and relevant tests. Record exact file/blob evidence; do not infer method equivalence from similarly named fields.
+- **允许变更：** only add `docs/audits/legado-runtime-3.2f.34-basesource-host-parity.md` and update this checklist. No production/test/Gradle/workflow/resource/UI/storage changes.
+- **验收：** full inherited API inventory; property defaults/nullability; method input/output/error/side-effect/lifecycle semantics; upstream caller map; host mapping and gap matrix; exact evidence; GO/NO-GO and minimal separately registered implementation slices.
+- **排除：** no BaseSource implementation or API additions; no Cookie/login/HTTP behavior changes; no schema/data migration; no JS runtime expansion; no BookSource UI/catalog changes; no upstream pin, fourth/fifth category or `main` changes.
+- **并行 / CI：** .30 parser run `45089612632` validates only implementation SHA `41f95a6b72149d0ba6d00c2cf1dff7119a97d9f6` and remains independent. This read-only audit modifies only new audit documentation and this checklist; it does not touch .30 codec/test files. No CI evidence is borrowed.
+- **状态：** 已 preregister；尚未开始审计。只读范围，不授权生产实现。
