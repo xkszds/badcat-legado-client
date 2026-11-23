@@ -557,10 +557,11 @@ class RhinoSourceScriptRuntime(
     private suspend fun stringifyScriptableResult(value: Scriptable): String? {
         val topScope = value.parentScope?.let { ScriptableObject.getTopLevelScope(it) }
             ?: return null
+        val coroutineContext = currentCoroutineContext()
         val cx = Context.enter() as RhinoContext
         val previousCoroutineContext = cx.coroutineContext
         val previousAllowScriptRun = cx.allowScriptRun
-        cx.coroutineContext = currentCoroutineContext()
+        cx.coroutineContext = coroutineContext
         cx.allowScriptRun = true
         cx.recursiveCount++
         try {
