@@ -5104,3 +5104,13 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 - **Inherited JsEncodeUtils:** MD5, symmetric/asymmetric crypto and signing factories, legacy AES/DES/TripleDES, digest and HMAC methods; overloads return helper objects/byte arrays as well as strings. This expands the JS ABI beyond JsExtensions.
 - **Still open:** prove each Badcat KV, batch, scope and crypto implementation against these exact contracts; inventory all inherited interface methods and helper-object semantics.
 - **State:** slice 3 partial; stage-0 in progress; stage-1 **NO-GO**. No production/Gradle/dependency/workflow/test fixture/rule/UI/Reader/DB/schema/release changes; four paused sources and security preflight untouched.
+
+
+#### Runtime-3.2f.49 JsExtensions/JsEncodeUtils declaration diff slice 4
+
+- **Audit report:** section 22; lexical Kotlin declaration comparison between pinned upstream JsExtensions + JsEncodeUtils and Badcat RhinoSafeSourceJavaExtensions.
+- **Counts:** upstream JsExtensions 122 declarations/81 unique names; inherited JsEncodeUtils 30/27; combined upstream unique names 108. Badcat bridge 225 declarations/179 unique names (many are helper/private implementation methods and are not ABI parity).
+- **Missing same-name declarations:** canOpenSourceUi, getReadBookConfig/getReadBookConfigMap, getThemeConfig/getThemeConfigMap/getThemeMode, getVerificationCode, openUrl/openVideoPlayer, refreshBookInfo/refreshBookToc/refreshContent, showBrowser/startBrowser/startBrowserAwait, webView/webViewGetSource/webViewGetOverrideUrl.
+- **Overload gaps:** ajaxAll and ajaxTestAll each 2 upstream vs 1 Badcat; webView/browser/UI callback families have no Badcat same-name method; get has 2 upstream vs 3 Badcat; other selected methods match counts only, not necessarily signatures or return types.
+- **Caveat:** lexical declaration-name diff only; it does not resolve JVM bridges, inherited/generated methods, visibility, annotations, exact parameter/default/nullability/return signatures, Rhino wrappers or runtime dispatch. Badcat bridge returns Map from getSource, null batch context and EmptyCoroutineContext navigation context.
+- **State:** explicit ABI gap list recorded; stage-0 remains partial and stage-1 **NO-GO**. No production changes; four paused sources and security preflight untouched.
