@@ -116,9 +116,10 @@ class LegadoSourceLoginUiV2Service(
     }
 
     private fun loginScript(source: BookSource): String? {
-        // Pinned BookSource.getLoginJs() selects the complete JS source mainJs
-        // before falling back to BaseSource.loginUrl parsing.
-        source.mainJs?.takeIf { it.isNotBlank() }?.let { return it }
+        // RhinoSourceScriptRuntime initializes nonblank mainJs once in the
+        // source scope before evaluating this hook. Do not prepend it again:
+        // top-level let/const declarations would be redeclared.
+        if (!source.mainJs.isNullOrBlank()) return ""
         val raw = source.loginUrl?.takeIf { it.isNotBlank() } ?: return null
         val text = raw.trim()
         val inline = INLINE_JS.matchEntire(text)?.groupValues?.get(1)

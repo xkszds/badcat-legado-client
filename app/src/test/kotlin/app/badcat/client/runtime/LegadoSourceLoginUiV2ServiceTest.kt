@@ -131,8 +131,8 @@ class LegadoSourceLoginUiV2ServiceTest {
         assertTrue(result is EngineResult.Success)
         assertEquals(mainJsSource.mainJs, runtime.capturedSource?.mainJs)
         val executed = requireNotNull(runtime.capturedScript)
-        assertTrue(executed.startsWith(mainJs))
-        assertTrue(executed.contains("loginUi(JSON.parse(String(__loginState)))"))
+        assertTrue(executed.trimStart().startsWith("loginUi(JSON.parse(String(__loginState)))"))
+        assertTrue(!executed.contains("sharedLoginHelper"))
         assertTrue(!executed.contains("legacyLoginUi"))
     }
 
@@ -149,8 +149,8 @@ class LegadoSourceLoginUiV2ServiceTest {
         assertTrue(result is EngineResult.Success)
         assertEquals(mainJsSource.mainJs, runtime.capturedSource?.mainJs)
         val executed = requireNotNull(runtime.capturedScript)
-        assertTrue(executed.startsWith(mainJs))
-        assertTrue(executed.contains("loginAction(String(__loginAction)"))
+        assertTrue(executed.trimStart().startsWith("loginAction(String(__loginAction)"))
+        assertTrue(!executed.contains("sharedLoginHelper"))
         assertTrue(!executed.contains("legacyLoginAction"))
     }
 
@@ -167,6 +167,24 @@ class LegadoSourceLoginUiV2ServiceTest {
         val executed = requireNotNull(runtime.capturedScript)
         assertTrue(executed.startsWith("function loginUi(state)"))
         assertTrue(executed.contains("loginUi(JSON.parse(String(__loginState)))"))
+    }
+
+    @Test
+    fun mainJsInitializesLoginUiOnceInTheRealRhinoSourceScope() = runBlocking {
+        val mainJs = """
+            let loginInitializationMarker = "from-main-js";
+            function loginUi(state) {
+                return { rows: [{ name: loginInitializationMarker, type: "text", key: "username" }] };
+            }
+        """.trimIndent()
+        val mainJsSource = source().copy(
+            mainJs = mainJs,
+            loginUrl = "<js>throw new Error('loginUrl must not be selected for a JS source');</js>",
+        )
+        val result = LegadoSourceLoginUiV2Service(RhinoSourceScriptRuntime()).render(mainJsSource)
+        val rows = (result as EngineResult.Success<List<LegadoLoginUiV2.Row>>).value
+        assertEquals("from-main-js", rows.single().name)
+        assertEquals("username", rows.single().key)
     }
 
     @Test
