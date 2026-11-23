@@ -4629,4 +4629,18 @@
 - **Changed files:** `LegadoSourceLoginUiV2Service.kt` and `LegadoSourceLoginUiV2ServiceTest.kt` only.
 - **Change:** JS sources select their existing `mainJs`-initialized Rhino source scope and execute the login hook there; the service no longer falls back to `loginUrl` for nonblank mainJs. It does not prepend mainJs again because RhinoSourceScriptRuntime initializes it once before the hook. Added render/action recording assertions, blank-mainJs @js fallback, and a real Rhino test with a top-level lexical binding to detect duplicate initialization.
 - **Intermediate commits:** initial implementation `d1f7736bb2fb5340a4096c551f7d427420ed1811` was corrected after identifying duplicate mainJs initialization; final code is only the exact SHA above.
-- **Test status:** no local test execution is claimed. Exact-SHA CI is pending; do not mark task accepted until #3213 reaches terminal success and its app JVM test report is inspected.
+- **Test status:** no local test execution is claimed. Exact-SHA CI #3213 / run 45093761811 failed; the app unit suite completed 330 tests with 1 failure in mainJsInitializesLoginUiOnceInTheRealRhinoSourceScope (ClassCastException at LegadoSourceLoginUiV2ServiceTest.kt:185). Descendant documentation runs 45093892515 and 45093940981 reproduce the same failure. The task is blocked pending the registered correction below; no acceptance.
+
+
+#### Runtime-3.2f.38 CI failure diagnosis and correction registration
+
+- 日期 / 分类：2026-11-23；第三类：Login UI v2 result normalization，作为 Runtime-3.2f.38 的失败修正，不另开无关功能。
+- 起始 branch / HEAD：integration/legado-upstream-runtime / 638fa91933d1e9673ac76a5c35aff79435ec215c；固定 Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a。
+- 失败证据：exact implementation commit 19dd06f09b1ce896d3c0464ca5907651b4fcd897 的 CI run #3213 / 45093761811；后续 descendant runs 45093892515 与 45093940981 复现。app:testDebugUnitTest 为 330 tests / 1 failure；唯一失败为 LegadoSourceLoginUiV2ServiceTest.mainJsInitializesLoginUiOnceInTheRealRhinoSourceScope，报告为 EngineResult.Failure 被测试强转为 Success（ClassCastException，测试第 185 行）。
+- 根因证据：pinned BaseSource.evalLoginUiV2/evalLoginActionV2 将 JS 返回值交给 JsSourceEngine.normalizeJsResult；固定上游对 Rhino Scriptable 结果使用 NativeJSON.stringify。宿主 LegadoSourceLoginUiV2Service 直接返回 loginUi(...)/loginAction(...) 对象，而 RhinoSourceScriptRuntime 仅接受 primitive 或 bounded array；boundedScriptResultValues 对没有数值 length 的普通对象返回 null，因而得到 UNSUPPORTED_RULE。这不是 mainJs 重复初始化问题，也不是 CI 基础设施失败。
+- 允许变更（严格）：仅 app/src/main/java/app/badcat/client/runtime/LegadoSourceLoginUiV2Service.kt 与 app/src/test/kotlin/app/badcat/client/runtime/LegadoSourceLoginUiV2ServiceTest.kt。保持原 .38 文件边界，不修改通用 Rhino runtime、模型、Gradle、UI、Cookie、网络或其他类别。
+- 修正目标：在 Login UI v2 render/action 调用边界内，按上游 normalizeJsResult 语义规范化结果：对象/数组转 JSON 字符串；字符串保持原文（不能无条件二次 stringify）；primitive 保持 primitive；null/undefined/函数类无 JSON 结果按上游空结果处理。使用局部 IIFE 或等价无全局变量写入的包装，不能污染 source scope，也不能重复执行/拼接 mainJs。
+- 必须新增/更新的测试：真实 Rhino + mainJs 顶层 lexical binding 的 render 对象返回；真实 Rhino action 对象返回；JSON 字符串返回保持原始 JSON 文本；mainJs 仍只由 Rhino source runtime 初始化一次；使用唯一 source ID 并在 finally 中清理 source runtime state，避免 static source scope 跨测试污染。现有 RecordingRuntime、非 JS @js:/<js> 回退、错误和 invocation context 测试保持。
+- 验收：focused LegadoSourceLoginUiV2ServiceTest 通过；完整 app JVM suite 通过；新 exact-HEAD CI 运行终结成功并检查 JUnit；随后更新 .38 closeout。Debug APK 产出或其他旧 SHA 通过均不能代替该验收。
+- 依赖 / 排除：先完成本修正，再关闭 .38；不启动依赖 Login UI V2 的下一项。不得扩展为通用 Rhino 对象结果支持，不改 pinned upstream SHA，不写 main，不改原版 APK/用户数据。
+- 状态：registered → in_progress；当前 CI 失败已定位，尚未修正、尚未重跑。
