@@ -5255,3 +5255,11 @@ Each row binds one run to its own immutable commit SHA and its single `assemble-
 - **Executed unit evidence:** #3301 `badcat-unit-test-reports` (artifact ID `14863755557`) has 40 JUnit XML files, 332 tests, 0 failures/errors/skips. Relevant passing suites: PinnedLegadoRuleModelsTest 6/6; LegadoGsonCompatibilityTest 6/6; RhinoSourceJsAbiBytecodeTest 3/3. Exact run SHA remains `4ea24ef01c7c9fa7f8414ec9d3a50e0b0b1c6a68`.
 - **Serializer test correction:** the six-model GSON test named `allSixRuleConvertersAcceptObjectAndStringEncodedObject` tests GSON object/string parsing, not direct invocation of the 12 `BookSource$Converters` methods. Additional passing coverage includes selected array/null cases, unknown fields, coercion, LocalDate, HTML escaping and ContentRule round-trip. Remaining gaps are listed in audit report section 24.8.
 - **Task state:** Runtime-3.2f.50 remains `in_progress`. The 17-name gap and test evidence are now reconciled; serializer differential and complete pre-R8 metadata/caller mapping remain open. Stage-0 ordered item 1 remains open; Stage-1 remains **NO-GO**. No production or test source changed.
+
+
+### 25.6 Additional callback-scope inventory
+
+- The pinned source API inventory includes 190 direct declarations across six scopes: JsExtensions 118, JsEncodeUtils 30, RssJsExtensions 17, WebJsExtensions 13, SourceLoginJsExtensions 6 and RegexJsExtensions 6. Inheritance and host bindings are documented in architecture audit section 24.9.
+- The corrected 17-name gap applies only to the base JsExtensions + JsEncodeUtils scope. It is not a complete count for Web/SourceLogin/Regex/Rss contexts.
+- Open context differences: WebJsExtensions has `upConfig` and `request` with no direct host equivalents; SourceLoginJsExtensions has six callback methods not mapped by name to the host source object; RegexJsExtensions has `t2s`/`s2t` absent from the replacement evaluator's actual binding; RssJsExtensions remains excluded unless caller evidence proves a book-source dependency.
+- **Task state:** Runtime-3.2f.50 remains `in_progress`. A full caller/context graph is now a required remaining dependency before these additional scopes can be classified. Stage-0 ordered item 1 remains open; Stage-1 remains **NO-GO**. No runtime code or tests changed.
