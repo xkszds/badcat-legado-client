@@ -4445,3 +4445,15 @@
 - **验收：** 固定 SHA 源码/测试证据；JS config 输入语法与解析字段矩阵；`mainJs`/source URL/type/default/null/unknown fields 映射；错误与失败语义；单 JS source export 格式和多源 JSON export 差异；host 当前能力与 caller 图；最小后续实现登记建议及安全边界。未能从源码确认的行为列为 unresolved。
 - **排除：** 不实现 JS parser/import/export，不执行脚本，不引入 Rhino/JS 运行时，不改 source catalog schema/persistence、UI、sourceUrls fetching、书源替换工作流、上游 pin、第四/第五类或 `main`。
 - **状态：** 已 preregister，尚未审计；只读并行任务，不得扩展为生产实现。
+
+
+#### Runtime-3.2f.31 audit closeout — JS source import/export compatibility
+
+- **Audit HEAD:** `4ff6b663d62b1b9eae762d068d7f16cc975e97b2`; report `docs/audits/legado-runtime-3.2f.31-js-source-import-export.md`, report commit `58f611ca41e4574e23753ad0555d4e451be4a998`.
+- **Pinned upstream evidence:** `JsSourceConfig.kt` evaluates scripts with the real Rhino runtime, resolves `config`/legacy `source`, validates required functions and source metadata, normalizes explore/login/review/batch features, and preserves the original script in `mainJs`. `ImportBookSourceViewModel` routes non-JSON text through this extractor. `BookSourceViewModel` exports one selected JS source as `.js`; other selections are JSON.
+- **Host evidence:** catalog importer accepts JSON only through `LegadoBookSourceCodec.decode`; `SourceCatalogActivity` file picker is `application/json`, network content is passed to the JSON importer, and export writes the whole catalog JSON array. The typed model carries nullable `mainJs` and raw JSON can preserve it, but this is not standalone JS extraction or JS file export.
+- **Result:** confirmed NO-GO for JS source import/export parity. No production/test/Gradle/workflow/UI changes; no build/CI/device evidence was generated for this read-only audit.
+- **Risks:** upstream parser executes supplied script text; future host integration needs explicit trust/security, time/resource limits, cancellation and side-effect boundaries. Import-review/selection/replacement and selected export are separate product workflow concerns and must not be silently merged into a parser task.
+- **Scope review:** only the preregistered audit report and this checklist changed. .30 codec/test files were untouched. No upstream pin, `main`, catalog persistence, or other category changed.
+- **Next:** separately preregister a pinned JS source fixture/normalization task or controlled Runtime-3.0 integration design; separately register Badcat import-review/selected-export UX if approved. Do not add a simplified parser or execute arbitrary scripts in the metadata catalog.
+- **Acceptance level:** this read-only audit is closed; JS import/export remains unimplemented in the host catalog workflow. Third category remains partially implemented.
