@@ -72,7 +72,28 @@ if ! "$analyzer" dex packages --defined-only "$apk" > "$defined_classes"; then
   exit 1
 fi
 
-class_definition="$(grep -E '^C d [0-9]+ [0-9]+ [0-9]+ io\.legado\.app\.model\.analyzeRule\.RuleAnalyzer$' "$defined_classes" | head -n 1 || true)"
+apk_sha256="$(sha256sum "$apk" | awk '{print $1}')"
+
+# apkanalyzer separates DEX tree columns with tabs, not fixed spaces.
+class_definition="$(grep -E '^C d[[:space:]]+[0-9]+[[:space:]]+[0-9]+[[:space:]]+[0-9]+[[:space:]]+io\.legado\.app\.model\.analyzeRule\.RuleAnalyzerif [ -z "$class_definition" ]; then
+  error="pinned RuleAnalyzer class definition is absent from APK DEX; references alone do not satisfy this gate"
+  exit 1
+fi
+
+if ! "$analyzer" dex code --class io.legado.app.model.analyzeRule.RuleAnalyzer "$apk" > "$smali_file"; then
+  error="apkanalyzer could not decompile the defined RuleAnalyzer class"
+  exit 1
+fi
+
+smali_bytes="$(wc -c < "$smali_file" | tr -d ' ')"
+if [ "$smali_bytes" -le 0 ]; then
+  error="RuleAnalyzer DEX class produced an empty code listing"
+  exit 1
+fi
+
+status="pass"
+error=""
+ "$defined_classes" | head -n 1 || true)"
 if [ -z "$class_definition" ]; then
   error="pinned RuleAnalyzer class definition is absent from APK DEX; references alone do not satisfy this gate"
   exit 1
