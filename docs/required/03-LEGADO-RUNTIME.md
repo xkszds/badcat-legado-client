@@ -5407,3 +5407,15 @@ Each row binds one run to its own immutable commit SHA and its single `assemble-
 - **State:** Stage-0 remains `in_progress/not accepted`; Stage-1 remains **NO-GO**. No production code, tests, Gradle, workflow, database/schema, UI/Reader or source fixtures were changed by the caller-audit continuation.
 - **Next action:** poll #3324–#3328 to terminal state and record exact outcomes; continue the preregistered Runtime-3.2f.50 caller/reflection/source-help closure. The external Robolectric dependency throttling remains an infrastructure blocker; do not change dependency versions or tests to mask it.
 
+
+
+### 26.5 Runtime-3.2f.50 caller-closure continuation — AnalyzeRule preUpdateJs lifecycle methods (2026-11-24)
+
+- **Detailed evidence:** architecture audit section 24.17; pinned Legado SHA remains `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Closed in this slice:** traced documented `java.reGetBook()` and `java.refreshTocUrl()` from jsHelp into AnalyzeRule and the WebBook/BookInfo/MainViewModel callers. They are AnalyzeRule methods, not direct JsExtensions declarations; both require the active `preUpdateJs` context.
+- **Behavior captured:** `reGetBook` performs precise search, updates Book URL and variable map, then refreshes book info; `refreshTocUrl` refreshes details/TOC URL and suppresses duplicate detail refresh when `isFromBookInfo` is true. Both run with the active coroutine context and a 30-minute timeout. The TOC workflow invokes preUpdateJs before chapter-list retrieval when configured; JS-source BookSource follows a separate path.
+- **Host gap:** current Rhino Java bridge does not expose either method or an upstream AnalyzeRule instance; separate host detail/TOC services do not establish callable source-script parity.
+- **Task state:** Runtime-3.2f.50 remains `in_progress`; this closes two method-level caller paths only. Other AnalyzeRule/AnalyzeUrl functions, external source scripts, reflection/generated ABI, serializer differential and full dependency closure remain open. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**.
+- **Change boundary:** audit/checklist documentation only; no production, tests, Gradle, workflow, UI/Reader, DB/schema or source fixtures changed.
+- **Next ordered action:** continue the remaining documented `JsExtensions` and `AnalyzeRule/AnalyzeUrl` method families, classify their source/JS/WebView caller contexts and host gaps, then complete serializer and compiled ABI gates. Do not begin Stage-1.
+
