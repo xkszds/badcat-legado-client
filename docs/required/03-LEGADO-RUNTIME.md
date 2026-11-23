@@ -4471,3 +4471,13 @@
 - **验收：** complete upstream property list; per-field mapping with host type/default/null/serialization; raw-only vs runtime-consumed distinction; rule model conversion coverage; exact source evidence and unresolved entries; minimum separately preregistered implementation/test slices.
 - **排除：** no field mapping implementation, schema changes, data migration, rule execution changes, sourceUrls fetching, JS parser, catalog/UI workflow, upstream pin, fourth/fifth category or `main`.
 - **状态：** 已 preregister，尚未审计；只读任务。
+
+
+#### Runtime-3.2f.32 audit closeout — BookSource model field coverage
+
+- **Audit start HEAD:** `5518804ad7b2e827212844de410aa878d336d911`; report `docs/audits/legado-runtime-3.2f.32-booksource-field-coverage.md`, report commit `c7d73d4d8041274bcba9de5ef044985b74755fa6`.
+- **Result:** all 33 top-level properties declared by pinned `BookSource.kt` map into both `LegadoBookSource` and engine-facing `BookSource` (URL/name/group/type use aliases); host adds `rawJson`. No missing top-level property was found.
+- **Important limits:** six nested upstream rule models are represented as JSON strings, not equivalent typed rule models. Pinned GSON coercion differs from strict host validation. `enabledCookieJar` Kotlin default `true` differs from its Room column default annotation `"0"`. Inherited `BaseSource` methods and field-specific runtime consumption are not proven by field presence.
+- **Decision:** GO for the transport-level 33/33 projection; NO-GO for claiming full model/runtime parity. Next small tasks should separately cover pinned-GSON scalar/null/default differential fixtures, six rule-model/converter parity, and caller/behavior tests for inherited and specialized fields.
+- **Scope review:** only the preregistered report and this checklist changed. No production/test/Gradle/workflow/schema/UI code; no build/CI/device evidence claimed. .30 parser CI evidence is not borrowed.
+- **Acceptance level:** read-only audit closed; third category remains partially implemented.
