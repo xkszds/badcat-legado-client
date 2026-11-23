@@ -8,7 +8,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.badcat.engine.BookChapter
 import app.badcat.engine.EngineResult
-import app.badcat.engine.ReadingEngine
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
@@ -169,8 +168,12 @@ class PublicLegadoSourcesEndToEndInstrumentedTest {
             report.put("finishedAtEpochMillis", System.currentTimeMillis())
             report.put("sources", sourceReports)
             val bytes = report.toString(2).toByteArray(Charsets.UTF_8)
-            Log.i("BadcatLegadoE2E", "REPORT_BASE64=" +
-                Base64.encodeToString(bytes, Base64.NO_WRAP))
+            val encoded = Base64.encodeToString(bytes, Base64.NO_WRAP)
+            val chunks = encoded.chunked(2500)
+            Log.i("BadcatLegadoE2E", "REPORT_PARTS=" + chunks.size)
+            chunks.forEachIndexed { index, chunk ->
+                Log.i("BadcatLegadoE2E", "REPORT_PART=" + index + "/" + chunks.size + ":" + chunk)
+            }
         }
 
         assertEquals("All four public source fixtures must be represented", 4, sourceReports.length())

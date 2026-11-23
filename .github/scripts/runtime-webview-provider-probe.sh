@@ -94,14 +94,27 @@ import sys
 
 log_path, report_path = sys.argv[1:]
 with open(log_path, encoding="utf-8", errors="replace") as stream:
-    encoded = [
-        line.split("REPORT_BASE64=", 1)[1].strip()
-        for line in stream
-        if "REPORT_BASE64=" in line
-    ]
-if not encoded:
-    raise SystemExit("No sanitized Legado E2E report payload found")
-report = json.loads(base64.b64decode(encoded[-1], validate=True))
+    lines = list(stream)
+parts = {}
+part_count = None
+for line in lines:
+    marker = "REPORT_PART="
+    if marker not in line:
+        continue
+    value = line.split(marker, 1)[1].strip()
+    header, separator, chunk = value.partition(":")
+    if not separator or "/" not in header:
+        continue
+    index_text, count_text = header.split("/", 1)
+    index, count = int(index_text), int(count_text)
+    if part_count is not None and count != part_count:
+        raise SystemExit("Inconsistent Legado report part count")
+    part_count = count
+    parts[index] = chunk
+if part_count is None or set(parts) != set(range(part_count)):
+    raise SystemExit("Legado E2E report is missing one or more logcat chunks")
+encoded = "".join(parts[index] for index in range(part_count))
+report = json.loads(base64.b64decode(encoded, validate=True))
 if report.get("task") != "Runtime-3.2f.45" or report.get("sdkInt") != 35:
     raise SystemExit("Unexpected task or emulator API in Legado E2E report")
 sources = report.get("sources")
