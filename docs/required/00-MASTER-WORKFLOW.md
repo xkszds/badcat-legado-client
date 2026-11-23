@@ -323,14 +323,17 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 
 **执行原则：先确认状态，再开展工作；先取得证据，再下结论；先回写并复核，再推进下一项。任何任务都不得绕过此闭环。**
 
-## 2026-11-24 CI 3300–3349 全量核查登记
+## 2026-11-24 CI 3300–3349 全量核查登记（逐项功能映射已补录）
 
-- CI 全量账本：`docs/required/CI-3300-3349-AUDIT.md`。
-- 已核对 3300–3349 共 50 次 Actions：43 success、5 failure、2 in_progress（补充轮询后快照；3346、3347 已成功，3348–3349 仍运行；审计写回触发的 3350–3352 另行追踪）。
-- 五次失败已按日志归类：3315/3343/3345 为 Kotlin Parcelize 2.4.20 插件工件无法解析；3317/3319 为 Robolectric nativeruntime-dist-compat 1.0.16 转换失败，并伴随 Emulator/ADB 启动问题。
-- 3348–3349 在补充轮询时仍运行中，必须继续轮询并回写最终结论，不得提前标记成功。
-- CI 成功只代表对应 SHA 的工作流结论，不代表完整 Legado 兼容验收；Runtime-3.0 已知阻断仍按第三类清单和 Stage-0 审计执行。
-- 本轮仅登记 CI 证据，无应用源码、测试源码、Gradle 或 UI 变更。
+- CI 全量账本：docs/required/CI-3300-3349-AUDIT.md。
+- 已逐个检查 #3300–#3349 的 50 次 Actions：获取每次完整 exact HEAD SHA、Run ID、Job ID、所有关键 Step 状态和 Job 日志；50/50 均建立逐项功能覆盖档案。
+- 最终状态：45 success、5 failure、0 in_progress；其中 44 次为全部配置步骤成功，#3323 虽然 workflow success，但 Bixiange 外部 Python 冒烟脚本因 HTTP 503 实际失败（步骤设置 continue-on-error）。
+- 失败分类：#3315/#3343/#3345 为 Kotlin Parcelize 2.4.20 插件解析失败，后续核心测试/构建/真实源步骤跳过；#3317/#3319 为 Maven Central HTTP 429 导致 Robolectric nativeruntime-dist-compat:1.0.16 无法下载，第三类 App 单测失败，但 API 28/35 仪器测试各 5 项、JVM ABI、Debug APK 与 DEX 检查随后成功，真实源步骤跳过。
+- 关键工作流命名问题：步骤“Feisuzhong 真实阅读”实际调用 live-bixiange-reading-smoke.py，验证的是笔仙阁，不是飞速中文；Pinshuzhai 使用独立 Python 脚本。两个脚本都直接用 Python urllib/HTML 解析，不会启动 Badcat Android App 或 Legado Runtime，因此只能记为外部 Python 书源网络冒烟，不得记作真实 Runtime E2E。
+- 45 次成功 workflow 中，Pinshuzhai Python 搜索→详情→目录→正文脚本通过 45/45；Bixiange 通过 44/45，#3323 因远端 503 失败。Nyasama 仅 3/5 搜索探测可用；公共书源 GET 端点扫描为 14 次尝试、8–9 次非空 HTTP 200；静态 POST 探测 0 次（候选源均处于暂停列表）。这些都不证明完整 Legado JS/规则管线。
+- CI 只证明其 exact SHA 上配置的检查结果；第三类 App 单测排除第四类测试。API 28/35 仪器测试、RuleAnalyzer 类路径/DEX 检查、G2d 编译探针及外部 Python 冒烟均不能替代完整书源执行验收。
+- 本次仅更新 CI 审计账本和本总清单状态索引，没有修改应用源码、测试源码、Gradle 或 UI。完整 Legado 兼容、Stage-0 GO、Stage-1 Runtime PoC GO、最终 APK 和真机验收仍未成立。
+- 第三类清单 03-LEGADO-RUNTIME.md 文件体量很大，本轮 GitHub 文件读取器无法完整返回其内容；不得声称本轮已完整重读该文件。下一次进入 Runtime 实施前，仍须先解决清单分段读取并按 Stage-0 阻断项推进。
 
 ### CI 逐项功能覆盖记录标准（强制，所有 CI 范围适用）
 
