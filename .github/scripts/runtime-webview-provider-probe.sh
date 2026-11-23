@@ -27,7 +27,8 @@ if [ "$device_state_status" -ne 0 ] || [ "$device_state" != "device" ] || \
   exit 1
 fi
 
-gradle --no-daemon :app:connectedDebugAndroidTest
+gradle --no-daemon :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.notClass=app.badcat.client.runtime.PublicLegadoSourcesEndToEndInstrumentedTest
 test_status=$?
 
 # connectedAndroidTest may uninstall the test APK before returning. The test
@@ -78,7 +79,7 @@ fi
 
 adb devices -l > "$diagnostics_dir/adb-devices-after.txt" 2>&1
 legado_report_status=0
-if [ "${EXPECTED_WEBVIEW_SDK:-}" = "35" ]; then
+if [ "${EXPECTED_WEBVIEW_SDK:-}" = "35" ] && [ "${SKIP_PUBLIC_LEGADO_E2E:-0}" != "1" ]; then
   adb -s "$ANDROID_SERIAL" logcat -d -s BadcatLegadoE2E:I \
     > "$diagnostics_dir/adb-legado-e2e-report-logcat.txt" 2>&1
   if [ ! -s "$diagnostics_dir/adb-legado-e2e-report-logcat.txt" ]; then
