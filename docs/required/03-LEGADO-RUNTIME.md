@@ -4481,3 +4481,17 @@
 - **Decision:** GO for the transport-level 33/33 projection; NO-GO for claiming full model/runtime parity. Next small tasks should separately cover pinned-GSON scalar/null/default differential fixtures, six rule-model/converter parity, and caller/behavior tests for inherited and specialized fields.
 - **Scope review:** only the preregistered report and this checklist changed. No production/test/Gradle/workflow/schema/UI code; no build/CI/device evidence claimed. .30 parser CI evidence is not borrowed.
 - **Acceptance level:** read-only audit closed; third category remains partially implemented.
+
+
+### Runtime-3.2f.33 registration — read-only audit of six BookSource rule models and converters
+
+- **日期 / 分类：** 2026-11-23；第三类：BookSource nested rule model / serialization compatibility。
+- **起始 branch / HEAD：** `integration/legado-upstream-runtime` / `5aab0e3ff7d87e3867369a85962bf42cdd32980e`；固定 Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **触发依据：** .32 confirmed all 33 top-level BookSource fields have host slots, but six nested rule models remain JSON strings and the pinned converters accept object-or-JSON-text primitive inputs with upstream Gson-specific null/coercion behavior. Transport shape is not semantic rule parity.
+- **目标：** read-only inventory of the six pinned rule model classes, their nested properties/defaults/nullability, Gson adapters/Room converters, and actual runtime consumers. Compare the host six `rule*Json` fields, validators/parsers, engine projection, and consumers. Classify each property/shape as typed+consumed, raw-only, transformed, rejected, or unresolved; produce a minimal independently testable follow-up sequence.
+- **必须审查：** pinned `BookSource.kt`, all six rule model declarations and nested types, `GsonExtensions.kt` deserializers, Room type converters, model tests/fixtures, and source execution callers for explore/search/book-info/TOC/content/review. Host `LegadoBookSourceCodec.kt`, `ReadingEngine.kt`, rule JSON parsing/consumers and all direct callers/tests. Resolve exact paths from the pinned tree and record blob SHAs; do not infer parity from field names.
+- **允许变更：** only add `docs/audits/legado-runtime-3.2f.33-booksource-rule-model-converters.md` and update this checklist. No production/test/Gradle/workflow/resource/UI/storage changes.
+- **验收：** six-model inventory; per-field type/default/null/adapter behavior; object-vs-primitive JSON conversion matrix; invalid-shape and unknown-field behavior; host projection/consumer map; exact source/test evidence; unresolved items; smallest next implementation registrations and GO/NO-GO.
+- **排除：** no model/converter implementation, no broad Gson coercion changes, no JS execution, no sourceUrls fetching, no catalog workflow, no Room/schema/data migration, no upstream pin, fourth/fifth category or `main` changes.
+- **并行 / CI：** .30 parser exact-SHA run `45089612632` validates only `41f95a6b72149d0ba6d00c2cf1dff7119a97d9f6` and is still active at registration time. This audit touches only new audit documentation plus this checklist; it does not modify .30 codec/test files, so it is path-disjoint. No CI evidence is borrowed.
+- **状态：** 已 preregister；尚未开始审计。只读范围，不授权生产实现。
