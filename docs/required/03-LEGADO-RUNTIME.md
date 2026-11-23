@@ -5051,3 +5051,13 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 - **Temporary utility screen:** SourceCatalogActivity is labeled temporary and separately creates source runtime/session/cookie/catalog stores; it is not proof that the original Badcat product UI has completed integration.
 - **Remaining:** trace every production call and alternate construction path; compare every host field against upstream fields and all readers/writers; establish transaction/cache invalidation/restart behavior; classify per-method API gaps; build semantic parity matrix.
 - **State:** Badcat caller/data-owner slice partial; stage-0 remains in progress and stage-1 remains **NO-GO**. No production code/Gradle/dependency/workflow/test/source fixture/rule/UI/Reader/DB/release files changed; four paused sources and security preflight untouched.
+
+
+#### Runtime-3.2f.49 semantic parity matrix and provisional boundary comparison
+
+- **Audit report:** `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md`, sections 16–17.
+- **Parity matrix:** first-pass evidence classifies BookSource/Book/BookChapter, AnalyzeRule/AnalyzeUrl, JsExtensions, SharedJsScope, BaseSource lifecycle, HTTP, Cookie/session, login, WebView/browser/verification, cache/variables, business chain and batch content as partial, missing or unknown. No row is complete. The seven rule-model source files and selected parser/Rhino sources are authentic slices only, not full runtime acceptance.
+- **Concrete semantic gaps:** host BookSource projection rather than authentic BaseSource; selector dispatcher rather than AnalyzeRule lifecycle; custom URL/HTTP stack rather than AnalyzeUrl; manual RhinoSafeSourceJavaExtensions bridge with getSource Map/getBatchContext null/EmptyCoroutineContext navigation; independent host persistence and cache stores; no demonstrated full contentBatch/BackstageWebView/verification chain.
+- **Boundary candidates compared:** (A) dedicated Android Runtime + typed Host Ports; (B) controlled upstream core module/source-set extraction; (C) hybrid source reuse with strict parity. No option is selected. Existing hybrid is not complete; A/B feasibility still requires closure and caller proof.
+- **Next:** exhaustive reflection/all-callers; resolved compile/runtime classpath, merged manifest/resources, generated code, native and R8 closure; Badcat alternate call paths/data writers; fixed-SHA semantic differential contracts; file-level GPL provenance; reproducible stage-0 acceptance bundle.
+- **State:** stage-0 remains in progress; stage-1 remains **NO-GO**. No production changes or tests/builds/CI/APK/device/source runs were performed by these audit slices. Four paused public-source cases and security preflight remain untouched.
