@@ -4420,4 +4420,13 @@
 - **验收：** pinned upstream differential fixture；host typed-result focused tests；原有 source object/array/unknown-field/duplicate-ID/limits tests 全通过；`:integration-contract:test`；完整 exact-SHA CI 与 diff-scope review。
 - **明确排除：** 不请求/下载/解压 manifest 中的 URL；不递归处理嵌套 `sourceUrls`；不做 redirect/SSRF/HTTP allowlist/timeout/size/recursion/cycle/partial-failure 策略；不接入 catalog 或 UI，不改变现有 import/export UX；不做 JS-source text import/export、selection/replacement workflow、schema/存储、上游 pin、第四/第五类或 `main`。
 - **风险与边界：** 这是 parser/contract 阶段，不代表用户可以通过当前 catalog UI 导入远端 manifest。后续 URL fetching 必须另行登记，定义 HTTPS/HTTP、私网/loopback/IP literal、DNS rebinding、redirect downgrade、内容长度/解压炸弹、重复/循环 URL、并发、取消、缓存和部分失败事务。
-- **状态：** 已 preregister，尚未实施；不得在本登记之外扩展生产路径或网络行为。
+- **状态：** 已 preregister；实现已提交至 `41f95a6b72149d0ba6d00c2cf1dff7119a97d9f6`，exact-SHA CI run `45089612632` 正在验证；不得在本登记之外扩展生产路径或网络行为。
+
+
+#### Runtime-3.2f.30 implementation checkpoint — sourceUrls manifest parser
+
+- **Implementation SHA:** `41f95a6b72149d0ba6d00c2cf1dff7119a97d9f6`.
+- **Actual scope:** exactly the two preregistered production/test paths. Added `LegadoBookSourceImportDocument.Sources` / `.SourceUrls` typed results and `decodeImportDocument`; retained `decode` as source-object/array-only API, explicitly rejecting manifest wrappers. No catalog/UI caller or network fetch was changed.
+- **Upstream differential basis:** exact pinned `BookSourceImport.kt` and `GsonExtensions.kt` at `330e606c4d57e08adc056ff8ab7a4132c784da9a` were inspected. The parser source is not part of the selected `pinnedLegado` compilation source set, so tests use a source-derived executable fixture for the exact upstream `StringJsonDeserializer` + `GSON.fromJsonArray<String>` conversion/null/blank behavior; this is not represented as executing the full upstream import UI function.
+- **Behavior encoded:** wrapper presence takes precedence over BookSource fields; empty URL list is accepted; null wrapper, non-array wrapper, null list items and blank strings reject; primitive values stringify through Gson `asString`; object/array list items stringify to compact JSON text, matching the pinned StringJsonDeserializer. `allowSourceUrls=false` rejects wrappers. No URL syntax validation or network activity occurs.
+- **Validation:** exact-SHA CI run `45089612632`, attempt 1, head SHA `41f95a6b72149d0ba6d00c2cf1dff7119a97d9f6`; status pending at this checkpoint. No test/build pass claimed yet.
