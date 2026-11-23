@@ -5385,3 +5385,25 @@ Each row binds one run to its own immutable commit SHA and its single `assemble-
 - **Change boundary:** documentation/audit only; no production, test, Gradle, workflow, UI/Reader, DB/schema or source fixture changes.
 - **Next ordered action:** continue method-level reachability for the remaining source-facing `JsExtensions`/AnalyzeRule/AnalyzeUrl functions, including external script examples and callback/overload behavior; retain serializer differential and unminified ABI metadata as separate Stage-0 gates.
 
+
+
+### 26.4 Actions #3319–#3328 exact-SHA CI continuation checkpoint (2026-11-24)
+
+- **#3319:** run `45271144630`, job `138030962691`, exact SHA `814972b39a96beefe6b1e1c887b0f1b45d7003cd`, completed/failure. Step 25 app unit suite failed before test execution because `org.robolectric:nativeruntime-dist-compat:1.0.16` could not be resolved from Maven Central; three attempts were classified `RETRY_REASON=exact_robolectric_dependency_http_429`. This is the same transient dependency-throttling blocker as #3317, not a failing test assertion. Debug APK and DEX artifacts were nevertheless uploaded; missing live-smoke report files were not uploaded on this run.
+- **Completed successful snapshots after #3319:**
+  - #3320 / run `45271275460` / job `138031403593` / SHA `8d3454eceeac8ab21fd8faeabf9dc0d8797a0ab1` — completed/success.
+  - #3321 / run `45271332284` / job `138031597251` / SHA `994d53f96b9fecc58e66377db5cc1f991d3e7d55` — completed/success.
+  - #3322 / run `45271572385` / job `138032427514` / SHA `5f965532c84afb82349524ae806c06dbcb2efe4a` — completed/success.
+  - #3323 / run `45272582551` / job `138035959504` / SHA `36eed59fa236c011a768992c1be515aa3dd7597a` — completed/success.
+  - Each is a separate exact-SHA `assemble-debug` snapshot; success does not transfer to later SHAs or establish complete Legado compatibility.
+- **Documentation commits currently building:**
+  - #3324 / run `45274787713` / job `138043642477` / SHA `52f5581fefe5b6c7852a85ea8c4e782c81af498b` — in_progress at API 28 CookieManager instrumentation.
+  - #3325 / run `45275189577` / job `138045055918` / SHA `6d756dd78d570a74a473a58776af59358c2ec3ec` — in_progress at API 28 CookieManager instrumentation.
+  - #3326 / run `45275230218` / job `138045206052` / SHA `2a20653e7decad1c9d476c6587e523e4ad86b9ee` — in_progress at API 28 CookieManager instrumentation.
+  - #3327 / run `45275545205` / job `138046260404` / SHA `dbd9f9cf89a5402d549221acf93b979dba628416` — in_progress at app unit suite.
+  - #3328 / run `45275587810` / job `138046408599` / SHA `70fd76cd1db07b448f3492594d5b9338f0b2003b` — in_progress at pinned RuleAnalyzer Android runtime classpath verification.
+- **Current exact-HEAD diff:** branch HEAD is `70fd76cd1db07b448f3492594d5b9338f0b2003b`. Compare from #3318's tested SHA `0a46282668ea414a9c61dacbc22be6b79fdace67` reports 10 commits ahead / 0 behind; the only changed paths are `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md` (+100 lines) and this required checklist (+104 lines). No production/runtime/build/test/workflow/UI/Reader/database/source-fixture path changed in this post-#3318 range.
+- **Interpretation:** #3319 repeats the known external Maven 429 failure; #3320–#3323 are green; #3324–#3328 are still pending and must be polled independently on their own exact SHAs. Do not count pending runs as success and do not transfer a green result between commits.
+- **State:** Stage-0 remains `in_progress/not accepted`; Stage-1 remains **NO-GO**. No production code, tests, Gradle, workflow, database/schema, UI/Reader or source fixtures were changed by the caller-audit continuation.
+- **Next action:** poll #3324–#3328 to terminal state and record exact outcomes; continue the preregistered Runtime-3.2f.50 caller/reflection/source-help closure. The external Robolectric dependency throttling remains an infrastructure blocker; do not change dependency versions or tests to mask it.
+
