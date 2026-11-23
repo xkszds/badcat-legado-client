@@ -73,7 +73,7 @@ if ! "$analyzer" dex packages --defined-only "$apk" > "$defined_classes"; then
 fi
 
 apk_sha256="$(sha256sum "$apk" | awk '{print $1}')"
-class_definition="$(grep -E '^C d[[:space:]]+[0-9]+[[:space:]]+[0-9]+[[:space:]]+[0-9]+[[:space:]]+io\\.legado\\.app\\.model\\.analyzeRule\\.RuleAnalyzer$' "$defined_classes" | head -n 1 || true)"
+class_definition="$(grep -E '^C d[[:space:]]+[0-9]+[[:space:]]+[0-9]+[[:space:]]+[0-9]+[[:space:]]+io[.]legado[.]app[.]model[.]analyzeRule[.]RuleAnalyzer$' "$defined_classes" | head -n 1 || true)"
 if [ -z "$class_definition" ]; then
   error="pinned RuleAnalyzer class definition is absent from APK DEX; references alone do not satisfy this gate"
   exit 1
