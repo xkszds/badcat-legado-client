@@ -5071,3 +5071,11 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 - **Search evidence:** wrapper registration, NativeBaseSource, ClassNameMatcher, class-shutter, reflection, getMethod/getDeclaredMethod and Class.forName queries were inspected. Search counts are discovery only; getMethod() matches in AnalyzeUrl are mostly UrlOption accessors, not reflection.
 - **Badcat comparison blocker:** compare LegadoRhinoSandbox against pinned RhinoClassShutter/ProtectedNativeJavaClass and compare every RhinoSafeSourceJavaExtensions method/property/overload/object type/error behavior against the upstream interface and wrapper registrations. Any deliberate security restriction that blocks source APIs must be recorded as incompatibility unless parity is demonstrated.
 - **State:** Rhino ABI/reflection graph remains partial; stage-0 in progress; stage-1 **NO-GO**. No runtime security or production code changed; four paused sources and preflight remain untouched.
+
+
+#### Runtime-3.2f.49 Rhino source provenance comparison
+
+- **Audit report:** section 19. Six files under Badcat legado-rhino have exact blob SHA matches to pinned upstream: RhinoClassShutter, RhinoWrapFactory, RhinoContext, ScriptBindings, ReadOnlyJavaObject and JavaObjectWrapFactory.
+- **Known divergence:** RhinoScriptEngine differs from pinned upstream blob. Badcat adds callSourceFunction(action, scope) and changes topLevelThis() to resolve the JS-visible globalThis property before falling back to TopLevel.globalThis. Record as local behavior change; require differential callback/this tests and provenance. Badcat code-search index is incomplete, so all call sites remain to be confirmed.
+- **Conclusion:** substantial exact Rhino source slice, not full ABI parity. Custom bridge, changed engine entry point, source-scope wiring and missing authentic BaseSource/JsExtensions remain blockers.
+- **State:** stage-0 remains in progress; stage-1 **NO-GO**. No production source or security policy was changed; four paused source cases and preflight untouched.
