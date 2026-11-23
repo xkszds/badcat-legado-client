@@ -4558,7 +4558,7 @@
 - **验收：** 增加固定差分夹具覆盖空字符串、空白、`null`、多个等号、缺少等号、重复名称、前后空格、分号边界；预期值逐项对应 pinned upstream；既有 persistent/session/WebView 和域桶测试保持通过。
 - **依赖 / 并行：** 无前置依赖。与 .36 限流任务文件完全隔离；不得并行写本分类清单，实施完成后统一顺序 closeout。
 - **排除：** 不改 Cookie 存储结构、域名算法、路径/secure 过滤、WebView 桥接、登录流程、Room/数据库、HTTP client、Gradle、UI、其他类别、上游 SHA 或 `main`。
-- **状态：** 已登记；待实施和 exact-SHA CI 验证。
+- **状态：** 实现已提交；exact-SHA CI 待完成（#3207）。
 
 ### Runtime-3.2f.36 registration — initial concurrentRate parsing parity
 
@@ -4571,7 +4571,7 @@
 - **验收：** 用可确定的解析/记录观察测试覆盖 null、空白、`0`、`0/10`、`2/100`、`x/100`、`2/x`、`x`、`-1/100`、`2/0`；明确哪些值跳过、哪些建立 record、各字段的上游值；原有节流/skip 测试保持通过。
 - **依赖 / 并行：** 无前置依赖。与 .35 Cookie 任务文件完全隔离；不得并行写本分类清单，实施完成后统一顺序 closeout。
 - **排除：** 不实现 `updateConcurrentRate`、不改变窗口算法/等待策略/线程与协程模型、不改 SourceRequestFactory、Rhino、Cookie、Gradle、UI、其他类别、上游 SHA 或 `main`。
-- **状态：** 已登记；待实施和 exact-SHA CI 验证。
+- **状态：** 实现已提交；exact-SHA CI 待完成（#3207）。
 
 ### Runtime-3.2f.37 registration — dynamic header request path and login-header caller audit
 
@@ -4609,7 +4609,24 @@
 - **验收：** render 与 dispatchAction 在 mainJs source 下均将 mainJs 放在被执行脚本前部，且不执行 loginUrl 脚本；非 JS source 仍正确解析 `<js>` 和 `@js:`；mainJs 空/blank 时按上游回退 loginUrl；错误/状态/InvocationContext 现有行为保持。
 - **依赖 / 并行：** 无前置依赖；与 .35 Cookie、.36 rate-limit 的生产/测试文件完全隔离。与 .37 只读审计已完成，不重叠。
 - **排除：** 不实现 legacy Login UI v1、WebView/验证码 UI、登录网络提交、Cookie 行为、header provider、Rhino 执行能力扩展、schema、Gradle、UI、其他类别、上游 SHA 或 `main`。
-- **状态：** 已登记；待实施和 exact-SHA CI 验证。
+- **状态：** 实现已提交；exact-SHA CI 待完成（#3213）。
 
 
 - **Runtime-3.2f.38 implementation design correction (before acceptance):** review of `RhinoSourceScriptRuntime.evaluate` at blob `879d6ed978894b16271cf5207348176fd040eda7` confirms the host runtime already initializes nonblank `source.mainJs` once per source scope before evaluating the requested script. Therefore the Login UI v2 service must not prepend `mainJs` a second time (which could redeclare top-level lexical bindings). The service should rely on the runtime's source initialization and execute only the `loginUi`/`loginAction` invocation; tests must prove this using the real Rhino runtime plus recording-runtime assertions that loginUrl is not substituted. This narrows the implementation to preserving upstream selection semantics without duplicate mainJs evaluation; no scope expansion.
+
+
+#### Runtime-3.2f.35/.36 implementation checkpoint
+
+- **Implementation commit / exact SHA:** `6ff710efe976b76db4f37b00fe7915748cb279d5`; exact-SHA CI run #3207 / `45093347465` was in progress at checkpoint time.
+- **Changed files:** .35 `SharedPreferencesSourceCookieJar.kt` + `SharedPreferencesSourceCookieJarTest.kt`; .36 `LegadoConcurrentRateLimiter.kt` + `LegadoConcurrentRateLimiterTest.kt`. Diff is restricted to the four preregistered paths.
+- **.35 change:** align cookie name/value parsing with pinned CookieStore for ASCII trim, empty-value omission, literal `null`, first-equals parsing and duplicate-key replacement; preserve host validation and size bounds.
+- **.36 change:** initial rate setting parser now follows pinned fetchStart fallbacks: null/empty/exact `0` skip; malformed N/M components use upstream 1/0 fallbacks; plain malformed numeric values use 1/0. `updateConcurrentRate`, waiting/window strategy and cancellation remain excluded.
+- **Test status:** focused tests were added/updated but no local test execution is claimed. Exact implementation CI is pending; do not mark either task accepted until #3207 reaches terminal success and its app JVM test report is inspected.
+
+#### Runtime-3.2f.38 implementation checkpoint
+
+- **Final implementation commit / exact SHA:** `19dd06f09b1ce896d3c0464ca5907651b4fcd897`; exact-SHA CI run #3213 / `45093761811` was in progress at checkpoint time.
+- **Changed files:** `LegadoSourceLoginUiV2Service.kt` and `LegadoSourceLoginUiV2ServiceTest.kt` only.
+- **Change:** JS sources select their existing `mainJs`-initialized Rhino source scope and execute the login hook there; the service no longer falls back to `loginUrl` for nonblank mainJs. It does not prepend mainJs again because RhinoSourceScriptRuntime initializes it once before the hook. Added render/action recording assertions, blank-mainJs @js fallback, and a real Rhino test with a top-level lexical binding to detect duplicate initialization.
+- **Intermediate commits:** initial implementation `d1f7736bb2fb5340a4096c551f7d427420ed1811` was corrected after identifying duplicate mainJs initialization; final code is only the exact SHA above.
+- **Test status:** no local test execution is claimed. Exact-SHA CI is pending; do not mark task accepted until #3213 reaches terminal success and its app JVM test report is inspected.
