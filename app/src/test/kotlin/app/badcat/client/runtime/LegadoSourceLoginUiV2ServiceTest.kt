@@ -122,21 +122,51 @@ class LegadoSourceLoginUiV2ServiceTest {
     fun rendersLoginUiV2ForSourcesWithMainJsInitialization() = runBlocking {
         val runtime = RecordingRuntime(ArrayDeque(listOf("""{"rows":[{"name":"账号","type":"text","key":"username"}]}""")))
         val service = LegadoSourceLoginUiV2Service(runtime)
-        val mainJsSource = source().copy(mainJs = "function sharedLoginHelper(){ return true; }")
+        val mainJs = "function sharedLoginHelper(){ return true; }\\nfunction loginUi(state){ return {rows:[]}; }"
+        val mainJsSource = source().copy(
+            mainJs = mainJs,
+            loginUrl = "<js>function legacyLoginUi(){ return 'must-not-run'; }</js>",
+        )
         val result = service.render(mainJsSource)
         assertTrue(result is EngineResult.Success)
         assertEquals(mainJsSource.mainJs, runtime.capturedSource?.mainJs)
-        assertTrue(requireNotNull(runtime.capturedScript).contains("loginUi(JSON.parse(String(__loginState)))"))
+        val executed = requireNotNull(runtime.capturedScript)
+        assertTrue(executed.startsWith(mainJs))
+        assertTrue(executed.contains("loginUi(JSON.parse(String(__loginState)))"))
+        assertTrue(!executed.contains("legacyLoginUi"))
     }
 
     @Test
     fun dispatchesLoginActionsForSourcesWithMainJsInitialization() = runBlocking {
         val runtime = RecordingRuntime(ArrayDeque(listOf("""{"state":{"step":2},"close":true}""")))
         val service = LegadoSourceLoginUiV2Service(runtime)
-        val mainJsSource = source().copy(mainJs = "function sharedLoginHelper(){ return true; }")
+        val mainJs = "function sharedLoginHelper(){ return true; }\\nfunction loginAction(action,state,form){ return {state:state,close:true}; }"
+        val mainJsSource = source().copy(
+            mainJs = mainJs,
+            loginUrl = "<js>function legacyLoginAction(){ return 'must-not-run'; }</js>",
+        )
         val result = service.dispatchAction(mainJsSource, "submit", "{}", "{}")
         assertTrue(result is EngineResult.Success)
         assertEquals(mainJsSource.mainJs, runtime.capturedSource?.mainJs)
+        val executed = requireNotNull(runtime.capturedScript)
+        assertTrue(executed.startsWith(mainJs))
+        assertTrue(executed.contains("loginAction(String(__loginAction)"))
+        assertTrue(!executed.contains("legacyLoginAction"))
+    }
+
+    @Test
+    fun fallsBackToLoginUrlWhenMainJsIsBlankAndSupportsAtJsPrefix() = runBlocking {
+        val runtime = RecordingRuntime(ArrayDeque(listOf("""{"rows":[{"name":"账号","type":"text","key":"username"}]}""")))
+        val service = LegadoSourceLoginUiV2Service(runtime)
+        val atJsSource = source().copy(
+            mainJs = "  ",
+            loginUrl = "@js: function loginUi(state){ return {rows:[]}; }",
+        )
+        val result = service.render(atJsSource)
+        assertTrue(result is EngineResult.Success)
+        val executed = requireNotNull(runtime.capturedScript)
+        assertTrue(executed.startsWith("function loginUi(state)"))
+        assertTrue(executed.contains("loginUi(JSON.parse(String(__loginState)))"))
     }
 
     @Test

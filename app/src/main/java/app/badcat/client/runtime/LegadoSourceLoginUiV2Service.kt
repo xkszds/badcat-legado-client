@@ -116,6 +116,9 @@ class LegadoSourceLoginUiV2Service(
     }
 
     private fun loginScript(source: BookSource): String? {
+        // Pinned BookSource.getLoginJs() selects the complete JS source mainJs
+        // before falling back to BaseSource.loginUrl parsing.
+        source.mainJs?.takeIf { it.isNotBlank() }?.let { return it }
         val raw = source.loginUrl?.takeIf { it.isNotBlank() } ?: return null
         val text = raw.trim()
         val inline = INLINE_JS.matchEntire(text)?.groupValues?.get(1)
