@@ -4861,3 +4861,6 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 - Next patch adds the output directory to the `:integration-contract` main SourceSetOutput and adds an explicit `:app:verifyPinnedLegadoRuleAnalyzerRuntimeClasspath` check before emulator tests. Final acceptance still requires APK DEX class definition and target class loading/callability.
 - Report: `docs/audits/legado-runtime-3.2f.46-rule-analyzer-packaging.md`.
 - **State:** diagnosis confirmed; variant fix submitted for CI, not yet verified. Do not close .46 until exact-SHA CI and APK DEX/device checks pass.
+
+
+- #3244 run `45230159003`, job `137887209500`, exact SHA `1e57729b60ac5e95fd60da321aff12fd4782eeb8`: failed at app Gradle script compilation before contract verification or Android instrumentation; `java.util.zip.ZipFile` unresolved in `app/build.gradle.kts`. No runtime-classpath result. Corrected by explicitly importing `java.util.zip.ZipFile` in the follow-up commit.

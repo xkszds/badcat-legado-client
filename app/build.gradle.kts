@@ -1,4 +1,5 @@
 import org.gradle.api.tasks.testing.Test
+import java.util.zip.ZipFile
 
 plugins {
     id("com.android.application")
@@ -76,7 +77,7 @@ val verifyPinnedLegadoRuleAnalyzerRuntimeClasspath =
                 when {
                     artifact.isDirectory -> artifact.resolve(classEntry).isFile
                     artifact.isFile && artifact.extension.equals("jar", ignoreCase = true) ->
-                        java.util.zip.ZipFile(artifact).use { it.getEntry(classEntry) != null }
+                        ZipFile(artifact).use { it.getEntry(classEntry) != null }
                     else -> false
                 }
             }

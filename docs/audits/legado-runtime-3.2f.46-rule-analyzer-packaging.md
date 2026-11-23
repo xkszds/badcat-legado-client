@@ -29,3 +29,9 @@
 ## 验收状态
 
 本报告记录的是基于已下载 #3243 APK DEX class_def 的根因定位及下一轮验证方案。新修正尚未经过 CI，不能声称已修复。必须同时满足：contract JAR class check、Android debugRuntimeClasspath class check、API 28/35 仪器测试、最终 APK DEX class_def 和 Class.forName/真实 split 调用全部通过；否则 .46 保持未完成。
+
+
+## Follow-up correction after #3244
+
+- #3244 / run `45230159003`, job `137887209500`, exact SHA `1e57729b60ac5e95fd60da321aff12fd4782eeb8`, failed before Gradle task execution because Kotlin DSL resolves `java.util` as an unresolved script receiver in the unqualified expression `java.util.zip.ZipFile` in `app/build.gradle.kts`. No runtime classpath or emulator result was produced on that SHA.
+- The next commit imports `java.util.zip.ZipFile` explicitly and uses `ZipFile(artifact)`, matching the working import pattern in `integration-contract/build.gradle.kts`. This is a build-script syntax correction only; it does not alter runtime behavior.
