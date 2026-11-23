@@ -817,6 +817,26 @@ jobs:
           # Keep this first sweep to ordinary GET sources. JS-generated, POST,
           # login/signature-dependent and opaque data: URLs need the Legado
           # runtime and are intentionally not misrepresented as HTTP tests.
+          # User-paused four-source set from Runtime-3.2f.42/.45.
+          # Do not send requests to these exact hosts from the broad public-repository probe.
+          paused_four_source_hosts = {
+              "xtangsanshu.com",
+              "00shu.la",
+              "bqg.fun",
+              "jhsssd.com",
+          }
+
+          def is_user_paused_four_source(source):
+              candidates = [
+                  source.get("bookSourceUrl", ""),
+                  str(source.get("searchUrl", "")).split(",", 1)[0].strip(),
+              ]
+              for candidate in candidates:
+                  host = (urllib.parse.urlparse(candidate).hostname or "").lower().rstrip(".")
+                  if host and any(host == root or host.endswith("." + root) for root in paused_four_source_hosts):
+                      return True
+              return False
+
           preferred = [
               "天天看书", "篱笆文学", "幻梦轻说", "天天小说", "猫眼看书",
               "鲸云轻说", "轻之文库", "茶马小说", "阅读库子", "穿越小说",
@@ -828,6 +848,9 @@ jobs:
               for source in sources:
                   name = source.get("bookSourceName", "")
                   search = source.get("searchUrl", "")
+                  if is_user_paused_four_source(source):
+                      print(f"PUBLIC_SOURCE_PAUSED_BY_USER {name}: source host is in the four-source pause set")
+                      continue
                   if wanted not in name or source.get("enabled") is False:
                       continue
                   if not isinstance(search, str) or not search or search.startswith("@js:") or search.startswith("{{"):
@@ -954,6 +977,9 @@ jobs:
               for source in sources:
                   name = source.get("bookSourceName", "")
                   search = source.get("searchUrl", "")
+                  if is_user_paused_four_source(source):
+                      print(f"PUBLIC_POST_SOURCE_PAUSED_BY_USER {name}: source host is in the four-source pause set")
+                      continue
                   if name != wanted or source.get("enabled") is False:
                       continue
                   if not isinstance(search, str) or not search or "@js" in search.lower() or "<js>" in search.lower():

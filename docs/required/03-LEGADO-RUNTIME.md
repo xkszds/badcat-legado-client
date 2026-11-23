@@ -4943,3 +4943,6 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 
 - Historical #3216 failure at `b03759ce9ac2623bbf6c399ae300619b6acc7ca8` was already fixed by its immediate child commit `80b0b93e2d25d133f27cfeac905b484d5a7e74ae`, which wraps Login UI render/action object results with `JSON.stringify` and adds real-Rhino regression coverage.
 - No additional runtime change is required. The temporary broad `RhinoSourceScriptRuntime` change was fully reverted; current runtime/test files match pre-attempt contents at `ea795a617bccba85fea2fdf513a6ff2e40cf89e3`. See `docs/audits/legado-runtime-3.2f.48-existing-fix-supersedes-duplicate.md`.
+
+
+- Additional pause enforcement: the broad `Probe public Legado source repositories` step now filters the exact four paused hosts (`xtangsanshu.com`, `00shu.la`, `bqg.fun`, `jhsssd.com`) before both GET and POST selection, so a similarly named public-repository entry cannot probe one of these hosts. Other unrelated source smoke probes remain separate.
