@@ -5018,3 +5018,13 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
   - #3277 / run `45252929738` / exact SHA `9a4f0aa070da05f0a4c89ede245eac02edbc1cb4` — completed/success; job `assemble-debug` completed/success (job `137967073454`).
   - #3278 / run `45252974500` / exact SHA `fdf1a44c283400664ed369d60c7db0e2def31ace` — completed/success; job `assemble-debug` completed/success (job `137967239401`).
 - These are four separate documentation commits and four exact-SHA CI snapshots. The result establishes the recorded `assemble-debug` job outcomes only; it does not establish complete tests, APK release acceptance, source compatibility, or stage-0 completion. The runs do not substitute for the API/caller/dependency audit.
+
+
+#### Runtime-3.2f.49 caller graph slice 1 — pinned source call-site discovery
+
+- **Pinned source:** `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`; exact source paths, core chain roles, platform bridges, code-search counts, and blockers are recorded in audit report section 13.
+- **Core call chain:** WebBook search/explore/detail/TOC/content/batch/precise-search entry points compose AnalyzeUrl request handling with AnalyzeRule parsing. BookList, BookInfo, BookChapterList and BookContent are concrete callers. JsSourceEngine injects CookieStore/CacheManager bindings and carries source/batch context.
+- **Platform edges:** BaseSourceExtensions provides shared JS scope; SourceNavigationBridge preserves coroutine context and suppresses navigation where required; BackstageWebView handles source navigation, CookieStore synchronization, WebCacheManager exposure, result caching, timeout and WebView cleanup; CookieStore uses CacheManager memory namespaces for persistent/session cookies.
+- **Discovery counts:** pinned code search returned 22 files for `AnalyzeRule(`, 38 for `AnalyzeUrl(`, 5 each for `getShareScope(` and `getSharedGlobalStateKey(`, 6 for `BackstageWebView(`, 19 for `CookieStore`, 43 for `CacheManager`, 50 for `BaseSource`, and 44 for `JsExtensions`. Results include tests/docs and adjacent RSS/dictionary/review/local-book/audio/video/browser/UI consumers; these are discovery counts, not complete call-graph node counts.
+- **Limitations:** Badcat GitHub code search returned zero with an incomplete index; this is not evidence of zero callers. Reflection/string dispatch, extension receivers, function references, per-method JsExtensions ownership, HTTP helper closure and persistence writers/readers remain open.
+- **State unchanged:** caller graph is partial; stage-0 remains in progress and stage-1 remains **NO-GO**. No production or runtime configuration changed; four paused source cases and security preflight remain untouched.
