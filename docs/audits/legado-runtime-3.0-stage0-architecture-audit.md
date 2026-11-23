@@ -1457,3 +1457,54 @@ This section **supersedes the “runtime-to-cookie-jar wiring remains unproven�
 - **Still open documented API:** read/theme configuration methods; source UI/browser/verification ports; complete source/cookie/cache callbacks and object identity; all remaining public overloads, returned object ABI, and NativeBaseSource dynamic dispatch. No source caller hit does not erase a documented method contract.
 - **No implementation/test change:** this was source/help/production-callsite inspection only. No test command was run. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**.
 - **Next ordered action:** complete the remaining 104-name method matrix by marking each declaration as (a) documented and active, (b) undocumented with an inspected source caller, (c) documented but no caller found, (d) internal/context-only but dynamically reachable, or (e) host-only extension. Then attach exact overload/return/nullability and differential-test requirements. Do not implement in this read-only task.
+
+
+## 24.30 Missing upstream UI/browser methods are active BookSource callers — Badcat-native adapter required (2026-11-24)
+
+### Source caller evidence
+
+The 17 upstream public methods absent from the main Badcat `RhinoSafeSourceJavaExtensions` class are not all unused UI helpers. A second public BookSource search found active callers for several browser/captcha APIs:
+
+| Upstream method | GitHub code-search discovery snapshot | Inspected concrete source field and calls |
+|---|---:|---|
+| `webView` | 94 | `Mina-kk/yuedu-MCP@e129d35e7cba08f8dcacc2cf05dc3e626b5965dd`, shard `f_0896.json` blob `00966ee548132c552ec916d344438b032f33892f`: bookSourceComment and searchUrl; `DowneyRem/PixivSource@79251ad67dc986f7554f69cd153b927be40955ba`, `btsrk.json` blob `77479384eb227a2d4bac2a432b2fd5409513767d`: loginUrl; `mumuceo/file01@8429f9d6e03112f77da35403dee2682edc67217b`, `202604/4078_4b35feff2d8a476596729852b040635e.json` blob `36c8697327cd1612f531a3dbe9a161f525fa9324`: ruleContent. |
+| `startBrowserAwait` | 217 | DowneyRem `btsrk.json` loginUrl; `Luoyacheng/yuedu@3ffc017cf6abb7151a127ba1610302ecfb617c96`, `8x.json` blob `6642f072a129df896b7d1b55443ccb951b2958e8` loginUrl; mumuceo 202604 source uses it in book-info init, TOC and content rules. |
+| `startBrowser` | 125 | DowneyRem `btsrk.json` jsLib/loginUrl; Luoyacheng `8x.json` jsLib/loginUi/loginUrl; mumuceo 202604 source jsLib/loginUrl/content. |
+| `getVerificationCode` | 70 | `Luoyacheng/yuedu@3ffc017cf6abb7151a127ba1610302ecfb617c96`, `qdzs.json` blob `6e417fe9e16b04fb9a4a8d1b9d3969fbd1a9033d`: ruleExplore.bookList; `8x.json`: exploreUrl and loginUrl. |
+| `showBrowser` | 4 | Luoyacheng `qdzs.json` exploreUrl. |
+| `openUrl` | 10 | Luoyacheng `8x.json` loginUrl; `mumuceo/file01` 202604 source jsLib. |
+| `webViewGetSource`, `webViewGetOverrideUrl` | 0 exact matches | No direct caller found in this pass; retain as upstream public API pending full caller closure. |
+| `openVideoPlayer` | 0 | No public BookSource caller found in this pass; classify as optional media/UI API, not core novel source acceptance evidence. |
+
+Counts are GitHub Code Search discovery counts, not unique source counts; repositories include mirrors and some search results may be fixtures. The inspected JSON fields above were parsed structurally; no script was executed and no credential-bearing source values were copied.
+
+### What these APIs do and why LoginUiV2 is not equivalent
+
+- `webView(html,url,js[,cacheFirst])` runs a real WebView off the main thread, applies source headers/tag, optionally uses cache, and returns JS-selected content or page source. It is called from ordinary source fields such as searchUrl and ruleContent, not only a login dialog.
+- `startBrowser(url,title[,html])` opens an interactive source verification browser. `startBrowserAwait(url,title[,refetchAfterSuccess[,html]])` blocks the source flow until user verification, then returns the verified response or refetches through AnalyzeUrl. These methods can occur inside loginUrl, book-info, TOC and content rules.
+- `getVerificationCode(imageUrl)` opens an image captcha prompt and synchronously returns the user's text; source callers include exploreUrl/ruleExplore.
+- `showBrowser(url[,html,preloadJs,config])` opens an interactive embedded browser asynchronously. `openUrl(url[,mimeType])` opens an external app/browser route with source-origin confirmation.
+- Existing `LegadoSourceLoginUiV2Service` / `SourceLoginUiV2Activity` implement the structured `loginUi` form flow (text/password/select/toggle/button and login result). The service source explicitly says it does not emulate WebView; it does not implement the above APIs. It is therefore not a substitute for these browser/captcha behaviors.
+- `BadcatReadingEngineFactory` wires the main script runtime's HTTP/cookie/session ports but does not pass WebView, browser, captcha, or external-open callbacks. The `BadcatSourceHttpGatewayFactory` source comment also explicitly states full bodyJs, WebView and upstream Java host APIs remain unsupported.
+
+### No-Legado-UI constraint and required architecture
+
+Do not transplant Legado's BottomWebViewDialog, BackstageWebView, SourceVerificationHelp, SourceHelp or player activities. The product requirement is to preserve Badcat's existing UI. However, do not silently omit active source APIs either. The compatibility path must be a **Badcat-native host port** with source-origin identity and explicit lifecycle:
+- `webView`: a Badcat-owned isolated WebView service/component with source-scoped cookies/headers/user-agent, safe navigation policy, cache behavior, JS evaluation result, background-thread blocking bridge, lifecycle cancellation and bounded page/script/response time.
+- `startBrowserAwait`: a cancellable request/response rendezvous with a Badcat-native verification browser; on success return the verified URL/body or perform the requested refetch through the same source request gateway; persist/import only the source's permitted cookies.
+- `startBrowser` and `showBrowser`: asynchronous Badcat-owned browser surface; source name/origin must be visible and external navigation policy enforced.
+- `getVerificationCode`: Badcat-native captcha image prompt and bounded user-input wait; cancellation/timeout must unwind the source execution rather than leave a worker blocked.
+- `openUrl`: Badcat confirmation/intent dispatcher; no arbitrary intent or untrusted custom scheme without explicit policy.
+- The script runtime must never block the Android main thread. UI waits must be cancellable when the Activity/engine is destroyed or the user cancels. Enforce HTTP(S) and redirect policy, source attribution, cookie partitioning, WebView file/content access restrictions, JS bridge allowlist, resource budgets and timeout. No raw Legado UI class should be exposed through Packages.
+
+### Revised classification of the 17 missing method names
+
+- **Active source caller / source-compatibility blocker until Badcat-native port:** `webView`, `startBrowser`, `startBrowserAwait`, `getVerificationCode`, `showBrowser`, `openUrl`.
+- **No direct public caller found in this pass; keep in matrix:** `webViewGetSource`, `webViewGetOverrideUrl`, `openVideoPlayer`.
+- **Reader/theme configuration APIs, not observed in public BookSource callers:** `getReadBookConfig`, `getReadBookConfigMap`, `getThemeConfig`, `getThemeConfigMap`, `getThemeMode`. Do not import Legado Reader settings/UI; decide whether to map to Badcat's own settings or return a documented source-safe result.
+- **Reader refresh control APIs, no production BookSource caller found:** `refreshBookInfo`, `refreshBookToc`, `refreshContent`. Keep classified as UI/engine callback surface, not as a required UI transplant. Search hits for refreshBookInfo/refreshContent were from a research dataset, not an inspected live source corpus.
+- **Media UI:** `openVideoPlayer` has no current source caller in the scan; retain as optional/out-of-core unless new evidence appears.
+
+### Decision
+
+The 17 missing names cannot be treated as 17 equally unused methods. Six have direct public BookSource callers and require Badcat-native UI/browser/captcha adapters for broad source compatibility. This remains a **read-only audit finding**: no UI, runtime, Activity, WebView, or source implementation was changed. Stage-0 remains in progress; Stage-1 remains NO-GO.
