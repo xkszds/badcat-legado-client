@@ -39,7 +39,7 @@ payload = {
     "smaliBytes": int(smali_bytes),
     "definitionCheck": "apkanalyzer dex packages --defined-only",
 }
-Path(report).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+Path(report).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + chr(10), encoding="utf-8")
 print(json.dumps(payload, ensure_ascii=False, indent=2))
 PY
 }
