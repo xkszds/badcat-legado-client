@@ -5197,10 +5197,20 @@ Each row binds one run to its own immutable commit SHA and its single `assemble-
 ## 25. Runtime-3.2f.50 API inventory closure — preregistered read-only audit (2026-11-24)
 
 - **Task ID:** Runtime-3.2f.50.
-- **Status:** registered; not started until this registration commit is visible on the integration branch.
+- **Status:** in_progress; source-level inheritance/default/serializer and generated-member audit recorded in audit report section 24. Compiled JVM/Rhino ABI and serializer differential closure remain pending.
 - **Objective:** continue Stage-0 ordered item 1 by closing source-level API contract gaps left by sections 11, 20–22: inherited/generated members, JVM-visible signatures and overload descriptors, annotations/visibility, Kotlin nullability/defaults, constructor and serializer edge cases, and exact mapping to Badcat declarations where available.
 - **Allowed files:** read-only inspection of pinned upstream source and current Badcat source; write results only to this checklist and the existing Stage-0 audit report. No source/build/test/workflow changes.
 - **Dependencies:** Runtime-3.2f.49 sections 11, 20, 21 and 22; pinned upstream SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`; current Badcat integration branch HEAD.
 - **Acceptance:** evidence table records exact upstream path, declaration/signature or generated-member origin, annotation/visibility/nullability/default/serialization behavior, Badcat counterpart, evidence source and status; unresolved items remain explicitly blocked. Distinguish source declaration inventory from compiled JVM/Rhino ABI proof. Re-read the updated checklist after recording results.
 - **Exclusions:** no production Kotlin/Java, Gradle/dependency, workflow, tests/fixtures, source rules, UI/Reader, database/schema, release changes; no Stage-1 implementation; no Room/schema v1; no main writes; do not inspect, run, edit or unpause the four paused source cases or security preflight.
 - **Parallelism:** independent of Actions #3301's immutable SHA `4ea24ef01c7c9fa7f8414ec9d3a50e0b0b1c6a68`; #3301 remains pending and must be polled separately. This audit must not claim or borrow its pending CI evidence.
+
+
+### 25.1 Source-level audit checkpoint
+
+- **Inspected Badcat HEAD:** `bfca5f67584522199240588740adbdcbb7152562` (source tree unchanged by the later documentation-only audit commits); pinned upstream SHA remains `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Recorded evidence:** `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md`, section 24. It records BaseSource/JsExtensions/JsEncodeUtils inheritance, BookSource/Book/BookChapter/BaseBook/RuleDataInterface relationships, all six rule-model inheritance/default/serializer entry points, AnalyzeRule/AnalyzeUrl constructors and overload annotations, and compiler-generated/Parcelize/reflection-visible surfaces that remain to be proven from bytecode.
+- **Confirmed source-level gaps:** Badcat's bridge remains a custom host class rather than the upstream interface/entity hierarchy; `getSource()` returns a Map, `getBatchContext()` is null, and navigation context is empty. The previous 18 missing-name and selected overload gap list remains open.
+- **Not yet accepted:** this is not a complete JVM/Rhino ABI inventory. Exact compiled descriptors, synthetic/default/bridge members, full annotations/visibility/nullability and serializer edge fixtures remain pending. The #3301 JVM ABI capture step is not yet reached.
+- **State:** Runtime-3.2f.50 remains `in_progress`; Stage-0 ordered item 1 remains open; Stage-1 remains **NO-GO**. No production or build/test/workflow files changed. Four paused source cases and security preflight remain untouched.
+- **Next action:** poll Actions #3301 on exact SHA `4ea24ef01c7c9fa7f8414ec9d3a50e0b0b1c6a68`; after its JVM ABI/artifacts are available, inspect those reports and continue the compiled ABI gap list without treating a host-only ABI report as upstream ABI proof.
