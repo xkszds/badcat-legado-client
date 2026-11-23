@@ -105,6 +105,23 @@ val verifyPinnedLegadoRuleAnalyzerRuntimeClasspath =
             containing.forEach {
                 logger.lifecycle("PINNED_RULE_ANALYZER_RUNTIME_CLASSPATH=${it.absolutePath}")
             }
+            val report = layout.buildDirectory
+                .file("reports/legado-runtime-3.2f.46/runtime-classpath.json")
+                .get().asFile
+            report.parentFile.mkdirs()
+            report.writeText(
+                groovy.json.JsonOutput.toJson(
+                    mapOf(
+                        "task" to "Runtime-3.2f.46",
+                        "configuration" to "debugRuntimeClasspath",
+                        "artifactType" to "android-classes-jar",
+                        "classEntry" to classEntry,
+                        "status" to "pass",
+                        "artifacts" to containing.map { it.absolutePath },
+                    )
+                ) + "\\n"
+            )
+            logger.lifecycle("PINNED_RULE_ANALYZER_REPORT=${report.absolutePath}")
         }
     }
 

@@ -189,9 +189,6 @@ jobs:
       - name: Run authentic Legado runtime model contract tests
         run: gradle --no-daemon :legado-runtime:testDebugUnitTest
 
-      - name: Verify pinned RuleAnalyzer on Android runtime classpath
-        run: gradle --no-daemon :app:verifyPinnedLegadoRuleAnalyzerRuntimeClasspath
-
       - name: Generate pinned Legado JavaScript API inventory
         run: |
           python3 -m py_compile .github/scripts/legado-js-abi-inventory.py
@@ -244,6 +241,18 @@ jobs:
           echo "Git blob SHA-1: $actual_blob"
           test "$actual_size" = "1900654"
           test "$actual_blob" = "d240cdd66f5269ed33da53cde7e4e690cee6e162"
+
+      - name: Verify pinned RuleAnalyzer on Android runtime classpath
+        run: gradle --no-daemon :app:verifyPinnedLegadoRuleAnalyzerRuntimeClasspath
+
+      - name: Upload Runtime-3.2f.46 Android runtime classpath report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: legado-runtime-3.2f.46-runtime-classpath
+          path: app/build/reports/legado-runtime-3.2f.46/runtime-classpath.json
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Restore pinned Legado Rhino extension sources
         run: |

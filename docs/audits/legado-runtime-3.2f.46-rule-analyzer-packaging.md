@@ -44,3 +44,12 @@
 - Narrow correction: request AGP's `android-classes-jar` artifact type through `debugRuntimeClasspath.incoming.artifactView`, then scan the resolved class JARs for the exact class definition. This makes the guard inspect the class-bearing artifacts rather than asking Gradle to materialize an unqualified multi-variant configuration.
 - No new dependency, production Kotlin behavior, upstream source, source fixture, UI, reader, bookshelf or storage change.
 - **Status:** correction committed for exact-SHA CI; not yet verified. APK DEX and API 28/35 class-loading/split tests remain mandatory.
+
+
+## Follow-up after #3246 — run classpath verification after restoring Rhino
+
+- #3246 / run `45231455009`, job `137891776289`, exact SHA `01c0578b09b5805a1d2e6931ca4e705514acc909`: the `android-classes-jar` artifact view removed the earlier variant ambiguity, but full runtime classpath resolution failed because `org.htmlunit:htmlunit-core-js:5.3.0-legado.4` was not present in the local Maven repository at that point in the workflow.
+- Workflow inspection confirms the verification step was ordered before `Restore pinned Legado Rhino artifact` and its size/blob verification. The missing file is intentionally downloaded later in the same workflow from the pinned upstream SHA; the classpath guard was therefore scheduled too early.
+- Correction: move the guard to immediately after the pinned Rhino artifact restore/verification, and emit a sanitized JSON report listing the exact class-bearing artifacts. Upload is required (`if-no-files-found: error`), so missing report output fails CI rather than being silently ignored.
+- No dependency version, artifact bytes, upstream source, production runtime behavior or user-facing code changed. The guard still resolves the Android runtime class-bearing artifact view; it does not skip dependencies or substitute a JAR-only check.
+- **Status:** order/report correction committed; exact-SHA CI pending. APK DEX and API 28/35 device checks remain mandatory.

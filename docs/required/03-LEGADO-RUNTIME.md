@@ -4869,3 +4869,8 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 - #3245 / run `45230453615`, job `137888252481`, exact SHA `9b7c030ac9eb8deffe5d332c3ea5b49cb0c71b85`: contract JAR check passed; app runtime-classpath guard failed because direct `debugRuntimeClasspath.files` resolution did not request AGP artifact type and Gradle reported ambiguous `:legado-runtime:debugRuntimeElements` variants. Android instrumentation and APK assembly were skipped; this is not a new APK result.
 - Follow-up correction: resolve `debugRuntimeClasspath` via `incoming.artifactView` with artifact type `android-classes-jar`, then scan the class-bearing artifact files for `io/legado/app/model/analyzeRule/RuleAnalyzer.class`. This only fixes the guard's variant selection; final DEX and device checks remain required.
 - Follow-up commit/CI pending at this closeout point. .46 remains in progress and unaccepted.
+
+
+- #3246 / run `45231455009`, job `137891776289`, exact SHA `01c0578b09b5805a1d2e6931ca4e705514acc909`: class-bearing artifact view removed the prior variant ambiguity, but verification ran before the workflow's pinned Rhino JAR restore and failed resolving missing local `htmlunit-core-js-5.3.0-legado.4.jar`. No APK or emulator result was produced.
+- Follow-up: moved classpath guard after pinned Rhino artifact size/blob verification; task now writes a sanitized JSON artifact-path report and CI upload is mandatory. No dependency bytes or versions changed.
+- .46 remains in progress pending exact-SHA CI, APK DEX class_def, API28/API35 instrumentation, and split call.
