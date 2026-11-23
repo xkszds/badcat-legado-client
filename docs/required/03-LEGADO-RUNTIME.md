@@ -4681,3 +4681,19 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 - **Scope:** only the new audit report and this checklist changed. No production/test/Gradle/workflow/UI/storage changes. No CI/JUnit/APK/device result is claimed for this audit.
 - **CI inspection scheduling:** per user instruction, Actions runs numbered 3200 and later are reserved for a unified inspection pass; no individual run numbered 3200 or later was inspected as part of this audit.
 - **Third-category status:** partially implemented; full Legado compatibility remains blocked. The audit does not authorize implementation or close any runtime capability.
+
+
+### Runtime-3.2f.40 registration — read-only concurrent-rate update and lifecycle audit
+
+- **日期 / 分类：** 2026-11-23；第三类：pinned Legado `BaseSource.concurrentRate` update behavior and record lifecycle.
+- **起始 branch / HEAD：** `integration/legado-upstream-runtime` / `2aa0b6524bccdf74fcf95f52691a7fd86fd4122b`；固定 Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`。
+- **触发依据：** .36 只对齐首次 `fetchStart` parser，明确排除 `updateConcurrentRate`、窗口/等待策略和生命周期。宿主当前在每次 `acquire` 时直接更新 record 的 access/interval；上游则提供显式 `updateConcurrentRate(key, concurrentRate)`，有效更新保留 time/frequency，非法值保留原 record。两者调用时机与生命周期是否等价尚未审计。
+- **目标：** 只读追踪上游更新契约、创建/更新/删除并发率设置的所有 caller、key identity 和 record 生命周期；对照宿主 limiter、所有 `acquire` callers、source model/catalog mutation/deletion paths 与测试，确认每请求刷新配置是否偏离上游显式更新。
+- **必须审查：** pinned `ConcurrentRateLimiter.kt`、`BaseSource.getKey()`、`concurrentRate` mutation/callers、source import/update/delete lifecycle；host `LegadoConcurrentRateLimiter.kt`、所有 `acquire` callers、source DTO/catalog mutation/deletion、runtime cleanup 和测试。所有 caller 必须从当前分支源码确认。
+- **允许变更：** 仅新增 `docs/audits/legado-runtime-3.2f.40-concurrent-rate-update-lifecycle-audit.md` 与更新本分类清单。禁止生产/测试/构建/workflow/resource/UI/storage 变更。
+- **验收：** update 有效/非法/null/blank/zero/positive/N/M 输入与 record 保留矩阵；key identity 和 record create/update/remove 调用图；host caller/lifecycle 矩阵；time/window/frequency 语义；准确源码 blob 证据；GO/NO-GO 与最小独立后续任务。
+- **排除：** 不改 limiter 或测试，不改等待/取消/线程模型，不处理 dynamic header，不改 schema/UI/Gradle/workflow/upstream pin/第四第五类或 `main`。
+- **CI：** Actions #3200 及之后仍按用户要求留待统一检查；本只读审计不检查单个 run，也不声称测试/CI/APK/设备通过。
+- **状态：** 已 preregister，待只读审计。
+
+详细登记见 `docs/audits/legado-runtime-3.2f.40-concurrent-rate-update-lifecycle-audit.md`。
