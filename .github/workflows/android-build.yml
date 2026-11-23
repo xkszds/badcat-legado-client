@@ -497,6 +497,20 @@ jobs:
         if: ${{ always() && (steps.bounded_rhino_tests.outcome == 'success' || steps.bounded_rhino_tests.outcome == 'failure') }}
         run: gradle --no-daemon :app:assembleDebug
 
+      - name: Verify authentic pinned RuleAnalyzer class definition in APK DEX
+        id: verify_rule_analyzer_apk_dex
+        if: ${{ always() && steps.assemble_debug_apk.outcome == 'success' }}
+        run: bash .github/scripts/verify-rule-analyzer-apk-dex.sh app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload RuleAnalyzer APK DEX class-definition evidence
+        if: ${{ always() && steps.assemble_debug_apk.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: legado-runtime-3.2f.46-apk-dex-class-definitions
+          path: build/runtime-rule-analyzer-apk-dex/**
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload debug APK
         if: ${{ always() && steps.assemble_debug_apk.outcome == 'success' }}
         uses: actions/upload-artifact@v4
