@@ -34,7 +34,7 @@ class LegadoSourceLoginUiV2Service(
             ?: return unsupported("Book source '${source.id}' has no login JavaScript")
         val evaluated = scriptRuntime.evaluate(
             source = source,
-            script = "$loginScript\nloginUi(JSON.parse(String(__loginState)))",
+            script = "$loginScript\n${normalizeLoginResult("loginUi(JSON.parse(String(__loginState)))")}",
             bindings = mapOf(
                 "__loginState" to stateJson,
                 "__badcatLoginInvocation" to invocation.toJson(),
@@ -77,7 +77,7 @@ class LegadoSourceLoginUiV2Service(
             ?: return unsupported("Book source '${source.id}' has no login JavaScript")
         val evaluated = scriptRuntime.evaluate(
             source = source,
-            script = "$loginScript\nloginAction(String(__loginAction), JSON.parse(String(__loginState)), JSON.parse(String(__loginForm)))",
+            script = "$loginScript\n${normalizeLoginResult("loginAction(String(__loginAction), JSON.parse(String(__loginState)), JSON.parse(String(__loginForm)))")}",
             bindings = mapOf(
                 "__loginAction" to action,
                 "__loginState" to stateJson,
@@ -126,6 +126,15 @@ class LegadoSourceLoginUiV2Service(
             ?: if (text.startsWith("@js:", ignoreCase = true)) text.substringAfter(':').trim() else text
         return inline.takeIf { it.isNotBlank() }
     }
+
+    private fun normalizeLoginResult(expression: String): String = """
+        (function () {
+            var __badcatLoginResult = ($expression);
+            if (__badcatLoginResult == null || typeof __badcatLoginResult === "function") return null;
+            if (typeof __badcatLoginResult === "object") return JSON.stringify(__badcatLoginResult);
+            return __badcatLoginResult;
+        })()
+    """.trimIndent()
 
     private fun isJsonObject(value: String): Boolean = runCatching {
         JsonParser.parseString(value).isJsonObject

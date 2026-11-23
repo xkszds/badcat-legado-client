@@ -131,7 +131,8 @@ class LegadoSourceLoginUiV2ServiceTest {
         assertTrue(result is EngineResult.Success)
         assertEquals(mainJsSource.mainJs, runtime.capturedSource?.mainJs)
         val executed = requireNotNull(runtime.capturedScript)
-        assertTrue(executed.trimStart().startsWith("loginUi(JSON.parse(String(__loginState)))"))
+        assertTrue(executed.contains("loginUi(JSON.parse(String(__loginState)))"))
+        assertTrue(executed.contains("JSON.stringify(__badcatLoginResult)"))
         assertTrue(!executed.contains("sharedLoginHelper"))
         assertTrue(!executed.contains("legacyLoginUi"))
     }
@@ -149,7 +150,8 @@ class LegadoSourceLoginUiV2ServiceTest {
         assertTrue(result is EngineResult.Success)
         assertEquals(mainJsSource.mainJs, runtime.capturedSource?.mainJs)
         val executed = requireNotNull(runtime.capturedScript)
-        assertTrue(executed.trimStart().startsWith("loginAction(String(__loginAction)"))
+        assertTrue(executed.contains("loginAction(String(__loginAction)"))
+        assertTrue(executed.contains("JSON.stringify(__badcatLoginResult)"))
         assertTrue(!executed.contains("sharedLoginHelper"))
         assertTrue(!executed.contains("legacyLoginAction"))
     }
@@ -171,6 +173,7 @@ class LegadoSourceLoginUiV2ServiceTest {
 
     @Test
     fun mainJsInitializesLoginUiOnceInTheRealRhinoSourceScope() = runBlocking {
+        val sourceId = "https://main-js-login-render.example/source.json"
         val mainJs = """
             let loginInitializationMarker = "from-main-js";
             function loginUi(state) {
@@ -178,13 +181,93 @@ class LegadoSourceLoginUiV2ServiceTest {
             }
         """.trimIndent()
         val mainJsSource = source().copy(
+            id = sourceId,
+            baseUrl = "https://main-js-login-render.example/",
             mainJs = mainJs,
             loginUrl = "<js>throw new Error('loginUrl must not be selected for a JS source');</js>",
         )
-        val result = LegadoSourceLoginUiV2Service(RhinoSourceScriptRuntime()).render(mainJsSource)
-        val rows = (result as EngineResult.Success<List<LegadoLoginUiV2.Row>>).value
-        assertEquals("from-main-js", rows.single().name)
-        assertEquals("username", rows.single().key)
+        val runtime = RhinoSourceScriptRuntime()
+        try {
+            val service = LegadoSourceLoginUiV2Service(runtime)
+            val result = service.render(mainJsSource)
+            assertTrue(result is EngineResult.Success)
+            val rows = (result as EngineResult.Success<List<LegadoLoginUiV2.Row>>).value
+            assertEquals("from-main-js", rows.single().name)
+            assertEquals("username", rows.single().key)
+
+            val repeated = service.render(mainJsSource)
+            assertTrue(repeated is EngineResult.Success)
+            assertEquals("from-main-js", (repeated as EngineResult.Success).value.single().name)
+        } finally {
+            runtime.clearSourceState(sourceId)
+        }
+    }
+
+    @Test
+    fun dispatchesMainJsLoginActionObjectThroughTheRealRhinoSourceScope() = runBlocking {
+        val sourceId = "https://main-js-login-action.example/source.json"
+        val mainJs = """
+            let loginActionMarker = "from-main-js-action";
+            function loginAction(action, state, form) {
+                return {
+                    state: {
+                        marker: loginActionMarker,
+                        action: action,
+                        username: form.username
+                    },
+                    close: true
+                };
+            }
+        """.trimIndent()
+        val mainJsSource = source().copy(
+            id = sourceId,
+            baseUrl = "https://main-js-login-action.example/",
+            mainJs = mainJs,
+            loginUrl = "<js>throw new Error('loginUrl must not be selected for a JS source');</js>",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        try {
+            val result = LegadoSourceLoginUiV2Service(runtime).dispatchAction(
+                source = mainJsSource,
+                action = "submit",
+                stateJson = "{}",
+                formJson = """{"username":"reader"}""",
+            )
+            assertTrue(result is EngineResult.Success)
+            val action = (result as EngineResult.Success).value
+            assertTrue(action.close)
+            val state = com.google.gson.JsonParser.parseString(requireNotNull(action.stateJson)).asJsonObject
+            assertEquals("from-main-js-action", state.get("marker").asString)
+            assertEquals("submit", state.get("action").asString)
+            assertEquals("reader", state.get("username").asString)
+        } finally {
+            runtime.clearSourceState(sourceId)
+        }
+    }
+
+    @Test
+    fun preservesJsonStringLoginUiResultWithoutDoubleEncodingInRealRhinoSourceScope() = runBlocking {
+        val sourceId = "https://main-js-login-json-string.example/source.json"
+        val mainJs = """
+            function loginUi(state) {
+                return '{"rows":[{"name":"json-string","type":"text","key":"username"}]}';
+            }
+        """.trimIndent()
+        val mainJsSource = source().copy(
+            id = sourceId,
+            baseUrl = "https://main-js-login-json-string.example/",
+            mainJs = mainJs,
+            loginUrl = "<js>throw new Error('loginUrl must not be selected for a JS source');</js>",
+        )
+        val runtime = RhinoSourceScriptRuntime()
+        try {
+            val result = LegadoSourceLoginUiV2Service(runtime).render(mainJsSource)
+            assertTrue(result is EngineResult.Success)
+            val rows = (result as EngineResult.Success<List<LegadoLoginUiV2.Row>>).value
+            assertEquals("json-string", rows.single().name)
+        } finally {
+            runtime.clearSourceState(sourceId)
+        }
     }
 
     @Test
