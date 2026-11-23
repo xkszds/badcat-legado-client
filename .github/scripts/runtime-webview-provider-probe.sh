@@ -27,6 +27,9 @@ if [ "$device_state_status" -ne 0 ] || [ "$device_state" != "device" ] || \
   exit 1
 fi
 
+# Keep each emulator's XML evidence isolated; API 35 must not see API 28 results.
+rm -rf app/build/outputs/androidTest-results/connected app/build/reports/androidTests/connected
+
 gradle --no-daemon :app:connectedDebugAndroidTest \
   -Pandroid.testInstrumentationRunnerArguments.notClass=app.badcat.client.runtime.PublicLegadoSourcesEndToEndInstrumentedTest
 test_status=$?
