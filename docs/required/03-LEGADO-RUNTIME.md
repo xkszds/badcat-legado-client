@@ -4724,3 +4724,18 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 - **结论：** #3217–#3222 已连续 335/335 JVM tests 通过，但不代表完整 Legado 兼容或 Release 就绪。#3223–#3225 必须等终结后按各自 exact SHA 核对 JUnit/产物，不能借用早期成功 run 的结果。
 - **报告：** docs/audits/legado-runtime-3.2f.41-ci-runs-3201-3225-inspection.md；检查报告提交 ade513ecc1e1864f9396e0cb50a0289b80e910fa。
 - **任务约束：** 本轮只做 CI 检查与文档记录，未启动其他开发任务；必须先完成 #3223–#3225 的终结检查，再继续第三类其他任务。记录提交自身可能触发新的 Actions run，该 run 也需单独按 exact SHA 核验。
+
+
+### Runtime-3.2f.42 registration — four-source live corpus failure diagnosis
+
+- Date/category: 2026-11-23; third category, read-only diagnosis of uploaded-corpus E2E failures.
+- Start branch/HEAD: integration/legado-upstream-runtime / 7c4c0ab28a3c1baf13a80c5deb37ef1338900238.
+- Pinned Legado: 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Trigger: #3221/#3222 live corpus each reported 1/4 full-reading success: 精华书阁 passed; 唐三中文 and 零零小说 timed out; 笔趣阁fun returned HTTP 404. A low pass rate alone does not identify a runtime defect.
+- Goal: read-only trace the exact corpus source definitions, request endpoints, request/response stages and available sanitized logs/artifacts for these four outcomes; compare against the pinned source execution path and distinguish network/site/rule/runtime causes. Check newer #3223–#3225 reports when terminal and use exact-SHA evidence only.
+- Allowed changes: this registration, one diagnostic report under docs/audits/, and this checklist closeout only. No production/test/Gradle/workflow/resource/UI/storage/source-catalog edits.
+- Evidence required: exact run IDs and SHAs; source identifiers/rule snapshots if present; stage reached (search/detail/TOC/content); request host/path/status/elapsed time with secrets redacted; timeout phase if observable; 404 response metadata/body excerpt if safe; retry/redirect/DNS/TLS evidence only when present; pinned-vs-host call path mapping.
+- Acceptance: each source classified as confirmed site/network issue, confirmed rule/config issue, confirmed host-runtime issue, or undetermined with exact missing evidence. Do not alter timeout thresholds, skip failed stages, or mark partial flow as full pass.
+- Exclusions: no rule edits or production fixes in this task; no secret/token/cookie logging; no unrelated rate-limit/dynamic-header implementation; no release/APK work. Any code fix requires a separate preregistration based on findings.
+- Concurrent CI: #3223–#3225 are checked by exact SHA independently; active #3226/#3227 are documentation-triggered runs. This read-only audit changes only docs and does not borrow their CI results.
+- State: registered; investigation pending.
