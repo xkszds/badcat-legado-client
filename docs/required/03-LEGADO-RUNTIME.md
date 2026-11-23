@@ -4799,3 +4799,14 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 - **Acceptance:** four distinct source IDs/domains verified; all search/detail/TOC/content rule objects retained; no credentials or secrets; fixture SHA-256 and upstream Git blob/commit recorded; source repository licenses and attribution documented. If a candidate fails provenance/license/sensitivity checks, do not commit it and keep that source blocked.
 - **Explicit qualification:** these are public community snapshots, not the user's original uploaded corpus and not proof the site's current rules work. Live runtime compatibility must be a separately preregistered task after fixture review. No complete Legado compatibility claim is permitted.
 - **State:** registered; source extraction and fixture integrity review pending.
+
+
+#### Runtime-3.2f.44 closeout — four licensed public source fixtures pinned
+
+- **Result:** four complete public BookSource objects were found, license-checked, extracted without changing field values, and committed under `app/src/androidTest/assets/legado-sources/`. All fixtures were read back and parsed as one-element JSON arrays; Search/Detail/TOC/Content rule objects are present. Empty header/loginUrl; no credentials detected. Inline JS in the 00shu source is preserved.
+- **Sources and licenses:** 唐三中文 + 笔趣阁fun from MIT-licensed `mumuceo/file01`; 精华书阁 from GPL-3.0 `yolo52/Yuedu`; 零零小说 from GPL-3.0 `Mina-kk/yuedu-MCP`. Immutable upstream commit/blob refs, fixture SHA-256 values, byte lengths and Badcat blob IDs are recorded in `docs/audits/legado-runtime-3.2f.44-public-source-fixture-provenance.md`.
+- **Fixture commit:** `fe537260ec36e48aa67dbcaa41db5e176153ae3c`.
+- **Qualification:** public community snapshots are not the user's original corpus. No rules were simplified, but JSON whitespace was normalized after extracting each complete object into a one-element array. This is fixture acquisition only; no Android test or live runtime behavior was executed.
+- **Changes:** four fixture files plus this audit and checklist closeout only. No production/test/workflow/Gradle/Python/UI/storage changes.
+- **CI:** #3232–#3234 remained in progress at last check on their own SHAs; this report commit's run must be checked separately.
+- **State:** .44 closed; four public fixtures available for a separately preregistered Android runtime instrumentation task. Third-category status remains partial, not full Legado compatibility.
