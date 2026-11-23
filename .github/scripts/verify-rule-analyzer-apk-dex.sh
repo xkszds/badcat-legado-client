@@ -75,7 +75,7 @@ fi
 apk_sha256="$(sha256sum "$apk" | awk '{print $1}')"
 
 # apkanalyzer separates DEX tree columns with tabs, not fixed spaces.
-class_definition="$(grep -E '^C d[[:space:]]+[0-9]+[[:space:]]+[0-9]+[[:space:]]+[0-9]+[[:space:]]+io\.legado\.app\.model\.analyzeRule\.RuleAnalyzerif [ -z "$class_definition" ]; then
+class_definition="$(grep -E '^C d[[:space:]]+[0-9]+[[:space:]]+[0-9]+[[:space:]]+[0-9]+[[:space:]]+io\.legado\.app\.model\.analyzeRule\.RuleAnalyzer$' "$defined_classes" | head -n 1 || true)"
   error="pinned RuleAnalyzer class definition is absent from APK DEX; references alone do not satisfy this gate"
   exit 1
 fi
