@@ -5432,3 +5432,17 @@ Each row binds one run to its own immutable commit SHA and its single `assemble-
 - **Change boundary:** audit/checklist documentation only; no production, tests, Gradle, workflow, UI/Reader, DB/schema or source fixtures changed.
 - **Next ordered action:** continue the remaining documented AnalyzeRule/AnalyzeUrl and JsExtensions methods/callers; then complete serializer differential fixtures and exact pre-R8 JVM ABI/nullability. Keep Stage-1 blocked until Stage-0 gates close.
 
+
+
+### 26.7 Actions #3329–#3333 follow-on documentation CI snapshots (2026-11-24)
+
+- These runs were triggered by the sequential documentation-only audit/checklist commits. Each is an immutable `assemble-debug` snapshot; all were still pending at this poll:
+  - #3329 / run `45275997333` / job `138047828349` / SHA `411fdfd61e4637aa4925cea7070f3d1bc0ed68cc` — in_progress at app unit suite.
+  - #3330 / run `45276241142` / job `138048665029` / SHA `d2682b4e1be9b0a79b21d23beb04fa763bf5038d` — in_progress at G2d authentic rule/model source compile probe.
+  - #3331 / run `45276283385` / job `138048812028` / SHA `ec6e987cbea6582c760570a274dd3c3343f135b0` — in_progress at pinned RuleAnalyzer Android runtime classpath verification.
+  - #3332 / run `45276506951` / job `138049574300` / SHA `765f4edc4ae831fbd1140322464181515f43beba` — in_progress at contract unit tests.
+  - #3333 / run `45276545937` / job `138049708231` / SHA `99f1f1ef2031dbb70bf936bc28a8198c0f2af0e5` — in_progress at contract unit tests.
+- At this poll, none of these five jobs had a failed step; none had a terminal conclusion. #3324–#3328 also remain pending as recorded in §26.4. Do not treat progress at a particular step as test success.
+- **Current branch HEAD:** `99f1f1ef2031dbb70bf936bc28a8198c0f2af0e5`. The latest documentation commit has no terminal CI conclusion at this checkpoint.
+- **Next action:** poll #3324–#3333 independently to terminal state; then record the outcomes against each exact SHA. Keep Stage-0 in progress and Stage-1 NO-GO. No production/build/test/workflow/UI/Reader/database/source-fixture change is included in these audit commits.
+
