@@ -4782,3 +4782,20 @@ Runtime-3.2f.39 is registered as a read-only dynamic-header re-entrancy/order au
 - **Required next input:** original Legado BookSource JSON export containing all four sources (one original array or four original files), with secrets handled outside repository/CI logs. After receipt, verify source IDs and fixture hashes, then implement instrumentation using `BadcatReadingEngineFactory.sourceCatalog().importJson()` and the factory-created `ReadingEngine` methods `search`, `bookDetail`, `chapters`, `chapterContent`.
 - **CI:** #3232 run 45203418924, exact SHA `2c4b459a5555c5f3deebd041e8a1a45f451bba97`, remained in_progress at closeout; do not borrow its result for the report commit or claim success. #3231 remains an overall failure due Maven Central HTTP 429, despite four Android instrumentation tests having executed.
 - **State:** blocked before implementation on missing original source fixtures; no compatibility result for any of the four sources. Resume this task only after source JSON is supplied; any change to runtime behavior requires separate preregistration.
+
+
+### Runtime-3.2f.44 registration — licensed public BookSource fixture acquisition
+
+- **Date/category:** 2026-11-23; third category, source corpus/provenance.
+- **Starting HEAD:** `f78e71d5f91d61e0637e89fea3207eb2d23eb890`; branch remains `integration/legado-upstream-runtime`; pinned Legado remains `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Reason:** .43 is correctly blocked because the user's original uploaded corpus is absent. User explicitly authorized finding the four site sources online. This task acquires public community BookSource records without pretending they are the user's original uploaded versions.
+- **Candidate provenance (all pinned to immutable upstream commit refs):**
+  - 唐三中文: `mumuceo/file01`, `202609/14834_67143e8696757866bc238acc878865fe.json`, commit `66a9f09187b0c8642bd3f8f9262146c5ace31aa0`; repository MIT license.
+  - 笔趣阁fun: `mumuceo/file01`, `202503/4078_419b9c27f3161a953e0246be6b1e3ce9.json`, same commit; repository MIT license.
+  - 精华书阁: `yolo52/Yuedu`, `shuyuan.json`, commit `9e9eb4ec08ffa5ac8986e2f07cae36c09f854d0a`; repository GPL-3.0.
+  - 零零小说: `Mina-kk/yuedu-MCP`, `app/src/main/assets/corpus/shards/f_0857.json`, commit `e129d35e7cba08f8dcacc2cf05dc3e626b5965dd`; repository GPL-3.0.
+- **Goal:** verify each exact source object by its source URL/name, full original model/rule structure, upstream repository license and immutable commit/blob identity; check for credentials/secrets; extract one unchanged-in-value JSON object per fixture and retain source attribution/provenance. Whitespace normalization is allowed only if explicitly recorded; no rule simplification, URL inference, selector rewriting or synthesized fields.
+- **Allowed changes:** this registration/closeout and one audit report under `docs/audits/`; immutable source fixtures only under `app/src/androidTest/assets/legado-sources/`. No production Kotlin/runtime, test code, Gradle, workflow, Python, UI, storage or existing source catalog changes.
+- **Acceptance:** four distinct source IDs/domains verified; all search/detail/TOC/content rule objects retained; no credentials or secrets; fixture SHA-256 and upstream Git blob/commit recorded; source repository licenses and attribution documented. If a candidate fails provenance/license/sensitivity checks, do not commit it and keep that source blocked.
+- **Explicit qualification:** these are public community snapshots, not the user's original uploaded corpus and not proof the site's current rules work. Live runtime compatibility must be a separately preregistered task after fixture review. No complete Legado compatibility claim is permitted.
+- **State:** registered; source extraction and fixture integrity review pending.
