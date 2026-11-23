@@ -599,3 +599,51 @@ Pinned path: `app/src/main/java/io/legado/app/help/JsExtensions.kt`; 1,390 lines
 This is a broad host surface. The exact overload signatures, default parameters, nullable returns, thrown errors, thread/coroutine behavior and object return types must be inventoried per method. The 48 annotation count is not an ABI count because RhinoWrapFactory also wraps ordinary Java objects and applies custom property/setter policies.
 
 **Status:** property/constructor inventory slice 2 is recorded. It does not yet close every inherited BaseBook/RuleDataInterface/JsEncodeUtils/RuleData/UrlOption field, every Gson converter/default, or every JsExtensions overload signature. Stage-0 remains partial; stage-1 remains **NO-GO**.
+
+
+## 21. Inherited rule-data, batch-save and shared-scope contracts — pinned source slice 3 (2026-11-24)
+
+### 21.1 RuleDataInterface / BaseBook data ownership
+
+Pinned paths:
+- `app/src/main/java/io/legado/app/model/analyzeRule/RuleDataInterface.kt`
+- `app/src/main/java/io/legado/app/data/entities/BaseBook.kt`
+
+`RuleDataInterface` owns a mutable `HashMap<String,String>` variable map and a two-tier value policy:
+- null removes the inline value and calls `putBigVariable(key, null)`;
+- values with `length < 10000` are kept inline and any previous big value is cleared;
+- values with length >= 10000 are removed from the inline map and delegated to `putBigVariable`;
+- reads resolve inline first, then big-value storage, then empty string.
+This threshold is Kotlin String length (UTF-16 code units), not UTF-8 byte size.
+
+`BaseBook` extends RuleDataInterface with name/author/bookUrl/kind/wordCount/variable plus infoHtml/tocHtml. Its default putVariable serializes the variable map back to `variable`; large values are owned by `RuleBigDataHelp` keyed by bookUrl. A replacement KV store must preserve key scoping, deletion, threshold, fallback and lifecycle cleanup, not just expose put/get.
+
+### 21.2 BatchContentContext identity, concurrency and save-fence contract
+
+Pinned path: `app/src/main/java/io/legado/app/model/BatchContentContext.kt`.
+
+- Context binds one BookSource, Book and immutable chapter list, plus coroutine context and per-index ContentSaveToken map.
+- Chapter identity is explicitly `BookChapter.index`; same URL may legitimately represent multiple chapters.
+- URL aliases include raw URL, absolute URL and normalized URL. A URL identifier is accepted only for a single unique candidate; ambiguous same-URL entries must use the chapter object. Numeric identifiers are rejected to avoid confusing list position with chapter index.
+- Shared mutable state (closed flag, saved-index set and cache/save status) is guarded by one lock because JS may call back concurrently from multiple threads/coroutines.
+- `saveContent` checks cancellation, closed state, resolves chapter identity, applies content replacement and online line formatting, requires the original per-index save token, checks cancellation again, and delegates to BookHelp.saveContent. Successful save records the chapter index. Closing blocks later saves; missing chapters are returned for ordinary per-chapter fallback.
+- This contract ties together source identity, book identity, chapter index, request-start version token, replacement rules, cancellation and persistence. A generic batch list callback or URL-keyed cache cannot replace it.
+
+### 21.3 SharedJsScope lifetime and synchronization contract
+
+Pinned path: `app/src/main/java/io/legado/app/model/SharedJsScope.kt`.
+
+- JS-library scope cache key is MD5 of the jsLib text; a separate crypto scope is keyed by owner identity and current thread.
+- Both use LRU caches of 16 entries containing weak references, plus per-key creation locks with reference counts to avoid duplicate concurrent scope creation.
+- A library scope installs CryptoJS, evaluates the JS library, prevents extensions and stores the weak scope. Removing a library removes cached remote library files, cached scope and shared-global-state keys under the same creation lock.
+- Scope reuse, source shared global-state namespace, thread ownership, weak-reference expiry, concurrent creation and invalidation are observable semantics. A per-source persistent global object with no equivalent eviction/reset is not automatically compatible.
+
+### 21.4 JsEncodeUtils inherited ABI
+
+Pinned path: `app/src/main/java/io/legado/app/help/JsEncodeUtils.kt`; JsExtensions inherits this interface.
+
+Method groups include MD5 full/16-character digest, symmetric crypto factory overloads (String/ByteArray keys and optional IV), asymmetric crypto and signing factories, legacy AES/DES/TripleDES encode/decode overloads, digest hex/Base64 and HMAC hex/Base64. Some are explicitly annotated with `@JavascriptInterface`, while many are exposed through Rhino Java-object wrapping. Return types include crypto helper objects and byte arrays, not just strings.
+
+This expands the JS compatibility surface beyond the JsExtensions declarations. Every inherited method, overload, helper object and nullable/byte-array conversion must be included in the source ABI inventory.
+
+**Status:** inherited data, batch and scope contracts are now described at source level, but Badcat implementation-by-implementation differential evidence is still incomplete. Stage-0 remains partial; stage-1 remains **NO-GO**.
