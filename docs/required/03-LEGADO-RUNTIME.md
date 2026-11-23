@@ -5372,3 +5372,16 @@ Each row binds one run to its own immutable commit SHA and its single `assemble-
 - **Change boundary:** audit/checklist documentation only; no production code, tests, Gradle, workflow, UI/Reader, database/schema or source fixtures changed.
 - **Next ordered action:** continue caller/reflection/script-corpus reachability for inherited `RssJsExtensions` helpers and remaining `JsExtensions` source-facing methods; then close all-12 converter differential fixtures and pre-R8 JVM metadata. Do not start Stage-1 or any production integration while these gates remain open.
 
+
+
+### 26.3 Runtime-3.2f.50 caller-closure continuation — Rss/SourceLogin method matrix (2026-11-24)
+
+- **Detailed evidence:** architecture audit section 24.16; fixed upstream remains `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Closed in this slice:** inventoried the public RssJsExtensions methods, `@JavascriptInterface` annotations, the unannotated Rhino-visible overloads, and SourceLoginJsExtensions callback additions against pinned `jsHelp.md` usage/context documentation.
+- **Important distinctions:** `searchBook(key, BookSource)` is a separate same-source Rhino callback overload; `open(login/search/explore)` is BookSource-reachable while `open(sort/rss)` is RssSource product navigation; SourceLogin refresh/browser/copy/login-data methods are callback/UI lifecycle behavior, not persistent session storage.
+- **Host differences:** host `put/get` and selector helpers have partial counterparts but not proven ABI/owner parity; host `setContent` returns String and lacks upstream `setBaseUrl/setRedirectUrl`; host selector element/list wrappers differ; no same-scope BookSource search/navigation/dialog/callback owner is present. Generic HTTP or login-session methods do not close these gaps.
+- **Boundary:** do not import unrelated Legado RSS product screens, login UI or Reader UI. Keep only BookSource-reachable behavior in the runtime compatibility scope and map UI effects through typed host ports.
+- **Task state:** Runtime-3.2f.50 remains `in_progress`; this is a method/annotation/context inventory slice, not implementation or parity acceptance. External source-script corpus, remaining JsExtensions callers, compiled ABI/nullability, serializer differential and dependency closure remain open. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**.
+- **Change boundary:** documentation/audit only; no production, test, Gradle, workflow, UI/Reader, DB/schema or source fixture changes.
+- **Next ordered action:** continue method-level reachability for the remaining source-facing `JsExtensions`/AnalyzeRule/AnalyzeUrl functions, including external script examples and callback/overload behavior; retain serializer differential and unminified ABI metadata as separate Stage-0 gates.
+
