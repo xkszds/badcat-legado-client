@@ -4585,3 +4585,13 @@
 - **依赖 / 并行：** 与 .35 Cookie parser 和 .36 rate limiter 的生产/测试文件完全隔离，可并行只读审计；本分类清单更新必须串行。
 - **排除：** 不执行用户书源 JS，不改请求行为、Cookie/login 实现、Rhino API、Gradle、UI、其他类别、上游 SHA 或 `main`。
 - **状态：** 已登记；待审计。
+ 
+#### Runtime-3.2f.37 audit closeout — dynamic header and login-header caller audit
+
+- **Audit HEAD:** `6ff710efe976b76db4f37b00fe7915748cb279d5`; report: `docs/audits/legado-runtime-3.2f.37-dynamic-header-caller-audit.md`.
+- **Pinned evidence:** BaseSource `9f5174d7ad6cb74a7e6b2d1f9260d90e3e8e6baa`; BookSource `7f63496ebf25c820b7d0c715d2fbce8e7bd29b9c`; AnalyzeUrl `d898c88dfd844d73f06d9396d0b46f39939f7e6c`; NativeBaseSource `8313dedf737fe42cb4381535f6e74760c4f31786`.
+- **Result:** upstream dynamically evaluates full-match inline header JS, normalizes and parses its result, adds default UA if absent, and merges login headers only for same-site requests. Host SourceRequestFactory supports static JSON only; multiple request paths call it; login-header wrapping is not guaranteed across every gateway factory. The host Rhino descriptor exposes raw header/login fields but not BaseSource.getHeaderMap semantics.
+- **Decision:** NO-GO for dynamic header/default UA/full caller parity. Correct next architecture is an app-layer typed header provider wired into every request path before the pure SourceRequestFactory; do not embed Rhino into the pure contract module. JS-source mainJs login selection remains separate.
+- **Scope review:** only this read-only audit report and this category checklist closeout changed. No production/test/Gradle/workflow/UI/storage code or CI/device results claimed.
+- **Acceptance:** read-only audit closed; implementation remains unstarted and must receive a separate preregistration.
+
