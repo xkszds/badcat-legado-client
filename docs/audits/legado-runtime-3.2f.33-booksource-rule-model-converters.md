@@ -56,12 +56,13 @@ These callers demonstrate that the rule types are not interchangeable bags of se
 
 - PinnedLegadoRuleModelsTest.kt blob 766c1cb9611deb02025cf3378bb50bd8ee10362b covers selected fields across all six models, object and legacy JSON-string forms, ReviewRule defaults/null, ContentRule batch fields and ContentRule JS string representation.
 - LegadoGsonCompatibilityTest.kt blob 4e952a0679a807245fa03da2bdb76c81eb6febb8 covers object/string forms for all six, null/array adapter behavior, unknown-field discard, selected scalar coercion and serialization round trips. Despite its method name, allSixRuleConvertersAcceptObjectAndStringEncodedObject calls GSON directly; it does not instantiate the Room BookSource.Converters methods.
-- ContentRuleCompatibilityTest.kt blob 31c8d455bdb9a0e7f6736ec329428a9c85187433 does exercise actual BookSource.Converters round trips, but only for ContentRule and its legacy JS toString() contract.
-- No evidence in this audit establishes per-property consumer equivalence for all six models, full Room converter behavior for all six, or complete upstream rule execution.
+- The similarly named ContentRuleCompatibilityTest.kt (blob 31c8d455bdb9a0e7f6736ec329428a9c85187433) is from the pinned upstream Legado repository, not this Badcat host repository. It verifies the upstream BookSource.Converters round trip for ContentRule; it is not host-side converter evidence.
+- The current Badcat app depends on :legado-runtime, whose reviewed compile source list includes BookListRule, the six rule model classes and GsonExtensions, but does not include upstream BookSource.kt. Consequently the host does not currently compile or expose BookSource.Converters. The existing host LegadoGsonCompatibilityTest exercises the copied Gson instances and model classes directly, not Room converter methods.
+- No evidence in this audit establishes per-property consumer equivalence for all six models, host-side Room converter behavior (the converter class is not integrated), or complete upstream rule execution.
 
 ## Minimal follow-up sequence
 
-1. Add focused converter tests that instantiate the six actual converter methods, including null, malformed JSON, object, legacy JSON-string primitive, unknown fields and serialization defaults. Keep database column defaults separate from Kotlin/Gson constructor defaults.
+1. First make a separate architecture decision whether the host should reuse the actual pinned BookSource.Converters or keep a typed host adapter. The current source closure does not include BookSource.kt, so tests cannot honestly instantiate its converters yet. Only after that decision, add focused tests for the selected real implementation: null, malformed JSON, object, legacy JSON-string primitive, unknown fields and serialization defaults. Keep database column defaults separate from Kotlin/Gson constructor defaults.
 2. Add field-by-field fixtures for all six models, including ReviewRule's currently dormant/partial operations and ContentRule batch semantics.
 3. Register each runtime stage separately for typed model binding and caller behavior. Do not route every string-valued field through CSS; preserve URL, JS, regex/replacement, callback, batch and pagination semantics.
 4. Treat ReviewRule as its own later runtime slice with explicit enable/configuration and summary/detail/reply flows.
