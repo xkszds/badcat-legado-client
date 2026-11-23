@@ -60,11 +60,12 @@ dependencies {
 val pinnedLegadoKotlinCompile =
     tasks.named<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>("compilePinnedLegadoKotlin")
 
-// Publish the custom upstream Kotlin output as part of the main source-set
-// output. Android project dependencies may consume the classes-directory
-// variant instead of the custom Jar task; Jar-only inclusion is insufficient.
+// Publish the custom upstream Kotlin output as a real main classes directory.
+// Android project variants consume SourceSetOutput.classesDirs; registering this
+// as output.dir(...) would classify the .class files as resources and leave the
+// Android classes-directory variant without the pinned RuleAnalyzer definition.
 sourceSets.named("main") {
-    output.dir(pinnedLegadoKotlinCompile.map { it.destinationDirectory })
+    output.classesDirs.from(pinnedLegadoKotlinCompile.map { it.destinationDirectory })
 }
 
 tasks.named<org.gradle.api.tasks.bundling.Jar>("jar") {
@@ -83,6 +84,16 @@ val verifyPinnedLegadoRuntimeJar = tasks.register("verifyPinnedLegadoRuntimeJar"
         val archive = tasks.named<org.gradle.api.tasks.bundling.Jar>("jar")
             .get().archiveFile.get().asFile
         val requiredClass = "io/legado/app/model/analyzeRule/RuleAnalyzer.class"
+        val mainClassDirs = sourceSets.named("main").get().output.classesDirs.files
+        val publishedClassDirs = mainClassDirs.filter { it.resolve(requiredClass).isFile }
+        check(publishedClassDirs.isNotEmpty()) {
+            "Pinned Legado runtime classes are missing $requiredClass from main classesDirs: " +
+                mainClassDirs.joinToString()
+        }
+        logger.lifecycle(
+            "PINNED_RULE_ANALYZER_MAIN_CLASSES_DIRS=" +
+                publishedClassDirs.joinToString { it.absolutePath }
+        )
         ZipFile(archive).use { zip ->
             check(zip.getEntry(requiredClass) != null) {
                 "Pinned Legado runtime JAR is missing $requiredClass: $archive"
