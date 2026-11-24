@@ -3161,3 +3161,65 @@ MainJsSourceGuard only allows a nonblank mainJs when a generic script runtime is
 - **Evidence type:** static source and caller evidence. Upstream marshaller unit tests were inspected as source artifacts, not executed in this environment. No Gradle build, device test or CI run was performed.
 - **Task 012 remains** in_progress / partial static closure; Stage-0 remains in_progress / not accepted; Stage-1 remains NO-GO.
 - **Next:** reconcile all source-script method families with the current RhinoSafeSourceJavaExtensions compiled member inventory and the pinned upstream public JS API/overloads, marking each as exact, partial, missing or conditional and linking existing method-specific deltas. Do not re-run already documented edge audits or CI.
+
+## 24.66 Runtime-3.0 Stage-0 — source-declaration inventory against the actual `java` bridge class
+
+- **Task:** continuation of `R3-S0-JS-EXTENSIONS-API-CALLER-CLOSURE-012` (overview §4.12), following §§24.62–24.65.
+- **Snapshot:** Badcat `integration/legado-upstream-runtime` HEAD `9752a15a3dba9ca68320f87bc20c8aab4caf20a3`; pinned upstream `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Files inspected:** pinned `JsExtensions.kt`, `JsEncodeUtils.kt`; host `RhinoSafeSourceJavaExtensions.kt`, `RhinoSourceScriptRuntime.kt`, `RuntimeHostPort.kt`, `RhinoHostSurfaceInventoryTest.kt` and focused compatibility test declarations.
+- **Evidence limit:** this is a source-declaration/name/overload inventory. `RhinoHostSurfaceInventoryTest` is designed to reflect compiled JVM descriptors and actual Rhino callable names, but it was not executed in this environment. Do not label these counts compiled ABI or measured Rhino visibility.
+
+### 24.66.1 Reconciled public-name inventory
+
+| Inventory | Unique names | Public declarations / overloads | Meaning |
+|---|---:|---:|---|
+| Pinned `JsExtensions` + inherited `JsEncodeUtils` base surface | 104 | 148 | Reconciles the exact 77 + 27 public-name inventory from §24.62.1. |
+| Host `RhinoSafeSourceJavaExtensions` outer class source declarations | 138 | Source declaration count not used as parity evidence | Includes adapter-specific helpers and extra names; it is not the pinned public contract. |
+| Name intersection between pinned base surface and host `java` class | 87 | Not an exact signature match | A shared method name alone does not prove parameter, return, nullability, overload resolution, object identity, default or behavior parity. |
+| Pinned base names absent from host `java` class | 17 | 17 pinned names absent | Detailed below. |
+
+**The 17 missing base names on `java`:**
+
+- Lifecycle/product refresh: `refreshBookInfo`, `refreshBookToc`, `refreshContent` (pinned `JsExtensions.kt:157–165`).
+- Hidden WebView: `webView`, `webViewGetSource`, `webViewGetOverrideUrl` (`:279–372`).
+- Browser/navigation/verification: `openVideoPlayer`, `startBrowser`, `startBrowserAwait`, `getVerificationCode`, `openUrl`, `showBrowser` (`:378–452`, `:1239–1298`).
+- Read/theme configuration: `getReadBookConfig`, `getReadBookConfigMap`, `getThemeMode`, `getThemeConfig`, `getThemeConfigMap` (`:1360–1385`).
+
+These are missing from the actual class assigned to `scope["java"]` (`RhinoSourceScriptRuntime.kt:457–458`). Some have abstract typed host seams already defined (`HiddenWebViewPort`, `VisibleBrowserPort`, `VerificationCodePort`, `HostUiPort`, `ProductEventPort` in `RuntimeHostPort.kt:124–260` and following declarations), but the inspected `RhinoSafeSourceJavaExtensions` constructor/injection does not accept or dispatch those ports (`:49–94`; runtime injection `:285–456`). A port declaration elsewhere is not a script-callable bridge. The five read/theme config getters have no corresponding complete typed port in the inspected RuntimeHostPort surface.
+
+### 24.66.2 Same-name does not mean same ABI or contract
+
+The source declaration comparison shows several material same-name divergences. The following examples are not new isolated defect tickets; they consolidate the API-level consequence and link prior evidence:
+
+| Name | Pinned contract | Host declaration | Classification / prior evidence |
+|---|---|---|---|
+| `getSource` | `BaseSource?` (`JsExtensions.kt:127`) | `Map<String, Any?>` (`RhinoSafeSourceJavaExtensions.kt:211`) | **Different object/type and identity.** A read-only descriptor map is not authentic BaseSource; source identity/lifecycle/typed methods are lost. Related §§24.45–24.46, §24.63. |
+| `getTag` | nullable `String?` (`:128`) | non-null `String` (`RhinoSafeSourceJavaExtensions.kt:209`) | **Nullability/default contract differs.** |
+| `getBatchContext` | `BatchContentContext?` (`:135`) | `Any?` and always null (`RhinoSafeSourceJavaExtensions.kt:194`) | **Typed context absent.** `cacheContent` throws without installed batch context (`:201–202`); see §§24.49, 24.63–24.65. |
+| `ajax` | `Any` plus optional `Long?` timeout; nullable `String?` result (`JsExtensions.kt:176–197`) | `Any?`/String overload; non-null `String` result (`RhinoSafeSourceJavaExtensions.kt:1248–1268`) | **Parameter/return contract differs.** The upstream timeout overload is absent; existing timeout/error/first-element deltas remain in §§24.39, 24.41. |
+| `ajaxAll` / `ajaxTestAll` | `Array<String>` overloads and `Array<StrResponse>` results (`JsExtensions.kt:200–230`) | `Any?` input with Kotlin default Boolean; `Array<RhinoSourceHttpResponse>` (`RhinoSafeSourceJavaExtensions.kt:940–990`) | **Input and response object differ; overload count differs.** See §24.41 for batch input, timeout and error mapping. |
+| `connect` | 1/2/3-argument header-string forms returning `StrResponse` (`JsExtensions.kt:240–260`) | 1/2/3-argument forms with `Any?` headers and `Long?`, returning `RhinoSourceHttpResponse` (`RhinoSafeSourceJavaExtensions.kt:917–938`) | **Similar arity, different header type and response class.** See §§24.38–24.39. |
+| `get` | URL + `Any?` headers, optional `Int?` timeout, returns Jsoup `Connection.Response` (`JsExtensions.kt:575–597`) | URL + headers + optional timeout returns `RhinoSourceHttpResponse`; additionally a one-string `get(urlOrKey): Any` dual-purpose KV/HTTP helper (`RhinoSafeSourceJavaExtensions.kt:846–884`) | **Overload collision and response type differ.** One-string KV lookup is not the upstream HTTP overload. See §24.38. |
+| `base64Decode` / `base64Encode` | Nullable input/result forms on pinned declarations (`JsExtensions.kt:676–713`) | non-null `String` forms (`RhinoSafeSourceJavaExtensions.kt:1353–1364`) | **Nullability differs**, even where method names and overload counts align. |
+| `hexEncodeToString` | nullable `String?` (`JsExtensions.kt:727–730`) | non-null `String` (`RhinoSafeSourceJavaExtensions.kt:1159`) | **Nullability differs.** |
+| `timeFormat` / `timeFormatUTC` | `Long` input; UTC result nullable (`JsExtensions.kt:735–750`) | `Number` and `String` overloads; non-null `String` (`RhinoSafeSourceJavaExtensions.kt:1129–1143`) | **Overload and nullability differ.** |
+| `log` / `logType` | `log(Any?): Any?`; `logType(Any?): Unit` (`JsExtensions.kt:1205–1227`) | both return `String` (`RhinoSafeSourceJavaExtensions.kt:1162`, `:1328`) | **Return semantics differ**, even though the names exist. |
+| `getFile` | `java.io.File` (`JsExtensions.kt:802–815`) | restricted `RhinoSourceFileHandle` (`RhinoSafeSourceJavaExtensions.kt:389`) | **Intentional security wrapper candidate, not exact ABI.** Requires differential proof for every script-visible file method and path behavior. |
+| `toURL` | upstream `JsURL` with optional nullable base URL (`JsExtensions.kt:1178–1186`) | `RhinoLegadoUrl` with two overloads (`RhinoSafeSourceJavaExtensions.kt:1800–1805`) | **Different return object/class.** Existing URL member/encoding semantics need descriptor and behavioral crosswalk. |
+
+Additional count differences among same-name declarations include `ajaxAll` and `ajaxTestAll` (two upstream overloads each versus one host declaration each), and host-only extra overloads for `get`, `timeFormat`, and `timeFormatUTC`. Same overload count in other names still does not establish exact descriptor parity.
+
+### 24.66.3 Scope and test implications
+
+- The `java` bridge is instantiated and assigned at `RhinoSourceScriptRuntime.kt:285–458`; separate objects are assigned to `cookie`, `source` and `cache` at `:459–476`. The 87/17 counts apply only to the pinned base `java` contract versus `RhinoSafeSourceJavaExtensions`, not the total 124-name inherited class surface and not the other three namespaces.
+- `RhinoHostSurfaceInventoryTest` explicitly records actual compiled methods, JVM descriptors, inherited methods, wrapper type, Rhino property IDs and callable names, and states its report is not upstream parity (`RhinoHostSurfaceInventoryTest.kt:20–27`, `:48–97`). It has not been run for this snapshot; no compiled descriptor count or measured Rhino-callable count is claimed.
+- The focused `RhinoSafeSourceJavaExtensionsCompatTest` source contains tests for batch default/explicit failure, navigation context default, bounded ajax inputs, HTTP error mapping, URL bounds, concurrency key isolation and header parsing. These are useful safety/host tests, but source presence is not a test result and the listed tests do not establish complete upstream overload/API parity.
+- The host class comment deliberately describes an explicitly allow-listed subset (`RhinoSafeSourceJavaExtensions.kt:40–47`). That security design can be retained only if every excluded upstream script method is explicitly accounted for and the final product requirement accepts no silent loss. Runtime-3.0's current target remains full source compatibility via typed host ports, not an undocumented subset.
+
+### 24.66.4 Task disposition
+
+1. **Completed in this slice:** reconciled 104 pinned base names / 148 declarations; source-declaration inventory of the actual host `java` class; 87 shared names and 17 absent pinned names; identified material same-name type/nullability/return/overload divergences; mapped missing WebView/browser/verification/product-event methods to existing but not injected host-port seams.
+2. **NOT MET:** compiled JVM descriptor comparison; actual Rhino callable-name capture; all 87 same-name method signature/default/return/exception behavior diffs; exact security-wrapper equivalence for File/URL/HTTP response objects; read/theme config ports; all inherited Rss/Web/login methods and their concrete script namespaces; Release/R8/WebView exposure; differential execution.
+3. **No dynamic claim:** no Gradle/test/device/CI execution was performed. Source declarations and test source were inspected only. No production/test/Gradle/workflow/schema/UI file changed; no CI started.
+4. **Task 012 remains** `in_progress / partial static closure`; Stage-0 remains `in_progress / not accepted`; Stage-1 remains NO-GO; complete Legado compatibility is not established.
+5. **Next:** finish the per-method signature/overload/default/nullable/return mapping for the 87 same-name base methods, then reconcile inherited Rss/Web/login APIs to the actual `source/cookie/cache` binding objects and typed Host Ports. Reuse §§24.37–24.65; do not repeat already recorded method behavior investigations or run CI.
