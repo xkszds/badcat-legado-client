@@ -234,7 +234,7 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 
 - **Task ID:** R3-S0-SEMANTIC-PARITY-CLOSURE-006
 - **Status:** registered; consolidation inspection not yet started.
-- **Start HEAD:** `PENDING_AFTER_R3-S0-BADCAT-CALLER-CLOSURE-005`; branch `integration/legado-upstream-runtime`; upstream pin `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Start HEAD:** `176b47b8a0a4ae1d5f8310b4336b3242e1366a6d`; branch `integration/legado-upstream-runtime`; upstream pin `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
 - **Goal:** turn the existing first-pass matrix (§16) and pinned source/host evidence (§24.37–§24.54) into a complete capability-by-capability semantic status matrix for the currently inventoried source-runtime surface; explicitly separate authentic upstream source, exact behavior parity, typed adapter parity, host-only behavior, missing behavior, unknowns and dynamic test requirements. This is a consolidation and gap-closure task, not permission to implement.
 - **Allowed files:** `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md` and this overview only; source/test/Gradle/schema reads are allowed solely to resolve a cited uncertainty. No source edits.
 - **Dependencies:** §16; §24.37–§24.54; overview §4.5 result; Stage-0 blockers and plan §8–§9.
