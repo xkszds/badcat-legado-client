@@ -3825,3 +3825,22 @@ Task 018 is complete as a successful exact-SHA Debug packaging evidence task. It
 Task 019 is complete as a bounded, read-only source/dependency/license inventory; it does **not** close licensing or SBOM acceptance. Machine-readable SBOM status is **ABSENT**; manual provenance/notice coverage is **PARTIAL**. Confirmed release/reproducibility blockers include missing APK GPL/HtmlUnit notices, unlisted modified/analyzer source provenance, unverified native libarchive license, no declared Badcat root license, and the absent Badcat-local custom HtmlUnit JAR. This is not a legal opinion. No source, test, Gradle/build configuration, workflow, notice, asset, schema or UI files were changed; no assemble/build/test/CI was run. Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; full Legado compatibility remains **NOT ESTABLISHED**.
 
 **Next:** register a separate remediation task before modifying `THIRD_PARTY_NOTICES.md`, license assets or packaging configuration; continue the still-open caller/data-owner, reproducibility and behavioral Stage-0 gates without starting Stage-1.
+
+
+### 24.79 Task 020 — exact Task 018 APK DEX and compiled runtime class inventory
+
+**Registration**
+
+- **Task ID:** `R3-S0-APK-DEX-ABI-CLOSURE-020`.
+- **Status:** registered; not started.
+- **Registration start branch HEAD:** `db0afc0b6c10ec146cbceb303b25dd6b1d531dd6`; branch `integration/legado-upstream-runtime`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Immutable artifact:** Task 018 APK built from Badcat `4c9cf8ca41a29fcfacdb17fb3ec1d66d4b451343`, upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`; APK SHA-256 `c0b5227165944da96db2c592dff3fc0543f82da01cdd72d7cb3121d573ead7d2`. Task 018 records 14 DEX files and no R8 mapping file.
+- **Goal:** inventory actual class definitions in the already-produced APK DEX and compare them to the pinned source/runtime declarations and Task 016 JVM output inventory. Determine which authentic upstream runtime classes are present in the final APK, which are absent, and which remain unverified; do not infer behavior from class presence.
+- **Allowed files:** only this audit and `docs/required/03-LEGADO-RUNTIME-OVERVIEW.md`. APK/DEX and pinned source inspection is read-only; temporary extraction/reports under `/tmp` are allowed.
+- **Dependencies:** Task 016 §24.75.1; Task 018 §24.77.1; Task 019 §24.78.1; pinned upstream SHA.
+- **Inspection plan:** verify APK SHA and DEX entry list; check existing runner tools (`apkanalyzer`, `dexdump`, `baksmali`) without installing anything; enumerate DEX class descriptors; derive target declarations from exact upstream source and callers; compare representative BookSource/Book/BookChapter/rule models, BaseSource, AnalyzeRule/AnalyzeUrl, JsExtensions and inherited groups, SharedJsScope/JsSourceEngine, Rhino and host bridge classes; identify missing classes and provenance; inspect obfuscation/R8 mapping evidence.
+- **Acceptance:** immutable APK identity; all 14 DEX entries; per-DEX class counts and descriptor inventory; pinned source declaration-to-DEX mapping for selected behavior-bearing groups; explicit absent classes; tool versions and report hashes; R8/mapping disposition; clear distinction between class packaging, compiled ABI, and runtime semantic parity.
+- **Execution boundary:** read-only only. No assemble/build/test, installation/device run, CI, dependency resolution, new tools, source/configuration/notice/asset/schema/UI changes or process termination.
+- **Exclusions:** no APK rebuild or modification; no R8/release build; no Stage-1 authorization; no complete ABI or behavior parity claim.
+- **Stop conditions:** APK hash mismatch, missing/corrupt DEX, unavailable existing inspection tools, pinned source mismatch or need for a tool installation/rebuild. Record NOT ESTABLISHED rather than guess.
+- **Current disposition:** registration only; no DEX inspection has started. Task 018 remains successful bounded Debug packaging evidence; Task 019 is complete as a partial provenance/license inventory with SBOM absent and release blockers open. Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; full compatibility remains **NOT ESTABLISHED**.
