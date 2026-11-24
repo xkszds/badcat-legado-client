@@ -123,3 +123,11 @@
 - #2147：26/26 steps success；笔仙阁与品书斋真实 search→detail→TOC→content PASS；上传 235-source corpus 中精华书阁 1/4 完整通过，另外 3 个候选超时；public source GET sweep 14 个、8 个非空 HTTP 200。
 - #2114/#2122/#2132 均未完整执行相关 smoke；取消不记通过。#2147 的 workflow 版本不含后续完整 API28/35 instrumentation 与完整第三类 app unit suite。
 - 第二分册登记至 0377，共 177 条，剩余 23 条。
+
+
+## 2026-11-24 大规模回溯第六轮：0378–0400
+- 第二分册补录 23 条并封册：0201–0400，共 200 条。
+- 补齐 PPRule 两阶段视频/剧集解析、漫画 URL 安全、protobuf 未知 group 保留与嵌套字段预算；source CookieJar 内存容量上限；Rhino 中文转换、source variables、ajax/KV/time/cookie helper；URL options suffix、相对 java.get URL、TOC 增量加载、importScript 与 WebView UA。
+- 对历史 Actions runs #1880–#2187 按 head_sha 检索，未找到本批 23 个 commit 的精确 run 映射；全部按证据缺口登记，不宣称通过。
+- 新建第三册：03-LEGADO-CI-0401-0600.md，下一条从 0401 开始。
+- 本轮 15 组关键词搜索得到 323 个第二册未登记候选；与第一册合并去重后仍有 290 个候选提交待逐项审查。候选数不等于有效第三类条目。
