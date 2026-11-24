@@ -3662,3 +3662,13 @@ Task 016 is completed as a read-only existing-output inventory with bounded JVM 
 - **Observed task progress:** :app:compileDebugKotlin, :app:checkDebugDuplicateClasses, then :app:mergeExtDexDebug were recorded. At the last responsive inspection, Gradle daemon PID 432858 remained CPU-active; Gradle shell PID 432816 had not produced a terminal result marker. No APK had yet appeared.
 - **Remote tracking:** process PID 432816; one process-output request and one read-only diagnostic request are still pending at the remote tool layer. The device heartbeat was last reported Online, but those calls have not returned. Do not launch a duplicate build or infer a result.
 - **Status:** in_progress; final exit code, APK, DEX/R8, manifest package result, and temp-JAR cleanup are pending. No CI or source/configuration changes.
+
+
+### 24.76.2 Task 017 remote recovery attempt — original calls timed out (2026-11-25)
+
+- **Scope:** read-only recovery of the already-running Task 017 process; no new build, no process termination, no CI.
+- **Repository state:** branch `integration/legado-upstream-runtime` was verified through the GitHub commits API at HEAD `eddd93fc70ff9ee628b432fb285ab01eba2a2ea9`. The mandatory workflow, Runtime overview and Stage-0 audit were reread from this branch before recovery.
+- **Device status:** `VM-0-5-ubuntu` was listed Online, but its last-seen heartbeat was 2 minutes old at inspection.
+- **Original remote calls:** the existing Task 017 start-process call, process-output read, log read, result-marker read, cleanup-marker read and process-list call all reached terminal `Timeout - no response from device` results. This does not establish whether the Gradle process completed, failed, or remains active on the runner.
+- **Disposition:** Task 017 remains **in_progress / result unknown**. Final Gradle exit code, APK/manifest/DEX/R8 outputs, and temporary-JAR cleanup remain unverified. Do not launch a duplicate assemble or kill a process based on these timeouts. Wait for the runner connection to respond, then perform read-only inspection of the existing log, result/cleanup markers, process list and artifact paths.
+- **Scope boundary:** no repository source, build, test, workflow, schema or UI files were changed; no build/test/CI was started.
