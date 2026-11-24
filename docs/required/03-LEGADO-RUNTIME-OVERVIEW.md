@@ -215,3 +215,17 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - **共同证据结论：** 本批历史 Android debug workflow 的 Job 均在 Step 4 `Set up Android SDK` 失败，日志为 `sdkmanager tools` 找不到旧 `tools` package；Gradle、contract tests、APK assemble、artifact upload 均 skipped，故本批没有单测、APK 或真实功能通过证据。提交 diff 仅能证明代码变更意图/范围，不能代替执行验证。
 - **功能边界发现：** 历史快照逐步形成 source metadata、selector 子集、HTTP transport、static URL resolver、CSS-only search/detail/TOC/content、SourceReadingEngine 和临时 source catalog UI；这些均非完整 Legado Runtime，且未完成 Badcat 原版 UI 集成。#109/#113/#124/#128/#137/#144 的 tests 为 fake/synthetic 或仅局部契约，不能记作真实书源 E2E。
 - **下一步：** 第一册已登记 CI 不再重查；先查重，再从 #0200–#0399 发现尚未登记的第三类历史 CI。Stage-0 仍 in_progress/not accepted，Stage-1 仍 NO-GO。
+
+
+## 4.5 Runtime-3.0 Stage-0 technical task registration — Badcat production caller and adapter closure
+
+- **Task ID:** R3-S0-BADCAT-CALLER-CLOSURE-005
+- **Status:** registered; source inspection not yet started.
+- **Start HEAD:** `001a792475b15cc1de98255c26505d716098239e`; branch `integration/legado-upstream-runtime`; upstream pin `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** close the remaining Badcat-side production call graph identified in audit §15.2(1): trace every production entry point from Badcat activities/view models into source-reading services, runtime factories, adapters and persistence/session/cache stores; identify alternate construction paths and legacy-store readers/writers; distinguish reachable production code from temporary/demo/test-only paths; map each call to the pinned upstream capability it intends to represent and flag signature/return/default/error/cancellation/lifecycle substitutions.
+- **Allowed files:** `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md` and this overview only. Source, test and build files may be read as evidence; do not edit them.
+- **Dependencies:** audit §15/§15.1/§15.2, §16 and §24.37–§24.53; do not repeat already established per-symbol upstream semantics or cache/model inventories.
+- **Inspection boundary:** enumerate app production Kotlin/Java entry points and constructor/factory call sites; follow reachable service and adapter edges through catalog, request, Rhino, login/Cookie, variables/files and chapter cache; inspect alternate/test/temporary UI wiring only to classify reachability. Record exact paths and line ranges plus exact HEAD.
+- **Acceptance:** a path-backed entrypoint→factory→service→adapter→store graph; all discovered production construction sites and alternate paths; read/write owner map for stores actually reachable from those paths; explicit dead/temporary/test-only classification; mapping to already audited upstream contracts; separate confirmed facts, static risks and dynamic-unverified behavior; deduplicate against prior audit sections.
+- **Exclusions:** no production/test/Gradle/workflow/database/schema/UI changes; no CI runs or CI history work; no Stage-1 authorization; no claim of runtime behavior without execution evidence.
+- **Next after this slice:** use the completed host call graph to update the semantic parity matrix and determine which Stage-0 architecture boundary evidence remains missing; do not start implementation.
