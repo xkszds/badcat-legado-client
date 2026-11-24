@@ -4212,3 +4212,17 @@ Task 023 is complete as a typed contract proposal, not an accepted production AP
 Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete Legado compatibility remains **NOT ESTABLISHED**.
 
 **Next:** register a separate Task 024 architecture decision/implementation-plan review. It must settle one authoritative owner per model/data domain, the runtime-owned location of model-typed ports, the module graph, transaction and deletion semantics, and the minimum storage strategy before any source or Gradle change. Do not implement these sketches under Task 023.
+
+
+## 24.83.0 Task 024 registration — Runtime-3.0 architecture decision and implementation-plan review
+
+- **Task ID:** `R3-S0-ARCHITECTURE-DECISION-REVIEW-024`; registered after Task 023.
+- **Registration HEAD:** `802ceb9afcc7fc2afeea07721774a766a58ba0fb`; overview registration commit: `c4cc281b5fc338fce4c0e97e3bcc416e3d80299e`; branch: `integration/legado-upstream-runtime`.
+- **Pinned upstream:** `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9`.
+- **Goal:** review the evidence from Tasks 020–023 and decide the Runtime-3.0 architecture/implementation plan at the logical ownership and dependency-boundary level. Resolve canonical ownership of duplicated model sources and Badcat data domains; place model-typed Host Ports; define module direction; specify Book/BookChapter transaction and deletion lifecycle; recommend the minimum storage boundary; preserve all unresolved source-closure and runtime-parity gates.
+- **Allowed files:** `docs/required/03-LEGADO-RUNTIME-OVERVIEW.md` and this audit only. Read-only evidence already recorded in §§24.79.1–24.82.1 is primary. No stale runner checkout is evidence of the current branch HEAD.
+- **Acceptance:** path-backed ownership decision matrix; dependency graph and no-cycle rationale; Book/Chapter write/delete and rollback sequence; minimum storage recommendation excluding unrelated AppDatabase domains; duplicate source remediation plan; explicit unresolved decisions and next task boundaries; Stage-0/Stage-1 gate disposition.
+- **Exclusions:** no production/test/Gradle/source-set/dependency/manifest/schema/database/UI/Reader/license/notice/workflow/CI/APK/device changes or execution; no schema freeze, migration, dual-write, source remediation or Stage-1 authorization.
+- **Stop conditions:** unresolved caller or owner evidence, conflict between prior records, or need for new build/dependency evidence. Use conditional decisions and retain blockers.
+- **Required source evidence:** Task 020 DEX inventory and duplicate FQCNs (§24.79.1); Task 021 source ownership and authentic closure plan (§24.80.1); Task 022 model/Room/storage boundary (§24.81.1); Task 023 typed model/storage Host Port proposal (§24.82.1).
+- **Expected result location:** overview §4.24.1 and audit §24.83.1. This registration itself authorizes documentation-only review, not implementation.
