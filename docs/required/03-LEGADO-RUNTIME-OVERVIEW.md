@@ -62,7 +62,7 @@
 - **规则/JS API：未完成。** 104-name JsExtensions/JsEncodeUtils 盘点已建立，但签名、返回对象、caller、动态分派和行为差分尚未全部闭合；已发现多项真实 ABI/行为缺口。
 - **HTTP/响应：部分实现且有阻断。** Rhino response facade 与 pinned Jsoup Response 在 bodyAsBytes、header/multiHeaders、cookie、response lifecycle 等方面仍有差异。
 - **浏览器/验证码：未完成。** webView、startBrowser、startBrowserAwait、getVerificationCode、showBrowser、openUrl 等有真实书源 caller；Badcat 原生 typed callback 方案需独立登记实施。
-- **Stage-0 最新证据：** 详细审计 §24.42–§24.44 已补充导航/浏览器调用方、refresh 事件、阅读/主题配置/验证码回调，以及 WebView 正文规则调用链和生命周期语义；宿主缺口仍是源码确认，动态 Rhino/宿主行为未验证。详见 `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md`。
+- **Stage-0 最新证据：** 详细审计 §24.42–§24.45 已补充导航/浏览器、refresh/配置/验证码、WebView 正文调用链，以及 BaseSource 登录脚本、动态请求头、登录态与 Cookie 生命周期差异；宿主缺口仍待动态 Rhino/书源差分验证。详见 `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md`。
 - **业务链：局部实现。** Badcat host search/detail/TOC/content 编排存在，但不等于完整 BaseSource/session/规则执行生命周期。
 - **章节身份：局部实现。** PoC-0.8/0.9 已将 index 带入主要内容边界并让旧 URL-only 只在唯一匹配时继续；完整 alias 候选与 BatchContentContext 未完成。
 - **缓存：局部实现。** typed chapter cache key 和进程内 SaveToken/Fence 已有；所有 mutation caller、跨进程持久令牌和完整 CacheManager 未完成。
