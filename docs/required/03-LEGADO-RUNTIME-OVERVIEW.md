@@ -71,7 +71,7 @@
 ## 5. 当前 CI 位置与分册规则
 
 CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，编号首尾包含且不得跨册重复。历史追溯已确认第三类 Legado Runtime 的 CI 至少从 #5 开始；#1–#4 暂无第三类关联证据。历史分册按以下顺序补建：
-- 历史第 1 册：`docs/required/CI-0001-0199-AUDIT.md`（#0001–#0199；本轮已建立，147 条候选元数据初筛，详细功能审计待逐条补齐）。
+- 历史第 1 册：`docs/required/CI-0001-0199-AUDIT.md`（#0001–#0199；已初筛 147 条候选元数据；#5–#29 的 22 条及本轮 #30–#160 的 102 条，共 124 条已逐 CI 详细审计并回写；剩余候选从 #161 起按编号继续，缺失/无真实 Run 的编号不造记录）。
 - 历史第 2 册：`docs/required/CI-0200-0399-AUDIT.md`（#0200–#0399；待建立）。
 - 后续历史册：#0400–#0599、#0600–#0799、#0800–#0999、#1000–#1199、#1200–#1399、#1400–#1599、#1600–#1799、#1800–#1999、#2000–#2199、#2200–#2399、#2400–#2599、#2600–#2799、#2800–#2999、#3000–#3199，均待按第三类边界核查后建立。
 - 现有第 17 册：`docs/required/CI-3200-3399-AUDIT.md`（#3200–#3399，既有分册，继续补齐缺失条目）。
@@ -120,7 +120,7 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 2. #3350–#3357 已补齐：`CI-3350-3357-DETAIL-AUDIT.md`。
 3. #3358–#3397 已补齐：`CI-3358-3397-DETAIL-AUDIT.md`；#3398–#3399 未发现真实 run。
 4. #3400–#3422 的 14 次实际工作流已单独审计：`CI-3400-3422-DETAIL-AUDIT.md`。
-5. 下一步回到历史第 1 册 `CI-0001-0199-AUDIT.md`，从 #30 开始按编号逐条核验 Job/Step/JUnit/artifacts/功能覆盖；#5–#29 已有详细审计，不重复。
+5. 历史第 1 册 `CI-0001-0199-AUDIT.md`：#5–#160 已完成 124 条逐 CI 详细审计（#30–#160 中没有真实 CI 记录的编号不造条目）；下一步从 #161 开始按编号逐条核验 Job/Step/JUnit/artifacts/功能覆盖，直到 #0199，之后进入 #0200–#0399。
 6. 本轮产生的 5 个文档维护 CI #3463–#3467 仍 in_progress，必须等终态后记录，不得提前算 success。
 7. CI 审计与 Runtime 技术任务分开登记；Stage-0 仍 in_progress/not accepted，Stage-1 仍 NO-GO。
 
@@ -139,3 +139,12 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - **DEX 验证纠正：** #3263–#3272 失败是 verifier 对 tab-separated apkanalyzer 输出的 false-negative；10 份 DEX report 均含 RuleAnalyzer，API28/API35 instrumentation 各 5/5。#3273 的 literal class-name matcher 修复 verifier，随后 53/53 steps success。
 - **临时 Scriptable 实验：** #3257–#3259 337/337 测试通过，但 #3260 已撤销 broad normalization 及两项新增测试；不计入当前功能。
 - **下一步：** #3279–#3299 已补齐；继续按编号审计 #3350–#3357。Stage-0 仍 in_progress/not accepted，Stage-1 仍 NO-GO；CI 审计不替代 Runtime 技术验收。
+
+
+### Runtime-CI-HIST-0001-0199 progress checkpoint — #0005–#0160（2026-11-24）
+
+- **状态：** 第一册历史审计 `in_progress`；已初筛 147 条第三类候选 CI 元数据；其中 #5–#29 已有 22 条详细记录，本轮 #30–#160 新增 102 条详细记录，合计 124 条完成详细审计并回写。
+- **本轮审计范围：** #30–#49、#51–#53、#55–#57、#60–#62、#65–#66、#68–#69、#78–#94、#97–#102、#104、#107–#117、#122–#160（仅对存在真实 CI Run 的候选登记；编号缺口不虚构）。
+- **共同证据结论：** 本批历史 Android debug workflow 的 Job 均在 Step 4 `Set up Android SDK` 失败，日志为 `sdkmanager tools` 找不到旧 `tools` package；Gradle、contract tests、APK assemble、artifact upload 均 skipped，故本批没有单测、APK 或真实功能通过证据。提交 diff 仅能证明代码变更意图/范围，不能代替执行验证。
+- **功能边界发现：** 历史快照逐步形成 source metadata、selector 子集、HTTP transport、static URL resolver、CSS-only search/detail/TOC/content、SourceReadingEngine 和临时 source catalog UI；这些均非完整 Legado Runtime，且未完成 Badcat 原版 UI 集成。#109/#113/#124/#128/#137/#144 的 tests 为 fake/synthetic 或仅局部契约，不能记作真实书源 E2E。
+- **下一步：** 从 #161 开始继续逐 CI 核查，完成 #0001–#0199 后再转 #0200–#0399；Stage-0 仍 in_progress/not accepted，Stage-1 仍 NO-GO。
