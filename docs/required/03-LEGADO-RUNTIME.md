@@ -5707,3 +5707,13 @@ Each row binds one run to its own immutable commit SHA and its single `assemble-
 - **Exclusions:** no reruns, no changes to workflow behavior, no claim that a successful CI run proves full Legado compatibility or category acceptance.
 - **Next action:** fetch exact run/job/step/log/report evidence in bounded batches, starting with #3200–#3225 to normalize the existing evidence and then #3226–#3299.
 
+
+
+### Runtime-CI-HIST-3200-3299 progress checkpoint — #3200–#3225
+
+- **状态：** `in_progress`；CI 审计账本 `docs/required/CI-3200-3299-AUDIT.md` 已创建并写入 #3200–#3225 的逐次记录，当前账本 commit `2c010fcf658c2a5c3c360d0fe0dda14e5675f742`。
+- **检查范围：** 26 个独立 run，均 attempt 1，push 到 `integration/legado-upstream-runtime`；逐项核对 run ID、exact SHA、job ID、job/step 状态、commit diff、日志和 JUnit/产物引用。#3200 的 41 个 XML suites / 329 项测试已下载解析；#3223–#3225 的 JUnit ZIP 已下载解析，各 41 suites / 335 项测试，均 0 failure/error/skip。
+- **结果：** #3200–#3225 workflow 结论为 22 success / 4 failure / 0 pending。#3213–#3216 的 step 22 第三类 App 单测均因 `LegadoSourceLoginUiV2ServiceTest.mainJsInitializesLoginUiOnceInTheRealRhinoSourceScope` ClassCastException 失败，后续五个 best-effort live-source steps skipped；APK 和部分 instrumentation 成功不改变 workflow failure。#3217 的 Login UI result normalization 修正后 focused 12/12、总计 335/335 通过。
+- **旧记录修正：** 旧 #3201–#3225 报告中 #3223–#3225 曾标记 pending；本轮重新获取三个 run/job/step/JUnit/产物，确认均 terminal success、47/47 steps、335/335 tests。CI ledger 已以新证据覆盖旧 pending 状态。
+- **功能覆盖边界：** Pinshuzhai/Bixiange 是外部 Python/HTML 冒烟，不是 Android App + Legado Runtime E2E；上传样本为 1/4 成功，不可写成全部书源通过。没有完整 Legado 兼容或产品验收结论。
+- **下一步：** 按升序检查 #3226–#3249，逐次取得 exact run/job/step/log/JUnit/artifact/commit-diff 证据；不重跑、不改生产代码。
