@@ -1814,3 +1814,42 @@ The 17 missing names cannot be treated as 17 equally unused methods. Six have di
 - Verify `clearSourceState` and source replacement invalidate every related scope, shared-global handle, bridge reference and request state without clearing another source's state.
 
 **Decision:** this closes an additional Stage-0 source-evidence slice only. It does not authorize a production patch or test implementation. Register a separate, exact-file implementation task with typed scope/identity semantics and the differential tests above only after the remaining Stage-0 architecture/ABI gates are reviewed. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**. No CI was run.
+
+
+## 24.38 Runtime-3.2f.50 follow-up — StrResponse and JsURL returned-object compatibility (2026-11-24)
+
+- **Audit base:** `1bcb24aa4ab0b957b4b8a3071b4c4d7e17df9da0` on `integration/legado-upstream-runtime`; pinned upstream `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Scope:** source-level comparison of pinned `StrResponse` / `JsURL` with Badcat's Rhino response/URL facades and the already-confirmed `connect` / `ajaxAll` return paths. No tests or implementation were run.
+
+### Pinned upstream object contracts
+
+1. `JsExtensions.connect(...)`, `ajaxAll(...)` and `ajaxTestAll(...)` return `StrResponse` values (arrays for the batch methods). Pinned `StrResponse` exposes:
+   - `raw: okhttp3.Response` (public getter; private setter);
+   - nullable `body: String?`, nullable `errorBody: ResponseBody?`, and `callTime: Int`;
+   - constructors for raw response + text body, URL + body (synthetic 200 response), and raw response + error body;
+   - `raw()`, `body()`, `code()`, `message()`, `headers(): okhttp3.Headers`, `isSuccessful()`, `errorBody()`, `callTime()`, `url()`, the `url` property and `toString()`.
+2. Pinned `JsURL` exposes Kotlin properties `searchParams`, `host`, `origin` and `pathname`. Its constructor resolves relative URLs against an optional base URL; query parsing stores decoded values in a map.
+
+### Badcat surface confirmed at the audited HEAD
+
+1. `connect` returns `RhinoSourceHttpResponse`, including for synthetic transport-error responses. `ajaxAll` and `ajaxTestAll` return arrays of that host class, not arrays of upstream `StrResponse`.
+2. `RhinoSourceHttpResponse` exposes non-null `body()/getBody()`, status/code/message/success, callTime, URL, a single-header helper, `headers(): Map<String,List<String>>`, safe raw-response metadata, parse/select and charset. It does not expose upstream `errorBody()` or an `okhttp3.Response` raw object.
+3. The host's safe raw response/request wrappers intentionally expose only selected metadata. This is a deliberate security boundary, but it is not the same object contract as the pinned `StrResponse.raw`.
+4. `RhinoLegadoUrl` exposes method-style `getHost/getOrigin/getPathname/getSearchParams` plus host-only path/protocol/query aliases. The inspected class does not declare the upstream Kotlin properties `host/origin/pathname/searchParams` as properties.
+
+### Compatibility classification
+
+- **Confirmed returned-type mismatch:** `connect`, `ajaxAll` and `ajaxTestAll` do not return pinned `StrResponse` objects. The host class offers a useful overlapping subset, but its response, raw response and header types differ.
+- **Confirmed declared-member mismatch:** upstream `StrResponse.errorBody()` and the raw `okhttp3.Response` surface are absent from the safe host facade. Do not expose unbounded raw response streams merely to copy the type; any equivalent must define bounded byte access, body-consumption, cancellation and resource ownership.
+- **Nullability mismatch:** upstream `StrResponse.body` is nullable; host `body()` returns non-null `String`. The host synthetic failure response also uses a text body and status 200, but that alone does not prove every upstream constructor/error branch is equivalent.
+- **URL property risk:** upstream declares properties while the host declares Java-style methods. Whether Rhino property lookup makes these script-equivalent must be tested against the actual pinned wrapper; source spelling alone is not enough to conclude a runtime failure.
+- **Header contract remains open:** upstream returns OkHttp `Headers`; host returns a multi-value map. Case-insensitive lookup, duplicate values, iteration, null/missing behavior and script property access need differential fixtures.
+
+### Required differential closure
+
+- Exercise `connect`, `ajaxAll` and `ajaxTestAll` success, HTTP-error and transport-error paths; compare returned JS type, array element type, nullable body, code/message/callTime/url and `toString()`.
+- Compare `headers()` iteration, duplicate header values, case-insensitive lookup, missing headers and direct header property access.
+- Compare `raw` and `raw()` access separately; explicitly test which bounded metadata/byte operations are required by active source callers. Do not add arbitrary stream or socket access.
+- Compare `JsURL` direct properties and method calls for absolute/relative URLs, explicit ports, empty query, repeated query keys, encoded values and malformed URLs.
+
+**Decision:** another Stage-0 returned-object signature slice is closed; semantic and Rhino-dispatch parity remain unverified. This does not authorize widening the host facade or production code changes. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**. No CI was run.
