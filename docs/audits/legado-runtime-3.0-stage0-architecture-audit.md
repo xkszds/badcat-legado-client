@@ -2968,3 +2968,28 @@ Continue task 012 by closing method-family caller/host-port mappings for the inh
 ### 24.62.8 Updated task disposition
 
 The declaration/inheritance inventory and these additional inherited action/RPC semantics are now source-backed. The complete mapping remains open because not every base and inherited method has a fully traced production caller, typed host contract, and Badcat implementation owner. Static source inspection cannot settle compiled Rhino method exposure, coroutine/blocking behavior, callback ordering, or dynamic object return parity. Keep task 012 `in_progress`; no implementation is authorized by this audit.
+
+### 24.62.9 Base method-family service ownership and host mapping
+
+| Method family | Pinned upstream owner/dependency | Badcat host mapping result |
+|---|---|---|
+| Source identity, tag, navigation context and batch context | BaseSource, CoroutineContext and BatchContentContext; JsSourceEngine/AnalyzeRule/AnalyzeUrl provide execution-specific contexts | SourceIdentity/SourceExecutionContext exists, but there is no typed BaseSource/RuleDataInterface/Book/BookChapter/BatchContentContext bridge or proof of identical scope/object lifetime. |
+| Batch chapter cache and refresh | `cacheContent` delegates to batch context; refresh methods post distinct EventBus refresh events | ProductEventPort covers three event labels, but typed chapter/index identity, batch write-back, event ordering and production page targeting are unproven. |
+| HTTP and rate limiting | AnalyzeUrl + HttpHelper/OkHttp/Jsoup, StrResponse, CookieStore and ConcurrentRateLimiter | SourceRequestClient is partial; no authentic AnalyzeUrl contract, Jsoup Response/StrResponse object, full multi-value header/cookie/redirect/retry/WebView selection or sync wrapper semantics. |
+| Hidden WebView execution/capture | BackstageWebView, WebViewPool and WebJsExtensions | HiddenWebViewPort has page/resource/override operations but full JS bridge injection, CacheManager result rendezvous, source object, cookies, navigation and pooled-resource lifecycle are not wired/proven. |
+| Browser, verification and video | SourceHelp, SourceVerificationHelp, VideoPlay, Activity/dialog and source navigation policy | Generic UI/browser/verification ports cover some actions; typed video/product action exists, but source verification wait/refetch/error and navigation suppression need full caller-level adapter proof. |
+| Cookie/session | CookieStore and CookieManager, including BaseSource/session and WebView synchronization | No complete CookieStore/CookieManager port or single-owner persistence/invalidation contract is declared in the inspected host modules. |
+| Source file/archive | app externalCache, FileUtils, ArchiveUtils, LibArchiveUtils, encoding detection and source-relative path utilities | No typed file/archive port; direct Android cache/filesystem assumptions cannot be satisfied by SourceRequestClient or generic UI ports. |
+| Font/TTF/cache | QueryTTF, CacheManager and font replacement helpers | No typed QueryTTF/font/cache service contract; host chapter cache and source KV cache are not substitutes for CacheManager/ACache/TTF cache. |
+| Crypto/signing | JsEncodeUtils, SymmetricCryptoAndroid, AsymmetricCrypto, Sign and Hutool digest/HMAC | No typed crypto object factory/operation port; returning primitive strings would not preserve returned Java crypto object methods. |
+| Read/theme/source config | ReadBookConfig, ThemeConfig, AppConfig | No host config port preserving both JSON and Map return forms, defaults, nulls and current Badcat preference ownership. |
+| Logging/device/concurrency | AppLog, AppConst.androidId, SourceLock keyed by source identity | No diagnostics/device identity/concurrency lock port with source-key isolation, timeout, nested/reentrant and cancellation semantics. |
+| Source variables and inherited product actions | BaseSource.put/get; RssJsExtensions search/add/photo/open; Login callback and Web RPC | No complete source-variable port or typed product-action/login/RPC contracts; generic HostUiAction and ProductEventPort are insufficient for all payloads and result channels. |
+
+This mapping explains why a list of method names alone is not a usable compatibility boundary: methods return typed Java/Rhino objects, invoke stateful services, or cross asynchronous Android UI/WebView boundaries. Each corresponding host port must preserve arguments, return object, errors, null/default behavior, callback ordering, coroutine cancellation, source identity and resource release.
+
+### 24.62.10 Current task progress
+
+- **Completed in this slice:** base + inherited declaration/name counts; class inheritance; principal runtime implementers/callers; Rss product-action semantics; Web RPC protocol; login callback behavior; method-family service ownership and missing host-port groups.
+- **Still open:** exact per-method external source/caller examples and full caller search across all relevant pinned files; full method-by-method typed port schema and ownership; compiled JVM/Rhino ABI, R8/DEX and dynamic behavior. The pinned source files establish declared behavior but not compiled exposure or runtime parity.
+- **Task 012 remains `in_progress / partial static closure`.** No production/test/Gradle/workflow/schema/UI/CI files changed or run; no CI started.
