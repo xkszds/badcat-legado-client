@@ -220,7 +220,7 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 ## 4.5 Runtime-3.0 Stage-0 technical task registration — Badcat production caller and adapter closure
 
 - **Task ID:** R3-S0-BADCAT-CALLER-CLOSURE-005
-- **Status:** registered; source inspection not yet started.
+- **Status:** source-audit slice complete; shared runtime lifetime and host state ownership remain NOT MET.
 - **Start HEAD:** `001a792475b15cc1de98255c26505d716098239e`; branch `integration/legado-upstream-runtime`; upstream pin `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
 - **Goal:** close the remaining Badcat-side production call graph identified in audit §15.2(1): trace every production entry point from Badcat activities/view models into source-reading services, runtime factories, adapters and persistence/session/cache stores; identify alternate construction paths and legacy-store readers/writers; distinguish reachable production code from temporary/demo/test-only paths; map each call to the pinned upstream capability it intends to represent and flag signature/return/default/error/cancellation/lifecycle substitutions.
 - **Allowed files:** `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md` and this overview only. Source, test and build files may be read as evidence; do not edit them.
@@ -228,4 +228,16 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - **Inspection boundary:** enumerate app production Kotlin/Java entry points and constructor/factory call sites; follow reachable service and adapter edges through catalog, request, Rhino, login/Cookie, variables/files and chapter cache; inspect alternate/test/temporary UI wiring only to classify reachability. Record exact paths and line ranges plus exact HEAD.
 - **Acceptance:** a path-backed entrypoint→factory→service→adapter→store graph; all discovered production construction sites and alternate paths; read/write owner map for stores actually reachable from those paths; explicit dead/temporary/test-only classification; mapping to already audited upstream contracts; separate confirmed facts, static risks and dynamic-unverified behavior; deduplicate against prior audit sections.
 - **Exclusions:** no production/test/Gradle/workflow/database/schema/UI changes; no CI runs or CI history work; no Stage-1 authorization; no claim of runtime behavior without execution evidence.
-- **Next after this slice:** use the completed host call graph to update the semantic parity matrix and determine which Stage-0 architecture boundary evidence remains missing; do not start implementation.
+- **Result:** §24.54 records launcher/search/catalog/book/chapter/login entrypoints, factory/service wiring, independent per-screen/per-action Rhino runtime construction, host persistence/navigation owners, and static-vs-dynamic boundaries. No source/tests/Gradle/CI changed or run. Stage-0 remains in_progress/not accepted; Stage-1 remains NO-GO.
+
+## 4.6 Runtime-3.0 Stage-0 technical task registration — semantic parity matrix closure
+
+- **Task ID:** R3-S0-SEMANTIC-PARITY-CLOSURE-006
+- **Status:** registered; consolidation inspection not yet started.
+- **Start HEAD:** `PENDING_AFTER_R3-S0-BADCAT-CALLER-CLOSURE-005`; branch `integration/legado-upstream-runtime`; upstream pin `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** turn the existing first-pass matrix (§16) and pinned source/host evidence (§24.37–§24.54) into a complete capability-by-capability semantic status matrix for the currently inventoried source-runtime surface; explicitly separate authentic upstream source, exact behavior parity, typed adapter parity, host-only behavior, missing behavior, unknowns and dynamic test requirements. This is a consolidation and gap-closure task, not permission to implement.
+- **Allowed files:** `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md` and this overview only; source/test/Gradle/schema reads are allowed solely to resolve a cited uncertainty. No source edits.
+- **Dependencies:** §16; §24.37–§24.54; overview §4.5 result; Stage-0 blockers and plan §8–§9.
+- **Acceptance:** each major source capability has pinned evidence, exact Badcat reachable caller/adapter evidence, a non-overstated parity state, known contract deltas, unresolved dependencies and required differential test; duplicate claims reconciled; architecture options A/B/C evaluated against the same matrix without selecting one by assumption; explicit residual Stage-0 exit checklist and GO/NO-GO rationale.
+- **Exclusions:** no CI history or CI runs; no production/test/Gradle/workflow/database/schema/UI changes; no Stage-1 authorization; no “complete compatibility” claim based on static matrix alone.
+- **Next after this slice:** identify any still-unclosed Stage-0 evidence (resolved dependency graph, reflection/provenance, reproducible bundle); register a separate task before further source inspection or any implementation decision.
