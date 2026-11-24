@@ -2743,3 +2743,81 @@ The local `RhinoScriptEngine.kt` public/source declaration inventory has all ins
 5. Do not implement production compatibility by expanding the current selector/Map runtime. The next implementation can begin only after Stage-0 establishes the minimum authentic closure and Stage-1 PoC is separately registered/authorized under the workflow.
 6. **Task 009 disposition:** major source-level boundary map complete for the inspected roots; transitive compiler/Gradle closure and all-port differential proof remain NOT MET. No source/test/Gradle/workflow/schema/UI/CI file changed or run.
 7. **Stage-0 remains** `in_progress / not accepted`; **Stage-1 remains NO-GO**. This is a major compatibility blocker, not a minor issue.
+
+
+## 24.59 Runtime-3.0 Stage-0 — behavior-bearing source closure decomposition (2026-11-24)
+
+- **Task:** `R3-S0-SOURCE-CLOSURE-DECOMPOSITION-010`; registered in overview §4.10.
+- **Snapshot:** start HEAD `0935239977a736633e99236c7cb672d204cef30c`; registration commit `acdd85d035992231f335e5cfafb850f982460c34`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Method:** reconciled the historical G1 17-root manifest against the immutable upstream recursive tree; inspected root declarations/imports and actual caller anchors; re-read current Badcat module source sets and host contracts. All 17 root Git blob SHAs match the pinned upstream tree exactly. The old manifest is a source navigation artifact, not a current compiler graph.
+
+### 24.59.1 Exact roots and boundary classification
+
+| Pinned upstream root | Evidence / role | Classification |
+|---|---|---|
+| `data/entities/BaseSource.kt` | `BaseSource : JsExtensions` (65); login/session, headers, variables, source scope and JS bindings (414–425). | **Mandatory authentic core** — preserve identity, login, variables, JS bindings, shared scope and cleanup. |
+| `data/entities/BookSource.kt` | Room/Parcelable entity (24–31), URL primary key (33–41), inherits BaseSource (104), six typed rule models. | **Mandatory authentic model/core** — host may own storage, but JSON-only DTO is not equivalent. |
+| `data/entities/Book.kt` | Typed BaseBook/RuleData context; Room and reader/content helper coupling. | **Mandatory model semantics** — preserve actual rule-context behavior; port data access, do not import Reader UI. |
+| `data/entities/BookChapter.kt` | Typed chapter/context identity, RuleData and AnalyzeUrl dependency; Room relation semantics in §24.52. | **Mandatory model semantics** — reduced chapter DTO is not sufficient for upstream execution. |
+| `help/JsExtensions.kt` | `@Keep` public interface (123–125), source/batch context (127–145), HTTP/WebView/browser/verification/cache/file/refresh API. | **Mandatory authentic script ABI** — retain complete methods/overloads; platform actions use typed host ports. |
+| `model/jsSource/JsSourceEngine.kt` | Implements JsExtensions (40); binds java/source/sourceApi/baseUrl/cookie/cache and shared scope (104–124); supports contentBatch. | **Mandatory authentic core** — current String-only evaluator is not equivalent. |
+| `model/SharedJsScope.kt` | Shared jsLib/crypto scopes, compiled script cache, shared global state and invalidation. | **Mandatory authentic core/service** — not a generic key/value store. |
+| `model/analyzeRule/AnalyzeRule.kt` | Typed RuleDataInterface/BaseBook/Book/BookChapter context, selector dispatch, JS, variables, batch and refresh behavior (63–90). | **Mandatory authentic rule engine** — parser sources alone are insufficient. |
+| `model/analyzeRule/AnalyzeUrl.kt` | Source/RuleData/chapter request context (82–99), URL options, HTTP, Cookie, redirect/retry, WebView and cancellation. | **Mandatory authentic request engine** — connect to host services without changing URL semantics. |
+| `help/http/CookieStore.kt` | Cookie DAO + CacheManager/session/WebView integration (21, 37–38). | **Mandatory Cookie behavior; host persistence port.** |
+| `help/CacheManager.kt` | Cache entity/DAO, memory LRU, ACache, file and QueryTTF APIs (53 onward). | **Mandatory cache behavior; host persistence port.** |
+| `ui/login/SourceLoginJsExtensions.kt` | Extends RssJsExtensions (26); callback/login UI data and custom button/browser behavior (29–80). | **Required source callback/login bridge; not a reason to import RSS UI.** |
+| `help/source/SourceVerificationHelp.kt` | Verification flight registry, await/complete/fail/abandon, browser/verification UI and refetch. | **Required state machine + host UI port** — preserve single-flight, wait, result, cancellation and refetch. |
+| `help/source/BaseSourceExtensions.kt` | Source-type dispatch, shared scope/global state identity and invalidation (13–37). | **Mandatory lifecycle helper.** |
+| `help/http/HttpHelper.kt` | OkHttp client, CookieJar, proxy/DNS/network/cache integration. | **Mandatory HTTP behavior; host network implementation.** |
+| `help/http/BackstageWebView.kt` | Hidden WebView lifecycle/cancel/release (54, 74–105); source is reloaded via `appDb.bookSourceDao` and JS interfaces attached (120–128). | **Required WebView semantics; host implementation** — replace DAO lookup with typed source-catalog port. |
+| `help/webView/WebJsExtensions.kt` | WebView JS bridge, rule/network APIs; extends RssJsExtensions. | **Required WebView script surface; host implementation**, not RSS Reader UI. |
+
+### 24.59.2 Production caller chain
+
+- `WebBook.kt` dispatches search/explore/detail/TOC/content/batch (search at 39, `searchBookAwait` at 53–62); JS sources dispatch to `JsSourceBook`.
+- `JsSourceBook.kt` constructs `JsSourceEngine` for search, explore, detail, TOC, content and batch (calls around 28–163).
+- `BookList.kt`, `BookInfo.kt`, `BookChapterList.kt`, `BookContent.kt` construct `AnalyzeRule`/`AnalyzeUrl` for selectors, request, pagination, replacement and contentBatch. Their caller detail is already in §24.48; not re-audited here.
+- `SourceCallBack.kt` constructs `SourceLoginJsExtensions` for event callbacks (line 91); code search also finds SourceLoginDialog, ExploreAdapter, BookInfoViewModel, ReadBookActivity and VideoPlayerViewModel callers.
+- `RssJsExtensions.kt` is a real transitive parent of SourceLoginJsExtensions and WebJsExtensions. It exposes script-visible `put/get`, `searchBook`, `addBook`, `showPhoto`, `open` and rule parsing helpers (45, 62–100, 286–319). This does not prove the full RSS product is needed: map inherited source-facing methods to Badcat host actions, and exclude RSS product screens/data only after caller/API classification.
+- `BackstageWebView` is called from AnalyzeUrl, AnalyzeRule and JsExtensions for rule/bodyJs/WebView execution. Its separate CodeEditViewModel caller is editor-only and must not pull code-editor UI into Runtime.
+- Therefore the actual chain is `WebBook` → `JsSourceBook` or `AnalyzeRule/AnalyzeUrl` → `BaseSource/BookSource` + `JsExtensions` + Rhino/shared scopes → HTTP/Cookie/Cache/WebView/verification → typed Book/BookChapter/BatchContentContext. Parser-only or bounded URL-evaluator implementations do not close it.
+
+### 24.59.3 Product boundary and typed host ports
+
+**Retain authentic behavior/source:** BookSource/BaseSource and rule models; AnalyzeRule/AnalyzeUrl and authentic parser sources; JsExtensions/JsEncodeUtils; JsSourceEngine/SharedJsScope/BaseSourceExtensions; typed RuleDataInterface/BaseBook/Book/BookChapter/BatchContentContext; Rhino and required pure/runtime utilities. Preserve FQCN, overloads, null/defaults, object identity, coroutine/cancellation, variable precedence, shared scope and lifecycle.
+
+**Replace Android/product implementations with typed Badcat host ports:**
+1. **Catalog/data:** exact source-key lookup/mutation/import/export/invalidation; typed Book/BookChapter access, transactions and single-owner persistence. BackstageWebView currently reaches `appDb.bookSourceDao` directly.
+2. **HTTP:** method/headers/multi-headers/body, cookie jar, proxy/DNS, redirect/retry, read/call timeout, WebView fallback, binary/upload, response metadata/error/close and cancellation.
+3. **Cookie/cache:** persistent cookie/session state, WebView CookieManager synchronization, CacheManager/ACache/QueryTTF, TTL/eviction/files and cross-runtime invalidation.
+4. **Hidden WebView:** real page execution, injected source/java/cache bridges, navigation context, cookie, source/override URL capture, pooling, timeout/cancel and guaranteed release.
+5. **Login/browser/verification:** LoginUiV2 protocol, login header/info persistence, visible browser, verification single-flight/wait/complete/refetch/cancel and custom actions.
+6. **Product actions/events:** search/add-book/photo/open URL/video/refresh callbacks map into Badcat UI/events; no Legado Activity/Dialog/Reader is imported into product layer.
+7. **Files/crypto/config:** source-relative file/archive/encoding/crypto, user-agent/config, resource/permission and bounded security behavior.
+
+Do not over-exclude based on package names:
+- BookSource references the AudioPlay model type; this alone does not prove the full audio player is required.
+- Book/BookChapter depend on reader/content helpers and Room; retain model behavior used by rule execution, not the full Reader UI.
+- JsExtensions imports BookHelp, ReadBookConfig, ThemeConfig, VideoPlay and Activity/dialog helpers; every source-visible action needs a Badcat host mapping or proved non-source-only classification.
+- SourceLoginJsExtensions/WebJsExtensions inherit RssJsExtensions; do not import RSS Reader wholesale, but do not silently delete inherited JS methods.
+
+### 24.59.4 Minimum controlled-runtime boundary proposal
+
+Proposal only; no module created and no implementation authorized:
+
+- **Controlled Legado Runtime Core:** unchanged pinned BookSource/BaseSource/rule models; required BaseBook/Book/BookChapter/RuleDataInterface/BatchContentContext semantics; AnalyzeRule/AnalyzeUrl and parser sources; JsExtensions/JsEncodeUtils, JsSourceEngine, SharedJsScope, BaseSourceExtensions; pinned Rhino and authentic runtime utilities.
+- **Typed Android Host Adapter:** Badcat source catalog/data, HTTP/response, CookieStore, CacheManager/ACache, WebView, browser/verification/login, product actions/events, files/crypto/config, coroutine/cancellation and resource lifecycle.
+- **Compatibility Facade:** central identity, entity projection, serializer/error/response and lifecycle conversion. It must not collapse upstream Scriptable/Book/BookChapter/RuleData into Map<String,String> or String-only bindings.
+- **Badcat Product UI:** keeps Badcat search/favorites/bookshelf/reader/navigation/purification/bookmarks/CSS; runtime callbacks use typed actions, never Legado UI/Reader.
+
+This does not yet define the final file list or prove buildability. Historical 661-file/6,303-import and 1,085-file/9,983-import graphs are lexical evidence with known blind spots; the unchanged two-file BookSource/BaseSource compiler probe still fails as recorded in G2 diagnostics. Exact Gradle variants, generated sources/resources, compiler bindings, reflection ABI and complete callers remain outstanding.
+
+### 24.59.5 Current gap and disposition
+
+- Current `:legado-runtime` injects only seven rule models + GsonExtensions (build lines 39–53); `:integration-contract` compiles selected parsers and explicitly leaves AnalyzeRule lifecycle separate (11–36); `:legado-rhino` packages Rhino/HtmlUnit but not the upstream execution roots (28–34).
+- Current `SourceRuntime.kt` still uses `LegadoRuleRuntime.evaluate(...): EngineResult<List<Map<String,String>>>` and `SourceScriptRuntime.evaluate(... bindings: Map<String,String>): EngineResult<String>` (58–90). These are structurally not the upstream typed RuleData/Scriptable/JsExtensions contracts.
+- `RuntimeHostPort.kt` is a useful foundation, but no complete one-to-one wired mapping yet exists for catalog/data, HTTP, Cookie, cache, WebView, login, verification, navigation, product actions, file/crypto and lifecycle.
+- **Task 010 disposition:** root provenance 17/17 exact; root/caller/product-boundary decomposition complete for the inspected G1 set; minimum controlled-runtime boundary proposed. Full recursive compiler/Gradle closure, complete API/caller coverage, exact platform-port acceptance and differential execution remain **NOT MET**. No production/test/Gradle/workflow/schema/UI/CI file changed or run.
+- **Stage-0 remains** `in_progress / not accepted`; **Stage-1 remains NO-GO**. This is a major compatibility blocker, not a small defect.
+- **Next:** consolidate Stage-0 exit evidence and determine whether authentic core + typed host ports can compile without Legado product UI/Reader or a second DB authority. Exact-SHA Gradle execution and compiled ABI remain required; do not start production migration before Stage-1 is explicitly opened.
