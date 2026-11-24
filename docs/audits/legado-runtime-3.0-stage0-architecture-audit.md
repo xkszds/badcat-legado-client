@@ -2256,3 +2256,74 @@ All six rule classes are mutable Kotlin data classes annotated @Parcelize. The f
 - **Not claimed:** no dynamic differential tests were run in this audit; no claim that all real sources fail or that every unknown field is lost on export. The codec's rawJson export does preserve unknown JSON fields semantically on the current catalog path.
 - **Required closure:** (a) keep the six upstream rule model classes and Gson adapters as the typed source of truth; (b) restore typed rule objects at the runtime boundary instead of relying on Map<String,String>; (c) explicitly preserve Int?/Boolean/null/default fields, BookSource lazy getter behavior, ContentRule batch semantics and ReviewRule enabled gating; (d) define field-specific dispatch for expression, URL, JS, metadata, replacement and callback properties; (e) either implement the upstream Review caller contract with typed host ports or explicitly keep Review unsupported and mark the capability blocked; (f) add all-field reflection/serialization tests, object/string/null/array/malformed cases, unknown nested-field import/export tests, and pinned differential tests for all six rule types.
 - **Decision:** this closes the six-rule model/codec source inventory only. Full BookSource/Book/BookChapter/ReadConfig model closure, runtime typed execution, Explore/Review caller parity and dynamic differential validation remain open. Task R3-S0-MODEL-BOOKSOURCE-RULES-001 source-audit slice complete; Stage-0 remains in_progress/not accepted; Stage-1 remains NO-GO. No production code, tests, Gradle, workflow, database/schema, UI or CI were changed/run.
+
+## 24.51 Runtime-3.0 Stage-0 — outer BookSource entity, Room identity/schema and import/catalog persistence semantics (2026-11-24)
+
+- **Task:** R3-S0-MODEL-BOOKSOURCE-ENTITY-002; registered in overview §4.2 before inspection.
+- **Snapshot:** Badcat branch `integration/legado-upstream-runtime` at `9ddbc024f07b593a62bd14472c8f3416f73d6a0e`; pinned upstream `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Deduplication:** §24.37/§24.45/§24.46 already cover BaseSource identity, source-key namespaces and runtime-state invalidation; §24.50 covers the six nested rule classes and resolver's typed-field loss. This section records the outer BookSource field/schema contract, Room ownership and additional import/catalog deltas only.
+
+### Pinned upstream BookSource outer model
+
+Upstream `app/src/main/java/io/legado/app/data/entities/BookSource.kt:24–104` is a `@Parcelize`, Room `@Entity(tableName="book_sources")`, `@TypeConverters(BookSource.Converters::class)` data class implementing `BaseSource`. It declares 33 top-level properties (the six nested rule properties are already inventoried in §24.50):
+
+| Fields | Kotlin type / default | Room / semantic notes |
+|---|---|---|
+| bookSourceUrl | String = `""` | `@PrimaryKey`; canonical source identity and BaseSource key |
+| bookSourceName | String = `""` | required display name |
+| bookSourceGroup | String? = null | comma/group membership text |
+| bookSourceType | Int = 0 | `@BookSourceType.Type` |
+| bookUrlPattern | String? = null | book URL matching |
+| customOrder | Int = 0 | Room default 0; ordering key |
+| enabled | Boolean = true | Room default 1 |
+| enabledExplore | Boolean = true | Room default 1 |
+| jsLib | String? = null | inherited BaseSource property |
+| enabledCookieJar | Boolean? = true | nullable inherited BaseSource property; Room column default is 0, not Kotlin default |
+| concurrentRate | String? = null | inherited BaseSource request-rate setting |
+| header | String? = null | inherited BaseSource header |
+| loginUrl / loginUi | String? = null | inherited BaseSource login URL/UI |
+| loginCheckJs | String? = null | login state script |
+| coverDecodeJs | String? = null | cover decode script |
+| bookSourceComment | String? = null | comment |
+| variableComment | String? = null | source-variable description |
+| lastUpdateTime | Long = 0 | ordering/update metadata |
+| respondTime | Long = 180000L | response-time metadata |
+| weight | Int = 0 | smart ordering |
+| exploreUrl / exploreScreen | String? = null | discovery URL/filter |
+| searchUrl | String? = null | search URL |
+| mainJs | String? = null | non-empty value switches to pure JS source flow |
+| eventListener | Boolean = false | Room default 0 |
+| customButton | Boolean = false | Room default 0 |
+
+The six typed nullable rule properties are `ruleExplore`, `ruleSearch`, `ruleBookInfo`, `ruleToc`, `ruleContent`, `ruleReview`; their exact model contracts are in §24.50. The upstream `BaseSource` contract at `BaseSource.kt:65–102` contributes the mutable shared JS-facing properties `concurrentRate/loginUrl/loginUi/header/enabledCookieJar/jsLib`, `getTag()`, `getKey()` and `getSource() = this`; the full JS/login/request behavior is already audited in §§24.37/24.45 and is not re-counted here.
+
+### Identity, entity methods and Room persistence
+
+- `BookSource.kt:27–30,33–34,110–120`: `bookSourceUrl` is the primary key; an additional non-unique index is declared on the same column. `getKey()` returns `bookSourceUrl`; `equals/hashCode` use only this URL. A name, group, base host or rule change does not create a new entity identity.
+- `BookSource.kt:122–155`: search/explore/detail/TOC/content getters lazily create and assign empty typed rule instances when absent; Review's getter is commented out (157–162). Batch support and maximum size are derived from typed ContentRule (246–258; semantic field details in §24.50).
+- `BookSource.kt:306–354`: all six typed rule properties have explicit Room string converters through pinned GSON. The database stores rule columns as TEXT, while runtime entity properties are typed nullable objects.
+- Pinned exported schema `app/schemas/io.legado.app.data.AppDatabase/113.json` defines the version-113 `book_sources` table with 33 columns, `bookSourceUrl` TEXT NOT NULL primary key, and a non-unique index on that same key. It records `enabled`/ `enabledExplore` default 1, `customOrder` default 0, `enabledCookieJar` nullable INTEGER default 0, `eventListener`/ `customButton` default 0; other non-null numeric fields have no SQL default in this snapshot. This is distinct from Kotlin constructor defaults (notably enabledCookieJar=true vs SQL default 0); a future Room port must preserve both construction and migration/database insertion semantics rather than collapsing them.
+- Pinned `AppDatabase.kt:70–90, 90–153` uses Room version 113, includes BookSource as an entity and BookSourcePart as a database view, and registers the migration chain. Relevant BookSource evolution in `DatabaseMigrations.kt`: 19→20 adds bookSourceComment (220); 34→35 adds concurrentRate (389); 35→36 adds loginUi/loginCheckJs (393–396); 37→38 adds respondTime with SQL default 180000 (408–411); 64→65 deletes the obsolete enabledReview column (489–494). Migration 105→106 creates book_source_check_states keyed by bookSourceUrl with FK to book_sources and ON DELETE CASCADE, seeds NEEDS_CHECK rows, and recreates the book_sources_part view (108–121). This is source/schema evidence; no migration was executed in this audit.
+- `BookSourceDao.kt:254–277,288–306,344–370,382–406`: lookup and mutation key on bookSourceUrl; insert uses REPLACE; insert transaction also writes check-state rows; update transaction compares `checkContent()` and resets check state when rule-relevant content changes; deletion and enable/order mutations are DAO operations. `SourceHelp.kt:91–95,141–154,174–185` adds source-variable/shared-global cleanup on deletion and adjusts duplicate/extreme order values asynchronously after import.
+- Upstream `BookSourcePart.kt:11–32` is a Room view, not the canonical entity. It projects identity/name/group/order/enabled/discovery/login/update/response/weight/event/type/JS and check-state fields from book_sources plus book_source_check_states; its URL-based equality and getBookSource lookup are at 68–85. Do not mistake this lightweight projection for the complete runtime model.
+
+### Host DTO, codec and catalog ownership
+
+- Host `ReadingEngine.kt:94–134` defines an immutable platform-neutral DTO. It carries all currently enumerated BookSource outer values, mapping `bookSourceUrl → id` and also `baseUrl`, `bookSourceName → name`, `bookSourceGroup → group`; `concurrentRate` and `customOrder` are appended. The six rule fields are JSON strings, not typed upstream rule objects (§24.50). The host DTO does not implement `BaseSource`, `Parcelable`, Room Entity, upstream equality/hash behavior, lazy typed-rule getters or the upstream entity methods.
+- Host `LegadoBookSourceCodec.kt:14–50,51–87,254–304` keeps selected top-level projections plus rawJson, then maps to the immutable DTO. Unknown fields are semantically retained on export because `encode` writes rawJson (203–221); this does not make the raw JSON an executable typed entity.
+- Host import validation at `LegadoBookSourceCodec.kt:307–387` is stricter than pinned Gson's global coercion adapters. Upstream `GsonExtensions.kt:32–55,140–151` registers `StringJsonDeserializer`, which converts any JSON primitive to its string form, null to null, and object/array to compact JSON text; host validates known string fields as JSON string or null only (rejecting numeric/boolean/object/array values). Upstream `IntJsonDeserializer` (159–177) accepts numeric primitives via `toInt()` and otherwise returns null; host validates integer fields as exact integral JSON numbers (including range checks), rejecting numeric strings and fractional numbers rather than allowing upstream's adapter/fallback path. This is a confirmed import-policy delta; no dynamic fixture comparison was run.
+- Host `FileBookSourceCatalog.kt:19–34,36–50,53–93,95–149,151–167,182–218,221–225` owns one app-private `filesDir/legado-book-sources.json` file through Android AtomicFile and a process-wide Mutex. It decodes a bounded catalog, replaces existing entries by sourceId, writes atomically, clears runtime state after replacement/removal, toggles enabled by editing rawJson, and exports ordered rawJson. Its 5 MiB / 2,000-source / 64-level nesting / 512-field bounds are deliberate host safety policy, not upstream Room limits. Catalog state is file-backed, not Room-backed; no BookSource DAO, relational check-state table or Room migration port exists in this host path.
+- The host's `orderBookSourcesForCatalog` sorts by customOrder (221–225); the pinned DAO's `all` query orders customOrder ASC (BookSourceDao.kt:205–206). Host test `FileBookSourceCatalogOrderTest.kt:7–32` verifies stable input order for ties; upstream SQL does not specify a tie-breaker, so exact tie ordering is not guaranteed upstream.
+- Host duplicate source IDs are rejected during decode (codec 187–194); upstream JSON parser accepts source objects/arrays and validates nonblank URL (BookSourceImport.kt:88–125), while DAO insert uses REPLACE keyed by URL (BookSourceDao.kt:276–292). Thus duplicate IDs within one import document have a different outcome: host rejects the document; upstream parsing can pass entries onward and Room replacement resolves key collisions by insertion order.
+- Upstream import supports `sourceUrls` manifests and recursively fetches each URL, and supports raw JS source text via `JsSourceConfig.extract` (`BookSourceImport.kt:88–125`; `ImportBookSourceViewModel.kt:194–229,259–294`). Host codec can parse a manifest through `decodeImportDocument`, but the actual `FileBookSourceCatalog.importJson` path calls `decode()` with manifests disallowed (codec 114–120); both local and network UI import call this catalog method (`SourceCatalogActivity.kt:363–429,467–500`). Consequently the current UI rejects sourceUrls manifests instead of recursively importing them, and accepts only JSON source objects/arrays—not the upstream raw-JS-source import format.
+- Upstream import also presents candidate selection and optional keep-local-name/group/enabled behavior before transactional insert (`ImportBookSourceViewModel.kt:129–183)); host catalog currently replaces imported source JSON by sourceId without these merge/selection controls. Upstream SourceHelp filters known 18+ hosts before insert (141–169); no equivalent filter appears in the inspected host catalog import path. These are import-workflow deltas, not claims about the six rule model semantics.
+
+### Compatibility classification
+
+- **Confirmed parity:** the host projection includes the inspected current BookSource outer scalar fields and maps URL/name/group into its transport DTO; rawJson export preserves unknown source-level fields. Source identity is represented by the upstream bookSourceUrl value, consistent with §24.46's source-key mapping.
+- **Confirmed structural gap:** host has no typed BookSource implementing BaseSource and no Room entity/converter/DAO/check-state view path. A file catalog and immutable DTO are not equivalent to the upstream entity + DAO lifecycle.
+- **Confirmed policy deltas:** strict host JSON type validation, duplicate-ID rejection, missing sourceUrls recursive import and raw-JS import, and absent upstream import-selection/keep-local metadata behavior.
+- **Confirmed data-model nuance:** Kotlin enabledCookieJar default true and Room SQL default 0 coexist upstream; migration/database semantics cannot be inferred from the Kotlin constructor alone.
+- **Not claimed:** no Room migration was run; no JSON differential runtime test or Android BookSource E2E was run; no claim that every BookSource method or every historical migration was exhausted beyond the pinned source/schema evidence cited here.
+- **Required closure:** (a) choose whether Runtime-3.0 will reuse the actual pinned BookSource/BaseSource/Converters/DAO closure or provide a fully typed, differential-equivalent adapter; (b) preserve URL primary-key/equality/REPLACE/check-state/variable/global cleanup semantics and define the one canonical host data owner; (c) reconcile Kotlin vs SQL defaults, Gson coercion and null/malformed field handling; (d) implement or explicitly block sourceUrls/raw-JS import and import merge/selection behavior; (e) provide a pinned version-113 schema/migration compatibility plan without prematurely freezing Badcat's own schema; (f) add all-field entity projection tests, coercion fixtures, duplicate-ID tests, sourceUrls recursion tests, import merge tests and transaction/restart/cleanup fault tests.
+- **Decision:** outer BookSource source-audit slice complete. This does not close Book/BookChapter/ReadConfig models, BaseSource runtime behavior, the complete Room dependency closure, or dynamic import/data-owner parity. Task R3-S0-MODEL-BOOKSOURCE-ENTITY-002 complete as a read-only audit slice; Stage-0 remains `in_progress/not accepted`; Stage-1 remains `NO-GO`. No production source, tests, Gradle, workflow, database/schema, UI or CI were changed/run.
