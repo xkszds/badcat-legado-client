@@ -3584,7 +3584,7 @@ This is partial runner evidence, not a task-007 acceptance result. Do not classi
 ### 24.75 Task 016 — existing exact-SHA compiled output and ABI evidence inventory
 
 - **Task ID:** `R3-S0-COMPILED-OUTPUT-ABI-INVENTORY-016`
-- **Status:** completed as bounded Debug packaging evidence; see §24.77.1.
+- **Status:** completed as a read-only existing-output inventory; see §24.75.1.
 - **Start branch HEAD:** `432a5e8cadc5cb250460cb1d980c64636f22447e`; branch `integration/legado-upstream-runtime`.
 - **Evidence checkout:** Badcat `b644bef2bac68401804c5807a1ca79ae53a683a6`; pinned upstream submodule `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
 - **Goal:** inspect already-existing compiled outputs from the prior exact-SHA runner attempt to determine which module class outputs/JARs actually exist and extract bounded JVM ABI/signature evidence without rebuilding. This is an evidence inventory, not proof of APK packaging or runtime parity.
@@ -3710,7 +3710,7 @@ Task 016 is completed as a read-only existing-output inventory with bounded JVM 
 **Registration**
 
 - **Task ID:** `R3-S0-RESILIENT-DEBUG-PACKAGING-018`.
-- **Status:** registered; not started.
+- **Status:** completed as bounded Debug packaging evidence; see §24.77.1.
 - **Registration start branch HEAD:** `424207fb4b441eb7a0e416ded180425fe434574c`; branch `integration/legado-upstream-runtime`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9`.
 - **Execution snapshot:** the exact branch HEAD after both Task 018 registration entries are committed. The immutable SHA must be read back from GitHub and verified on the runner before execution.
 - **Goal:** one fresh `:app:assembleDebug` attempt with a detached launcher whose lifecycle is independent of the Remote Desktop Commander request. The prior Task 017 daemon log proved the Gradle build was cancelled after client disconnection; Task 018 specifically removes that foreground-session coupling and captures an explicit terminal exit marker.
