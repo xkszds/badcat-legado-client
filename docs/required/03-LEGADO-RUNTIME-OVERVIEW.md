@@ -418,7 +418,7 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 ## 4.16 Runtime-3.0 Stage-0 — existing compiled output and ABI evidence inventory
 
 - **Task ID:** `R3-S0-COMPILED-OUTPUT-ABI-INVENTORY-016`
-- **Status:** registered; not started.
+- **Status:** completed as a read-only inventory; see §4.16.1.
 - **Start HEAD:** `432a5e8cadc5cb250460cb1d980c64636f22447e`; branch `integration/legado-upstream-runtime`; evidence checkout Badcat `b644bef2bac68401804c5807a1ca79ae53a683a6`; upstream pin `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
 - **Goal:** inspect existing compiled outputs from the earlier exact-SHA runner attempt and extract bounded compiled ABI/signature evidence without rebuilding.
 - **Allowed files:** audit and overview documentation only; runner access read-only.
@@ -441,7 +441,7 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 ## 4.17 Runtime-3.0 Stage-0 — fresh exact-HEAD Debug packaging verification
 
 - **Task ID:** `R3-S0-EXACT-HEAD-DEBUG-PACKAGING-017`
-- **Status:** registered; not started.
+- **Status:** cancelled before successful packaging; see §4.17.4.
 - **Start HEAD:** `519d6c9d74401a1072d97457475d79cd2c59684c`; branch `integration/legado-upstream-runtime`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
 - **Goal:** run one fresh `:app:assembleDebug` against the exact registered HEAD and capture terminal status plus APK/manifest/DEX/R8 evidence.
 - **Allowed files:** audit and overview documentation only; runner build outputs and ephemeral exact-SHA Maven artifact are permitted.
