@@ -299,3 +299,14 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - **Acceptance:** root-by-root classification with exact source paths/caller evidence; mandatory authentic source groups; explicit typed port contracts; product-only exclusion candidates with proof and unresolved dependencies; one evidence-backed minimum closure proposal and GO/NO-GO conditions. No dependency edge may be removed merely because its package name looks UI-related.
 - **Exclusions:** no production/test/Gradle/workflow/database/schema/UI changes; no CI; no small-defect sweep; no source import or implementation; no Stage-1 authorization; no claim of complete compiler closure from import graphs.
 - **Result:** audit §24.59 confirms all 17 G1 behavior-bearing roots still match exact pinned upstream blobs; maps their runtime/core vs typed host-port roles; traces WebBook→JsSourceBook/AnalyzeRule/AnalyzeUrl→BaseSource/JsExtensions/Rhino→HTTP/Cookie/Cache/WebView/verification→typed Book/BookChapter context; identifies RssJsExtensions as a transitive source-visible callback API without requiring RSS Reader UI; proposes controlled upstream core + typed Badcat host adapter + compatibility facade + Badcat-only UI. Current :legado-runtime/:integration-contract/:legado-rhino source sets remain structurally incomplete. No production/test/Gradle/workflow/schema/UI/CI changed or run. Audit commit: `655176b6aba78eb7f6034ea6f64c0cf3261f17e6`.
+
+## 4.11 Runtime-3.0 Stage-0 — exit-evidence reconciliation and gate matrix
+
+- **Task ID:** `R3-S0-EXIT-EVIDENCE-RECONCILIATION-011`
+- **Status:** registered; evidence reconciliation in progress.
+- **Start HEAD:** `6a1afb466db254979f69b0b8a6f1075ec06edc0f`; branch `integration/legado-upstream-runtime`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** reconcile Stage-0 exit criteria in audit §24.55 against the newer evidence in §24.56–§24.60 and tasks 006–010; distinguish completed static slices, partial inventories, environment-blocked evidence and prerequisites for Stage-1. Produce one non-contradictory GO/NO-GO matrix and a single next mainline task.
+- **Allowed files:** `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md` and this overview only. Read existing audit evidence; do not repeat completed source/CI inventories.
+- **Dependencies:** overview §§1–2 and §§4.6–4.10; audit §§24.55–§24.60; pinned upstream SHA above.
+- **Acceptance:** every Stage-0 exit row has a current evidence-backed status, exact evidence section/task, remaining artifact/proof and blocker owner/type; reconcile stale wording without rewriting historical findings; separate Stage-0 prerequisites from Stage-1 dynamic acceptance; preserve Stage-1 NO-GO until all Stage-0 gates are met.
+- **Exclusions:** no production/test/Gradle/workflow/database/schema/UI changes; no CI; no new build claims; no Stage-1 authorization; no full-compatibility claim.
