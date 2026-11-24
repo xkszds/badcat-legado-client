@@ -312,3 +312,14 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - **Result:** audit §24.61 reconciles all nine Stage-0 exit rows against tasks 006–010 and evidence §§24.55–§24.60. It separates static inventory completion from missing resolved Gradle/compiled ABI/full caller closure/license SBOM/reproducible bundle. No exact-parity capability is established. The Gradle blocker is environmental, not a source compile failure. No source/test/Gradle/workflow/database/schema/UI/CI changed or run.
 - **Disposition:** reconciliation task complete; Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**. Next mainline task is the complete JsExtensions public API/overload/inherited-caller-to-host-port closure, not a minor defect sweep or CI audit.
 - **Exclusions:** no production/test/Gradle/workflow/database/schema/UI changes; no CI; no new build claims; no Stage-1 authorization; no full-compatibility claim.
+
+## 4.12 Runtime-3.0 Stage-0 — complete JsExtensions public API and caller closure
+
+- **Task ID:** `R3-S0-JS-EXTENSIONS-API-CALLER-CLOSURE-012`
+- **Status:** registered; static API/caller reconciliation in progress.
+- **Start HEAD:** `2f5bc46f4a69314b74b174e084d59f18a362f4f4`; branch `integration/legado-upstream-runtime`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** close the full pinned script-visible JsExtensions surface, not another isolated method fix: reconcile the existing 104-name inventory against exact declarations, overloads, parameter/return types, nullability/default/suspend semantics, inherited RssJsExtensions/WebJsExtensions methods, real source-runtime callers and the current Badcat typed host-port mapping.
+- **Allowed files:** audit and overview documentation only. Inspect pinned upstream declarations/callers and current Badcat contracts as evidence; do not modify production/test/Gradle/workflow/schema/UI files.
+- **Dependencies:** audit §§24.37–24.46, §§24.57–24.61; overview §§4.8–4.11; pinned upstream SHA above.
+- **Acceptance:** complete declaration/overload matrix with exact upstream path/line; inherited surface and caller classification; host-port disposition for every source-visible method; deduplicate already-recorded behavior deltas by linking prior audit sections; distinguish source facts, static risks and dynamic-unverified ABI/behavior; list remaining compiler/Gradle and differential requirements.
+- **Exclusions:** no minor per-method defect sweep where prior evidence exists; no CI; no source implementation/module-boundary changes; no Stage-1 authorization; no claim of exact parity from static signatures.
