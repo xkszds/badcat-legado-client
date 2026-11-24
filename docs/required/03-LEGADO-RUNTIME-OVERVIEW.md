@@ -436,3 +436,15 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - **Boundary:** class outputs and selected signatures are not equivalent to successful app compile task, AAR/APK packaging, R8/DEX, upstream ABI parity or runtime compatibility. Existing class timestamps correlate with the earlier build attempt, but the missing terminal Gradle status prevents declaring that task successful.
 - **Disposition:** Task 016 complete as a read-only inventory. Task 007 partial; Stage-0 not accepted; Stage-1 NO-GO. No build/test/CI rerun or source/configuration change.
 - **Next:** use the evidence to close the remaining authentic upstream source/dependency and typed host-port gaps; do not start Stage-1 or production migration.
+
+
+## 4.17 Runtime-3.0 Stage-0 — fresh exact-HEAD Debug packaging verification
+
+- **Task ID:** `R3-S0-EXACT-HEAD-DEBUG-PACKAGING-017`
+- **Status:** registered; not started.
+- **Start HEAD:** `519d6c9d74401a1072d97457475d79cd2c59684c`; branch `integration/legado-upstream-runtime`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** run one fresh `:app:assembleDebug` against the exact registered HEAD and capture terminal status plus APK/manifest/DEX/R8 evidence.
+- **Allowed files:** audit and overview documentation only; runner build outputs and ephemeral exact-SHA Maven artifact are permitted.
+- **Acceptance:** exact checkout identity, complete build log and exit code, APK hash/size if created, packaging/DEX evidence, temporary artifact cleanup and clean Git status.
+- **Exclusions:** no CI, source/test/Gradle/workflow/schema/UI edits, dependency upgrade, Stage-1 or complete-compatibility claim.
+- **Next:** verify runner fast-forward and upstream pin, then execute one logged assemble attempt.
