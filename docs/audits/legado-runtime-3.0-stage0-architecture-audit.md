@@ -3918,3 +3918,105 @@ This is an evidence delta to the earlier matrix in §24.69; it does not rewrite 
 - **Acceptance:** complete duplicate-name-to-source/module matrix covering all 38 DEX definitions; caller/reference map for each top-level family; one recommended canonical owner with explicit rationale and migration sequencing; authentic runtime class/source-closure matrix with pinned paths and dependency classes; typed Host Port and Badcat shell boundary; risks, unknowns, validation tasks, and stop conditions. Recommendation must preserve upstream behavior and avoid shadow DTOs, string-map substitutes, no-op stubs, duplicate class definitions, and Legado UI/Reader migration.
 - **Exclusions:** no source, test, Gradle, source-set, manifest, dependency, workflow, license/notice, schema, database, UI or Reader changes; no build/assemble/test/device/CI/Actions; no tool installation or system/network changes; no Stage-1 authorization; no claim of complete compatibility or runtime behavior.
 - **Next:** after this read-only plan is reviewed, register a separate implementation/remediation task with exact files, callers, focused duplicate-class/ABI tests, source-closure acceptance and reproducible build requirements. Do not modify production files under Task 021.
+
+
+### 24.80.1 Task 021 result — duplicate-class ownership and bounded authentic source-closure plan
+
+**Identity and inspection boundary**
+
+- Task registration HEAD: `534e18a6cb95f5f98b0806039a15a1057a469c9f`. The Task 021 registration commits advanced the branch to `7a2d283e580b3dda7a87bc0cc456ab73feccce97`.
+- Read-only source checkout: Badcat `4c9cf8ca41a29fcfacdb17fb3ec1d66d4b451343`; pinned upstream submodule `330e606c4d57e08adc056ff8ab7a4132c784da9`. GitHub compare from the source checkout to the registered branch snapshot reports only the two allowed documentation paths changed; source/build inputs are identical.
+- Runner checkout remained detached at the older source snapshot; no fetch/checkout was needed or attempted for this read-only inspection. Working tree was clean.
+- Inspected existing Kotlin class outputs, source/build declarations, app production/test references, pinned upstream callers and the Task 020 DEX duplicate list. No build, test, assemble, install, device execution, dependency resolution, CI/Actions, source/configuration edit or process termination occurred.
+
+**All 38 DEX duplicate names mapped to eight source files**
+
+The duplicate list contains 38 names, grouped as follows:
+
+| Source file | DEX definitions | Duplicate names |
+|---|---:|---|
+| `rule/BookListRule.kt` | 1 | `BookListRule` |
+| `rule/BookInfoRule.kt` | 4 | `BookInfoRule`, `$Companion`, `$Creator`, `$$ExternalSyntheticLambda0` |
+| `rule/ContentRule.kt` | 4 | `ContentRule`, `$Companion`, `$Creator`, `$$ExternalSyntheticLambda0` |
+| `rule/ExploreRule.kt` | 4 | `ExploreRule`, `$Companion`, `$Creator`, `$$ExternalSyntheticLambda0` |
+| `rule/ReviewRule.kt` | 4 | `ReviewRule`, `$Companion`, `$Creator`, `$$ExternalSyntheticLambda0` |
+| `rule/SearchRule.kt` | 4 | `SearchRule`, `$Companion`, `$Creator`, `$$ExternalSyntheticLambda0` |
+| `rule/TocRule.kt` | 4 | `TocRule`, `$Companion`, `$Creator`, `$$ExternalSyntheticLambda0` |
+| `utils/GsonExtensions.kt` | 13 | `GsonExtensionsKt`, three `$$ExternalSyntheticLambdaN`, two inlined `fromJsonObject...genericType` classes, `genericType$1`, `INITIAL_GSON$2$1`, `IntJsonDeserializer`, `LocalDateTypeAdapter`, `LocalDateTypeAdapter$WhenMappings`, `MapDeserializerDoubleAsIntFix`, `StringJsonDeserializer` |
+
+Fully qualified names are in the Task 020 duplicate inventory. The 38 definitions are each present twice in the APK DEX: one app copy and one runtime copy. The nine `$$ExternalSyntheticLambda*` definitions are D8-generated and have no corresponding pre-D8 Kotlin class file in either module's inspected class directory; they are attributed to the lambda call sites in the owning source file above.
+
+**Source provenance and compiled class evidence**
+
+- All eight duplicated source files are byte-identical between `app/src/main/java` and the pinned upstream source tree:
+  - `BookListRule.kt`: `480f72f845d042fb4d00eeb16a5028b0f9546e70cf182d9bd222e2d77e1b758d`
+  - `ExploreRule.kt`: `f1d681306351643bba37f2ff5e1fc6a164075199bbd2d3ac73c0a426fdcc0941`
+  - `SearchRule.kt`: `cf4973f893fc91b414bc19d93d4faa6dba808a6878d188789b689a4c6773aba9`
+  - `BookInfoRule.kt`: `d78aaa3b6c8700abf0b20d61e1419f1469ae1b4e67705278b90fe96185fa513d`
+  - `TocRule.kt`: `effce50998e428af679448814c2c9ad393cac0f1fd400aac44e2cd67e806f407`
+  - `ContentRule.kt`: `b90944f2dd9314dc5a290449706b3b4d5095db62600c33297402779162c69da7`
+  - `ReviewRule.kt`: `b7c7cba14785c2755c538d4e246b6d6e22c374837845af616ef9f7c25bb5609b`
+  - `GsonExtensions.kt`: `f1150a4f0d11f911dc3c32394144e954a6ca609cd6ab668c458bca3113a31379`
+- Both modules have a Kotlin Debug class output for 29 of the 38 names. All 29 paired `javap -p -s` outputs are identical (29 same, 0 different); nine D8 synthetic names have no corresponding class file. Class-file byte hashes differ for multiple top-level/Companion classes even where the source and inspected JVM signatures match. This is not evidence of different runtime semantics; it is evidence that two independent module compilations are being packaged.
+- The full 38-name class-file hash report was generated at `/tmp/r3-task021-duplicate-class-hashes.tsv` (39 lines including header; SHA-256 `515ae9f957e81e369cc742a157e64827cd84c1ea14ed12e51e163e63e4299424`). The representative hashes already recorded in §24.79.1 remain valid.
+
+**Caller and Gradle ownership findings**
+
+- `:legado-runtime/build.gradle.kts` explicitly adds the seven rule-model files and `GsonExtensions.kt` from `upstream/legado/app/src/main/java` to its Debug/Release Kotlin compilation.
+- `:app` also compiles its default source copies from `app/src/main/java/io/legado/app/data/entities/rule/` and `app/src/main/java/io/legado/app/utils/GsonExtensions.kt`. `:app` already has `implementation(project(":legado-runtime"))`.
+- A bounded static search found no app production source reference to the seven duplicated rule types or Gson extension API outside those eight source files themselves. App tests do reference the types/helpers; they can compile against the existing runtime project dependency after a separately reviewed ownership change. `:legado-runtime` also has its own model contract test.
+- `:integration-contract/src/pinnedLegado` has no direct import of these rule-model types. Its selected parser source set is not a second owner of these eight declarations.
+- Thus the current duplicate is not required by an identified app production caller. It is caused by overlapping source ownership, not by a necessary app/runtime ABI split.
+
+**Adjacent upstream model files required by the real source callers**
+
+Three additional app-owned files are exact pinned upstream copies and are not yet included in `:legado-runtime`:
+
+| File | Source SHA-256 (app and upstream match) | Pinned BookSource caller |
+|---|---|---|
+| `rule/RowUi.kt` | `6fbb4ff6536336e1deda8c1a7e069e6ac820b5e86b38cb3af0fe16e472a55ed8` | `BaseSource.getLoginInfoMap` and `LoginUiV2.parseRender` |
+| `rule/ExploreKind.kt` | `5a1d570b0a4af0e35d9a0a581bc34644e1a334543792b1baed6cbe164abb1ef3` | `BookSourceExtensions.exploreKinds` and `BookList` |
+| `rule/FlexChildStyle.kt` | `701a36240c09d9b2d0f0c6dfd8a7e395f8da4e06cd07ce0eee2c80930ef4088c` | Referenced by both `RowUi` and `ExploreKind` |
+
+The three files are only referenced by their own declarations and tests in the current Badcat app production tree. Upstream `RowUi` and `ExploreKind` carry source/login/explore data contracts; `FlexChildStyle` additionally imports Android `View` and Flexbox `FlexboxLayout`. The latter is a small Android model/helper dependency, not a reason to import Legado login or explore product screens. These files should be reviewed as part of the same canonical source-owner boundary rather than left in `:app` as shadow copies.
+
+**Canonical ownership recommendation**
+
+Recommend `:legado-runtime` as the single canonical owner for the exact pinned upstream rule/source model and Gson contract family:
+
+1. Keep the seven rule model sources and `GsonExtensions.kt` only in `:legado-runtime`; remove their app default-source copies only in a separately registered implementation task.
+2. Add the exact upstream `RowUi.kt`, `ExploreKind.kt` and `FlexChildStyle.kt` to that same owner as the source-closure task reaches BaseSource/LoginUiV2/BookSourceExtensions. Preserve their upstream types and serialization; do not replace them with host DTOs.
+3. Keep Badcat screens, navigation, form rendering, explore UI and product actions in `:app`. App may consume the runtime's authentic model types through its existing project dependency; runtime must not depend on app.
+4. Keep platform-neutral typed contracts in `:integration-contract`; keep the authentic Rhino engine/security/wrappers in `:legado-rhino`; keep `:legado-runtime-poc` probe-only. A future dependency direction may be `:app` → `:legado-runtime` → (`:integration-contract`, `:legado-rhino`), subject to a separately proven Gradle graph and cycle check.
+5. This is a recommended logical/physical ownership plan, not an authorization to edit source sets. No module-boundary freeze or production migration is approved by Task 021.
+
+**Authentic source closure plan for the absent behavior-bearing declarations**
+
+| Upstream source group | Observed source/caller evidence | Required boundary / typed Host Port disposition |
+|---|---|---|
+| `BaseSource` | Implements `JsExtensions`; live source identity, login URL/UI, header, CookieJar, JS library, source variables and shared scope. Called by ordinary source rules and login/source callbacks. | Runtime-owned authentic interface and lifecycle. Ports for HTTP, Cookie/session, source cache/variables, config, crypto, login form/action, JS scope/cache and coroutine/cancellation. Keep live source identity; do not replace with a metadata DTO. |
+| `BookSource` | Pinned Room `@Entity` + Parcelable; implements `BaseSource`; owns six rule groups, loginCheckJs, mainJs, source identity and execution settings. | Runtime-owned authentic model. Preserve fields/default/null/serialization and identity. Room annotations/type converters and its `AudioPlay` type need exact dependency review; do not import the upstream AppDatabase or audio product UI by assumption. |
+| `Book` / `BaseBook` (transitive required models) | `AnalyzeRule`, `AnalyzeUrl`, `BaseSource` and `BookChapter` use live Book objects; `BookChapter` declares a Room FK to `Book.bookUrl`. | Must be added to the closure inventory even though the Task 020 representative absent-class list focused on BookSource/BookChapter. Preserve Book identity, reading configuration and source association; inventory Book's app DB/reader helper dependencies before choosing its adapter boundary. |
+| `BookChapter` | Pinned Room entity with PK `(url, bookUrl)`, unique `(bookUrl,index)`, FK to Book with cascade; implements `RuleDataInterface`. Its methods directly call `appDb`, `RuleBigDataHelp`, `AppConfig`, network/URL helpers and UI toast helpers. | Runtime-owned authentic model semantics, but database writes/large-variable storage/config/UI notifications must be delegated through typed host ports. Preserve `(bookUrl,index)` identity, URL matching and save/update semantics; do not add a second database or use host shadow chapter DTOs. |
+| `AnalyzeRule` | Real BookSource callers: `BookList`, `BookInfo`, `BookChapterList`, `BookContent`; also preUpdateJs and source JS contexts. Imports BaseBook/Book/BookChapter/BookSource, WebBook, BackstageWebView, CookieStore, SharedJsScope and other app services. | Runtime-owned authentic orchestration and parser context; selected parser sources in `:integration-contract` are only components, not substitutes. Ports for source/book lookup, HTTP/response, Cookie/cache, WebView, script scope, debug/logging and cancellation. Preserve parser object identity, URL/base/redirect, result nullability and fluent semantics. |
+| `AnalyzeUrl` | Called by BookChapterList and BookContent and passed as `java` in loginCheckJs; imports BaseSource/Book/BookChapter, CookieStore/Manager, BackstageWebView, Cronet, OkHttp, Android Base64, request/response types and media/image helpers. | Runtime-owned request orchestration with a typed HTTP/request/response Host Port; preserve mutable request state, headers, URL reconstruction, response types, cookies, retries, timeout, redirect and cancellation. Media3/Glide/ExoPlayer dependencies remain conditional until BookSource caller evidence shows which are required; do not import unrelated product playback UI. |
+| `JsExtensions` and inherited Rss/Web/login surfaces | Full declaration/inheritance/caller matrix already exists in audit §§24.62–24.68; source-visible methods include HTTP, Cookie, cache, browser/WebView, verification, callbacks and product actions. The source imports AppCompatActivity and Legado activities/dialogs. | Preserve every BookSource-visible API through typed per-context facades and Host Ports. Implement visible/browser/verification/login/product callbacks with Badcat-owned UI; do not import Legado Activity/Dialog/Reader/RSS screens. Keep RSS/TTS-only operations conditional unless a real BookSource caller proves dependency. |
+| `SharedJsScope` | Uses LruCache, ACache, OkHttp, Android app context, files, weak references, SecureRandom and concurrent scope maps. | Runtime-owned JS scope/cache lifecycle with typed cache/file/HTTP/random/executor ports; preserve source-key identity, sharing, thread safety, cache eviction and release semantics. |
+| `JsSourceEngine` | Uses BaseSource/BookSource, ScriptBindings, RhinoContext/RhinoScriptEngine, CacheManager, CookieStore, SharedJsScope and coroutine Job. | Runtime-owned authentic JS-source dispatch/marshalling; depend on `:legado-rhino`; ports for cache, Cookie, source services and cancellation. Preserve typed Book/BookChapter and script result normalization. |
+| BookSource business callers | `BookList`, `BookInfo`, `BookChapterList`, `BookContent`, `BookSourceExtensions` and `LoginUiV2` provide actual search/explore/detail/TOC/content/login invocation contexts. | Bring the behavior-bearing orchestration/caller path into the controlled runtime closure or provide a line-by-line equivalent call bridge. Do not treat the current host service chain or parser-only source set as upstream caller parity. |
+
+**Module boundary and unresolved evidence**
+
+- Current `:legado-runtime` is an Android library (compileSdk 36, minSdk 26, Java/Kotlin 21) whose own source tree contains only its manifest/test; its build injects seven rule model files plus GsonExtensions and declares Gson/AndroidX annotation. This is a narrow model slice, not the authentic runtime closure.
+- `:app` depends on `:integration-contract`, `:legado-runtime` and `:legado-rhino`. `:integration-contract` is Kotlin/JVM with selected upstream parser files and typed Host Port declarations; it has no direct imports of the duplicated rule-model family. The app currently implements selected adapters, but audit §24.70/§24.71 records that the full typed invocation contexts/Host Port production dispatch are not wired.
+- The authentic closure crosses Android, Room/Parcelable, app database helpers, HTTP/Cookie, WebView/browser, config, cache, crypto, file/archive, coroutine and source business orchestration. Exact resolved dependency/variant closure, complete Book/BaseBook closure, all Room converter/entity references, reflection/script-visible symbol reachability, and a buildable no-cycle module graph remain NOT ESTABLISHED.
+- Keep product UI out of the runtime. Any UI-affecting source callback must be a typed Host Port implemented by Badcat; do not copy Legado UI screens. Any dependency retained from media/RSS/TTS must be justified by a real BookSource caller.
+- Full classfile hash report: `/tmp/r3-task021-duplicate-class-hashes.tsv`, SHA-256 `515ae9f957e81e369cc742a157e64827cd84c1ea14ed12e51e163e63e4299424`. It is a runner temporary report, not a committed artifact.
+
+**Task disposition**
+
+Task 021 is complete as a bounded read-only source-ownership and architecture plan. Recommendation: `:legado-runtime` owns the canonical upstream model/Gson family and should absorb the adjacent exact upstream source-contract models; Badcat UI/platform behavior remains in `:app`, typed contracts in `:integration-contract`, Rhino in `:legado-rhino`. The absent authentic runtime classes and their full caller/dependency closure remain a major Stage-0 implementation/verification gap. No source/build/test/CI/notice/schema/UI changes occurred. No class-loader/runtime behavior or full ABI equivalence was tested.
+
+Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete Legado compatibility remains **NOT ESTABLISHED**.
+
+**Next:** register a separate implementation task before removing the app duplicate source copies or adding further authentic sources. That task must include the exact app/runtime source-set files, all test and production callers, the adjacent RowUi/ExploreKind/FlexChildStyle ownership, dependency direction/cycle proof, duplicate-class/ABI tests, and a reproducible APK/DEX check. In parallel, keep the full Book/BaseSource/AnalyzeRule/AnalyzeUrl/JsExtensions/SharedJsScope/JsSourceEngine source closure and typed Host Port wiring as explicit Stage-0 gates; do not start Stage-1.
