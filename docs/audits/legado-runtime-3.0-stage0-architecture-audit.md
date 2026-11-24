@@ -3593,3 +3593,47 @@ This is partial runner evidence, not a task-007 acceptance result. Do not classi
 - **Acceptance:** exact checkout/submodule identity; per-module output inventory; selected compiled signature evidence with artifact path/hash; explicit distinction between Kotlin class output, Java ABI inspection, packaged AAR/APK, DEX/R8 and final build status; limitations and remaining gates recorded.
 - **Exclusions:** no build/assemble/test/CI rerun; no Gradle or production source/configuration changes; no source migration, schema/UI work, module-boundary freeze, Stage-1 authorization or complete-compatibility claim.
 - **Next:** perform read-only runner inventory and append the evidence result here and overview §4.7.4. If existing artifacts are insufficient, record NOT ESTABLISHED rather than rebuilding under this task.
+
+
+### 24.75.1 Task 016 result — existing compiled outputs and selected JVM signatures
+
+**Identity and provenance boundary**
+
+- Runner checkout: Badcat `b644bef2bac68401804c5807a1ca79ae53a683a6`; upstream submodule `330e606c4d57e08adc056ff8ab7a4132c784da9a`; working tree clean at inspection.
+- The existing build outputs were inspected read-only. Their timestamps align with the earlier 2026-11-25 runner activity (the `:app` Kotlin output timestamps end at 06:12:19; the original assemble log was last modified at 06:12:20). This is strong temporal correlation, but because the original process exit/status is missing, it is not proof that Gradle marked the full task successful.
+- JDK `javap` version: 21.0.13.1.
+
+**Existing output inventory**
+
+| Module | Existing class files | Existing JARs | AAR / APK / DEX |
+|---|---:|---:|---|
+| `:app` | 314 | 1 (resource `R.jar` only) | none |
+| `:legado-runtime` | 29 | 2 (resource `R.jar` + `classes.jar`) | none |
+| `:legado-rhino` | 67 | 2 (resource `R.jar` + `classes.jar`) | none |
+| `:integration-contract` | 265 | 1 (`integration-contract.jar`) | none |
+
+Selected artifact SHA-256:
+
+- `:legado-runtime` `bundleLibCompileToJarDebug/classes.jar`: `9994ba1487a733f4ba6eb0c5bdca572b0d964cab07e8e284e3fe01982e69cabc`.
+- `:legado-rhino` `bundleLibCompileToJarDebug/classes.jar`: `99b1a8bf65d8b7c3deba359f08f740237185aaf45da81a4376e1fc311b012d24`.
+- `:integration-contract` `build/libs/integration-contract.jar`: `6ffcd72123c7f8de01947d1a9cb1f406e08f0c33a2f8c9dbfd4838f5fcdbd17c`.
+- Representative classes: upstream `SearchRule.class` `8c23d7f4d31cf1b49b7408969d82e8c50d77da326dfc2f90b7acef2f400907b1`; Rhino `RhinoScriptEngine.class` `d4766399ae854f480f97e69d8bafa78653a25e384e2a8d61d0c2444ff1995639`; host `SourceScriptRuntime.class` `380888c4a7a26c9b577434a47ef5451b791f182ee79cc7172262c48547bacd26`.
+
+**Selected `javap -public` signature evidence**
+
+- Compiled `io.legado.app.data.entities.rule.SearchRule` is a Parcelable Kotlin data class with 11-string constructor/fields, getters/setters, component1–11, copy/copy$default, CREATOR and no-arg constructor. This is evidence for this one rule model's emitted JVM surface only.
+- Compiled `com.script.rhino.RhinoScriptEngine` exposes `eval` overloads for String/Reader and VarScope/CoroutineContext, `evalSuspend`, `newStandardTopLevel`, `getRuntimeScope`, `compile`, `unwrapReturnValue` and `callSourceFunction`. This proves these signatures exist in the existing Rhino compile JAR; it does not prove Rhino runtime behavior or upstream ABI parity.
+- Compiled `app.badcat.engine.SourceScriptRuntime` exposes a suspend `evaluate(BookSource, String, Map<String,String>)` returning `EngineResult<String>`, plus string get/put helpers. This is direct evidence that this host contract surface is still a string-map facade, not the full typed per-caller upstream bridge contract from §24.70.
+
+**What this does and does not establish**
+
+- Existing Kotlin/JVM class outputs and selected bytecode signatures exist for the listed modules/classes. The two Android library modules have compile-to-JAR outputs.
+- `:legado-runtime` output inventory remains a narrow slice: the inspected 29 class files are the seven rule-model family and Gson/helper classes already documented in §24.57/§24.71; this inventory does not show the authentic BookSource/BaseSource/AnalyzeRule/AnalyzeUrl/JsExtensions service closure in that module.
+- No AAR, APK, DEX or R8 output exists in the inspected module build trees. The app's final compile task status remains UNKNOWN because the original Gradle log has no terminal status. The existing `:app` class files are not equivalent to an APK or proof of successful task completion.
+- No comparison against a complete reference ABI dump from the pinned upstream Android build was performed. Therefore full compiled ABI equivalence, packaging closure, R8/DEX, all variants, license SBOM, reproducible bundle and dynamic parity remain NOT ESTABLISHED.
+
+**Disposition**
+
+Task 016 is completed as a read-only existing-output inventory with bounded JVM signature evidence. Task 007 remains partial; Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete Legado compatibility remains **NOT ESTABLISHED**. No build/test/CI rerun and no source/configuration change occurred.
+
+**Next:** the evidence confirms the current `:legado-runtime` compiled source slice is not the full authentic runtime. The next Stage-0 work should close the exact source/dependency and host-port gap inventory from pinned upstream callers; do not begin Stage-1 or production migration until the remaining Stage-0 gates are met.
