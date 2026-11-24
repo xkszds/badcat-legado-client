@@ -58,11 +58,11 @@
 <badge>总体：部分实现 / 未验收</badge>
 
 - **完整 Legado 书源兼容：未完成。** Stage-0 架构/依赖闭包审查仍 in_progress/not accepted；Stage-1 仍 NO-GO。
-- **模型/序列化：部分实现。** 六类规则/Gson 路径有源码和测试夹具；官方完整 BookSource/Book/BookChapter/ReadConfig 模型闭包仍未完成。
+- **模型/序列化：部分实现且存在运行时字段损失。** 六类规则类与 Gson adapter 声明已对齐固定上游并有局部测试；但 host BookSource 仍是 JSON 字符串 DTO，RuleResolver 丢弃 ContentRule.maxBatchSize / ReviewRule.enabled 等非字符串字段，官方 BookSource/Book/BookChapter/ReadConfig 完整模型闭包未完成。详见 §24.50。
 - **规则/JS API：未完成。** 104-name JsExtensions/JsEncodeUtils 盘点已建立，但签名、返回对象、caller、动态分派和行为差分尚未全部闭合；已发现多项真实 ABI/行为缺口。
 - **HTTP/响应：部分实现且有阻断。** Rhino response facade 与 pinned Jsoup Response 在 bodyAsBytes、header/multiHeaders、cookie、response lifecycle 等方面仍有差异。
 - **浏览器/验证码：未完成。** webView、startBrowser、startBrowserAwait、getVerificationCode、showBrowser、openUrl 等有真实书源 caller；Badcat 原生 typed callback 方案需独立登记实施。
-- **Stage-0 最新证据：** 详细审计 §24.42–§24.49 已补充导航/浏览器、WebView、书源状态清理、jsLib 共享库、AnalyzeRule/AnalyzeUrl 四条业务链调用，以及 RuleDataInterface 的书籍/章节/源变量作用域、真实 Rhino 对象绑定和批量正文上下文缺口；完整模型、规则、请求契约及动态差分仍待闭合。详见 `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md`。
+- **Stage-0 最新证据：** 详细审计 §24.42–§24.50 已补充导航/浏览器、WebView、书源状态清理、jsLib 共享库、AnalyzeRule/AnalyzeUrl 四条业务链、RuleDataInterface 变量作用域，以及六类规则模型/Gson/JSON codec 与非字符串字段执行损失；完整 BookSource 模型、类型化规则执行、请求契约及动态差分仍待闭合。详见 `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md`。
 - **业务链：局部实现。** Badcat host search/detail/TOC/content 编排存在，但不等于完整 BaseSource/session/规则执行生命周期。
 - **章节身份：局部实现。** PoC-0.8/0.9 已将 index 带入主要内容边界并让旧 URL-only 只在唯一匹配时继续；完整 alias 候选与 BatchContentContext 未完成。
 - **缓存：局部实现。** typed chapter cache key 和进程内 SaveToken/Fence 已有；所有 mutation caller、跨进程持久令牌和完整 CacheManager 未完成。
@@ -72,14 +72,14 @@
 ## 4.1 Runtime-3.0 Stage-0 technical task registration — BookSource six rule models
 
 - **Task ID:** R3-S0-MODEL-BOOKSOURCE-RULES-001
-- **Status:** registered / in_progress (read-only source audit).
+- **Status:** source-audit slice complete; runtime/model closure remains open.
 - **Start HEAD:** e67add9c1c8bc4a031ef7a60e131c275c183fca2; branch `integration/legado-upstream-runtime`; upstream pin `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
 - **Goal:** audit the six BookSource rule models (SearchRule, ExploreRule, BookInfoRule, TocRule, ContentRule, ReviewRule) and their JSON/Gson/serialization path against the pinned upstream; determine fields, nested objects, defaults, nullable/missing behavior, aliases, raw JSON retention and host codec loss.
 - **Allowed files:** `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md` and this overview only. Upstream and host source reads are evidence gathering; no source edits.
 - **Callers / evidence:** locate all six upstream declarations, BookSource serialization/import/export and runtime accessors/callers; inspect host codec, source DTOs, rule resolver, fixtures and tests without changing them.
 - **Acceptance:** source-path/line-backed field matrix for all six models; upstream-vs-host type/default/null/unknown-field/nested-value comparison; JSON string-vs-object handling and round-trip evidence; explicit confirmed facts vs static risks vs dynamic unverified items; duplicate check against existing audit sections.
 - **Exclusions:** no production code, tests, Gradle, workflow, database/schema, UI or CI changes/runs; no claim of full model compatibility from raw JSON retention alone.
-- **Next action:** resolve exact pinned upstream model paths and all serialization/caller paths, then inspect the host import/codec/DTO/test-fixture closure. Record only net-new gaps in the audit; update the progress pointer and re-fetch both documents after commit.
+- **Result:** §24.50 records the six model field matrix, Gson/converter semantics, rawJson retention boundary, non-string field loss and Review caller gap. Next technical slice: inspect the outer pinned BookSource entity fields/defaults/identity/Room converter lifecycle against host catalog/DTO, without repeating six-rule findings.
  
 ## 5. 当前 CI 位置与分册规则
 
