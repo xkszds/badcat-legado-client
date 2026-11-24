@@ -3703,3 +3703,22 @@ Task 016 is completed as a read-only existing-output inventory with bounded JVM 
 - No APK/AAB/DEX/R8 mapping file exists in the inspected `app/build` tree; the only `app/build/outputs` file is the 16,229-byte manifest merger report. No OOM-killer lines were returned by the bounded kernel-journal query for 06:25–06:40; this absence does not establish the reason for the client disconnection.
 - SHA-256: assemble log `2e4a8183a63734da52b8b81aeb461dd5a3aba6b5a7bfe7cb9d717e44e59a9c7b`; daemon log `070a8ab6afadfcca27668182eb54c8617785a103a4e6d5e5c5b0cc0f876ee0e1`; cleanup marker `ede4663fa9a5e8031704705268edde90aae07273f42b7b7274db7b317a40b001`.
 - **Disposition unchanged:** Task 017 is cancelled before successful packaging; client exit code remains unknown; cleanup verified; Stage-0 not accepted and Stage-1 **NO-GO**. No retry, CI, source/configuration change, or process termination.
+
+
+### 24.77 Task 018 — resilient detached exact-HEAD Debug packaging verification
+
+**Registration**
+
+- **Task ID:** `R3-S0-RESILIENT-DEBUG-PACKAGING-018`.
+- **Status:** registered; not started.
+- **Registration start branch HEAD:** `424207fb4b441eb7a0e416ded180425fe434574c`; branch `integration/legado-upstream-runtime`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9`.
+- **Execution snapshot:** the exact branch HEAD after both Task 018 registration entries are committed. The immutable SHA must be read back from GitHub and verified on the runner before execution.
+- **Goal:** one fresh `:app:assembleDebug` attempt with a detached launcher whose lifecycle is independent of the Remote Desktop Commander request. The prior Task 017 daemon log proved the Gradle build was cancelled after client disconnection; Task 018 specifically removes that foreground-session coupling and captures an explicit terminal exit marker.
+- **Allowed repository files:** only `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md` and `docs/required/03-LEGADO-RUNTIME-OVERVIEW.md`. Runner-only ephemeral files under `/tmp`, ordinary Gradle build outputs and the temporary pinned Maven JAR are permitted. No production or build configuration changes.
+- **Dependencies:** Task 007 §24.72–§24.74; Task 016 §24.75.1; Task 017 §24.76.3–§24.76.4; fixed upstream SHA.
+- **Preflight:** clean exact checkout; registered execution SHA; exact upstream submodule SHA; Gradle/JDK/SDK/Build Tools versions; disk and memory headroom; no competing assemble process; wrapper and pinned JAR available. Preserve existing daemons; do not kill processes or modify system packages/network settings.
+- **Execution:** verify the pinned HtmlUnit JAR copied from the upstream submodule at SHA-256 `d720f34285515025e4ccc80a5b92aed42cb26c03a7715ca53583d2c74ae51df7`; launch exactly one new-session/fully detached `nohup` shell with stdin disconnected and output redirected to persistent log files; run `:app:assembleDebug` with bounded workers; EXIT trap removes the temporary JAR, records cleanup result and writes a terminal result marker containing the shell/Gradle exit code and timestamps. Poll the detached PID/log/markers read-only; never relaunch while state is pending.
+- **Acceptance:** exact branch/HEAD/submodule identity; clean pre/post Git state; exact command and toolchain; detached PID; complete log and SHA-256; explicit exit code and terminal status; APK SHA-256/size if present; manifest package/version/min/target SDK; DEX/R8 output inventory; cleanup marker and temporary path absence. Build success does not establish runtime behavior, ABI equivalence or Stage-0 acceptance.
+- **Exclusions:** no CI/Actions; no production/test/Gradle/workflow/schema/UI/source edits; no dependency upgrade; no apt/sudo/system/network changes; no Stage-1 or complete-compatibility claim.
+- **Stop conditions:** any identity mismatch, dirty checkout, unavailable toolchain/SDK, inadequate capacity, competing build, missing or hash-mismatched upstream JAR, failure to establish detached execution/result capture, or unverified cleanup. Stop before launching or before starting any duplicate.
+- **Current disposition:** registration only; no Task 018 build has started. Task 017 remains cancelled before successful packaging, with Gradle client exit code unknown and temporary-JAR cleanup verified. Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete compatibility remains **NOT ESTABLISHED**.
