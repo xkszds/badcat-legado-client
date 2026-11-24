@@ -62,10 +62,10 @@
 - **规则/JS API：未完成。** 104-name JsExtensions/JsEncodeUtils 盘点已建立，但签名、返回对象、caller、动态分派和行为差分尚未全部闭合；已发现多项真实 ABI/行为缺口。
 - **HTTP/响应：部分实现且有阻断。** Rhino response facade 与 pinned Jsoup Response 在 bodyAsBytes、header/multiHeaders、cookie、response lifecycle 等方面仍有差异。
 - **浏览器/验证码：未完成。** webView、startBrowser、startBrowserAwait、getVerificationCode、showBrowser、openUrl 等有真实书源 caller；Badcat 原生 typed callback 方案需独立登记实施。
-- **Stage-0 最新证据：** 详细审计 §24.42–§24.52 已补充导航/浏览器、WebView、书源状态清理、jsLib 共享库、AnalyzeRule/AnalyzeUrl 四条业务链、RuleDataInterface 变量作用域，以及六类规则模型/Gson/JSON codec 与非字符串字段执行损失；完整 BookSource 实体/Room/导入持久化闭包、类型化规则执行、请求契约及动态差分仍待闭合。详见 `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md`。
+- **Stage-0 最新证据：** 详细审计 §24.42–§24.53 已补充导航/浏览器、WebView、书源状态清理、jsLib 共享库、AnalyzeRule/AnalyzeUrl 四条业务链、RuleDataInterface 变量作用域、规则/BookSource/Book/BookChapter 模型，以及 Cache/CacheManager/ACache/BookCacheInfo 存储和清理语义；完整上游运行闭包、类型化数据所有权、缓存差分和动态验证仍待闭合。详见 `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md`。
 - **业务链：局部实现。** Badcat host search/detail/TOC/content 编排存在，但不等于完整 BaseSource/session/规则执行生命周期。
 - **章节身份：局部实现。** PoC-0.8/0.9 已将 index 带入主要内容边界并让旧 URL-only 只在唯一匹配时继续；完整 alias 候选与 BatchContentContext 未完成。
-- **缓存：局部实现。** typed chapter cache key 和进程内 SaveToken/Fence 已有；所有 mutation caller、跨进程持久令牌和完整 CacheManager 未完成。
+- **缓存：局部实现，未达兼容。** pinned Cache/CacheDao/CacheManager/ACache 的 Room + 50 MiB memory LRU + 文件 TTL 语义已审计（§24.53）；host 只有分离的 source KV/file cache 与 parsed chapter AtomicFile cache，generic CacheManager/ACache parity、完整 source/book mutation invalidation、跨实例 save-fence 与持久化差分仍未完成。
 - **阅读状态/五域数据：未验收。** ReadConfig/ParagraphAnchor、单一事实源、单写者、跨域事务、迁移回滚和五域重启恢复未通过。
 - **真实源/真机/发布：未验收。** 外部 Python 书源冒烟不算 Android + Legado Runtime E2E；真机、最终 APK 和发布门禁未完成。
 
@@ -108,14 +108,14 @@
 ## 4.4 Runtime-3.0 Stage-0 technical task registration — Cache / BookCacheInfo / CacheManager closure
 
 - **Task ID:** R3-S0-CACHE-MODEL-004
-- **Status:** registered / in_progress (read-only source audit).
+- **Status:** source-audit slice complete; generic CacheManager/ACache compatibility and host cache invalidation remain NOT MET.
 - **Start HEAD:** f6c1faafcf433a4f3a86a5d9faab1956584e0715; branch `integration/legado-upstream-runtime`; upstream pin `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
 - **Goal:** inspect pinned Cache/BookCacheInfo entities, CacheManager/DAO/storage keys, expiry/eviction/clear semantics, source/book/chapter cache namespaces and all book-source caller lifecycles; compare host FileChapterContentCache and runtime invalidation without duplicating §24.37/§24.48/§24.52.
 - **Allowed files:** `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md` and this overview only; inspect but do not edit production/test/schema files.
 - **Dependencies:** §24.37 BaseSource scope/cache lifecycle; §24.48 AnalyzeUrl/CacheManager caller coverage; §24.52 Book/BookChapter owner and host cache boundary.
 - **Acceptance:** exact pinned key/owner/TTL/eviction/clear/write semantics; entity/DAO/schema fields; all book-source callers; host key and persistence mapping; stale-write/cancellation/invalidation comparison; source facts vs static inference vs dynamic unverified.
 - **Exclusions:** no production code/tests/Gradle/workflow/database/schema/UI/CI changes or runs; no Stage-1 authorization.
-- **Next action:** locate pinned Cache and BookCacheInfo declarations, CacheManager and all reachable source-runtime callers; compare host cache implementation and invalidation graph, then add only net-new findings.
+- **Result:** §24.53 records the pinned Cache Room schema/DAO, CacheManager memory/disk/ACache TTL and delete semantics, BookCacheInfo cleanup projection/folder naming, startup expiry and BookHelp cleanup callers, plus host cache separation. No source/tests/Gradle/CI were changed or run. Stage-0 remains in_progress/not accepted; Stage-1 remains NO-GO.
  
 ## 5. 当前 CI 位置与分册规则
 
