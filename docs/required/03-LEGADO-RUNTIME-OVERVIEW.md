@@ -706,3 +706,96 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - **Exclusions:** no production source, test, Gradle/source-set, dependency, manifest, schema/database, UI/Reader, notice/license, workflow/CI, APK or device changes/runs; no database/schema freeze, data migration, dual-write, source-set remediation or Stage-1 authorization.
 - **Stop conditions:** conflicting evidence, missing caller/owner proof, or a decision requiring new builds/dependency resolution. Record a conditional recommendation and blocker rather than guessing.
 - **Next:** if the review yields a viable boundary, register separately scoped source-ownership and storage/Host Port implementation PoCs with exact files, callers, contract tests and rollback criteria. Do not implement under Task 024.
+
+### 4.24.1 Task 024 result — Runtime-3.0 ownership and minimum-boundary decision
+
+**Identity and evidence boundary**
+
+- Task 024 registered at start HEAD `802ceb9afcc7fc2afeea07721774a766a58ba0fb`; overview registration commit `c4cc281b5fc338fce4c0e97e3bcc416e3d80299e`; audit registration commit/current start for this review `062c07e85658b950d49dcd2f3229981265b6883d`. Branch: `integration/legado-upstream-runtime`.
+- Pinned behavior baseline: `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- This review used the already-recorded bounded evidence in §§4.20.1–4.23.1 and audit §§24.79.1–24.82.1. The old runner checkout remains detached at source snapshot `4c9cf8ca41a29fcfacdb17fb3ec1d66d4b451343`; it was not treated as the current branch HEAD and no runner operation, source/build inspection, build, test, dependency resolution, CI or device execution was needed.
+- Documentation-only result. No production/test/Gradle/source-set/dependency/manifest/schema/database/UI/Reader/license/notice/workflow/APK changes.
+
+**Architecture decision — logical ownership**
+
+| Model/data domain | Single logical owner decision | Runtime and Badcat boundary | Evidence / remaining condition |
+|---|---|---|---|
+| Pinned rule models (seven rule families) and Gson extensions | `:legado-runtime` is the sole canonical source/compile owner | `:app` consumes the authentic upstream types through its existing runtime dependency; no app-local duplicate declarations | Task 020/021 maps all 38 duplicate DEX names to the seven rule files plus GsonExtensions; no app production caller requires a second copy. Removal is a separate implementation task with app-test and DEX checks. |
+| Adjacent source-contract models `RowUi`, `ExploreKind`, `FlexChildStyle` | `:legado-runtime` | Preserve exact pinned types; Badcat owns rendering/forms/screens in `:app` | Task 021 found exact upstream copies and real BaseSource/LoginUiV2/BookSourceExtensions callers. Flexbox/Android dependencies require explicit dependency closure; do not import Legado screens. |
+| Authentic `BaseSource`, `BookSource`, `BaseBook`, `Book`, `BookChapter`, `SearchBook`, `AnalyzeRule`, `AnalyzeUrl`, `JsExtensions`, `SharedJsScope`, `JsSourceEngine` | `:legado-runtime` owns the authentic declarations and their source-visible behavior | Runtime passes authentic objects; Badcat DTOs are one-way UI projections only. Android/Room/HTTP/Cookie/WebView/cache/config/crypto/file/coroutine/UI effects cross typed ports | This is the target ownership, not current implementation. Full transitive closure, reflection/script reachability and buildable module closure remain NOT ESTABLISHED. |
+| BookSource catalog and check state | One Badcat SourceRepository aggregate is the sole durable owner after migration | Runtime uses authentic BookSource through typed store; catalog UI/import/export remains Badcat | Current FileBookSourceCatalog is the only evidenced catalog owner, but it lacks authentic typed models and check-state transactions. Recommended target storage is a minimal Room-backed repository; migration and parity are not implemented. |
+| SearchBook results | Runtime invocation scope; transient by default | Preserve authentic SearchBook and origin while projecting to Badcat search/detail DTOs | No durable SearchBook owner is justified by current caller evidence. If a real pinned caller requires durable search-result storage, register a separate evidence-backed extension; do not persist/merge into Book implicitly. |
+| Book and BookChapter metadata/TOC | One Badcat BookRepository/ChapterRepository backed by the same minimal runtime-data store | Runtime owns model semantics; Badcat owns repository implementation and UI projection | No current durable Book/Chapter repository exists. Recommend Room tables for Book and BookChapter with pinned keys/index/FK; exact schema, converters and caller semantics remain open. |
+| Reader progress, bookmarks, history | Existing BadcatReadingStateRepository remains sole owner | Runtime accesses through a typed adapter; no second upstream progress writer | Existing SharedPreferences authority remains. Do not move it into Room or duplicate it during this architecture task. |
+| Parsed chapter content cache | Existing FileChapterContentCache remains sole owner | Runtime consumes a separate cache port | It is not RuleBigDataHelp and must not be reused for RuleData variables. Preserve its current version-fenced AtomicFile semantics. |
+| RuleData large values | One new Badcat RuleVariableStore adapter, filesystem-backed initially | Authentic RuleDataInterface keeps inline/10,000-character/null semantics; typed port supplies only big-value backing | Preserve MD5 namespaces, bookUrl marker, synchronized access, null deletion and cleanup. RSS storage remains outside this book-runtime boundary unless a real BookSource caller proves otherwise. |
+| Replacement rules | Existing FileReplaceRuleCatalog remains the sole current owner pending parity | Runtime uses a typed replacement port; Badcat owns editor/import/export UI | Exact pinned scope/order/target/timeout-disable and BookChapter title-normalization parity is unproven; do not claim it is a final compatible owner until differential tests pass. |
+| Config | Split ownership: Book.readConfig belongs to the Book record; global source/runtime config belongs to one Badcat host config repository; Reader presentation preferences remain Badcat UI-owned | Runtime receives separate typed per-book and global-config ports | Never conflate Book.readConfig, global ReadBookConfig and Badcat reader preferences. Exact global config field list/serialization owner remains open. |
+| Runtime notifications and product actions | Badcat host UI/event services | Typed callback ports only; no Activity/View retained by runtime | Notification failure is distinct from repository commit; preserve cancellation and failure outcomes. |
+
+**Minimum justified storage boundary**
+
+Recommend a dedicated, Badcat-owned Room database boundary for authentic runtime model metadata, not the upstream 26-entity AppDatabase and not an unproven schema freeze. The smallest currently justified relational set is:
+
+1. `book_sources` — authentic BookSource identity and complete rule/config payload, keyed by `bookSourceUrl`.
+2. `book_source_check_states` — source check-state keyed/related to BookSource with cascade and transactional begin/complete semantics.
+3. `books` — authentic Book identity keyed by `bookUrl`, preserving the pinned unique `(name, author)` contract and typed ReadConfig converter.
+4. `chapters` — authentic BookChapter with composite PK `(url, bookUrl)`, unique `(bookUrl, index)`, and FK cascade to Book.
+
+A small host deletion-journal/outbox record is recommended if Book deletion spans Room plus SharedPreferences/filesystem cleanup, so post-commit cleanup can be retried after process death. Its exact representation is a PoC decision, not an approved schema. Room is recommended because the pinned model contracts already expose Room identity/index/FK semantics and chapter/book atomicity; this recommendation does not authorize adding Room now.
+
+Explicitly exclude the upstream AppDatabase registration, unrelated bookshelf groups/memos/highlights/RSS/TTS/audio/video/server entities and product views/DAOs unless a traced BookSource execution caller proves a dependency. Do not include parsed body cache, progress, bookmarks/history, RuleData files or replacement rules in these four model tables. No database migration, schema version or table DDL is frozen by Task 024.
+
+**Module graph and ownership direction**
+
+```text
+:app
+ ├──> :legado-runtime
+ ├──> :integration-contract
+ └──> :legado-rhino (direct only where app platform wiring needs it)
+
+:legado-runtime
+ ├──> :integration-contract   (model-neutral invocation/platform contracts only)
+ └──> :legado-rhino           (authentic Rhino engine/security implementation)
+
+:integration-contract  -X-> :legado-runtime model types
+:legado-runtime        -X-> :app
+:legado-rhino          -X-> :app / product UI
+:legado-runtime-poc    -X-> production dependency graph
+```
+
+Model-typed persistence/config/replacement/notification interfaces must live beside the authentic model declarations in `:legado-runtime` (or a future Android-compatible runtime-contract submodule that does not create a cycle). The existing `:integration-contract` remains Kotlin/JVM and model-neutral; it may carry invocation identity, cancellation and generic browser/UI ports but must not import runtime Android/Room/Parcelable model types if Runtime consumes it. `:app` implements runtime-owned typed ports. The graph is a logical recommendation only; exact Gradle variants, transitive dependencies and no-cycle compilation remain unproven.
+
+**Book / BookChapter transaction and deletion protocol**
+
+- **Book write:** load/retain the authentic Book object; validate `bookUrl` and the pinned unique `(name,author)` constraint; write Book and its typed ReadConfig in one repository transaction. Do not create a second Book DTO authority. A failed transaction leaves the previous Book/readConfig unchanged.
+- **Chapter batch write:** acquire a per-book write fence; validate every row belongs to the requested `bookUrl`; perform the batch in one Room transaction while preserving PK `(url,bookUrl)`, unique `(bookUrl,index)`, ordering and FK. Apply the exact pinned conflict/replace policy only after the source caller audit; do not invent URL-only matching. Publish cache content only after the corresponding chapter/version fence is current.
+- **Book delete prepare:** acquire the per-book lifecycle lock; stop accepting new chapter writes and cancel/quiesce active source/reader jobs; ask the Badcat reader lifecycle port to detach or pause and capture the current progress/bookmark/history snapshot. Do not clear the existing progress owner before the durable delete transaction commits.
+- **Book delete commit:** in one Room transaction, record a pending cleanup journal (including the identity and the captured progress snapshot/reference) and delete the Book; the BookChapter FK cascade removes its chapter rows. Any failure before commit rolls back the database mutation and leaves progress/cache/variables available; the reader can be resumed from the snapshot.
+- **Post-commit cleanup:** idempotently finalize reader detach, clear only the deleted book's Badcat progress/bookmark/history entries, invalidate its parsed chapter cache, and remove its RuleData big-value namespace. Mark the journal complete only after all cleanup steps succeed. A crash/failure after DB commit is a pending cleanup, not a database rollback; replay the journal on next startup. Keep the record until cleanup succeeds.
+- **Source delete/check:** delete BookSource and its check-state in one repository transaction; after commit invalidate live runtime instances and source-scoped caches. Stale check completions must be rejected by a host revision/lease if required by the caller contract; do not claim the lease is an existing upstream token.
+- This protocol is a target contract to validate with failure injection and restart tests. It does not claim current behavior or authorize implementation. Exact progress snapshot format and whether reader detach can be safely resumed are open PoC questions.
+
+**Duplicate-class remediation path**
+
+1. In a separately registered source-ownership task, make the seven rule files and GsonExtensions compile only from `:legado-runtime`; remove the redundant app source copies only after verifying all app production/test imports and test compile behavior.
+2. Bring exact `RowUi`, `ExploreKind`, `FlexChildStyle` declarations under the same runtime owner when the authentic caller closure is integrated; keep Badcat rendering in app.
+3. Add a static duplicate-FQCN guard at module/DEX boundary; require zero duplicate class definitions in the rebuilt APK and compare public JVM descriptors/serialized model fixtures before and after. Do not infer safety from the 29 matching `javap` reports alone.
+4. Treat this as a packaging ownership fix only. It does not supply the missing BaseSource/BookSource/BookChapter/AnalyzeRule/AnalyzeUrl/JsExtensions/SharedJsScope/JsSourceEngine source closure.
+
+**Separate implementation/verification tasks required**
+
+- **Task 025 — canonical rule/model source ownership PoC:** exact eight duplicate source removals from app ownership; adjacent three model ownership review; app test/caller migration; Gradle no-cycle and duplicate-FQCN guard; exact APK/DEX zero-duplicate check. No broader runtime source closure bundled into this task.
+- **Task 026 — authentic runtime source-closure PoC:** bring in the minimal real BookSource/BaseSource/Book/BaseBook/BookChapter/SearchBook/AnalyzeRule/AnalyzeUrl/JsExtensions/SharedJsScope/JsSourceEngine caller closure from the pinned SHA; typed ports for every platform side effect; no shadow DTO/no-op; exact symbol/caller/API and dependency closure; compile/runtime boundary proof. Keep Legado UI/Reader excluded.
+- **Task 027 — minimum storage and typed Host Port PoC:** only after authentic model closure is buildable, implement the minimal Room repository and RuleVariableStore/config/replacement adapters, progress/cache single-owner bridges, transaction/delete journal and migration dry-run/rollback/restart tests. Do not dual-write or migrate user data before a separately accepted migration plan.
+- These are proposed task boundaries, not registered implementation authorization. No implementation starts under Task 024.
+
+**Unresolved blockers and gate decision**
+
+- Authentic source closure and caller parity for BaseSource/BookSource/Book/BookChapter/SearchBook/AnalyzeRule/AnalyzeUrl/JsExtensions/inherited groups/SharedJsScope/JsSourceEngine remain NOT ESTABLISHED.
+- Exact Gradle dependency/variant closure, Android/Room converters and Flexbox dependency closure, reflection/script-visible reachability, no-cycle compile proof and reproducible packaging remain NOT ESTABLISHED.
+- SearchBook durable use, global ReadBookConfig field ownership, replacement-rule parity, BookChapter batch conflict policy, progress snapshot/restore semantics, deletion-journal schema and BookSource file-to-Room migration/rollback require focused PoCs.
+- License/SBOM, reproducibility and behavioral differential gates remain open per §4.20.2. The old successful assemble remains bounded evidence only; the 38 duplicate DEX definitions and missing authentic runtime classes are not repaired.
+- **Task 024 disposition:** complete as a bounded logical architecture decision and implementation plan. No source/build/test/schema/database/UI changes; no build/test/CI/device/dependency resolution performed.
+- **Stage-0:** `in_progress / not accepted`. **Stage-1:** **NO-GO**. Complete Legado compatibility: **NOT ESTABLISHED**. No release readiness claim.
+- **Next:** separately preregister Task 025 source ownership remediation and Task 026 authentic source-closure PoC; do not begin storage implementation or Stage-1 until authentic closure and its module boundary are proven.
