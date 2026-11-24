@@ -1958,3 +1958,34 @@ The 17 missing names cannot be treated as 17 equally unused methods. Six have di
 3. **Compatibility impact:** this is a real Stage-0 blocker for source rules that require browser verification or user navigation; it cannot be classified as safely irrelevant solely because Badcat is a different product. Any eventual implementation must use typed host ports, preserve source identity/context/cancellation and the source-navigation suppression policy, and must not transplant Legado UI.
 4. **Required differential closure:** a host instrumentation suite for the same JS contexts (direct rule, source header, `@webjs`), both navigation-policy states, successful/cancelled browser verification, image-code return, and WebView response/body/URL behavior. Also verify refresh callbacks and read/theme config separately against Badcat-owned product state.
 - **Decision:** adds caller evidence to an already recorded API gap; no duplicate API item was created. No CI, tests, production source, Gradle, database or UI were changed. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**.
+
+
+## 24.43 Runtime-3.2f.50 follow-up — refresh events and read/theme configuration callbacks (2026-11-24)
+
+- **Audit base:** `daf8b0c058deac6c7c7b6d2d95a5904c68909e69` on `integration/legado-upstream-runtime`; pinned upstream `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Scope:** adds semantic evidence for the already inventoried missing refresh/read-theme/verification API names in §22.1 and §24.42. It does not repeat the missing-name inventory and does not assert that Badcat must reproduce Legado's product UI.
+
+### Pinned upstream semantics
+
+- `JsExtensions.refreshBookInfo()`, `refreshBookToc()`, and `refreshContent()` publish distinct EventBus events: `REFRESH_BOOK_INFO`, `REFRESH_BOOK_TOC`, and `REFRESH_BOOK_CONTENT` respectively (`JsExtensions.kt`, lines 157–167).
+- The pinned `JsExtensionsRefreshContractTest` asserts that these three methods and their three event constants exist on the shared JS extension, and explicitly asserts that the same refresh methods are absent from `SourceLoginJsExtensions`. This establishes that these are source-runtime callbacks, not login-bridge methods.
+- `getReadBookConfig()` serializes `ReadBookConfig.durConfig` to JSON; `getReadBookConfigMap()` returns the map projection of the same durable configuration (lines 1359–1365).
+- `getThemeMode()` returns `AppConfig.themeMode`, defaulting null to string `"0"`; `getThemeConfig()` serializes `ThemeConfig.getDurConfig(appCtx)`; `getThemeConfigMap()` returns its map projection (lines 1371–1387). The string and map forms are separate callable surfaces and should not be collapsed into one approximate return contract.
+- `getVerificationCode(imageUrl)` obtains the current source via `getSource()`, checks the Rhino context is active, then invokes `SourceVerificationHelp.getVerificationResult` with the source and source-navigation/coroutine context; it requires a `VerificationResult.Response` and returns the response's verification value (lines 442–449).
+- Pinned `SourceVerificationHelp` requires a non-null source and background-thread invocation, serializes access to verification UI, observes coroutine cancellation, and has bounded waiting/flight coordination. Its tests cover source/type/origin isolation, cancellation, timeout, abandonment and concurrent verification coalescing. This is not equivalent to a generic synchronous string prompt.
+
+### Host boundary evidence at the audited HEAD
+
+- The production `scope["java"]` binding remains `RhinoSafeSourceJavaExtensions`; the host bridge declaration surface has no matching `refreshBookInfo`, `refreshBookToc`, `refreshContent`, read-config, theme-config/mode or `getVerificationCode` methods. This is consistent with the absence already recorded in §22.1; no duplicate missing-name item is created.
+- The host runtime constructor currently supplies rule/HTTP, rate-limit, Cookie, key-value, and other source callbacks, but does not supply typed refresh-event, durable reader-config, theme-config, or user-verification ports. No equivalent host callback was found in the runtime binding path.
+- The refresh methods are product-event dispatch in the pinned application. A Badcat implementation must translate them to Badcat-owned state/events through typed host ports; it must not import Legado's reader/product UI or blindly replay its EventBus.
+- Read/theme settings are also product-owned state. If these APIs remain exposed to imported source scripts, Badcat must provide a documented Badcat-owned projection with compatible JSON/map/null/default semantics, or explicitly establish through a complete caller/compatibility policy that a specific method is intentionally unsupported. Silent omission is not parity.
+- Verification requires an explicit user-mediated host flow, preserving source identity, coroutine cancellation, background-thread constraints, timeout, and concurrent-request semantics. A no-op, fixed string, or generic blocking prompt would not be equivalent.
+
+### Classification and required closure
+
+1. **Source-confirmed API semantics:** the refresh callbacks have three distinct event effects; read/theme JSON and map accessors have distinct return shapes/defaults; image verification is source-scoped and cancellation-aware.
+2. **Host source-confirmed gap:** the current Java bridge and its constructor do not expose these APIs or corresponding typed ports. The exact Rhino error and user-visible effects have not been dynamically exercised in this turn.
+3. **Caller evidence boundary:** refresh and configuration names are documented in pinned source help and covered by the upstream refresh contract test; this turn did not locate an independent imported third-party source fixture invoking every one of them. Do not claim broader real-source caller frequency without that evidence.
+4. **Required differential closure:** test each refresh event dispatch and Badcat state effect; JSON versus Map shape and values for reader/theme settings including null/default theme mode; verification success/cancel/timeout, source isolation, background-thread enforcement, concurrent requests, and cancellation propagation. Verify the APIs through Rhino using the actual `scope.java` wrapper, not only direct Kotlin calls.
+5. **Decision:** these are additional semantic details for existing §22.1 gaps, not new duplicate API entries. Badcat product ownership determines the adapter implementation, not permission to silently omit the source-facing contract. No CI, tests, production source, Gradle, database or UI were changed. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**.
