@@ -58,11 +58,11 @@
 <badge>总体：部分实现 / 未验收</badge>
 
 - **完整 Legado 书源兼容：未完成。** Stage-0 架构/依赖闭包审查仍 in_progress/not accepted；Stage-1 仍 NO-GO。
-- **模型/序列化：部分实现且存在运行时字段损失。** 六类规则类与 Gson adapter 声明已对齐固定上游并有局部测试；但 host BookSource 仍是 JSON 字符串 DTO，RuleResolver 丢弃 ContentRule.maxBatchSize / ReviewRule.enabled 等非字符串字段，官方 BookSource/Book/BookChapter/ReadConfig 完整模型闭包未完成。详见 §24.50。
+- **模型/序列化：部分实现且存在运行时字段损失。** 六类规则类与 Gson adapter 声明已对齐固定上游并有局部测试；但 host BookSource 仍是 JSON 字符串 DTO，RuleResolver 丢弃 ContentRule.maxBatchSize / ReviewRule.enabled 等非字符串字段，官方 BookSource/Book/BookChapter/ReadConfig 完整模型闭包未完成（§24.51–§24.52 已补充实体证据，运行时与数据所有权仍未闭合）。详见 §24.50。
 - **规则/JS API：未完成。** 104-name JsExtensions/JsEncodeUtils 盘点已建立，但签名、返回对象、caller、动态分派和行为差分尚未全部闭合；已发现多项真实 ABI/行为缺口。
 - **HTTP/响应：部分实现且有阻断。** Rhino response facade 与 pinned Jsoup Response 在 bodyAsBytes、header/multiHeaders、cookie、response lifecycle 等方面仍有差异。
 - **浏览器/验证码：未完成。** webView、startBrowser、startBrowserAwait、getVerificationCode、showBrowser、openUrl 等有真实书源 caller；Badcat 原生 typed callback 方案需独立登记实施。
-- **Stage-0 最新证据：** 详细审计 §24.42–§24.51 已补充导航/浏览器、WebView、书源状态清理、jsLib 共享库、AnalyzeRule/AnalyzeUrl 四条业务链、RuleDataInterface 变量作用域，以及六类规则模型/Gson/JSON codec 与非字符串字段执行损失；完整 BookSource 实体/Room/导入持久化闭包、类型化规则执行、请求契约及动态差分仍待闭合。详见 `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md`。
+- **Stage-0 最新证据：** 详细审计 §24.42–§24.52 已补充导航/浏览器、WebView、书源状态清理、jsLib 共享库、AnalyzeRule/AnalyzeUrl 四条业务链、RuleDataInterface 变量作用域，以及六类规则模型/Gson/JSON codec 与非字符串字段执行损失；完整 BookSource 实体/Room/导入持久化闭包、类型化规则执行、请求契约及动态差分仍待闭合。详见 `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md`。
 - **业务链：局部实现。** Badcat host search/detail/TOC/content 编排存在，但不等于完整 BaseSource/session/规则执行生命周期。
 - **章节身份：局部实现。** PoC-0.8/0.9 已将 index 带入主要内容边界并让旧 URL-only 只在唯一匹配时继续；完整 alias 候选与 BatchContentContext 未完成。
 - **缓存：局部实现。** typed chapter cache key 和进程内 SaveToken/Fence 已有；所有 mutation caller、跨进程持久令牌和完整 CacheManager 未完成。
@@ -96,14 +96,26 @@
 ## 4.3 Runtime-3.0 Stage-0 technical task registration — Book and BookChapter entity/data contract
 
 - **Task ID:** R3-S0-MODEL-BOOK-CHAPTER-003
-- **Status:** registered / in_progress (read-only source audit).
+- **Status:** source-audit slice complete; Book/BookChapter/ReadConfig runtime and data-owner closure remains open.
 - **Start HEAD:** c38367bcea78402c43bf836967a8908c632580d2; branch `integration/legado-upstream-runtime`; upstream pin `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
 - **Goal:** audit pinned Book and BookChapter entity fields/defaults/nullability/identity/relations/indexes, Room converters and migrations, serialization/import paths, variable persistence, and compare Badcat's Book/BookChapter DTOs, storage and caller lifecycle.
 - **Allowed files:** `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md` and this overview only; inspect but do not edit production/test/schema files.
 - **Dependencies:** §24.49 typed RuleData variable precedence; §24.51 BookSource source identity/Room ownership; existing chapter identity/cache findings.
 - **Acceptance:** line-backed field/type/default/null matrix, Book and chapter composite identity/FK/index comparison, variable JSON + large-variable storage and write transaction path, host DTO/storage mapping, caller/data-owner lifecycle, explicit dynamic-unverified boundaries and dedup.
 - **Exclusions:** no production code/tests/Gradle/workflow/database/schema/UI/CI changes or runs; no Stage-1 authorization.
-- **Next action:** inspect exact pinned Book/BookChapter declarations and schema 113, then host reading data DTO/repository/cache callers; add only net-new evidence.
+- **Result:** §24.52 records the 34-field Book, 17-field BookChapter, nested 21-field ReadConfig, schema-113 identity/index/FK constraints, DAO preservation transactions and host's reduced DTO/SharedPreferences/cache ownership gaps. Next technical slice: inspect pinned Cache/BookCacheInfo/CacheManager storage and lifecycle against host FileChapterContentCache and cache invalidation callers; deduplicate existing §24.37/§24.48 cache findings.
+ 
+## 4.4 Runtime-3.0 Stage-0 technical task registration — Cache / BookCacheInfo / CacheManager closure
+
+- **Task ID:** R3-S0-CACHE-MODEL-004
+- **Status:** registered / in_progress (read-only source audit).
+- **Start HEAD:** abb703f90efdb899bd1ada7419d020408bb27f7a; branch `integration/legado-upstream-runtime`; upstream pin `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** inspect pinned Cache/BookCacheInfo entities, CacheManager/DAO/storage keys, expiry/eviction/clear semantics, source/book/chapter cache namespaces and all book-source caller lifecycles; compare host FileChapterContentCache and runtime invalidation without duplicating §24.37/§24.48/§24.52.
+- **Allowed files:** `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md` and this overview only; inspect but do not edit production/test/schema files.
+- **Dependencies:** §24.37 BaseSource scope/cache lifecycle; §24.48 AnalyzeUrl/CacheManager caller coverage; §24.52 Book/BookChapter owner and host cache boundary.
+- **Acceptance:** exact pinned key/owner/TTL/eviction/clear/write semantics; entity/DAO/schema fields; all book-source callers; host key and persistence mapping; stale-write/cancellation/invalidation comparison; source facts vs static inference vs dynamic unverified.
+- **Exclusions:** no production code/tests/Gradle/workflow/database/schema/UI/CI changes or runs; no Stage-1 authorization.
+- **Next action:** locate pinned Cache and BookCacheInfo declarations, CacheManager and all reachable source-runtime callers; compare host cache implementation and invalidation graph, then add only net-new findings.
  
 ## 5. 当前 CI 位置与分册规则
 

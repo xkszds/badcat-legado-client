@@ -2327,3 +2327,77 @@ The six typed nullable rule properties are `ruleExplore`, `ruleSearch`, `ruleBoo
 - **Not claimed:** no Room migration was run; no JSON differential runtime test or Android BookSource E2E was run; no claim that every BookSource method or every historical migration was exhausted beyond the pinned source/schema evidence cited here.
 - **Required closure:** (a) choose whether Runtime-3.0 will reuse the actual pinned BookSource/BaseSource/Converters/DAO closure or provide a fully typed, differential-equivalent adapter; (b) preserve URL primary-key/equality/REPLACE/check-state/variable/global cleanup semantics and define the one canonical host data owner; (c) reconcile Kotlin vs SQL defaults, Gson coercion and null/malformed field handling; (d) implement or explicitly block sourceUrls/raw-JS import and import merge/selection behavior; (e) provide a pinned version-113 schema/migration compatibility plan without prematurely freezing Badcat's own schema; (f) add all-field entity projection tests, coercion fixtures, duplicate-ID tests, sourceUrls recursion tests, import merge tests and transaction/restart/cleanup fault tests.
 - **Decision:** outer BookSource source-audit slice complete. This does not close Book/BookChapter/ReadConfig models, BaseSource runtime behavior, the complete Room dependency closure, or dynamic import/data-owner parity. Task R3-S0-MODEL-BOOKSOURCE-ENTITY-002 complete as a read-only audit slice; Stage-0 remains `in_progress/not accepted`; Stage-1 remains `NO-GO`. No production source, tests, Gradle, workflow, database/schema, UI or CI were changed/run.
+
+## 24.52 Runtime-3.0 Stage-0 — Book, BookChapter, ReadConfig and reading-progress entity/data closure (2026-11-24)
+
+- **Task:** R3-S0-MODEL-BOOK-CHAPTER-003; registered in overview §4.3 before source inspection.
+- **Snapshot:** Badcat branch `integration/legado-upstream-runtime` at `abb703f90efdb899bd1ada7419d020408bb27f7a`; pinned upstream `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Deduplication:** §24.49 already records BaseBook/Book/BookChapter RuleData variable ownership, big-variable storage namespaces, chapter/book variable precedence and typed AnalyzeRule context. Existing chapter-index/cache sections cover the host's identity-safe cache token. This section adds the full persisted entity fields, Room constraints, Book-level ReadConfig/progress contract, DAO preservation transactions and the current Badcat data-owner comparison; it does not repeat variable lookup precedence.
+
+### Pinned Book entity and ReadConfig
+
+Upstream `Book.kt:33–130` is a Room `books` entity, `@Parcelize`, with `Book.Converters`; it implements BaseBook. Its 34 persisted properties are:
+
+| Property | Type / Kotlin default |
+|---|---|
+| bookUrl | String = `""` |
+| tocUrl | String = `""` |
+| origin | String = `BookType.localTag` |
+| originName | String = `""` |
+| name / author | String = `""` |
+| kind | String? = null |
+| customTag | String? = null |
+| coverUrl / customCoverUrl | String? = null |
+| intro / customIntro | String? = null |
+| charset | String? = null |
+| type | Int = `BookType.text` |
+| group | Long = 0 |
+| latestChapterTitle | String? = null |
+| latestChapterTime / lastCheckTime / durChapterTime | Long = `System.currentTimeMillis()` |
+| lastCheckCount / totalChapterNum / durChapterIndex / durVolumeIndex / chapterInVolumeIndex / durChapterPos | Int = 0 |
+| durChapterTitle | String? = null |
+| wordCount | String? = null |
+| canUpdate | Boolean = true |
+| order / originOrder | Int = 0 |
+| variable | String? = null |
+| readConfig | Book.ReadConfig? = null |
+| syncTime | Long = 0L |
+| persistedCoverUrl | String? = null |
+
+- **Identity and constraints:** `Book.kt:35–38,41–43,132–141` makes bookUrl the primary key and adds a unique composite index on (name, author); equals/hashCode use bookUrl only. Thus URL identity is canonical, but name+author is also a database uniqueness constraint and can replace a different URL on import.
+- **Inherited contract:** `BaseBook.kt:8–18` exposes name, author, bookUrl, kind, wordCount, variable, infoHtml and tocHtml; persisted properties overlap the Book columns, while infoHtml/tocHtml are transient/runtime fields. §24.49 already records BaseBook RuleData variable behavior and external big-variable ownership.
+- **Transient/computed fields:** `Book.kt:143–168` excludes lazy variableMap, infoHtml, tocHtml, downloadUrls and folderName from Room/parcel persistence; lastChapterIndex is computed from totalChapterNum.
+- **ReadConfig:** nested `Book.ReadConfig` at `Book.kt:499–530` has 21 fields: reverseToc, reverseTocDisplay, tocExpanded, pageAnim, reSegment, imageStyle, useReplaceRule, delTag, ttsEngine, splitLongChapter, readSimulating, startDate, startChapter, dailyChapters, openCredits, closeCredits, playMode, playSpeed, useGlobalAudioSkip, manualReplaceRuleIds and paragraphAnchor. ParagraphAnchor has (chapterUrl, itemId, chapterPosition). Defaults include false/true/null values, dailyChapters=3, playSpeed=1.0f, empty manualReplaceRuleIds and null paragraphAnchor.
+- **Default nuance:** `Book.kt:197–204` lazily materializes a missing config as `ReadConfig(useGlobalAudioSkip = true)`, although the nested data-class constructor default is false (line 526). This lazy getter behavior is part of the upstream contract; a null readConfig column is not equivalent to blindly constructing ReadConfig().
+- **Converters:** `Book.kt:532–539` serializes ReadConfig as JSON TEXT via GSON. The version-113 Room schema stores `readConfig` and `variable` as nullable TEXT.
+- **Version-113 schema:** `app/schemas/io.legado.app.data.AppDatabase/113.json` has 34 Book columns, primary key bookUrl, unique index (name,author). SQL defaults include bookUrl/tocUrl/originName/name/author, type/group/progress counters and order values; canUpdate defaults 1. The three Kotlin timestamp defaults above are current time, whereas the SQL defaults in this schema are 0. Constructor defaults and DB migration defaults must remain separately represented.
+
+### Pinned BookChapter entity and BookProgress
+
+- **BookChapter fields:** upstream `BookChapter.kt:29–60` declares 17 fields: url:String="", title:String="", isVolume:Boolean=false, baseUrl:String="", bookUrl:String="", index:Int=0, isVip:Boolean=false, isPay:Boolean=false, resourceUrl:String?=null, tag:String?=null, wordCount:String?=null, start:Long?=null, end:Long?=null, startFragmentId:String?=null, endFragmentId:String?=null, variable:String?=null, imgUrl:String?=null.
+- **Database identity:** `BookChapter.kt:30–41` and schema 113 define composite primary key (url,bookUrl), non-unique index bookUrl, unique index (bookUrl,index), and FK bookUrl→books.bookUrl with ON DELETE CASCADE. A chapter URL may therefore exist in different books; index is unique within a book.
+- **Domain equality nuance:** despite the composite Room identity, `BookChapter.kt:116–123` implements equals/hashCode using url only. This is the pinned domain equality contract and is not identical to the SQL primary key; caller effects of URL-only equality across books have not been dynamically exercised.
+- **Chapter mutation:** `BookChapter.kt:69–105` updates imgUrl/lyric/danmaku and serializes variable changes; `update()` persists through BookChapterDao unless deferUpdates is true (88–95). Big variables use the bookUrl + chapter URL namespace already described in §24.49.
+- **DAO:** `BookChapterDao.kt:13–53` queries by bookUrl and index/title, inserts with REPLACE, updates rows, updates resource metadata/variable and deletes all chapters by bookUrl. Foreign-key cascade also removes chapters when the parent Book row is deleted.
+- **BookProgress:** `BookProgress.kt:3–19` is a derived six-field snapshot (name, author, durChapterIndex, durChapterPos, durChapterTime, durChapterTitle), not an independent Room entity. Reading progress is principally stored in the Book row.
+- **Book DAO preservation semantics:** `BookDao.kt:125–129,208–244,272–287,327–403` supports lookup by bookUrl and name+author; insert uses REPLACE under a transaction, and the unique name+author collision can replace a different bookUrl while moving the newer memo. `upsertPreservingVariable` retains existing variable data by URL or name+author; updatePreservingCustomCoverUrl and updatePreservingReadConfig preserve user overrides/config; replace carries custom/persisted cover and ReadConfig and migrates memo data; delete removes memo then the Book row (and chapter FK cascade). These are more than simple DTO CRUD.
+- **Migration evidence:** pinned `DatabaseMigrations.kt:171–186` (13→14) rebuilds books and adds the unique name+author index; 21→22 (230–251) rebuilds books to add readConfig while preserving old columns; 22→23 (254–257) adds chapter baseUrl; 29→30 (320–329) adds EPUB fragment IDs; 39→40 (420–424) adds VIP/pay flags; 42→43 (443–446) adds isVolume. Version-113 schema is the current endpoint; no migration was executed here.
+
+### Badcat host data projection and ownership
+
+- **No persisted Book entity:** host source tree has `BookCandidate` and `BookDetail` value DTOs in `ReadingEngine.kt:136–159`, but no corresponding Book entity/DAO. They carry search/detail display fields, not the 34 persisted Book fields, unique (name,author) constraint, origin/local-file semantics, mutable progress, user cover/intro/tag overrides, variable or ReadConfig.
+- **Host chapter DTO:** `ReadingEngine.kt:161–173` carries only index, title, URL, isVip, isPay, tag and baseUrl. It omits upstream isVolume, resourceUrl, wordCount, start/end, startFragmentId/endFragmentId and imgUrl; bookUrl is supplied separately to operations rather than being part of the chapter object. Variable/bookUrl scope gaps are already recorded in §24.49. The host DTO is a data class with generated all-property equality, unlike upstream BookChapter's URL-only equals/hashCode.
+- **Host chapter cache is not a chapter entity:** `ChapterContentCache.kt:3–51` stores parsed ChapterContent and a timestamp with a host key (sourceId, bookUrl, chapterIndex); `FileChapterContentCache.kt:32–94,96–177` writes bounded AtomicFile JSON containing title/text/next/previous page URLs and savedAt (the index path also keeps chapterUrl as a guard). It does not persist the 17-field BookChapter row, TOC metadata or per-chapter variables.
+- **Reading progress boundary:** host `ReadingProgressStore.kt:3–21` exposes only lastChapterUrl and chapterScrollY operations. `BadcatReadingStateRepository.kt:18–23,44–62,133–199,205–234` stores these, plus bookmark/history records, in SharedPreferences. It has no typed Book, chapter index/volume position, durChapterPos, durChapterTime, totalChapterNum, ReadConfig or BookProgress snapshot.
+- **Favorite identity:** `FavoritesActivity.kt:25–27,47–90,168–176` stores FavoriteBook JSON in SharedPreferences with (sourceId,bookUrl) identity and name/folder/cover/status/addedAt. Upstream Book identity is bookUrl alone and its name+author unique index; favorites are a separate host product list, not an upstream Book row or shelf-state equivalent.
+- **Settings:** `ReaderSettingsActivity.kt:16–19,65–98,104–115,149–152` persists global reader controls in its own SharedPreferences. It is not an implementation of per-Book `Book.ReadConfig` or its converter/restore semantics.
+- **Data ownership conclusion:** Badcat currently has separate preference owners for favorites, history/progress/bookmarks and global reader settings, plus a separate file cache. There is no single host Book/BookChapter/ReadConfig entity owner corresponding to the upstream relational Book + chapter + config model. This is a confirmed structural difference; migration/transaction/restart parity is not demonstrated.
+
+### Compatibility classification
+
+- **Confirmed source facts:** upstream Book has 34 persisted fields and 21-field nested ReadConfig; BookChapter has 17 persisted fields; BookProgress is a derived six-field projection. Room identity, unique indexes, FK cascade, converter and DAO preservation transactions are source-confirmed by pinned code/schema.
+- **Confirmed host gaps:** no persisted Book entity or typed ReadConfig; reduced BookChapter DTO; URL-only progress representation; separate SharedPreferences/file data owners; no upstream relational transaction/constraint/migration path.
+- **New nuance:** BookChapter domain equality uses URL only while Room primary key is (url,bookUrl); host data-class equality differs. Book name+author uniqueness can replace another URL, which the host favorites identity does not model.
+- **Not claimed:** no database migration, restart/fault injection, ReadConfig serialization differential, entity CRUD differential or Android reader E2E was run; no claim every host preference feature is absent beyond the inspected files.
+- **Required closure:** (a) decide whether to reuse pinned Book/BookChapter/ReadConfig/DAO/converters or build typed adapters proven differential-equivalent; (b) preserve both Book identity constraints, memo/variable/cover/ReadConfig retention and transactional replace/delete; (c) preserve all 17 chapter fields, composite key, unique per-book index, FK cascade and update/defer semantics; (d) map URL progress to chapter index/position/volume/time and reconcile host source-scoped identity with Book.bookUrl; (e) implement per-book ReadConfig and ParagraphAnchor serialization/default/lazy getter behavior; (f) define one authoritative owner and migration/restart strategy for favorites/history/bookmarks/progress/chapter rows/cache without double-writing; (g) add schema-113 entity projection, field/null/default, equality/identity, DAO transaction and restart/failure differential tests.
+- **Decision:** task R3-S0-MODEL-BOOK-CHAPTER-003 source-audit slice complete. Stage-0 remains `in_progress/not accepted`; Stage-1 remains `NO-GO`. No production source, tests, Gradle, workflow, database/schema, UI or CI were changed/run.
