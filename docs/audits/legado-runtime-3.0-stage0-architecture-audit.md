@@ -3542,3 +3542,29 @@ Task 015 is complete as a static architecture decision slice. Stage-0 remains `i
 This is partial runner evidence, not a task-007 acceptance result. Do not classify the assemble attempt as success or failure without the final process/log evidence. Do not infer complete Gradle/packaging closure from one resolved configuration or the observed Kotlin task progress. No CI was triggered and no production/test/Gradle/workflow/schema/UI source was modified. Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete Legado compatibility remains **NOT ESTABLISHED**.
 
 **Next:** recover the existing process/log state without launching a duplicate build; verify temporary JAR cleanup and any APK/manifest/DEX outputs; finish the exact variant/packaging and compiled ABI evidence; then reconcile the remaining Stage-0 provenance and acceptance gates. No production migration or module-boundary freeze is authorized.
+
+
+### 24.73 Task 007 — recovery of the original assemble process state (2026-11-25)
+
+**Scope and identity**
+
+- Continuation of `R3-S0-GRADLE-PACKAGING-CLOSURE-007`; read-only recovery/verification plus documentation update.
+- The recovered runner checkout remains at Badcat `b644bef2bac68401804c5807a1ca79ae53a683a6`; upstream submodule remains `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- Runner `VM-0-5-ubuntu` became responsive again. No build was relaunched.
+
+**Recovered evidence**
+
+- The original log `/tmp/r3-assembleDebug-with-pinned-jar.log` exists (8,034 bytes; 92 lines; last modified 2026-11-25 06:12:20 +0800).
+- Its final recorded Gradle task is `:app:compileDebugKotlin`. The log then contains Kotlin/Java deprecation and code warnings, but no `BUILD SUCCESSFUL`, `BUILD FAILED`, Gradle failure block, or final exit status.
+- A read-only process check found no remaining Gradle assemble/daemon process at inspection time. This does not establish why the original process/log ended.
+- No `.apk`, `.aab` or `.dex` file was found under `app/build`. The only file found under `app/build/outputs` was `logs/manifest-merger-debug-report.txt` (16,229 bytes); this report alone does not establish successful final packaging.
+- The temporary local Maven JAR at `third_party/maven/org/htmlunit/htmlunit-core-js/5.3.0-legado.4/htmlunit-core-js-5.3.0-legado.4.jar` is ABSENT.
+- The Git working tree is clean and the checkout/submodule identities still match the exact SHAs above.
+
+**Disposition**
+
+- The second `:app:assembleDebug` result remains **UNKNOWN**: `:app:compileDebugKotlin` was reached and emitted warnings, but completion and final Gradle exit status are not evidenced. Do not infer success or failure.
+- Temporary JAR cleanup is now verified for the inspected path. APK/AAB/DEX output is not present in the inspected build tree. Compiled ABI/R8 and completed packaging remain NOT ESTABLISHED.
+- No CI, build retry, source change, or Gradle/configuration change was made during recovery. Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; full Legado compatibility remains **NOT ESTABLISHED**.
+
+**Next:** do not repeat the original build solely to replace missing historical exit evidence. Reconcile the exact-SHA resolved variant/packaging and compiled ABI gates as a separately registered Stage-0 evidence task when appropriate; do not start Stage-1 or production migration.
