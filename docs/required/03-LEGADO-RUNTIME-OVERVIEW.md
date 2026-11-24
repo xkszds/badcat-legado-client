@@ -233,11 +233,12 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 ## 4.6 Runtime-3.0 Stage-0 technical task registration — semantic parity matrix closure
 
 - **Task ID:** R3-S0-SEMANTIC-PARITY-CLOSURE-006
-- **Status:** registered; consolidation inspection not yet started.
-- **Start HEAD:** `176b47b8a0a4ae1d5f8310b4336b3242e1366a6d`; branch `integration/legado-upstream-runtime`; upstream pin `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
-- **Goal:** turn the existing first-pass matrix (§16) and pinned source/host evidence (§24.37–§24.54) into a complete capability-by-capability semantic status matrix for the currently inventoried source-runtime surface; explicitly separate authentic upstream source, exact behavior parity, typed adapter parity, host-only behavior, missing behavior, unknowns and dynamic test requirements. This is a consolidation and gap-closure task, not permission to implement.
-- **Allowed files:** `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md` and this overview only; source/test/Gradle/schema reads are allowed solely to resolve a cited uncertainty. No source edits.
-- **Dependencies:** §16; §24.37–§24.54; overview §4.5 result; Stage-0 blockers and plan §8–§9.
-- **Acceptance:** each major source capability has pinned evidence, exact Badcat reachable caller/adapter evidence, a non-overstated parity state, known contract deltas, unresolved dependencies and required differential test; duplicate claims reconciled; architecture options A/B/C evaluated against the same matrix without selecting one by assumption; explicit residual Stage-0 exit checklist and GO/NO-GO rationale.
-- **Exclusions:** no CI history or CI runs; no production/test/Gradle/workflow/database/schema/UI changes; no Stage-1 authorization; no “complete compatibility” claim based on static matrix alone.
-- **Next after this slice:** identify any still-unclosed Stage-0 evidence (resolved dependency graph, reflection/provenance, reproducible bundle); register a separate task before further source inspection or any implementation decision.
+- **Status:** static consolidation slice complete; Stage-0 architecture/dependency/ABI/provenance closure remains open.
+- **Start HEAD:** `9961357eec4a8667a88f69e0397b6618a97f6195`; branch `integration/legado-upstream-runtime`; upstream pin `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** turn the existing first-pass matrix (§16) and pinned source/host evidence (§24.37–§24.54) into a capability-by-capability semantic status matrix; separate authentic source, exact parity, typed adapter candidate, host-only behavior, missing behavior, unknowns and dynamic test requirements.
+- **Allowed files:** `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md` and this overview only; source/test/Gradle/schema reads solely to resolve cited uncertainty. No source edits.
+- **Dependencies:** §16; §24.37–§24.54; overview §4.5; Stage-0 blockers §8–§9.
+- **Acceptance:** each major inventoried capability has pinned evidence, reachable Badcat caller/adapter where established, honest parity state, contract deltas, unresolved dependencies and required differential tests; duplicate claims reconciled; A/B/C compared against same matrix; explicit Stage-0 exit checklist and GO/NO-GO rationale.
+- **Result:** §24.55 records 20 capability rows, separates authentic source presence from behavior parity, compares A dedicated Android Runtime / B controlled upstream core extraction / C hybrid against common evidence, and enumerates residual Stage-0 exit artifacts. No row has exact parity evidence. No source/test/Gradle/schema/UI/workflow/CI was changed or run.
+- **Exclusions:** no CI history/runs; no production/test/Gradle/workflow/database/schema/UI changes; no Stage-1 authorization; no complete-compatibility claim from static evidence.
+- **Next:** register a separate Gradle dependency/packaging closure task before additional source/build inspection or any implementation decision.
