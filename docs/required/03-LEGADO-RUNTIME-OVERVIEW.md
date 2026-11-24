@@ -101,10 +101,10 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - #3250–#3278：29/29 已逐项审计并写入 CI 分册附录 D；19 workflow success / 10 failure。#3250–#3253 Android 四源 E2E 为 0/4；#3254–#3261 仍运行 Python corpus 1/4，#3262 删除该步骤，#3273 首次验证暂停 host filter 自检通过。#3263–#3272 的 DEX failure 已证实为 verifier 正则 false-negative：10 份 DEX 报告均含 RuleAnalyzer，API28/API35 instrumentation 均 5/5；#3273 修复脚本后 workflow 恢复 success。
 - #3279–#3299：21/21 已逐项审计并写入补充档案 `CI-3279-3299-DETAIL-AUDIT.md`；21 workflow success、21 Job success、每个 Job 的 53 个返回 Step 全部 success。21 个 commit 均为 docs-only；第三类 app 单测、API28/35 instrumentation、JVM ABI、Debug APK/DEX 检查均完成。Bixiange/Pinshuzhai 为外部 Python smoke，不是 Android Runtime E2E。
 - #3300–#3349：50/50 已建立逐项功能覆盖档案，并已按每个 CI 独立条目迁入本 200 册附录 B；45 workflow success、5 failure、0 in_progress。#3315/#3343/#3345 为 Parcelize 插件解析失败；#3317/#3319 为 Maven Central HTTP 429 导致 Robolectric 依赖失败；#3323 workflow success 但 Bixiange 外部脚本实际 HTTP 503。所有这些均不构成完整 Legado E2E。
-- #3350–#3357：旧总清单仅登记为 docs-only/bookkeeping CI terminal success；本 200 册尚未补齐逐 run 身份、exact SHA、Job/Step、日志与功能映射，暂记待补证，不计入逐 CI 审计完成数。
-- #3358–#3399：本轮资料未建立这些编号的 run 证据；不预设它们已存在。若后续发现真实 run，按编号升序纳入本册并完整审计；无 run 则保持未发生/无记录，不造记录。
+- #3350–#3357：8/8 已逐项审计并写入 `CI-3350-3357-DETAIL-AUDIT.md`；8 workflow/Job success、每个 Job 53/53 returned steps success；均为 docs-only/bookkeeping CI，真实书源部分仅外部 Python smoke。
+- #3358–#3397：40/40 已逐项审计并写入 `CI-3358-3397-DETAIL-AUDIT.md`；38 success、2 failure。#3361 为 Kotlin Parcelize 插件解析失败；#3389 为 Robolectric 依赖 HTTP 429。#3398–#3399 未发现实际 run，不造记录。
 
-**当前可确认统计：** 本 200 册已容纳逐 CI 详细条目 150/200（原附录 A–D 共 129 条 + 补充档案 `CI-3279-3299-DETAIL-AUDIT.md` 共 21 条）。已审计 150 个编号的 workflow 汇总为 119 success / 31 failure / 0 pending。待补逐次证据 #3350–#3357 共 8 个；#3358–#3399 是未建立记录的预留编号。这里的 150 是“已有逐次档案数”，不是第三类功能通过数。
+**当前可确认统计：** 本 200 册 #3200–#3399 已记录 198/200 个实际 CI（#3200–#3397）；workflow 汇总为 165 success / 33 failure / 0 pending。#3398–#3399 未发现实际 run。这里的 198 是第三类历史 CI 记录数，不是第三类功能通过数。另有本分册维护过程中发现的 #3400–#3422 区间 14 次实际审计工作流，单列于 `CI-3400-3422-DETAIL-AUDIT.md`，结果 11 success / 3 failure。
 
 ## 7. 关联文件与读取顺序
 
@@ -116,13 +116,13 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 
 ## 8. 下一步唯一顺序
 
-1. 已将 #3300–#3349 逐项记录迁入附录 B，#3226–#3249 写入附录 C，#3250–#3278 写入附录 D；下一步从 #3279 开始按编号升序补齐缺失 CI，不把旧账本汇总状态误当成逐项已完成。
-2. 从 #3279 开始按编号升序补齐缺失 CI 的完整证据，逐条记录每项实际跑通的功能和未验证范围。
-3. 补齐 #3350–#3357 的 exact run/job/step/log 证据。
-4. 每一批回写后重新读取当前分册复核，更新本文件中的统计与下一项。
-5. CI 审计与 Runtime 技术任务继续分开登记；只有文件/依赖完全隔离时才并行，不跳过前置依赖。
-
-
+1. #3279–#3299 已补齐：`CI-3279-3299-DETAIL-AUDIT.md`。
+2. #3350–#3357 已补齐：`CI-3350-3357-DETAIL-AUDIT.md`。
+3. #3358–#3397 已补齐：`CI-3358-3397-DETAIL-AUDIT.md`；#3398–#3399 未发现真实 run。
+4. #3400–#3422 的 14 次实际工作流已单独审计：`CI-3400-3422-DETAIL-AUDIT.md`。
+5. 下一步回到历史第 1 册 `CI-0001-0199-AUDIT.md`，从 #30 开始按编号逐条核验 Job/Step/JUnit/artifacts/功能覆盖；#5–#29 已有详细审计，不重复。
+6. 本轮产生的 5 个文档维护 CI #3463–#3467 仍 in_progress，必须等终态后记录，不得提前算 success。
+7. CI 审计与 Runtime 技术任务分开登记；Stage-0 仍 in_progress/not accepted，Stage-1 仍 NO-GO。
 
 ### Runtime-CI-HIST-3200-3299 progress checkpoint — #3226–#3278（2026-11-24）
 
