@@ -5691,3 +5691,19 @@ Each row binds one run to its own immutable commit SHA and its single `assemble-
 
 - **Correction to §§26.23 and 26.25:** `JsEncodeUtils` has 30 public declarations but 27 distinct names (three additional overload declarations). Its 27 names are disjoint from the 77 direct `JsExtensions` names; combined inventory remains 148 declarations / 104 distinct names.
 - Verified from pinned source blobs in architecture-audit §24.36. The earlier “30 names / three overlaps” wording was a counting error; the source-signature comparison remains unchanged.
+
+
+### 26.27 Historical CI backfill under the current per-run functional coverage standard (2026-11-24)
+
+- **Task ID:** Runtime-CI-HIST-3200-3299; status **registered / in_progress**.
+- **Starting branch / exact HEAD:** `integration/legado-upstream-runtime` / `5dcf515c095bf088825f4347d9845792d7917bbe`; pinned Legado SHA remains `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** Re-audit historical GitHub Actions runs #3200–#3299 against the current mandatory CI standard in `00-MASTER-WORKFLOW.md`, producing one independently traceable record per run and attempt.
+- **Evidence sources:** GitHub run metadata, exact SHA, job/step summaries, job logs, JUnit/test reports, artifacts, APK/DEX reports and live-source reports where available. Existing #3201–#3225 inspection and #3200–#3273 checkpoint summaries are indexes only; they do not replace per-run evidence checks.
+- **Allowed files:** new `docs/required/CI-3200-3299-AUDIT.md`; this category checklist for registration/closeout; `docs/required/00-MASTER-WORKFLOW.md` only for the final audit index after the ledger is complete. No application source, tests, Gradle, workflows, DB/schema, UI/Reader or source fixtures.
+- **Per-run required fields:** run/attempt/event/branch/full exact SHA/time/conclusion; each job and step state; feature/test coverage grounded in assertions/logs/reports; failures/skips/cancellations/unexecuted steps and confirmed root cause; source identity and exact E2E stage; separate workflow/job/test/functional/product acceptance conclusions; artifact/report/log references; audit and re-read verification.
+- **Method:** process #3200–#3299 in ascending run number; do not infer coverage from workflow names or transfer results across SHAs. Reuse common workflow profiles only after verifying each run's own job/step state and log/report evidence. Preserve terminal historical failures even if later commits fixed the issue. Distinguish bookkeeping/documentation runs from product-code runs.
+- **Acceptance:** exactly 100 distinct run numbers are accounted for; retries/attempts are separately identified; every run has an exact SHA and a per-run functional coverage profile; all failures and best-effort source probes are explicitly classified; aggregate counts reconcile; final ledger is re-read and checked against source runs. Any unavailable log/report is marked unavailable/unverified, never guessed.
+- **Current inventory snapshot:** #3200–#3299 are present in the branch's Actions run history and all appear terminal in the current listing; #3201–#3225 have a prior inspection document; #3200–#3273 have historical aggregate/closeout notes; #3274–#3299 require fresh run-level inspection. These are provisional inventory facts until the individual records are verified.
+- **Exclusions:** no reruns, no changes to workflow behavior, no claim that a successful CI run proves full Legado compatibility or category acceptance.
+- **Next action:** fetch exact run/job/step/log/report evidence in bounded batches, starting with #3200–#3225 to normalize the existing evidence and then #3226–#3299.
+
