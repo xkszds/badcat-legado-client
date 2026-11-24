@@ -2849,3 +2849,38 @@ This does not yet define the final file list or prove buildability. Historical 6
 - **Task 007 remains:** static inventory complete; resolved Gradle configurations/variants/artifact graph/generated outputs/manifest-resource merge/DEX packaging remain NOT MET.
 - **No source, test, Gradle, workflow, database/schema, UI or CI files changed.** No build/test/CI was run.
 - **Stage-0 remains** `in_progress / not accepted`; **Stage-1 remains NO-GO**. Exact-SHA dependency and compiled ABI evidence requires a network-enabled reproducible Gradle+Android SDK runner.
+
+## 24.61 Runtime-3.0 Stage-0 — exit-evidence reconciliation and gate matrix (2026-11-25)
+
+- **Task:** `R3-S0-EXIT-EVIDENCE-RECONCILIATION-011`; registered in overview §4.11 at start HEAD `6a1afb466db254979f69b0b8a6f1075ec06edc0f`; registration commit `a53f1fb8804b5d9621fa991bf788d617ad81b7fd`.
+- **Reconciliation snapshot:** branch `integration/legado-upstream-runtime`; source/documentation start for this result `a53f1fb8804b5d9621fa991bf788d617ad81b7fd`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Scope:** reconcile the existing Stage-0 exit matrix (§24.55) with the later Gradle, ABI/provenance, caller-boundary, root-decomposition and runner evidence (§§24.56–24.60). This is a documentation/status reconciliation, not a new source audit.
+
+### 24.61.1 Current Stage-0 exit evidence
+
+| Exit evidence | Reconciled status | Evidence and remaining proof |
+|---|---|---|
+| Pinned source declarations, models and callers | **PARTIAL** | Tasks 006/008/010 and §§24.50–24.59 establish a 20-capability static matrix and 17/17 exact G1 root blob matches. Full machine-readable declaration/field/overload inventory, inherited/generated/reflection-visible surface and all caller edges remain incomplete. |
+| Complete upstream transitive caller graph | **PARTIAL** | §§24.58–24.59 trace the principal BookSource/BaseSource → AnalyzeRule/AnalyzeUrl/JsExtensions/Rhino → HTTP/Cookie/Cache/WebView/verification → typed book/chapter path. Complete transitive compiler/caller closure and all source-visible API callers are not proven. |
+| Resolved Gradle dependency/variant/packaging closure | **STATIC INVENTORY COMPLETE; RESOLUTION BLOCKED** | §24.56 records modules, plugins, source/resource/assets/manifests, declared dependency families, Cronet/native inputs and packaging scripts. §24.60 confirms no Gradle/wrapper cache, Android SDK or outbound GitHub DNS in the runner. Exact runtime classpaths, generated outputs, merged resources/manifests, native/DEX/R8 outputs remain NOT MET. Environment blocker is not a source compile failure. |
+| Reflection/JVM/Rhino compiled ABI | **STATIC PARTIAL; COMPILED ABI NOT MET** | §24.57 records 48 JavascriptInterface annotation occurrences, NativeBaseSource/Rhino reflection behavior, selected source provenance and security surface. No compiled descriptors, Kotlin default/suspend/bridge methods, R8 mapping, DEX exposure or runtime overload-resolution proof exists. |
+| Badcat production caller/store graph | **STATIC INSPECTED-SLICE COMPLETE; DYNAMIC LIFECYCLE NOT MET** | §24.54 and §§24.58–24.59 trace product entrypoints, runtime construction and inspected store/callback paths. Cross-instance mutation invalidation, persistence transaction and restart behavior have no dynamic proof. |
+| Semantic parity matrix | **STATIC CONSOLIDATION COMPLETE FOR INVENTORIED SURFACE; EXACT PARITY NONE** | Task 006 / §24.55 has 20 capability rows and explicit status vocabulary. No row is proven exact parity; newly discovered symbols/callers must be added without re-auditing known slices. |
+| Architecture option comparison | **STATIC COMPARISON COMPLETE; BUILDABILITY UNDECIDED** | §24.55 compares dedicated Android Runtime, controlled upstream core and hybrid against the same matrix; §§24.58–24.59 favor controlled authentic core + typed host ports + Badcat-only UI as the formal direction, but no candidate has a buildability GO. |
+| File provenance, license and distribution obligations | **STATIC PARTIAL; FULL SBOM/LEGAL ACCEPTANCE NOT MET** | §24.57 confirms selected exact blob provenance (including 17/18 Rhino Kotlin files, 12/12 HtmlUnit Java files and license/notice records) and GPL-3.0 source pin. Complete closure-wide file provenance, resolved transitive license SBOM and distribution/legal review remain absent. |
+| Reproducible Stage-0 acceptance bundle | **NOT DONE** | No single reproducible bundle yet combines exact pin, complete inventories, resolved dependency graph, compiled ABI, provenance/license SBOM, parity matrix, blockers and reproducible commands. |
+| Dynamic source-runtime behavior | **NOT RUN; STAGE-1 PREREQUISITE** | No dynamic runtime compatibility claim is made. Real exact-SHA build, differential fixtures and Android host integration belong to the separately gated Stage-1 PoC after Stage-0 GO; they cannot be inferred from static evidence. |
+
+### 24.61.2 Gate interpretation
+
+1. Completed tasks 006–010 close only their explicitly scoped static slices; they do not collectively imply Stage-0 acceptance.
+2. The immediate Stage-0 blockers are complete source/API/caller closure, resolved exact-SHA Gradle/variant/packaging evidence, compiled JVM/Rhino ABI and R8/DEX evidence, complete provenance plus resolved license SBOM/review, and a reproducible acceptance bundle. The architecture must remain demonstrably extractable without importing Legado product UI/Reader or creating a second authoritative data owner.
+3. The current runner failure is classified as **environment-blocked**. It is neither a successful Gradle resolution nor a failed upstream compilation. Do not start CI to work around this; obtain an explicitly available network-enabled exact-SHA Gradle + Android SDK runner when permitted.
+4. Stage-1 dynamic differential/Android execution is downstream of Stage-0 GO and must be registered separately. No circular claim is made that Stage-1 tests have already passed.
+5. **Decision:** Stage-0 = `in_progress / not accepted`; Stage-1 = **NO-GO**; complete Legado compatibility = **NOT ESTABLISHED**.
+
+### 24.61.3 Next mainline slice
+
+Register and perform a non-duplicative full public `JsExtensions` API closure: reconcile the existing 104-name inventory with exact pinned declarations, overloads, parameter/return/nullability/default/suspend semantics, inherited `RssJsExtensions` and `WebJsExtensions` surface, actual source-runtime callers, and Badcat typed host-port mapping. Reuse existing per-method findings (§§24.37–24.46) rather than re-recording them; focus on missing API/caller coverage and unresolved inherited surface. Documentation-only until Stage-0 is accepted.
+
+- **Task 011 disposition:** evidence matrix reconciled and recorded. No production/test/Gradle/workflow/database/schema/UI/CI files changed or run. No CI started. No Stage-0 or Stage-1 gate was advanced.

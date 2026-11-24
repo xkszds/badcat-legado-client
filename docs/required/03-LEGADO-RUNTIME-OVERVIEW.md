@@ -303,10 +303,12 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 ## 4.11 Runtime-3.0 Stage-0 — exit-evidence reconciliation and gate matrix
 
 - **Task ID:** `R3-S0-EXIT-EVIDENCE-RECONCILIATION-011`
-- **Status:** registered; evidence reconciliation in progress.
+- **Status:** completed as a documentation/evidence-reconciliation slice; Stage-0 itself remains NOT accepted.
 - **Start HEAD:** `6a1afb466db254979f69b0b8a6f1075ec06edc0f`; branch `integration/legado-upstream-runtime`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
 - **Goal:** reconcile Stage-0 exit criteria in audit §24.55 against the newer evidence in §24.56–§24.60 and tasks 006–010; distinguish completed static slices, partial inventories, environment-blocked evidence and prerequisites for Stage-1. Produce one non-contradictory GO/NO-GO matrix and a single next mainline task.
 - **Allowed files:** `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md` and this overview only. Read existing audit evidence; do not repeat completed source/CI inventories.
 - **Dependencies:** overview §§1–2 and §§4.6–4.10; audit §§24.55–§24.60; pinned upstream SHA above.
 - **Acceptance:** every Stage-0 exit row has a current evidence-backed status, exact evidence section/task, remaining artifact/proof and blocker owner/type; reconcile stale wording without rewriting historical findings; separate Stage-0 prerequisites from Stage-1 dynamic acceptance; preserve Stage-1 NO-GO until all Stage-0 gates are met.
+- **Result:** audit §24.61 reconciles all nine Stage-0 exit rows against tasks 006–010 and evidence §§24.55–§24.60. It separates static inventory completion from missing resolved Gradle/compiled ABI/full caller closure/license SBOM/reproducible bundle. No exact-parity capability is established. The Gradle blocker is environmental, not a source compile failure. No source/test/Gradle/workflow/database/schema/UI/CI changed or run.
+- **Disposition:** reconciliation task complete; Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**. Next mainline task is the complete JsExtensions public API/overload/inherited-caller-to-host-port closure, not a minor defect sweep or CI audit.
 - **Exclusions:** no production/test/Gradle/workflow/database/schema/UI changes; no CI; no new build claims; no Stage-1 authorization; no full-compatibility claim.
