@@ -3584,7 +3584,7 @@ This is partial runner evidence, not a task-007 acceptance result. Do not classi
 ### 24.75 Task 016 — existing exact-SHA compiled output and ABI evidence inventory
 
 - **Task ID:** `R3-S0-COMPILED-OUTPUT-ABI-INVENTORY-016`
-- **Status:** registered; not started.
+- **Status:** completed as bounded Debug packaging evidence; see §24.77.1.
 - **Start branch HEAD:** `432a5e8cadc5cb250460cb1d980c64636f22447e`; branch `integration/legado-upstream-runtime`.
 - **Evidence checkout:** Badcat `b644bef2bac68401804c5807a1ca79ae53a683a6`; pinned upstream submodule `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
 - **Goal:** inspect already-existing compiled outputs from the prior exact-SHA runner attempt to determine which module class outputs/JARs actually exist and extract bounded JVM ABI/signature evidence without rebuilding. This is an evidence inventory, not proof of APK packaging or runtime parity.
@@ -3721,7 +3721,7 @@ Task 016 is completed as a read-only existing-output inventory with bounded JVM 
 - **Acceptance:** exact branch/HEAD/submodule identity; clean pre/post Git state; exact command and toolchain; detached PID; complete log and SHA-256; explicit exit code and terminal status; APK SHA-256/size if present; manifest package/version/min/target SDK; DEX/R8 output inventory; cleanup marker and temporary path absence. Build success does not establish runtime behavior, ABI equivalence or Stage-0 acceptance.
 - **Exclusions:** no CI/Actions; no production/test/Gradle/workflow/schema/UI/source edits; no dependency upgrade; no apt/sudo/system/network changes; no Stage-1 or complete-compatibility claim.
 - **Stop conditions:** any identity mismatch, dirty checkout, unavailable toolchain/SDK, inadequate capacity, competing build, missing or hash-mismatched upstream JAR, failure to establish detached execution/result capture, or unverified cleanup. Stop before launching or before starting any duplicate.
-- **Current disposition:** registration only; no Task 018 build has started. Task 017 remains cancelled before successful packaging, with Gradle client exit code unknown and temporary-JAR cleanup verified. Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete compatibility remains **NOT ESTABLISHED**.
+- **Execution disposition:** Task 018 completed with Gradle exit code 0 and a signed Debug APK on the registered exact execution snapshot; detailed evidence is in §24.77.1. Task 017 remains cancelled before successful packaging, with Gradle client exit code unknown and temporary-JAR cleanup verified. Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete compatibility remains **NOT ESTABLISHED**.
 
 
 ### 24.77.1 Task 018 result — detached exact-HEAD Debug APK packaging
@@ -3740,7 +3740,7 @@ Task 016 is completed as a read-only existing-output inventory with bounded JVM 
 - Started `2026-11-25T07:05:15+08:00`; completed `2026-11-25T07:08:33+08:00`.
 - Exact command: `gradle -Dorg.gradle.jvmargs="-Xmx1g -Dfile.encoding=UTF-8" --no-daemon --max-workers=1 --no-parallel :app:assembleDebug --console=plain`.
 - The launcher was started under `nohup setsid` with stdin disconnected and output redirected to persistent files. It survived the remote request boundary and wrote a terminal result marker.
-- Result marker: `exit_code=0`; cleanup status `ABSENT`. The complete Gradle log is 157 lines / 11,031 bytes, SHA-256 `bc6e773718ef3b19b3620961278cd6dc3c412e1ad6bc7509820a52b43acc8d4f`. Terminal log: `BUILD SUCCESSFUL in 3m 16s`; `82 actionable tasks: 23 executed, 59 up-to-date`.
+- Result marker: `exit_code=0`; cleanup status `ABSENT`. The complete Gradle log is 157 lines / 11,031 bytes, SHA-256 `bc6e773718ef3b19b3620961278cd6dc3c412e1ad6bc7509820a52b43acc8d4f`. Terminal log: `BUILD SUCCESSFUL in 3m 16s`; `82 actionable tasks: 23 executed, 59 up-to-date`. This was an incremental exact-HEAD assemble, not a clean-build/reproducibility proof; 59 tasks were reused as UP-TO-DATE.
 - The temporary Maven input was copied from the exact upstream submodule and both source/copy SHA-256 values matched `d720f34285515025e4ccc80a5b92aed42cb26c03a7715ca53583d2c74ae51df7`. EXIT cleanup removed the copied JAR; the cleanup marker and absent path agree.
 
 **APK, manifest and DEX evidence**
