@@ -278,7 +278,7 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 
 ## 2026-11-20 用户最终确认：必须交付完整 Legado 书源兼容运行层
 
-- 用户明确要求交付物必须是**完整的 Legado 书源兼容运行层**，不得以部分兼容、selector-only、常见规则子集或单条 Search→Detail→TOC→Content 演示链代替。详细能力范围、可行性审视、小跑证据和实施门禁以第三类必读清单 `03-LEGADO-RUNTIME.md` 最新章节为准。
+- 用户明确要求交付物必须是**完整的 Legado 书源兼容运行层**，不得以部分兼容、selector-only、常见规则子集或单条 Search→Detail→TOC→Content 演示链代替。第三类总进度与硬要求以 `03-LEGADO-RUNTIME-OVERVIEW.md` 为准；具体技术实施历史按需查阅 `03-LEGADO-RUNTIME.md`，CI 逐项证据以当前 200 CI 分册为准。
 - 坏坏猫仍是唯一产品外壳：保留原版搜索界面/流程、其他页面、净化、书架/收藏、书签、阅读器、CSS/排版和交互；只接入完整 Legado 书源导入与运行能力，不引入 Legado UI/Reader UI。
 - 完整性必须以固定上游 SHA 的全部书源相关真实源码、API/overload、模型、规则、JS ABI、HTTP/Cookie/登录、BaseSource 生命周期及必要依赖闭包为准；逐项差分验收。未覆盖能力一律阻断完整兼容结论。
 - 当前旧 selector-only/host projection 方案不满足最终交付门槛。优先验证独立 Android Runtime 模块/受控上游核心源码/Hybrid 方案；不得为了维持 Android-free contract 或 B′ 而削弱上游语义。此为最高优先级架构门禁。
@@ -335,7 +335,7 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 - 45 次成功 workflow 中，Pinshuzhai Python 搜索→详情→目录→正文脚本通过 45/45；Bixiange 通过 44/45，#3323 因远端 503 失败。Nyasama 仅 3/5 搜索探测可用；公共书源 GET 端点扫描为 14 次尝试、8–9 次非空 HTTP 200；静态 POST 探测 0 次（候选源均处于暂停列表）。这些都不证明完整 Legado JS/规则管线。
 - CI 只证明其 exact SHA 上配置的检查结果；第三类 App 单测排除第四类测试。API 28/35 仪器测试、RuleAnalyzer 类路径/DEX 检查、G2d 编译探针及外部 Python 冒烟均不能替代完整书源执行验收。
 - 本次仅更新 CI 审计账本和本总清单状态索引，没有修改应用源码、测试源码、Gradle 或 UI。完整 Legado 兼容、Stage-0 GO、Stage-1 Runtime PoC GO、最终 APK 和真机验收仍未成立。
-- 第三类清单 03-LEGADO-RUNTIME.md 文件体量很大，本轮 GitHub 文件读取器无法完整返回其内容；不得声称本轮已完整重读该文件。下一次进入 Runtime 实施前，仍须先解决清单分段读取并按 Stage-0 阻断项推进。
+- 第三类清单已拆分为总进度入口 `03-LEGADO-RUNTIME-OVERVIEW.md`、按每 200 个 CI 编号建立的分册（当前 `CI-3200-3399-AUDIT.md`）和旧技术历史档案 `03-LEGADO-RUNTIME.md`。旧档案保留原始证据，不作为每轮整份必读；按具体技术任务读取相关章节。
 
 ### CI 逐项功能覆盖记录标准（强制，所有 CI 范围适用）
 
