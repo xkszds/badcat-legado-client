@@ -116,3 +116,10 @@
 - 覆盖章节同章多页正文、URL cycle/redirect/fragment 安全、per-source durable Cookie、章节缓存 freshness/offline fallback、Login UI v2/mainJs、source login session helpers、java.getCookie、PPRule protobuf/video/comic 子集、Kuwo/Bixiange live smoke 脚本。
 - PPRule 是 Badcat 自有媒体规则邻接能力，单独标注，不与 Legado RuleAnalyzer 完整兼容混为一谈。
 - 测试源码和文档不当作测试通过；live smoke 脚本需与 Actions head_sha/run/job/log 做一一映射后才能标记通过。
+
+
+## 2026-11-24 Live source smoke SHA→Actions 映射补充
+- 新增 0374–0377 四条独立 Actions 记录，映射 #2147（success）、#2114/#2122/#2132（cancelled）到具体 live smoke commits。
+- #2147：26/26 steps success；笔仙阁与品书斋真实 search→detail→TOC→content PASS；上传 235-source corpus 中精华书阁 1/4 完整通过，另外 3 个候选超时；public source GET sweep 14 个、8 个非空 HTTP 200。
+- #2114/#2122/#2132 均未完整执行相关 smoke；取消不记通过。#2147 的 workflow 版本不含后续完整 API28/35 instrumentation 与完整第三类 app unit suite。
+- 第二分册登记至 0377，共 177 条，剩余 23 条。
