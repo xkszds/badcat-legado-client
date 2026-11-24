@@ -246,7 +246,7 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 ## 4.7 Runtime-3.0 Stage-0 technical task registration — Gradle dependency and packaging closure
 
 - **Task ID:** R3-S0-GRADLE-PACKAGING-CLOSURE-007
-- **Status:** static inventory complete; exact resolved dependency/variant graph blocked by verified runner constraints (no Gradle distribution/cache, no Android SDK, no outbound GitHub DNS).
+- **Status:** static inventory complete; exact-SHA runner restored and partial Gradle resolution/compile evidence obtained; final `:app:assembleDebug` result and packaging closure remain unconfirmed (see §4.7.1).
 - **Start HEAD:** `b42d38bf20c28a2d191c5809fa70048e190e3bdb`; branch `integration/legado-upstream-runtime`; upstream pin `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
 - **Goal:** establish the exact pinned upstream Gradle runtime/build closure and evaluate whether Runtime-3.0 controlled upstream-core extraction can exclude Legado product UI/Reader without severing source-runtime behavior.
 - **Allowed files:** audit and overview documentation only. Read upstream/Badcat Gradle/settings/catalog/build scripts, manifests, source/resource inventories and prior closure evidence; no source/build/test/workflow/schema/UI edits.
@@ -255,6 +255,17 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - **Blocker:** verified in audit §24.60: OpenJDK 21 exists, but Gradle and its wrapper cache are absent; Android SDK/SDK manager/adb are absent; GitHub checkout fails DNS resolution (`Could not resolve host: github.com`). Therefore exact resolved configurations, generated outputs, manifest/resource merge and packaging evidence cannot be produced in this container. This is an environment blocker, not an upstream compiler failure. Do not infer resolved graph from version declarations.
 - **Exclusions:** no CI history/runs; no production/test/Gradle/workflow/database/schema/UI changes; no dependency upgrades; no source import or module-boundary edits; no Stage-1 authorization.
 - **Runner check:** audit §24.60 records OpenJDK 21 present; no Gradle executable/wrapper cache, no Android SDK/sdkmanager/adb/android.jar, and GitHub DNS unavailable. No build or CI was run. Resolved dependency/variant graph, generated outputs, manifest/resource merge and APK/DEX packaging remain NOT MET. **Next:** use a network-enabled exact-SHA Gradle + Android SDK runner; until then dependency closure stays blocked.
+
+
+### 4.7.1 Task 007 — exact-SHA runner recovery and partial build evidence (2026-11-25)
+
+- **Runner:** Ubuntu device `VM-0-5-ubuntu`; JDK 21.0.13; Gradle 8.14.4; Android SDK API 36 and Build Tools 36.0.0 installed. SDK licenses were accepted under the user's explicit authorization. Build Tools 35.0.0 and Platform-Tools 37.0.3 were also installed by SDK/AGP tooling during setup.
+- **Checkout identity:** a fresh Git checkout of `integration/legado-upstream-runtime` resolved to exact HEAD `b644bef2bac68401804c5807a1ca79ae53a683a6`; the `upstream/legado` submodule resolved to `330e606c4d57e08adc056ff8ab7a4132c784da9a`. The checkout was clean when identity was checked.
+- **Gradle evidence:** `gradle help` and `gradle projects` completed successfully; the project graph reported five projects. `:app:dependencies --configuration debugRuntimeClasspath` completed successfully, giving a real resolved debug runtime dependency configuration for this exact checkout.
+- **Packaging/compile attempt:** the first `:app:assembleDebug` attempt stopped at a missing local Maven artifact, `org.htmlunit:htmlunit-core-js:5.3.0-legado.4`. The exact upstream submodule JAR was checked against its upstream `SOURCE.md` SHA-256 (`d720f34285515025e4ccc80a5b92aed42cb26c03a7715ca53583d2c74ae51df7`). A temporary copy was then used for a second `:app:assembleDebug` attempt, with shell-exit cleanup configured. The observed task output passed `:legado-rhino:compileDebugKotlin`, `:legado-runtime:compileDebugKotlin`, and entered `:app:compileDebugKotlin`.
+- **Unresolved result:** the remote process-output request timed out while the second assemble was running. No final Gradle exit code, completed `:app:compileDebugKotlin`, APK, manifest/package result, DEX, R8, or ABI evidence has been recovered. Temporary JAR cleanup has not yet been verified. Do not call the build successful or failed until the process/log and filesystem are checked.
+- **Scope:** no CI was triggered; no production source, test, Gradle, workflow, schema, or UI file was changed. This runner activity is evidence gathering only and does not authorize source migration or Stage-1.
+- **Next:** recover the existing process/log state without starting a duplicate build; verify temporary JAR cleanup and any APK/DEX/manifest outputs; then complete the resolved variant/packaging and compiled ABI evidence. Keep Stage-0 not accepted until all remaining caller/data-owner, provenance/license SBOM, and reproducible acceptance requirements are met.
 
 ## 4.8 Runtime-3.0 Stage-0 technical task registration — reflection/JVM/Rhino ABI and source provenance inventory
 
