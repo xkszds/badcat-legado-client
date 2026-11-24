@@ -457,3 +457,11 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - **Execution:** :app:assembleDebug --no-daemon --console=plain; log /tmp/r3-task017-assembleDebug.log. Pinned upstream HtmlUnit JAR copied temporarily and its expected SHA-256 verified; shell EXIT cleanup trap is active.
 - **Last observed tasks:** app Kotlin compile, duplicate-class check and :app:mergeExtDexDebug. Gradle process PID 432816 remained pending; no APK was present at last inspection. Final exit, packaging and cleanup are not yet known.
 - **Disposition:** task 017 remains in progress. No duplicate build, CI, or source/configuration edit.
+
+
+### 4.17.2 Task 017 recovery checkpoint — runner calls timed out
+
+- GitHub branch HEAD verified as `eddd93fc70ff9ee628b432fb285ab01eba2a2ea9`; required workflow, overview and audit reread.
+- Runner `VM-0-5-ubuntu` reported Online, but heartbeat was 2 minutes old. All six outstanding Task 017 process/log/marker/process-list calls subsequently returned terminal device timeouts.
+- These timeouts do not reveal the Gradle process's final state. Task 017 remains in progress with exit code, APK/manifest/DEX/R8 and temp-JAR cleanup unknown.
+- No duplicate build, process termination, CI, or source/configuration change. Next action is read-only recovery after the runner responds.
