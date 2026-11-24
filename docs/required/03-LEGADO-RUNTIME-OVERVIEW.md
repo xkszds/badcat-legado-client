@@ -448,3 +448,12 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - **Acceptance:** exact checkout identity, complete build log and exit code, APK hash/size if created, packaging/DEX evidence, temporary artifact cleanup and clean Git status.
 - **Exclusions:** no CI, source/test/Gradle/workflow/schema/UI edits, dependency upgrade, Stage-1 or complete-compatibility claim.
 - **Next:** verify runner fast-forward and upstream pin, then execute one logged assemble attempt.
+
+
+### 4.17.1 Task 017 execution checkpoint — Debug assemble pending
+
+- **Exact test HEAD:** 1855cd77cb01efc13e59e119d3392027906d179e; upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Toolchain:** JDK 21.0.13.1 / Gradle 8.14.4 / Android API 36 / Build Tools 36.0.0.
+- **Execution:** :app:assembleDebug --no-daemon --console=plain; log /tmp/r3-task017-assembleDebug.log. Pinned upstream HtmlUnit JAR copied temporarily and its expected SHA-256 verified; shell EXIT cleanup trap is active.
+- **Last observed tasks:** app Kotlin compile, duplicate-class check and :app:mergeExtDexDebug. Gradle process PID 432816 remained pending; no APK was present at last inspection. Final exit, packaging and cleanup are not yet known.
+- **Disposition:** task 017 remains in progress. No duplicate build, CI, or source/configuration edit.
