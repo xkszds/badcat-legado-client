@@ -1776,3 +1776,41 @@ The 17 missing names cannot be treated as 17 equally unused methods. Six have di
 - **Correction to §§24.33 and 24.35:** `JsEncodeUtils.kt` has **30 public declarations but 27 distinct method names**, because three declarations are additional overloads. The 77 distinct names declared directly by `JsExtensions.kt` and the 27 inherited `JsEncodeUtils` names are disjoint. The combined total is therefore **148 declarations / 104 distinct names**: 118 + 30 declarations, 77 + 27 names.
 - **Verified from pinned blobs:** `JsEncodeUtils.kt` `c75b61650db2abdd64a09d2bd8340ef14c2947b3` has 30 `fun` declarations and 27 distinct names; `JsExtensions.kt` `f6808edd2a0d312e8bd13649935dea444cb82581` has 118 public direct declarations and 77 distinct names; their name-set intersection is empty.
 - The earlier “30 names / three overlaps” wording was a counting error. The source-signature comparison of the 30 declarations remains unchanged; only the distinct-name arithmetic is corrected. Future matrices must count declarations and distinct names separately.
+
+
+## 24.37 Runtime-3.2f.50 follow-up — BaseSource scope lifetime, request bindings and bridge identity (2026-11-24)
+
+- **Audit base:** `d3d932ad00cd32c84c867fdca9a2bb9b63595bab` on `integration/legado-upstream-runtime`; pinned upstream `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Scope:** read-only source comparison of upstream `BaseSource.evalJS` / `buildScriptBindings` / `SharedJsScope` against Badcat `RhinoSourceScriptRuntime.evaluate` / `ScriptBindings` and source bridge installation. No production code, tests, Gradle, workflow, database or UI changes.
+
+### Upstream facts confirmed
+
+1. Every `BaseSource.evalJS` call invokes `buildScriptBindings { ... }`; pinned `ScriptBindingsExtensions.kt` constructs a **new `ScriptBindings()` for each call**. The per-call bindings include `java = this`, `source = this`, `sourceApi = this`, `baseUrl = getKey()`, `cookie = CookieStore` and `cache = CacheManager`.
+2. The upstream `java`, `source` and `sourceApi` values are the same BaseSource instance. `BaseSource.getSource()` returns `this`; this is object identity, not merely equivalent descriptor data.
+3. The fresh per-call bindings chain to a shared jsLib scope only when the source has a nonblank jsLib. The shared-global-state key is derived from jsLib hash, concrete source class name and source-key hash. The jsLib scope itself is cached by jsLib hash in an LRU of weak references (capacity 16), with synchronized creation and invalidation.
+4. Without a shared jsLib scope, upstream creates a fresh standard top-level scope for that invocation. The per-invocation bindings object is not reused as the next invocation's lexical/request scope.
+
+### Badcat facts confirmed at the audited HEAD
+
+1. `RhinoSourceScriptRuntime` retains one `ScriptBindings` VarScope per source ID in `sourceScopes` and reuses it through `computeIfAbsent` across `evaluate` calls. It chains that scope to a source-global handle; the host lifecycle is therefore not the upstream fresh-bindings-per-call model.
+2. Each call writes only the keys present in the incoming `bindings` map. The inspected path does not remove request-only keys that were supplied by an earlier call but are absent from the next call.
+3. Each `evaluate` creates a new `RhinoSafeSourceJavaExtensions` instance, installs it as `scope["java"]`, and stores it in the runtime's bridge map. `scope["source"]` is a cached `RhinoSourceLoginExtensions`; no `sourceApi` binding is installed.
+4. The Java bridge constructor receives closures over per-evaluation mutable values including current rule content and base URL. The source global scope is persistent, so JS can retain a reference to an earlier bridge in a global variable even after the global `java` property is replaced.
+
+### Compatibility classification
+
+- **Confirmed identity/API gap:** upstream `java === source === sourceApi` and `java.getSource() === java` are not represented by the host's three distinct/missing bindings and descriptor-map `getSource()`.
+- **Confirmed scope-lifetime design difference:** upstream creates fresh invocation bindings; Badcat reuses a per-source VarScope. This is not automatically incompatible in every script, but it changes where request bindings and top-level declarations live.
+- **Static stale-binding risk (not runtime-proven):** because host bindings are only overwritten when present, a key such as `page`, `key`, `result` or another caller-provided name can remain in the persistent scope when omitted by a later invocation. This must be verified with a differential probe before being described as an observed runtime failure.
+- **Static retained-bridge risk (not runtime-proven):** a script can retain an earlier `java` object in a global variable. That object keeps its original per-evaluation closures; later use may observe the earlier request's base URL/content context. No runtime probe was run in this audit.
+- **Not a simple instruction to remove persistent state:** upstream intentionally preserves selected jsLib/global state through a separately keyed shared scope. Any future host design must distinguish per-invocation bindings, source-global state, jsLib shared state, lexical declarations, and bridge/request context rather than flattening them into one scope.
+
+### Required differential closure before implementation
+
+- Compare two consecutive evaluations where the first supplies `page`/`key`/`result` and the second omits or changes each binding; inspect stale values and lexical `var`/`let`/`const` behavior.
+- Compare no-jsLib, identical-jsLib and changed-jsLib source cases; verify source-key/class isolation, shared globals, invalidation and scope recreation.
+- Verify `java === source`, `source === sourceApi`, `java.getSource() === java`, and property/method visibility against pinned upstream.
+- Retain an earlier bridge reference in JS global state, run a second evaluation with a different base URL/content, then call the retained reference; compare closure context and cleanup behavior.
+- Verify `clearSourceState` and source replacement invalidate every related scope, shared-global handle, bridge reference and request state without clearing another source's state.
+
+**Decision:** this closes an additional Stage-0 source-evidence slice only. It does not authorize a production patch or test implementation. Register a separate, exact-file implementation task with typed scope/identity semantics and the differential tests above only after the remaining Stage-0 architecture/ABI gates are reviewed. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**. No CI was run.
