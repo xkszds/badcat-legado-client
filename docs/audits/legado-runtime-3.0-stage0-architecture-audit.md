@@ -2562,3 +2562,74 @@ Upstream `Book.kt:33–130` is a Room `books` entity, `@Parcelize`, with `Book.C
 - `R3-S0-SEMANTIC-PARITY-CLOSURE-006` is complete as a static consolidation slice: all currently inventoried major capability rows have upstream evidence, reachable host path where established, honest parity state, contract delta and required differential evidence; A/B/C have been compared against the same matrix.
 - No source/test/Gradle/schema/UI/workflow/CI file was changed or run.
 - Next work must be separately registered. The next highest-value Stage-0 slice is exact pinned-upstream Gradle dependency and packaging closure, including direct/transitive artifacts, Android resources/manifest, generated code, native libraries, R8/ProGuard, reflection and service loading. This must resolve the existing “broad source-closure experiment” failure against exact symbols before any module-boundary decision.
+
+
+## 24.56 Runtime-3.0 Stage-0 — pinned Gradle/source/resource/packaging closure, static pass (2026-11-24)
+
+- **Task:** R3-S0-GRADLE-PACKAGING-CLOSURE-007; registered in overview §4.7.
+- **Inspection snapshot:** branch `integration/legado-upstream-runtime`, start HEAD `b42d38bf20c28a2d191c5809fa70048e190e3bdb`; pinned upstream `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Method:** Git tree inventory and direct inspection of pinned `settings.gradle`, root `build.gradle`, `gradle/libs.versions.toml`, `app/build.gradle`, `modules/book/build.gradle`, `modules/rhino/build.gradle`, app manifest, Cronet build scripts and Badcat's five module build files. This is a **static declaration/source inventory**, not a resolved Gradle graph.
+
+### Module and build topology
+
+| Item | Pinned upstream | Badcat current branch | Implication |
+|---|---|---|---|
+| Included Gradle projects | `:app`, `:modules:book`, `:modules:rhino` | `:app`, `:integration-contract`, `:legado-rhino`, `:legado-runtime`, `:legado-runtime-poc` | Current Badcat has five modules, but its runtime module is not the upstream app core extraction |
+| Main app plugins | Android application, Kotlin Android, Parcelize, Room, KSP, Google Services | app: Android application, Kotlin Android, Parcelize | Upstream Room/KSP/Google Services build integration is not present as an equivalent runtime module graph |
+| Root plugin baseline | AGP 8.13.2, Kotlin 2.4.20, KSP 2.3.12, Room 2.8.4 (version catalog) | AGP 8.13.2, Kotlin 2.4.20; no KSP/Room plugin in current root plugin declaration | Version alignment is partial; plugin presence does not imply generated code closure |
+| Java/Kotlin target | Java 21 / Kotlin JVM toolchain 21 in app and libraries | Java 21 / Kotlin JVM 21 in app and Android runtime libraries | Language target aligns at declaration level |
+| Runtime/source extraction | Upstream app owns most source and service classes; `:modules:book` and `:modules:rhino` are small Android libraries | `:legado-runtime` injects seven rule model sources + GsonExtensions; `:integration-contract` separately compiles selected parser files and local adapted bridges; `:legado-rhino` reuses Rhino dependency/source set | No single module currently contains authentic BookSource/BaseSource/AnalyzeRule/AnalyzeUrl/JsExtensions runtime closure |
+| Product UI/Reader boundary | Product activities, app manifest, Room DB and resources live in `:app` | Badcat app manifest and UI remain host-owned | A controlled extraction must retain source-required app services without importing Legado product activities/Reader |
+
+### Exact pinned source inventory (Git tree)
+
+The recursive upstream tree at the fixed SHA returned 3,298 entries (`truncated=false`). Static path counts:
+- `app/src/main/java/`: 1,245 entries;
+- `modules/book/src/main/java/`: 93 entries;
+- `modules/rhino/src/main/java/`: 38 entries;
+- `app/src/main/res/`: 673 entries;
+- `app/src/main/assets/`: 155 entries.
+- App manifests: `app/src/main/AndroidManifest.xml`, `app/src/cronetRuntime/AndroidManifest.xml`, `app/src/pdfRuntime/AndroidManifest.xml`.
+- Library manifests for `:modules:book` and `:modules:rhino` are empty manifest shells.
+- Packaging/consumer rules: `app/proguard-rules.pro`, `app/cronet-proguard-rules.pro`, `modules/book/consumer-rules.pro`, `modules/rhino/consumer-rules.pro`.
+- Tracked JAR/native-adjacent artifacts include seven Cronet Java JARs under `app/cronetlib`, Rhino 1.7.14 under `modules/rhino/lib`, and the pinned HtmlUnit CoreJS JAR under `third_party/maven`. The tree listing did not provide a checked-in `.so` payload in the selected path inventory; `app/download.gradle` defines downloads for five ABI-specific Cronet shared libraries, so the build has external native artifact inputs.
+- No `META-INF/services/` service-loader files were found in the recursive tree path inventory. This does not exclude reflection, generated registries, JNI or string-based class loading.
+
+The main app manifest declares the Legado Application and extensive product activities/services/permissions, including its own welcome/main/reader/book/source/RSS/video/audio and other UI surfaces. It is not an acceptable runtime manifest to transplant wholesale into Badcat. The two reusable library manifests are empty, but this does not prove that all source-runtime APIs are free of app resources or generated symbols.
+
+### Build-script dependency and packaging evidence
+
+- **Pinned upstream root:** plugin management adds the R8 9.1.29 buildscript classpath from Google's R8 raw repository; repositories include Google, Maven Central, Gradle Plugin Portal and a local vendored HtmlUnit Maven repository. The build includes `:app`, `:modules:book`, `:modules:rhino`.
+- **Pinned upstream app:** applies Android application, Kotlin Android, Parcelize, Room, KSP and Google Services plugins; applies `download.gradle` and `cronet-loader.gradle`; enables BuildConfig and ViewBinding; uses Room KSP schema generation; enables Java 21; configures product flavor `app`; has debug/release ProGuard and resource shrinking behavior.
+- **Pinned upstream direct dependency families:** AndroidX UI/lifecycle/preferences/webkit/documentfile, Material/Flexbox, Room runtime/ktx/compiler/testing, Gson, coroutines, Jsoup/JsoupXpath/JsonPath, project book/Rhino modules, OkHttp/Brotli, Cronet JARs and generated native loader JAR, protobuf, Glide/KSP, NanoHTTPD/WebSocket, Ktor/MCP server, libarchive, Hutool crypto, Bouncy Castle, Quick Chinese Transfer, PDFBox, Firebase, media/video/audio, editor, QR and other product dependencies. The app dependency list is substantially broader than the source-runtime capability set.
+- **Pinned Rhino library:** exposes HtmlUnit CoreJS as API; includes coroutines, OkHttp and AndroidX collection.
+- **Pinned book library:** depends on AndroidX annotation; its own manifest is empty. Its source inventory is 93 paths and must be filtered by actual source-runtime callers, not module name alone.
+- **Cronet build-time closure:** `download.gradle` downloads seven Java JARs and five ABI native libraries (armeabi-v7a, arm64-v8a, riscv64, x86, x86_64), creates `cronet.json`, and declares remote artifact inputs. `cronet-loader.gradle` uses ASM 9.8 as buildscript tooling to transform the pinned Cronet native Java JAR at a hash/version guard. These are not generic Legado runtime dependencies unless caller tracing proves they are required by the selected source execution path.
+- **Badcat current runtime modules:** `:legado-runtime` declares Gson and AndroidX annotation and adds only seven rule model files plus GsonExtensions to Debug/Release Kotlin compilation. `:integration-contract` separately compiles authentic AnalyzeByJSoup, AnalyzeByRegex, RuleAnalyzer and SourceHtmlParser plus local adapted XPath/JSONPath bridges, with explicit parser dependencies. `:legado-rhino` exposes HtmlUnit CoreJS and includes coroutines, OkHttp and AndroidX collection. `:legado-runtime-poc` declares Room/Gson/Hutool/BouncyCastle/coroutines and Rhino but injects a selected pure/rule model source group; it is a probe, not the production runtime.
+- **Badcat custom packaging:** app build has packaging exclusions/pickFirst for META-INF collisions and a custom Android runtime-classpath verifier for RuleAnalyzer. These are host build accommodations, not evidence that the upstream app dependency/packaging closure is reproduced.
+
+### Historical source-closure experiment recovery
+
+The prior records are reconciled without treating their graph counts as interchangeable:
+
+1. Runtime-0.6 / Runtime-0.7 two-root source import graph from `BookSource.kt` + `BaseSource.kt` reported **658 reachable upstream source nodes** and overlapping dependency families including Android (460), Activity/UI (288), database (141), Room (54), WebView (32), Rhino/JS (59), network (84), Parcelable (27) and cache (59). The source graph explicitly documents lexical/same-package/reflection/generated-code blind spots.
+2. The exact unchanged two-file Kotlin probe compiled those upstream files in `:legado-runtime-poc` with a deliberately narrow dependency set and failed with **211 compiler diagnostic lines**: 153 unresolved-reference occurrences, 42 distinct unresolved names, plus cascading inference/type/overload errors. The corrected G2c attribution identified 113 real source symbol/property/function occurrences across 35 pinned declarations; remaining diagnostics included package-path segments and cascades. This proves the two-file isolated probe is insufficient, not that the pinned upstream app itself is broken.
+3. A later package-aware G2 graph snapshot reports **661 files / 6,303 internal import edges**. This is a separate graph iteration and must not be arithmetically merged with the 658-node earlier report.
+4. Current `legado-runtime-poc/source-closure-stage1.json` records the G2d source group: six rule models, BookListRule, GsonExtensions, AppPattern, BookSourceType, NoStackTraceException and MapExtensions, plus a declared dependency set. Its own note says this is an independently compilable first source group, not full BookSource/BaseSource runtime. The current probe build file reintroduces that group, not the full closure.
+5. The current repository includes `.github/scripts/legado-runtime-dependency-closure.py`, which labels itself a deterministic **source-level import graph**, not a Kotlin compiler graph. It explicitly does not resolve reflection, generated Kotlin/Java, KSP/KAPT output, service loader, JNI, Gradle variants, manifest/resources or actual compiler binding. Therefore its output cannot be used as the resolved dependency closure required for Stage-0.
+
+### Confirmed facts, static risks and dynamic-unverified boundaries
+
+- **Confirmed static facts:** exact included module sets; declared plugins and versions; selected source roots; source/resource/asset counts; manifest variants; direct dependency families; Cronet external JAR/native download and ASM transformation path; prior two-file compiler diagnostics; and the current script's stated analysis limitations.
+- **Static architecture risk:** a faithful BookSource/BaseSource source closure reaches app-owned services and data models (Room/CacheManager/CookieStore/SharedJsScope/login/WebView and reader/content helpers) and is not currently demonstrated as a small pure module. The upstream app build includes extensive product UI/Reader and unrelated features; wholesale app module reuse violates the Badcat-only product boundary.
+- **Dynamic/unresolved:** no exact resolved Gradle `runtimeClasspath` or variant graph was generated for the pinned upstream checkout or a candidate isolated runtime; no artifact metadata/variant selection report, dependency insight, generated source report, resource merge report, manifest merger report, APK DEX/native packaging report or R8 mapping was produced in this task. Static version declarations are not resolved artifacts.
+- **Tooling boundary:** GitHub source/tree inspection does not execute Gradle or expose a checked-out working tree. No local pinned checkout/Gradle invocation or reproducible dependency-resolution environment was available in this task. No CI was started.
+- **Decision:** R3-S0-GRADLE-PACKAGING-CLOSURE-007 is **partial/static inventory complete, resolved graph blocked by execution environment**. Do not mark dependency closure complete. Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**. No source, test, Gradle, workflow, schema, UI or CI file was changed or run.
+
+### Remaining acceptance work
+
+1. Run dependency resolution against an exact pinned checkout and capture `:app:debugRuntimeClasspath`, `:modules:book:debugRuntimeClasspath`, `:modules:rhino:debugRuntimeClasspath` and candidate runtime configurations with artifact coordinates, variants and transitive paths.
+2. Capture Room/KSP/Parcelize/BuildConfig/ViewBinding generated outputs and manifest/resource merge inputs; classify which are truly required by source-runtime callers.
+3. Resolve Cronet/native/JNI scope and distinguish source-runtime-required HTTP behavior from product-level Cronet integrations; inspect all reflection/service-loader/string-based class references.
+4. Re-open the G2c diagnostic set and map each of the 35 declarations to current exact source and dependency edges, preserving the no-fake/no-no-op rule.
+5. Generate a candidate controlled upstream-core extraction graph that preserves required BookSource/BaseSource/AnalyzeRule/AnalyzeUrl/JsExtensions behavior while excluding Legado product UI/Reader only where caller proof permits.
