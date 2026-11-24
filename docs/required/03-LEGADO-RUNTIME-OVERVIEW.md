@@ -578,3 +578,20 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - **R8:** no `mapping.txt`, `seeds.txt` or `usage.txt` found under app outputs. DEX class names remain readable, but absence of mapping output alone does not prove all release/minification configuration.
 - **Task disposition:** Task 020 is complete as a read-only DEX/class inventory. It confirms that Task 018's successful assemble packages only a partial Legado source slice, omits the authentic BaseSource/AnalyzeRule/AnalyzeUrl/JsExtensions/SharedJsScope/JsSourceEngine core, and contains duplicate DEX class definitions caused by overlapping app/runtime source ownership. No source/build/test/CI/APK changes, installation or device execution occurred. Compiled ABI and runtime semantic parity remain NOT ESTABLISHED; Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; full compatibility remains **NOT ESTABLISHED**.
 - **Next:** register a separate source-ownership/duplicate-class resolution task before changing module source sets or production code. Do not treat the existing APK as a Stage-0 or release acceptance artifact.
+
+
+### 4.20.2 Stage-0 gate delta after Tasks 018–020
+
+| Gate | Current evidence | Disposition |
+|---|---|---|
+| Architecture direction | Task 015 selected fixed-SHA authentic Legado core plus typed Badcat Host Ports; preserve Badcat product shell | **Decision closed; implementation gate still separate** |
+| Debug build/packaging | Task 018 `:app:assembleDebug` exit 0, but Task 020 found 38 duplicate class definitions across DEX and absent upstream runtime core classes | **Partial; not accepted** |
+| Dependency graph | Task 019 offline Debug compile/runtime reports both exit 0 | **Partial; artifact-file and full build closure not established** |
+| Source/runtime closure | Task 020 confirms parser/rule-model/Rhino slice, but BaseSource, upstream BookSource/BookChapter, AnalyzeRule/AnalyzeUrl, JsExtensions, SharedJsScope and JsSourceEngine are absent from APK | **Not met** |
+| DEX/ABI | 14 DEX checksum-valid; 16,531 unique classes; 38 duplicate definitions; no R8 mapping; no full ABI inventory | **Partial; not accepted** |
+| Caller/data ownership | Static maps and selected adapters exist; authentic upstream caller lifecycle and data-owner wiring are not present/verified in DEX | **Partial / not met** |
+| License/SBOM | Task 019 manual inventory partial; APK lacks GPL/HtmlUnit notices; native libarchive license unresolved; machine-readable SBOM absent | **Not met** |
+| Reproducibility | Task 018 required temporary manual staging of the pinned HtmlUnit JAR; no clean reproducible build or stable artifact bundle | **Not met** |
+| Behavioral parity | No end-to-end upstream source execution or differential behavior suite established | **Not established** |
+
+**Decision:** Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**. A successful assemble is now explicitly bounded by the duplicate DEX definitions and missing authentic upstream runtime classes. The next technical blocker is to define one canonical source owner for the duplicated rule/Gson classes and a reviewed path for the missing authentic runtime closure; no source-set or production changes are authorized by this reconciliation.
