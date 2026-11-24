@@ -1691,7 +1691,7 @@ The 17 missing names cannot be treated as 17 equally unused methods. Six have di
 ### Inheritance and source declaration inventory
 
 - Pinned `JsExtensions` is an interface extending `JsEncodeUtils`, not a standalone class: `JsExtensions.kt` blob `f6808edd2a0d312e8bd13649935dea444cb82581`, line 127. Therefore the inherited methods are part of the same BookSource `java` bridge surface.
-- Refreshed pinned source: `JsEncodeUtils.kt` blob `c75b61650db2abdd64a09d2bd8340ef14c2947b3`, 518 lines. It contains **30 public declarations / 30 method names**. Host source: `RhinoSafeSourceJavaExtensions.kt` blob `6a00e649895c4c1d223b768c6b288632ec033de9`; the main bridge contains all 30 names and matching source-level parameter/return type shapes.
+- Refreshed pinned source: `JsEncodeUtils.kt` blob `c75b61650db2abdd64a09d2bd8340ef14c2947b3`, 518 lines. It contains **30 public declarations / 27 distinct method names (three additional overload declarations)**. Host source: `RhinoSafeSourceJavaExtensions.kt` blob `6a00e649895c4c1d223b768c6b288632ec033de9`; the main bridge contains all 27 names and matching source-level parameter/return type shapes.
 - This is a source declaration comparison only. It does not prove the upstream/host pre-R8 JVM descriptors, Kotlin metadata, generated default overloads, annotation parity or behavioral equivalence.
 
 ### Type/return signature groups
@@ -1734,7 +1734,7 @@ The 17 missing names cannot be treated as 17 equally unused methods. Six have di
 
 ### Inventory reconciliation
 
-- Pinned `JsExtensions.kt` has **118 direct public declarations / 77 distinct names**; inherited `JsEncodeUtils.kt` adds **30 declarations / 30 names**, with three overlapping names, yielding the previously recorded **148 declarations / 104 distinct names**. Sources: JsExtensions blob `f6808edd2a0d312e8bd13649935dea444cb82581`; JsEncodeUtils blob `c75b61650db2abdd64a09d2bd8340ef14c2947b3`. Host `RhinoSafeSourceJavaExtensions` has 150 direct public declarations in blob `6a00e649895c4c1d223b768c6b288632ec033de9`.
+- Pinned `JsExtensions.kt` has **118 direct public declarations / 77 distinct names**; inherited `JsEncodeUtils.kt` adds **30 declarations / 27 names**; the two name sets are disjoint, yielding the previously recorded **148 declarations / 104 distinct names**. Sources: JsExtensions blob `f6808edd2a0d312e8bd13649935dea444cb82581`; JsEncodeUtils blob `c75b61650db2abdd64a09d2bd8340ef14c2947b3`. Host `RhinoSafeSourceJavaExtensions` has 150 direct public declarations in blob `6a00e649895c4c1d223b768c6b288632ec033de9`.
 - The source inventory must keep three separate counts: source declarations, generated JVM overloads (e.g. `@JvmOverloads`), and Rhino-callable members through the actual wrapper. A matching name or declaration count is not an ABI or semantic match.
 
 ### Confirmed direct signature/return deltas
@@ -1769,3 +1769,10 @@ The 17 missing names cannot be treated as 17 equally unused methods. Six have di
 - This is a **confirmed-delta summary**, not closure of all 104 method rows. Remaining same-name overloads, default argument bridges, annotations, nullability metadata, dynamic wrapper dispatch, active caller contexts and behavior/error/cancellation semantics still require row-by-row review.
 - No application code or tests changed; no test command was run. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**.
 - **Next:** continue exact signature and caller review for the remaining direct JsExtensions methods, then re-check every source-visible returned object and dynamic dispatch path. Keep implementation blocked until §26.13 acceptance criteria are met.
+
+
+## 24.36 Count correction — JsEncodeUtils overloads versus distinct names (2026-11-24)
+
+- **Correction to §§24.33 and 24.35:** `JsEncodeUtils.kt` has **30 public declarations but 27 distinct method names**, because three declarations are additional overloads. The 77 distinct names declared directly by `JsExtensions.kt` and the 27 inherited `JsEncodeUtils` names are disjoint. The combined total is therefore **148 declarations / 104 distinct names**: 118 + 30 declarations, 77 + 27 names.
+- **Verified from pinned blobs:** `JsEncodeUtils.kt` `c75b61650db2abdd64a09d2bd8340ef14c2947b3` has 30 `fun` declarations and 27 distinct names; `JsExtensions.kt` `f6808edd2a0d312e8bd13649935dea444cb82581` has 118 public direct declarations and 77 distinct names; their name-set intersection is empty.
+- The earlier “30 names / three overlaps” wording was a counting error. The source-signature comparison of the 30 declarations remains unchanged; only the distinct-name arithmetic is corrected. Future matrices must count declarations and distinct names separately.

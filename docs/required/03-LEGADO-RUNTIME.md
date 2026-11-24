@@ -5662,7 +5662,7 @@ Each row binds one run to its own immutable commit SHA and its single `assemble-
 
 - **Task:** §26.13 remains **in_progress/read-only**. Detailed evidence is architecture-audit §24.33; this closes the inherited crypto/encoding declaration slice only.
 - **Inheritance proof:** pinned `JsExtensions` extends `JsEncodeUtils`; all 30 inherited public declarations are exposed through the same source-facing Java bridge.
-- **Signature result:** all 30 upstream declarations (30 names) have corresponding host declarations with matching source parameter types, return types and nullability in the inspected Kotlin source. Six methods use different parameter identifiers only; that does not change positional script calls or JVM descriptors. Exact grouped declarations and line/blob identities are in §24.33.
+- **Signature result:** all 30 upstream declarations (27 names) have corresponding host declarations with matching source parameter types, return types and nullability in the inspected Kotlin source. Six methods use different parameter identifiers only; that does not change positional script calls or JVM descriptors. Exact grouped declarations and line/blob identities are in §24.33.
 - **Behavior result:** crypto compatibility remains **partial**. Host size caps, digest/HMAC allowlists and bounded crypto wrappers differ from the complete upstream/Hutool behavior. Active AES content and HmacSHA1 source callers are already recorded in §24.29. No caller hit for another helper does not make a dynamically reachable method unused.
 - **Evidence boundary:** source declaration comparison only; no tests run, no upstream/host compiled ABI or Kotlin metadata comparison, and no application code changed. Audit blob SHA after append: `095e0ab90e36f9164a32684feff1b9079853c773`.
 - **Acceptance:** §26.13 and Stage-0 remain **in_progress/not accepted**; Stage-1 remains **NO-GO**.
@@ -5680,8 +5680,14 @@ Each row binds one run to its own immutable commit SHA and its single `assemble-
 ### 26.25 Runtime-3.2f.50 checkpoint — direct JsExtensions signature-delta summary (2026-11-24)
 
 - **Task:** §26.13 remains **in_progress/read-only**. Detailed evidence is architecture-audit §24.35; this is a confirmed-delta summary, not completion of the full 104-name matrix.
-- **Inventory:** 118 direct JsExtensions declarations / 77 names plus 30 inherited JsEncodeUtils declarations / 30 names (three overlaps) reconcile to 148 declarations / 104 names. Host main bridge has 150 direct public declarations. Keep source declarations, generated JVM overloads and actual Rhino-callable methods as separate measures.
+- **Inventory:** 118 direct JsExtensions declarations / 77 names plus 30 inherited JsEncodeUtils declarations / 27 names (no overlap) reconcile to 148 declarations / 104 names. Host main bridge has 150 direct public declarations. Keep source declarations, generated JVM overloads and actual Rhino-callable methods as separate measures.
 - **Confirmed deltas:** BaseSource/getSource and batch-context object types; getTag nullability; ajax timeout/parameter/return types; ajaxAll/ajaxTestAll parameter and StrResponse-array types; connect header representation/response type; get/head/post response wrappers; Base64/hex nullability; timeFormat Long vs Number/String; htmlFormat input nullability; File vs safe file handle; JsURL vs RhinoLegadoUrl; log/logType return contracts. Seventeen upstream names remain absent as enumerated in §24.35.
 - **Correction:** cacheContent's declared return type is Boolean on both sides; its actual blocker is the absent batch context and always-throwing host implementation (§24.34).
 - **Evidence boundary:** static source inspection only; no tests run and no compiled upstream ABI proof. No app source/tests changed. §26.13 remains in_progress; Stage-0 not accepted; Stage-1 NO-GO.
 - **Next ordered action:** continue remaining direct JsExtensions methods and their overload/default/nullability/caller matrix; do not implement or begin Stage-1.
+
+
+### 26.26 Count correction — inherited declarations vs distinct method names (2026-11-24)
+
+- **Correction to §§26.23 and 26.25:** `JsEncodeUtils` has 30 public declarations but 27 distinct names (three additional overload declarations). Its 27 names are disjoint from the 77 direct `JsExtensions` names; combined inventory remains 148 declarations / 104 distinct names.
+- Verified from pinned source blobs in architecture-audit §24.36. The earlier “30 names / three overlaps” wording was a counting error; the source-signature comparison remains unchanged.
