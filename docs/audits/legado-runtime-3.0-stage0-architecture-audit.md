@@ -1932,3 +1932,29 @@ The 17 missing names cannot be treated as 17 equally unused methods. Six have di
 
 - **Required differential closure:** test array and Scriptable inputs, empty arrays, whitespace/blank entries, >20 entries, oversized URL/aggregate inputs, configured concurrency values, direct versus wrapped timeout/DNS/connect/socket/SSL exceptions, null exception messages, cancellation, rate-limit skip flag, result ordering and mixed success/failure batches.
 - **Decision:** this records additional narrow source-confirmed batch API and error-classification deltas; no claim is made that every delta is a product defect. No CI, tests, production source, Gradle, database or UI were changed. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**.
+
+
+## 24.42 Runtime-3.2f.50 follow-up — source-navigation caller evidence for missing host callbacks (2026-11-24)
+
+- **Audit base:** `0eadb6b0f7b5cdc8fc4dd7ea5c5eae32f1995309` on `integration/legado-upstream-runtime`; pinned upstream `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Scope:** this is caller/host-binding evidence for the missing public API names already inventoried in §22.1. It does **not** create a second missing-name list or repeat the overall API gap count.
+
+### Pinned caller evidence
+
+- Pinned upstream `app/src/androidTest/java/io/legado/app/help/source/SourceNavigationUiTest.kt`, lines 81–96, executes `java.openUrl`, `java.startBrowser`, `java.showBrowser`, `java.openVideoPlayer` and `java.startBrowserAwait` from a source JS rule under `SuppressSourceNavigation`; the test asserts navigation is blocked and no UI navigation starts.
+- The same test, lines 98–127, executes `java.openUrl` from a source header and from `@webjs`, alongside `source.openUrl`, and verifies the navigation policy changes the observed number of launched activities. This demonstrates that the `java.*` methods are not merely help-document examples; they participate in source/header/WebView JS execution paths.
+- Pinned `JsExtensions.kt` defines these UI operations with source-navigation suppression and coroutine-context checks. `webView`, `webViewGetSource`, and `webViewGetOverrideUrl` also depend on the source's headers/tag and the BackstageWebView execution path; `startBrowserAwait` and `getVerificationCode` return user-mediated verification results.
+
+### Host binding evidence at the audited HEAD
+
+- `RhinoSourceScriptRuntime.kt`, lines 285–337, constructs `RhinoSafeSourceJavaExtensions` with HTTP, rate-limit, cookie, key-value and rule-reader callbacks; no WebView, browser, verification-code, external-navigation, video-player or refresh-event callback is supplied.
+- The same runtime binds that instance directly as `scope["java"]` (lines 457–458); separate bindings are `cookie`, `source` and `cache` (lines 459–476). The source-login bridge's `source.openUrl` method is a different object/API and cannot stand in for `java.openUrl` or the other `java.*` methods.
+- The compiled-host inventory test `RhinoHostSurfaceInventoryTest` inventories `scope.java` as `RhinoSafeSourceJavaExtensions` and explicitly states that the inventory is not upstream parity approval. The bridge's declaration inventory still has none of the §22.1 browser/navigation/refresh/read-theme method names.
+
+### Classification and closure
+
+1. **Caller reachability is confirmed upstream** for `openUrl`, `startBrowser`, `showBrowser`, `openVideoPlayer`, and `startBrowserAwait` through a pinned Android instrumentation test, including header and `@webjs` contexts.
+2. **Host callback absence is source-confirmed** at the Java bridge construction/binding boundary. Calling these names through the current host `java` binding has no matching implementation. The exact Rhino error and user-visible outcome are not dynamically verified in this audit turn.
+3. **Compatibility impact:** this is a real Stage-0 blocker for source rules that require browser verification or user navigation; it cannot be classified as safely irrelevant solely because Badcat is a different product. Any eventual implementation must use typed host ports, preserve source identity/context/cancellation and the source-navigation suppression policy, and must not transplant Legado UI.
+4. **Required differential closure:** a host instrumentation suite for the same JS contexts (direct rule, source header, `@webjs`), both navigation-policy states, successful/cancelled browser verification, image-code return, and WebView response/body/URL behavior. Also verify refresh callbacks and read/theme config separately against Badcat-owned product state.
+- **Decision:** adds caller evidence to an already recorded API gap; no duplicate API item was created. No CI, tests, production source, Gradle, database or UI were changed. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**.
