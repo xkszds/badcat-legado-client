@@ -353,3 +353,24 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - **Acceptance:** one context-by-context matrix with exact pinned/host path+line evidence; explicit typed Book/BookChapter and callback payload contract; one-to-one required Host Port mapping with production injection status; source/cookie/cache owner and namespace boundaries; explicit exclusions/conditional APIs; remaining dynamic proof and Stage-0/Stage-1 gates. No no-op or same-name Map substitute may be treated as parity.
 - **Exclusions:** no source implementation, no schema freeze/migration, no module-boundary change, no CI or build/test/device execution, no repeated API inventory, no Stage-1 authorization, no complete-compatibility claim.
 - **Next:** read the registered sources at the pinned SHA and current Badcat HEAD, then append a documentation-only result to audit §24.70 and update this task's disposition. Do not start implementation or CI.
+
+
+### 4.14.1 Task 014 result
+
+- **Status:** completed as a documentation-only invocation-context/host-port contract slice.
+- **Result:** audit §24.70 distinguishes BaseSource.evalJS, AnalyzeRule.evalJS, payAction, image-click, callBackJs, legacy login/Login UI v2 and WebView page RPC. It confirms that upstream `java` is caller-specific (BaseSource, AnalyzeRule or SourceLoginJsExtensions), `source/sourceApi` share BaseSource identity in BaseSource.evalJS, and Book/BookChapter are passed as live typed objects by reading/login callbacks. Current Badcat accepts only string bindings, injects a universal java bridge plus distinct source/cookie/cache wrappers, lacks sourceApi and typed Book, and does not pass SourceExecutionContext into SourceScriptRuntime. Host Ports remain declarations without production factory/runtime dispatch.
+- **Disposition:** task 014 complete as static contract evidence; task 012 remains partial; Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**. No production/test/Gradle/workflow/schema/UI change, build/test/device execution or CI.
+- **Next:** task 015 registered below before further architecture/source inspection.
+
+## 4.15 Runtime-3.0 Stage-0 — minimum authentic typed invocation facade and bridge ownership decision
+
+- **Task ID:** `R3-S0-TYPED-INVOCATION-FACADE-DECISION-015`
+- **Status:** registered; not started.
+- **Start HEAD:** `72a8c304501648d040e3fad87442a4f56f5694d9`; branch `integration/legado-upstream-runtime`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** turn audit §24.70's invocation matrix into one minimal, non-contradictory architecture contract for a controlled authentic upstream source runtime plus typed Badcat host adapters. Decide which script objects are authentic runtime core, which are per-context compatibility facades, which are Android host ports, and which Legado product UI surfaces are excluded. This is a Stage-0 architecture decision, not implementation authorization.
+- **Allowed files:** audit and overview documentation only. Read existing pinned/host source and module/build declarations as evidence; no production/test/Gradle/workflow/schema/UI edits.
+- **Dependencies:** audit §§24.55–24.70; overview §§4.6–4.14; exact pinned upstream SHA.
+- **Inspection boundary:** reconcile BaseSource/AnalyzeRule/SourceLoginJsExtensions caller-specific `java` ownership; `source/sourceApi/cookie/cache/config` namespace owners; typed Book/BookChapter facade and ScriptBindings values; SourceExecutionContext/HostPort result and cancellation contracts; production factory wiring; authentic upstream core vs Badcat-only UI/Room ownership. Compare A dedicated runtime module, B controlled upstream core extraction and C hybrid using the same source/caller/ABI/Gradle evidence. Treat unavailable resolved Gradle graph as a blocker, not a guess.
+- **Acceptance:** one minimal target module/ownership map; per-context bridge object matrix; typed invocation and Host Port responsibilities; explicit no-shadow/no-no-op/no-second-database rules; A/B/C decision with buildability status; exact remaining Stage-0 GO/NO-GO artifacts. No source code changes and no claim of buildability without resolved Gradle evidence.
+- **Exclusions:** no implementation, source copy, dependency upgrade, schema freeze/migration, UI work, build/test/device/CI execution, Stage-1 authorization or full-compatibility claim.
+- **Next:** read the existing architecture and build-boundary evidence only, then append a documentation-only result to audit §24.71 and update this task's disposition. Do not modify production code or run CI.
