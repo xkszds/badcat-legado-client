@@ -82,3 +82,11 @@
 - fixture 使用 fake HTTP，不能等同真实书源或 Android 设备端到端；无 Actions 证据处保持待核查/缺证据。
 - 本轮另有 15 组检索、228 个去重命中；后续重点核查 TOC 安全/分页、Cookie 持久化与 Rhino bridge、mainJs/jsLib、PPRule、规则引擎和真实 source smoke。
 - 本批为历史补录，部分提交日期早于第一分册末尾；纳入序号维持唯一追加，真实 commit 时间单独保留。需要继续制作全量时间线校正表。
+
+
+## 2026-11-24 Actions 深度核查补充
+- 新增 8 条独立 Actions 运行记录：原始 CI/run_number #3350–#3357，第三类纳入序号 0231–0238；每条保留 Run ID、commit SHA、Job ID、时间和 workflow URL。
+- 8/8 assemble-debug jobs success；第三类 runtime unit suite、authentic Legado runtime model contract tests、RuleAnalyzer Android instrumentation、CookieManager API 28、WebView provider API 35、APK assemble/DEX RuleAnalyzer class verification steps 均 success。
+- 8 次日志均确认笔仙阁 GBK POST search→detail→TOC AJAX→chapter content 与品书斋 search→detail→1650-chapter TOC→chapter content 两条指定 live smoke PASS。#3350 artifacts 已检查，包含 13.45 MB APK、unit test reports、API28/API35 RuleAnalyzer instrumentation reports、JS ABI/dependency closure 与 live source smoke reports。
+- 同一公共源 sweep 中仍存在站点 403/444/404、TLS/timeout、redirect loop 和空结果；这些被分阶段记录，不归因于引擎功能，也不把单个 PASS 泛化为所有书源兼容。
+- 第二分册目前登记 38 条（0201–0238）；继续大规模关键词与 CI 历史回溯。
