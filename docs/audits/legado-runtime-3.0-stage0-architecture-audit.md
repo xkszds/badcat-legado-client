@@ -3579,3 +3579,17 @@ This is partial runner evidence, not a task-007 acceptance result. Do not classi
 - **Scope:** dependency-report query only; no source/build configuration edits, no assemble/build retry, no tests, and no CI.
 - **Disposition:** Task 007 remains partial. The second assemble exit status is still UNKNOWN; no APK/AAB/DEX was found in the inspected build tree; Stage-0 remains not accepted and Stage-1 remains NO-GO.
 - **Next:** retain the successful compile/runtime classpath reports as bounded evidence. Any further variant/packaging/ABI work must not be inferred from these reports and must remain within the Stage-0 gate.
+
+
+### 24.75 Task 016 — existing exact-SHA compiled output and ABI evidence inventory
+
+- **Task ID:** `R3-S0-COMPILED-OUTPUT-ABI-INVENTORY-016`
+- **Status:** registered; not started.
+- **Start branch HEAD:** `432a5e8cadc5cb250460cb1d980c64636f22447e`; branch `integration/legado-upstream-runtime`.
+- **Evidence checkout:** Badcat `b644bef2bac68401804c5807a1ca79ae53a683a6`; pinned upstream submodule `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** inspect already-existing compiled outputs from the prior exact-SHA runner attempt to determine which module class outputs/JARs actually exist and extract bounded JVM ABI/signature evidence without rebuilding. This is an evidence inventory, not proof of APK packaging or runtime parity.
+- **Allowed repository files:** this audit and `docs/required/03-LEGADO-RUNTIME-OVERVIEW.md) only. Runner inspection is read-only.
+- **Inspection boundary:** inventory timestamps, paths, counts and hashes of existing class/JAR outputs for `:app`, `:legado-runtime`, `:legado-rhino` and `:integration-contract`; use JDK `javap` on representative public runtime-facing classes where compiled artifacts exist; identify missing outputs and whether generated class files can be tied to the exact checkout/build attempt. Do not regenerate classes.
+- **Acceptance:** exact checkout/submodule identity; per-module output inventory; selected compiled signature evidence with artifact path/hash; explicit distinction between Kotlin class output, Java ABI inspection, packaged AAR/APK, DEX/R8 and final build status; limitations and remaining gates recorded.
+- **Exclusions:** no build/assemble/test/CI rerun; no Gradle or production source/configuration changes; no source migration, schema/UI work, module-boundary freeze, Stage-1 authorization or complete-compatibility claim.
+- **Next:** perform read-only runner inventory and append the evidence result here and overview §4.7.4. If existing artifacts are insufficient, record NOT ESTABLISHED rather than rebuilding under this task.
