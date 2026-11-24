@@ -374,3 +374,14 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - **Acceptance:** one minimal target module/ownership map; per-context bridge object matrix; typed invocation and Host Port responsibilities; explicit no-shadow/no-no-op/no-second-database rules; A/B/C decision with buildability status; exact remaining Stage-0 GO/NO-GO artifacts. No source code changes and no claim of buildability without resolved Gradle evidence.
 - **Exclusions:** no implementation, source copy, dependency upgrade, schema freeze/migration, UI work, build/test/device/CI execution, Stage-1 authorization or full-compatibility claim.
 - **Next:** read the existing architecture and build-boundary evidence only, then append a documentation-only result to audit §24.71 and update this task's disposition. Do not modify production code or run CI.
+
+
+### 4.15.1 Task 015 result
+
+- **Status:** completed as a static architecture/ownership decision slice.
+- **Decision:** controlled authentic upstream core extraction (B) remains the formal Runtime-3.0 direction; A is a possible physical module layout for B; C is rejected as the main runtime because shadow models/string-map adapters cannot preserve the upstream execution contract.
+- **Minimum logical ownership:** authentic source models/orchestration/bridge in the runtime core; pinned Rhino/security/wrapper in :legado-rhino; platform-neutral typed contracts in :integration-contract; Badcat Android ports, catalog/progress persistence and product UI in :app; :legado-runtime-poc remains probe-only. This is a logical target, not a proven exact Gradle source graph.
+- **Bridge contract:** per-context BaseSource/AnalyzeRule/SourceLogin java facade; source/sourceApi identity; typed Book/BookChapter; separate cookie/cache owner adapters; separate WebView page RPC; typed Host Port dispatch with caller identity, result/error/cancel/thread/lifecycle semantics.
+- **Evidence:** audit §24.71 reconciles current module build declarations with pinned upstream topology and Stage-0 gates. Exact Gradle resolution remains environment-blocked; compiled ABI/R8/DEX, full caller/data-owner closure, license SBOM and reproducible acceptance bundle remain NOT MET.
+- **Disposition:** task 015 complete as documentation-only; Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete Legado compatibility remains **NOT ESTABLISHED**. No production/test/Gradle/workflow/schema/UI changes; no build/test/device execution or CI.
+- **Next:** do not duplicate task 007 or trigger CI. Resume its exact-SHA Gradle dependency/variant/packaging closure only when a network-enabled runner with Gradle wrapper and Android SDK is available. Until then, do not freeze module boundaries, begin production source migration or authorize Stage-1.
