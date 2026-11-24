@@ -4077,3 +4077,138 @@ Task 022 is complete as a bounded read-only model/storage dependency audit. It d
 Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete Legado compatibility remains **NOT ESTABLISHED**.
 
 **Next:** register a separate typed model/storage Host Port contract task before editing upstream model side effects or choosing a database. It must cover BookSource/SearchBook/Book/BookChapter identities, source check-state revisions, transaction/cascade/cleanup semantics, RuleData large-value behavior and ReadConfig without importing Legado product UI or creating a second data authority.
+
+## 24.82.1 Task 023 result — typed model/storage Host Port contract proposal
+
+**Identity and evidence boundary**
+
+- Task 023 registered at branch HEAD `b43bcba6b9f7735d2d1989d96c1d8b3a327434a9`; registration commit `eddc76878579bdab762a2dc247854801acf9950e`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9`.
+- Read-only runner source snapshot: Badcat `4c9cf8ca41a29fcfacdb17fb3ec1d66d4b451343`; upstream submodule exact pin `330e606c4d57e08adc056ff8ab7a4132c784da9`; runner checkout clean. This is the same code/build snapshot previously compared to the branch; documentation commits do not change source/build inputs.
+- Inspected current Badcat contract declarations and implementations, production construction/callers, pinned model method entry points and current module project dependencies. No source/build/test/schema/database/UI change; no build/test/assemble/device/CI/dependency-resolution run; no system/tool/network change.
+
+**Current Badcat owners and their actual scope**
+
+| Current contract / implementation | Evidence paths | What it owns today | What it does not own / cannot substitute for |
+|---|---|---|---|
+| `BookSourceCatalog` → `FileBookSourceCatalog` | `integration-contract/.../SourceReadingEngine.kt:4-6`; `app/.../FileBookSourceCatalog.kt:28-36,72-108,182-203`; factory `BadcatReadingEngineFactory.kt:48-49,248` | AtomicFile JSON catalog; retains unknown source JSON fields, imports/replaces by host `sourceId`, enabled flag, custom-order sorting and runtime-source invalidation callback. | Returns the simplified `app.badcat.engine.BookSource` projection; no authentic upstream `io.legado...BookSource`, Room DAO, source check-state revision/transaction or SearchBook storage. Import replacement is file-write then cleanup, not one cross-domain transaction. |
+| `ReadingEngine` DTOs | `integration-contract/.../ReadingEngine.kt:9-10,94-174` | Badcat UI-facing source/candidate/detail/chapter/content projection. | `BookSource`, `BookCandidate`, `BookDetail` and `BookChapter` here are not the pinned upstream model types. The reduced DTOs cannot carry full rule models, BaseBook variable behavior, Room metadata or upstream method identity. Keep them at the product facade boundary only. |
+| `ReadingProgressStore` → `BadcatReadingStateRepository` | `integration-contract/.../ReadingProgressStore.kt:11-20`; `app/.../BadcatReadingStateRepository.kt:18,44-60`; callers `SourceBookActivity.kt`, `BookmarkActivity.kt`, `ReadingHistoryActivity.kt`, `FavoritesActivity.kt` | Badcat SharedPreferences owner for last chapter URL, scroll position, bookmarks and reading history, keyed by sourceId/bookUrl/chapterUrl. | It is not a Book/BookChapter repository, has no upstream Book/readConfig object, no `(bookUrl,index)` chapter identity, no DAO transaction/cascade, and no RuleData big-variable API. Keep this existing product progress authority; bridge it without creating a second progress writer. |
+| `ChapterContentCache` → `FileChapterContentCache` | `integration-contract/.../ChapterContentCache.kt:4-50`; `app/.../runtime/FileChapterContentCache.kt:32-174` | Badcat's already-parsed/purified chapter text cache; URL legacy key plus source/book/index fenced key; AtomicFile, process-wide lock, stale-write fence, 4 MiB entry and 64 MiB aggregate limits. | This is chapter content cache, not upstream `RuleBigDataHelp` storage. Do not reuse it for `RuleDataInterface` variables or conflate its cache eviction/version fence with BookChapter persistence. |
+| `LegadoReplaceRuleCatalog` → `FileReplaceRuleCatalog` | `integration-contract/.../CatalogLegadoBookTextReplacement.kt:4-9`; `app/.../FileReplaceRuleCatalog.kt:25-31,83-105` | Badcat private JSON replacement-rule catalog, typed host record, import/merge and enable/disable by rule ID; `CatalogLegadoBookTextReplacement` reads on each chapter and disables timed-out rules. | Not proven identical to upstream replacement DAO scope/query/transaction or BookChapter's upstream title-normalization side effect. It is a candidate adapter, not established parity. |
+| `RuntimeHostPort` | `integration-contract/.../RuntimeHostPort.kt:12-118,229-295` | Platform-neutral source execution identity/cancellation, browser/WebView, verification, UI dispatch and product refresh declarations. | It carries `SourceIdentity`, not authentic BookSource/Book/SearchBook/BookChapter object identity; no typed repository, transaction, ReadConfig or RuleData storage ports. Existing interfaces are declarations and not proof of production injection. |
+
+**Pinned caller/model crossings that the contract must preserve**
+
+- `BookSource` (`upstream/.../data/entities/BookSource.kt:31`) is the source identity/rule-bearing object; its `bookSourceUrl` is the canonical key. The runtime must pass the same authentic object (or an explicitly documented new immutable snapshot with equivalent semantics) through source execution, not repeatedly reconstruct the current DTO from JSON.
+- `BaseSource` (`.../data/entities/BaseSource.kt:65`) is the live source service contract inherited by script execution; it owns variable methods at lines 344–356 and reaches cache, Cookie, config, JS scope, login, HTTP and concurrency services. It must receive typed service ports; it is not a repository entity adapter.
+- `SearchBook` is a source-facing result model used by pinned `WebBook`, `BookList`, `JsSourceBook` and `JsSourceMarshaller` callers (Task 022 §24.81.1). Preserve the authentic object and `origin` source association while projecting into Badcat `BookCandidate`/`BookDetail` for UI. Do not persist SearchBook as a Book by assumption.
+- `Book` (`.../data/entities/Book.kt:39`) owns `bookUrl` identity and typed `readConfig`; its `save()`/`delete()` methods at lines 473–481 directly invoke upstream persistence and active-reader lifecycle behavior. Repository writes and reader detach/progress snapshot must be separated without changing observable delete semantics.
+- `BookChapter` (`.../data/entities/BookChapter.kt:42`) has Room identity `(url,bookUrl)`, unique `(bookUrl,index)` and FK cascade to Book; `update()` at line 93 and `getAbsoluteURL()` at line 176 cross persistence and URL/runtime behavior. Preserve both composite persistence identity and its distinct domain equality/URL matching semantics from §24.81.1.
+- `RuleDataInterface` (`.../model/analyzeRule/RuleDataInterface.kt:3-36`) owns inline-vs-big variable semantics and delegates big values through `putBigVariable/getBigVariable`; BaseBook and BookChapter are live rule-data implementers. Keep the 10,000-character threshold, null deletion, inline fallback and empty-string result in the authentic interface; a host store must only implement the delegated big-value operations.
+- `RuleBigDataHelp` (`.../help/RuleBigDataHelp.kt:111`) additionally cleans invalid book and RSS variable roots. The Badcat port must scope book/chapter variable ownership separately; RSS cleanup is not implicitly part of a book-runtime port.
+
+**Proposed typed contract (design sketch only; not source code or approved API)**
+
+Place model-typed interfaces beside the authentic models in `:legado-runtime` (or a future Android-compatible runtime-contract module). Keep `integration-contract` model-neutral: it is currently Kotlin/JVM, and making it depend on Android/Room/Parcelable upstream models while Runtime depends on it would create a dependency cycle. `:app` depends on `:legado-runtime` and implements the ports; runtime must not depend on `:app`. Existing generic browser/UI ports may remain in `integration-contract` and be injected downward.
+
+```kotlin
+// Types below are pinned upstream types, not app.badcat.engine DTOs.
+interface LegadoRuntimeHost {
+    val sources: BookSourceStore
+    val books: BookStore
+    val chapters: BookChapterStore
+    val ruleVariables: RuleVariableStore
+    val config: RuntimeConfigPort
+    val replacements: ReplacementRulePort
+    val notifications: RuntimeNotificationPort
+}
+
+interface BookSourceStore {
+    suspend fun find(bookSourceUrl: String): BookSource?
+    suspend fun listForExecution(): List<BookSource>
+    suspend fun importOrReplace(values: List<BookSource>): SourceImportReceipt
+    suspend fun update(value: BookSource): SourceWriteReceipt
+    suspend fun delete(bookSourceUrl: String): SourceDeleteReceipt
+    suspend fun beginCheck(bookSourceUrl: String): SourceCheckLease
+    suspend fun completeCheck(lease: SourceCheckLease, outcome: SourceCheckOutcome): SourceCheckReceipt
+}
+
+interface BookStore {
+    suspend fun find(bookUrl: String): Book?
+    suspend fun save(value: Book): BookWriteReceipt
+    suspend fun delete(bookUrl: String, lifecycle: BookDeleteLifecycle): BookDeleteReceipt
+}
+
+interface BookChapterStore {
+    suspend fun find(bookUrl: String, chapterUrl: String): BookChapter?
+    suspend fun findByIndex(bookUrl: String, index: Int): BookChapter?
+    suspend fun list(bookUrl: String): List<BookChapter>
+    suspend fun upsertBatch(bookUrl: String, values: List<BookChapter>): ChapterWriteReceipt
+    suspend fun update(value: BookChapter): ChapterWriteReceipt
+    suspend fun deleteForBook(bookUrl: String): ChapterDeleteReceipt
+}
+
+interface RuleVariableStore {
+    suspend fun getBook(bookUrl: String, key: String): String?
+    suspend fun putBook(bookUrl: String, key: String, value: String?)
+    suspend fun getChapter(bookUrl: String, chapterUrl: String, key: String): String?
+    suspend fun putChapter(bookUrl: String, chapterUrl: String, key: String, value: String?)
+    suspend fun clearInvalidBookValues(existingBookUrls: Set<String>): VariableCleanupReceipt
+}
+
+interface RuntimeConfigPort {
+    suspend fun readBookConfig(bookUrl: String): ReadConfig?
+    suspend fun updateBookConfig(bookUrl: String, value: ReadConfig): ConfigWriteReceipt
+    suspend fun sourceRuntimeConfig(): SourceRuntimeConfig
+}
+
+interface ReplacementRulePort {
+    suspend fun applicable(book: Book?, chapter: BookChapter?, target: ReplacementTarget): List<ReplaceRule>
+    suspend fun disable(ruleId: Long, reason: ReplacementDisableReason): ReplacementWriteReceipt
+}
+
+interface RuntimeNotificationPort {
+    suspend fun notify(event: RuntimeNotification): HostPortResult<Unit>
+}
+```
+
+- `SourceImportReceipt`, `SourceCheckLease/Outcome/Receipt`, write/delete receipts, `BookDeleteLifecycle`, `VariableCleanupReceipt`, `SourceRuntimeConfig`, replacement scope/reason and notification event are deliberately named contract concepts; their exact fields/error taxonomy are **not frozen**. They must be derived from pinned DAO/helper behavior and Badcat owner requirements before implementation.
+- Source operations must preserve upstream URL key/equality, source order/customOrder, full nested rule objects, enabled state, import replace semantics, check-state begin/complete ordering and transactionality. A check lease/revision is a candidate stale-completion guard, not a claim that upstream already uses that exact token.
+- `SearchBook` remains an authentic typed transient result flowing from upstream source callers to the compatibility facade. Conversion to `BookCandidate`/`BookDetail` is a one-way UI projection; no SearchBook-to-Book persistence or name/author merge policy is authorized by this task.
+- Book deletion must coordinate repository deletion with active `ReadBook` detach and Badcat progress snapshot/clear behavior; the exact transaction boundary and failure rollback must be designed. BookChapter batch replacement/update must preserve `(url,bookUrl)`, `(bookUrl,index)`, cascade and ordering semantics. Do not use a host `BookChapter(index,title,url)` DTO as a persistence key.
+- RuleVariableStore implements only big-value backing. It must preserve upstream MD5 path namespaces, `bookUrl.txt` marker, synchronized access, null-delete and invalid-book cleanup behavior. `RuleDataInterface` itself retains inline values and the 10,000-character cutoff. Keep RSS variable storage separate unless an actual BookSource caller proves it is required.
+- `ReadConfig` stored in the authentic `Book` is distinct from global `ReadBookConfig` and Badcat reader presentation preferences. The proposed `RuntimeConfigPort` is a boundary placeholder; exact global config fields and single owner must be enumerated before an implementation task. Do not silently overwrite Badcat Reader settings.
+- ReplacementRulePort must preserve rule order/scope, title-vs-content target, enabled state, regex timeout disable semantics and the upstream BookChapter normalization behavior. Current `FileReplaceRuleCatalog` is a candidate for host-owned rules but its scope/query parity is not yet established.
+- RuntimeNotificationPort must return accepted/unavailable/failed outcomes and must not retain Activity/View. It is separate from repository success; a notification failure must not roll back a successfully committed model write unless pinned caller semantics explicitly require it.
+
+**Single-owner and module responsibility proposal**
+
+| Domain | Candidate sole owner | Runtime role | Badcat UI/product role | Current status |
+|---|---|---|---|---|
+| BookSource JSON and check state | One Badcat source repository adapter, after exact upstream contract mapping | Consume authentic `BookSource`; request import/update/check/delete | Source catalog UI/import/export | Current AtomicFile JSON file is an existing source owner but does not implement full typed upstream contract; check-state parity absent |
+| SearchBook | Runtime invocation lifetime (transient; no durable owner assumed) | Preserve exact upstream result object and caller context | Project to search/detail UI DTO | No authentic typed bridge in current contracts |
+| Book | One Badcat book repository/data owner (not chosen) | Consume authentic `Book`, preserve readConfig and save/delete semantics | Book detail/reader presentation | No Book repository contract found in current inspected app source |
+| BookChapter metadata/TOC | One Badcat chapter repository/data owner (not chosen) | Consume authentic `BookChapter`, preserve composite identity and rule variables | TOC list/selection UI projection | Current DTO and content cache only; no durable chapter repository contract found |
+| Reader progress/bookmarks/history | Existing `BadcatReadingStateRepository` | Read/write through adapter only; do not introduce a second progress owner | Reader, bookmark/history/favorites screens | Existing Badcat SharedPreferences owner; keep its legacy key/JSON format |
+| Parsed chapter content cache | Existing `FileChapterContentCache` | Consume cache service separately from model persistence | Offline content rendering | Existing fenced AtomicFile cache; not RuleBigDataHelp |
+| Rule big variables | New typed host adapter required; storage choice open | RuleDataInterface calls typed backing port | No direct UI ownership | No existing Badcat big-variable store found |
+| Replacement rules | Existing `FileReplaceRuleCatalog` candidate, subject to parity audit | Apply pinned scope/ordering/timeout semantics | Replacement-rule editor/import/export | Existing JSON owner, exact upstream scope/DAO parity not proven |
+| UI/config side effects | Badcat host services; split global source config from Reader presentation config | Call typed ports; no Android Activity references in runtime | Own navigation, notifications and settings | Browser/UI ports exist; model/config/notification wiring incomplete |
+
+**Contract tests and architecture guards required before implementation**
+
+1. Pinned model contract: exact FQCN/class identity, fields/default/null/serialization, BookSource URL key/equality, Book and BookChapter Room key/index/FK metadata, SearchBook source origin, ReadConfig JSON round-trip.
+2. Source repository: import/replace/update/delete ordering, full unknown nested JSON retention, customOrder, check-state begin/complete atomicity, cancellation/failure rollback and concurrent stale completion.
+3. Book/Chapter: same-object save/update/delete semantics, `(bookUrl,index)` and `(url,bookUrl)` collisions, cascade, TOC ordering/batch replace, active-reader delete/progress snapshot, restart recovery.
+4. RuleData: lengths 9,999/10,000/10,001; null removal; inline-to-big and big-to-inline transition; empty fallback; MD5 key namespace; marker; synchronized concurrent access; invalid-book cleanup; RSS isolation.
+5. ReadConfig/config: Book.readConfig and global ReadBookConfig separation; null/default/unknown JSON fields; Badcat reader preference non-overwrite; cancellation and write failure.
+6. Replacement/UI: rule scope/order/target, timeout disables correct ID, failed disable surfaced, UI unavailable/cancelled/failed does not report false success or corrupt persisted data.
+7. Architecture: `:legado-runtime` may depend on model-neutral contracts and `:legado-rhino`, but never `:app`; `:app` implements runtime-owned model-typed ports. `:integration-contract` must not import runtime model types if runtime consumes it. Enforce no cycle and no duplicate FQCN at compile/DEX level.
+
+**Disposition**
+
+Task 023 is complete as a typed contract proposal, not an accepted production API and not an implementation. It identifies current Badcat data owners and gaps, proposes typed model-aware ports and ownership boundaries, and gives a focused validation plan. The exact Book/Chapter persistence owner, minimum database/DAO choice, ReadConfig/global config owner, transaction semantics, port signatures/receipt fields, production wiring and module-cycle/build proof remain NOT ESTABLISHED. No source/build/test/schema/database/UI changes occurred and no build/test/CI was run.
+
+Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete Legado compatibility remains **NOT ESTABLISHED**.
+
+**Next:** register a separate Task 024 architecture decision/implementation-plan review. It must settle one authoritative owner per model/data domain, the runtime-owned location of model-typed ports, the module graph, transaction and deletion semantics, and the minimum storage strategy before any source or Gradle change. Do not implement these sketches under Task 023.
