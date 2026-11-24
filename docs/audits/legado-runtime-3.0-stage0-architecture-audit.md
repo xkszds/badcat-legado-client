@@ -3568,3 +3568,14 @@ This is partial runner evidence, not a task-007 acceptance result. Do not classi
 - No CI, build retry, source change, or Gradle/configuration change was made during recovery. Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; full Legado compatibility remains **NOT ESTABLISHED**.
 
 **Next:** do not repeat the original build solely to replace missing historical exit evidence. Reconcile the exact-SHA resolved variant/packaging and compiled ABI gates as a separately registered Stage-0 evidence task when appropriate; do not start Stage-1 or production migration.
+
+
+### 24.74 Task 007 — exact-SHA debug compile-classpath resolution (2026-11-25)
+
+- **Snapshot:** Badcat checkout `b644bef2bac68401804c5807a1ca79ae53a683a6`; pinned upstream submodule `330e606c4d57e08adc056ff8ab7a4132c784da9`.
+- **Command:** `:app:dependencies --configuration debugCompileClasspath --console=plain`, executed with the runner's explicit Gradle 8.14.4, JDK 21.0.13 and Android SDK environment paths.
+- **Result:** process exit code 0; Gradle reported `BUILD SUCCESSFUL in 19s`. The report identifies `debugCompileClasspath` as the compile classpath for `/debug` and resolves the app's project dependencies and external dependency constraints, including the pinned HtmlUnit CoreJS version.
+- **Combined evidence:** this adds the debug compile classpath to the previously recorded successful `debugRuntimeClasspath` dependency report. These are two resolved configurations, not proof of every build variant, every task input, final APK packaging, R8/DEX, or compiled ABI.
+- **Scope:** dependency-report query only; no source/build configuration edits, no assemble/build retry, no tests, and no CI.
+- **Disposition:** Task 007 remains partial. The second assemble exit status is still UNKNOWN; no APK/AAB/DEX was found in the inspected build tree; Stage-0 remains not accepted and Stage-1 remains NO-GO.
+- **Next:** retain the successful compile/runtime classpath reports as bounded evidence. Any further variant/packaging/ABI work must not be inferred from these reports and must remain within the Stage-0 gate.
