@@ -71,11 +71,11 @@
 ## 5. 当前 CI 位置与分册规则
 
 CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，编号首尾包含且不得跨册重复。历史追溯已确认第三类 Legado Runtime 的 CI 至少从 #5 开始；#1–#4 暂无第三类关联证据。历史分册按以下顺序补建：
-- 历史第 1 册：`docs/required/CI-0001-0199-AUDIT.md`（#0001–#0199；已初筛 147 条候选元数据；#5–#29 的 22 条及本轮 #30–#160 的 102 条，共 124 条已逐 CI 详细审计并回写；剩余候选从 #161 起按编号继续，缺失/无真实 Run 的编号不造记录）。
+- 历史第 1 册：`docs/required/CI-0001-0199-AUDIT.md`（#0001–#0199；151/151 条第三类候选 CI 已逐项核验；#5–#29 的 22 条在主账本，#30–#99 的 53 条、#100–#131 的 24 条、#133–#199 的 52 条分别见 `CI-0030-0099-DETAIL-AUDIT.md`、`CI-0100-0131-DETAIL-AUDIT.md`、`CI-0133-0199-DETAIL-AUDIT.md`；151 次 workflow 均因旧 runner Android SDK Step 4 缺少 `tools` package 失败，Gradle/测试/APK/书源步骤未执行）。
 - 历史第 2 册：`docs/required/CI-0200-0399-AUDIT.md`（#0200–#0399；待建立）。
 - 后续历史册：#0400–#0599、#0600–#0799、#0800–#0999、#1000–#1199、#1200–#1399、#1400–#1599、#1600–#1799、#1800–#1999、#2000–#2199、#2200–#2399、#2400–#2599、#2600–#2799、#2800–#2999、#3000–#3199，均待按第三类边界核查后建立。
-- 现有第 17 册：`docs/required/CI-3200-3399-AUDIT.md`（#3200–#3399，既有分册，继续补齐缺失条目）。
-- 下一册：`docs/required/CI-3400-3599-AUDIT.md`（#3400–#3599，进入该区间后创建）。
+- 第 17 册：`docs/required/CI-3200-3399-AUDIT.md`（#3200–#3399；198/200 实际 run 已逐项登记，165 success / 33 failure；#3398–#3399 无真实 run）。
+- 第 18 册：`docs/required/CI-3400-3599-AUDIT.md`（#3400–#3599；已创建，当前 19 次实际 run，16 success / 3 failure / 0 pending）。
 - 每册只收第三类相关 CI；混合类别要标注交叉边界，纯其他类别 CI 不得计入第三类。历史初筛/元数据登记不等于逐 CI 详细审计完成。
 - 原始分段审计文件暂时保留为证据来源：`CI-3200-3299-AUDIT.md`、`CI-3300-3349-AUDIT.md`。新 200 册已吸收现有逐 CI 详细记录；旧账本保留作来源副本，不删除。
 - 技术实施历史与详细架构审计仍保留在本文件后续的技术历史文档：`03-LEGADO-RUNTIME.md`（旧版长档案，作为历史证据；日常入口以本总进度文件为准）。CI 功能流水以 200 册为准。
@@ -104,7 +104,7 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - #3350–#3357：8/8 已逐项审计并写入 `CI-3350-3357-DETAIL-AUDIT.md`；8 workflow/Job success、每个 Job 53/53 returned steps success；均为 docs-only/bookkeeping CI，真实书源部分仅外部 Python smoke。
 - #3358–#3397：40/40 已逐项审计并写入 `CI-3358-3397-DETAIL-AUDIT.md`；38 success、2 failure。#3361 为 Kotlin Parcelize 插件解析失败；#3389 为 Robolectric 依赖 HTTP 429。#3398–#3399 未发现实际 run，不造记录。
 
-**当前可确认统计：** 本 200 册 #3200–#3399 已记录 198/200 个实际 CI（#3200–#3397）；workflow 汇总为 165 success / 33 failure / 0 pending。#3398–#3399 未发现实际 run。这里的 198 是第三类历史 CI 记录数，不是第三类功能通过数。另有本分册维护过程中发现的 #3400–#3422 区间 14 次实际审计工作流，单列于 `CI-3400-3422-DETAIL-AUDIT.md`，结果 11 success / 3 failure。
+**当前可确认统计：** #3200–#3399 第 17 册记录 198/200 个实际 CI（#3200–#3397），165 success / 33 failure / 0 pending；#3398–#3399 无真实 run。#3400–#3599 第 18 册记录 19 次实际 run（#3400–#3422 的 14 次 + #3463–#3467 的 5 次），16 success / 3 failure / 0 pending。两册 workflow 统计仅表示 CI 终态，不等于产品功能通过数。
 
 ## 7. 关联文件与读取顺序
 
@@ -116,20 +116,19 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 
 ## 8. 下一步唯一顺序
 
-1. #3279–#3299 已补齐：`CI-3279-3299-DETAIL-AUDIT.md`。
-2. #3350–#3357 已补齐：`CI-3350-3357-DETAIL-AUDIT.md`。
-3. #3358–#3397 已补齐：`CI-3358-3397-DETAIL-AUDIT.md`；#3398–#3399 未发现真实 run。
-4. #3400–#3422 的 14 次实际工作流已单独审计：`CI-3400-3422-DETAIL-AUDIT.md`。
-5. 历史第 1 册 `CI-0001-0199-AUDIT.md`：#5–#160 已完成 124 条逐 CI 详细审计（#30–#160 中没有真实 CI 记录的编号不造条目）；下一步从 #161 开始按编号逐条核验 Job/Step/JUnit/artifacts/功能覆盖，直到 #0199，之后进入 #0200–#0399。
-6. 本轮产生的 5 个文档维护 CI #3463–#3467 仍 in_progress，必须等终态后记录，不得提前算 success。
-7. CI 审计与 Runtime 技术任务分开登记；Stage-0 仍 in_progress/not accepted，Stage-1 仍 NO-GO。
+1. 历史第 1 册 #0001–#0199 已完成 151/151 候选审计；下一步建立/核验历史第 2 册 #0200–#0399，先检索真实 run 和第三类边界，不预造编号。
+2. 第 17 册 #3200–#3399 已登记 198/200 实际 run：165 success / 33 failure；#3398–#3399 无真实 run。
+3. 第 18 册 #3400–#3599 已建立，当前 19 次实际 run：16 success / 3 failure；完整状态见 CI-3400-3599-AUDIT.md。
+4. #3463–#3467 已完成终态核验：5/5 success、每个 Job 53/53 steps success；详细证据见 CI-3463-3467-DETAIL-AUDIT.md。
+5. 每次新发现真实第三类 CI，按对应 200 编号册登记 exact SHA、Run/Job/Step、日志/报告/产物及实际功能覆盖；无真实 run 的编号不造记录。
+6. CI 审计与 Runtime 技术任务分开登记；Stage-0 仍 in_progress/not accepted，Stage-1 仍 NO-GO。
 
 ### Runtime-CI-HIST-3200-3299 progress checkpoint — #3226–#3278（2026-11-24）
 
 - **状态：** `in_progress`；本 200 册现有逐 CI 记录 100/200。附录 C 已记录 24 个独立 run：12 success、12 failure、0 pending。
 - **关键功能证据：** #3226–#3238 的标准 47-step workflow、335/335 JUnit、API28 CookieManager/API35 WebView callback、Rhino/JS ABI/依赖闭包/G2d 探针和 Debug APK 均按各自 SHA 通过；外部 Python Bixiange/Pinshuzhai 脚本通过但上传的四源样本仅 1/4。
 - **关键失败与修复进展：** #3239–#3247 证明 contract JAR / Android runtime classpath 通过仍不足以将 RuleAnalyzer 放入 APK DEX；#3249 通过 classesDirs 的 ConfigurableFileCollection 发布修正，在 14 个 DEX 的 classes5.dex 找到 RuleAnalyzer 定义，并通过 API28/35 Class.forName + split smoke。#3249 workflow 仍因 Maven Central HTTP429 失败；Android 四源 E2E 0/4（两源网络超时、一源安全阻断、一源 source_rule_failure）。
-- **下一步：** 按编号从 #3250 开始审计至 #3299；之后补 #3350–#3357。Stage-0 仍 in_progress/not accepted，Stage-1 仍 NO-GO；CI 审计不替代 Runtime 技术验收。
+- **历史快照（已被本页当前状态覆盖）：** 当时 #3250–#3299 仍在审计；现 #3200–#3397 已完成 198/200 实际 run 核查。Stage-0 仍 in_progress/not accepted，Stage-1 仍 NO-GO。
 
 
 ### Runtime-CI-HIST-3200-3299 progress checkpoint — #3250–#3278（2026-11-24）
@@ -138,7 +137,7 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - **真实书源暂停边界：** #3250–#3253 的 API35 四源 Android E2E 为 0/4；#3254–#3261 虽排除了 Android E2E，却仍执行 Python uploaded-corpus 1/4；#3262 才移除上传 corpus step。#3265/#3266 的 host filter 与 self-test 因 DEX gate failure 未执行；#3273 首次真实执行并通过，之后四个暂停 host 均被跳过。本轮没有重新请求四个暂停书源。
 - **DEX 验证纠正：** #3263–#3272 失败是 verifier 对 tab-separated apkanalyzer 输出的 false-negative；10 份 DEX report 均含 RuleAnalyzer，API28/API35 instrumentation 各 5/5。#3273 的 literal class-name matcher 修复 verifier，随后 53/53 steps success。
 - **临时 Scriptable 实验：** #3257–#3259 337/337 测试通过，但 #3260 已撤销 broad normalization 及两项新增测试；不计入当前功能。
-- **下一步：** #3279–#3299 已补齐；继续按编号审计 #3350–#3357。Stage-0 仍 in_progress/not accepted，Stage-1 仍 NO-GO；CI 审计不替代 Runtime 技术验收。
+- **历史快照（已被本页当前状态覆盖）：** 当时 #3279–#3299 已补齐，#3350–#3357 待审计；现 #3200–#3397 已完成 198/200 实际 run 核查。Stage-0 仍 in_progress/not accepted，Stage-1 仍 NO-GO。
 
 
 ### Runtime-CI-HIST-0001-0199 progress checkpoint — #0005–#0160（2026-11-24）
