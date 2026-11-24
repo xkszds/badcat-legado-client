@@ -1888,3 +1888,17 @@ The 17 missing names cannot be treated as 17 equally unused methods. Six have di
 - Keep `ajax` separate from `connect`, `get/head/post` and URL/options suffix parsing in the method matrix.
 
 **Decision:** one additional direct JsExtensions overload and request-timeout gap is confirmed from source. Caller prevalence and dynamic overload selection remain open. This does not authorize a production patch. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**. No CI was run.
+
+
+## 24.40 Runtime-3.2f.50 follow-up — ZIP entry edge semantics (2026-11-24)
+
+- **Audit base:** `e0a4210db552e1a5433178af3e3021779c9cbcea` on `integration/legado-upstream-runtime`; pinned upstream `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Scope:** narrow supplement to the archive-helper comparison already recorded above. No production code or tests changed.
+- **Pinned ZIP behavior:** `getZipByteArrayContent(url, path)` compares each `entry.name` with the requested path without excluding directory entries. If no entry matches, it logs `getZipContent 未发现内容` and returns null (pinned `JsExtensions.kt`, lines 984–1004).
+- **Host behavior:** the host matches only `!entry.isDirectory && entry.name == path`; if no regular-file entry matches, it returns null without the corresponding source log (host `RhinoSafeSourceJavaExtensions.kt`, lines 636–670).
+- **Compatibility classification:**
+  1. **Confirmed entry-selection difference:** a directory entry with an exact matching name can be selected by the pinned loop but is skipped by the host. Caller impact is not yet established.
+  2. **Confirmed diagnostic difference:** pinned no-match handling emits a log message; host no-match handling is silent. This is an observability gap, not proof of a failed source rule.
+  3. Host compressed/expanded archive limits remain a separate intentional safety constraint already recorded in the archive audit; this entry does not recommend removing them.
+- **Required differential closure:** fixtures for a matching regular file, matching directory entry, missing entry and duplicate names; compare bytes/null, exceptions and source-attributed logs. Keep compressed/expanded resource limits independently tested.
+- **Decision:** two narrow ZIP behavior deltas are source-confirmed; caller impact and dynamic Rhino observability remain unverified. No CI, tests, production source, Gradle, database or UI were changed. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**.
