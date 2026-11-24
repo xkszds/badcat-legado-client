@@ -2993,3 +2993,35 @@ This mapping explains why a list of method names alone is not a usable compatibi
 - **Completed in this slice:** base + inherited declaration/name counts; class inheritance; principal runtime implementers/callers; Rss product-action semantics; Web RPC protocol; login callback behavior; method-family service ownership and missing host-port groups.
 - **Still open:** exact per-method external source/caller examples and full caller search across all relevant pinned files; full method-by-method typed port schema and ownership; compiled JVM/Rhino ABI, R8/DEX and dynamic behavior. The pinned source files establish declared behavior but not compiled exposure or runtime parity.
 - **Task 012 remains `in_progress / partial static closure`.** No production/test/Gradle/workflow/schema/UI/CI files changed or run; no CI started.
+
+### 24.62.11 Pinned script binding namespaces beyond java.*
+
+- **Authoritative documentation source:** `app/src/main/assets/web/help/md/jsHelp.md` at the same pinned SHA. It documents the source-facing runtime as more than the `java` object or the 124 class-method names.
+
+| Injected object / contract | Pinned documentation anchors | Required semantics | Badcat mapping status |
+|---|---|---|---|
+| `book` | JsHelp.md:492–531 | Large typed Book projection (URLs, source identity, metadata, progress, user overrides, variable) plus `putVariable/getVariable`; not a search-result `Map<String,String>`. | Current BookCandidate/BookDetail projections are not the complete upstream Book object or its mutable variable contract. |
+| `chapter` | JsHelp.md:533–558 | Typed chapter URL/title/baseUrl/bookUrl/index/resourceUrl/tag/start/end/variable; variable access, update lifecycle, lyric and image URL methods. | Current reduced BookChapter DTO does not expose the full typed object or variable/update/media helper behavior. |
+| `source` / `sourceApi` | JsHelp.md:560–605, 732–741 | Source key; source variables; custom key/value store; login headers and login info read/write/remove; refreshExplore/refreshJSLib. `sourceApi` is an explicit compatibility alias; old scripts declaring `var source = {...}` must continue to resolve the runtime entity through `sourceApi`. | No complete typed source entity/alias binding, login-info/header persistence, source variable owner or shared-jslib refresh contract has been proven in the production host runtime. |
+| `cookie` | JsHelp.md:606–620 | `getCookie`, `getKey`, `setCookie`, `replaceCookie`, `removeCookie`, `setWebCookie`; includes WebView CookieManager synchronization. | No complete CookieStore/CookieManager typed host port or cross-runtime/WebView parity proof. |
+| `cache` | JsHelp.md:622–642 | `put/get/delete`, `putFile/getFile`, `putMemory/getFromMemory/deleteMemory`; TTL in seconds, disk-vs-memory selection and large-file behavior. | Host source KV/file/chapter caches are separate implementations; no unified CacheManager/ACache contract or namespace parity. |
+| `config` and source-function ABI | JsHelp.md:732–780 | Distinguishes config from source entity; lists source type values and BookType bit values; defines search/explore/detail/chapters/content/contentBatch/login/loginUi/loginAction return contracts. | Existing source DTO and orchestration do not yet prove full pinned source object and all function return/object-marshalling semantics. |
+
+Additional script caller/contract evidence in the same pinned guide:
+- Book and chapter are passed as live typed objects into source functions; `getContent(chapter, book, nextChapterUrl)` receives the next URL as nullable at the last chapter (885–898).
+- `getContentBatch(chapters, book)` receives a chapter array; each `java.cacheContent(chapters[i], content)` must preserve chapter identity. URL-string cache-back is allowed only when unique within the batch; duplicate URLs must use the chapter object (900–935). The guide states cached content receives replaceRegex and uncached chapters fall back to `getContent`.
+- Login documentation writes login headers via `source.putLoginHeader`, stores login info via `source.putLoginInfo`, and asks the login UI to call `java.upLoginData` (782–843). This joins the source entity and SourceLoginJsExtensions callback contract; a one-way UI launch callback does not close it.
+
+### 24.62.12 Documentation/source declaration drift
+
+| Surface | Pinned JsHelp.md | Pinned Kotlin declaration | Disposition |
+|---|---|---|---|
+| `java.ajax` timeout | Describes `callTimeout: Int?` (around line 203) | Base JsExtensions overload is `Long?` (lines 176–180); WebJsExtensions wrapper accepts `Int` (183+) | Documented call contract spans different concrete bridge classes; must be verified against Rhino/WebView overload dispatch, not normalized by assumption. |
+| `java.upLoginData` | Describes `Map<String, String?>?` (line 86) | SourceLoginJsExtensions uses `Map<String, Any?>?` (lines 29–36) | Static type/documentation mismatch; preserve actual accepted script payloads and test marshalling. |
+| `java.cacheContent` | Guide shows both chapter object and URL-string usage (377, 391–407, 921–930) | JsExtensions has one `cacheContent(chapter: Any?, content: String)` declaration (149+) | URL string is a value accepted by the Any? parameter under documented uniqueness constraints, not a second Kotlin overload. |
+
+These are source/documentation facts and unresolved bridge-contract questions, not observed dynamic failures. The source guide itself is part of the pinned compatibility evidence and must be versioned with the code pin.
+
+### 24.62.13 Expanded ABI scope and task status
+
+The 124-name count covers the Java extension class surfaces only. The effective script ABI also includes the injected `source/sourceApi`, `cookie`, `cache`, `book`, `chapter`, `config` namespaces and the JavaScript source function protocol. These are independently typed/stateful objects, not aliases for `Map<String,String>` or the existing `SourceRuntime` DTOs. Task 012 therefore remains **in_progress / partial static closure** until each namespace has an explicit owner, typed host port, lifecycle and differential contract. No production/test/Gradle/workflow/schema/UI/CI files changed or run; no CI started; Stage-0 remains not accepted and Stage-1 remains NO-GO.
