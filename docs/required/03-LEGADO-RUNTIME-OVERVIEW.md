@@ -316,7 +316,7 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 ## 4.12 Runtime-3.0 Stage-0 — complete JsExtensions public API and caller closure
 
 - **Task ID:** `R3-S0-JS-EXTENSIONS-API-CALLER-CLOSURE-012`
-- **Status:** registered; static API/caller reconciliation in progress.
+- **Status:** in_progress; pinned declaration/inheritance inventory is mapped, but complete source caller coverage and one-to-one host-port acceptance remain open.
 - **Start HEAD:** `2f5bc46f4a69314b74b174e084d59f18a362f4f4`; branch `integration/legado-upstream-runtime`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
 - **Goal:** close the full pinned script-visible JsExtensions surface, not another isolated method fix: reconcile the existing 104-name inventory against exact declarations, overloads, parameter/return types, nullability/default/suspend semantics, inherited RssJsExtensions/WebJsExtensions methods, real source-runtime callers and the current Badcat typed host-port mapping.
 - **Allowed files:** audit and overview documentation only. Inspect pinned upstream declarations/callers and current Badcat contracts as evidence; do not modify production/test/Gradle/workflow/schema/UI files.

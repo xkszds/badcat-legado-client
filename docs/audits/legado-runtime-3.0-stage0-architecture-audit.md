@@ -2884,3 +2884,74 @@ This does not yet define the final file list or prove buildability. Historical 6
 Register and perform a non-duplicative full public `JsExtensions` API closure: reconcile the existing 104-name inventory with exact pinned declarations, overloads, parameter/return/nullability/default/suspend semantics, inherited `RssJsExtensions` and `WebJsExtensions` surface, actual source-runtime callers, and Badcat typed host-port mapping. Reuse existing per-method findings (§§24.37–24.46) rather than re-recording them; focus on missing API/caller coverage and unresolved inherited surface. Documentation-only until Stage-0 is accepted.
 
 - **Task 011 disposition:** evidence matrix reconciled and recorded. No production/test/Gradle/workflow/database/schema/UI/CI files changed or run. No CI started. No Stage-0 or Stage-1 gate was advanced.
+
+## 24.62 Runtime-3.0 Stage-0 — JsExtensions declaration, inheritance and host-port coverage (2026-11-25)
+
+- **Task:** `R3-S0-JS-EXTENSIONS-API-CALLER-CLOSURE-012`; registered in overview §4.12 at start HEAD `2f5bc46f4a69314b74b174e084d59f18a362f4f4`; registration commit `c65928903cc127adab2cb2f44a08b981d1b8751b`.
+- **Inspection snapshot:** pinned upstream `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`; branch `integration/legado-upstream-runtime`; source/API inventory verified from the exact pinned raw files.
+- **Method:** parsed Kotlin public declarations and overload locations from JsExtensions, JsEncodeUtils, RssJsExtensions, WebJsExtensions, SourceLoginJsExtensions and RegexJsExtensions; inspected the actual pinned implementation/caller anchors and the current Badcat RuntimeHostPort/SourceRuntime declarations. This is static source evidence, not compiled ABI or behavior parity.
+
+### 24.62.1 Exact declaration and inheritance inventory
+
+| Surface | Pinned source / line anchors | Inventory result |
+|---|---|---|
+| `JsExtensions` | `app/src/main/java/io/legado/app/help/JsExtensions.kt:125–1385` | Extends `JsEncodeUtils`; 77 public unique method names and 118 public declarations/overloads in the interface. The 81-name lexical count also includes one top-level helper and three private helpers, which are not public API names. |
+| `JsEncodeUtils` | `app/src/main/java/io/legado/app/help/JsEncodeUtils.kt:19–506` | 27 public unique names / 30 declarations; includes four `createSymmetricCrypto` overloads. Together with the 77 JsExtensions names, this reconciles the historical **104-name** base inventory. |
+| `RssJsExtensions` | `app/src/main/java/io/legado/app/ui/rss/read/RssJsExtensions.kt:45–319` | Implements `JsExtensions`; adds 13 unique inherited names beyond the base inventory: `put`, `get`, `searchBook`, `addBook`, `showPhoto`, `open`, `setContent`, `setBaseUrl`, `setRedirectUrl`, `getStringList`, `getString`, `getElement`, `getElements`. `searchBook` and `getString` each have overloads. |
+| `WebJsExtensions` | `app/src/main/java/io/legado/app/help/webView/WebJsExtensions.kt:21–219` | Extends RssJsExtensions; adds two unique names, `upConfig` and `request`, and overrides navigation context, logging, HTTP and rule helper methods. Its `ajax/connect/get/post/head` signatures/return values are not interchangeable with the base interface overloads. |
+| `SourceLoginJsExtensions` | `app/src/main/java/io/legado/app/ui/login/SourceLoginJsExtensions.kt:21–80` | Extends RssJsExtensions; adds five unique extension methods: `upLoginData`, `reLoginView`, `refreshExplore`, `copyText`, `clearTtsCache`; overrides `showBrowser`. Its nested Callback separately declares `upUiData` and `reUiView` (not methods on the extension object). |
+| `RegexJsExtensions` | `app/src/main/java/io/legado/app/help/RegexJsExtensions.kt:16–49` | Separate conditional rule extension implementation with `log`, `logType`, `t2s`, `s2t`, `get`, `put`; names overlap existing surfaces but semantics/owner differ. Do not merge its variable owner with BaseSource/Rss KV semantics. |
+
+Across the base and inherited class surfaces, the static inventory therefore contains **124 unique public names** (104 base + 13 Rss + 2 Web + 5 login-specific), before counting overloads. This is a source declaration/name count, not a claim that every method is exposed identically through every Rhino/WebView bridge. The upstream JsExtensions file has 48 `@JavascriptInterface` annotation occurrences (§24.57); Rhino's `NativeBaseSource`/`CatchableNativeJavaObject` reflection wrapper makes annotation count alone insufficient to define the Rhino-visible API.
+
+### 24.62.2 Base API groups and overload hotspots
+
+| API group | Public names (source line range) | Notable overload/contract surface |
+|---|---|---|
+| Source/context/batch/events | `getSource`, `getTag`, `getSourceNavigationContext`, `getBatchContext`, `cacheContent`, `refreshBookInfo`, `refreshBookToc`, `refreshContent` (127–165) | Typed BaseSource identity, CoroutineContext, BatchContentContext, chapter object and event semantics; `cacheContent(chapter: Any?, content: String)` is not a string-map operation. |
+| HTTP helpers | `ajax`, `ajaxAll`, `ajaxTestAll`, `connect` (176–260); `get`, `head`, `post` (575–633) | `ajax(Any)`/`ajax(Any, Long?)`; batch Array<String> + skipRateLimit; test timeout + skipRateLimit; connect 1/2/3-argument forms; GET/HEAD/POST each have timeout overloads and return Jsoup `Connection.Response`; header input is `Any?`. |
+| Hidden WebView | `webView`, `webViewGetSource`, `webViewGetOverrideUrl` (279–372) | Each family has cache/delay variants; URL-capture methods return extracted resource/override URL and are not ordinary HTTP fetches. |
+| Browser/navigation/verification | `openVideoPlayer`, `startBrowser`, `startBrowserAwait`, `getVerificationCode`, `openUrl`, `showBrowser` (378–452, 1239–1298) | Browser-await has three overloads including `refetchAfterSuccess` and optional HTML; `showBrowser` has four forms and optional preload/config; preserve result URL/body/refetch, context, wait/cancel and navigation suppression. |
+| Source file/cache/cookie | `importScript`, `cacheFile`, `getCookie`, `downloadFile` (455–554) | Cache TTL overload, cookie namespace/key overload, download from URL vs supplied content+URL; source-relative file and CookieStore behavior. |
+| Encoding/URL/text | `strToBytes`, `bytesToStr`, `base64Decode`, `base64DecodeToByteArray`, `base64Encode`, `hexDecodeToByteArray`, `hexDecodeToString`, `hexEncodeToString`, `timeFormatUTC`, `timeFormat`, `encodeURI`, `htmlFormat`, `t2s`, `s2t`, `toNumChapter`, `toURL`, `getWebViewUA` (655–791, 1167–1185) | Charset/flags/redirect URL/base URL overloads; nullable byte/string returns and exact default encodings matter. |
+| File/archive | `getFile`, `readFile`, `readTxtFile`, `deleteFile`, `unzipFile`, `un7zFile`, `unrarFile`, `unArchiveFile`, `getTxtInFolder`, `getZipStringContent`, `getRarStringContent`, `get7zStringContent`, `getZipByteArrayContent`, `getRarByteArrayContent`, `get7zByteArrayContent` (802–1051) | Local source-relative file access, ZIP/RAR/7z archive decoding, charset overloads and byte-array return semantics. |
+| Font/TTF | `queryBase64TTF`, `queryTTF`, `replaceFont` (1052–1165) | Deprecated compatibility entrypoint; Any?/String/URL/file/bytes input dispatch, cache toggle and typed QueryTTF objects. |
+| Logging/device/concurrency/config | `toast`, `longToast`, `log`, `logType`, `randomUUID`, `androidId`, `singleFlight`, `lock`, `tick`, `getReadBookConfig`, `getReadBookConfigMap`, `getThemeMode`, `getThemeConfig`, `getThemeConfigMap` (1189–1385) | Source-scoped UI/log actions, device identity, lock timeout/default overloads, concurrency key lifecycle, and JSON + Map configuration projections. |
+
+`JsEncodeUtils` adds MD5, symmetric/asymmetric crypto creation, signing, AES/DES/3DES encode/decode, digest and HMAC methods (27 names; declarations at lines 22–506). The returned `SymmetricCrypto`/`AsymmetricCrypto`/`Sign` objects and their callable methods are part of the JS object surface; flattening these to String results is not equivalent.
+
+### 24.62.3 Caller and implementation anchors
+
+- `BaseSource` implements `JsExtensions` (pinned `data/entities/BaseSource.kt`, class declaration around line 65); this is the source identity/session implementation, not just a DTO.
+- `JsSourceEngine` implements `JsExtensions` (`model/jsSource/JsSourceEngine.kt:40`) and builds ScriptBindings at 104–118, including source/sourceApi and SharedJsScope. It is used by the JS-source search/explore/detail/TOC/content/batch chain recorded in §24.59.
+- `AnalyzeRule` implements `JsExtensions` (`model/analyzeRule/AnalyzeRule.kt:68`); it invokes BackstageWebView (187), binds CookieStore/CacheManager (899–900), evaluates JS (896+) and exposes BatchContentContext (948).
+- `AnalyzeUrl` implements `JsExtensions` (`model/analyzeRule/AnalyzeUrl.kt:99`); its request/response path spans 454–587, WebView fallback 497–516, CookieStore/CacheManager interaction 757–786 and URL option handling later in the file.
+- `BackstageWebView` constructs `WebJsExtensions` and attaches it as the Java JS interface (`help/http/BackstageWebView.kt:120–127`); it also directly reloads BookSource through `appDb.bookSourceDao` at line 122, reinforcing the catalog host-port gap already recorded in §24.59.
+- `SourceCallBack` constructs `SourceLoginJsExtensions` at `model/SourceCallBack.kt:91`; its callback methods bridge source login UI state and browser behavior.
+- `RssJsExtensions` is not an unrelated dead parent: WebJsExtensions and SourceLoginJsExtensions inherit it. Its source-visible parsing/state/product-action methods must be mapped, while its Activity/Dialog/Explore/Search/RSS UI implementations must be replaced by Badcat host actions rather than importing Legado product screens.
+
+### 24.62.4 Current Badcat host-port mapping
+
+| API capability | Existing Badcat seam | Current disposition |
+|---|---|---|
+| Source identity/context/cancellation | `SourceIdentity`, `SourceExecutionContext`, `HostPortResult` in `RuntimeHostPort.kt` | Useful typed foundation; not yet bound to authentic BaseSource identity, ScriptBindings, object lifetime and shared-scope invalidation. |
+| HTTP/response | `SourceRequestClient`, `SourceHttpRequest`, `SourceHttpResponse` in `SourceRuntime.kt` | Partial transport seam only; response is not Jsoup `Connection.Response`/StrResponse and does not by declaration prove all overload, header, cookie, response ownership, WebView fallback or sync/blocking semantics. |
+| Hidden WebView | `HiddenWebViewPort` + `HiddenWebViewRequest/Result` | Typed operations exist, but full WebJsExtensions bridge injection, page/cookie/navigation context, cache/capture semantics and release/cancel parity are not proven. |
+| Browser/verification/navigation | `VisibleBrowserPort`, `VerificationCodePort`, `HostUiPort`, typed HostUiAction | Foundation exists; startBrowserAwait/refetch/StrResponse, source verification single-flight, login callback protocol, custom buttons and all inherited UI methods are not mapped one-to-one. |
+| Refresh events | `ProductEventPort`, `ProductRefreshEvent` | Event names exist; upstream EventBus timing/target/current-content behavior and production wiring are not proven. |
+| Rule/parser/context | `LegadoRuleRuntime.evaluate(...): List<Map<String,String>>`; `SourceScriptRuntime.evaluate(... bindings: Map<String,String>): String` | Structurally incompatible with AnalyzeRule/AnalyzeUrl, typed RuleDataInterface/Book/BookChapter/BatchContentContext, Scriptable/Any? values and authentic JsExtensions object returns. |
+| Cookie/cache/files/archive/crypto/TTF/config/concurrency | No complete typed contract set in the inspected production runtime boundary | Missing one-to-one ports for CookieStore/CookieManager, CacheManager/ACache/QueryTTF, source file/archive, crypto object factories, font replacement, read/theme config, source locks and source KV. |
+| RSS/login product actions | `ProductEventPort` and `HostUiPort` are generic action seams | No complete mapping for searchBook/addBook/showPhoto/open, login form/UI-data callbacks, copyText, clearTtsCache or WebJsExtensions request/upConfig RPC. Must map to Badcat UI without importing Legado Activity/Dialog/Reader/RSS screens. |
+
+### 24.62.5 Findings and remaining work
+
+1. The historical 104-name inventory is a **base-interface + encoding-interface** count only. It omits inherited Rss/Web/login-specific surfaces; the static public name inventory across those classes is 124 names. The previous 104-name count is not wrong, but it is not a complete effective source-facing extension inventory.
+2. The method declaration surface is much larger than the unique-name count because of overloads and inherited overrides. Exact source signatures/defaults/nullability are source-inspectable; compiled JVM descriptors, Kotlin `$default`/bridge/suspend methods, R8 retention and Rhino overload resolution remain dynamic/compiler-unverified under the runner blocker.
+3. Existing per-method findings in §§24.37–24.46 remain authoritative for ajax, response, navigation, refresh, cookie/session, cache/jsLib and lifecycle deltas. This task does not duplicate or reclassify those findings.
+4. The current typed host ports cover only selected WebView/browser/verification/UI/event seams and a partial HTTP request DTO. They do not yet form a complete one-to-one adapter for the 124-name class surface, especially inherited Rss actions, source login callbacks, file/archive/crypto/font/config/concurrency and typed JS objects.
+5. **Task 012 disposition:** static declaration/inheritance inventory and principal implementation/caller anchors complete for the inspected classes; complete per-method caller closure, full typed host-port mapping, compiled ABI and differential behavior remain **NOT MET**. No source/test/Gradle/workflow/schema/UI/CI file changed or run. No CI started.
+6. **Stage-0 remains** `in_progress / not accepted`; **Stage-1 remains NO-GO**; complete Legado compatibility remains NOT ESTABLISHED.
+
+### 24.62.6 Next
+
+Continue task 012 by closing method-family caller/host-port mappings for the inherited Rss/Web/login methods and remaining base groups, using exact pinned source callers and the existing host contracts. Prioritize missing behavior-bearing ports (source KV/catalog, Cookie/cache, login, product actions, file/archive/crypto/config, concurrency) over rechecking known isolated method deltas. Do not modify production code or start CI before Stage-0/authorization gates.
