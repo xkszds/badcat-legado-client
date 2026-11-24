@@ -3284,3 +3284,57 @@ These 67 names still require behavior/exception/object-lifecycle comparison. Exa
 - **NOT MET:** behavior-level comparison for the 67 same-shape methods; compiled JVM/Rhino descriptor and overload-resolution proof; inherited Rss/Web/login method crosswalk; returned helper-object ABI; release/R8/WebView exposure; differential execution.
 - **Task 012 remains** in_progress / partial static closure; Stage-0 remains in_progress / not accepted; Stage-1 remains NO-GO.
 - **Next:** reconcile the inherited Rss/Web/login APIs to their actual source/cookie/cache bindings and typed Host Ports, then consolidate the Stage-0 exit evidence matrix. Reuse §§24.37–24.66 and do not repeat completed method investigations or run CI.
+
+
+## 24.68 Runtime-3.0 Stage-0 — inherited Rss/Web/login method-to-host-port closure
+
+- **Task:** continuation of R3-S0-JS-EXTENSIONS-API-CALLER-CLOSURE-012; follows the corrected 123-name class-surface inventory and 87-method base signature crosswalk (§§24.62–24.67).
+- **Snapshot:** Badcat branch HEAD afbef5f706e1da12ee4a8e701727228afd76dde1; upstream pin 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Purpose:** classify the 13 additional inherited method names absent from current script-injected objects against actual Badcat ports. Existing Rss/Web/login behavior descriptions in §24.62.7 and four-object injection evidence in §24.63 are reused.
+
+### 24.68.1 RssJsExtensions methods
+
+| Upstream method | Current Badcat same-name or service seam | Host-port disposition |
+|---|---|---|
+| put(key,value) / get(key) | source object has getVariable/setVariable; java object has put/get for a separate Java key/URL store | **Missing on source object.** Separate Java storage does not satisfy source KV owner, namespace, key lifetime or script object identity. SourceScriptKeyValueStore is a usable storage dependency, but no source.put/get script facade is wired. See §§24.63.2, 24.66.3. |
+| searchBook(...) | SourceSearchService and SourceSearchActivity exist as product flows | **No script action port.** HostUiAction has no SearchBook action; SourceSearchActivity is a separate screen and is not dispatched by the runtime. |
+| addBook(...) | SourceBookActivity/favorites product flow exists | **No script action port.** HostUiAction has no AddBook/add-to-shelf action or result callback. |
+| showPhoto(...) | No matching action in HostUiAction | **Missing.** No typed photo-viewer port or return/cancel contract. |
+| open(...) | HostUiAction.OpenUrl/OpenVideoPlayer and ShowBrowserDialog cover three narrow actions | **Partial typed seams, no dispatcher.** Upstream open dispatches multiple product/login/RSS/URL cases. No source action router maps its full action discriminator/payload/result contract to Badcat pages. |
+| setContent(...) | java.setContent(content) and java.setContent(content,baseUrl) exist (RhinoSafeSourceJavaExtensions.kt:278–294) | **Same-name only.** Host returns String and updates current selector content/base URL; upstream Rss setContent returns an AnalyzeRule object used by chained setBaseUrl/setRedirectUrl/extraction calls. |
+| setBaseUrl(...) | second java.setContent overload can update baseUrl | **Missing as a distinct method.** Side effect on another method does not reproduce the returned AnalyzeRule fluent API. |
+| setRedirectUrl(...) | no corresponding method in RhinoSafeSourceJavaExtensions or HostUiAction | **Missing.** No redirect-URL state/typed AnalyzeRule adapter. |
+| getString/getStringList/getElement/getElements | same names exist on java (RhinoSafeSourceJavaExtensions.kt:214–260) | **Partial selector helpers, different owner/object contract.** Host helpers read current rule content and return String/Array/LegadoSourceElement wrappers; upstream Rss helpers delegate to AnalyzeRule and return typed/nullable extraction objects. Name overlap does not preserve AnalyzeRule identity, mutability or return shape. |
+
+### 24.68.2 WebJsExtensions methods
+
+| Upstream method | Current Badcat seam | Host-port disposition |
+|---|---|---|
+| upConfig(config,callback) | no injected WebJsExtensions object; generic HostUiPort exists only as an interface | **Missing.** No WebView config callback registration, last-config deduplication or callback lifecycle in the injected Rhino objects. |
+| request(funName,jsParam,id) | SourceRequestClient, HiddenWebViewPort, file and crypto helpers exist separately; RhinoSourceRawResponse.request() returns raw request metadata | **Missing RPC dispatcher.** No method routes the named asynchronous Web bridge operations, correlates request IDs, stores results/errors, or calls window.$JSBridgeResult. The raw-response request() accessor is unrelated. |
+
+### 24.68.3 SourceLoginJsExtensions methods
+
+| Upstream method | Current Badcat seam | Host-port disposition |
+|---|---|---|
+| upLoginData(Map<String,Any?>?) | LegadoSourceLoginUiV2Service returns parsed rows/action results to SourceLoginUiV2Activity | **Partial separate flow, missing extension callback.** No injected method accepts the upstream login data map and forwards it to the active login form with matching lifecycle. |
+| reLoginView(...) | SourceLoginUiV2Activity can re-render after its own action dispatch | **Missing extension callback.** Activity-local re-render is not the source object callback or upstream callback ordering/state contract. |
+| refreshExplore(...) | ProductEventPort only declares BOOK_INFO/BOOK_TOC/CURRENT_CONTENT | **Missing event.** No EXPLORE refresh event or script method; the existing enum cannot represent it. |
+| copyText(...) | no CopyText HostUiAction or clipboard port | **Missing.** No source-attributed clipboard action/result contract. |
+| clearTtsCache(...) | no TTS cache port or injected script method | **Missing/conditional owner.** The method is present in the pinned SourceLoginJsExtensions public surface; whether its product-side effect is required for the Badcat source login boundary needs an explicit architecture disposition, not silent omission. |
+| showBrowser(...) override | HostUiAction.ShowBrowserDialog and VisibleBrowserPort are declared | **Typed candidate but not wired.** BadcatReadingEngineFactory does not accept HostUiPort/VisibleBrowserPort/ProductEventPort, and RhinoSourceScriptRuntime does not inject a dispatcher. The existence of these interface declarations does not expose showBrowser to Rhino. |
+
+### 24.68.4 Host-port wiring facts
+
+- HostUiAction currently contains only ShowBrowserDialog, OpenUrl and OpenVideoPlayer (RuntimeHostPort.kt:229–265); ProductRefreshEvent contains only BOOK_INFO, BOOK_TOC and CURRENT_CONTENT (:267–271).
+- HiddenWebViewPort, VisibleBrowserPort, VerificationCodePort, HostUiPort and ProductEventPort are declared in the contract (RuntimeHostPort.kt:273–297), but BadcatReadingEngineFactory constructor accepts Context, SourceRequestClient, SourceScriptRuntime, BookTextReplacement and login store only (BadcatReadingEngineFactory.kt:41–47). The runtime factory creates/injects the current Rhino objects without those ports (:56–104).
+- RhinoSourceScriptRuntime still injects only java/cookie/source/cache (§24.63). The four-object script surface has no WebJsExtensions object, no typed product action dispatcher and no source-login callback dispatcher.
+- SourceLoginUiV2Service is a separate orchestration path: it evaluates loginUi/loginAction and parses JSON rows/action results (LegadoSourceLoginUiV2Service.kt:19–98). It does not instantiate SourceLoginJsExtensions or bind the upstream upLoginData/reLoginView callback object.
+
+### 24.68.5 Disposition
+
+- **Completed:** mapped each of the 13 additional inherited method names to the actual injected host object, same-name Java helper where present, typed HostPort seam where declared, and current missing wiring/owner.
+- **NOT MET:** Rss product action router; fluent AnalyzeRule object bridge; WebJsExtensions RPC/config callback; login extension callbacks; explore refresh event; clipboard/TTS ownership decision; wiring of typed Host Ports into production runtime and Rhino objects.
+- **No dynamic claim:** source inspection only; no tests/build/CI/device execution. No production/test/Gradle/workflow/schema/UI file changed.
+- **Task 012 remains** in_progress / partial static closure; Stage-0 remains in_progress / not accepted; Stage-1 remains NO-GO.
+- **Next:** consolidate the Stage-0 exit evidence matrix from tasks 006–012, with every exit gate marked met/partial/not met/environment-blocked and linked to its unique audit evidence. Do not repeat the API/method audits; no CI.
