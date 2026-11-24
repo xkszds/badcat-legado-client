@@ -99,3 +99,13 @@
 - #3361 因 Kotlin Parcelize Gradle plugin 2.4.20 无法解析而在 contract unit tests 阶段失败，后续步骤跳过；#3389 因 Maven Central HTTP 429 无法下载 Robolectric native runtime dependency，unit suite 在依赖解析阶段失败；#3398/#3399 在 Android SDK platform/build-tools 安装时被取消，后续验收跳过。
 - 公开源 sweep 的 403/444/404/timeout/空结果与上述两条指定书源 E2E 分开统计，不归咎为通用引擎缺陷。
 - 第二分册当前登记至 0280，共 80 条（0201–0280）；下一轮继续 #3400 之后和历史提交/测试线索，并补查原始 CI #3129 及更早。
+
+
+## 2026-11-24 Actions 深查：#3400–#3431
+- 第二分册新增 32 条（纳入序号 0281–0312），对应 Actions run_number #3400–#3431；head commits 均为 docs 类历史回填/索引变更，因此作为仓库快照 CI 证据登记，不宣称这些提交增加了 runtime 功能。
+- 区间统计：11 success、3 failure（#3409、#3410、#3414）、18 cancelled。
+- 11 个成功 run 均核对 53/53 steps success；逐条 job logs 均有笔仙阁与品书斋四阶段 live E2E PASS。
+- #3409 的 SharedPreferencesSourceScriptKeyValueStoreTest 两项失败；#3414 的 SourceLoginSessionTest 多项失败，涉及 source namespace cleanup 与 login/session 迁移、加密、header/cookie 行为，属于真实单元测试回归线索。
+- #3410 API 35 WebView instrumentation 失败，日志见 emulator ADB device offline；需区分 runner 环境故障与功能缺陷。
+- 18 个取消 run 无完整验收结论；连续 push 并发取消/部分 run 未创建 job。
+- 第二分册当前登记至 0312，共 112 条（0201–0312）。
