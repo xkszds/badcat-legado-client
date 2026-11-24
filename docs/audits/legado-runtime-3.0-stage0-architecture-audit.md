@@ -3651,3 +3651,14 @@ Task 016 is completed as a read-only existing-output inventory with bounded JVM 
 - **Acceptance:** verify branch/HEAD/submodule/clean tree before execution; record exact Gradle/JDK/SDK versions and command; capture terminal exit code and complete log; verify APK presence, size and SHA-256 if produced; inspect merged manifest and DEX/R8 outputs where present; verify temporary Maven artifact cleanup and post-build Git status. Report task success/failure independently of Stage-0 acceptance.
 - **Exclusions:** no CI/GitHub Actions; no source, test, Gradle, workflow, schema or UI edits; no dependency upgrades; no Stage-1 authorization or complete-compatibility claim.
 - **Next:** fast-forward the clean runner checkout to the registered exact HEAD, verify the pinned submodule, then perform one logged Debug assemble and record its final result. If prerequisites fail, stop without launching Gradle.
+
+
+### 24.76.1 Task 017 execution checkpoint — Debug assemble still running
+
+- **Tested exact HEAD:** 1855cd77cb01efc13e59e119d3392027906d179e; runner checkout is detached at this immutable commit; upstream submodule 330e606c4d57e08adc056ff8ab7a4132c784da9a; working tree was clean before build.
+- **Toolchain:** JDK 21.0.13.1; Gradle 8.14.4; Android API 36; Build Tools 36.0.0.
+- **Command:** :app:assembleDebug --no-daemon --console=plain; full output redirected to /tmp/r3-task017-assembleDebug.log.
+- **Pinned local Maven input:** temporary JAR copied from the exact upstream submodule path; SHA-256 verified as d720f34285515025e4ccc80a5b92aed42cb26c03a7715ca53583d2c74ae51df7. Shell EXIT trap is configured to remove it and record cleanup.
+- **Observed task progress:** :app:compileDebugKotlin, :app:checkDebugDuplicateClasses, then :app:mergeExtDexDebug were recorded. At the last responsive inspection, Gradle daemon PID 432858 remained CPU-active; Gradle shell PID 432816 had not produced a terminal result marker. No APK had yet appeared.
+- **Remote tracking:** process PID 432816; one process-output request and one read-only diagnostic request are still pending at the remote tool layer. The device heartbeat was last reported Online, but those calls have not returned. Do not launch a duplicate build or infer a result.
+- **Status:** in_progress; final exit code, APK, DEX/R8, manifest package result, and temp-JAR cleanup are pending. No CI or source/configuration changes.
