@@ -95,12 +95,12 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 ## 5.2 历史第 2 册 #0200–#0399 审计检查点（2026-11-24）
 
 - 分册已创建：`docs/required/CI-0200-0399-AUDIT.md`，状态 `in_progress`。
-- #200–#225 二十六条已按七组标准逐项核验并登记；二十六条均为第三类 Legado URL/Rhino 相关 CI，attempt 1，唯一 Run ID/exact SHA 已写入第二册索引。
-- 二十六条共同结论：Job `assemble-debug` 在 Step 4 `Set up Android SDK` 失败，日志 `sdkmanager tools` / `Failed to find package 'tools'`；Step 5–9 skipped；无 Gradle、测试、JUnit、APK、artifact 或真实源 E2E 证据。
+- #200–#231 三十二条已按七组标准逐项核验并登记；三十二条均为第三类 Legado URL/Rhino 相关 CI，attempt 1，唯一 Run ID/exact SHA 已写入第二册索引。
+- 三十二条共同结论：Job `assemble-debug` 在 Step 4 `Set up Android SDK` 失败，日志 `sdkmanager tools` / `Failed to find package 'tools'`；Step 5–9 skipped；无 Gradle、测试、JUnit、APK、artifact 或真实源 E2E 证据。
 - #200 为 unsupported static URL method 错误码测试断言修改；#201 为 URL method/charset 边界文档；#202 为 pinned Rhino integration source audit；#203 为该 audit 的文档状态登记；#204 为 Rhino 依赖和 18-file source inventory；#205 为 inventory 文档状态登记；#206–#209 依次增加 CompiledScript 抽象接口、隔离 ScriptBindings/共享 source global、bindings 构造 helper、ScriptException 错误类型。以上 CI 均未证明所述功能运行通过。
-- 下一条续查：#226；不得重复抓取 #200–#225。后续候选先确认第三类边界，再逐项取 Run/Job/Step/log/diff/artifact 证据。
+- 下一条续查：#232；不得重复抓取 #200–#231。后续候选先确认第三类边界，再逐项取 Run/Job/Step/log/diff/artifact 证据。
 - #210–#225 逐项审计：16/16；新增 Rhino Java wrapper/class shutter/context/script engine/Gradle module/license files；16 条均在 SDK setup Step 4 阻断，不能视为代码编译或功能通过。
-- 本册 #0226–#0399 尚未完成筛查和逐项审计；不得提前标记整册完成。
+- 本册 #0232–#0399 尚未完成筛查和逐项审计；不得提前标记整册完成。
 
 ## 5.1 CI 去重检查点与续查规则（2026-11-24）
 
