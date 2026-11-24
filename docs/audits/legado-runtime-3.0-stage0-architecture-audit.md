@@ -3430,3 +3430,82 @@ The Stage-0 exit matrix is reconciled for tasks 006–012. The next task must cl
 - No production/test/Gradle/workflow/schema/UI files changed; no build/test/device execution or CI was run. This is static contract evidence only.
 - Task 014 is complete as a documentation-only contract slice. Task 012 remains partial static closure; Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; full Legado compatibility remains **NOT ESTABLISHED**.
 - **Next:** register the next Stage-0 slice before further source or implementation work. It must decide the minimum authentic typed invocation facade and per-context bridge ownership from this contract, while retaining the exact Gradle/compiled ABI/provenance blockers. No production implementation or CI until Stage-0 gates permit it.
+
+
+## 24.71 Runtime-3.0 Stage-0 — minimum authentic invocation facade and module ownership decision (2026-11-25)
+
+- **Task:** `R3-S0-TYPED-INVOCATION-FACADE-DECISION-015`; registered in overview §4.15 before this consolidation.
+- **Snapshot:** Badcat `integration/legado-upstream-runtime` start HEAD `04a4ee3861be0e4161941279c93232ef8c4bcdf6`; pinned upstream `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Scope:** architecture-only reconciliation of the context matrix (§24.70), prior core/source closure (§§24.56–24.59), Stage-0 gate status (§24.69) and current/pinned module declarations. No source implementation or build execution.
+
+### 24.71.1 Current module boundary facts
+
+| Module / source set | Current declaration | Current responsibility and limitation |
+|---|---|---|
+| Badcat `:app` | Included in host `settings.gradle.kts`; consumes `:integration-contract`, `:legado-runtime`, `:legado-rhino` (`app/build.gradle.kts`). | Owns Android application, Badcat UI, factory and platform adapters. It does not currently wire an authentic upstream BaseSource/AnalyzeRule/AnalyzeUrl/JsExtensions execution closure. |
+| Badcat `:legado-runtime` | Android library; selected upstream compile source includes only seven nested rule models plus GsonExtensions (`legado-runtime/build.gradle.kts`). | Authentic model slice only. It does not contain BaseSource/BookSource, Book/BookChapter, AnalyzeRule, AnalyzeUrl, JsExtensions or SharedJsScope as a production runtime. |
+| Badcat `:integration-contract` | Kotlin/JVM module; compiles selected upstream JSoup/Regex/RuleAnalyzer/SourceHtmlParser files plus local adapters for JSONPath/XPath (`integration-contract/build.gradle.kts`). | Parser/runtime contracts and selected source slices. The build file explicitly leaves AnalyzeRule's app-coupled lifecycle separate; `SourceScriptRuntime` still takes string-map bindings. |
+| Badcat `:legado-rhino` | Android library; pinned HtmlUnit CoreJS artifact plus copied Rhino Kotlin/Java source (`legado-rhino/build.gradle.kts`). | Rhino engine and security/wrapper foundation, not the full Legado source execution/application service layer. |
+| Badcat `:legado-runtime-poc` | Included as a separate probe module in host settings. | Historical compiler/source-closure probe only; not a production runtime or a substitute for the full dependency closure. |
+| Pinned upstream `:modules:book` | Android library, namespace `me.ag2s`, Java/Kotlin 21; direct dependency only AndroidX annotation in inspected build file. | A small upstream library, not the complete BookSource/AnalyzeRule runtime. |
+| Pinned upstream `:modules:rhino` | Android library, namespace `com.script`, Java/Kotlin 21; HtmlUnit CoreJS, coroutines, OkHttp and AndroidX collection. | Authentic Rhino engine module; still depends on the upstream app-level integration for source models, bridge and execution. |
+| Pinned upstream `:app` | Upstream settings includes `:app`, `:modules:book`, `:modules:rhino`. | Most BaseSource/BookSource/Book/BookChapter, AnalyzeRule/AnalyzeUrl/JsExtensions, SharedJsScope, CookieStore/CacheManager and UI/service callers reside in this broad Android app module. Directly depending on upstream `:app` would import the Legado product app/Reader and its Room/service graph. |
+
+Evidence paths at the snapshot: host `settings.gradle.kts`, `legado-runtime/build.gradle.kts`, `integration-contract/build.gradle.kts`, `legado-rhino/build.gradle.kts`, `app/build.gradle.kts`; upstream `settings.gradle`, `modules/book/build.gradle`, `modules/rhino/build.gradle`. This is declaration-level topology only; resolved variants/artifacts remain blocked by §24.56/§24.60.
+
+### 24.71.2 Minimum authentic runtime ownership contract
+
+The evidence supports the following **logical ownership contract**, not yet an approved exact Gradle source graph:
+
+1. **Authentic source-runtime core owner — Badcat `:legado-runtime` target role.** It must contain or consume the pinned, behavior-bearing source models and execution sequence: BaseSource/BookSource, required Book/BookChapter/RuleData context, AnalyzeRule/AnalyzeUrl, JsExtensions and inherited extension contracts, SharedJsScope/JsSourceEngine, and the source-facing cache/cookie/session contracts that those classes call. A selector dispatcher, string-map script adapter or same-name facade cannot replace these upstream behaviors.
+2. **Rhino engine owner — `:legado-rhino`.** Keep the pinned Rhino/HtmlUnit engine, Java wrapper, class shutter, security rules and script/context lifecycle as one reviewed engine dependency. It must expose the exact callable surface needed by the authentic runtime, with compiled ABI/R8/DEX proof still required.
+3. **Platform-neutral host contracts — `:integration-contract`.** Own typed ports and invocation/result contracts only: source identity/persistence, HTTP request/response, CookieStore adapter, CacheManager adapter, file/archive access, crypto, concurrency/rate-limit, hidden WebView, visible browser/verification, UI actions, login callbacks, product refresh and cancellation/lifecycle. Do not place Android Activity/View types or Legado product screens here.
+4. **Android adapter and product owner — Badcat `:app`.** Own Badcat Activities/Views, source catalog and reader persistence adapters, Android WebView/browser/clipboard/toast/file/network implementations and user-facing product flows. Inject adapters through the typed ports; do not make runtime core depend on Badcat Activities.
+5. **Probe-only owner — `:legado-runtime-poc`.** Remains an isolated diagnostic module. It must not become a parallel production runtime or define duplicate authoritative domain models.
+
+The exact file split between these modules is **not frozen**: the pinned source closure still reaches app-owned Room/cache/cookie/login/WebView/native/generated dependencies, and resolved Gradle variants are unavailable. The ownership contract deliberately does not claim that the current module source sets satisfy it.
+
+### 24.71.3 Per-context bridge facade ownership
+
+| Context | Required facade ownership | Required namespace relationship |
+|---|---|---|
+| BaseSource direct eval | Authentic BaseSource-compatible invocation facade | `java`, `source`, `sourceApi` must preserve the upstream BaseSource owner/identity where bound; cookie/cache adapters must retain their separate upstream singleton semantics. |
+| AnalyzeRule rule evaluation | Authentic AnalyzeRule-compatible facade, not the generic Java bridge | `java` is AnalyzeRule; `source` is BaseSource; typed book/chapter, result, chapters and context locals are passed as typed values. |
+| payAction / image-click / callBackJs | SourceLoginJsExtensions-compatible invocation facade plus callback-specific typed data | `java` is the login/callback facade; `source` remains the source owner; live Book/BookChapter objects and explicit nullable result/src/event values are retained. |
+| Legacy Login UI | Separate legacy login extension callback owner | upLoginData/reLoginView/refreshExplore and showBrowser are typed callback/action contracts; not replaced by Login UI v2 JSON rows. |
+| Login UI v2 | Separate structured Login UI v2 service | JSON state/form/result contract remains distinct; optional Book/BookChapter values must be passed if the caller supplies them. |
+| WebView page bridge | Separate WebJsExtensions-compatible WebView RPC owner | request-id callback and upConfig are bound to a WebView owner; do not inject them indiscriminately into Rhino's normal `java` namespace. |
+
+A safe compatibility facade may replace Android implementation details, but it must not replace typed upstream entities or caller-specific Java facade behavior with a universal `Map<String,String>` or one universal `RhinoSafeSourceJavaExtensions` instance.
+
+### 24.71.4 Typed invocation and port contract
+
+- The invocation envelope must carry `SourceExecutionContext` (source identity, caller kind, operation id, navigation policy and parent Job), explicit call kind, base URL, nullable typed bindings, Book/BookChapter facades and a result/exception contract. `SourceScriptRuntime.evaluate(Map<String,String>)` is insufficient.
+- Caller kinds must distinguish at least ordinary rule evaluation, payAction, image-click, callBackJs, legacy login, Login UI v2 and WebView page RPC. Existing `SourceCallerKind` values are too coarse to preserve these paths.
+- Host Ports must be injected through `BadcatReadingEngineFactory` and `RhinoSourceScriptRuntime`, not merely declared. Each asynchronous action must return accepted/blocked/unavailable/failed/cancelled distinctly, preserve parent coroutine cancellation and never retain an Activity/View in the runtime context.
+- BookSource catalog, Book/BookChapter compatibility facades, reading progress, cookie/session, source variables and file cache each need one authoritative owner. A facade may map to Badcat-owned persistence, but must not create a second Room database or split one domain's writes across independent stores.
+- Legado RSS Reader/WebView/login screens remain excluded as product UI. Their source-visible behaviors are mapped to Badcat-owned ports only where the actual source caller requires them; product-only search/add-book/photo/RSS navigation is not a reason to import Legado Activities.
+
+### 24.71.5 Architecture option decision
+
+| Candidate | Decision | Reason |
+|---|---|---|
+| A — dedicated Android Runtime module with authentic source groups + typed Host Ports | **Viable implementation shape, not independently accepted** | It can isolate source runtime from Badcat UI, but manually selecting a small source subset repeats the current failure mode. It is acceptable only if it contains the full authentic caller/dependency closure and resolves/compiles against exact pinned artifacts. |
+| B — controlled upstream core extraction with typed Badcat host adapters | **Preferred formal direction; buildability NOT PROVEN** | Best preserves upstream types, call order, object identity and runtime semantics while replacing Android/product boundaries with typed ports. It must avoid direct dependency on upstream `:app` and must prove all required Room/cache/cookie/WebView/native/generated edges are adapted without dropping behavior. |
+| C — hybrid selected source files plus local same-name reimplementation | **Rejected as the main runtime architecture** | It creates shadow types, split owners, string-map bridges and silent semantic drift; current host differences in §24.63–24.70 are direct examples. C is permitted only for thin, typed, differentially equivalent platform adapters around authentic upstream behavior. |
+
+**Decision:** B remains the strategic target, with A as a possible physical module layout for implementing B. This is not a module-boundary/buildability GO and does not authorize source migration. C cannot serve as the compatibility engine.
+
+### 24.71.6 Stage-0 gate and disposition
+
+- **Architecture target:** selected directionally (B); exact source graph and module boundaries remain undecided until resolved Gradle/compiler evidence is available.
+- **Typed invocation/port contract:** statically specified in §24.70 and this section; implementation and production wiring NOT MET.
+- **Resolved Gradle/variant/packaging graph:** environment-blocked, NOT MET (§§24.56, 24.60).
+- **Compiled ABI/R8/DEX:** NOT MET (§24.57, §§24.66–24.68).
+- **Full caller/API and data-owner closure:** PARTIAL (§§24.58–24.70).
+- **Provenance/license SBOM and reproducible acceptance bundle:** PARTIAL / NOT MET (§24.57, §24.69).
+- **Dynamic source-runtime parity:** not run; remains downstream of Stage-0 GO.
+
+Task 015 is complete as a static architecture decision slice. Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete Legado compatibility remains **NOT ESTABLISHED**. No production/test/Gradle/workflow/schema/UI files changed; no build/test/device execution or CI was run.
+
+**Next:** Stage-0 cannot authorize implementation until exact-SHA resolved Gradle/variant/packaging and compiled ABI evidence are available from a network-enabled Gradle + Android SDK environment, alongside the remaining provenance/acceptance bundle. Do not trigger CI as a substitute for this runner and do not begin Stage-1 or production source migration.
