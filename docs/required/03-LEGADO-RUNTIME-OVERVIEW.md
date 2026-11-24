@@ -81,6 +81,18 @@
 - **Exclusions:** no production code, tests, Gradle, workflow, database/schema, UI or CI changes/runs; no claim of full model compatibility from raw JSON retention alone.
 - **Result:** §24.50 records the six model field matrix, Gson/converter semantics, rawJson retention boundary, non-string field loss and Review caller gap. Next technical slice: inspect the outer pinned BookSource entity fields/defaults/identity/Room converter lifecycle against host catalog/DTO, without repeating six-rule findings.
  
+## 4.2 Runtime-3.0 Stage-0 technical task registration — outer BookSource entity and persistence contract
+
+- **Task ID:** R3-S0-MODEL-BOOKSOURCE-ENTITY-002
+- **Status:** registered / in_progress (read-only source audit).
+- **Start HEAD:** 5566f49cdbad0be9a38016164e2b0fa897d8d71a; branch `integration/legado-upstream-runtime`; upstream pin `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** inspect the complete pinned upstream BookSource entity outside the six nested rule models: every top-level property/type/default/nullability/identity/index, BaseSource inheritance and methods, Room converters/schema/migrations, import/export normalization, and actual caller/data-owner lifecycle; compare host DTO/codec/catalog/persistence without repeating §24.50 rule-model inventory.
+- **Allowed files:** `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md` and this overview only. Read source/test/Gradle/schema files for evidence, but do not edit them.
+- **Dependencies:** §24.50 six-rule model audit; existing §24.37/§24.45/§24.46 source identity/catalog invalidation findings.
+- **Acceptance:** line-backed full outer-field matrix; identity and uniqueness comparison; Room converter/schema/migration/import/export path; host DTO/rawJson/catalog persistence path; actual production callers and write order; explicit source facts vs static risks vs dynamic unverified; dedup with prior sections.
+- **Exclusions:** no production code, tests, Gradle, workflow, database/schema, UI or CI changes/runs; no approval of Stage-1 and no claim that raw JSON persistence equals upstream entity semantics.
+- **Next action:** inspect pinned BookSource declaration and BaseSource contract, Room entity/converters/migrations and import/export callers; then inspect host catalog persistence and DTO mapping. Record only net-new closure gaps.
+ 
 ## 5. 当前 CI 位置与分册规则
 
 CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，编号首尾包含且不得跨册重复。历史追溯已确认第三类 Legado Runtime 的 CI 至少从 #5 开始；#1–#4 暂无第三类关联证据。历史分册按以下顺序补建：
