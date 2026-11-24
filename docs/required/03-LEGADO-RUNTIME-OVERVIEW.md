@@ -246,15 +246,15 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 ## 4.7 Runtime-3.0 Stage-0 technical task registration — Gradle dependency and packaging closure
 
 - **Task ID:** R3-S0-GRADLE-PACKAGING-CLOSURE-007
-- **Status:** static inventory complete; exact resolved dependency/variant graph blocked pending reproducible Gradle execution environment.
+- **Status:** static inventory complete; exact resolved dependency/variant graph blocked by verified runner constraints (no Gradle distribution/cache, no Android SDK, no outbound GitHub DNS).
 - **Start HEAD:** `b42d38bf20c28a2d191c5809fa70048e190e3bdb`; branch `integration/legado-upstream-runtime`; upstream pin `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
 - **Goal:** establish the exact pinned upstream Gradle runtime/build closure and evaluate whether Runtime-3.0 controlled upstream-core extraction can exclude Legado product UI/Reader without severing source-runtime behavior.
 - **Allowed files:** audit and overview documentation only. Read upstream/Badcat Gradle/settings/catalog/build scripts, manifests, source/resource inventories and prior closure evidence; no source/build/test/workflow/schema/UI edits.
 - **Dependencies:** audit §8–§9, §16, §18, §24.24, §24.55; overview §2.2–§2.4 and §4.6.
 - **Result:** §24.56 records exact module/plugin topology, static source/resource/asset/manifest inventories, direct dependency families, Cronet JAR/native download and ASM transformation, the current Badcat selected-source module boundaries, and historical 658-node / 661-file graph snapshots plus the 211-line narrow-probe failure. No resolved Gradle variant/artifact graph was generated. No CI was started and no Gradle/source/test/workflow/schema/UI file was changed.
-- **Blocker:** GitHub source/tree inspection does not execute Gradle or provide a checked-out pinned working tree; exact resolved configurations, generated outputs, manifest/resource merge and packaging evidence require a reproducible Gradle runner. Do not infer resolved graph from version declarations.
+- **Blocker:** verified in audit §24.60: OpenJDK 21 exists, but Gradle and its wrapper cache are absent; Android SDK/SDK manager/adb are absent; GitHub checkout fails DNS resolution (`Could not resolve host: github.com`). Therefore exact resolved configurations, generated outputs, manifest/resource merge and packaging evidence cannot be produced in this container. This is an environment blocker, not an upstream compiler failure. Do not infer resolved graph from version declarations.
 - **Exclusions:** no CI history/runs; no production/test/Gradle/workflow/database/schema/UI changes; no dependency upgrades; no source import or module-boundary edits; no Stage-1 authorization.
-- **Next:** obtain a reproducible exact-SHA Gradle execution environment and capture dependency/variant reports; then continue reflection/provenance and reproducible acceptance bundle work. Until then dependency closure is NOT MET.
+- **Runner check:** audit §24.60 records OpenJDK 21 present; no Gradle executable/wrapper cache, no Android SDK/sdkmanager/adb/android.jar, and GitHub DNS unavailable. No build or CI was run. Resolved dependency/variant graph, generated outputs, manifest/resource merge and APK/DEX packaging remain NOT MET. **Next:** use a network-enabled exact-SHA Gradle + Android SDK runner; until then dependency closure stays blocked.
 
 ## 4.8 Runtime-3.0 Stage-0 technical task registration — reflection/JVM/Rhino ABI and source provenance inventory
 
