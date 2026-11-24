@@ -3844,3 +3844,35 @@ Task 019 is complete as a bounded, read-only source/dependency/license inventory
 - **Exclusions:** no APK rebuild or modification; no R8/release build; no Stage-1 authorization; no complete ABI or behavior parity claim.
 - **Stop conditions:** APK hash mismatch, missing/corrupt DEX, unavailable existing inspection tools, pinned source mismatch or need for a tool installation/rebuild. Record NOT ESTABLISHED rather than guess.
 - **Current disposition:** registration only; no DEX inspection has started. Task 018 remains successful bounded Debug packaging evidence; Task 019 is complete as a partial provenance/license inventory with SBOM absent and release blockers open. Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; full compatibility remains **NOT ESTABLISHED**.
+
+
+### 24.79.1 Task 020 result — immutable APK DEX class inventory and duplicate-definition finding
+
+**Artifact and tools**
+
+- APK: `app/build/outputs/apk/debug/app-debug.apk`; size 32,073,886 bytes; SHA-256 `c0b5227165944da96db2c592dff3fc0543f82da01cdd72d7cb3121d573ead7d2`. Artifact source Badcat SHA `4c9cf8ca41a29fcfacdb17fb3ec1d66d4b451343`; upstream SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`. Compare to registered branch tip `86fae25009afb2971b21c705ca7a01621c6190d9` shows 14 commits ahead and only the two documentation paths changed; source/build inputs are unchanged.
+- Tools: Android SDK Build Tools 36.0.0 `dexdump`, installed `apkanalyzer`, `baksmali 2.5.2`. No tools installed. `dexdump -c` returned success for all 14 extracted DEX files.
+- DEX entries: `classes.dex` through `classes14.dex` (14 total). The merged `apkanalyzer dex packages --defined-only` report contains 16,531 unique class names. Per-DEX class counts sum to 16,569 because 38 class names occur twice across different DEX files.
+- Package report: 168,207 lines / 17,423,719 bytes; SHA-256 `b792971a4cc6b40f6c13a2e12afc26a09e88605474fe580adabd736b4c22f379`. Class descriptor list: 16,531 lines / 896,444 bytes; SHA-256 `b7c22e70dd65afa363af4ec8a4118428f538431e842285cd9705598d9284ba02`. Per-DEX report SHA-256 `2cd590df155aff699cdb3c5dd4f4cbb54de4d6437f3e01596d282ea2d5916447`. Duplicate-name list: 38 lines / 2,097 bytes; SHA-256 `fcaea3380162290d0b2a960e261798f6f46f321546fa4051bc75e77350f9cb65`.
+- Per-DEX defined class counts: 7,244; 14; 3; 327; 50; 46; 104; 12; 15; 46; 284; 513; 8; 7,903, in order from `classes.dex` through `classes14.dex`. Exact per-file bytes and SHA-256 are recorded in `/tmp/r3-task020/per-dex.txt`.
+
+**Pinned source declarations compared to actual DEX definitions**
+
+- Present: seven upstream rule-model types in `io.legado.app.data.entities.rule`; selected parser/evaluator classes in `io.legado.app.model.analyzeRule` (AnalyzeByJSoup, AnalyzeByRegex, AnalyzeByXPath, AnalyzeByJSonPath, RuleAnalyzer, SourceHtmlParser and the local PinnedLegado/UpstreamLegado adapters); Rhino `com.script.rhino.RhinoScriptEngine` and `LegadoRhinoSandbox`; Badcat `app.badcat.engine.BookSource`, `BookChapter`, `SourceScriptRuntime`, `app.badcat.client.runtime.RhinoSourceScriptRuntime` and `RhinoSafeSourceJavaExtensions`.
+- Absent exact upstream declarations: `io.legado.app.data.entities.BaseSource`, `io.legado.app.data.entities.BookSource`, `io.legado.app.data.entities.BookChapter`, `io.legado.app.model.analyzeRule.AnalyzeRule`, `io.legado.app.model.analyzeRule.AnalyzeUrl`, `io.legado.app.help.JsExtensions`, `io.legado.app.ui.rss.read.RssJsExtensions`, `io.legado.app.help.webView.WebJsExtensions`, `io.legado.app.ui.login.SourceLoginJsExtensions`, `io.legado.app.model.SharedJsScope` and `io.legado.app.model.jsSource.JsSourceEngine`.
+- The present `app.badcat.engine.BookSource` and `BookChapter` are Badcat-owned classes, not upstream `io.legado.app.data.entities.BookSource/BookChapter`. Similarly, parser classes do not substitute for the absent upstream AnalyzeRule/AnalyzeUrl orchestration. This DEX inventory therefore confirms a partial parser/rule-model/Rhino slice, not the full authentic Legado runtime closure.
+
+**Duplicate class definitions**
+
+- 38 names appear exactly twice across DEX files. They are seven rule-model families and eight `GsonExtensionsKt` helper classes. Independent `baksmali list classes` and `dexdump` checks confirm examples: SearchRule/BookListRule and their nested/synthetic classes are defined in both `classes5.dex` and `classes10.dex`; GsonExtensionsKt and its generated helpers are defined in both `classes2.dex` and `classes9.dex`.
+- Source/build cause is directly evidenced: app's default source tree contains copies at `app/src/main/java/io/legado/app/data/entities/rule/` and `app/src/main/java/io/legado/app/utils/GsonExtensions.kt`; `:legado-runtime/build.gradle.kts` separately adds the seven matching upstream model files plus GsonExtensions from `upstream/legado/app/src/main/java`. Both modules produce class outputs for the same fully-qualified names.
+- Representative class-file SHA-256 values differ between app and runtime outputs: SearchRule app `6771c0a50708eeacc8fbb1cda78ed0400af7da45d2c7a664f8c25cb848501688` vs runtime `8c23d7f4d31cf1b49b7408969d82e8c50d77da326dfc2f90b7acef2f400907b1`; BookListRule app `8e515f1e8eed89f4c8e130217867b1dc558d116392b8424fd766cfe143fc7e04` vs runtime `de320569054c6aecb613c81c8de555065f717c2244f43e92a4437f6822ff4ebc`; GsonExtensionsKt app `bcb845e92dec2609fc8120dd73146f8453113c052a645c849fe8a2bfb30877eb` vs runtime `69437278a54d7ef868712332be12d08492cafafdd7c38d3df44c83848fb05013`.
+- For those three representative classes, `javap -p -s` textual public/private descriptor outputs are identical between the two module class directories (zero diff), but this does not make duplicate DEX definitions safe. Their runtime class-loader behavior was not tested. Record as a packaging/source-ownership anomaly requiring resolution, not as a proven crash.
+
+**R8 and acceptance boundary**
+
+- No `mapping.txt`, `seeds.txt` or `usage.txt` exists under `app/build/outputs`. The DEX class names are readable; no full R8 mapping/compiled ABI closure is established.
+- Task 020 is complete as a read-only artifact inventory. It did not rebuild, install or run the APK, change source/build files, run tests or CI, or modify the artifact. The 14 DEX files are structurally readable/checksum-valid, but the missing authentic core declarations and 38 duplicate class definitions prevent treating this APK as a Stage-0 accepted or release artifact.
+- Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; full Legado compatibility remains **NOT ESTABLISHED**.
+
+**Next:** register a separate source-ownership/duplicate-class resolution task before modifying source sets or production code. Reconcile this evidence with the Stage-0 gate matrix; do not infer runtime behavior from DEX class presence.
