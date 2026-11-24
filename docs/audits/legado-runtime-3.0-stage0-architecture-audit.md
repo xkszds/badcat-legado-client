@@ -3876,3 +3876,24 @@ Task 019 is complete as a bounded, read-only source/dependency/license inventory
 - Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; full Legado compatibility remains **NOT ESTABLISHED**.
 
 **Next:** register a separate source-ownership/duplicate-class resolution task before modifying source sets or production code. Reconcile this evidence with the Stage-0 gate matrix; do not infer runtime behavior from DEX class presence.
+
+
+### 24.79.2 Stage-0 gate matrix delta after Tasks 018–020
+
+This is an evidence delta to the earlier matrix in §24.69; it does not rewrite the historical task results.
+
+| Gate | New evidence | Current disposition |
+|---|---|---|
+| Architecture direction | Task 015 retains route B: fixed-SHA authentic Legado core plus typed Badcat Host Ports; Badcat shell preserved | Decision closed; implementation not authorized |
+| Debug build/packaging | Task 018 assemble exit 0; Task 020 verifies 14 DEX, but finds 38 duplicated class definitions and missing upstream runtime core classes | Partial; not accepted |
+| Dependency graph | Task 019 offline `:app:dependencies` reports for Debug compile/runtime both exit 0 | Partial; graph metadata only, not full artifact/variant closure |
+| Authentic runtime source closure | DEX includes selected parser/rule-model/Rhino slice but omits upstream BaseSource, BookSource, BookChapter, AnalyzeRule, AnalyzeUrl, JsExtensions, SharedJsScope and JsSourceEngine | Not met |
+| DEX/compiled ABI | 16,531 unique DEX class names; 38 class names duplicated across DEX; no R8 mapping; only selected class descriptors compared | Partial; not accepted |
+| Caller/data ownership | Static invocation/context maps remain; authentic upstream caller lifecycle and complete typed host-port ownership are not established by the packaged class set | Partial / not met |
+| License/SBOM | Task 019 found partial manual notices, missing APK GPL/HtmlUnit notice files, unverified native libarchive license and no machine-readable SBOM | Not met |
+| Reproducible build | Temporary pinned HtmlUnit JAR staging required for Task 018; clean build/reproducible artifact bundle not established | Not met |
+| Behavioral compatibility | No complete end-to-end source execution or differential parity evidence | Not established |
+
+**Gate decision:** Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete Legado compatibility remains **NOT ESTABLISHED**. The Task 018 successful Gradle terminal status is valid but bounded: the produced APK has duplicate DEX class definitions and lacks core upstream runtime declarations.
+
+**Next mainline blocker:** establish a single canonical owner for the duplicated rule/Gson classes and a reviewed source-closure plan for the absent authentic runtime classes. This matrix update authorizes no source-set, production, Gradle, notice or packaging changes; those require a separately registered and accepted task.
