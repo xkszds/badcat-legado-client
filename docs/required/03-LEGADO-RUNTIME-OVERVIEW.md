@@ -425,3 +425,14 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - **Acceptance:** per-module class/JAR inventory, selected `javap` signature evidence and artifact hashes where available, explicit distinction from AAR/APK/DEX/R8/final build success, and a list of unmet gates.
 - **Exclusions:** no build/assemble/test/CI rerun; no production/Gradle/configuration changes; no Stage-1 or complete-compatibility claim.
 - **Next:** inspect existing artifacts read-only and record the result in audit §24.75 and this section's result entry.
+
+
+### 4.7.4 Task 016 result — existing compiled output and JVM signature inventory
+
+- **Identity:** read-only inspection of Badcat `b644bef2bac68401804c5807a1ca79ae53a683a6` and upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Outputs:** `:app` 314 class files; `:legado-runtime` 29; `:legado-rhino` 67; `:integration-contract` 265. Compile JARs exist for `:legado-runtime`, `:legado-rhino` and `:integration-contract`; no AAR/APK/DEX was found. App has only an R resource JAR, not a packaged app artifact.
+- **Hashes:** runtime classes JAR `9994ba1487a733f4ba6eb0c5bdca572b0d964cab07e8e284e3fe01982e69cabc`; Rhino classes JAR `99b1a8bf65d8b7c3deba359f08f740237185aaf45da81a4376e1fc311b012d24`; integration-contract JAR `6ffcd72123c7f8de01947d1a9cb1f406e08f0c33a2f8c9dbfd4838f5fcdbd17c`.
+- **JVM signatures:** `javap -public` confirmed representative compiled signatures for upstream `SearchRule`, `RhinoScriptEngine` and Badcat `SourceScriptRuntime`. The latter still exposes `evaluate(BookSource, String, Map<String,String>)`, evidence of the narrow string-map facade rather than the full typed upstream invocation contract. Full signatures and hashes are in audit §24.75.1.
+- **Boundary:** class outputs and selected signatures are not equivalent to successful app compile task, AAR/APK packaging, R8/DEX, upstream ABI parity or runtime compatibility. Existing class timestamps correlate with the earlier build attempt, but the missing terminal Gradle status prevents declaring that task successful.
+- **Disposition:** Task 016 complete as a read-only inventory. Task 007 partial; Stage-0 not accepted; Stage-1 NO-GO. No build/test/CI rerun or source/configuration change.
+- **Next:** use the evidence to close the remaining authentic upstream source/dependency and typed host-port gaps; do not start Stage-1 or production migration.
