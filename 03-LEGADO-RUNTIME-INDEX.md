@@ -131,3 +131,14 @@
 - 对历史 Actions runs #1880–#2187 按 head_sha 检索，未找到本批 23 个 commit 的精确 run 映射；全部按证据缺口登记，不宣称通过。
 - 新建第三册：03-LEGADO-CI-0401-0600.md，下一条从 0401 开始。
 - 本轮 15 组关键词搜索得到 323 个第二册未登记候选；与第一册合并去重后仍有 290 个候选提交待逐项审查。候选数不等于有效第三类条目。
+
+
+## 2026-11-24 大规模回溯第七轮：0401–0559
+- 第三分册 `03-LEGADO-CI-0401-0600.md` 新增至 0559，共 159 条，距离封册 0600 还差 41 条。
+- 本轮补齐 11/18 Rhino Java selector bridge、put literal/selector、direct @get、全文 replaceRegex、原生 JS Array、source cache/Cookie mutation/file cache、WebView UA、JSONPath URL placeholder、Nyasama public source smoke、Legado embedded selector dispatch、multi-class selector、公开 source compatibility corpus，以及 11/19–11/20 source closure 架构 gate。
+- 本轮新增并核实了 11/18–11/20 多组 Actions：#1886（392 tests 中 4 failed）、#1899（Rhino extension Kotlin 编译失败）、#2080（Nyasama JSON search fixture 1 failed）、#2205（CssRuleEvaluator.kt:328 Missing return statement）；这些是真实代码/测试缺陷线索，不能归为外部网络故障。
+- #2097/#2101 的 public source smoke step 虽随 job success 结束，但脚本自身分别出现 simple_css / re 未定义，必须记为 probe 部分失败。
+- #2135/#2140/#2187/#2208/#2942/#3441 的两条固定真实书源（笔仙阁、品书斋）四阶段 search→detail→TOC→content 有 PASS；上传 235-source 语料每次抽样只有 1/4 PASS，不能宣传全量书源通过。
+- #2942 source-closure 审计统计 1,186 source files、16/16 seeds、661 reachable files、6,303 import edges；文档明确不是 compiler-complete closure，不能作为 upstream 完整运行时编译通过证明。
+- 最新清单 push 触发的 #3438–#3452 另登记 15 条：1 success（#3441）、13 cancelled、1 in_progress（#3452）。#3452 最后检查仍在运行，结论未定。
+- 当前分册进度：第一册 0001–0200、第二册 0201–0400、第三册 0401–0559；第三册余 41 条，满 200 后创建 `03-LEGADO-CI-0601-0800.md`。
