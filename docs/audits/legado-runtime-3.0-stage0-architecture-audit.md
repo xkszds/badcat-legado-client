@@ -3672,3 +3672,25 @@ Task 016 is completed as a read-only existing-output inventory with bounded JVM 
 - **Original remote calls:** the existing Task 017 start-process call, process-output read, log read, result-marker read, cleanup-marker read and process-list call all reached terminal `Timeout - no response from device` results. This does not establish whether the Gradle process completed, failed, or remains active on the runner.
 - **Disposition:** Task 017 remains **in_progress / result unknown**. Final Gradle exit code, APK/manifest/DEX/R8 outputs, and temporary-JAR cleanup remain unverified. Do not launch a duplicate assemble or kill a process based on these timeouts. Wait for the runner connection to respond, then perform read-only inspection of the existing log, result/cleanup markers, process list and artifact paths.
 - **Scope boundary:** no repository source, build, test, workflow, schema or UI files were changed; no build/test/CI was started.
+
+
+### 24.76.3 Task 017 — runner recovered; bounded packaging evidence (2026-11-25)
+
+**Recovery identity and process state**
+
+- Runner `VM-0-5-ubuntu` became responsive. Task 017 checkout is `/root/stage0-runner/repo-git`, detached at exact Badcat HEAD `1855cd77cb01efc13e59e119d3392027906d179e`; upstream submodule is exactly `330e606c4d57e08adc056ff8ab7a4132c784da9a`; `git status --porcelain=v1` is empty.
+- Original log `/tmp/r3-task017-assembleDebug.log` is 4,597 bytes / 87 lines. Its last recorded task is `:app:mergeExtDexDebug`; it contains no `BUILD SUCCESSFUL`, `BUILD FAILED`, failure block or terminal exit code.
+- Original Gradle CLI/shell PIDs `432816` / `432824` and daemon PID `432858` are no longer present. A separate Gradle 8.14.4 daemon PID `431223` remains, but no assemble CLI process is visible; it is not treated as proof that Task 017 is still running or complete.
+
+**Recovered output and cleanup**
+
+- APK/AAB/DEX and R8 mapping output: none found under the Task 017 checkout's `app/build` tree.
+- Merged manifest intermediates do exist (three `AndroidManifest.xml` files, each 3,774 bytes), and `app/build/outputs/logs/manifest-merger-debug-report.txt` exists (16,229 bytes). These are intermediate manifest evidence only, not proof of final APK packaging.
+- `/tmp/r3-task017-temp-cleanup.result` contains `ABSENT`; the expected temporary HtmlUnit JAR is also absent from the exact checkout. The configured cleanup therefore is verified for the target path.
+- No Task 017 terminal result/exit marker was found in the bounded `/tmp`, `/root` and `/home` search. The log itself remains non-terminal.
+
+**Disposition**
+
+- Task 017 is **partial / terminal result unknown**, not a successful or failed assemble. It reached `:app:mergeExtDexDebug`; manifest merge intermediates exist; no APK/AAB/DEX/R8 output was produced or found; temp-JAR cleanup and clean Git state are verified.
+- Do not retry the build solely to infer the missing historical exit code. Any new packaging attempt requires a separately registered task and explicit decision. No CI, source/configuration change, test run or process termination occurred during recovery.
+- Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; full Legado compatibility remains **NOT ESTABLISHED**.
