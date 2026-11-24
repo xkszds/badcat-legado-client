@@ -396,3 +396,13 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - **Evidence:** audit §24.71 reconciles current module build declarations with pinned upstream topology and Stage-0 gates. Exact Gradle resolution remains environment-blocked; compiled ABI/R8/DEX, full caller/data-owner closure, license SBOM and reproducible acceptance bundle remain NOT MET.
 - **Disposition:** task 015 complete as documentation-only; Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete Legado compatibility remains **NOT ESTABLISHED**. No production/test/Gradle/workflow/schema/UI changes; no build/test/device execution or CI.
 - **Next:** do not duplicate task 007 or trigger CI. Resume its exact-SHA Gradle dependency/variant/packaging closure only when a network-enabled runner with Gradle wrapper and Android SDK is available. Until then, do not freeze module boundaries, begin production source migration or authorize Stage-1.
+
+
+### 4.7.2 Task 007 — recovery of the original assemble process state (2026-11-25)
+
+- **Recovery:** the Ubuntu runner `VM-0-5-ubuntu` became responsive; no build was relaunched.
+- **Identity:** the inspected checkout remains Badcat `b644bef2bac68401804c5807a1ca79ae53a683a6`, with upstream submodule `330e606c4d57e08adc056ff8ab7a4132c784da9`.
+- **Original log:** `/tmp/r3-assembleDebug-with-pinned-jar.log` is 8,034 bytes / 92 lines. Its last Gradle task is `:app:compileDebugKotlin`, followed by Kotlin/Java warnings. There is no `BUILD SUCCESSFUL`, `BUILD FAILED`, failure block, or final exit status. No Gradle assemble/daemon process remained at inspection time.
+- **Artifacts/cleanup:** no APK, AAB or DEX was found under `app/build`; only `app/build/outputs/logs/manifest-merger-debug-report.txt` (16,229 bytes) was present. The temporary local HtmlUnit Maven JAR is ABSENT. Git working tree is clean.
+- **Disposition:** the second assemble result remains UNKNOWN, not success or failure. Temporary-JAR cleanup is verified; final packaging, APK/DEX, R8 and compiled ABI remain NOT ESTABLISHED. No CI, build retry or source/configuration change was made. Stage-0 remains not accepted; Stage-1 remains NO-GO.
+- **Next:** do not rerun merely to replace missing historical exit evidence. Any new exact-SHA packaging/ABI evidence task must be separately registered; no production migration or Stage-1.
