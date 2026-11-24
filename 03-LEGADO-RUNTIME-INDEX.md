@@ -142,3 +142,13 @@
 - #2942 source-closure 审计统计 1,186 source files、16/16 seeds、661 reachable files、6,303 import edges；文档明确不是 compiler-complete closure，不能作为 upstream 完整运行时编译通过证明。
 - 最新清单 push 触发的 #3438–#3452 另登记 15 条：1 success（#3441）、13 cancelled、1 in_progress（#3452）。#3452 最后检查仍在运行，结论未定。
 - 当前分册进度：第一册 0001–0200、第二册 0201–0400、第三册 0401–0559；第三册余 41 条，满 200 后创建 `03-LEGADO-CI-0601-0800.md`。
+
+
+## 2026-11-24 第三册封册与第四册启动：0401–0600
+- 第三册 03-LEGADO-CI-0401-0600.md 已补满 200 条（0401–0600），封册。
+- 本轮历史回溯新增 11/15–11/17 的 Legado tokenizer、selector-only adapter、URL resolver、HTTP query/form encoding、Rhino sandbox、Rhino source isolation、jsLib lexical scope、bounded replacement host、安全访问限制等 41 条（0560–0600）。
+- 早期 #9–#360 的大量 Actions run 均因 setup Android SDK 的 sdkmanager tools package not found 而失败，后续 tests/APK skipped；不得当成功验收。
+- #500/#501 contract test 编译失败（SourceChapterContentServiceTest.kt:115 lambda 签名不匹配）；#507 app compile 因缺少 androidx.annotation.Keep 失败；#519 Rhino security test 9 项中 1 项失败；#520/#521/#522 后续 bounded Rhino tests/build 通过。
+- #517/#520/#521/#522 仅证明 bounded replacement Rhino host 的类访问、ProcessBuilder 实例化阻断、timeout recovery、System dangerous methods 阻断；不等于完整 Legado Java ABI。
+- 新建第四册 03-LEGADO-CI-0601-0800.md，下一条从 0601 开始。
+- 当前分册进度：0001–0200、0201–0400、0401–0600；第四册开始为空册。
