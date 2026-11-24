@@ -3764,3 +3764,22 @@ Task 016 is completed as a read-only existing-output inventory with bounded JVM 
 **Disposition**
 
 Task 018 is complete as a successful exact-SHA Debug packaging evidence task. It establishes that this checkout can produce a signed debug APK with DEX and native-library packaging; it does not establish complete Legado runtime compatibility or Stage-0 acceptance. Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete compatibility remains **NOT ESTABLISHED**.
+
+
+### 24.78 Task 019 — pinned source provenance, license and SBOM closure
+
+**Registration**
+
+- **Task ID:** `R3-S0-LICENSE-SBOM-PROVENANCE-019`.
+- **Status:** registered; not started.
+- **Registration start branch HEAD:** `780fdce7b7a58539aec5f51846a6b2b40d678283`; branch `integration/legado-upstream-runtime`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Execution snapshot:** exact branch HEAD after both Task 019 registration entries are committed. Verify the exact SHA and pinned submodule before any inspection.
+- **Goal:** produce a source/dependency provenance and license evidence inventory for the pinned runtime closure and Badcat snapshot; determine whether the project has a complete, reliable SBOM/notice path for any future distributable APK.
+- **Allowed repository files:** only this audit and `docs/required/03-LEGADO-RUNTIME-OVERVIEW.md`. Read-only inspection of source, build, manifest, native, license and dependency metadata is allowed. Use ephemeral `/tmp` reports/logs only.
+- **Dependencies:** pinned Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`; architecture/ownership decision §24.71; Task 018 APK/DEX evidence §24.77.1.
+- **Inspection plan:** (1) enumerate top-level and relevant nested LICENSE/COPYING/NOTICE and source copyright/provenance markers; (2) trace copied/upstream source and local Maven artifact origin/hash; (3) inspect Gradle plugins, repositories, module declarations and dependency constraints; (4) capture direct/transitive Debug compile/runtime dependency graphs on the exact snapshot using offline bounded Gradle dependency reports; (5) inspect cached POM/module license metadata and project notice/attribution coverage; (6) inventory Task 018 APK native libraries and relevant packaged component evidence; (7) record GPL-3.0 and third-party license obligations/gaps without rendering a legal opinion.
+- **Acceptance:** exact snapshot/branch/submodule identity; line/path-backed source provenance; resolved dependency coordinates and versions per configuration; license source and confidence for each dependency where available; local/native artifact hashes and origins; NOTICE/attribution inventory; explicit missing/ambiguous license list; machine-readable SBOM status (complete/partial/absent) and reason; release-blocking questions separated from confirmed facts.
+- **Execution boundary:** read-only only. Gradle built-in `dependencies` reports may run with `--offline`, `--no-daemon` and one worker; do not run assemble/build/test/CI or install tools/dependencies. If offline resolution is incomplete, record the exact unresolved nodes and stop; do not enable network or modify configuration.
+- **Exclusions:** no source/test/Gradle/workflow/schema/UI edits; no dependency changes; no new license/SBOM plugin or tooling install; no CI/Actions; no release build; no legal advice or unsupported license-compliance claim; no Stage-1.
+- **Stop conditions:** wrong snapshot/upstream pin, dirty tree, missing provenance inputs, offline dependency resolution failure, or any need for persistent environment/configuration changes. Stop rather than guess.
+- **Current disposition:** registration only; no Task 019 inspection or Gradle report has started. Task 018 remains complete as bounded incremental Debug packaging evidence only; Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete compatibility remains **NOT ESTABLISHED**.
