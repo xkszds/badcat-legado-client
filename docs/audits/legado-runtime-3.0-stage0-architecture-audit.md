@@ -3509,3 +3509,36 @@ A safe compatibility facade may replace Android implementation details, but it m
 Task 015 is complete as a static architecture decision slice. Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete Legado compatibility remains **NOT ESTABLISHED**. No production/test/Gradle/workflow/schema/UI files changed; no build/test/device execution or CI was run.
 
 **Next:** Stage-0 cannot authorize implementation until exact-SHA resolved Gradle/variant/packaging and compiled ABI evidence are available from a network-enabled Gradle + Android SDK environment, alongside the remaining provenance/acceptance bundle. Do not trigger CI as a substitute for this runner and do not begin Stage-1 or production source migration.
+
+
+### 24.72 Task 007 — exact-SHA runner recovery and partial Gradle/compile evidence (2026-11-25)
+
+**Scope and identity**
+
+- Task: `R3-S0-GRADLE-PACKAGING-CLOSURE-007`; documentation-only evidence update.
+- Tested Badcat checkout: branch `integration/legado-upstream-runtime`, exact HEAD `b644bef2bac68401804c5807a1ca79ae53a683a6`.
+- Pinned upstream submodule: `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- Runner: Ubuntu `VM-0-5-ubuntu`; JDK 21.0.13; Gradle 8.14.4; Android SDK API 36; Build Tools 36.0.0. SDK licenses were accepted under explicit user authorization.
+
+**Observed Gradle evidence**
+
+- `gradle help`: completed successfully.
+- `gradle projects`: completed successfully; five Gradle projects were reported.
+- `:app:dependencies --configuration debugRuntimeClasspath`: completed successfully for the exact checkout. This is actual dependency resolution evidence for that configuration, not proof of every variant/configuration or final packaging closure.
+- First `:app:assembleDebug` attempt encountered a missing local Maven artifact: `org.htmlunit:htmlunit-core-js:5.3.0-legado.4`.
+- The corresponding JAR in the pinned upstream submodule was checked against the upstream `SOURCE.md` SHA-256: `d720f34285515025e4ccc80a5b92aed42cb26c03a7715ca53583d2c74ae51df7`. A temporary copy was used for a second assemble attempt; the shell command configured cleanup on process exit.
+- Output from the second attempt showed `:legado-rhino:compileDebugKotlin`, `:legado-runtime:compileDebugKotlin`, and then `:app:compileDebugKotlin` entered. This establishes progress through those task boundaries only.
+
+**Pending / not established**
+
+- The remote output retrieval timed out before the second assemble's final process status could be obtained. Its final exit code is UNKNOWN.
+- Completion of `:app:compileDebugKotlin`, successful APK assembly, merged manifest/resource packaging, APK hash, DEX contents, R8 result, and compiled ABI are NOT ESTABLISHED.
+- Temporary local Maven JAR cleanup is NOT VERIFIED.
+- Other build variants and runtime/test configurations are NOT ESTABLISHED.
+- Full caller/API and data-owner closure remains PARTIAL; license SBOM and reproducible acceptance bundle remain NOT MET; dynamic source-runtime parity was not run.
+
+**Disposition**
+
+This is partial runner evidence, not a task-007 acceptance result. Do not classify the assemble attempt as success or failure without the final process/log evidence. Do not infer complete Gradle/packaging closure from one resolved configuration or the observed Kotlin task progress. No CI was triggered and no production/test/Gradle/workflow/schema/UI source was modified. Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete Legado compatibility remains **NOT ESTABLISHED**.
+
+**Next:** recover the existing process/log state without launching a duplicate build; verify temporary JAR cleanup and any APK/manifest/DEX outputs; finish the exact variant/packaging and compiled ABI evidence; then reconcile the remaining Stage-0 provenance and acceptance gates. No production migration or module-boundary freeze is authorized.
