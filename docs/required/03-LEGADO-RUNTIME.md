@@ -5667,3 +5667,11 @@ Each row binds one run to its own immutable commit SHA and its single `assemble-
 - **Evidence boundary:** source declaration comparison only; no tests run, no upstream/host compiled ABI or Kotlin metadata comparison, and no application code changed. Audit blob SHA after append: `095e0ab90e36f9164a32684feff1b9079853c773`.
 - **Acceptance:** §26.13 and Stage-0 remain **in_progress/not accepted**; Stage-1 remains **NO-GO**.
 - **Next ordered action:** continue the direct `JsExtensions` method-by-method signature/return/nullability and annotation/caller-context matrix. Keep generated JVM ABI and behavioral differential testing as separate gates.
+
+
+### 26.24 Correction — cacheContent return type vs batch lifecycle (2026-11-24)
+
+- **Correction:** §26.21's wording that upstream `cacheContent` returns Unit/undefined was wrong. Pinned `JsExtensions.cacheContent(Any?, String): Boolean` returns the result of `BatchContentContext.saveContent`; host `cacheContent(Any?, String): Boolean` has the same declared return type.
+- **Real blocker:** host `getBatchContext()` always returns null and host `cacheContent` always throws, so valid-batch save behavior, lifecycle and Boolean success/failure semantics are not implemented. This is a behavior/context gap, not a return descriptor gap. See architecture-audit §24.34.
+- **No code/tests changed or run.** §26.13 remains in_progress; Stage-0 not accepted; Stage-1 NO-GO. Use this correction in future signature matrices.
+- Audit blob SHA after correction: `bc581dd4f3ac481bbe3a69c62cefffc2ac8f143b`.
