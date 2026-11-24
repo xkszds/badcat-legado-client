@@ -109,3 +109,10 @@
 - #3410 API 35 WebView instrumentation 失败，日志见 emulator ADB device offline；需区分 runner 环境故障与功能缺陷。
 - 18 个取消 run 无完整验收结论；连续 push 并发取消/部分 run 未创建 job。
 - 第二分册当前登记至 0312，共 112 条（0201–0312）。
+
+
+## 2026-11-24 大规模历史代码回溯补录：0313–0373
+- 新增 61 条，第二分册登记至 0373，共 173 条，剩余 27 条。
+- 覆盖章节同章多页正文、URL cycle/redirect/fragment 安全、per-source durable Cookie、章节缓存 freshness/offline fallback、Login UI v2/mainJs、source login session helpers、java.getCookie、PPRule protobuf/video/comic 子集、Kuwo/Bixiange live smoke 脚本。
+- PPRule 是 Badcat 自有媒体规则邻接能力，单独标注，不与 Legado RuleAnalyzer 完整兼容混为一谈。
+- 测试源码和文档不当作测试通过；live smoke 脚本需与 Actions head_sha/run/job/log 做一一映射后才能标记通过。
