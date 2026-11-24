@@ -90,3 +90,12 @@
 - 8 次日志均确认笔仙阁 GBK POST search→detail→TOC AJAX→chapter content 与品书斋 search→detail→1650-chapter TOC→chapter content 两条指定 live smoke PASS。#3350 artifacts 已检查，包含 13.45 MB APK、unit test reports、API28/API35 RuleAnalyzer instrumentation reports、JS ABI/dependency closure 与 live source smoke reports。
 - 同一公共源 sweep 中仍存在站点 403/444/404、TLS/timeout、redirect loop 和空结果；这些被分阶段记录，不归因于引擎功能，也不把单个 PASS 泛化为所有书源兼容。
 - 第二分册目前登记 38 条（0201–0238）；继续大规模关键词与 CI 历史回溯。
+
+
+## 2026-11-24 大规模 Actions 区间复核：#3358–#3399
+- 第二分册新增 42 条独立 CI 记录（纳入序号 0239–0280），对应 Actions run_number #3358–#3399。
+- 区间结论：38 success、2 failure（#3361、#3389）、2 cancelled（#3398、#3399）。
+- 38 次成功 run 均逐条核对 assemble-debug Job 的 53/53 step summaries 为 success；38 份 job logs 均逐条确认笔仙阁 GBK POST search→detail→TOC AJAX→content 与品书斋 search→detail→TOC→content 两条指定 live smoke PASS。
+- #3361 因 Kotlin Parcelize Gradle plugin 2.4.20 无法解析而在 contract unit tests 阶段失败，后续步骤跳过；#3389 因 Maven Central HTTP 429 无法下载 Robolectric native runtime dependency，unit suite 在依赖解析阶段失败；#3398/#3399 在 Android SDK platform/build-tools 安装时被取消，后续验收跳过。
+- 公开源 sweep 的 403/444/404/timeout/空结果与上述两条指定书源 E2E 分开统计，不归咎为通用引擎缺陷。
+- 第二分册当前登记至 0280，共 80 条（0201–0280）；下一轮继续 #3400 之后和历史提交/测试线索，并补查原始 CI #3129 及更早。
