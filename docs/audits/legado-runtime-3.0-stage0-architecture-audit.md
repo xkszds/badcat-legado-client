@@ -3119,3 +3119,45 @@ MainJsSourceGuard only allows a nonblank mainJs when a generic script runtime is
 4. **Evidence type:** static source/caller evidence only. No test, Gradle build, CI or device execution was performed; no dynamic failure claim is made.
 5. **Task 012 remains** in_progress / partial static closure; Stage-0 remains in_progress / not accepted; Stage-1 remains NO-GO.
 6. **Next:** map the JS-source return marshalling and source-type routing gates (isJsSource, config/source type and import normalization), including missing/malformed/empty result behavior and host BookCandidate/BookDetail/BookChapter conversion. Reuse §24.64 and §24.50–§24.52; do not re-audit method declarations.
+
+
+## 24.65 Runtime-3.0 Stage-0 — JS-source return marshalling, source-mode routing and host DTO projection
+
+- **Task:** continuation of R3-S0-JS-EXTENSIONS-API-CALLER-CLOSURE-012 (overview §4.12), following §24.64.
+- **Pinned sources:** JsSourceMarshaller.kt, BookSource.kt, JsSourceBook.kt, WebBook.kt and JsSourceMarshallerTest.kt at LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Host sources:** LegadoBookSourceCodec, ReadingEngine DTOs, SourceReadingEngine, search/detail/TOC/content services and parsers at branch HEAD 8205c90013628977d37915a63a96a9f55918dd02.
+- **Boundary:** this slice maps JS-source return conversion and mode selection only; it does not repeat the complete Book/BookChapter persistence audit in §§24.51–24.52 or six rule-model audit in §24.50.
+
+### 24.65.1 Upstream JS-source mode selection
+
+- Pinned BookSource.isJsSource() is defined solely as nonblank mainJs (BookSource.kt:239); it is not inferred from bookSourceType. WebBook branches to JsSourceBook for search/explore/detail/content/batch when this predicate is true (WebBook.kt:53–75, :131–160, :202–209, :395–425, :510–528).
+- bookSourceType and returned Book.type are separate domains. JsHelp.md:761–763 states source type values 0–4 differ from BookType bit flags; JsSourceMarshaller validates BookType values against the known mask and falls back to source.getBookType() when search result type is absent/invalid (JsSourceMarshaller.kt:24–38).
+- The host codec preserves mainJs and bookSourceType separately and projects both into ReadingEngine.BookSource (LegadoBookSourceCodec.kt:269–303; ReadingEngine.kt:94–134). The inspected SourceReadingEngine/services do not implement an isJsSource branch. MainJsSourceGuard only checks whether a generic script runtime exists; it does not select JsSourceEngine or a function-dispatch pipeline (§24.64).
+- Consequently, preserving mainJs/rawJson in the import DTO is not proof that a source is executed in JS-source mode. The current host search URL resolver still requires searchUrl (BookSourceSearchUrlResolver.kt:27–34), whereas upstream JS-source search invokes search(key,page) directly and does not require searchUrl as its execution entrypoint.
+
+### 24.65.2 Pinned result marshalling contracts
+
+| Return path | Pinned marshalling behavior | Host result model/path | Current parity |
+|---|---|---|---|
+| search/explore array | Blank/null result yields empty list; non-array JSON throws; non-object/malformed rows are skipped; rows missing name/bookUrl are skipped; origin/originName/originOrder are overwritten from source; type must be a valid BookType bitmask or falls back to source type (JsSourceMarshaller.kt:24–59). | CssSearchResultsParser extracts rule fields into BookCandidate(name, author, bookUrl, coverUrl, latestChapter, intro, status); it does not receive JS function JSON or project origin/type/custom order (CssSearchResultsParser.kt:330–362; ReadingEngine.kt:136–146). | Not the same function-result marshaller or complete SearchBook projection. Empty/invalid data handling differs by parser path. |
+| getBookInfo object | Null/blank means no override; non-object JSON throws; only allowed keys are merged; name/author obey canReName; null values are ignored; variable accepts object or JSON string and replaces the variable map; type validates BookType; downloadUrls must be string array, filters blank/javascript entries, resolves relative to bookUrl and deduplicates (JsSourceMarshaller.kt:62–133). | CssBookInfoParser extracts name/author/intro/coverUrl/lastChapter/tocUrl/bookStatus and returns BookDetail (CssBookInfoParser.kt:140–184; ReadingEngine.kt:148–159). | No JS getBookInfo result merge, no mutable Book identity, no downloadUrls/variable/type projection or canReName semantics in this service DTO. |
+| getChapters array | Blank/null yields empty list; non-array JSON throws; malformed/non-object rows and missing title/url are skipped; volume row URL/title special case is preserved; relative URLs resolve against book.tocUrl; each chapter gets bookUrl, baseUrl and sequential index (JsSourceMarshaller.kt:135–160). | CssTocParser returns BookChapter DTOs; SourceTocService deduplicates by URL and assigns indexes (SourceTocService.kt:54–86; ReadingEngine.kt:161–173). | Some URL/index basics overlap, but this is declarative TOC parsing and host DTO retains only index/title/url/isVip/isPay/tag/baseUrl. Full upstream BookChapter fields/identity remain not mapped (§24.52). |
+| getContent string | JS-source function result is normalized to text; non-volume blank content throws ContentEmptyException; volume rows can return empty without parsing (JsSourceBook.kt:112–140). | CssChapterContentParser rejects empty content with NOT_FOUND; SourceChapterContentService handles multi-page pagination, replacement and chapter cache (SourceChapterContentService.kt:51–167). | Not the same function contract or error type; host's page-fetch/field-parse pipeline is not getContent(chapter,book,nextChapterUrl). |
+| getContentBatch | Function absence or failed batch returns all chapters for single-chapter fallback; each successful cacheContent immediately saves chapter content; the returned missing set controls fallback (JsSourceBook.kt:143–180; JsHelp.md:900–933). | Host parser rejects contentBatch; Java bridge batch context is null and cacheContent throws (§24.64.2). | Not implemented in the source runtime path. |
+
+### 24.65.3 Mode and data projection gaps
+
+1. **No source-mode router:** upstream selects JS-source behavior by mainJs presence and calls JsSourceBook; current host preserves mainJs but its SourceReadingEngine calls URL-first services and parsers. MainJsSourceGuard is a precondition check only, not a dispatcher.
+2. **No JS-source marshaller:** upstream uses JsSourceMarshaller for SearchBook/Book/BookChapter semantics. Current host has no equivalent marshaller on this path; it returns reduced BookCandidate/BookDetail/BookChapter DTOs from rule fields.
+3. **Source type vs book type:** host BookSource.sourceType corresponds to bookSourceType. Host BookCandidate/BookDetail contain no BookType field, so upstream returned type flags and fallback logic cannot currently be represented at this contract boundary.
+4. **Detail mutation semantics:** upstream merges a narrow allowlist into an existing Book and retains its identity/custom state; host creates a new BookDetail value object. This is an architectural difference already supported by the Book persistence evidence in §24.52, not a newly observed runtime failure.
+5. **Chapter metadata:** host BookChapter omits upstream isVolume, resourceUrl, wordCount, start/end, EPUB fragment IDs, variable/imgUrl and entity update/variable methods; this is cross-referenced to §24.52 rather than re-audited here.
+6. **Import preservation vs execution:** LegadoBookSourceCodec retains rawJson/mainJs and maps sourceType, but does not create a JsSourceEngine or translate the mainJs source into a different host invocation protocol. Upstream BookSourceImport accepts object/array/sourceUrls document forms (BookSourceImport.kt:88–125); the host codec's separate source manifest limitation is already recorded in §24.51 and is not duplicated here.
+
+### 24.65.4 Task disposition
+
+- **Completed:** mapped upstream isJsSource predicate and WebBook routing, source-type vs BookType distinction, exact JS result marshaller behavior for search/detail/chapters/content/batch, host DTO projection and import-preservation boundary.
+- **NOT MET:** a mode-aware JsSourceBook equivalent; function-result marshalling for search/detail/TOC/content; BookType propagation/validation; mutable Book merge and typed BookChapter identity; batch result/fallback/cache-back.
+- **Evidence type:** static source and caller evidence. Upstream marshaller unit tests were inspected as source artifacts, not executed in this environment. No Gradle build, device test or CI run was performed.
+- **Task 012 remains** in_progress / partial static closure; Stage-0 remains in_progress / not accepted; Stage-1 remains NO-GO.
+- **Next:** reconcile all source-script method families with the current RhinoSafeSourceJavaExtensions compiled member inventory and the pinned upstream public JS API/overloads, marking each as exact, partial, missing or conditional and linking existing method-specific deltas. Do not re-run already documented edge audits or CI.
