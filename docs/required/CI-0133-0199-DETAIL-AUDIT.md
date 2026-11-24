@@ -116,3 +116,78 @@ The fail-closed script runtime (#174–#176) is not Rhino execution; it only des
 - JUnit/APK/artifacts: none produced.
 - All submitted code/test changes remain unvalidated at their respective exact SHAs.
 - No product acceptance or full Legado compatibility claim is made.
+
+
+## 4. Per-CI functional coverage and evidence detail — #161–#177
+
+> Each listed workflow has one `assemble-debug` Job. Step 1–3 success; Step 4 `Set up Android SDK` failure with `sdkmanager tools` → `Failed to find package 'tools'` → exit code 1; Steps 5–9 (Android platform/build-tools, Gradle, contract tests, APK assemble, upload) skipped; cleanup steps success. No JUnit/APK artifacts. The source diff below is implementation intent only; no compile/test execution occurred.
+
+### #161 — Run 43696843621 / Job 132759178148 / SHA `bc290554db1e1a5e88ce59ac62585dd9ce29d7bf`
+- Added guards in `SourceReadingEngine.search`: reject blank keyword, disabled source, and blank resolved URL before proceeding to resolver/HTTP.
+- Functional coverage: source-search input validation and disabled-source policy only; not runtime-verified.
+
+### #162 — Run 43696849027 / Job 132759194721 / SHA `2dfa7f14b37d80c60b173a055a24fa22271541d1`
+- Added synthetic tests asserting disabled sources do not invoke SearchUrlResolver and whitespace-only keyword is rejected before resolution.
+- Tests were authored but skipped by CI; no assertion executed.
+
+### #163 — Run 43696857925 / Job 132759223419 / SHA `6666b92b3e0dbb66cbcca9c447115fd25c908031`
+- Documentation-only update: pinned AnalyzeUrl `{{...}}` requires Rhino JS evaluation with `key` binding before URL query/form encoding; generic text substitution is not equivalent.
+- Confirms dynamic URL expressions remain unsupported and no search UI/compile/device/APK result exists.
+
+### #164 — Run 43696953857 / Job 132759529888 / SHA `f67a0002b436274635cf5f4242c5e56f7f0b34a9`
+- Moved enabled-source gate into `findSource`, intended to reject disabled sources consistently for search, detail, TOC and chapter-content operations, while propagating catalog errors and NOT_FOUND.
+- This is source-level policy centralization only; no build or tests ran.
+
+### #165 — Run 43696961789 / Job 132759555615 / SHA `5d583e967be0f121e616eee4a00d502bb30ed2e1`
+- Added one disabled-source book-detail test using NoNetworkClient.
+- Does not add TOC/content tests in this commit; test not executed.
+
+### #166 — Run 43696968158 / Job 132759577566 / SHA `e6fcd24184395c0e4f28a93d72f230b553b67f74`
+- Documentation-only update: records centralized source gate and upstream HtmlUnit Rhino fork requirements (Legado context, bindings, class shutter and execution guards).
+- Explicitly keeps JS URL evaluation disabled; no executable Rhino runtime was added.
+
+### #167 — Run 43697132841 / Job 132760082328 / SHA `673a1114c1b530eae4df0ddaaa83846b06cf6fbf`
+- Added URL resolver tests for `@js:`, options `js`, `bodyJs` and `webView=true`, expecting UNSUPPORTED_RULE.
+- These are regression-test definitions only; CI skipped them.
+
+### #168 — Run 43697140123 / Job 132760101682 / SHA `04ee3252e95f4ae574a69b7cc14155eef82e6f76`
+- Documentation-only update recording URL script rejection tests; explicitly says tests were not executed and no build/device/APK was confirmed.
+
+### #169 — Run 43697220818 / Job 132760335981 / SHA `8aa50744712e89b8d9661059ad90d7ef10bd6062`
+- Added synthetic tests for disabled source rejection at TOC and chapter-content entry points, using NoNetworkClient and expecting INVALID_SOURCE.
+- Tests were not executed; no real network/source behavior demonstrated.
+
+### #170 — Run 43697226108 / Job 132760352453 / SHA `e3bb0bfc9f5f5863c16ae7ecc2e63c3a8f61757e`
+- Documentation-only update stating disabled-source tests now cover search/detail/TOC/content.
+- Actual test code is fake-transport contract coverage; all tests remain unexecuted and are not real-source E2E.
+
+### #171 — Run 43697346408 / Job 132760722223 / SHA `84dbd628746cc30d5f0fc5557189dba8cae88260`
+- Expanded static URL method allowlist to GET/HEAD/POST/PUT/PATCH/PROPPATCH/REPORT; unsupported methods fail closed.
+- Resolver change was not compiled or tested.
+
+### #172 — Run 43697354507 / Job 132760745392 / SHA `69af34a360bd3df71770de7068ce4b48d97c603a`
+- Added tests for PUT/PATCH/PROPPATCH/REPORT body method forwarding and DELETE rejection as INVALID_SOURCE.
+- Tests were skipped; no method execution was verified.
+
+### #173 — Run 43697361506 / Job 132760765572 / SHA `96ff5c754dd9b8d90616fe54bb4e232035392f78`
+- Documentation-only update describing alignment between static URL allowlist and HTTP transport; explicitly records tests as authored/not executed.
+
+### #174 — Run 43697580210 / Job 132761415763 / SHA `688f0f88a60fe337144f31589723441ee886dcc8`
+- Added `UnsupportedSourceScriptRuntime`, which always returns UNSUPPORTED_RULE rather than echoing script text or evaluating it with an unreviewed JS engine.
+- This is a fail-closed stub, not a Rhino implementation; no runtime script capability was added.
+
+### #175 — Run 43697585301 / Job 132761430684 / SHA `0033daa48cdd3240be7acb57e46cc8a93de5a2b3`
+- Added a coroutine contract test expecting the fail-closed script runtime to return UNSUPPORTED_RULE.
+- Test was not executed.
+
+### #176 — Run 43697589864 / Job 132761445269 / SHA `91a779d8245190ab8964fbd8a2cccdada19647a2`
+- Documentation-only update describing fail-closed boundary; explicitly not Rhino and no compile/device/APK proof.
+
+### #177 — Run 43697660397 / Job 132761665630 / SHA `5fe5af070597334ce89298b5b8528287432be1a0`
+- Added supported-method validation at shared SourceRequestFactory boundary, allowing GET/HEAD/POST/PUT/PATCH/PROPPATCH/REPORT and returning UNSUPPORTED_RULE for other methods.
+- No compile or test ran; method contract remains unverified.
+
+### #161–#177 aggregate conclusion
+- 17/17 workflows failed at the same Android SDK setup step; 17/17 Gradle/test/APK stages skipped.
+- Source code adds search guards, centralized enabled-source policy, URL-script rejection tests, a fail-closed script stub and static HTTP method validation.
+- None of these commits demonstrates an executed unit test, APK, actual HTTP request, real Legado source, or full JS/Rhino behavior.
