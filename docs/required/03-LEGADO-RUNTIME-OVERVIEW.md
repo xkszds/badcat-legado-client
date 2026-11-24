@@ -406,3 +406,10 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - **Artifacts/cleanup:** no APK, AAB or DEX was found under `app/build`; only `app/build/outputs/logs/manifest-merger-debug-report.txt` (16,229 bytes) was present. The temporary local HtmlUnit Maven JAR is ABSENT. Git working tree is clean.
 - **Disposition:** the second assemble result remains UNKNOWN, not success or failure. Temporary-JAR cleanup is verified; final packaging, APK/DEX, R8 and compiled ABI remain NOT ESTABLISHED. No CI, build retry or source/configuration change was made. Stage-0 remains not accepted; Stage-1 remains NO-GO.
 - **Next:** do not rerun merely to replace missing historical exit evidence. Any new exact-SHA packaging/ABI evidence task must be separately registered; no production migration or Stage-1.
+
+
+### 4.7.3 Task 007 — exact-SHA debug compile-classpath resolution (2026-11-25)
+
+- **Command:** `:app:dependencies --configuration debugCompileClasspath --console=plain` on the exact tested checkout `b644bef2bac68401804c5807a1ca79ae53a683a6` and pinned upstream submodule `330e606c4d57e08adc056ff8ab7a4132c784da9`.
+- **Result:** exit code 0; `BUILD SUCCESSFUL in 19s`. The `/debug` compile classpath report resolved successfully.
+- **Evidence boundary:** together with the earlier successful `debugRuntimeClasspath` report, two debug dependency configurations are now resolved. This does not establish all variants, final APK packaging, R8/DEX or compiled ABI. No build retry, source/configuration change, test or CI was performed. Task 007 remains partial; Stage-0 not accepted; Stage-1 NO-GO.
