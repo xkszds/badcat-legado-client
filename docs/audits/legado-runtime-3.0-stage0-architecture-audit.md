@@ -1853,3 +1853,38 @@ The 17 missing names cannot be treated as 17 equally unused methods. Six have di
 - Compare `JsURL` direct properties and method calls for absolute/relative URLs, explicit ports, empty query, repeated query keys, encoded values and malformed URLs.
 
 **Decision:** another Stage-0 returned-object signature slice is closed; semantic and Rhino-dispatch parity remain unverified. This does not authorize widening the host facade or production code changes. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**. No CI was run.
+
+
+## 24.39 Runtime-3.2f.50 follow-up — direct JsExtensions ajax overload and timeout propagation (2026-11-24)
+
+- **Audit base:** `758086db99dd7b63396d42e0e4307813d3af71b5` on `integration/legado-upstream-runtime`; pinned upstream `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Scope:** read-only comparison of pinned `JsExtensions.ajax` and `AnalyzeUrl.callTimeout` with the host main bridge and runtime injection. No test or production implementation was run.
+
+### Pinned upstream contract
+
+1. Pinned `JsExtensions` declares both `ajax(url: Any): String?` and `ajax(url: Any, callTimeout: Long?): String?`. The one-argument overload delegates to the two-argument overload with null.
+2. The two-argument path extracts the first element when the URL is a List, creates `AnalyzeUrl(urlStr, source = getSource(), callTimeout = callTimeout, coroutineContext = context)`, and returns `getStrResponse().body`. On failure it checks coroutine activity, logs the failure and returns the exception stack trace string.
+3. Pinned `AnalyzeUrl` stores the explicit timeout as `callTimeoutMs`; its client builder uses `callTimeoutMillis = callTimeoutMs` when constructing the request client. This is a request execution timeout, not merely a URL suffix or a general default socket timeout.
+
+### Badcat surface confirmed at the audited HEAD
+
+1. `RhinoSafeSourceJavaExtensions` declares `ajax(urlAndOptions: String): String` and `ajax(url: Any?): String`; it has no two-argument `ajax(url, callTimeout)` overload.
+2. The one-argument host method extracts a list/Scriptable first element, checks URL length and calls the injected `ajaxRequest(raw)` callback. Its callback type accepts only one String argument; the runtime closure also supplies only the current source and current base URL to `sourceAjax`. No explicit per-call timeout value can cross this path.
+3. The host does expose a timeout-bearing `connect(url, headers, callTimeout)` method, but it returns the separate response facade and has different upstream semantics. It does not satisfy the missing `ajax(url, callTimeout)` signature or its nullable body-string return contract.
+4. The host one-argument list handling uses `firstOrNull()?.toString().orEmpty()`; pinned upstream uses `firstOrNull().toString()`. For an empty list, the resulting input differs (`""` versus `"null"`) before URL parsing/error handling. This is a source-confirmed edge difference; exact surfaced JS error text still requires a runtime probe.
+
+### Compatibility classification
+
+- **Confirmed missing overload:** `ajax(Any, Long?): String?` is absent from the host source/JVM declaration surface. A String-only overload and a three-argument `connect` are not substitutes.
+- **Confirmed timeout propagation gap:** the host ajax callback accepts only the URL string, so explicit upstream `callTimeout` cannot be forwarded through this API path. The timeout behavior of the host transport's default request configuration is a separate matter and does not establish parity.
+- **Confirmed nullable-return declaration difference:** upstream declares `String?`; host declares non-null `String`. The runtime may return stack-trace text on failures, but the declared null contract is still different and should be included in ABI/behavior fixtures.
+- **Static input edge difference:** empty-list conversion differs before request execution; no dynamic Rhino observation was collected.
+
+### Required differential closure
+
+- Invoke `java.ajax(url)` and `java.ajax(url, timeout)` for a normal URL, URL list, empty list, malformed URL, HTTP error, transport error and timeout.
+- Compare actual timeout duration and cancellation behavior, returned null/body/error string, logging/exception propagation and source/base URL resolution.
+- Capture the compiled upstream and host JVM descriptors and the Rhino-visible overload set; verify overload selection for JavaScript Number, numeric String, null and omitted second argument.
+- Keep `ajax` separate from `connect`, `get/head/post` and URL/options suffix parsing in the method matrix.
+
+**Decision:** one additional direct JsExtensions overload and request-timeout gap is confirmed from source. Caller prevalence and dynamic overload selection remain open. This does not authorize a production patch. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**. No CI was run.
