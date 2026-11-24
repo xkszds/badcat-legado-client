@@ -465,3 +465,12 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - Runner `VM-0-5-ubuntu` reported Online, but heartbeat was 2 minutes old. All six outstanding Task 017 process/log/marker/process-list calls subsequently returned terminal device timeouts.
 - These timeouts do not reveal the Gradle process's final state. Task 017 remains in progress with exit code, APK/manifest/DEX/R8 and temp-JAR cleanup unknown.
 - No duplicate build, process termination, CI, or source/configuration change. Next action is read-only recovery after the runner responds.
+
+
+### 4.17.3 Task 017 recovery result — bounded evidence, terminal status unknown
+
+- Runner recovered. Exact checkout: Badcat `1855cd77cb01efc13e59e119d3392027906d179e`; upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`; Git working tree clean.
+- Original log: 4,597 bytes / 87 lines; last task `:app:mergeExtDexDebug`; no terminal Gradle status or exit code. Original assemble shell/CLI/daemon PIDs are absent; a separate Gradle daemon remains but is not evidence of Task 017 completion.
+- No APK/AAB/DEX/R8 mapping under `app/build`. Merged manifest intermediates (3 × 3,774 bytes) and the 16,229-byte manifest merger report exist; these do not prove APK packaging.
+- Cleanup marker reads `ABSENT`, and the temporary HtmlUnit JAR is absent. Cleanup is verified.
+- Task 017 remains partial / result unknown. No duplicate build, CI, process termination, or source/configuration edit. Stage-0 not accepted; Stage-1 NO-GO.
