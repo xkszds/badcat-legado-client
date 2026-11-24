@@ -3722,3 +3722,45 @@ Task 016 is completed as a read-only existing-output inventory with bounded JVM 
 - **Exclusions:** no CI/Actions; no production/test/Gradle/workflow/schema/UI/source edits; no dependency upgrade; no apt/sudo/system/network changes; no Stage-1 or complete-compatibility claim.
 - **Stop conditions:** any identity mismatch, dirty checkout, unavailable toolchain/SDK, inadequate capacity, competing build, missing or hash-mismatched upstream JAR, failure to establish detached execution/result capture, or unverified cleanup. Stop before launching or before starting any duplicate.
 - **Current disposition:** registration only; no Task 018 build has started. Task 017 remains cancelled before successful packaging, with Gradle client exit code unknown and temporary-JAR cleanup verified. Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete compatibility remains **NOT ESTABLISHED**.
+
+
+### 24.77.1 Task 018 result — detached exact-HEAD Debug APK packaging
+
+**Execution identity and environment**
+
+- Runner: `VM-0-5-ubuntu`; checkout: `/root/stage0-runner/repo-git`.
+- Badcat exact execution HEAD: `4c9cf8ca41a29fcfacdb17fb3ec1d66d4b451343` (detached); upstream submodule: `330e606c4d57e08adc056ff8ab7a4132c784da9`.
+- Git status was clean before execution and remained clean afterward. No branch history was rewritten.
+- Toolchain: Microsoft OpenJDK `21.0.13.1`; Gradle `8.14.4`; Android SDK platform API `36`; Build Tools `36.0.0`.
+- The prior idle Gradle daemon was preserved. The build used a single-use daemon with a runtime-only 1 GiB heap cap and one worker; no persistent Gradle configuration was edited.
+
+**Detached execution and terminal evidence**
+
+- Launcher PID/session: `442062`; Gradle CLI PID: `442145`; single-use Gradle daemon PID: `442181`.
+- Started `2026-11-25T07:05:15+08:00`; completed `2026-11-25T07:08:33+08:00`.
+- Exact command: `gradle -Dorg.gradle.jvmargs="-Xmx1g -Dfile.encoding=UTF-8" --no-daemon --max-workers=1 --no-parallel :app:assembleDebug --console=plain`.
+- The launcher was started under `nohup setsid` with stdin disconnected and output redirected to persistent files. It survived the remote request boundary and wrote a terminal result marker.
+- Result marker: `exit_code=0`; cleanup status `ABSENT`. The complete Gradle log is 157 lines / 11,031 bytes, SHA-256 `bc6e773718ef3b19b3620961278cd6dc3c412e1ad6bc7509820a52b43acc8d4f`. Terminal log: `BUILD SUCCESSFUL in 3m 16s`; `82 actionable tasks: 23 executed, 59 up-to-date`.
+- The temporary Maven input was copied from the exact upstream submodule and both source/copy SHA-256 values matched `d720f34285515025e4ccc80a5b92aed42cb26c03a7715ca53583d2c74ae51df7`. EXIT cleanup removed the copied JAR; the cleanup marker and absent path agree.
+
+**APK, manifest and DEX evidence**
+
+- APK path: `app/build/outputs/apk/debug/app-debug.apk`.
+- Size: `32,073,886` bytes. SHA-256: `c0b5227165944da96db2c592dff3fc0543f82da01cdd72d7cb3121d573ead7d2`.
+- `aapt dump badging`: package `app.badcat.client`; versionCode `1`; versionName `0.1.0-integration`; minSdk `28`; targetSdk/compileSdk `36`; label `坏坏猫`; launch activity `app.badcat.client.MainActivity`; debuggable.
+- `apksigner verify --verbose` succeeded; APK Signature Scheme v2 is present. v1, v3, v3.1 and v4 signatures are absent.
+- APK contains 14 DEX files (`classes.dex` through `classes14.dex`) and `libarchive-jni.so` for `arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`. DEX intermediates exist under `app/build/intermediates/dex/debug`.
+- Packaged manifest intermediate SHA-256: `815823deb697a5bdb26e42ea3267dc0e1a3de3b13bf45609a6dfa04e77e4d9be`.
+- Manifest merger report SHA-256: `d7462a5dcd6e9da5f35f0a2f8382382d3bffce5a226606915701b9a73fb62e92`.
+- Output metadata SHA-256: `c6a944fb73f38dc0bd33cbf3728bbd047cb839fc82d66dc5c70ca5dca49454a3`.
+- No AAB or R8 mapping file was found. Gradle warned that `libarchive-jni.so` could not be stripped and was packaged unchanged.
+
+**Resource and scope boundary**
+
+- The runner experienced high but non-fatal memory pressure (available RAM briefly around 96 MiB; swap usage peaked around 1.7 GiB of 1.9 GiB). The build completed with exit code 0; the bounded kernel-journal check found no OOM-killer entry. Task 018 launcher, CLI and single-use daemon have exited.
+- This was an assemble task only. No unit/instrumentation tests, APK installation, device execution, runtime behavior, full upstream ABI comparison, R8, or release build was performed.
+- No CI/Actions, production source, tests, Gradle/build configuration, workflow, schema, UI or Reader files were changed. Only the two registered documentation files are updated.
+
+**Disposition**
+
+Task 018 is complete as a successful exact-SHA Debug packaging evidence task. It establishes that this checkout can produce a signed debug APK with DEX and native-library packaging; it does not establish complete Legado runtime compatibility or Stage-0 acceptance. Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete compatibility remains **NOT ESTABLISHED**.
