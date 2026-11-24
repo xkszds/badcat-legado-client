@@ -1728,3 +1728,44 @@ The 17 missing names cannot be treated as 17 equally unused methods. Six have di
 - **Actual behavior blocker remains:** host `getBatchContext(): Any? = null`, and host `cacheContent` unconditionally throws `IllegalStateException("java.cacheContent can only be called in a batch content rule")`. It does not have an active typed `BatchContentContext`, does not persist per-chapter batch content and cannot return the upstream save success/failure Boolean for an active batch. Pinned upstream only throws when no batch context is installed; inside a valid batch it delegates to `BatchContentContext.saveContent`.
 - **Correct classification:** `cacheContent` signature return type **matches**; batch-context object type/identity, valid-batch execution, side effects, false/error paths and lifecycle remain **blocking behavior gaps**. `getBatchContext` remains a separate type/behavior mismatch (`BatchContentContext?` upstream versus host `Any?` that always returns null).
 - **Evidence boundary:** source inspection only; no tests or implementation changes. Preserve the prior audit history but use this correction for all future matrices and acceptance decisions. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**.
+
+
+## 24.35 Direct JsExtensions — concrete source-signature gaps beyond the method-name matrix (2026-11-24)
+
+### Inventory reconciliation
+
+- Pinned `JsExtensions.kt` has **118 direct public declarations / 77 distinct names**; inherited `JsEncodeUtils.kt` adds **30 declarations / 30 names**, with three overlapping names, yielding the previously recorded **148 declarations / 104 distinct names**. Sources: JsExtensions blob `f6808edd2a0d312e8bd13649935dea444cb82581`; JsEncodeUtils blob `c75b61650db2abdd64a09d2bd8340ef14c2947b3`. Host `RhinoSafeSourceJavaExtensions` has 150 direct public declarations in blob `6a00e649895c4c1d223b768c6b288632ec033de9`.
+- The source inventory must keep three separate counts: source declarations, generated JVM overloads (e.g. `@JvmOverloads`), and Rhino-callable members through the actual wrapper. A matching name or declaration count is not an ABI or semantic match.
+
+### Confirmed direct signature/return deltas
+
+| Surface | Pinned upstream declaration | Host declaration | Classification |
+|---|---|---|---|
+| Source identity | `getSource(): BaseSource?` | `getSource(): Map<String, Any?>` | Return object/type and identity mismatch. |
+| Source tag | `getTag(): String?` | `getTag(): String` | Nullability mismatch. |
+| Batch context | `getBatchContext(): BatchContentContext?` | `getBatchContext(): Any?` (always null) | Return type and active context mismatch. |
+| AJAX | `ajax(Any): String?`; `ajax(Any, Long?): String?` | `ajax(String): String`; `ajax(Any?): String` | Missing timeout overload; input and nullable return mismatch. |
+| Concurrent AJAX | `ajaxAll(Array<String>): Array<StrResponse>`; `ajaxAll(Array<String>, Boolean): Array<StrResponse>` | `ajaxAll(Any?, Boolean): Array<RhinoSourceHttpResponse>` with generated default bridge | Parameter/response object mismatch; generated overload count alone is not parity. |
+| Test AJAX | `ajaxTestAll(Array<String>, Int): Array<StrResponse>`; three-argument form returns `Array<StrResponse>` | `ajaxTestAll(Any?, Int, Boolean): Array<RhinoSourceHttpResponse>` with generated default bridge | Parameter/response object mismatch. |
+| AnalyzeUrl connect | `connect(String): StrResponse`; header overloads use `String?`; returns `StrResponse` | `connect(String)`, `connect(String, Any?)`, `connect(String, Any?, Long?)`; returns `RhinoSourceHttpResponse` | Header representation and return object differ. |
+| HTTP Response | `get/head/post(...): Connection.Response` | returns `RhinoSourceHttpResponse` | See §24.32 for inherited Response/Base surface gaps. |
+| Base64 decode | upstream accepts nullable input on its String overloads | host String parameters are non-null | Null input compatibility differs; overloads/flags require differential tests. |
+| Base64 encode | upstream returns `String?` | host returns `String` | Return nullability differs. |
+| Hex encode | upstream `hexEncodeToString(String): String?` | host returns `String` | Return nullability differs. |
+| Time formatting | upstream `Long` timestamp and nullable UTC result | host uses `Number`/extra `String` overloads and non-null `String` | JVM parameter and nullability differ; coercion convenience is not ABI parity. |
+| HTML formatting | upstream arguments are non-null `String` | host accepts nullable `String?` arguments | Input nullability differs; output behavior still needs differential fixtures. |
+| File handle | upstream `getFile(String): File` | host `getFile(String): RhinoSourceFileHandle` | Intentional safe facade; not type parity. Preserve class-shutter boundary and test allowed operations. |
+| URL object | upstream `toURL(String[, String?]): JsURL` | host returns `RhinoLegadoUrl` | Returned object/property ABI differs; host common property tests do not establish full JsURL parity. |
+| Logging | upstream `log(Any?): Any?`, `logType(Any?): Unit` | host returns `String` for both | Return and side-effect contracts differ. |
+
+- The 17 missing upstream names remain as classified in §24.31: `refreshBookInfo`, `refreshBookToc`, `refreshContent`, `webView`, `webViewGetSource`, `webViewGetOverrideUrl`, `openVideoPlayer`, `startBrowser`, `startBrowserAwait`, `getVerificationCode`, `openUrl`, `showBrowser`, `getReadBookConfig`, `getReadBookConfigMap`, `getThemeMode`, `getThemeConfig`, `getThemeConfigMap`. The six active UI/browser/captcha callers are already proven in §24.30; the remaining settings/refresh methods must be explicitly classified rather than silently treated as irrelevant.
+- **Correction carried forward from §24.34:** `cacheContent(Any?, String): Boolean` has the same declared Boolean return type upstream and host. Its blocker is missing batch context and save behavior, not a return-type mismatch.
+- Some extra host methods intentionally support AnalyzeRule-style key/URL access or safe adapters; do not count host-only overloads as upstream compatibility gains. In particular host one-argument `get(keyOrUrl)` is an AnalyzeRule helper and does not replace the JsExtensions `get(url, headers[, timeout])` return object.
+
+### Evidence and closure boundary
+
+- Material upstream declarations are in JsExtensions blob `f6808edd2a0d312e8bd13649935dea444cb82581` (e.g. source identity/batch lines 127–150; ajax/connect 176–260; HTTP response 575–633; encoding/time 655–775; file/URL/logging 802, 1178–1217).
+- Host declaration groups are in `RhinoSafeSourceJavaExtensions.kt` blob `6a00e649895c4c1d223b768c6b288632ec033de9`; the host ABI artifact and test scope remain those already recorded in §§24.25/24.31. No upstream compiled JVM ABI comparison has been performed in this slice.
+- This is a **confirmed-delta summary**, not closure of all 104 method rows. Remaining same-name overloads, default argument bridges, annotations, nullability metadata, dynamic wrapper dispatch, active caller contexts and behavior/error/cancellation semantics still require row-by-row review.
+- No application code or tests changed; no test command was run. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**.
+- **Next:** continue exact signature and caller review for the remaining direct JsExtensions methods, then re-check every source-visible returned object and dynamic dispatch path. Keep implementation blocked until §26.13 acceptance criteria are met.

@@ -5675,3 +5675,13 @@ Each row binds one run to its own immutable commit SHA and its single `assemble-
 - **Real blocker:** host `getBatchContext()` always returns null and host `cacheContent` always throws, so valid-batch save behavior, lifecycle and Boolean success/failure semantics are not implemented. This is a behavior/context gap, not a return descriptor gap. See architecture-audit §24.34.
 - **No code/tests changed or run.** §26.13 remains in_progress; Stage-0 not accepted; Stage-1 NO-GO. Use this correction in future signature matrices.
 - Audit blob SHA after correction: `bc581dd4f3ac481bbe3a69c62cefffc2ac8f143b`.
+
+
+### 26.25 Runtime-3.2f.50 checkpoint — direct JsExtensions signature-delta summary (2026-11-24)
+
+- **Task:** §26.13 remains **in_progress/read-only**. Detailed evidence is architecture-audit §24.35; this is a confirmed-delta summary, not completion of the full 104-name matrix.
+- **Inventory:** 118 direct JsExtensions declarations / 77 names plus 30 inherited JsEncodeUtils declarations / 30 names (three overlaps) reconcile to 148 declarations / 104 names. Host main bridge has 150 direct public declarations. Keep source declarations, generated JVM overloads and actual Rhino-callable methods as separate measures.
+- **Confirmed deltas:** BaseSource/getSource and batch-context object types; getTag nullability; ajax timeout/parameter/return types; ajaxAll/ajaxTestAll parameter and StrResponse-array types; connect header representation/response type; get/head/post response wrappers; Base64/hex nullability; timeFormat Long vs Number/String; htmlFormat input nullability; File vs safe file handle; JsURL vs RhinoLegadoUrl; log/logType return contracts. Seventeen upstream names remain absent as enumerated in §24.35.
+- **Correction:** cacheContent's declared return type is Boolean on both sides; its actual blocker is the absent batch context and always-throwing host implementation (§24.34).
+- **Evidence boundary:** static source inspection only; no tests run and no compiled upstream ABI proof. No app source/tests changed. §26.13 remains in_progress; Stage-0 not accepted; Stage-1 NO-GO.
+- **Next ordered action:** continue remaining direct JsExtensions methods and their overload/default/nullability/caller matrix; do not implement or begin Stage-1.
