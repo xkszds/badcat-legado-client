@@ -3637,3 +3637,17 @@ Selected artifact SHA-256:
 Task 016 is completed as a read-only existing-output inventory with bounded JVM signature evidence. Task 007 remains partial; Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete Legado compatibility remains **NOT ESTABLISHED**. No build/test/CI rerun and no source/configuration change occurred.
 
 **Next:** the evidence confirms the current `:legado-runtime` compiled source slice is not the full authentic runtime. The next Stage-0 work should close the exact source/dependency and host-port gap inventory from pinned upstream callers; do not begin Stage-1 or production migration until the remaining Stage-0 gates are met.
+
+
+### 24.76 Task 017 — fresh exact-HEAD Debug assemble and packaging closure
+
+- **Task ID:** `R3-S0-EXACT-HEAD-DEBUG-PACKAGING-017`
+- **Status:** registered; not started.
+- **Start branch HEAD:** `519d6c9d74401a1072d97457475d79cd2c59684c`; branch `integration/legado-upstream-runtime`.
+- **Pinned upstream:** `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** establish a fresh, terminally observable `:app:assembleDebug` result on the current exact branch HEAD and verify any resulting APK, merged manifest, DEX/R8 outputs and hashes. This is a new packaging verification, not a retry to reconstruct the missing historical exit status from Task 007.
+- **Allowed repository files:** this audit and `docs/required/03-LEGADO-RUNTIME-OVERVIEW.md) only. Runner may fast-forward to the registered exact HEAD and create ephemeral build outputs; any temporary local Maven artifact must be copied from the pinned submodule with its SHA-256 verified and removed by a shell exit trap.
+- **Dependencies:** Task 007 §§24.72–24.74; Task 016 §24.75.1; exact upstream SHA.
+- **Acceptance:** verify branch/HEAD/submodule/clean tree before execution; record exact Gradle/JDK/SDK versions and command; capture terminal exit code and complete log; verify APK presence, size and SHA-256 if produced; inspect merged manifest and DEX/R8 outputs where present; verify temporary Maven artifact cleanup and post-build Git status. Report task success/failure independently of Stage-0 acceptance.
+- **Exclusions:** no CI/GitHub Actions; no source, test, Gradle, workflow, schema or UI edits; no dependency upgrades; no Stage-1 authorization or complete-compatibility claim.
+- **Next:** fast-forward the clean runner checkout to the registered exact HEAD, verify the pinned submodule, then perform one logged Debug assemble and record its final result. If prerequisites fail, stop without launching Gradle.
