@@ -482,3 +482,21 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - The packaged manifest intermediate identifies `app.badcat.client`, version `0.1.0-integration`, minSdk 28 and targetSdk 36. This is not a packaged APK.
 - No APK/AAB/DEX/R8 mapping exists in the inspected `app/build` tree. Temporary JAR cleanup remains verified (`ABSENT`).
 - Task 017 remains cancelled before successful packaging / partial evidence. No retry or CI. Stage-0 not accepted; Stage-1 **NO-GO**.
+
+
+## 4.18 Runtime-3.0 Stage-0 — resilient exact-HEAD Debug packaging verification
+
+- **Task ID:** `R3-S0-RESILIENT-DEBUG-PACKAGING-018`
+- **Status:** registered; not started.
+- **Registration start HEAD:** `424207fb4b441eb7a0e416ded180425fe434574c`; branch `integration/legado-upstream-runtime`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9`.
+- **Execution snapshot:** the exact branch HEAD after both Task 018 registration entries are committed; record and verify that SHA, branch ref and upstream submodule before launching any process.
+- **Goal:** obtain one terminally observable `:app:assembleDebug` result on that immutable execution snapshot. Run the launcher fully detached from the Remote Desktop Commander request so a tool-session/client disconnect cannot cancel the Gradle build; capture the complete log, final Gradle exit code, cleanup status and any APK/manifest/DEX/R8 evidence.
+- **Allowed repository files:** this overview and the Stage-0 architecture audit only. On the runner, use the existing exact-SHA checkout after a verified fast-forward/fetch; ephemeral launcher/log/result files under `/tmp`, Gradle outputs and one temporary exact-upstream Maven JAR are allowed. No persistent build-environment or system configuration edits.
+- **Dependencies:** Task 007 §§24.72–24.74; Task 016 §24.75.1; Task 017 §24.76.3–§24.76.4; fixed upstream SHA.
+- **Preflight:** verify clean checkout and exact execution SHA, exact upstream submodule, Gradle/JDK/Android SDK/Build Tools, available disk/RAM/swap, and absence of another active assemble CLI. Do not kill the idle Gradle daemon or change system packages/network settings. If any prerequisite is not met, stop before launch.
+- **Execution boundary:** use a detached `nohup`/new-session launcher with stdin disconnected and stdout/stderr redirected to stable files; the launcher itself must write an EXIT result marker containing exit code and timestamps after removing the temporary JAR and writing an explicit cleanup marker. Use a bounded Gradle worker count; run exactly one assemble attempt. Poll only the detached PID, log and markers; never start a duplicate while its state is pending.
+- **Pinned temporary input:** copy the HtmlUnit CoreJS JAR only from the exact upstream submodule and verify SHA-256 `d720f34285515025e4ccc80a5b92aed42cb26c03a7715ca53583d2c74ae51df7`; EXIT cleanup must remove it on both success and failure.
+- **Acceptance:** record execution SHA and clean Git status; toolchain versions; exact command; detached launcher PID; complete terminal log hash/size; explicit Gradle exit code and terminal outcome; APK hash/size if present; merged manifest identity; DEX/R8 outputs if present; temporary-JAR cleanup marker and absent path; post-run Git status. A successful assemble is only bounded packaging evidence, not full compatibility or Stage-0 acceptance.
+- **Exclusions:** no CI/GitHub Actions; no production/test/Gradle/workflow/schema/UI/source changes; no dependency upgrades; no system apt/sudo/network changes; no Stage-1 authorization, module-boundary freeze or complete-compatibility claim.
+- **Stop conditions:** wrong branch/SHA/submodule, dirty checkout, missing SDK/toolchain, insufficient runner capacity, active competing build, missing/hash-mismatched pinned JAR, inability to create a detached launcher/result marker, or unverified cleanup. Stop without launching or duplicating work.
+- **Next:** verify the final registration commit is the branch HEAD, fast-forward the runner checkout without rewriting history, complete preflight, then run one detached assemble and append the exact result. Stage-0 remains not accepted and Stage-1 NO-GO until all independent architecture, caller/data-owner, license/SBOM and reproducibility gates pass.
