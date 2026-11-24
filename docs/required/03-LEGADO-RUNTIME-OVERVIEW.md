@@ -474,3 +474,11 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - No APK/AAB/DEX/R8 mapping under `app/build`. Merged manifest intermediates (3 × 3,774 bytes) and the 16,229-byte manifest merger report exist; these do not prove APK packaging.
 - Cleanup marker reads `ABSENT`, and the temporary HtmlUnit JAR is absent. Cleanup is verified.
 - Task 017 remains partial / result unknown. No duplicate build, CI, process termination, or source/configuration edit. Stage-0 not accepted; Stage-1 NO-GO.
+
+
+## 4.17.4 Task 017 daemon cancellation evidence
+
+- The original Gradle daemon log confirms: client disconnection was detected and the build was cancelled; the daemon then stopped. The Gradle client exit code remains unavailable.
+- The packaged manifest intermediate identifies `app.badcat.client`, version `0.1.0-integration`, minSdk 28 and targetSdk 36. This is not a packaged APK.
+- No APK/AAB/DEX/R8 mapping exists in the inspected `app/build` tree. Temporary JAR cleanup remains verified (`ABSENT`).
+- Task 017 remains cancelled before successful packaging / partial evidence. No retry or CI. Stage-0 not accepted; Stage-1 **NO-GO**.
