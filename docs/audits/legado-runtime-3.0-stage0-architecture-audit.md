@@ -3642,7 +3642,7 @@ Task 016 is completed as a read-only existing-output inventory with bounded JVM 
 ### 24.76 Task 017 — fresh exact-HEAD Debug assemble and packaging closure
 
 - **Task ID:** `R3-S0-EXACT-HEAD-DEBUG-PACKAGING-017`
-- **Status:** registered; not started.
+- **Status:** cancelled before successful packaging; see §24.76.4.
 - **Start branch HEAD:** `519d6c9d74401a1072d97457475d79cd2c59684c`; branch `integration/legado-upstream-runtime`.
 - **Pinned upstream:** `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
 - **Goal:** establish a fresh, terminally observable `:app:assembleDebug` result on the current exact branch HEAD and verify any resulting APK, merged manifest, DEX/R8 outputs and hashes. This is a new packaging verification, not a retry to reconstruct the missing historical exit status from Task 007.
