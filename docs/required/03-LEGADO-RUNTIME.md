@@ -5656,3 +5656,14 @@ Each row binds one run to its own immutable commit SHA and its single `assemble-
 - **Evidence boundary:** static source/API/test inspection only; no tests or source endpoints were run. No application source, tests, Gradle, workflow, database/schema, UI/Reader or source fixtures changed. Audit blob SHA after append: `16453bff3b7d412b5d74b2c8a14db9bda7067721`.
 - **Acceptance:** response object parity remains **blocked/partial**; §26.13 remains **in_progress**; Runtime-3.0 Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**.
 - **Next ordered action:** continue the 104-name signature/return/nullability matrix and every returned object's inherited API/caller context. Register exact differential fixtures after the read-only inventory is complete; do not implement or start Stage-1.
+
+
+### 26.23 Runtime-3.2f.50 checkpoint — inherited JsEncodeUtils signature matrix (2026-11-24)
+
+- **Task:** §26.13 remains **in_progress/read-only**. Detailed evidence is architecture-audit §24.33; this closes the inherited crypto/encoding declaration slice only.
+- **Inheritance proof:** pinned `JsExtensions` extends `JsEncodeUtils`; all 30 inherited public declarations are exposed through the same source-facing Java bridge.
+- **Signature result:** all 30 upstream declarations (30 names) have corresponding host declarations with matching source parameter types, return types and nullability in the inspected Kotlin source. Six methods use different parameter identifiers only; that does not change positional script calls or JVM descriptors. Exact grouped declarations and line/blob identities are in §24.33.
+- **Behavior result:** crypto compatibility remains **partial**. Host size caps, digest/HMAC allowlists and bounded crypto wrappers differ from the complete upstream/Hutool behavior. Active AES content and HmacSHA1 source callers are already recorded in §24.29. No caller hit for another helper does not make a dynamically reachable method unused.
+- **Evidence boundary:** source declaration comparison only; no tests run, no upstream/host compiled ABI or Kotlin metadata comparison, and no application code changed. Audit blob SHA after append: `095e0ab90e36f9164a32684feff1b9079853c773`.
+- **Acceptance:** §26.13 and Stage-0 remain **in_progress/not accepted**; Stage-1 remains **NO-GO**.
+- **Next ordered action:** continue the direct `JsExtensions` method-by-method signature/return/nullability and annotation/caller-context matrix. Keep generated JVM ABI and behavioral differential testing as separate gates.

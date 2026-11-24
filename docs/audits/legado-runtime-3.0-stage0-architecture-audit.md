@@ -1684,3 +1684,38 @@ The 17 missing names cannot be treated as 17 equally unused methods. Six have di
 - Cookie/header mutation and presence helpers, URL/method object identity, charset setter, content type and read/stream methods: **missing or unverified inherited Response surface**.
 - No source/test command was run in this documentation audit. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**. No complete Jsoup Response compatibility claim is made.
 - **Next:** include this inherited Response/Base surface in the signature-level matrix; inspect every remaining JsExtensions method/overload and source-visible returned object; identify active BookSource callers and define differential fixtures for bytes, duplicate/missing headers, cookie maps, URL/method, nullability and body-consumption lifecycle. Keep this read-only until a separately registered implementation task authorizes exact files and safe facade semantics.
+
+
+## 24.33 Inherited JsEncodeUtils — 30 exact source-signature comparisons (2026-11-24)
+
+### Inheritance and source declaration inventory
+
+- Pinned `JsExtensions` is an interface extending `JsEncodeUtils`, not a standalone class: `JsExtensions.kt` blob `f6808edd2a0d312e8bd13649935dea444cb82581`, line 127. Therefore the inherited methods are part of the same BookSource `java` bridge surface.
+- Refreshed pinned source: `JsEncodeUtils.kt` blob `c75b61650db2abdd64a09d2bd8340ef14c2947b3`, 518 lines. It contains **30 public declarations / 30 method names**. Host source: `RhinoSafeSourceJavaExtensions.kt` blob `6a00e649895c4c1d223b768c6b288632ec033de9`; the main bridge contains all 30 names and matching source-level parameter/return type shapes.
+- This is a source declaration comparison only. It does not prove the upstream/host pre-R8 JVM descriptors, Kotlin metadata, generated default overloads, annotation parity or behavioral equivalence.
+
+### Type/return signature groups
+
+| Upstream method declarations (pinned source lines) | Host declarations (bridge source lines) | Signature result |
+|---|---:|---|
+| `md5Encode(String): String`, `md5Encode16(String): String` (22–27) | 1282–1302 | Same parameter and return types; parameter identifier differs. |
+| `createSymmetricCrypto(String, ByteArray?, ByteArray?): SymmetricCrypto`; `createSymmetricCrypto(String, ByteArray): SymmetricCrypto`; `createSymmetricCrypto(String, String): SymmetricCrypto`; `createSymmetricCrypto(String, String, String?): SymmetricCrypto` (45–68) | 1337–1373 | Four overload shapes present with matching source types/nullability. |
+| `createAsymmetricCrypto(String): AsymmetricCrypto`, `createSign(String): Sign` (80–87) | 1374–1399 | Matching source types/return classes. |
+| AES decode/encode family: `aesDecodeToByteArray`, `aesDecodeToString`, `aesDecodeArgsBase64Str`, `aesBase64DecodeToByteArray`, `aesBase64DecodeToString`, `aesEncodeToByteArray`, `aesEncodeToString`, `aesEncodeToBase64ByteArray`, `aesEncodeToBase64String`, `aesEncodeArgsBase64Str` (106–280) | 1400–1589 | Matching four-/five-String parameter shapes and nullable ByteArray/String return types. |
+| DES family: `desDecodeToString`, `desBase64DecodeToString`, `desEncodeToString`, `desEncodeToBase64String` (296–329) | 1590–1644 | Matching four-String parameter and nullable String return types. |
+| 3DES family: `tripleDESDecodeStr`, `tripleDESDecodeArgsBase64Str`, `tripleDESEncodeBase64Str`, `tripleDESEncodeArgsBase64Str` (351–432) | 1645–1740 | Matching five-String parameter and nullable String return types. |
+| `digestHex(String, String): String`, `digestBase64Str(String, String): String`, `HMacHex(String, String, String): String`, `HMacBase64(String, String, String): String` (456–506) | 1285–1301 | Matching source parameter/return types; parameter identifiers and formatting differ. |
+
+- The six declaration strings whose parameter identifiers differ are `md5Encode`, `md5Encode16`, `digestHex`, `digestBase64Str`, `HMacHex` and `HMacBase64`. Parameter names do not change positional Rhino calls or JVM method descriptors; the type and nullability shapes match in the inspected Kotlin source.
+- No inherited JsEncodeUtils method name is missing from the host main bridge in this source-level pass. Do not use this as evidence that the other 74 JsExtensions names, nested return objects or generated JVM ABI are closed.
+
+### Behavioral classification remains partial
+
+- Existing §24.22 evidence remains controlling: host crypto factories/helpers impose bounded input/output and allow-listed digest/HMAC algorithms and use host wrappers; these safeguards and supported algorithm sets differ from the complete Hutool/upstream object behavior. Selected host tests cover common symmetric, legacy AES, DES/3DES, RSA/sign and size-limit cases, not every overload, algorithm provider, null/error edge or inherited Hutool method.
+- Active BookSource callers already evidenced in §24.29 include `aesBase64DecodeToString` for encrypted source content and `HMacHex` for HmacSHA1 signing. The absence of a public source hit for the remaining helper methods is not deletion authorization: `JsExtensions : JsEncodeUtils` makes them dynamically reachable through the Java wrapper.
+- No test command was run in this signature inventory. Do not upgrade crypto compatibility from **partial** to exact based on matching declaration shapes. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**.
+
+### Next closure
+
+- Continue with the direct `JsExtensions` declarations: exact Kotlin/JVM parameter and return/nullability shapes, @JavascriptInterface presence, inherited/default-generated overloads, caller context and side effects. Keep reflection/wrapper reachability distinct from help-documentation and public corpus hits.
+- After source declarations are closed, use compiled upstream and host artifacts for pre-R8 ABI/Kotlin metadata comparison; keep that as a separate gate. No implementation or test changes are authorized by §26.13.
