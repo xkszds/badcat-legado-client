@@ -74,3 +74,11 @@
 - 本轮检索 20 组关键词，初步得到 368 个去重提交候选；仅对其中按历史时间靠前且与第三类直接相关的 46 条完成本册登记，剩余候选继续去重、审 diff、分册登记。
 - 新增记录未发现真实书源端到端验收通过证据；无 Actions 证据处保持待核查/缺证据。Run #43719899764 与已有纳入序号 0079 交叉引用，不重复当作新的 run 通过记录。
 - 下一分册：03-LEGADO-CI-0201-0400.md，序号从 0201 开始。
+
+
+## 2026-11-24 大规模回溯第五轮
+- 第二分册已创建：03-LEGADO-CI-0201-0400.md。
+- 新增 0201–0230（30 条），补回 platform-neutral ReadingEngine contract、CSS selector evaluator、source-scoped OkHttp/Cookie、详情服务、Android composition root、TOC/详情 URL 安全校验、详情→目录→正文本地 fixture。
+- fixture 使用 fake HTTP，不能等同真实书源或 Android 设备端到端；无 Actions 证据处保持待核查/缺证据。
+- 本轮另有 15 组检索、228 个去重命中；后续重点核查 TOC 安全/分页、Cookie 持久化与 Rhino bridge、mainJs/jsLib、PPRule、规则引擎和真实 source smoke。
+- 本批为历史补录，部分提交日期早于第一分册末尾；纳入序号维持唯一追加，真实 commit 时间单独保留。需要继续制作全量时间线校正表。
