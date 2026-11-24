@@ -92,6 +92,15 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 
 **CI 状态纪律：** 不跨 SHA 借用结果；不把 skipped/pending 写通过；不把 continue-on-error 的脚本失败隐藏在 workflow success 下；不把 mock/fixture 当真实网站；不把外部 Python 解析当 Android Runtime；缺日志/报告必须标“证据不可得/未验证”，禁止推测。
 
+## 5.2 历史第 2 册 #0200–#0399 审计检查点（2026-11-24）
+
+- 分册已创建：`docs/required/CI-0200-0399-AUDIT.md`，状态 `in_progress`。
+- #200–#205 六条已按七组标准逐项核验并登记；六条均为第三类 Legado URL/Rhino 相关 CI，attempt 1，唯一 Run ID/exact SHA 已写入第二册索引。
+- 六条共同结论：Job `assemble-debug` 在 Step 4 `Set up Android SDK` 失败，日志 `sdkmanager tools` / `Failed to find package 'tools'`；Step 5–9 skipped；无 Gradle、测试、JUnit、APK、artifact 或真实源 E2E 证据。
+- #200 为 unsupported static URL method 错误码测试断言修改；#201 为 URL method/charset 边界文档；#202 为 pinned Rhino integration source audit；#203 为该 audit 的文档状态登记；#204 为 Rhino 依赖和 18-file source inventory；#205 为 inventory 文档状态登记。以上 CI 均未证明所述功能运行通过。
+- 下一条续查：#206；不得重复抓取 #200–#205。后续候选先确认第三类边界，再逐项取 Run/Job/Step/log/diff/artifact 证据。
+- 本册 #0206–#0399 尚未完成筛查和逐项审计；不得提前标记整册完成。
+
 ## 5.1 CI 去重检查点与续查规则（2026-11-24）
 
 **第 1 册 #0001–#0199：151/151 条已登记第三类实际 CI 完成逐项历史审计，编号唯一。** 已审计 CI 编号范围为：#5；#7–#18；#20–#24；#26–#49；#51–#53；#55–#57；#60–#62；#65–#66；#68–#69；#78–#94；#97–#102；#104；#107–#115；#117；#122–#131；#133–#135；#137–#148；#150–#156；#158–#177；#180–#181；#184；#188–#191；#196–#197；#199。
