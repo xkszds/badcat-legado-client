@@ -2821,3 +2821,31 @@ This does not yet define the final file list or prove buildability. Historical 6
 - **Task 010 disposition:** root provenance 17/17 exact; root/caller/product-boundary decomposition complete for the inspected G1 set; minimum controlled-runtime boundary proposed. Full recursive compiler/Gradle closure, complete API/caller coverage, exact platform-port acceptance and differential execution remain **NOT MET**. No production/test/Gradle/workflow/schema/UI/CI file changed or run.
 - **Stage-0 remains** `in_progress / not accepted`; **Stage-1 remains NO-GO**. This is a major compatibility blocker, not a small defect.
 - **Next:** consolidate Stage-0 exit evidence and determine whether authentic core + typed host ports can compile without Legado product UI/Reader or a second DB authority. Exact-SHA Gradle execution and compiled ABI remain required; do not start production migration before Stage-1 is explicitly opened.
+
+
+## 24.60 Runtime-3.0 Stage-0 — exact-SHA Gradle runner availability check (2026-11-24)
+
+- **Related task:** `R3-S0-GRADLE-PACKAGING-CLOSURE-007`; this supplements §24.56 and overview §4.7. It is not a new implementation task.
+- **Snapshot:** branch `integration/legado-upstream-runtime`; source/documentation start HEAD `79b669b13cf67c7993dbaa5dbbdbb5cc3ffd195d`; upstream pin remains `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Purpose:** verify whether the current execution container can supply the exact-SHA Gradle evidence required by Stage-0, without starting CI or changing the repository.
+
+### Environment facts observed
+
+| Capability | Observed result |
+|---|---|
+| Java | OpenJDK 21.0.12.1 available |
+| Git | `/usr/bin/git` available |
+| Gradle executable | `gradle` not installed |
+| Gradle wrapper cache | `$HOME/.gradle` / wrapper distribution cache absent |
+| Android SDK | `ANDROID_HOME` and `ANDROID_SDK_ROOT` unset; no `sdkmanager`, `adb` or Android SDK platform `android.jar` found under inspected `/opt` and `/usr/local` paths |
+| GitHub checkout access | `git ls-remote https://github.com/xkszds/badcat-legado-client.git refs/heads/integration/legado-upstream-runtime` failed: `Could not resolve host: github.com` |
+| CI | Not started; no workflow dispatch or CI run |
+
+### Consequence
+
+- The container has a suitable Java major version but cannot check out the Badcat/upstream exact commits, download the Gradle wrapper distribution/dependencies, or resolve Android SDK components.
+- A Gradle wrapper invocation would not cure the blocker: wrapper distribution and Maven/Google repository artifacts are not cached, and external GitHub DNS resolution failed. No successful or failed Gradle task was produced.
+- This confirms the execution-environment blocker in §24.56; it is **not** evidence of an upstream source compile failure and must not be recorded as one.
+- **Task 007 remains:** static inventory complete; resolved Gradle configurations/variants/artifact graph/generated outputs/manifest-resource merge/DEX packaging remain NOT MET.
+- **No source, test, Gradle, workflow, database/schema, UI or CI files changed.** No build/test/CI was run.
+- **Stage-0 remains** `in_progress / not accepted`; **Stage-1 remains NO-GO**. Exact-SHA dependency and compiled ABI evidence requires a network-enabled reproducible Gradle+Android SDK runner.
