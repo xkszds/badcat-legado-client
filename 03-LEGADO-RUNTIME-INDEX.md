@@ -152,3 +152,12 @@
 - #517/#520/#521/#522 仅证明 bounded replacement Rhino host 的类访问、ProcessBuilder 实例化阻断、timeout recovery、System dangerous methods 阻断；不等于完整 Legado Java ABI。
 - 新建第四册 03-LEGADO-CI-0601-0800.md，下一条从 0601 开始。
 - 当前分册进度：0001–0200、0201–0400、0401–0600；第四册开始为空册。
+
+
+## 2026-11-24 第四册回溯进度：0601–0647
+- 第四册 03-LEGADO-CI-0601-0800.md 已新增 47 条（0601–0647），剩余 153 条容量。
+- 新增 11/15–11/18 早期历史：Rhino Android module/Gradle integration、AnalyzeUrl js/bodyJs、Cookie storage limits/clear/nullable key、WebView purification bridge、Legado @@/chained/index selector、PPRule regex/XPath/video/comic extraction 与安全 redirect、章节正文 fail-closed/raw get。
+- 早期 #225–#246 等 Actions 多因 setup Android SDK 的 sdkmanager tools package not found 失败；未执行测试/APK。#1285/#1417/#1588/#1657/#1697 等成功仅代表相应 bounded tests/build。
+- 最新 #3452 已完成，结论 cancelled：contract tests、Rhino host tests、APK build/upload 成功，但 Nyasama smoke 被取消，public probe 与后续 E2E skipped；故只能记部分通过。
+- #3453–#3457 新增 5 条 ledger-triggered CI：#3454 部分通过（Feisuzhong E2E PASS，Pinshuzhai E2E cancelled）；#3457 笔仙阁与品书斋 E2E PASS、tests/APK success，但 235-source corpus step cancelled，run conclusion cancelled。
+- 当前分册：0001–0200、0201–0400、0401–0600 已封册；第四册 0601–0647，剩余 153 条。
