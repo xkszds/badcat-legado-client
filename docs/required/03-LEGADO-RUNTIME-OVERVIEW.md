@@ -98,12 +98,13 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 
 - #3200–#3225：旧账本有 26 个逐次条目；22 success、4 failure、0 pending。失败 #3213–#3216 为 Login UI v2 测试 ClassCastException；#3217 后修复该特定问题并通过 335/335 测试。功能边界和外部 Python 冒烟限制见旧账本。
 - #3226–#3249：24/24 已逐次审计并写入 CI 分册附录 C；12 workflow success / 12 failure。#3239–#3247 暴露 RuleAnalyzer APK DEX 缺类，#3249 已证明类定义进入 APK 并通过 API28/35 设备端 class-load/split smoke；但 #3249 workflow 仍因 Maven Central 429 失败，Android 四源 E2E 仍为 0/4。
-- #3250–#3299：仍待逐项审计，按编号升序取得 exact run/job/step/log/JUnit/artifact，不从旧摘要推断。
+- #3250–#3278：29/29 已逐项审计并写入 CI 分册附录 D；19 workflow success / 10 failure。#3250–#3253 Android 四源 E2E 为 0/4；#3254–#3261 仍运行 Python corpus 1/4，#3262 删除该步骤，#3273 首次验证暂停 host filter 自检通过。#3263–#3272 的 DEX failure 已证实为 verifier 正则 false-negative：10 份 DEX 报告均含 RuleAnalyzer，API28/API35 instrumentation 均 5/5；#3273 修复脚本后 workflow 恢复 success。
+- #3279–#3299：仍待逐项审计，按编号升序取得 exact run/job/step/log/JUnit/artifact，不从旧摘要推断。
 - #3300–#3349：50/50 已建立逐项功能覆盖档案，并已按每个 CI 独立条目迁入本 200 册附录 B；45 workflow success、5 failure、0 in_progress。#3315/#3343/#3345 为 Parcelize 插件解析失败；#3317/#3319 为 Maven Central HTTP 429 导致 Robolectric 依赖失败；#3323 workflow success 但 Bixiange 外部脚本实际 HTTP 503。所有这些均不构成完整 Legado E2E。
 - #3350–#3357：旧总清单仅登记为 docs-only/bookkeeping CI terminal success；本 200 册尚未补齐逐 run 身份、exact SHA、Job/Step、日志与功能映射，暂记待补证，不计入逐 CI 审计完成数。
 - #3358–#3399：本轮资料未建立这些编号的 run 证据；不预设它们已存在。若后续发现真实 run，按编号升序纳入本册并完整审计；无 run 则保持未发生/无记录，不造记录。
 
-**当前可确认统计：** 本 200 册已容纳逐 CI 详细条目 100/200（附录 A：#3200–#3225 共 26 条；附录 B：#3300–#3349 共 50 条；附录 C：#3226–#3249 共 24 条）。已审计 100 个编号的 workflow 汇总为 79 success / 21 failure / 0 pending。待补逐次证据 #3250–#3299 共 50 个编号；#3350–#3357 共 8 个需补证；#3358–#3399 是未建立记录的预留编号。这里的 100 是“已有逐次档案数”，不是第三类功能通过数。
+**当前可确认统计：** 本 200 册已容纳逐 CI 详细条目 129/200（附录 A：#3200–#3225 共 26 条；附录 B：#3300–#3349 共 50 条；附录 C：#3226–#3249 共 24 条；附录 D：#3250–#3278 共 29 条）。已审计 129 个编号的 workflow 汇总为 98 success / 31 failure / 0 pending。待补逐次证据 #3279–#3299 共 21 个编号；#3350–#3357 共 8 个需补证；#3358–#3399 是未建立记录的预留编号。这里的 129 是“已有逐次档案数”，不是第三类功能通过数。
 
 ## 7. 关联文件与读取顺序
 
@@ -115,17 +116,26 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 
 ## 8. 下一步唯一顺序
 
-1. 已将 #3300–#3349 逐项记录迁入附录 B，并将 #3226–#3249 逐项审计记录写入附录 C；下一步从 #3250 开始按编号升序补齐缺失 CI，不把旧账本汇总状态误当成逐项已完成。
-2. 从 #3250 开始按编号升序补齐缺失 CI 的完整证据，逐条记录每项实际跑通的功能和未验证范围。
+1. 已将 #3300–#3349 逐项记录迁入附录 B，#3226–#3249 写入附录 C，#3250–#3278 写入附录 D；下一步从 #3279 开始按编号升序补齐缺失 CI，不把旧账本汇总状态误当成逐项已完成。
+2. 从 #3279 开始按编号升序补齐缺失 CI 的完整证据，逐条记录每项实际跑通的功能和未验证范围。
 3. 补齐 #3350–#3357 的 exact run/job/step/log 证据。
 4. 每一批回写后重新读取当前分册复核，更新本文件中的统计与下一项。
 5. CI 审计与 Runtime 技术任务继续分开登记；只有文件/依赖完全隔离时才并行，不跳过前置依赖。
 
 
 
-### Runtime-CI-HIST-3200-3299 progress checkpoint — #3226–#3249（2026-11-24）
+### Runtime-CI-HIST-3200-3299 progress checkpoint — #3226–#3278（2026-11-24）
 
 - **状态：** `in_progress`；本 200 册现有逐 CI 记录 100/200。附录 C 已记录 24 个独立 run：12 success、12 failure、0 pending。
 - **关键功能证据：** #3226–#3238 的标准 47-step workflow、335/335 JUnit、API28 CookieManager/API35 WebView callback、Rhino/JS ABI/依赖闭包/G2d 探针和 Debug APK 均按各自 SHA 通过；外部 Python Bixiange/Pinshuzhai 脚本通过但上传的四源样本仅 1/4。
 - **关键失败与修复进展：** #3239–#3247 证明 contract JAR / Android runtime classpath 通过仍不足以将 RuleAnalyzer 放入 APK DEX；#3249 通过 classesDirs 的 ConfigurableFileCollection 发布修正，在 14 个 DEX 的 classes5.dex 找到 RuleAnalyzer 定义，并通过 API28/35 Class.forName + split smoke。#3249 workflow 仍因 Maven Central HTTP429 失败；Android 四源 E2E 0/4（两源网络超时、一源安全阻断、一源 source_rule_failure）。
 - **下一步：** 按编号从 #3250 开始审计至 #3299；之后补 #3350–#3357。Stage-0 仍 in_progress/not accepted，Stage-1 仍 NO-GO；CI 审计不替代 Runtime 技术验收。
+
+
+### Runtime-CI-HIST-3200-3299 progress checkpoint — #3250–#3278（2026-11-24）
+
+- **状态：** in_progress；本 200 册现有逐 CI 记录 129/200。附录 D 已记录 29 个独立 run：19 success、10 failure、0 pending。
+- **真实书源暂停边界：** #3250–#3253 的 API35 四源 Android E2E 为 0/4；#3254–#3261 虽排除了 Android E2E，却仍执行 Python uploaded-corpus 1/4；#3262 才移除上传 corpus step。#3265/#3266 的 host filter 与 self-test 因 DEX gate failure 未执行；#3273 首次真实执行并通过，之后四个暂停 host 均被跳过。本轮没有重新请求四个暂停书源。
+- **DEX 验证纠正：** #3263–#3272 失败是 verifier 对 tab-separated apkanalyzer 输出的 false-negative；10 份 DEX report 均含 RuleAnalyzer，API28/API35 instrumentation 各 5/5。#3273 的 literal class-name matcher 修复 verifier，随后 53/53 steps success。
+- **临时 Scriptable 实验：** #3257–#3259 337/337 测试通过，但 #3260 已撤销 broad normalization 及两项新增测试；不计入当前功能。
+- **下一步：** 按编号从 #3279 开始审计至 #3299；之后补 #3350–#3357。Stage-0 仍 in_progress/not accepted，Stage-1 仍 NO-GO；CI 审计不替代 Runtime 技术验收。
