@@ -1902,3 +1902,33 @@ The 17 missing names cannot be treated as 17 equally unused methods. Six have di
   3. Host compressed/expanded archive limits remain a separate intentional safety constraint already recorded in the archive audit; this entry does not recommend removing them.
 - **Required differential closure:** fixtures for a matching regular file, matching directory entry, missing entry and duplicate names; compare bytes/null, exceptions and source-attributed logs. Keep compressed/expanded resource limits independently tested.
 - **Decision:** two narrow ZIP behavior deltas are source-confirmed; caller impact and dynamic Rhino observability remain unverified. No CI, tests, production source, Gradle, database or UI were changed. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**.
+
+
+## 24.41 Runtime-3.2f.50 follow-up — ajaxAll batch input and test-error semantics (2026-11-24)
+
+- **Audit base:** `7dc15cc29d08fe1f64b5da3de365cda18488aa67` on `integration/legado-upstream-runtime`; pinned upstream `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Scope:** narrow supplement to the existing HTTP/batch method inventory (§22) and response-facade comparison (§24.38). It does not repeat the already recorded return-object mismatch or ajax single-request timeout gap. No production code or tests changed.
+
+### Pinned upstream behavior
+
+- `ajaxAll` accepts `Array<String>`; it passes each URL to `AnalyzeUrl` and invokes `getStrResponseAwait(skipRateLimit = ...)`. Parallelism is `AppConfig.threadCount` (pinned `JsExtensions.kt`, lines 200–214).
+- `ajaxTestAll` accepts `Array<String>` plus an integer timeout and optional skip-rate-limit boolean. It passes the timeout into `AnalyzeUrl.callTimeout` and invokes `getStrResponseAwait(isTest = true, ...)` (lines 219–234).
+- In pinned `AnalyzeUrl.executeStrRequest`, test-mode transport exceptions are classified by the **direct exception type** into negative call-time codes; non-test mode rethrows (pinned `AnalyzeUrl.kt`, `executeStrRequest`).
+
+### Host behavior confirmed at the audited HEAD
+
+- Host `ajaxAll/ajaxTestAll` accept `Any?` and first materialize bounded URL collections. Supported inputs include Rhino `Scriptable`, `Iterable`, arrays and JSON-array strings. The host enforces at most 20 URLs, 64 KiB total collection input and 16 KiB per URL (`RhinoSafeSourceJavaExtensions.kt`, lines 2011–2052; constants lines 1980–1982).
+- Host then converts values to strings, trims whitespace and rejects blank URLs (lines 943–947, 972–976). Pinned declarations take `Array<String>` and do not perform this same pre-normalization in `JsExtensions`.
+- Host batch worker concurrency is fixed at 4; pinned concurrency follows the mutable/configured `AppConfig.threadCount` (host lines 949–956, 978–1014; pinned lines 205 and 224).
+- Host `ajaxTestAll` walks up to 16 nested `Throwable.cause` links before selecting the negative call-time code; pinned `AnalyzeUrl` classifies the caught exception itself. Wrapped transport exceptions can therefore be classified differently. Host also normalizes a nullable exception message to an empty string when constructing its synthetic response (host lines 985–1007); pinned passes `e.message` to `StrResponse` (upstream `AnalyzeUrl.kt`).
+- Host uses `RhinoSourceHttpResponse` rather than pinned `StrResponse`; that broader facade difference is already tracked in §24.38 and is not recounted here.
+
+### Classification and follow-up
+
+1. **Confirmed input-contract difference:** accepted input types and pre-validation normalization differ. The host's bounded limits are intentional safety controls, not automatically defects; however, they narrow the upstream accepted domain and must be explicit in the compatibility policy and tests.
+2. **Confirmed concurrency-policy difference:** fixed host cap 4 versus upstream configured thread count. Whether this changes observable source behavior under load needs controlled concurrency fixtures; do not remove the cap without a safety review.
+3. **Confirmed error-classification difference:** direct exception matching upstream versus bounded cause-chain matching host can yield different `callTime` codes for wrapped exceptions. This requires fixtures with direct and wrapped instances of each transport exception family.
+4. **Dynamic behavior remains unverified:** Rhino array/Iterable/JSON-string coercion, cancellation while worker futures are running, per-source rate limiter behavior, and response ordering/partial failure need differential tests against the pinned implementation.
+
+- **Required differential closure:** test array and Scriptable inputs, empty arrays, whitespace/blank entries, >20 entries, oversized URL/aggregate inputs, configured concurrency values, direct versus wrapped timeout/DNS/connect/socket/SSL exceptions, null exception messages, cancellation, rate-limit skip flag, result ordering and mixed success/failure batches.
+- **Decision:** this records additional narrow source-confirmed batch API and error-classification deltas; no claim is made that every delta is a product defect. No CI, tests, production source, Gradle, database or UI were changed. Stage-0 remains **in_progress/not accepted**; Stage-1 remains **NO-GO**.
