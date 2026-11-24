@@ -499,7 +499,7 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - **Acceptance:** record execution SHA and clean Git status; toolchain versions; exact command; detached launcher PID; complete terminal log hash/size; explicit Gradle exit code and terminal outcome; APK hash/size if present; merged manifest identity; DEX/R8 outputs if present; temporary-JAR cleanup marker and absent path; post-run Git status. A successful assemble is only bounded packaging evidence, not full compatibility or Stage-0 acceptance.
 - **Exclusions:** no CI/GitHub Actions; no production/test/Gradle/workflow/schema/UI/source changes; no dependency upgrades; no system apt/sudo/network changes; no Stage-1 authorization, module-boundary freeze or complete-compatibility claim.
 - **Stop conditions:** wrong branch/SHA/submodule, dirty checkout, missing SDK/toolchain, insufficient runner capacity, active competing build, missing/hash-mismatched pinned JAR, inability to create a detached launcher/result marker, or unverified cleanup. Stop without launching or duplicating work.
-- **Next:** verify the final registration commit is the branch HEAD, fast-forward the runner checkout without rewriting history, complete preflight, then run one detached assemble and append the exact result. Stage-0 remains not accepted and Stage-1 NO-GO until all independent architecture, caller/data-owner, license/SBOM and reproducibility gates pass.
+- **Next:** do not repeat the assemble under Task 018. Use §4.18.1's bounded APK/DEX evidence while continuing only the still-open Stage-0 caller/data-owner, license/SBOM, reproducibility and behavioral gates; Stage-0 remains not accepted and Stage-1 NO-GO.
 
 
 ### 4.18.1 Task 018 result — detached exact-HEAD Debug packaging succeeded (2026-11-25)
