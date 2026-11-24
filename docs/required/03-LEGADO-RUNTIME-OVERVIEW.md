@@ -325,3 +325,17 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - **Exclusions:** no minor per-method defect sweep where prior evidence exists; no CI; no source implementation/module-boundary changes; no Stage-1 authorization; no claim of exact parity from static signatures.
 - **Current result:** audit §§24.62–24.68 maps the base/inherited JS API, actual scope injection, JS-source dispatch/marshalling, 87 same-name base signatures (67 same-shape, 20 non-exact, 17 absent) and the 13 additional inherited Rss/Web/login names against current host objects/ports. Typed action, RPC, fluent AnalyzeRule and login callback gaps remain. This is static evidence, not runtime ABI or behavior proof. No code/test/build/CI changed or run.
 - **Next:** consolidate the Stage-0 exit evidence matrix from tasks 006–012, marking each gate met/partial/not met/environment-blocked and linking unique audit evidence. Do not repeat completed API/method audits or run CI.
+
+
+## 4.13 Runtime-3.0 Stage-0 — exit-evidence reconciliation after JS API closure
+
+- **Task ID:** `R3-S0-EXIT-EVIDENCE-RECONCILIATION-013`
+- **Status:** completed as a documentation/evidence-reconciliation slice; Stage-0 itself remains NOT accepted.
+- **Start HEAD:** `af4e47ff575c63462388278aef2473e5691dad09`; branch `integration/legado-upstream-runtime`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** update the Stage-0 exit matrix from §24.61 using tasks 006–012 and audit §§24.55–24.68; add explicit typed Host Port and data-owner statuses without repeating prior technical inventories.
+- **Allowed files:** audit and overview documentation only. No source, test, Gradle, workflow, schema or UI changes.
+- **Dependencies:** overview §§4.6–4.12; audit §§24.50–24.68.
+- **Acceptance:** every Stage-0 gate has one current status, unique evidence links, remaining proof and blocker classification; separate static completion, environment-blocked evidence and dynamic-unverified behavior; preserve Stage-0 NOT ACCEPTED and Stage-1 NO-GO.
+- **Result:** audit §24.69 reconciles the Stage-0 matrix after the complete base/inherited JS API static slices. It retains partial status for source declarations/callers, transitive caller graph, compiled ABI, typed Host Port wiring and data ownership; confirms Gradle resolution is environment-blocked; keeps provenance/SBOM and reproducible acceptance bundle NOT MET; and marks dynamic behavior as not run/downstream of Stage-0. No exact parity row is established.
+- **Disposition:** task 013 complete as a documentation-only reconciliation; Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; complete Legado compatibility remains **NOT ESTABLISHED**. No source/test/Gradle/build/CI was changed or run. Commit uses `[skip ci]`; no CI was intentionally triggered.
+- **Next:** register a documentation-only source invocation-context and typed Host Port wiring contract slice covering ordinary BookSource rules, payAction, image-click, callBackJs, loginUrl/loginUi and WebView bridge. Reconcile live Book/BookChapter identity, object namespace ownership, callback/result/error/cancellation/threading/lifecycle semantics. Do not repeat the completed 87-name signature or 13-name inherited API inventories; do not begin production implementation, Stage-1 or CI.
