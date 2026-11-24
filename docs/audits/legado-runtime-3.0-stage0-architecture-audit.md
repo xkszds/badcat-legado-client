@@ -2633,3 +2633,51 @@ The prior records are reconciled without treating their graph counts as intercha
 3. Resolve Cronet/native/JNI scope and distinguish source-runtime-required HTTP behavior from product-level Cronet integrations; inspect all reflection/service-loader/string-based class references.
 4. Re-open the G2c diagnostic set and map each of the 35 declarations to current exact source and dependency edges, preserving the no-fake/no-no-op rule.
 5. Generate a candidate controlled upstream-core extraction graph that preserves required BookSource/BaseSource/AnalyzeRule/AnalyzeUrl/JsExtensions behavior while excluding Legado product UI/Reader only where caller proof permits.
+
+
+## 24.57 Runtime-3.0 Stage-0 — reflection/JVM/Rhino ABI and source provenance static inventory (2026-11-24)
+
+- **Task:** `R3-S0-REFLECTION-ABI-PROVENANCE-008`; registered in overview §4.8 before this inspection.
+- **Inspection snapshot:** branch `integration/legado-upstream-runtime`, starting source HEAD `e7f242273a00c1b050ce86dcaeb5c265207db1ee`; pinned upstream `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Method:** exact Git tree/blob SHA comparisons between the Badcat branch and pinned upstream tree/submodule; static inspection of upstream `JsExtensions`, `NativeBaseSource`, Rhino wrapper/class-shutter sources and local Rhino engine; license/notice file inventory. No compilation or runtime execution.
+
+### Source provenance and exact-file comparison
+
+| Local slice | Pinned upstream counterpart | Result |
+|---|---|---|
+| Seven rule models (`BookListRule`, `ExploreRule`, `SearchRule`, `BookInfoRule`, `TocRule`, `ContentRule`, `ReviewRule`) + `GsonExtensions.kt` | Same paths under upstream `app/src/main/java` | All 8 files have identical Git blob SHA at the pin |
+| Additional rule UI/model files `ExploreKind.kt`, `FlexChildStyle.kt`, `RowUi.kt` | Same upstream paths | All 3 blobs identical; their presence does not enlarge the runtime module's declared seven-model compile set |
+| `legado-rhino/src/main/java/com/script/**` | `modules/rhino/src/main/java/com/script/**` | 18 Kotlin files compared: 17 identical; `RhinoScriptEngine.kt` differs |
+| Local `legado-rhino/src/main/java/org/htmlunit/corejs/javascript/**` | Same relative paths in upstream `:modules:rhino` | All 12 Java files have identical Git blob SHA |
+| Local HtmlUnit license/source bundle | Upstream `app/src/main/assets/licenses/htmlunit-core-js/5.3.0-legado.4/` | Seven records (`LICENSE-APACHE-2.0.txt`, `LICENSE-core-js.txt`, `LICENSE.txt`, `NOTICE-tools.txt`, `NOTICE.txt`, `SOURCE.md`, `rhinoDiff.txt`) have identical Git blob SHA |
+| `AnalyzeByJSonPath.kt` | Pinned upstream same path | Identical Git blob SHA |
+| `AnalyzeByXPath.kt` | Pinned upstream same path | Modified adapter: removes Android `TextUtils` import and replaces `TextUtils.join("\\n", it)` with Kotlin `it.joinToString("\\n")`; source behavior equivalence has not been differentially tested |
+| `AnalyzeByJSoup.kt`, `AnalyzeByRegex.kt`, `RuleAnalyzer.kt`, `SourceHtmlParser.kt` | Pinned upstream app source tree | Not copied into the Badcat main tree; `integration-contract/build.gradle.kts` compiles these from `$rootDir/upstream/legado/app/src/main/java`. The `upstream/legado` gitlink and `gradle/legado-upstream.properties` both pin exact SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`. |
+| `LegadoRhinoSandbox.kt` | No upstream counterpart | Badcat-local bounded primitive-string sandbox; explicitly documents it is not the complete Legado AnalyzeUrl adapter |
+
+The local `RhinoScriptEngine.kt` public/source declaration inventory has all inspected upstream declarations present and adds one local-only public method, `callSourceFunction(action: Function, scope: VarScope): Any?` (local lines 292–299). The local file imports Rhino `Function` for this bridge. No upstream declaration with that signature was found in the pinned file. This is a local extension, not upstream API parity evidence; its callers and bytecode exposure still require compiled caller/ABI verification. The source comparison establishes at least this intentional difference; it does not substitute for a complete compiled class diff.
+
+### Reflection and JavaScript bridge evidence
+
+- Pinned `app/src/main/java/io/legado/app/help/JsExtensions.kt` is a 1,390-line class marked with `@Keep` (line 123). It contains **48 `@JavascriptInterface` annotation occurrences** and numerous overloaded Java-callable functions. The count is an annotation-occurrence count, not a count of unique JS API names or overload descriptors.
+- Pinned `app/src/main/java/io/legado/app/help/rhino/NativeBaseSource.kt` (lines 8–44) subclasses `CatchableNativeJavaObject` and overrides Rhino `has/get/put`: setter-like names are hidden when a matching property exists, and writes are specially restricted to `variable`. This is observable JS property-resolution behavior, not a passive DTO wrapper.
+- Pinned `modules/rhino/.../CatchableNativeJavaObject.kt` (lines 17–43, 148–208) wraps Java members through `NativeJavaMethod`/Rhino `Function` wrappers and maintains a per-name method cache. Java method discovery/overload binding and error unwrapping therefore form part of the script-visible ABI.
+- Pinned `RhinoClassShutter.kt` (lines 34, 47–49, 104–139) uses `java.lang.reflect.Member` internally while denying script access to `java.lang.reflect`, `java.lang.invoke`, `dalvik.system` and other protected packages; it also protects `ClassLoader`, `Class`, `Member`, Context and object-stream classes. The protected system method names include `load`, `loadLibrary` and `exit` (lines 123–125). This is a security boundary and must be retained/tested when the authentic Rhino wrapper is integrated.
+- In the inspected pinned files (`JsExtensions`, `BaseSource`, `NativeBaseSource`, `RhinoScriptEngine`, `CatchableNativeJavaObject`, `JavaObjectWrapFactory`, `RhinoClassShutter`), no `Class.forName`, `ClassLoader.loadClass`, `ServiceLoader`, JNI `native fun`, or `System.load/loadLibrary` call was found. This is limited to these inspected files, not a repository-wide proof that the complete runtime closure has no dynamic loading.
+- The current Badcat tree contains no `JsExtensions.kt` or `NativeBaseSource.kt` counterpart. Existing host JS and typed adapters do not thereby provide the full upstream bridge surface. This reinforces the already-recorded runtime gap; it does not re-open the earlier per-method inventory.
+- `legado-rhino/consumer-rules.pro` currently contains comments only. The upstream `@Keep` and `@JavascriptInterface` annotations are on upstream application code not currently copied as a complete bridge class. Whether R8 retains the final integrated bridge and its methods cannot be inferred from the current empty consumer rules or from source annotations alone.
+
+### License and notice provenance
+
+- Pinned upstream root `LICENSE` is GPL-3.0. Both local `third_party/legado/LICENSE` and `third_party/legado-rhino/LICENSE` have the exact same Git blob SHA as that upstream license (`ef08d94b4bf3cd935a545be060e001f872a3090c`).
+- Local `THIRD_PARTY_NOTICES.md` records the Legado pin, Rhino source module, GPL-3.0-only notice, HtmlUnit artifact source revisions, MPL-2.0/Apache-2.0 and third-party notice bundle, plus the selected model/Gson and crypto helper source attribution.
+- The HtmlUnit license/notice/source records listed above are byte-for-byte Git-blob-identical to the pinned upstream asset copies. The source tree also contains `third_party/htmlunit-core-js-5.3.0-legado.4/SOURCE.md` with the packaging and Rhino fork source revisions and a recorded artifact SHA-256.
+- The repository tree has no root-level `LICENSE` file; the GPL text is retained under `third_party/legado/` and `third_party/legado-rhino/`. This inventory does not constitute legal review of GPL combination/distribution obligations, the exact applicability of file-level Oracle/Rhino notices, MPL source-offer obligations, or the full transitive dependency license set. Those remain release blockers until a complete artifact/dependency SBOM and distribution review exist.
+
+### ABI limits, status and remaining proof
+
+- Source signatures and Git blob equality do **not** establish compiled JVM descriptors, Kotlin `$default` bridges, suspend continuation descriptors, synthetic/bridge methods, parameter annotations, generic signatures, R8 keep behavior, Rhino overload selection or Android DEX exposure. No compiled ABI dump, reflection test, R8 mapping or APK DEX inspection was produced in this task.
+- No Gradle/build/test/CI was run. This is static evidence only; do not state a dynamic reflection or runtime failure.
+- **Task 008 disposition:** static source/provenance inventory complete for the inspected slices; compiled ABI and full distribution-license acceptance remain **NOT MET**. No source/test/Gradle/workflow/schema/UI/CI file changed.
+- **Stage-0 remains** `in_progress / not accepted`; **Stage-1 remains NO-GO**. Task 007 resolved Gradle dependency/variant closure remains independently blocked and NOT MET.
+- **Next acceptance:** obtain a reproducible exact-SHA Gradle runner; generate pinned and candidate class/JVM ABI inventories, inspect R8/DEX retention and Rhino reflection behavior, finish full dependency/license SBOM and reproducible Stage-0 bundle. Do not repeat the blob comparisons above unless the pin or local source files change.
