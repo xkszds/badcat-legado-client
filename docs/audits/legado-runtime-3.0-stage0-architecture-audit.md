@@ -3694,3 +3694,12 @@ Task 016 is completed as a read-only existing-output inventory with bounded JVM 
 - Task 017 is **partial / terminal result unknown**, not a successful or failed assemble. It reached `:app:mergeExtDexDebug`; manifest merge intermediates exist; no APK/AAB/DEX/R8 output was produced or found; temp-JAR cleanup and clean Git state are verified.
 - Do not retry the build solely to infer the missing historical exit code. Any new packaging attempt requires a separately registered task and explicit decision. No CI, source/configuration change, test run or process termination occurred during recovery.
 - Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; full Legado compatibility remains **NOT ESTABLISHED**.
+
+
+### 24.76.4 Task 017 — daemon-side cancellation evidence addendum (2026-11-25)
+
+- Follow-up read-only inspection of the exact runner's Gradle daemon log `/root/.gradle/daemon/8.14.4/daemon-432858.out.log` found the terminal daemon-side message: `client disconnection detected, canceling the build`; it then records `DaemonStoppedException` stating the build was canceled after a stop request, followed by daemon shutdown. This upgrades the earlier process-state uncertainty to **Gradle build cancellation confirmed**; it still does not recover the Gradle CLI's final exit code.
+- The packaged manifest intermediate was read directly: package `app.badcat.client`, versionCode `1`, versionName `0.1.0-integration`, minSdk `28`, targetSdk `36`. It remains an intermediate, not an APK.
+- No APK/AAB/DEX/R8 mapping file exists in the inspected `app/build` tree; the only `app/build/outputs` file is the 16,229-byte manifest merger report. No OOM-killer lines were returned by the bounded kernel-journal query for 06:25–06:40; this absence does not establish the reason for the client disconnection.
+- SHA-256: assemble log `2e4a8183a63734da52b8b81aeb461dd5a3aba6b5a7bfe7cb9d717e44e59a9c7b`; daemon log `070a8ab6afadfcca27668182eb54c8617785a103a4e6d5e5c5b0cc0f876ee0e1`; cleanup marker `ede4663fa9a5e8031704705268edde90aae07273f42b7b7274db7b317a40b001`.
+- **Disposition unchanged:** Task 017 is cancelled before successful packaging; client exit code remains unknown; cleanup verified; Stage-0 not accepted and Stage-1 **NO-GO**. No retry, CI, source/configuration change, or process termination.
