@@ -92,7 +92,9 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 
 1. [第一类：Badcat UI](01-BADCAT-UI.md)
 2. [第二类：阅读器](02-READER.md)
-3. [第三类：Legado 运行时](03-LEGADO-RUNTIME.md)
+3. [第三类：Legado 运行时总进度与 CI 分册索引](03-LEGADO-RUNTIME-OVERVIEW.md)
+   - 技术历史档案：`03-LEGADO-RUNTIME.md`（历史证据，按需读取，不作为每轮例行入口）
+   - 当前 200 CI 分册：`CI-3200-3399-AUDIT.md`（#3200–#3399）
 4. [第四类：AdBlock/AdMark](04-ADBLOCK-ADMARK.md)
 5. [第五类：PPRule](05-PP-RULE.md)
 
@@ -112,7 +114,7 @@ UI 是交互入口，不等于数据库事实源。每个数据域（BookSource�
 
 ## 0.2 连续任务接手与进度恢复（强制）
 
-- **必读门禁优先于上下文恢复：** 每次收到新任务或“继续”，先重新读取当前分支的本总清单，再读取本次所属分类清单；不得先凭聊天记忆、摘要或上次结果开始操作。用户指定第三类时，必须读取本文件和 `03-LEGADO-RUNTIME.md`。
+- **必读门禁优先于上下文恢复：** 每次收到新任务或“继续”，先重新读取当前分支的本总清单，再读取本次所属分类清单；不得先凭聊天记忆、摘要或上次结果开始操作。用户指定第三类时，必须读取本文件和 `03-LEGADO-RUNTIME-OVERVIEW.md`；只有需要恢复具体技术历史证据时才按章节读取 `03-LEGADO-RUNTIME.md`。
 - **以仓库证据恢复进度：** 必读完成后，核对分支名、HEAD、最近提交和分支变化；从分类清单恢复所有 registered/in_progress 任务、各自的文件边界、依赖、实际结果、失败项和下一步，不要求用户重复提供已经记录的信息。
 - **活动 CI 快照与并行任务规则：** CI 只读取其 exact SHA 的不可变快照；活动 CI 不再冻结整条分支。允许独立任务在同一分支形成后续提交并各自运行 CI。仅当文件路径不重叠、无共享可变状态、无未满足依赖且各自已 preregister 时才可并行；同文件/同依赖任务串行。分支 ref 更新必须用 expected SHA/CAS，不得 force-push、reset、rebase 或改写活动 CI 所依赖的历史。任何测试/CI 结果仅对其记录的 SHA 有效。
 - **CI/产物必须按提交快照核实：** 每个 CI run 固定验证其触发时的 exact commit SHA；CI 运行期间允许在同一 integration 分支提交已独立登记、文件范围不冲突且无依赖冲突的其他任务。新提交产生新的 SHA/CI run，旧 run 只验证旧 SHA，绝不能替新提交背书。禁止 force-push、reset、rebase 改写活动 run 所依据的历史；分支更新必须使用 expected SHA/CAS，避免并发提交覆盖。对已终结 CI 检查 exact HEAD、job/step、失败日志、JUnit、报告和 APK/其他产物；不能只看 run 标题或“上传成功”推断验收通过。
