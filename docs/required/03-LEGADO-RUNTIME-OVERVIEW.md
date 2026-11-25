@@ -1151,3 +1151,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Temporary filtered Maven repository and init script were removed; verified KSP JAR retained under `/tmp/task026-ksp-aa-full/`; tracked Badcat and upstream worktrees remain clean.
 - **Next:** Task 026H is separately preregistered in audit §24.116 to run only `:app:compileAppDebugKotlin` with `-Pkotlin.compiler.execution.strategy=in-process` and a single Gradle JVM capped at 1 GiB, reusing the verified local KSP artifact. No tests/assemble/DEX/R8/APK/CI/device or source migration.
 - **Disposition:** Task 026 Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
+
+### 4.27.30 Task 026H result — in-process App compile reached Kotlin task but stopped on memory pressure (2026-11-25)
+
+- **Status:** incomplete / acceptance not met; not a source compile failure and not a pass. The exact `:app:compileAppDebugKotlin` task was reached after `:app:kspAppDebugKotlin` loaded the Room and Glide providers.
+- **Strategy:** in-process Kotlin compiler, single Gradle JVM `-Xmx1g`; no separate Kotlin daemon. The Gradle process reached about 1.26 GiB RSS; available RAM fell to about 115 MiB and swap use rose to about 400 MiB. It was stopped under the registered memory-pressure gate, exit 143. No App Kotlin `.class` outputs were produced. See audit §24.117 for hashes and complete evidence.
+- Temporary filtered Maven repository and init script removed; verified KSP JAR retained under `/tmp/task026-ksp-aa-full/`; tracked Badcat and upstream worktrees remain clean.
+- **Next:** Task 026I is preregistered in audit §24.118 to run only `:app:compileAppDebugKotlin` with the compiler in-process and Gradle heap capped at 768 MiB. This is the last bounded App compile resource experiment; no further compile retry after it.
+- **Disposition:** Task 026 Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
