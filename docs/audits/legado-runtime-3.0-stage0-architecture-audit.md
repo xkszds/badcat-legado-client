@@ -4503,3 +4503,67 @@ This is a proposed protocol requiring failure-injection/restart validation. Prog
 3. No source, Gradle, test, workflow, schema, UI or product file changed. No Gradle dependency task, build, test, DEX/R8, CI or device run occurred in this slice.
 4. Task 026 Phase A remains in_progress / not closed; Phase B remains unauthorized; Task 027 remains blocked; Stage-0 remains in_progress / not accepted; Stage-1 remains NO-GO; complete Legado compatibility remains NOT ESTABLISHED.
 5. **Next:** obtain an exact-current-HEAD clean checkout for descriptor/reflection and complete dependency-variant evidence, then finish the source-image and Explore typed-port signature matrices. Re-read both required documents before any Phase B decision. Do not use the stale/dirty runner checkout or infer DEX/R8 results from source declarations.
+
+
+## 24.87 Task 026 Phase A — source-image execution and Explore catalog contract refinement (2026-11-25)
+
+- **Review snapshot:** Badcat branch `integration/legado-upstream-runtime` at `3ae580f6ee9e9c983a8fcf1d1f23ff14bc8b2b8c`; comparison with the branch ref reports identical (0 ahead/behind). Pinned upstream: `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Scope:** read-only inspection of the pinned AnalyzeUrl, ImageUtils, OkHttpStreamFetcher, OkHttpModelLoader, BookCover, GlideImageGetter, BookSourceExtensions, WebBook and ExploreAdapter source paths. No source/build/test/Gradle/workflow/schema/UI edits and no build, test, dependency resolution, DEX/R8 or CI execution.
+
+### 24.87.1 Source-aware image request and decode are runtime behavior
+
+**Pinned call chain and ownership**
+
+1. `BookCover.load(..., sourceOrigin)` and `loadManga(..., sourceOrigin)` attach `OkHttpModelLoader.sourceOriginOption` to the Glide request. This is a product-side image entry point; its Glide RequestBuilder/Drawable/placeholder/transform behavior is not Runtime code.
+2. `OkHttpModelLoader` creates `OkHttpStreamFetcher`. In `loadData`, the fetcher reads `sourceOriginOption`, resolves the active source with `SourceHelp.getSource(sourceUrl)`, then constructs `AnalyzeUrl(url.toString(), source=source, coroutineContext=coroutineContext).getGlideUrl()`.
+3. `AnalyzeUrl.getGlideUrl()` calls `setCookie()` before returning the analyzed URL with `GlideHeaders(headerMap)`. The AnalyzeUrl constructor and URL parser also preserve source-derived login headers, URL JS/embedded JS, URL options, relative URL resolution, and source context. `setCookie` merges CookieStore values with an explicit Cookie header and sets/removes the cookie-jar marker according to `BaseSource.enabledCookieJar`.
+4. The fetcher issues the actual image HTTP request using the host OkHttp client (manga uses a separate manga client), applies the analyzed headers, and treats non-success HTTP status as a load failure. On success it checks `ImageUtils.skipDecode`; if decoding is needed it runs the decode path on IO using the fetcher's coroutine context.
+5. `ImageUtils.decode` selects `BookSource.coverDecodeJs` for cover images and `BookSource.getContentRule().imageDecode` for chapter/manga images. It invokes `BaseSource.evalJS` with `book`, `result` (bytes or InputStream) and `src`; a non-blank script is expected to return ByteArray. Decode exceptions are logged and converted to null; null then becomes a fetch failure in `OkHttpStreamFetcher.onStreamReady`.
+6. Fetcher lifecycle is explicit: `cancel()` cancels both OkHttp Call and coroutine context; `cleanup()` closes stream/response body, cancels context and clears callback. These semantics must not be lost when replacing the Glide adapter.
+
+**Boundary correction**
+
+- Source-aware URL analysis, login headers/CookieStore interaction, source-specific cover/chapter decode JS, the typed Book binding and cancellation/error semantics are genuine BookSource runtime capabilities.
+- Glide ModelLoader/DataFetcher, RequestBuilder, Drawable/Bitmap/GIF presentation, TextView/HTML layout, placeholders, transformations, disk/memory image presentation caches and UI lifecycle remain Badcat host responsibilities.
+- `AnalyzeUrl.getMediaItem()` remains a separate playback convenience; the previously traced callers are AudioPlayService and ReviewDetailDialog. This image path does not justify importing Media3 into the BookSource Runtime.
+- `GlideImageGetter` is another product-side caller: it resolves `sourceOrigin` through the app DB and passes it into Glide; it also uses AnalyzeUrl for data-URI URL normalization. Do not migrate its TextView/Drawable lifecycle or direct appDb lookup into Runtime.
+
+**Typed port implications (proposal, not finalized signatures)**
+
+- The runtime needs an image-request preparation contract that preserves the analyzed URL and complete request headers (including cookie/login headers and any source-specific URL options) without exposing Glide types to the core.
+- The host owns byte/stream transport and must return a cancellable, closeable response with status/headers/error information sufficient to preserve current failure semantics. The runtime owns source-specific decode-script selection/evaluation and receives the actual source object, optional Book context, original source URL and bounded bytes/stream.
+- A likely seam is a typed `SourceImageRequest` / `SourceImageResponse` pair plus a decode operation tied to the existing source execution context. Exact type placement and signatures remain open: current upstream `getGlideUrl()` returns GlideUrl and `setCookie()` is private, so extracting a Glide-free preparation API requires a reviewed adapter/fork seam rather than merely moving the current class unchanged.
+- Required differential cases include same-origin vs cross-origin login headers; explicit Cookie plus CookieStore merge; enabled/disabled cookie jar; relative/JS/data URLs; cover vs chapter decode script; ByteArray vs InputStream; decode exception/null/wrong return type; HTTP failure; call cancellation; coroutine cancellation; response/stream close; and source/book identity isolation.
+
+### 24.87.2 Explore catalog state is a source-execution context, not only UI state
+
+**Pinned execution chain**
+
+1. `BookSource.exploreKinds()` computes `MD5(bookSourceUrl + exploreUrl)` as the result/cache key. It first checks a process-memory `ConcurrentHashMap<String, List<ExploreKind>>`, then uses a per-`bookSourceUrl` `Mutex` before recomputing.
+2. For `@js:` and `<js>` explore rules, it checks the persistent `ACache.get("explore")` string cache. On a miss it obtains the source-keyed `InfoMap` from `ExploreAdapter.exploreInfoMapList` (an `LruCache<String, InfoMap>(99)`) or creates one, injects it into JS as `infoMap`, evaluates the script and persists the resulting string. Non-JS explore rules use their literal rule text.
+3. The result is parsed as a JSON array of `ExploreKind`, or as text split by `&&` / newline and then `::`. Errors are represented as an `ExploreKind` whose title starts with `ERROR:` and whose URL/detail carries the stack trace; the resulting list is still stored in the process-memory map.
+4. `WebBook.exploreBookAwait()` reads the same source-keyed `exploreInfoMapList[sourceUrl]` and passes it into `AnalyzeUrl(infoMap=...)`. Therefore mutable InfoMap values written while resolving kinds can affect the later explore request/JS context; it is not merely adapter rendering state.
+5. `clearExploreKindsCache()` removes the persistent result and process-memory result for the computed key. The source-keyed InfoMap has a separate LRU lifecycle and is not removed by that method. `exploreKindsJson()` returns a cached value only if it is a JSON array, otherwise a literal JSON-array exploreUrl, else an empty string.
+6. `ExploreAdapter` itself owns UI rendering, Flexbox child creation, click/openExplore actions, SourceLoginJsExtensions callbacks and per-view refresh state. Those are product UI responsibilities. Its static InfoMap LRU is currently also consumed by runtime source execution, so the mutable context ownership must be extracted rather than importing the adapter.
+
+**Concurrency and cache cautions**
+
+- The source code declares a `ConcurrentHashMap` for computed kind lists and a per-source `Mutex`; the lazy `mutexMap` itself is a plain `HashMap`. Do not overstate this as a fully thread-safe lock registry without a concurrency test or a replacement design.
+- Result key scope (`bookSourceUrl + exploreUrl`), lock scope (`bookSourceUrl`), InfoMap scope (`bookSourceUrl`), persistent namespace (`explore`), and LRU capacity (99) are distinct and must remain distinct unless differential evidence justifies a change.
+- Cache invalidation currently removes one explore result key from persistent and memory result caches, but not the InfoMap LRU entry. Source deletion/update may therefore require a separately traced lifecycle invalidation path; do not silently broaden or narrow invalidation.
+- UI rendering and source-execution state are coupled by a static field. A replacement must preserve the mutable InfoMap object identity/contents across `exploreKinds()` and `exploreBookAwait()`, not replace it with a fresh Map per call.
+
+**Typed port implications (proposal, not finalized signatures)**
+
+- Separate the typed mutable source-scoped InfoMap context from the ExploreKind result cache. The runtime should receive a source-scoped context object for JS writes/reads; the host may own its bounded persistence/LRU implementation.
+- An `ExploreCatalogPort` candidate must cover: source+explore URL result keying; persistent result read/write/remove; in-memory result reuse; per-source serialized execution; source-scoped InfoMap acquisition with stable identity; and explicit source-update/delete invalidation. It must preserve the current distinction between result cache invalidation and InfoMap lifetime until callers prove otherwise.
+- Do not import `ExploreAdapter`, Flexbox, Explore Activity, SourceLogin UI, or product callback/rendering code into Runtime. Keep the typed `ExploreKind` model/runtime result separate from the UI's view construction and navigation.
+- Required differential tests: same-source concurrent requests serialize; different sources can proceed independently; same source+explore URL shares cached result; changing exploreUrl changes result key; persistent-cache hit skips JS; InfoMap writes survive from kind resolution to explore request; clear removes both result caches but preserves InfoMap unless explicit source invalidation occurs; parse/error encoding matches; source deletion/update invalidation is deterministic; cancellation while waiting for source mutex does not poison later requests.
+
+### 24.87.3 Phase A disposition
+
+- **Closed in this slice:** exact pinned image URL/header/Cookie/decode caller chain and the split between source execution vs Glide presentation; exact Explore result/cache/InfoMap/UI caller chain and the current cache/lock scopes.
+- **Still NOT MET:** compiled JVM/Rhino ABI/reflection descriptors; upstream optimized Release DEX/R8 evidence; complete resolved Debug/Release/unit/AndroidTest dependency graph; final typed signatures and ownership for SourceImage and ExploreCatalog/InfoMap ports; source-update/delete invalidation callers; dynamic cancellation/concurrency/decode differential tests.
+- **No changes/execution:** no production source, Gradle, test, workflow, schema, UI or product file changed; no build, test, dependency resolution, DEX/R8, CI or device run.
+- **Gate:** Task 026 Phase A remains in progress/not closed; Phase B is not authorized; Task 027 remains blocked; Stage-0 remains in_progress/not accepted; Stage-1 remains NO-GO; complete Legado compatibility remains NOT ESTABLISHED.
+- **Next:** continue Phase A only for the remaining compiled ABI/reflection and exact Gradle variant evidence where an authorized exact-current-HEAD environment is available; then consolidate the path-exact Phase B proposal and stop for review. Do not start source migration from this evidence slice.
