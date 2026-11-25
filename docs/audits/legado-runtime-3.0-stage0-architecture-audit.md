@@ -5022,3 +5022,14 @@ These are candidates for a later committed addendum, not currently authorized ed
 - **Cleanup:** the metadata response and 1 MiB probe were removed after recording; only `/tmp/task026-ksp-aa-full/probe-results.txt` remains (SHA-256 `13ae0fa5a1be5a1a9b5a56b3c86c5eb7985df2d0e6653500aa03105c61841d20`). No Gradle cache, repository or build files were changed.
 - **Stop:** do not fetch 5 MiB chunks until an authoritative checksum source is registered and verified. The range mechanism is proven, but the full JAR integrity condition is not yet met.
 - **Disposition:** Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
+
+
+## 24.101 Task 026 Phase A — Maven checksum-sidecar lookup preregistration (2026-11-25)
+
+- **Task ID:** `R3-S0-T026-KSP-AA-CHECKSUM-SIDECAR-026C`.
+- **Status:** registered; not yet executed.
+- **Snapshot:** runner source checkout `55b8f102e8b0b2e1c27a3d44530accf06d5a07e4`, clean; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`; branch HEAD before registration `ed10f18078bd07753791884588de82cf7804a939`; source/build inputs remain unchanged by intervening documentation-only commits.
+- **Goal:** find an authoritative checksum sidecar for the exact KSP AA-embeddable 2.3.12 JAR, because its Gradle `.module` endpoint returned 404.
+- **Allowed execution:** one HTTPS GET each, in order, to the exact same Maven Central artifact path with suffixes `.jar.sha256`, `.jar.sha512`, then `.jar.sha1`; stop at the first valid sidecar. Each request has 10-second connect and 15-second total timeout, no retries. Validate response is HTTP 200 and content is a correctly sized hexadecimal digest (64, 128 or 40 hex chars respectively), optionally followed by filename. No mirror switch or other endpoint.
+- **Acceptance:** record exact URL, status, returned digest, response size and SHA-256 of the sidecar. If SHA-256 or SHA-512 exists, it can anchor the subsequent chunked download. If only SHA-1 exists, stop and request a separate decision before using it as the integrity anchor. If all sidecars are absent/invalid, stop; no full JAR download.
+- **Exclusions:** no full artifact chunk download, no Gradle cache injection, no local repo, no build/KSP/test/CI/DEX/R8/APK/device execution, no repository source/config edits, no Phase B or Task 027.
