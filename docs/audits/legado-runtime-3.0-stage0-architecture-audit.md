@@ -4444,3 +4444,62 @@ This is a proposed protocol requiring failure-injection/restart validation. Prog
   - Build validation, after a separate written Phase B approval: runtime Debug/Release compile and unit-test variants; app Debug/Release compile and focused host-adapter tests; compiled JVM descriptor/reflection snapshot for every JS bridge and source model; duplicate-class/single-owner and no-cycle checks; then a bounded authentic search/detail/TOC/content/batch/login/browser/HTTP execution proof with test-only fakes. No schema migration, Task 027 storage adapter, APK/release claim or CI run is included.
 - **Disposition:** Phase A remains `in_progress` and is **not closed**. The new caller evidence adds the replacement-runtime path and narrows the RSS/product boundary, but compiled descriptor/reflection verification, online-complete Debug/Release/test transitive dependency resolution, media/image caller adjudication and exact Host Port signatures remain blockers. This is a candidate path-exact addendum for review, not authorization to edit production code. Task 027 remains blocked; Stage-0 remains not accepted; Stage-1 remains NO-GO; full Legado compatibility remains NOT ESTABLISHED.
 - **Next Phase A work:** complete the compiled ABI/reflection pass without using the stale Badcat checkout; obtain complete Debug/Release/unit/AndroidTest transitive reports in a dependency-complete environment; close the media/image and explore-catalog seams; then revise this proposed path list and stop for independent review. Do not start Phase B from this checkpoint.
+
+## 24.86 Task 026 Phase A — Release/R8, variant declarations, image and Explore host boundaries (2026-11-25)
+
+- **Review snapshot:** Badcat branch integration/legado-upstream-runtime at exact HEAD 18d83aac4b1b50e27f88754829850e250ff3f38b; pinned upstream LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a. The branch compare against checkpoint 792837d8713099babc3927770b72302a82e8c6d6 reports two commits ahead, limited to the audit and required overview documents. No production/build/test file changed in that range.
+- **Scope:** read-only inspection of current Badcat Gradle/consumer rules and bridge declarations, pinned upstream app/module build files and ProGuard rules, adjacent model files, image loading/decode caller path, and Explore cache caller path. No Gradle task, build, test, DEX/R8, CI or device execution was performed.
+
+### 24.86.1 Release/R8 and inherited bridge visibility
+
+**Pinned upstream**
+
+1. app/build.gradle:110–135 declares one app product flavor with Debug and Release build types. Debug has minifyEnabled false; Release has minifyEnabled true, shrinkResources = true, and applies proguard-android-optimize.txt, proguard-rules.pro and Cronet rules.
+2. app/proguard-rules.pro:30,61,63 retains annotation/inner-class and generic signature attributes, keeps classes extending io.legado.app.help.JsExtensions with their members, and keeps data-entity classes. The pinned JsExtensions interface itself is annotated @Keep.
+3. The script-facing inheritance chain is real: RssJsExtensions : JsExtensions; WebJsExtensions and SourceLoginJsExtensions extend RssJsExtensions. The login bridge's callback methods are public Rhino-visible methods even though they do not carry @JavascriptInterface; the public JS surface therefore cannot be inventoried only by annotation count.
+4. These rules are intended source-level shrinker protection. No pinned Release DEX/mapping output was produced in this slice, so inherited-method retention, obfuscation names, Kotlin-generated overloads and reflection visibility in the actual optimized artifact remain unverified.
+
+**Badcat at the reviewed HEAD**
+
+1. app/build.gradle.kts has no explicit buildTypes, minifyEnabled, shrinkResources or proguardFiles declaration. The repository has no app/proguard-rules.pro at that path.
+2. legado-runtime/consumer-rules.pro is empty; legado-rhino/consumer-rules.pro contains only a comment. The current RhinoSafeSourceJavaExtensions class has no @Keep annotation (blob 6a00e649895c4c1d223b768c6b288632ec033de9, class declaration line 49).
+3. Therefore the current repository source does not configure an app Release R8/minification pass from which bridge retention could be established. It would be incorrect to claim either successful or failed Release bridge preservation from the existing source snapshot. If minification is enabled later, the host Rhino-reflected methods and inherited/runtime bridge members need an explicit keep/consumer-rule design and a minified-artifact reflection test.
+
+**Disposition:** source-level keep intent is confirmed upstream; Badcat's current release-shrinker behavior is not exercised/configured in the inspected app script. Compiled JVM descriptors, actual Rhino callable members, optimized DEX visibility and mapping evidence remain open.
+
+### 24.86.2 Declared dependency/variant boundary (not a resolved graph)
+
+- Pinned upstream app has one app flavor and Debug/Release build types. modules/book/build.gradle:31–33 declares AndroidX annotation as its only direct dependency. modules/rhino/build.gradle:39–43 exposes HtmlUnit CoreJS through api and declares coroutines, OkHttp and AndroidX collection. The upstream app itself directly declares the much broader AndroidX/Room/HTTP/parser/crypto/archive/image/media/product dependency set; these declarations do not imply that all are required by the isolated BookSource runtime.
+- Badcat :legado-runtime currently compiles only the eight Task-025 pinned rule/Gson files and declares Gson plus AndroidX annotation (legado-runtime/build.gradle.kts:34–55). :legado-rhino exposes HtmlUnit CoreJS and declares coroutines, OkHttp and AndroidX collection (legado-rhino/build.gradle.kts:34–39). :app depends on :integration-contract, :legado-runtime and :legado-rhino, and directly declares Flexbox, Hutool crypto, Bouncy Castle, Jsoup/JsoupXpath/JsonPath, coroutines, OkHttp, libarchive and quick-transfer among other host dependencies (app/build.gradle.kts:131–161).
+- The declarations above are not a resolved Debug/Release/unit-test/AndroidTest transitive graph. The prior offline report in §24.85.2 listed unresolved artifacts; the online resolution attempt did not complete. No new dependency resolution was attempted here. Complete variant resolution, generated-source/plugin dependencies, runtime-vs-test-only provenance and license/SBOM closure remain environment-blocked or unverified.
+
+### 24.86.3 Adjacent source models and Flexbox boundary
+
+- The current Badcat files for RowUi.kt, ExploreKind.kt and FlexChildStyle.kt are byte-identical to the pinned upstream blobs:
+  - RowUi.kt: d62c08d4928df39d8c035f22067fd58339baf368
+  - ExploreKind.kt: 0e3ae79df1f126b662e043badebbc4ca1fa2ad90
+  - FlexChildStyle.kt: 0416e148f52930acf5f37f724fee56105aeb0344
+- RowUi and ExploreKind carry typed login/explore UI rule data including FlexChildStyle. FlexChildStyle.kt:3–4,28 directly imports Android View and Flexbox FlexboxLayout and applies layout parameters. Badcat app already declares Flexbox 3.0.0, while :legado-runtime does not.
+- This is a real direct source dependency if the exact FlexChildStyle class is moved unchanged into Runtime; it is not evidence that Legado Activity/Dialog screens belong there. Keep the model/FQCN and presentation effect boundary explicit. Any module move must either expose the required Flexbox API dependency to consumers or provide a separately reviewed compatibility-preserving host arrangement; do not silently drop apply(View) or mutate these files during Phase A.
+
+### 24.86.4 Image URL/decode and Explore cache are runtime seams, not product-screen imports
+
+**Image path**
+
+- Pinned OkHttpStreamFetcher.loadData reads the source origin and resolves the active BaseSource (OkHttpStreamFetcher.kt:68), calls AnalyzeUrl.getGlideUrl() (:71–75), then passes the successful response into ImageUtils.decode (:131,139).
+- Pinned ImageUtils.decode invokes source.evalJS with result and src (ImageUtils.kt:20–46); for BookSource it selects coverDecodeJs for covers and ContentRule.imageDecode for chapter images (:66–69). Thus source-aware image URL/header/cookie processing and source-specific decode JS are genuine BookSource behavior.
+- Keep Glide's DataFetcher, model loader, stream/Drawable presentation and UI lifecycle in the Badcat host. The Runtime boundary needs a source-image URL/request/decode capability with bounded bytes, source identity, cancellation and script context; it need not import Glide merely because the current upstream adapter returns GlideUrl. AnalyzeUrl.getMediaItem() callers previously located are AudioPlayService and ReviewDetailDialog, which are product playback callers; no BookSource runtime caller was established for Media3 in this slice.
+
+**Explore path**
+
+- Pinned BookSourceExtensions.kt imports ExploreAdapter, InfoMap and ACache (file lines 9–10, 28 onward); WebBook.kt:23,127–141 reads the adapter's source-keyed exploreInfoMapList. The UI adapter owns an LruCache<String, InfoMap>(99) (ui/main/explore/ExploreAdapter.kt:80).
+- BookSourceExtensions.exploreKinds also has per-source URL serialization, a concurrent in-memory result map, persistent ACache entries keyed by the source URL and explore URL, and an explicit clear/invalidation path (see pinned BookSourceExtensions.kt:28–119). The InfoMap state is used as request context; it is not merely an Explore screen rendering detail.
+- Preserve the per-source request context, concurrent request exclusion, persistent/memory cache and invalidation behind a typed ExploreCatalogPort. Do not import ExploreAdapter, InfoMap's product presentation, or Explore Activity/screens into Runtime. Exact port signatures and cross-runtime invalidation behavior remain to be specified and differentially verified.
+
+### 24.86.5 Phase A disposition
+
+1. **Closed in this slice:** upstream Release shrinker intent and bridge inheritance source path; current Badcat minification/consumer-rule declarations; direct module dependency declarations for upstream :modules:book/:modules:rhino and Badcat runtime/Rhino/app; exact identity of the three adjacent model files; source image decode caller path; Explore cache/UI seam.
+2. **Still NOT MET:** compiled upstream/host JVM and Rhino reflection inventory; optimized upstream Release DEX/R8 retention proof; Badcat minified Release bridge proof (no current minification configuration); complete resolved Debug/Release/unit/AndroidTest transitive dependencies; exact typed signatures for source-image and Explore ports; full cancellation/resource/error differential tests.
+3. No source, Gradle, test, workflow, schema, UI or product file changed. No Gradle dependency task, build, test, DEX/R8, CI or device run occurred in this slice.
+4. Task 026 Phase A remains in_progress / not closed; Phase B remains unauthorized; Task 027 remains blocked; Stage-0 remains in_progress / not accepted; Stage-1 remains NO-GO; complete Legado compatibility remains NOT ESTABLISHED.
+5. **Next:** obtain an exact-current-HEAD clean checkout for descriptor/reflection and complete dependency-variant evidence, then finish the source-image and Explore typed-port signature matrices. Re-read both required documents before any Phase B decision. Do not use the stale/dirty runner checkout or infer DEX/R8 results from source declarations.
