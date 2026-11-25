@@ -5558,3 +5558,13 @@ Determine whether this POC should be retained as quarantined evidence or exclude
 - **Exclusions:** read-only only. No production source/build/test/Gradle/manifest/schema/UI/Reader edits; no Gradle/compiler/build/test/CI/device/network action; no App compile retry under §24.119; no POC cleanup; no BookSource/BaseSource migration; no Task 027 or Stage-1.
 - **Acceptance:** every host effect has one typed owner or a proven Runtime-core implementation; every port method has exact source/caller and complete null/error/thread/cancel/callback/lifecycle semantics; no duplicate ownership; all unresolved items named. A candidate signature without owner evidence is not frozen. Commit only the contract matrix/report and audit/overview result updates.
 - **Next:** after registration commit, reread the master and third-category required lists at that committed HEAD before beginning 026P inspection.
+
+
+## 24.125.6 Task 026P scope amendment — shared App-side JsExtensions implementations
+
+The registered Login UI/WebView bridge scope includes subclasses of a shared App-side `JsExtensions` implementation. To distinguish the 175-method upstream API from product-only UI extensions, add only these exact upstream read paths:
+
+- `app/src/main/java/io/legado/app/ui/rss/read/RssJsExtensions.kt` — shared App-side `JsExtensions` implementation and source context owner.
+- `app/src/main/java/io/legado/app/ui/login/SourceLoginJsExtensions.kt` — Login/Explore/Reader/Video product bridge extending `RssJsExtensions`.
+
+`WebJsExtensions.kt`, `SourceLoginDialog.kt`, `SourceLoginV2Delegate.kt` and `SourceLoginRoute.kt` remain in the existing registered scope. Read only the direct implementation methods, constructor/source/context ownership and exact JS bridge methods in the two added files. Search-only `JsExtensions` implementer/caller inventory is allowed; do not read unrelated Reader/RSS/Video UI bodies. These are App-only product/UI bridges and must not be moved into Runtime. No other scope changes; Task 026P remains read-only.
