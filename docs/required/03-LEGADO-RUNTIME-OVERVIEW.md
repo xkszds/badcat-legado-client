@@ -1030,3 +1030,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Cleanup:** all downloaded/partial JAR files were deleted after recording transfer metadata and hashes; no Gradle cache or repository source/build files were modified. Results file SHA-256 and per-artifact hashes are in audit §24.98.
 - **Next:** preregister and perform a checksum-verified full JAR transfer/staging step before retrying App KSP. Do not treat the cancelled exit-143 app compile as a pass or source failure.
 - **Disposition:** Phase A remains open/not closed; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
+
+
+### 4.27.16 Task 026 Phase A — verified KSP AA-embeddable staging preregistered (2026-11-25)
+
+- **Task ID:** `R3-S0-T026-KSP-AA-ARTIFACT-STAGING-026B`; registered/not started; scope and stop conditions in audit §24.99.
+- **Goal:** obtain the exact 80,992,357-byte `symbol-processing-aa-embeddable:2.3.12` JAR via bounded HTTPS range requests, using Maven module metadata as the authoritative size/SHA-256 source.
+- **Boundaries:** download only to `/tmp`; verify each 5 MiB range and final checksum; no Gradle cache injection, local repo injection, build/KSP/test/source edit, or app compile retry. Stop on unsupported Range, non-206, timeout, wrong size or checksum mismatch.
+- **Next:** execute the metadata + range staging probe only. If verified, separately preregister any Gradle staging/compile action; Phase A remains open and Stage-1 NO-GO.
