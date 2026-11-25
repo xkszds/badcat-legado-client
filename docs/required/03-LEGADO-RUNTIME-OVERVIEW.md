@@ -1274,3 +1274,5 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Next:** register BaseSource/BookSource implementation only if the per-source host bridge is proven; otherwise stop and reopen architecture decision. Stage-0 remains not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
 
 - **026O scope amendment:** search-only implementer inventory found additional shared `BaseSource` implementations in upstream `RssSource`, `HttpTTS`, anonymous `BookCover` and `SourceNavigationBridge` delegation, plus Review/Reader/Login/Verification/WebView callsites. Exact files are listed in audit §24.131.1 and are read only at BaseSource boundaries; these product features remain App-side and are not imported into Runtime.
+
+- **026O scope amendment 2:** added exact read-only imported owner files for CacheManager, CookieStore/CookieManager, ConcurrentRateLimiter, AppConfig/Theme/ReadBookConfig, Android-ID/AES, SourceHelp, AppLog/EventBus, File/Archive/LibArchive, BackstageWebView/SSL, BatchContentContext and VideoPlay. Exact paths and ownership boundary are audit §24.131.2; read only methods used by BaseSource/JsExtensions.

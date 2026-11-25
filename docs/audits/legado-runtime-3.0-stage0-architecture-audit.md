@@ -5473,3 +5473,31 @@ Add only the following exact upstream read paths to Task 026O; read only their B
 - `app/src/main/java/io/legado/app/help/webView/WebJsExtensions.kt`
 
 These types/callers remain host/product-side; this amendment does not authorize moving RSS, TTS, Cover, Reader, Review or Login UI into Runtime. The purpose is to preserve the shared interface contract and enumerate any additional host adapter obligations. No other scope changes.
+
+### 24.131.2 Task 026O scope amendment — exact imported host-side service owners
+
+To freeze host-port signatures rather than infer them from imports, add the following exact upstream dependency-owner files to the read-only scope. Read only the methods directly invoked by BaseSource/JsExtensions and their actual host callers; no unrelated implementation or UI migration is authorized:
+
+- `app/src/main/java/io/legado/app/help/CacheManager.kt`
+- `app/src/main/java/io/legado/app/help/ConcurrentRateLimiter.kt`
+- `app/src/main/java/io/legado/app/help/http/CookieStore.kt`
+- `app/src/main/java/io/legado/app/help/http/CookieManager.kt`
+- `app/src/main/java/io/legado/app/help/http/BackstageWebView.kt`
+- `app/src/main/java/io/legado/app/help/http/SSLHelper.kt`
+- `app/src/main/java/io/legado/app/help/config/AppConfig.kt`
+- `app/src/main/java/io/legado/app/help/config/ThemeConfig.kt`
+- `app/src/main/java/io/legado/app/help/config/ReadBookConfig.kt`
+- `app/src/main/java/io/legado/app/help/crypto/SymmetricCryptoAndroid.kt`
+- `app/src/main/java/io/legado/app/help/source/SourceHelp.kt`
+- `app/src/main/java/io/legado/app/constant/AppConst.kt`
+- `app/src/main/java/io/legado/app/constant/AppLog.kt`
+- `app/src/main/java/io/legado/app/constant/AppPattern.kt`
+- `app/src/main/java/io/legado/app/constant/EventBus.kt`
+- `app/src/main/java/io/legado/app/utils/FileUtils.kt`
+- `app/src/main/java/io/legado/app/utils/ArchiveUtils.kt`
+- `app/src/main/java/io/legado/app/utils/compress/LibArchiveUtils.kt`
+- `app/src/main/java/io/legado/app/model/BatchContentContext.kt`
+- `app/src/main/java/io/legado/app/model/VideoPlay.kt`
+- `app/src/main/java/io/legado/app/help/book/BookHelp.kt`
+
+These owners are classified by use: Runtime pure utilities may move; AppContext/config/resources, persistence, HTTP/Cookie, browser/WebView, Media, notifications/events and file/archive implementations remain host-side behind typed ports. No source file changes.
