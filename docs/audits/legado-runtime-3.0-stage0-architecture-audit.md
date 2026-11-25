@@ -4759,3 +4759,155 @@ Cross-cutting contract requirements:
 - **No execution:** no build/test/CI/dependency resolution/DEX/R8/device run; all conclusions are pinned source/static caller evidence.
 - **Gate:** Task 026 Phase A remains open/not closed; Phase B is not authorized; Task 027 remains blocked; Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; full Legado compatibility remains **NOT ESTABLISHED**.
 - **Next:** consolidate the complete path-exact Host Port and source migration proposal using §§24.85–24.90, including unresolved ABI/Gradle proof and the caller-specific write/invalidation matrix; present for review and stop. No source migration.
+
+## 24.91 Task 026 Phase A — path-exact Host Port signatures and conditional Phase B proposal (2026-11-25)
+
+- **Review snapshot:** branch `integration/legado-upstream-runtime`, HEAD `a692f2e57ef70001bc3ef4fced1d66e1667b02f7`; compare from the prior checkpoint is identical (0 ahead/behind, no changed paths). Pinned upstream remains `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Scope:** consolidate §§24.85–24.90 into a path-exact model-typed Host Port proposal and conditional Phase B plan. Documentation-only; no API freeze or implementation authorization.
+- **Current boundary:** `integration-contract/.../RuntimeHostPort.kt` carries model-neutral `SourceIdentity`/`SourceExecutionContext` and browser/UI/verification ports. `SourceRuntime.evaluate()` remains `Map<String,String> -> EngineResult<String>`, so it cannot carry authentic BaseSource/Book/BookChapter identity, nullable typed bindings or the pinned raw JS `Any?` result. `legado-runtime/build.gradle.kts` currently compiles only seven rule models plus `GsonExtensions.kt`; it does not yet depend on `:integration-contract` or `:legado-rhino`. `BadcatReadingEngineFactory.kt` still wires the simplified runtime.
+
+### 24.91.1 Placement and invocation invariants
+
+1. Put model-typed ports beside authentic models under `legado-runtime/src/main/kotlin/io/legado/runtime/host/`. Keep generic UI/browser/verification/coroutine contracts in `:integration-contract`; `:legado-runtime` may depend on `:integration-contract` and `:legado-rhino`, never `:app`; `:app` implements the ports. Do not import Legado model types into the Kotlin/JVM contract module.
+2. Keep caller-specific `java` ownership: BaseSource direct eval binds `java/source/sourceApi` to the same BaseSource; AnalyzeRule eval binds `java` to AnalyzeRule and `source` to BaseSource; payAction/image-click/callBackJs/legacy login use SourceLoginJsExtensions-compatible `java`; Login UI v2 is separate; WebView page RPC is not normal Rhino execution.
+3. The invocation envelope carries `SourceExecutionContext`, caller kind, authentic BaseSource, optional live Book/BookChapter/list, nullable caller values, base URL/key/page and raw `result` only where the pinned caller supplies it. Keep Book/BookChapter typed. `Any?` is retained only for raw JS result/return values where upstream itself uses it, never as a replacement source-model bridge.
+
+### 24.91.2 Proposed signatures — design sketch only
+
+```kotlin
+interface LegadoRuntimeHost {
+    val catalog: BookSourceCatalogPort
+    val sourceState: SourceExecutionStatePort
+    val explore: ExploreCatalogPort
+    val sourceVariables: SourceVariablePort
+    val ruleVariables: RuleVariablePort
+    val sessions: SourceSessionPort
+    val cookies: SourceCookiePort
+    val cache: SourceCachePort
+    val http: SourceHttpPort
+    val images: SourceImageTransportPort
+    val actions: SourceActionPort
+    val replacements: ReplacementRuntimePort
+}
+
+interface BookSourceCatalogPort {
+    suspend fun find(bookSourceUrl: String): BookSource?
+    suspend fun listForExecution(): List<BookSource>
+    suspend fun insertReplace(sources: List<BookSource>, origin: SourceMutationOrigin, batch: SourceBatchPolicy): SourceMutationReceipt
+    suspend fun update(source: BookSource, origin: SourceMutationOrigin): SourceUpdateReceipt
+    suspend fun delete(bookSourceUrls: List<String>, origin: SourceMutationOrigin): SourceDeleteReceipt
+}
+
+interface SourceExecutionStatePort {
+    fun invalidateSourceGlobals(sourceClass: Class<out BaseSource>, sourceKey: String)
+    suspend fun removeSharedLibrary(jsLib: String?)
+    suspend fun removeSourceConfig(sourceKey: String)
+    fun clearSourceVariableMemory(sourceKey: String)
+    suspend fun resetConcurrentRate(sourceKey: String)
+}
+
+interface ExploreCatalogPort {
+    suspend fun <T> withSourceLock(sourceUrl: String, block: suspend () -> T): T
+    suspend fun getResult(sourceUrl: String, exploreUrl: String): String?
+    suspend fun putResult(sourceUrl: String, exploreUrl: String, rawResult: String)
+    suspend fun clearResult(sourceUrl: String, exploreUrl: String)
+    fun acquireInfoMap(sourceUrl: String): InfoMap
+    suspend fun persistInfoMap(sourceUrl: String)
+    fun invalidateInfoMap(sourceUrl: String, reason: SourceStateInvalidationReason)
+}
+
+interface SourceVariablePort {
+    fun getVariable(sourceKey: String): String
+    fun putVariable(sourceKey: String, value: String?)
+    fun get(sourceKey: String, key: String): String
+    fun put(sourceKey: String, key: String, value: String)
+}
+
+interface RuleVariablePort {
+    fun getBookVariable(bookUrl: String, key: String): String?
+    fun putBookVariable(bookUrl: String, key: String, value: String?)
+    fun getChapterVariable(bookUrl: String, chapterUrl: String, key: String): String?
+    fun putChapterVariable(bookUrl: String, chapterUrl: String, key: String, value: String?)
+    suspend fun clearInvalidBookValues(existingBookUrls: Set<String>)
+}
+
+interface SourceSessionPort {
+    fun getLoginHeader(sourceKey: String): String?
+    fun putLoginHeader(sourceKey: String, headerJson: String)
+    fun removeLoginHeader(sourceKey: String)
+    fun getLoginInfo(sourceKey: String): String?
+    fun putLoginInfo(sourceKey: String, infoJson: String)
+    fun removeLoginInfo(sourceKey: String)
+}
+
+interface SourceCookiePort {
+    fun getCookie(url: String): String
+    fun getKey(): String
+    fun setCookie(url: String, cookie: String)
+    fun replaceCookie(url: String, cookie: String)
+    fun removeCookie(url: String)
+    fun removeCookie(url: String, key: String)
+    suspend fun setWebCookie(url: String, cookie: String): HostPortResult<Unit>
+}
+
+interface SourceHttpPort { suspend fun execute(request: RuntimeHttpRequest): RuntimeHttpResponse }
+interface SourceImageTransportPort { suspend fun fetch(request: SourceImageRequest): SourceImageResponse }
+interface SourceActionPort {
+    suspend fun dispatch(action: SourceHostAction, context: SourceExecutionContext): HostPortResult<SourceActionResult>
+    suspend fun upLoginData(data: Map<String, Any?>?): HostPortResult<Unit>
+    suspend fun reLoginView(context: SourceExecutionContext): HostPortResult<Unit>
+}
+interface ReplacementRuntimePort {
+    suspend fun disable(rule: ReplaceRule, reason: ReplacementDisableReason): HostPortResult<Unit>
+    suspend fun reportTimeout(ruleName: String, detail: String): HostPortResult<ReplacementTimeoutDisposition>
+}
+```
+
+**Semantics that signatures must preserve**
+
+- `SourceMutationOrigin` distinguishes edit UI, JS upsert, MCP declarative, manual import, RuleUpdate subscription, HTTP JSON single/batch, legacy import, backup restore, management metadata and delete. `SourceBatchPolicy` distinguishes one Room transaction from per-item partial acceptance. Receipts report per-item accepted/rejected and check-state reset without claiming cross-store atomicity.
+- DAO insert is transactional REPLACE + check-state reset. Full update resets check state only when `checkContent()` changes; it normalizes order/enabled/explore-enabled/update-time/respond-time/weight, while group-only changes can reset state. Narrow metadata SQL methods remain narrow.
+- Delete preserves source-row + persisted source-variable deletion in one transaction; source-key shared-global invalidation occurs before delete, SourceConfig and generic in-memory variable cleanup after commit. Do not claim production deletion evicts the Explore InfoMap object LRU.
+- Source-key shared-global invalidation (`sourceClass.name + MD5(sourceKey)`) is distinct from jsLib-hash-wide scope/file/global invalidation. The latter may affect several source URLs. Neither proves cancellation of scripts already running.
+- Explore result key is `MD5(sourceUrl + exploreUrl)`; preserve persistent `ACache('explore')`, process-memory results, source-scoped serialization and stable mutable `InfoMap(sourceUrl)` identity. Clearing results must not evict InfoMap. Its persistent key, generic memory entry and separate object LRU are separate state layers.
+- `sourceVariable_<sourceKey>` is distinct from `v_<sourceKey>_<key>`. RuleData big-value backing preserves the 10,000-character inline threshold in `RuleDataInterface`, null deletion, empty fallback, MD5(bookUrl/chapterUrl/key), `bookUrl.txt`, synchronized access and invalid-book cleanup. RSS variables remain separate.
+- Login header/info storage is separate from CookieStore. Cookie operations preserve domain/merge/enable semantics and WebView CookieManager synchronization. Cache operations separately preserve text/file/memory, `onlyDisk`, TTL seconds and byte-array/large-file behavior.
+- New `RuntimeHttpRequest/Response` and `SourceImageRequest/Response` must preserve source identity, URL/options, method/body, multi-value headers, timeout/retry/redirect, cookie-jar choice, status/final URL, bytes or closeable stream, cancellation, close and error. Runtime owns AnalyzeUrl/source-specific cover/chapter decode; host owns OkHttp/Glide DataFetcher and presentation.
+- Reuse existing `HostUiPort`, `HiddenWebViewPort`, `VisibleBrowserPort`, `VerificationCodePort` and `ProductEventPort`; add typed login callbacks with main-thread ordering, lifecycle cancellation and exactly-once completion. `WebJsExtensions.request/upConfig` page RPC remains a separate WebView owner.
+- Regex execution for `BookChapter.getDisplayTitle`/`ContentProcessor` remains in Runtime; timeout prompt, crash persistence, rule-disable DAO and restart policy are host ports. Source-import replacement, editor preview and ReplaceRuleController retain separate caller paths.
+
+### 24.91.3 Caller-specific mutation policy — no universal upsert
+
+| Origin | Pinned write semantics | Port requirement |
+|---|---|---|
+| Manual import / RuleUpdate | SourceHelp 18+ filter, transactional REPLACE/check reset, async order normalization; no edit/upsert cleanup | Preserve this origin policy; do not route through delete helper |
+| HTTP JSON single | Nonblank name/URL validation then direct DAO REPLACE; no 18+ filter | No implicit JS-upsert invalidation |
+| HTTP JSON batch | Per-item direct inserts; partial accepted subset | Preserve per-item transaction and partial result |
+| Legacy import / backup restore | Parse/deserialise then direct DAO REPLACE | Preserve conversion path and no inferred cleanup |
+| Edit / JS upsert / MCP | Explicit old/new comparison and distinct Explore/jsLib/SourceConfig/concurrent-rate ordering | Preserve each origin; URL change is delete-old + insert-new with conflict checks |
+| DAO update / metadata | Full update checkContent comparison; narrow SQL metadata methods | Preserve both paths |
+| Delete | SourceHelp row + persisted variables transaction; source globals before, SourceConfig/memory cleanup after | Preserve ordering; do not imply InfoMap eviction |
+
+### 24.91.4 Path-exact conditional Phase B candidate set
+
+These are candidates for a later committed addendum, not currently authorized edits. Pinned upstream remains read-only; adapted copies must record upstream blob SHA and a minimal diff.
+
+- **Runtime contracts:** `legado-runtime/build.gradle.kts`; new `legado-runtime/src/main/kotlin/io/legado/runtime/host/LegadoRuntimeHost.kt`, `BookSourceCatalogPort.kt`, `SourceExecutionStatePort.kt`, `ExploreCatalogPort.kt`, `SourceVariablePort.kt`, `RuleVariablePort.kt`, `SourceSessionPort.kt`, `SourceCookiePort.kt`, `SourceCachePort.kt`, `SourceHttpPort.kt`, `SourceImageTransportPort.kt`, `SourceActionPort.kt`, `ReplacementRuntimePort.kt`; and `legado-runtime/src/main/kotlin/io/legado/runtime/invocation/SourceInvocation.kt`. `legado-runtime/consumer-rules.pro` only after ABI/reflection proof.
+- **Pinned model candidates:** `upstream/legado/app/src/main/java/io/legado/app/data/entities/{BaseSource,BookSource,BaseBook,Book,BookChapter,SearchBook}.kt`; `data/entities/rule/{RowUi,ExploreKind,FlexChildStyle}.kt` only if source-visible callers and Android/Flexbox dependencies are proven; `utils/InfoMap.kt`.
+- **Rule/script core:** `model/analyzeRule/{AnalyzeRule,AnalyzeUrl,RuleDataInterface,RuleData}.kt`; `help/{JsExtensions,JsEncodeUtils,RegexJsExtensions}.kt`; `ui/login/SourceLoginJsExtensions.kt`; `ui/rss/read/RssJsExtensions.kt` only as the inherited superclass closure. `help/webView/WebJsExtensions.kt` stays out unless a BookSource caller is proven.
+- **Shared scope/callers:** `model/SharedJsScope.kt`; `model/jsSource/{JsSourceEngine,JsSourceBook,JsSourceMarshaller}.kt`; `model/webBook/{WebBook,BookList,BookInfo,BookChapterList,BookContent}.kt`; `help/source/{BaseSourceExtensions,BookSourceExtensions}.kt`; `utils/InfoMap.kt`; `model/login/LoginUiV2.kt` only for its source-login caller.
+- **Content replacement:** `help/book/ContentProcessor.kt` and `data/entities/ReplaceRule.kt` only for BookChapter title/content callers. Do not import app-coupled `utils/RegexExtensions.kt` unchanged; implement the runtime replacement executor and route UI/crash/DAO/restart effects through ports.
+- **Image seam:** `AnalyzeUrl.kt` imports Glide/Media3 convenience methods. Its Runtime copy must expose a Glide-free source request/decode seam; keep `getGlideUrl`/`getMediaItem`, `OkHttpStreamFetcher`, `OkHttpModelLoader`, `BookCover`, `GlideImageGetter`, `AudioPlayService` and `ReviewDetailDialog` host/product-side absent separate source caller proof.
+- **Host adapters:** candidate `app/src/main/java/app/badcat/client/runtime/BadcatReadingEngineFactory.kt`, new `LegadoRuntimeHostAdapter.kt` and narrowly scoped files under `app/src/main/java/app/badcat/client/runtime/host/`. Reuse real stores/transport; no no-op/fake-success/empty-return production adapters.
+- **Explicit exclusions:** `SourceHelp.kt`, `BookSourceDao.kt`, `AppDatabase`, `CacheManager.kt`, `CookieStore.kt`, `RuleBigDataHelp.kt`, `BackstageWebView.kt`, `ExploreAdapter.kt`, OkHttp/Glide adapters and Legado product Activities/Fragments/Reader/RSS UI remain host-side. No Room schema/data migration or Task 027 storage implementation. `integration-contract/.../RuntimeHostPort.kt` remains model-neutral; any edit there needs a separate path addendum.
+- **Tests:** `legado-runtime/src/test/kotlin/io/legado/runtime/host/RuntimeHostPortContractTest.kt`, `SourceInvocationAbiTest.kt`, `SourceMutationLifecycleTest.kt`, `ExploreCatalogPortTest.kt`, `SourceImageTransportTest.kt`, `RegexReplacementLifecycleTest.kt`; app adapter test `app/src/test/kotlin/app/badcat/client/runtime/LegadoRuntimeHostAdapterTest.kt`; conditional Android lifecycle test `app/src/androidTest/kotlin/app/badcat/client/runtime/LegadoRuntimeLifecycleTest.kt`.
+- **Conditional commands after explicit authorization:** `./gradlew :legado-runtime:compileDebugKotlin :legado-runtime:compileReleaseKotlin :app:compileDebugKotlin`; `./gradlew :legado-runtime:testDebugUnitTest :app:testDebugUnitTest`; then exact dependency-variant reports, ABI/reflection report and DEX duplicate-FQCN check. No command was run here. Current Badcat has no established Release minification configuration, so Release R8 proof remains a blocker.
+
+### 24.91.5 Blockers and stop decision
+
+- Compiled JVM descriptors, Kotlin default/suspend/bridge/synthetic methods, Rhino overload dispatch/inherited reflection and R8/DEX retention remain NOT MET.
+- Exact Debug/Release/unit/AndroidTest dependency-variant closure remains NOT MET; prior offline reports had unresolved modules and online resolution did not complete. The attached runner is stale/dirty and is not a valid current-HEAD build/test environment.
+- Dynamic same-URL replacement during active Rhino/Explore, stale InfoMap reuse, shared-jsLib blast radius, delete cancellation/drain, image stream close/decode, mutation rollback and partial-batch behavior remain unverified.
+- Receipt fields, serialization, schema and transaction callbacks are not frozen. Task 027 remains blocked.
+- **Disposition:** Phase A remains open/not closed; Phase B unauthorized; Task 027 blocked; Stage-0 `in_progress / not accepted`; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
+- **Stop:** submit this proposal for review. No source migration, Gradle/test edit, dependency resolution, build, CI or device execution is authorized by this documentation update.
