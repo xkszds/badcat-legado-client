@@ -1175,3 +1175,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Existing Rhino module bytecode remains available: `RhinoScriptEngine`, `ScriptBindings`, `SharedGlobalStateHandle` and `CompiledScript` were found in the Rhino classes JAR and `javap` evidence retained. This does not establish App Runtime ABI. Full hashes and inventories are in `/root/stage0-runner/task026-clean/task026j-attempt1/` and audit §24.121.
 - **Next:** continue Phase A source/caller/Host-Port closure only. No further App compile retry is authorized.
 - **Disposition:** Task 026 Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
+
+### 4.27.33 Task 026 Phase A supplemental result — pinned upstream App dependency variants recovered (2026-11-25)
+
+- **Status:** existing report evidence recovered and integrity-checked; no Gradle rerun. All ten available pinned upstream App configurations have `BUILD SUCCESSFUL`, exit 0 and zero `FAILED` dependency entries: Debug/Release compile + runtime, Debug/Release UnitTest compile + runtime, and Debug AndroidTest compile + runtime. No Release AndroidTest variant is exposed.
+- The nine additional reports are under `/tmp/task026-55b8/upstream/`; the Debug runtime report is already recorded in audit §24.92. The report snapshot's superproject tree pins upstream exactly to `330e606c4d57e08adc056ff8ab7a4132c784da9a`; all report hashes were rechecked. Full matrix and hashes: audit §24.122.
+- **Limit:** this verifies the full upstream App dependency metadata graph, not the minimal `:legado-runtime` source closure or compiled ABI. Do not conflate it with the separate Badcat 44-configuration graph.
+- **Next:** reconcile exact Runtime source imports and typed Host Port ownership against these existing variant graphs; no repeated dependency report or App compile.
+- **Disposition:** Task 026 Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
