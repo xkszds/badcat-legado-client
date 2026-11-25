@@ -4613,3 +4613,67 @@ This is a proposed protocol requiring failure-injection/restart validation. Prog
 - **No changes/execution:** documentation only; no production source, Gradle, tests, workflow, schema, UI or product file changed; no build/test/dependency resolution/DEX/R8/CI/device run.
 - **Gate:** Task 026 Phase A remains in progress/not closed; Phase B is not authorized; Task 027 remains blocked; Stage-0 remains in_progress/not accepted; Stage-1 remains NO-GO; complete Legado compatibility remains NOT ESTABLISHED.
 - **Next:** continue read-only caller closure for source lifecycle and SharedJsScope/source-state cleanup; only then consolidate exact Host Port signatures and Phase B file/test/build proposal. Do not start migration.
+
+
+## 24.89 Task 026 Phase A — SharedJsScope invalidation and full source mutation entry-point closure (2026-11-25)
+
+- **Review HEAD:** `929a3053937e19216ebbee851e3d5a6ad513fb25`; branch `integration/legado-upstream-runtime`; comparison from the prior checkpoint is identical (0 ahead/behind). Pinned upstream: `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Allowed scope:** this audit and `docs/required/03-LEGADO-RUNTIME-OVERVIEW.md) only. Upstream source and caller searches were read-only. No production/test/Gradle/workflow/schema/UI/product changes; no build, test, dependency resolution, DEX/R8, CI or device execution.
+
+### 24.89.1 Shared global state has two different invalidation keys
+
+**Source-key deletion**
+- `BaseSourceExtensions.kt` defines `clearSharedGlobalStateBySourceKey(sourceClass, sourceKey)`; it calls `ScriptBindings.removeSharedGlobalStatesBySource(sourceClass.name, MD5(sourceKey))`. `SourceHelp.deleteBookSourceInternal()` is the only production caller found; it applies the BookSource class and URL key before DAO deletion.
+- Pinned `modules/rhino/.../ScriptBindings.kt` forms the suffix `:$sourceClassName:$sourceHash`, then under `sharedGlobalLock` increments the generation and removes every currently known matching key from `sharedGlobals`. Both the generation map and live shared-object map participate in matching. This invalidates source-specific shared global state across library hashes without deleting the shared library itself.
+- This operation is not equivalent to `SharedJsScope.remove(jsLib)`. It does not remove the `SharedJsScope.scopeMap` entry or downloaded remote jsLib files.
+
+**Library-wide removal**
+- `SharedJsScope.remove(jsLib)` computes `MD5(jsLib)`, serializes against scope creation for that key, removes URL-backed jsLib files from its ACache, removes the weak-reference scope entry, then calls `ScriptBindings.removeSharedGlobalStates("$key:")`.
+- The prefix invalidation clears shared global state for every source using that exact jsLib content hash, not just the edited source. This is a library-level invalidation blast radius and must not be modelled as per-source deletion.
+- Production callers include `BaseSource.refreshJSLib()`, BookSource edit save, JS-source upsert and MCP declarative save; RSS edit also uses the shared library API. BookSource edit/upsert/MCP call it when the old and new `jsLib` values differ.
+- Static source confirms synchronized map/generation invalidation and scope-creation locking, but does not establish cancellation of scripts already executing against previously acquired bindings. Race behavior for an active source execution concurrent with source deletion or jsLib replacement remains dynamically unverified.
+
+### 24.89.2 InfoMap has persistent, memory-cache and object-identity layers
+
+- `InfoMap(sourceUrl)` loads `CacheManager.get("infoMap_$sourceUrl")`; `saveNow()` writes that key through `CacheManager.put`. Its mutable map and `needSave/saveTime` state live in the object.
+- `ExploreAdapter.exploreInfoMapList` is an independent process-memory `LruCache<String, InfoMap>(99)`. Production lookup uses source URL, and `ExploreAdapter.onPause()` persists dirty instances. No production `exploreInfoMapList.remove/evictAll` caller was found; the only exact `.remove` search hit is the ExploreRefresh instrumentation-test teardown.
+- Source deletion's `CacheDao.deleteSourceVariables(key)` deletes persisted `infoMap_$key` alongside `v_$key_*`, `userInfo_$key`, `loginHeader_$key` and `sourceVariable_$key`. `AppCacheManager.clearSourceVariables()` clears the matching prefixes from the generic in-memory cache LRU, including `infoMap_`; it does **not** evict the separate ExploreAdapter InfoMap object LRU.
+- Therefore delete-then-recreate with the same source URL can leave a previously held InfoMap object reachable in the ExploreAdapter LRU even though its persisted CacheManager record was deleted. This is a source-visible stale-state risk inferred from the static object/cache wiring; its actual user-visible manifestation and eviction timing are not dynamically tested. The explicit test teardown removes the object LRU entry, but that is not production lifecycle behavior.
+- `clearExploreKindsCache()` remains result-only (Explore result ACache + in-memory result map); it does not clear either InfoMap layer. `SourceHelp.deleteBookSourceKeys()` clears generic source-variable persistence/cache but does not call that result invalidator or evict the InfoMap object.
+
+### 24.89.3 Additional production BookSource mutation entry points
+
+Code-search results were reviewed against the pinned tree and production/test path classification:
+
+| Entry point | Mutation path | Lifecycle behavior observed |
+|---|---|---|
+| `BookSourceEditViewModel.save()` | same-URL DAO delete/insert; URL change delegates to SourceHelp delete then inserts | Explore result invalidation on exploreUrl change; jsLib-wide invalidation on jsLib change; same-URL SourceConfig cleanup; target concurrent-rate reset; same-URL path does not invoke source-variable row cleanup |
+| `JsSourceUpsert.save()` | process Mutex; DAO delete/insert or old-URL SourceHelp delete + new insert | result invalidation on URL/exploreUrl change; jsLib invalidation; old/target concurrent-rate reset; same-URL SourceConfig cleanup |
+| `McpSourceStore.saveDeclarative()` | shares JS-upsert save Mutex/prepare helper; DAO delete/insert | result invalidation on exploreUrl change; jsLib invalidation; SourceConfig and target concurrent-rate cleanup; does not call source-variable row cleanup |
+| `SourceHelp.insertBookSource()` | 18+ filter then DAO insert | no explicit Explore, InfoMap, SharedJsScope, SourceConfig, source-variable or concurrent-rate invalidation |
+| `ImportBookSourceViewModel.importSelect()` | bulk import delegates to SourceHelp.insertBookSource | inherits direct-insert behavior; no explicit per-source runtime-state invalidation in this path |
+| `BookSourceController.saveSource/saveSources()` | direct DAO insert for HTTP API | bypasses JS upsert and SourceHelp lifecycle cleanup; `saveJsSource()` uses JsSourceUpsert; delete API uses SourceHelp.deleteBookSources |
+| `RuleUpdate.cacheSource()` | updates via SourceHelp.insertBookSource | direct-insert behavior; no explicit runtime-state invalidation at this call site |
+| `ImportOldData.importOldSource()` and `Restore` | direct DAO insert/REPLACE | bulk legacy/backup restoration path; no per-source lifecycle invalidation in the inspected insert code |
+| `BookSourceViewModel.update()` | generic DAO update; adjacent order/group/enable methods use specialized DAO operations | no explicit JS/Explore/source-variable invalidation in the inspected management methods; generic update callers require separate field-level classification |
+| `ReadBookViewModel` / `ChangeBookSourceViewModel` DAO updates | enabled/order metadata updates | no runtime-state invalidation in the inspected call sites |
+| Delete callers (management UI, Explore UI, change-source UI, HTTP API, MCP) | converge on `SourceHelp.deleteBookSource/Parts/Sources` | inherit its transaction + SharedJsScope source-key invalidation + variable/SourceConfig cleanup, but not Explore result or InfoMap object-LRU eviction |
+
+- `BookSourceDao.insert()` is a Room transaction around `insertSources(REPLACE)` plus check-state reset. Direct insert paths can replace an existing source row without invoking the higher-level invalidation sequence. `BookSourceDao.update()` is also transactional and resets check state when `checkContent()` changes, but does not itself own JS/Explore/cache cleanup.
+- The production direct insert paths are materially different from the three explicit update orchestrators. Do not infer that all imports, HTTP API writes, backup restore, rule-subscription updates or declarative JS saves share one universal source-upsert lifecycle.
+- Code search found only `SourceHelp.deleteBookSourceInternal()` as the production caller of `clearSharedGlobalStateBySourceKey`; only the ExploreRefresh instrumentation test explicitly removes an Explore InfoMap LRU entry. Test-only direct DAO writes/deletes were excluded from production lifecycle claims.
+
+### 24.89.4 Host Port and next proof implications
+
+- Keep at least three separate invalidation operations: (1) source-key shared-global invalidation, (2) jsLib-hash scope/file/global invalidation, and (3) Explore result-cache invalidation. InfoMap object identity and persisted `infoMap_` cache cleanup are a fourth, separate state domain; do not silently fold it into result-cache clearing.
+- Source mutation ports must distinguish direct import/restore/API insert from edit/upsert/MCP orchestration and deletion. If the implementation chooses to centralize these paths, it is a deliberate compatibility change requiring source-specific differential tests, not a presumed upstream behavior.
+- The exact remaining caller closure includes generic `BookSourceViewModel.update()` callers, restore lifecycle ordering, HTTP API save semantics, RuleUpdate subscription semantics and races with active Rhino/Explore operations. No database/schema change is authorized.
+- **No dynamic claim:** generation invalidation, stale InfoMap reuse, library-wide shared-scope effects and in-flight execution races are static source conclusions only. No differential test or runtime execution was performed.
+
+### 24.89.5 Phase A disposition
+
+- **Closed in this slice:** source-key versus jsLib-wide SharedJsScope invalidation mechanics; production source-key invalidation caller; InfoMap persistence/cache/object-LRU separation; production direct insert/update/delete entry-point inventory for the searched DAO and helper APIs.
+- **Still NOT MET:** remaining generic update/restore/API caller semantics; dynamic race and stale-object tests; exact typed Host Port signatures; compiled JVM/Rhino ABI/reflection descriptors; complete resolved Debug/Release/unit/AndroidTest dependency graph.
+- **No changes/execution:** audit/overview documentation only; no production source, Gradle, tests, workflow, schema, UI or product file changed; no build/test/dependency resolution/DEX/R8/CI/device run.
+- **Gate:** Task 026 Phase A remains open/not closed; Phase B is not authorized; Task 027 remains blocked; Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; full Legado compatibility remains **NOT ESTABLISHED**.
+- **Next:** finish the residual generic update/restore/API caller classification and exact Host Port signatures, then consolidate the path-exact Phase B proposal and stop for review. Do not start migration.
