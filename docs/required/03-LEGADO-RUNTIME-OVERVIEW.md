@@ -1203,3 +1203,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Open ports:** AppContextPort, ResourcePort, FileStoragePort, BookRepositoryPort, ChapterRepositoryPort, SearchResultRepositoryPort, SharedJsScopePort, LoginCallbackPort and FlexStyleLayoutAdapter are missing/incomplete. Existing/proposed ports are not yet fully wired. Room/Parcelable models require Room 2.8.4 and Parcelize 2.4.20; DB/schema stays app-owned.
 - **Next:** finalize the path-exact Phase B addendum and test/acceptance matrix. No App compile retry under §24.119; no production source edit before addendum commit and required-list reread.
 - **Disposition:** Task 026 Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
+
+### 4.27.36 Task 026L preregistration — path-exact Phase B addendum freeze (2026-11-25)
+
+- **Status:** registered; read-only. Re-read master and this category overview before registration.
+- **Goal:** compare the exact current `:legado-runtime`, `:legado-rhino`, `:integration-contract` and relevant App Host Port implementations/build files with the 33-file upstream source/import/caller/dependency map, then freeze one path-exact Phase B addendum: file dispositions, typed Host Port signatures, dependency graph, test paths and acceptance gates.
+- **Allowed:** current module build files and source/tests in `legado-runtime`, `legado-rhino`, `integration-contract`, root settings/build/version catalog, and only App source files that implement or inject the Runtime Host Ports/facade. Upstream remains read-only; reuse Task 026K evidence rather than repeat scans.
+- **Outputs:** standalone implementation addendum under `docs/audits/`, plus audit/overview result records. Every candidate file must be COPY/ADAPT/SPLIT/HOST_ONLY/CONDITIONAL/EXCLUDE with evidence. Missing port signatures remain explicit blockers.
+- **Hard constraints:** no Runtime→app cycle; no `:modules:book`; use `:legado-rhino`; Room database/schema stays in app; Glide/Media3/RSS/login UI and Flexbox View mutation stay host-side; preserve RowUi/ExploreKind/FlexChildStyle data and ExploreInfoMap LRU/dirty-save semantics.
+- **No code/build/test action in 026L.** The user previously authorized Phase B, but the path-exact addendum must be committed and both required lists reread before any production edit. No App compile retry under §24.119.
+- **Disposition:** Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
