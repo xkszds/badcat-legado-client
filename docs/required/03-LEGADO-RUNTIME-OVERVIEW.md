@@ -1062,3 +1062,10 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Task ID:** `R3-S0-T026-KSP-AA-CHUNKED-TRANSFER-026D`; registered/not started. It permits 16 sequential 5 MiB HTTPS range requests, each bounded at 60 seconds, with exact HTTP 206/Content-Range/size validation and final SHA-256 verification. Full details in audit §24.103.
 - **Boundary:** only `/tmp` artifact staging; no Gradle cache/local repo injection and no compile retry. If any chunk fails or final size/hash differs, delete partial data and stop.
 - **Disposition:** Phase A remains open/not closed; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
+
+
+### 4.27.20 Task 026 Phase A — 5 MiB KSP AA transfer chunk failed safely (2026-11-25)
+
+- **Result:** first 5 MiB range completed in 21.17s; second range timed out at 60s after 4,848,598/5,242,880 bytes. The transfer script stopped and deleted all chunks/headers/assembled output; no partial JAR remains. Failure manifest SHA-256 and exact ranges are in audit §24.104.
+- **Next:** 2 MiB sequential range plan registered as R3-S0-T026-KSP-AA-CHUNKED-TRANSFER-026E, 45s per chunk, same verified Maven SHA-256. Full scope in audit §24.105.
+- **Boundary:** no cache injection or compile retry; only a fully verified artifact may be retained in /tmp. Phase A remains open and Stage-1 NO-GO.
