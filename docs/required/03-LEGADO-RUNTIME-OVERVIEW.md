@@ -867,3 +867,14 @@ Model-typed persistence/config/replacement/notification interfaces must live bes
 - **Execution gate:** first complete the read-only declaration/API/overload/caller/reflection and transitive dependency/Gradle-variant inventory. Then write and commit a path-exact source/Host-Port/test/build addendum and reread both required lists. Only that addendum may authorize Phase B source/build/test edits.
 - **Hard exclusions:** no schema/Room/data migration, no dual-write, no Task 027 storage work, no Badcat UI/Reader changes, no Legado UI/Reader/product screens, no unproven broad AppDatabase/RSS/TTS/media dependencies, no CI/workflow run, no Stage-1.
 - **Next action:** perform Phase A against the fixed upstream and current integration branch, then preregister the exact implementation file boundary before changing code. Stage-0 remains in_progress/not accepted; Stage-1 remains NO-GO; complete Legado compatibility remains NOT ESTABLISHED.
+
+
+## 4.27.1 Task 026 Phase A checkpoint — read-only inventory in progress
+
+- **Review HEAD:** `81e6d851f0ed7c3f372ba4f0700d71fc411d5d4a`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- Pinned source inventory confirms that `BookSource`, `Book`, `BookChapter`, `SearchBook`, `BaseSource`, `AnalyzeRule`, `AnalyzeUrl`, `JsExtensions`, `SharedJsScope` and JS-source engine classes are deeply coupled to Room, Android, cache/files, HTTP/Cookie, WebView/browser, crypto, config, lifecycle and product callbacks.
+- The 12-core-seed conservative resolved import closure reaches 484 upstream files (overlapping tags: 211 activity/UI, 101 database, 53 Room, 69 network, 28 WebView, 46 Rhino/JS, among others). This is an import-graph warning, not a proven runtime call graph; unused imports and product-only paths still need caller-level adjudication.
+- `JsExtensions` has 119 non-private function declarations / 78 names / 41 additional overloads in the source scan; derived `RssJsExtensions`, `WebJsExtensions` and `SourceLoginJsExtensions` add further JS-visible/callback surfaces. Exact compiled ABI/reflection closure is not yet complete.
+- Current `:legado-runtime` still owns only the eight Task-025 rule/Gson files and has no complete authentic source/runtime dependency closure. Existing Badcat model-neutral `:integration-contract` contracts and Map/Any JS adapters are not substitutes for authentic Legado model types.
+- The runner checkout is stale and dirty relative to this review HEAD; no build/test evidence was produced. No production source, Gradle, test, workflow or CI files were changed.
+- **Status:** Task 026 Phase A remains in progress/not closed; Phase B is not authorized. Next: close exact callers/reflection, dependency variants and typed-port semantics, then commit the path-exact implementation/test/build addendum and stop for review. Task 027 remains blocked; Stage-0 not accepted; Stage-1 NO-GO; full Legado compatibility NOT ESTABLISHED.
