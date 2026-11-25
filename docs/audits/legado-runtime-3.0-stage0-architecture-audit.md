@@ -5091,3 +5091,24 @@ These are candidates for a later committed addendum, not currently authorized ed
 - **Artifact:** KSP AA-embeddable 2.3.12, expected size 80,992,357, authoritative SHA-256 862f0042fc2467cdcf7752e15880f97396a29e2469741dc6453f37584f1b4c69.
 - **Allowed execution:** 39 sequential HTTPS Range GETs of at most 2 MiB each, 10-second connect timeout, 45-second total timeout, no retries. Require HTTP 206, exact Content-Range and exact byte count per chunk. Assemble in /tmp/task026-ksp-aa-full/; verify final size and SHA-256 exactly. Keep only a verified final JAR and manifest; delete all partial data on any failure.
 - **Stop conditions / exclusions:** stop and clean on any HTTP/range/size/timeout/hash mismatch. No mirror switch, retry, Gradle cache injection, local Maven repo, Gradle task, compile, KSP, test, CI, DEX/R8, APK, device run, source/config edit, Phase B or Task 027.
+
+
+## 24.106 Task 026 Phase A — KSP AA-embeddable complete artifact verified by ranged transfer (2026-11-25)
+
+- **Task:** R3-S0-T026-KSP-AA-CHUNKED-TRANSFER-026E; completed successfully. The artifact was fetched as 39 sequential 2 MiB-or-smaller HTTP Range responses, each validated for HTTP 206, exact Content-Range and exact byte count. No retries or mirror switch occurred.
+- **Final artifact:** /tmp/task026-ksp-aa-full/symbol-processing-aa-embeddable-2.3.12.jar; size 80,992,357 bytes; SHA-256 862f0042fc2467cdcf7752e15880f97396a29e2469741dc6453f37584f1b4c69, exactly matching the Maven Central .jar.sha256 sidecar.
+- **Integrity:** unzip -t completed with “No errors detected in compressed data”. Chunk manifest SHA-256 5ceb175a4a8bba47954a266cc8bc31447b94ca831c6f986337765449d3c37a74. Manifest records every range's HTTP metadata, size, duration and per-chunk SHA-256.
+- **Cleanup:** all 39 chunk files and response headers were deleted after assembly; only the fully verified JAR, chunk manifest, checksum-sidecar record and prior small probe result remain in /tmp/task026-ksp-aa-full/. No repository source/build file or Gradle cache was modified.
+- **Disposition:** exact missing large KSP artifact is now available locally and verified. This resolves the artifact-transfer candidate, but not the historical Gradle thread URL with absolute certainty. Do not retry full App compile yet; first use a separately registered temporary local Maven staging and KSP-only task probe. Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full compatibility NOT ESTABLISHED.
+
+## 24.107 Task 026 Phase A — temporary KSP local-repository staging and KSP-only probe preregistration (2026-11-25)
+
+- **Task ID:** R3-S0-T026-KSP-AA-LOCAL-STAGING-026F.
+- **Status:** registered; not yet executed.
+- **Snapshot:** runner source checkout 55b8f102e8b0b2e1c27a3d44530accf06d5a07e4, clean; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a; branch HEAD before registration 8ad6dcb88e9cbbda95528f06033044760fb80213.
+- **Goal:** prove the verified KSP AA JAR can be resolved from an isolated temporary Maven repository and complete only the upstream :app:kspAppDebugKotlin task, avoiding a full App Kotlin compile retry.
+- **Allowed setup:** create /tmp/task026-ksp-local-maven/com/google/devtools/ksp/symbol-processing-aa-embeddable/2.3.12/ with the verified JAR, the exact cached POM copied from Gradle's artifact cache, and the published .sha256 sidecar. Create a temporary Gradle init script under /tmp that prepends only this local Maven repository to the upstream :app project repositories for this single invocation. Do not edit settings.gradle, app/build.gradle, any repository file, or the Gradle cache manually.
+- **Allowed task:** run only :app:kspAppDebugKotlin on the pinned upstream checkout with --info, --no-daemon, --max-workers=1 and --no-parallel; no :app:compileAppDebugKotlin, assemble, test, or other task. Normal Gradle artifact-cache writes from the task's own resolution are allowed, but no manual cache injection. The purpose is to confirm the large artifact is no longer downloaded remotely and expose any remaining processor dependency failure.
+- **Acceptance:** log shows the AA artifact resolved from the temporary local repository, KSP task exits 0, generated outputs are present, and the runner's tracked source tree plus upstream submodule remain clean. Record exact task exit code, log hash, resolved artifact origin, and generated output inventory.
+- **Stop conditions:** source/upstream identity mismatch, dirty tracked tree, Gradle still attempting remote AA-embeddable transfer, any HTTP/resolve failure, KSP task timeout, or any request to run app Kotlin compile/build/test. Stop and preserve logs; remove the temporary local Maven repository and init script after the task; retain the verified JAR in /tmp only.
+- **Exclusions:** no full App compile, no tests/CI/DEX/R8/APK/device run, no production source/Gradle/test/config/schema/UI edits, no Phase B migration and no Task 027.
