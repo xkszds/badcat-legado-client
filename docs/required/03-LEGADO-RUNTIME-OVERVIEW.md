@@ -928,7 +928,7 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Next:** continue Phase A only for remaining source lifecycle/SharedJsScope callers, compiled ABI/reflection evidence and exact Gradle variant resolution. Then consolidate path-exact Host Port signatures and a Phase B proposal and stop for review; do not start source migration.
 
 
-### 4.27.5 Task 026 Phase A continuation — SharedJsScope and source mutation entry-point closure (2026-11-25)
+### 4.27.6 Task 026 Phase A continuation — SharedJsScope and source mutation entry-point closure (2026-11-25)
 
 - **Review HEAD:** `929a3053937e19216ebbee851e3d5a6ad513fb25`; pinned upstream remains `330e606c4d57e08adc056ff8ab7a4132c784da9a`. Audit details are in §24.89.
 - **Shared global invalidation:** source-key deletion calls `ScriptBindings.removeSharedGlobalStatesBySource(sourceClass, MD5(sourceUrl))`, removing source-specific global objects/generation state. `SharedJsScope.remove(jsLib)` is different: it removes the weak cached library scope, URL-backed jsLib file cache entries, and all shared global states under that jsLib hash prefix (potentially affecting multiple sources sharing the library). The former does not remove the library scope; neither operation cancels already-running source scripts by itself.
