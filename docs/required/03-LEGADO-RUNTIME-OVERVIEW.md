@@ -1213,3 +1213,5 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Hard constraints:** no Runtime→app cycle; no `:modules:book`; use `:legado-rhino`; Room database/schema stays in app; Glide/Media3/RSS/login UI and Flexbox View mutation stay host-side; preserve RowUi/ExploreKind/FlexChildStyle data and ExploreInfoMap LRU/dirty-save semantics.
 - **No code/build/test action in 026L.** The user previously authorized Phase B, but the path-exact addendum must be committed and both required lists reread before any production edit. No App compile retry under §24.119.
 - **Disposition:** Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
+
+- **026L scope correction:** the current production composition root is `app/.../runtime/BadcatReadingEngineFactory.kt` + `BadcatSourceHttpGatewayFactory.kt` + `RhinoSourceScriptRuntime.kt`, called by SourceSearch/SourceBook/SourceCatalog and login UI activities. These are included in the read-only addendum audit; `SourceRuntime`/`RuntimeHostPort` in `integration-contract` are not the only runtime surface. See audit §24.125.1.
