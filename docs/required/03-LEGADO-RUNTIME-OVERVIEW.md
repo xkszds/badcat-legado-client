@@ -1225,3 +1225,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - No production source/build/test/schema/UI/Reader edits, Gradle/build/test/CI/device action or App compile retry occurred. This task is a design freeze, not Phase B implementation or compatibility proof.
 - **Next mandatory gate:** commit addendum and records, reread master + this category overview, then register the first bounded Phase B implementation task before any production edit.
 - **Disposition:** Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
+
+### 4.27.38 Task 026M preregistration — first bounded Phase B source-model ownership slice (2026-11-25)
+
+- **Task ID:** `R3-S0-T026-PHASE-B-CORE-UI-MODEL-026M`; status registered / not started. Start HEAD `088e8c5369d09f9e3d9e5bc4408a5d0cbd5315a0`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** move exact pinned `RowUi`, `ExploreKind` and `FlexChildStyle` data contracts to `:legado-runtime`, remove duplicate App model definitions, and split `FlexChildStyle.apply(View)` into an App-only adapter. Preserve every JSON field/default, Type constant, equality/hashCode, style fallback and layout mapping.
+- **Exact files:** add the three models under `legado-runtime/src/main/java/io/legado/app/data/entities/rule/`; remove the three App duplicates under `app/src/main/java/io/legado/app/data/entities/rule/`; add `app/src/main/java/app/badcat/client/runtime/FlexStyleLayoutAdapter.kt`; add `legado-runtime/src/test/kotlin/io/legado/runtime/PinnedLegadoUiModelContractTest.kt`. Existing App test `PinnedLegadoRuleModelsTest.kt` remains unchanged.
+- **Evidence:** the three current App files are byte-identical to pinned upstream (hashes and source caller evidence in audit §24.127). No current Badcat App production caller exists beyond the model declarations; upstream UI callsites are not imported as product UI.
+- **Validation:** focused `:legado-runtime:testDebugUnitTest` only; source hashes, unique FQCN ownership, no App production model copy, no Runtime View/Flexbox import, model JSON/default/equality and adapter mapping review. **No App compile/test/assemble retry** under §24.119; host adapter compilation remains unverified.
+- **Exclusions:** no other Runtime source migration, no Room/schema/database, no UI/Reader changes, no dependency upgrade, no CI, no Task 027 or Stage-1.
+- **Next:** complete this isolated model ownership slice and its Runtime-only tests, write exact results, reread required lists, then register the next Phase B task. Stage-0 remains not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
