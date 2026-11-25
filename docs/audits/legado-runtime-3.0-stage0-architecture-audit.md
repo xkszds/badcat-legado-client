@@ -5012,3 +5012,13 @@ These are candidates for a later committed addendum, not currently authorized ed
 - **Acceptance:** final JAR exactly 80,992,357 bytes and SHA-256 matches the metadata; preserve the metadata, per-range status/size/time, final hash and a manifest in `/tmp`. If Range is unsupported, a response is not 206, any chunk times out, size differs, or checksum fails, stop and delete partial chunks/assembled JAR; do not switch mirrors or retry without a new preregistration.
 - **Exclusions:** no Gradle cache injection, no local Maven repository injection, no Gradle task, app/KSP compile, build, test, DEX/R8, APK, CI, device validation, source/configuration edit, Phase B migration or Task 027.
 - **Next gate:** after the complete JAR is verified, separately review whether a one-run local artifact staging method can be registered. The App compile must not be retried until that staging plan is recorded and approved by the Task 026 sequence.
+
+
+## 24.100 Task 026 Phase A — KSP AA-embeddable range support and metadata endpoint result (2026-11-25)
+
+- **Task:** `R3-S0-T026-KSP-AA-ARTIFACT-STAGING-026B`; metadata/range probe executed. No full artifact chunks were downloaded.
+- **Metadata endpoint:** the Maven `.module` URL returned HTTP 404 with a 554-byte HTML response (SHA-256 `e791ccfcfee9c0d299d07474d9bfcbfcbebf1181323be601220c8a823062ab99`). Therefore no authoritative SHA-256 was obtained from Gradle module metadata and the preregistered full-chunk condition was not met.
+- **Range support:** a single request for bytes `0-1048575` returned HTTP 206 in 1.870631 s with `Content-Range: bytes 0-1048575/80992357`, exactly 1,048,576 bytes. The partial-range SHA-256 is `c9218838caed69ef09cb1d1102cfaf7f9327247c06043037aaaabd567da07510`. This independently confirms the JAR total size is 80,992,357 bytes and Maven Central honors byte ranges.
+- **Cleanup:** the metadata response and 1 MiB probe were removed after recording; only `/tmp/task026-ksp-aa-full/probe-results.txt` remains (SHA-256 `13ae0fa5a1be5a1a9b5a56b3c86c5eb7985df2d0e6653500aa03105c61841d20`). No Gradle cache, repository or build files were changed.
+- **Stop:** do not fetch 5 MiB chunks until an authoritative checksum source is registered and verified. The range mechanism is proven, but the full JAR integrity condition is not yet met.
+- **Disposition:** Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
