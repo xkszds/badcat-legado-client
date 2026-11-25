@@ -1077,3 +1077,10 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Location:** verified JAR retained only at /tmp/task026-ksp-aa-full/symbol-processing-aa-embeddable-2.3.12.jar; chunk files/headers removed; no repository or Gradle cache manually modified.
 - **Next task:** R3-S0-T026-KSP-AA-LOCAL-STAGING-026F registered to prepend a temporary Maven repo via a one-run init script and execute only upstream :app:kspAppDebugKotlin. No full App compile retry. Full details in audit §24.107.
 - **Disposition:** Phase A remains open/not closed; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full Legado compatibility NOT ESTABLISHED.
+
+### 4.27.22 Task 026F preflight amendment — central repository policy preserved (2026-11-25)
+
+- Pinned upstream `settings.gradle` uses `FAIL_ON_PROJECT_REPOS`; a project-level repository injection would violate the build's repository policy.
+- Task 026F is amended to add the temporary local Maven repository through the one-run init script at `settings.dependencyResolutionManagement.repositories`, first in order and filtered to exactly `com.google.devtools.ksp:symbol-processing-aa-embeddable`. No tracked settings/build file or Gradle cache is edited. Details in audit §24.108.
+- The verified 80,992,357-byte JAR is present under `/tmp` with the expected Maven Central SHA-256 and passes ZIP integrity. Runner source checkout is clean at `55b8f102...`; upstream is clean at `330e606c...`. The stale `/root/stage0-runner/repo-git` checkout is dirty and must not be used.
+- Next: copy exact cached POM + verified JAR + SHA sidecar to the temporary repository, then execute only `:app:kspAppDebugKotlin` with the amended filtered settings-level repository. No App compile/build/test/CI. Phase A remains open; Stage-0 not accepted; Stage-1 NO-GO.
