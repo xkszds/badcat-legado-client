@@ -4677,3 +4677,85 @@ Code-search results were reviewed against the pinned tree and production/test pa
 - **No changes/execution:** audit/overview documentation only; no production source, Gradle, tests, workflow, schema, UI or product file changed; no build/test/dependency resolution/DEX/R8/CI/device run.
 - **Gate:** Task 026 Phase A remains open/not closed; Phase B is not authorized; Task 027 remains blocked; Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; full Legado compatibility remains **NOT ESTABLISHED**.
 - **Next:** finish the residual generic update/restore/API caller classification and exact Host Port signatures, then consolidate the path-exact Phase B proposal and stop for review. Do not start migration.
+
+
+## 24.90 Task 026 Phase A — generic BookSource DAO update, import/restore/API write semantics and Host Port contract decomposition (2026-11-25)
+
+- **Start/review HEAD:** `c5e8d99b910e5af9f0e33e34af5344f0bc30b5d6`; branch `integration/legado-upstream-runtime`; pinned upstream `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`. Branch was identical to the previous checkpoint before this slice.
+- **Allowed changes:** this audit and `docs/required/03-LEGADO-RUNTIME-OVERVIEW.md` only. All upstream and host source reads were read-only. No source, Gradle, tests, workflow, schema, UI or product edits; no build/test/CI/dependency resolution/DEX/R8/device execution.
+
+### 24.90.1 DAO update is not one universal source lifecycle
+
+Pinned `BookSourceDao` distinguishes full entity update from narrow metadata SQL:
+- `insert(vararg BookSource)` is a Room transaction around `insertSources(REPLACE)` and replacement of per-source check-state rows.
+- `update(vararg BookSource)` is a Room transaction: load current row, update the full entity, and reset BookSourceCheckState only if `current.checkContent() != source.checkContent()`.
+- `BookSource.checkContent()` serializes a copy with `customOrder`, `enabled`, `enabledExplore`, `lastUpdateTime`, `respondTime` and `weight` normalized. These management/timing fields do not count as source-check content changes; rule/source configuration changes do.
+- Dedicated DAO methods update enabled, enabledExplore, customOrder and check respond time directly. Group updates use `upGroup`, which reads the current row and routes a changed group through the full `update()` method.
+- None of these DAO methods invokes `SourceHelp`, `SharedJsScope.remove`, source-key shared-global invalidation, Explore result invalidation, InfoMap LRU eviction, SourceConfig removal, source-variable cleanup or concurrent-rate reset.
+
+Production caller classification:
+- `BookSourceViewModel.addGroup/upGroup` build full BookSource copies and call DAO `update()`; these are management group edits. `BookSourceViewModel.update(vararg)` is a generic public wrapper; no direct production call site was found in the searched source tree, so it remains a potential full-row entry point rather than a proven live mutation caller.
+- `ReadBookViewModel` disables the active source through full DAO update; `ChangeBookSourceViewModel` disables/reorders a source through full DAO update. The modified fields are normalized by `checkContent()`, so the check-state reset is not triggered solely by these metadata changes.
+- `BookSourceDao.enable/enableExplore/upOrder` are narrow metadata mutations. They do not imply source-script or Explore result invalidation.
+- Group changes are included in `checkContent()` (unlike the normalized metadata fields), so a group-only edit through `update()` can reset source check state even though it does not invalidate the execution caches. This is an observed DAO-level side effect, not a runtime cache operation.
+
+### 24.90.2 Import and replacement routes retain caller-specific semantics
+
+| Caller/path | Actual write | Observed lifecycle / important distinction |
+|---|---|---|
+| `ImportBookSourceViewModel.importSelect()` | calls `SourceHelp.insertBookSource(*selected)` after preserving configured name/group/enabled/order options | Applies 18+ URL filter and DAO REPLACE/check-state transaction; adjusts sort asynchronously; does not run edit/upsert jsLib/Explore/SourceConfig/concurrency cleanup |
+| `RuleUpdate.cacheSource()` silent subscription update | calls `SourceHelp.insertBookSource(list)` for missing/newer sources | Same 18+ filter + direct REPLACE path; carries old local group for existing source; no JS-upsert lifecycle invalidation |
+| `BookSourceController.saveSource()` | validates JSON object + nonblank name/URL, then direct DAO insert | No 18+ filter and no SourceHelp/JS-upsert invalidation |
+| `BookSourceController.saveSources()` | parses array; individually accepts nonblank name/URL and direct DAO inserts each accepted source | Per-item insert, not one explicit all-items transaction; partial accepted list is returned; no higher-level invalidation |
+| `BookSourceController.saveJsSource()` | delegates to `JsSourceUpsert.save()` with 30-second timeout | Uses serialized JS-upsert preparation/invalidation and cancellation/error mapping; distinct from generic JSON save endpoints |
+| `ImportOldData.importOldSource()` | parses legacy JSON and calls DAO insert | Legacy conversion then REPLACE/check-state reset; no per-source runtime cleanup |
+| `Restore` bookSource restore | deserializes `bookSource.json` and directly DAO inserts all rows; fallback invokes `ImportOldData.importOldSource()` | Backup restore direct replacement path; no per-source lifecycle invalidation in the inspected branch |
+| `SourceHelp.insertBookSource()` | 18+ filter then DAO insert and asynchronous sort normalization | Shared by manual import and RuleUpdate; not equivalent to delete+upsert orchestration |
+| `BookSourceEditViewModel.save()`, `JsSourceUpsert.save()`, `McpSourceStore.saveDeclarative()` | explicit old/new comparison and ordered state cleanup before/around DAO replacement | These remain the only inspected orchestrators with explicit Explore/jsLib/SourceConfig/concurrent-rate invalidation combinations |
+
+- Direct DAO `REPLACE` is not a semantic rename or a full source-deletion operation. It can replace the source row while leaving source-keyed runtime state in other stores. Conversely, source deletion cleans some state domains but does not currently evict the Explore InfoMap object LRU (see §24.89).
+- `SourceHelp.insertBookSource` does not first call `deleteBookSource`; therefore it does not inherit the delete helper's shared-global invalidation, persisted variable deletion, SourceConfig removal or generic source-variable cache cleanup.
+- The BookSourceController single/batch JSON APIs are reachable from the HTTP server. Their direct DAO write behavior must not be conflated with the separately authenticated/validated JS-source API path.
+- Tests that directly insert/delete source fixtures were excluded from production lifecycle counts.
+
+### 24.90.3 Host Port contract decomposition — proposed shapes, not implementation authorization
+
+The existing Badcat `RuntimeHostPort.kt` has model-neutral `SourceIdentity`/`SourceExecutionContext` and UI/browser ports; `SourceRuntime.kt` currently exposes simplified BookSource and source HTTP/script contracts. Neither currently expresses the complete upstream catalog mutation and cache-state lifecycle. The following is a contract decomposition for review, not frozen signatures or approval to edit code:
+
+1. **Catalog persistence transaction**
+   - Inputs need the authentic source payload/model, source key, mutation origin (edit UI / JS upsert / MCP declarative / import / subscription / HTTP API / legacy restore), conflict policy, and whether the operation is insert, replace, delete or metadata-only update.
+   - Result must distinguish inserted/replaced/unchanged/not-found/conflict/partial acceptance and preserve upstream per-item vs batch transaction boundaries. Do not collapse import batch partial success into all-or-nothing without an explicit compatibility decision.
+2. **Source-key execution-state invalidation**
+   - A typed operation keyed by source class/type + source key must preserve the pinned MD5 derivation and generation invalidation behavior for shared globals. It must not silently remove the jsLib scope or all sources sharing that library.
+3. **Shared-library invalidation**
+   - A separate operation keyed by jsLib identity/content hash must serialize with scope creation and remove weak scope/file cache/shared-global prefix state. Its blast radius can include multiple source URLs.
+4. **Explore result cache**
+   - Separate clear/invalidate request keyed by source URL + explore URL; preserve persistent ACache and in-memory result-map semantics, including the source-visible main-thread restriction of `refreshExplore()`.
+5. **Explore InfoMap context**
+   - Separate stable mutable context acquisition keyed by source URL, with explicit persistent load/save and object identity. A result-cache clear must not be represented as InfoMap eviction. Source deletion/replacement needs a deliberate policy for the separate object LRU and in-flight references.
+6. **Source variable/config state**
+   - Separate transactional persisted source-variable deletion, generic memory-prefix cleanup, SourceConfig removal and any login/session/header state cleanup. Do not treat these as interchangeable.
+7. **Concurrent request limiter**
+   - Separate source-key reset operation. It is called by explicit edit/upsert/MCP flows but not every direct import/restore/API insert.
+
+Cross-cutting contract requirements:
+- Every mutation carries a caller/origin and old/new source identities; URL changes are represented as delete-old + insert-new with target-conflict validation, not an implicit rename.
+- The adapter must preserve Room transaction scope, order of side effects, partial batch behavior, cancellation and exception propagation. If an upstream sequence is non-atomic across DB and in-memory stores, do not silently claim an atomic cross-store transaction.
+- In-flight Rhino/Explore requests need an explicit policy (allow completion, cooperative cancellation, generation check or drain) because current static evidence does not prove that cache invalidation cancels already-running scripts.
+- Preserve the existing Badcat `SourceIdentity(sourceId, sourceName, sourceType)` and `SourceExecutionContext` only as host context identifiers; do not use them as substitutes for authentic `BookSource` or upstream source class identity.
+
+### 24.90.4 Remaining uncertainty / closure criteria
+
+- The generic `BookSourceViewModel.update()` wrapper has no direct production caller in the inspected code-search results; its indirect or reflective use is not established. The concrete group/reader/change-source update callers are identified above.
+- The exact call graph from every backup restore entrypoint and every external HTTP/API client is not dynamically exercised; static endpoint and restore source paths are recorded.
+- The in-memory side effects of direct DAO REPLACE when a source with the same URL is actively executing remain unverified. This includes stale SourceConfig, SharedJsScope/global state, InfoMap, result cache and concurrent-rate state.
+- Exact typed Kotlin Host Port method signatures, exception/result mapping, serialization envelope and transaction callback design remain review work; no code has been authored.
+- Required differential tests, once separately authorized: (a) metadata-only update vs rule-content update and check-state revision; (b) import/HTTP/legacy/restore REPLACE vs edit/upsert/MCP lifecycle; (c) same-URL replacement with active Rhino and Explore calls; (d) old-URL to new-URL conflict and rollback; (e) partial batch API save; (f) source variable/config/jsLib/InfoMap/result-cache/concurrency state independently observed after each path.
+
+### 24.90.5 Phase A disposition
+
+- **Closed in this slice:** DAO update/check-state contract; management metadata callers; direct import/subscription/HTTP/legacy/backup write routes; separation between direct DAO REPLACE and orchestrated JS upsert/edit/MCP; Host Port responsibility decomposition.
+- **Still NOT MET:** compiled ABI/reflection proof; complete exact-variant dependency resolution; dynamic mutation/cache/in-flight execution races; frozen typed Host Port signatures and path-exact Phase B proposal.
+- **No execution:** no build/test/CI/dependency resolution/DEX/R8/device run; all conclusions are pinned source/static caller evidence.
+- **Gate:** Task 026 Phase A remains open/not closed; Phase B is not authorized; Task 027 remains blocked; Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; full Legado compatibility remains **NOT ESTABLISHED**.
+- **Next:** consolidate the complete path-exact Host Port and source migration proposal using §§24.85–24.90, including unresolved ABI/Gradle proof and the caller-specific write/invalidation matrix; present for review and stop. No source migration.
