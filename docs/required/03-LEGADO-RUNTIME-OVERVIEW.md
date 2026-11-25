@@ -1038,3 +1038,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Goal:** obtain the exact 80,992,357-byte `symbol-processing-aa-embeddable:2.3.12` JAR via bounded HTTPS range requests, using Maven module metadata as the authoritative size/SHA-256 source.
 - **Boundaries:** download only to `/tmp`; verify each 5 MiB range and final checksum; no Gradle cache injection, local repo injection, build/KSP/test/source edit, or app compile retry. Stop on unsupported Range, non-206, timeout, wrong size or checksum mismatch.
 - **Next:** execute the metadata + range staging probe only. If verified, separately preregister any Gradle staging/compile action; Phase A remains open and Stage-1 NO-GO.
+
+
+### 4.27.17 Task 026 Phase A continuation — KSP range probe passes, checksum metadata missing (2026-11-25)
+
+- **Result:** the Maven `.module` endpoint for KSP AA-embeddable returned HTTP 404, so the authoritative SHA-256 condition for full staging was not met. A single 1 MiB range request returned HTTP 206 with `Content-Range: bytes 0-1048575/80992357` in 1.87 seconds; byte-range retrieval is supported and total JAR size is confirmed as 80,992,357 bytes.
+- **Cleanup:** the probe and 404 response were deleted after recording; only the small result record remains under `/tmp`. No repository or Gradle cache changed. See audit §24.100.
+- **Next:** preregister a same-repository checksum-sidecar check (`.sha256`, then `.sha1` if necessary) before any full range download. Do not assemble or stage the JAR without a verifiable published checksum.
+- **Disposition:** Phase A remains open/not closed; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
