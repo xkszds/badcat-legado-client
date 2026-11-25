@@ -4334,3 +4334,13 @@ This is a proposed protocol requiring failure-injection/restart validation. Prog
 - **Stop conditions:** unreviewed caller, source mismatch, dependency-cycle risk, adjacent model dependency not already available, test/build failure requiring out-of-scope changes, stale runner checkout, or resource instability. Preserve the blocker and register a new task if scope must expand.
 - **Expected result location:** overview §4.25.1 and audit §24.84.1.
 - **Registration itself authorizes only the bounded Task 025 scope above; it does not claim any source change, build, test, APK/DEX result, CI run, or compatibility pass has occurred.
+
+
+**Task 025 inspection addendum (before any source/build edit)**
+
+- Exact current-HEAD app source copies were fetched and compared byte-for-byte with `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9`: all seven rule files and `GsonExtensions.kt` are identical (same Git blob SHA for each pair). No local-only behavior will be lost by deleting these app copies.
+- Existing app test caller: `app/src/test/kotlin/io/legado/app/utils/LegadoGsonCompatibilityTest.kt`. It imports all six concrete rule types and exercises `GSON`/`INITIAL_GSON`; it will remain unchanged and serve as a focused compatibility test. The app already declares `implementation(project(":legado-runtime"))`, and runtime already compiles the eight pinned upstream files.
+- Task 021's path-backed caller audit found no app production caller to these duplicate declarations outside their own files; app tests are the identified consumers. This is cross-checked against the current branch's unchanged source/build tree (the current branch differs from source snapshot `4c9cf8ca41a29fcfacdb17fb3ec1d66d4b451343` only in the two registered documentation files).
+- **Additional exact allowed build path:** `app/build.gradle.kts`, solely to add a standalone `verifyNoDuplicatePinnedLegadoRuleClasses` task. It will inspect the Android `debugRuntimeClasspath` class-JAR view plus app Debug class outputs, require exactly one definition for the seven rule model classes and the five top-level Gson helper classes, and fail on missing or duplicate definitions. It will not be wired into CI/workflows or run automatically as part of unrelated tasks.
+- The adjacent `RowUi.kt`, `ExploreKind.kt`, and `FlexChildStyle.kt` are **not moved in Task 025**: `FlexChildStyle` imports Android View/Flexbox and `:legado-runtime` does not currently declare the app's Flexbox dependency. They remain in app until Task 026 source-closure dependency review; no dependency is added here.
+- No test source edit is currently required. If compilation reveals one, stop and add the exact test path and rationale to this registration before editing it.
