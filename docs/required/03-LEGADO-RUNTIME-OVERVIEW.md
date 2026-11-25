@@ -1287,3 +1287,5 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Disposition:** Phase A remains open; Phase B limited to Task 026M DTO slice; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
 
 - **026L snapshot refresh:** current documentation HEAD is `8c95fed9728f88d2610755fd597e10eeb17c42c1`; upstream pin unchanged. Task 026L must consume 026K–026O evidence and freeze the full path-exact Phase B addendum read-only. No code/build/test edit is authorized in 026L.
+
+- **026L scope amendment 3:** inspect `legado-runtime-poc` build, source-closure evidence and manifest read-only. It is included in settings but not depended on by App; final addendum must classify it as quarantined/excluded from production graph, without editing it.

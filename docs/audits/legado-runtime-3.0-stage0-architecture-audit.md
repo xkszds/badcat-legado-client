@@ -5521,3 +5521,13 @@ These owners are classified by use: Runtime pure utilities may move; AppContext/
 - Task 026L remains the registered read-only Phase B addendum freeze. Refresh its inspection snapshot to current Badcat HEAD `8c95fed9728f88d2610755fd597e10eeb17c42c1` on `integration/legado-upstream-runtime`; pinned upstream remains `330e606c4d57e08adc056ff8ab7a4132c784da9a`. Confirm both tracked worktrees clean before execution.
 - The addendum must consume the completed source/import/port/BookSource/BaseSource evidence from §§24.124 and 24.130–24.132, not repeat those scans. The selected BaseSource architecture is the per-instance typed Host Services sidecar described in `legado-runtime-3.0-basesource-host-port-contract.md`; its compile/serialization tests remain future gates.
 - Task 026L stays read-only. It may read the exact source/build/test files in its preregistered scope and produce only the path-exact Phase B addendum plus documentation result updates. No production source/build/test action is authorized by this refresh.
+
+### 24.125.3 Task 026L scope amendment — quarantine the existing Runtime POC module
+
+The repository also includes `:legado-runtime-poc` in `settings.gradle.kts`. Although it has no App dependency and no Kotlin production source, it contributes to the Gradle project graph and contains a selected upstream source-closure artifact. Add these exact paths to the 026L read-only inspection scope:
+
+- `legado-runtime-poc/build.gradle.kts`
+- `legado-runtime-poc/source-closure-stage1.json`
+- `legado-runtime-poc/src/main/AndroidManifest.xml`
+
+Determine whether this POC should be retained as quarantined evidence or excluded from the final production graph. Do not edit/remove the module in 026L. The final graph must not accidentally depend on both `:legado-runtime` and `:legado-runtime-poc`.
