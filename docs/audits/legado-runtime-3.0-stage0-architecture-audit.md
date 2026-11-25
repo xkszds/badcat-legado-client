@@ -4567,3 +4567,49 @@ This is a proposed protocol requiring failure-injection/restart validation. Prog
 - **No changes/execution:** no production source, Gradle, test, workflow, schema, UI or product file changed; no build, test, dependency resolution, DEX/R8, CI or device run.
 - **Gate:** Task 026 Phase A remains in progress/not closed; Phase B is not authorized; Task 027 remains blocked; Stage-0 remains in_progress/not accepted; Stage-1 remains NO-GO; complete Legado compatibility remains NOT ESTABLISHED.
 - **Next:** continue Phase A only for the remaining compiled ABI/reflection and exact Gradle variant evidence where an authorized exact-current-HEAD environment is available; then consolidate the path-exact Phase B proposal and stop for review. Do not start source migration from this evidence slice.
+
+
+## 24.88 Task 026 Phase A — Explore cache invalidation and source lifecycle caller closure (2026-11-25)
+
+- **Review snapshot:** Badcat `integration/legado-upstream-runtime` at `31f439c4e0a5604c0f6698b2eee88a2a961aad36`; comparison with prior checkpoint `31f439c4e0a5604c0f6698b2eee88a2a961aad36` is identical (0 ahead/behind). Pinned upstream: `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Scope:** read-only inspection of pinned `SourceHelp`, `BaseSource`, `BookSourceExtensions`, `SharedJsScope`, `BookSourceEditViewModel`, `JsSourceUpsert`, `McpSourceStore` and code-search caller hits. No production/build/test/Gradle/workflow/schema/UI edits and no build/test/dependency-resolution/DEX/R8/CI/device execution.
+
+### 24.88.1 Explore result invalidation is distinct from source-scoped execution state
+
+**Confirmed result-cache semantics**
+
+- `BookSourceExtensions.kt` computes result key `MD5(bookSourceUrl + exploreUrl)`; it reads/writes process-memory `ConcurrentHashMap` and persistent `ACache("explore")`. A per-source Mutex serializes a source's explore-kind generation; the lock registry remains a lazy plain `HashMap`.
+- `clearExploreKindsCache()` removes only the computed result key from ACache and the in-memory result map. It does not remove `ExploreAdapter.exploreInfoMapList[bookSourceUrl]`, which has a separate LRU lifecycle and is passed by `WebBook.exploreBookAwait()` into `AnalyzeUrl`.
+- Source URL and explore URL therefore affect different dimensions: result cache key includes both; lock and InfoMap identity are source-scoped. Replacing the current implementation with one generic cache invalidation call would change semantics.
+
+**Newly traced invalidation/update callers**
+
+1. `BaseSource.refreshExplore()` rejects main-thread use and synchronously invokes `clearExploreKindsCache()` via `runBlocking`; this is a source-script-visible capability and belongs in the runtime contract, with thread/error semantics preserved.
+2. `BookSourceEditViewModel.save()` clears old Explore results when `exploreUrl` changes, removes the old SharedJsScope entry when `jsLib` changes, and on same-URL updates deletes/reinserts the Room row while removing SourceConfig for that source. If the source URL changes it delegates to `SourceHelp.deleteBookSource()`. It always removes the target URL's concurrent-rate record after save.
+3. `JsSourceUpsert.save()` is serialized by a process-wide Mutex. It clears old Explore results if source URL or exploreUrl changes; removes old SharedJsScope if jsLib changes; if source URL changes it calls `SourceHelp.deleteBookSource(oldUrl)` and clears the old concurrent-rate record, otherwise it directly deletes the old DAO row and removes SourceConfig. It then inserts the new source and clears the target concurrent-rate record. It also preserves selected user-managed fields and rejects stale/missing opened source or target URL conflicts.
+4. `McpSourceStore.saveDeclarative()` reuses `JsSourceUpsert.withSaveLock/prepareForSave`; it clears Explore results when exploreUrl changes, invalidates SharedJsScope on jsLib change, directly deletes/reinserts the DAO row, removes SourceConfig and clears concurrent-rate state.
+5. `SourceHelp.deleteBookSourceKeys()` deduplicates source URLs and wraps deletion of each source in one Room transaction. For each key, `deleteBookSourceInternal()` clears source-keyed shared global JS state, deletes the BookSource row and deletes that source's persisted variable rows. After the transaction it removes SourceConfig for all keys and calls `AppCacheManager.clearSourceVariables()`. The method does not explicitly remove the Explore InfoMap LRU entry, nor does this helper itself call `clearExploreKindsCache()`.
+6. Explore UI/debug and instrumentation paths call `clearExploreKindsCache()`; test teardown can additionally remove the InfoMap entry explicitly. Those test-only cleanup calls must not be mistaken for a production source-deletion guarantee.
+
+**Important distinction**
+
+- Updating `exploreUrl` invalidates result cache but intentionally leaves source-scoped InfoMap available in the observed implementation.
+- Updating `jsLib` removes the shared JS library scope, which is a different state domain from Explore results and InfoMap.
+- Deleting a source clears SharedJsScope's source-keyed global state, Room source row, persisted source variables, SourceConfig and global in-memory source-variable cache. The inspected production delete helper does not explicitly clear Explore result entries or the InfoMap LRU; stale entries may remain until key changes/eviction or another caller clears them. Do not claim source deletion currently performs complete Explore cache cleanup.
+- Same-URL source updates are implemented through multiple caller paths and direct DAO delete/insert, not one universal repository transaction. Preserve the distinct behavior and ordering for edit UI, JS upsert and MCP declarative save unless a reviewed compatibility change is proven.
+
+### 24.88.2 Runtime/Host Port implications
+
+- Runtime owns the source-visible `BaseSource.refreshExplore()` behavior and calls an Explore invalidation port; the host owns persistent/memory cache storage and source catalog persistence.
+- Explore invalidation API should be explicit and scoped: `invalidateExploreResult(sourceUrl, exploreUrl)` (result caches only), `acquireExploreInfoContext(sourceUrl)` (stable mutable context identity), and a separately invoked `invalidateSourceExecutionState(sourceUrl, reason)` for source deletion/replacement or jsLib/global-state changes. Do not collapse these into a single method or automatically remove InfoMap when upstream does not.
+- The host source-upsert/delete orchestration must preserve the caller-specific sequence: Explore result invalidation, SharedJsScope/jsLib invalidation, DAO/store delete or replacement, SourceConfig cleanup, persisted source-variable cleanup, in-memory source-variable cleanup and concurrent-rate reset. Typed ports must expose transaction outcomes and cancellation/error behavior; runtime must not call AppDatabase or SourceConfig directly.
+- A source URL change is a two-identity operation (old key removal + new key insertion). It must not be represented as an in-place rename without preserving old-source state cleanup and target conflict rules.
+- Remaining source lifecycle work: trace `clearSharedGlobalStateBySourceKey` and every source update/delete/import/export entry point; identify whether any non-UI production path explicitly removes `exploreInfoMapList`; determine source variable cleanup scopes and whether concurrent-rate/SourceConfig invalidation has other callers. Dynamic parity for races between in-flight source execution and source deletion remains unverified.
+
+### 24.88.3 Phase A disposition
+
+- **Closed in this slice:** production callers for Explore result invalidation and the source-visible `refreshExplore()`; source edit, JS upsert and MCP save behavior; SourceHelp delete transaction and its source-variable/SharedJsScope/SourceConfig cleanup ordering; distinction between result cache, InfoMap, SharedJsScope, SourceConfig, persisted variables and concurrent-rate state.
+- **Still NOT MET:** all source lifecycle callers outside inspected entry points; complete SharedJsScope invalidation semantics under source-key deletion; explicit production InfoMap eviction policy; typed signatures and implementation for lifecycle/cache ports; races/cancellation and failure-injection differential tests; compiled JVM/Rhino ABI/reflection descriptors; complete resolved Debug/Release/unit/AndroidTest dependency graph.
+- **No changes/execution:** documentation only; no production source, Gradle, tests, workflow, schema, UI or product file changed; no build/test/dependency resolution/DEX/R8/CI/device run.
+- **Gate:** Task 026 Phase A remains in progress/not closed; Phase B is not authorized; Task 027 remains blocked; Stage-0 remains in_progress/not accepted; Stage-1 remains NO-GO; complete Legado compatibility remains NOT ESTABLISHED.
+- **Next:** continue read-only caller closure for source lifecycle and SharedJsScope/source-state cleanup; only then consolidate exact Host Port signatures and Phase B file/test/build proposal. Do not start migration.
