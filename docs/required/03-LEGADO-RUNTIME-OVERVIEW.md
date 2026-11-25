@@ -1235,3 +1235,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Validation:** focused `:legado-runtime:testDebugUnitTest` only; source hashes, unique FQCN ownership, no App production model copy, no Runtime View/Flexbox import, model JSON/default/equality and adapter mapping review. **No App compile/test/assemble retry** under §24.119; host adapter compilation remains unverified.
 - **Exclusions:** no other Runtime source migration, no Room/schema/database, no UI/Reader changes, no dependency upgrade, no CI, no Task 027 or Stage-1.
 - **Next:** complete this isolated model ownership slice and its Runtime-only tests, write exact results, reread required lists, then register the next Phase B task. Stage-0 remains not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
+
+### 4.27.39 Task 026M result — canonical UI-model Runtime ownership slice (2026-11-25)
+
+- **Status:** completed for the bounded model ownership scope. Exact pinned `RowUi.kt` and `ExploreKind.kt` moved to `:legado-runtime`; duplicate App definitions removed. `FlexChildStyle` data fields/defaults/equality/align mapping moved to Runtime; `apply(View)` moved to App-only `FlexStyleLayoutAdapter`. Runtime has no View/Flexbox imports. Exact source hashes and caller scope are in audit §24.128.
+- Added `PinnedLegadoUiModelContractTest.kt`; `:legado-runtime:testDebugUnitTest` passed: 6 tests, 0 failures, 0 errors, 0 skipped. Gradle 8.14.4, JDK 21.0.13.1, offline, only Runtime tasks. Exact log/JUnit/classes JAR hashes are in audit §24.128.
+- **Limit:** App test, App compile and adapter compilation/runtime were not run because §24.119 forbids any further App compile retry. The adapter is not wired to a current Badcat production caller; no Legado UI was imported. No CI, Room/schema, UI/Reader or data migration changes.
+- **Next:** preregister a BookSource canonical-model/file-catalog/Room-annotation decision slice before moving BookSource or changing persistence. BaseSource lifecycle and remaining Host Ports stay blocked.
+- **Disposition:** Phase A remains open; Phase B has begun with this one bounded slice; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
