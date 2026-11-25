@@ -1285,3 +1285,5 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Still blocked:** five Host Port declarations have zero App implementations; HTTP options, WebView/browser/verification single-flight, CookieStore sync, cache LRU/TTL, dynamic rate update and batch-content save-token path remain incomplete. Full matrix and evidence: `docs/audits/legado-runtime-3.0-basesource-host-port-contract.md`.
 - **Next:** execute Task 026L read-only Phase B addendum freeze using 026K–026O evidence; no more source edits until the addendum is committed and both required lists are reread.
 - **Disposition:** Phase A remains open; Phase B limited to Task 026M DTO slice; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
+
+- **026L snapshot refresh:** current documentation HEAD is `8c95fed9728f88d2610755fd597e10eeb17c42c1`; upstream pin unchanged. Task 026L must consume 026K–026O evidence and freeze the full path-exact Phase B addendum read-only. No code/build/test edit is authorized in 026L.
