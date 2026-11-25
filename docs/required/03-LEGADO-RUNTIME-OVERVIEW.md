@@ -1183,3 +1183,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Limit:** this verifies the full upstream App dependency metadata graph, not the minimal `:legado-runtime` source closure or compiled ABI. Do not conflate it with the separate Badcat 44-configuration graph.
 - **Next:** reconcile exact Runtime source imports and typed Host Port ownership against these existing variant graphs; no repeated dependency report or App compile.
 - **Disposition:** Task 026 Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
+
+### 4.27.34 Task 026K preregistration — Runtime source/import dependency ownership matrix (2026-11-25)
+
+- **Status:** registered; not yet executed. Read-only Phase A work only.
+- **Goal:** reconcile the path-exact candidate Runtime sources and actual BookSource callers against their direct imports, pinned source owners, exact external Gradle coordinates and Debug/Release/test variants; classify each dependency as Runtime core, typed Host Port, product UI/Reader or conditional/excluded.
+- **Scope:** candidates in audit §24.91.4 and actual callers in §§24.85–24.90. Upstream source/build files remain read-only; outputs stay outside the repository under `/root/stage0-runner/task026-clean/task026k-attempt1/`.
+- **Evidence:** existing pinned upstream variant reports (§24.122), prior 1,085-node import graph (§24.85.1), and caller/Host-Port evidence (§§24.85–24.91). Do not rerun dependency reports or App compilation.
+- **Exclusions:** no Gradle/compiler/build/test/CI/device, no source/build/test/UI/Reader/schema edits, no dependency upgrades, no Phase B or Task 027.
+- **Next:** complete the import/coordinate/Host-Port matrix, then reconcile the path-exact implementation addendum and blockers. No further App compile retry is authorized.
