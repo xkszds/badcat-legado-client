@@ -1004,3 +1004,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Changes:** audit-only §24.95 plus this checkpoint; no production/build/test/workflow/schema/UI edits and no build/test/CI/DEX/R8/device execution.
 - **Disposition:** Task 026 Phase A remains open/not closed; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
 - **Next:** continue the remaining pinned app-level caller/reflection closure without retrying the stalled full App compile until the external artifact transfer is identified or a reproducible bounded route is established.
+
+
+### 4.27.13 Task 026 Phase A continuation — KSP transfer candidate narrowing (2026-11-25)
+
+- **Finding:** pinned upstream app uses KSP 2.3.12 with Room compiler 2.8.4 and Glide KSP 5.0.7. The KSP plugin's compiled `KspAATask` constructs a detached compiler classpath containing `symbol-processing-aa-embeddable:2.3.12` and `kotlinx-coroutines-core-jvm:1.10.2` as well as KSP API/common dependencies.
+- **Cache check:** API/common-deps and Kotlin stdlib JARs are cached; the AA-embeddable and coroutines entries have metadata only and no JAR; Room compiler 2.8.4 and Glide KSP 5.0.7 cache paths are empty. Four artifact candidates are therefore not locally staged for the KSP task.
+- **Limit:** the earlier TLS thread dump did not record which of these artifacts was being downloaded. This narrows likely transfer candidates but does not identify the exact stalled artifact. No Gradle command or build was run in this diagnostic slice. Details and bytecode evidence are in audit §24.96.
+- **Next:** use a separately registered, bounded diagnostic with explicit transfer logging or controlled artifact staging to identify the actual failed transfer before retrying the full upstream app compile. Keep exit 143 as cancelled/incomplete, not build failure or pass.
+- **Disposition:** Phase A remains open/not closed; no Phase B source migration; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
