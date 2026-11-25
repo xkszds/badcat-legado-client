@@ -1013,3 +1013,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Limit:** the earlier TLS thread dump did not record which of these artifacts was being downloaded. This narrows likely transfer candidates but does not identify the exact stalled artifact. No Gradle command or build was run in this diagnostic slice. Details and bytecode evidence are in audit §24.96.
 - **Next:** use a separately registered, bounded diagnostic with explicit transfer logging or controlled artifact staging to identify the actual failed transfer before retrying the full upstream app compile. Keep exit 143 as cancelled/incomplete, not build failure or pass.
 - **Disposition:** Phase A remains open/not closed; no Phase B source migration; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
+
+
+### 4.27.14 Task 026 Phase A — bounded KSP transfer diagnostic registered (2026-11-25)
+
+- **Task ID:** `R3-S0-T026-KSP-TRANSFER-DIAGNOSTIC-026A`; status registered/not started; full scope and stop conditions in audit §24.97.
+- **Snapshot:** branch HEAD before registration `83726efc09575bd7a58693bb6f8034dcf4597287`; runner source checkout `55b8f102...` remains clean and differs only by documentation-only commits; pinned upstream `330e606c...`.
+- **Scope:** one HTTPS GET per four uncached KSP artifact candidates (KSP AA-embeddable 2.3.12, coroutines 1.10.2, Room compiler 2.8.4, Glide KSP 5.0.7) into `/tmp`, 10-second connect / 30-second total timeout, no retries. No Gradle/build/KSP/test/source edits or cache injection.
+- **Next:** execute only this bounded artifact-transfer check; record status/size/hash/time and clean temporary downloads. It does not prove which artifact was stalled in the prior cancelled build. Keep Phase A open and Stage-1 NO-GO.
