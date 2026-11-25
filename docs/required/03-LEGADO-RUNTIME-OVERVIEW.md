@@ -1159,3 +1159,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Temporary filtered Maven repository and init script removed; verified KSP JAR retained under `/tmp/task026-ksp-aa-full/`; tracked Badcat and upstream worktrees remain clean.
 - **Next:** Task 026I is preregistered in audit §24.118 to run only `:app:compileAppDebugKotlin` with the compiler in-process and Gradle heap capped at 768 MiB. This is the last bounded App compile resource experiment; no further compile retry after it.
 - **Disposition:** Task 026 Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
+
+### 4.27.31 Task 026I result — lower-heap in-process App compile stopped at memory threshold (2026-11-25)
+
+- **Status:** incomplete / acceptance not met; not a source compile failure and not a pass. With `-Xmx768m` and in-process Kotlin compilation, Gradle reached `:app:compileAppDebugKotlin`; KSP was up-to-date and no remote AA JAR fetch occurred.
+- Available memory crossed the registered 150 MiB stop threshold (sampled about 138 MiB); Gradle RSS reached about 1.31 GiB. The task was stopped at 22:12:10 +08:00, exit 143. No App Kotlin `.class` outputs were produced. Full evidence and hashes: audit §24.119.
+- Temporary filtered Maven repository and init script removed; verified KSP JAR retained under `/tmp/task026-ksp-aa-full/`; tracked worktrees remain clean.
+- **No further App compile retry is authorized.** Task 026J is preregistered in audit §24.120 for read-only extraction of existing class/JAR/AAR/DEX artifacts and JVM ABI metadata; no Gradle/compiler/build task.
+- **Disposition:** Task 026 Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
