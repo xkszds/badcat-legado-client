@@ -1069,3 +1069,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Result:** first 5 MiB range completed in 21.17s; second range timed out at 60s after 4,848,598/5,242,880 bytes. The transfer script stopped and deleted all chunks/headers/assembled output; no partial JAR remains. Failure manifest SHA-256 and exact ranges are in audit §24.104.
 - **Next:** 2 MiB sequential range plan registered as R3-S0-T026-KSP-AA-CHUNKED-TRANSFER-026E, 45s per chunk, same verified Maven SHA-256. Full scope in audit §24.105.
 - **Boundary:** no cache injection or compile retry; only a fully verified artifact may be retained in /tmp. Phase A remains open and Stage-1 NO-GO.
+
+
+### 4.27.21 Task 026 Phase A — KSP AA-embeddable JAR fully verified (2026-11-25)
+
+- **Result:** 39 sequential range chunks completed; exact 80,992,357-byte JAR SHA-256 matches Maven Central sidecar: 862f0042fc2467cdcf7752e15880f97396a29e2469741dc6453f37584f1b4c69. ZIP integrity passed. Chunk manifest SHA-256: 5ceb175a4a8bba47954a266cc8bc31447b94ca831c6f986337765449d3c37a74.
+- **Location:** verified JAR retained only at /tmp/task026-ksp-aa-full/symbol-processing-aa-embeddable-2.3.12.jar; chunk files/headers removed; no repository or Gradle cache manually modified.
+- **Next task:** R3-S0-T026-KSP-AA-LOCAL-STAGING-026F registered to prepend a temporary Maven repo via a one-run init script and execute only upstream :app:kspAppDebugKotlin. No full App compile retry. Full details in audit §24.107.
+- **Disposition:** Phase A remains open/not closed; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full Legado compatibility NOT ESTABLISHED.
