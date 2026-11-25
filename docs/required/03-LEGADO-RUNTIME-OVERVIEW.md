@@ -804,7 +804,7 @@ Model-typed persistence/config/replacement/notification interfaces must live bes
 ## 4.25 Runtime-3.0 Stage-0 — canonical rule/model source ownership remediation PoC
 
 - **Task ID:** `R3-S0-CANONICAL-MODEL-SOURCE-OWNERSHIP-025`
-- **Status:** registered; implementation not started.
+- **Status:** completed; implementation committed and focused build/test/duplicate-class verification passed on 2026-11-25. CI/Actions were intentionally not run per task exclusion.
 - **Registration branch / start HEAD:** `926afed48e1f0a41f1a4722065e795a905aac75f`; branch `integration/legado-upstream-runtime`.
 - **Pinned upstream:** `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9`.
 - **Goal:** implement the narrow Task 024 ownership decision for the duplicate rule-model/Gson source family. Establish one compiler owner for the seven pinned rule models and `GsonExtensions.kt`, retain app callers through the existing `:app -> :legado-runtime` dependency, and verify no module cycle or duplicate FQCN remains. Review the adjacent `RowUi.kt`, `ExploreKind.kt`, and `FlexChildStyle.kt` contracts and move them only if their exact pinned dependencies are already satisfied without importing Legado product UI or adding an unreviewed dependency.
@@ -835,3 +835,22 @@ Model-typed persistence/config/replacement/notification interfaces must live bes
 - **Additional exact allowed build path:** `app/build.gradle.kts`, solely to add a standalone `verifyNoDuplicatePinnedLegadoRuleClasses` task. It will inspect the Android `debugRuntimeClasspath` class-JAR view plus app Debug class outputs, require exactly one definition for the seven rule model classes and the five top-level Gson helper classes, and fail on missing or duplicate definitions. It will not be wired into CI/workflows or run automatically as part of unrelated tasks.
 - The adjacent `RowUi.kt`, `ExploreKind.kt`, and `FlexChildStyle.kt` are **not moved in Task 025**: `FlexChildStyle` imports Android View/Flexbox and `:legado-runtime` does not currently declare the app's Flexbox dependency. They remain in app until Task 026 source-closure dependency review; no dependency is added here.
 - No test source edit is currently required. If compilation reveals one, stop and add the exact test path and rationale to this registration before editing it.
+
+
+## 4.26 Runtime-3.0 Stage-0 — Task 025 result and verification (2026-11-25)
+
+- **Task ID:** `R3-S0-CANONICAL-MODEL-SOURCE-OWNERSHIP-025`
+- **Status:** `completed` (bounded source-ownership PoC only; not full Runtime compatibility).
+- **Implementation commit:** `996f60d79ca6a84c02b5b06b3357dc3487ac5fb3` on `integration/legado-upstream-runtime`.
+- **Exact tree verification:** GitHub commit tree `8b0019b295bb5a944b72065782bff1740811f7ae`; reconstructed validation worktree `git write-tree` returned the identical tree SHA. The runner's original detached base was not treated as current branch evidence; the two intervening documentation files were refreshed from the current branch before matching the full tree.
+- **Implementation:** removed the eight duplicate app-owned rule/Gson source files registered in Task 025; added standalone Gradle task `verifyNoDuplicatePinnedLegadoRuleClasses` in `app/build.gradle.kts`. Adjacent `RowUi`, `ExploreKind`, and `FlexChildStyle` were not moved. No CI/workflow, dependency version, UI, schema, or database changes.
+- **Focused verification command:** `gradle --no-daemon :app:verifyNoDuplicatePinnedLegadoRuleClasses :app:testDebugUnitTest --tests io.legado.app.utils.LegadoGsonCompatibilityTest --stacktrace`.
+  - `:app:compileDebugKotlin`: success.
+  - `:app:verifyNoDuplicatePinnedLegadoRuleClasses`: PASS; all 12 registered classes have exactly one compiler owner, each in `:legado-runtime`'s Debug runtime classes JAR.
+  - `LegadoGsonCompatibilityTest`: 6 tests, 0 skipped, 0 failures, 0 errors. JUnit: `app/build/test-results/testDebugUnitTest/TEST-io.legado.app.utils.LegadoGsonCompatibilityTest.xml`.
+- **Dependency environment note:** the first attempt stopped before compilation because the root local Maven mirror lacked `htmlunit-core-js-5.3.0-legado.4.jar`. The identical pinned artifact already present under `upstream/legado/third_party/maven` was temporarily symlinked into the expected local mirror path for verification, then the symlink was removed. This was a local-only runner adjustment; no repository source or dependency metadata was changed.
+- **APK build:** `gradle --no-daemon :app:assembleDebug` — BUILD SUCCESSFUL. Debug APK: `app/build/outputs/apk/debug/app-debug.apk`; SHA-256 `ed2a5d1abe4b4dd62553176a7c450167df49027909c1e53c3b639d432a3644d5`.
+- **DEX verification:** APK contains 14 DEX files. `apkanalyzer dex packages --defined-only` found each of the 12 Task-025 target base classes exactly once across all DEX files (12/12 unique); `DEX_CLASS_DEFINITION_CHECK=PASS`.
+- **CI:** not run, as explicitly excluded by Task 025. No CI pass is claimed. The Debug APK is verification evidence, not a release artifact.
+- **Disposition:** Task 025 acceptance is met. No duplicate app source remains in the eight registered paths; runtime ownership, focused compatibility test, Gradle guard, Debug assembly and target DEX uniqueness are verified on the exact commit tree.
+- **Next gate:** separately preregister Task 026 (authentic Runtime source/caller closure) before any implementation. Task 027 storage work remains blocked until Task 026 proves the authentic source closure and buildable module boundary. **Stage-0 remains in_progress/not accepted; Stage-1 remains NO-GO; full Legado compatibility remains NOT ESTABLISHED.**
