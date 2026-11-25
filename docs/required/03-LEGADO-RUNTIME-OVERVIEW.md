@@ -1276,3 +1276,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **026O scope amendment:** search-only implementer inventory found additional shared `BaseSource` implementations in upstream `RssSource`, `HttpTTS`, anonymous `BookCover` and `SourceNavigationBridge` delegation, plus Review/Reader/Login/Verification/WebView callsites. Exact files are listed in audit §24.131.1 and are read only at BaseSource boundaries; these product features remain App-side and are not imported into Runtime.
 
 - **026O scope amendment 2:** added exact read-only imported owner files for CacheManager, CookieStore/CookieManager, ConcurrentRateLimiter, AppConfig/Theme/ReadBookConfig, Android-ID/AES, SourceHelp, AppLog/EventBus, File/Archive/LibArchive, BackstageWebView/SSL, BatchContentContext and VideoPlay. Exact paths and ownership boundary are audit §24.131.2; read only methods used by BaseSource/JsExtensions.
+
+### 4.27.43 Task 026O result — BaseSource JS ABI and per-source Host Port closure (2026-11-25)
+
+- **Status:** completed read-only. Pinned upstream API has 175 unique method signatures across `BaseSource`/`JsExtensions`/`JsEncodeUtils`, including 77 `@JavascriptInterface` annotations. Exact method tables: `task026o-attempt1/`.
+- Current Badcat source object is login-only (11 methods); 14 BaseSource methods and 17 JsExtensions names are missing. `java.getSource()` returns a Map, not BaseSource; `sourceApi` and `baseUrl` bindings are absent; current tests codify this reduced ABI. Current SourceScriptRuntime is DTO/String-only.
+- **Selected design:** preserve the exact BookSource object and attach a typed per-instance Host Services sidecar, ignored by Room/Gson/Parcelable and hidden from Rhino. No wrapper/global service locator/ThreadLocal/Map bridge. Concrete BookSource casts in AnalyzeRule make wrapper substitution unsafe.
+- **Still blocked:** five Host Port declarations have zero App implementations; HTTP options, WebView/browser/verification single-flight, CookieStore sync, cache LRU/TTL, dynamic rate update and batch-content save-token path remain incomplete. Full matrix and evidence: `docs/audits/legado-runtime-3.0-basesource-host-port-contract.md`.
+- **Next:** execute Task 026L read-only Phase B addendum freeze using 026K–026O evidence; no more source edits until the addendum is committed and both required lists are reread.
+- **Disposition:** Phase A remains open; Phase B limited to Task 026M DTO slice; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
