@@ -1289,3 +1289,14 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **026L snapshot refresh:** current documentation HEAD is `8c95fed9728f88d2610755fd597e10eeb17c42c1`; upstream pin unchanged. Task 026L must consume 026K–026O evidence and freeze the full path-exact Phase B addendum read-only. No code/build/test edit is authorized in 026L.
 
 - **026L scope amendment 3:** inspect `legado-runtime-poc` build, source-closure evidence and manifest read-only. It is included in settings but not depended on by App; final addendum must classify it as quarantined/excluded from production graph, without editing it.
+
+
+### 4.27.44 Task 026L snapshot refresh result — Phase B addendum and POC quarantine (2026-11-25)
+
+- **Status:** completed read-only at Badcat refresh start HEAD `4e51c9c210c33e3784070e8a557b8c3f4ab54b9c`; pinned upstream remains `330e606c4d57e08adc056ff8ab7a4132c784da9a`. Both tracked worktrees were clean.
+- Refreshed `docs/audits/legado-runtime-3.0-phase-b-implementation-addendum.md` (SHA-256 `be29cfe61ea2646e06bab8f74f5c34b5a4de0b7eae290d45c4028e95b16f256b`) to consume 026M–026O evidence and the POC scope amendment. Current `:legado-runtime` owns RowUi/ExploreKind/FlexChildStyle plus eight injected rule/serialization sources; the App FlexStyle adapter remains uncompiled under §24.119.
+- `:legado-runtime-poc` remains a quarantined historical probe: included in settings, no App dependency edge, 12 injected pinned sources, no Kotlin `src/main` source. Excluded from production dependencies; no cleanup/edit.
+- BaseSource ABI inventory: 175 unique signatures and 77 JS annotations. Current Badcat source/java bridge remains incomplete. Per-source Host Services is only a selected design direction; public cross-module owner visibility, all BaseSource implementers, source-type mapping, attachment lifecycle and typed port semantics remain unproven. No BookSource/BaseSource migration authorization.
+- Corrected Host Port matrix and 64-source hash evidence are under `/root/stage0-runner/task026-clean/task026l-refresh-attempt1/`. Exact result and hashes: audit §24.125.4.
+- **No** production source/build/test/manifest/schema/UI/Reader edit, Gradle/build/test/CI/device/network action or App compile retry. Phase B has begun only with Task 026M's bounded UI-model slice (Runtime tests 6/6); Phase A remains open, Task 027 blocked, Stage-0 not accepted, Stage-1 **NO-GO**, full compatibility **NOT ESTABLISHED**.
+- **Next:** after this documentation commit, reread the master and third-category required lists, then register Task 026P for read-only exact typed Host Port signature closure. Do not begin BookSource/BaseSource migration before the signature freeze and separate owner proof.

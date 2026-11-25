@@ -1,14 +1,15 @@
 # Runtime-3.0 Phase B path-exact implementation addendum
 
-**Task:** `R3-S0-T026-PHASE-B-ADDENDUM-FREEZE-026L`  
-**Date:** 2026-11-25  
-**Status:** design freeze completed as a read-only Phase A deliverable; Phase B implementation is still not started.  
-**Badcat branch/start HEAD:** `integration/legado-upstream-runtime` / `07d0819ddb3802fd2e2e17b3de75f965da9fcea2`  
+**Task:** `R3-S0-T026-PHASE-B-ADDENDUM-FREEZE-026L`
+**Date:** 2026-11-25
+**Status:** original design freeze completed; read-only snapshot refreshed after Tasks 026M–026O and the Runtime POC quarantine review. Phase B has started only with the bounded 026M UI-model ownership slice; BookSource/BaseSource migration and Host Port production wiring remain NO-GO.
+**Badcat branch/original addendum HEAD:** `integration/legado-upstream-runtime` / `07d0819ddb3802fd2e2e17b3de75f965da9fcea2`
+**Current refresh HEAD:** `4e51c9c210c33e3784070e8a557b8c3f4ab54b9c`
 **Pinned behavior baseline:** `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`
 
 ## 1. Purpose and hard constraints
 
-This addendum converts audit §§24.70–24.125 and the Task 026K evidence into an implementation-ready file/port/module/test map. It does not authorize edits. It is deliberately conservative where the source ABI or host contract is not proven: unresolved signatures are named blockers, not guessed interfaces.
+This addendum converts audit §§24.70–24.132 and Tasks 026K–026O evidence into an implementation-ready file/port/module/test map. It does not authorize edits. It is deliberately conservative where the source ABI or host contract is not proven: unresolved signatures are named blockers, not guessed interfaces.
 
 The product remains Badcat. Keep its original UI, navigation, bookshelf, reader, CSS/layout, purification and interaction. Legado contributes the real pinned source model, rule evaluator, JS/Rhino, source lifecycle and search/explore/detail/TOC/content behavior. Do not substitute the current selector parser or a simplified `BookSource` DTO for the upstream implementation. Do not introduce no-op behavior, permissive fallback, fake data, generic `Map<String, Any?>` bridges, or claim compatibility from compilation alone.
 
@@ -18,9 +19,10 @@ Data strategy remains the Runtime-3.0 §2.3 rule: prove source execution closure
 
 ### 2.1 Current project graph and module state
 
-`settings.gradle.kts` includes `:app`, `:integration-contract`, `:legado-rhino`, `:legado-runtime` and `:legado-runtime-poc`. The production App dependencies currently include the first three runtime-related projects: `:integration-contract`, `:legado-runtime`, and `:legado-rhino`. `:legado-runtime-poc` is not part of the App dependency declaration and must not be treated as the production runtime.
+`settings.gradle.kts` includes `:app`, `:integration-contract`, `:legado-rhino`, `:legado-runtime` and `:legado-runtime-poc`. App depends on `:integration-contract`, `:legado-runtime` and `:legado-rhino`; it has no dependency edge to `:legado-runtime-poc`. The POC is retained only as quarantined historical evidence, not as a production Runtime dependency.
 
-- `:legado-runtime` is an Android library (compileSdk 36, minSdk 26, Java/Kotlin 21, Kotlin/Parcelize 2.4.20). It has no ordinary Kotlin production file under `src/main`; its `KotlinCompile` task injects eight pinned upstream files from the upstream app tree: seven rule DTOs (`BookListRule`, `ExploreRule`, `SearchRule`, `BookInfoRule`, `TocRule`, `ContentRule`, `ReviewRule` — seven rule classes) plus `GsonExtensions.kt`. It currently declares Gson 2.14.0 and AndroidX annotation 1.10.0. It does not declare Room, Room compiler/KSP or the full upstream model/runtime dependency closure.
+- `:legado-runtime` is an Android library (compileSdk 36, minSdk 26, Java/Kotlin 21, Kotlin/Parcelize 2.4.20). After Task 026M it owns three ordinary Kotlin production models under `src/main`: `RowUi.kt`, `ExploreKind.kt` and `FlexChildStyle.kt`. Its `KotlinCompile` task also injects eight pinned upstream files from the upstream app tree: seven rule DTOs (`BookListRule`, `ExploreRule`, `SearchRule`, `BookInfoRule`, `TocRule`, `ContentRule`, `ReviewRule`) plus `GsonExtensions.kt`. The current production source input is three checked-in models plus eight injected upstream files. It declares Gson 2.14.0 and AndroidX annotation 1.10.0; it does not declare Room database/compiler/KSP or the full upstream model/runtime dependency closure.
+- `:legado-runtime-poc` is a separate probe build. Its build script injects 12 pinned upstream source files into its own Debug/Release compile tasks; `src/main` contains only an empty Android manifest and `source-closure-stage1.json` is historical metadata. Keep it quarantined and out of App/production dependencies; do not merge its source set with `:legado-runtime`.
 - `:legado-rhino` is an Android library containing the Rhino bridge/sandbox implementation. It exports `org.htmlunit:htmlunit-core-js:5.3.0-legado.4` through `api`; it implements coroutines 1.11.0, OkHttp 5.4.0 and AndroidX collection 1.6.0. Preserve the exported CoreJS ABI.
 - `:integration-contract` is currently a Kotlin/JVM 21 module but contains substantial production code, not merely interfaces: source services, request/rule parsers, compatibility helpers, tests, and a custom `pinnedLegado` source set. The latter compiles original upstream `AnalyzeByJSoup.kt`, `AnalyzeByRegex.kt`, `RuleAnalyzer.kt`, `SourceHtmlParser.kt` plus adapted JSONPath/XPath/Jsoup bridges and `PrintOnDebug.kt`.
 - `:app` currently composes the actual `SourceReadingEngine` graph through `BadcatReadingEngineFactory`; it also constructs independent `RhinoSourceScriptRuntime` instances from `SourceCatalogActivity` and `SourceLoginUiV2Activity`. It owns `FileBookSourceCatalog`, SharedPreferences cookie/session/key-value adapters, file caches and the visible UI.
@@ -43,7 +45,7 @@ The real production entry points are:
 
 `PinnedLegadoRuleAnalyzer` currently wraps upstream `RuleAnalyzer.splitRule` and bounds expression size/nesting; it is not the full upstream `AnalyzeRule` / `AnalyzeUrl` execution pipeline. The current CSS/JSONPath/XPath/selector helpers and `Source*Service` classes provide useful partial behavior but must not be represented as complete source-rule compatibility.
 
-`FileBookSourceCatalog` stores complete imported source JSON through `AtomicFile` and maps it into the current `app.badcat.engine.BookSource` host DTO. That DTO is not the exact upstream `io.legado.app.data.entities.BookSource`; it must not remain the Runtime's authoritative source model. The complete raw JSON retention is useful migration evidence, not a substitute for exact model fields/defaults/serialization or runtime semantics.
+`FileBookSourceCatalog` stores complete imported source JSON through `AtomicFile` and maps it into the current `app.badcat.engine.BookSource` host DTO. That DTO is not the exact upstream `io.legado.app.data.entities.BookSource`; it must not remain the Runtime's authoritative source model. Task 026N selected the pinned upstream BookSource as the sole eventual Runtime source model while retaining the App AtomicFile catalog as current persistence owner. Complete raw JSON retention is useful migration evidence, not a substitute for exact model fields/defaults/serialization or runtime semantics.
 
 ### 2.3 Current app-only boundary
 
@@ -160,6 +162,7 @@ Current App runtime files and target ownership:
 | `app/src/main/java/app/badcat/client/runtime/FileSourceScriptCacheStore.kt` | Keep App; file-backed source cache adapter. |
 | `app/src/main/java/app/badcat/client/runtime/FileChapterContentCache.kt` | Keep App; file-backed chapter cache adapter, preserving atomic write/save fences. |
 | `app/src/main/java/app/badcat/client/runtime/CacheFilePruner.kt` | Keep App; storage lifecycle/space policy. |
+| `app/src/main/java/app/badcat/client/runtime/FlexStyleLayoutAdapter.kt` | Keep App-only; applies Runtime-owned `FlexChildStyle` data to Android View/Flexbox LayoutParams. Its source exists, but App compilation/runtime remains unverified under §24.119. |
 | `app/src/main/java/app/badcat/client/runtime/BadcatPurificationCoordinator.kt` | Keep Badcat product layer; not a Legado Runtime dependency. |
 
 ### 4.4 `integration-contract` source ownership
@@ -275,6 +278,7 @@ Create or migrate under `legado-runtime/src/test/kotlin/io/legado/runtime/`:
 - `model/UpstreamSourceModelFieldParityTest.kt` — every upstream field, constructor default, nullable/absent distinction, equality/hashCode and sourceUrl identity.
 - `model/UpstreamModelSerializationParityTest.kt` — Gson round-trip, unknown-field retention, nested rule JSON and null/default behavior.
 - `model/UpstreamParcelableContractTest.kt` — Parcelable round-trip for BookSource/Book/BookChapter/SearchBook/ReplaceRule when the model build is approved; no schema creation.
+- Existing `PinnedLegadoUiModelContractTest.kt` — Task 026M's exact RowUi/ExploreKind/FlexChildStyle field/default/equality/serialization contract; retain its 3/3 Runtime-only pass as bounded evidence, not as source-runtime acceptance.
 - `analyze/AnalyzeRuleDifferentialTest.kt` — pinned CSS/JSONPath/XPath/regex/JS branch dispatch and exact output/error parity.
 - `analyze/AnalyzeUrlRequestSemanticsTest.kt` — URL option parsing, header precedence, redirect, timeout, charset, status/body bytes and error semantics.
 - `source/BaseSourceLifecycleContractTest.kt` — source state, login, cache, callback, cancellation and cleanup lifecycle.
@@ -327,22 +331,97 @@ Create under `app/src/androidTest/kotlin/app/badcat/client/runtime/`:
 
 ## 8. Phase B sequencing and prerequisites
 
-Phase B may begin only after a separate implementation task is registered with exact files, callers, typed port signatures, source model mapping and test oracles. The order is:
+Phase B implementation must be separately registered with exact files, callers, typed port signatures, source model mapping and test oracles. After 026M–026O, the sequence is:
 
-1. Resolve `BookSource` canonical model/file catalog mapping and the Room annotation/Parcelable dependency without adding a schema.
-2. Freeze all typed Host Port signatures from exact upstream callsites, including source/session/cookie/HTTP/shared-scope/context/resource/file/DB/explore/login/replacement operations.
-3. Move the canonical Runtime API and production services out of `integration-contract`; ensure no duplicate DTO/model source of truth.
-4. Add the exact pinned core source closure and analyzer/JS/Rhino wiring to `:legado-runtime` with `:legado-rhino`; retain only host adapters in App.
-5. Add contract/model/differential tests before enabling any source execution path; then wire host implementations and real-source E2E.
-6. Run the authorized Runtime-only focused test matrix and architecture checks. App compiled ABI remains unavailable and cannot be retried under §24.119; App/R8/device gates require a separately approved viable runner/evidence path.
+1. Register Task 026P as a read-only exact typed Host Port signature freeze: owner/cross-module visibility, SourceExecutionState, SourceType, cache/cookie/session/HTTP, context/config/resource/file, UI/WebView/browser/verification/events/batch-content and Explore. Reconcile every signature to its upstream owner/callsite and null/error/thread/cancel/callback/lifecycle semantics.
+2. Only after 026P commits and both required lists are reread, register a bounded owner implementation/proof task. The owner API must be Kotlin-visible to App implementers but hidden from Rhino/JS by a proven JVM-synthetic/ABI strategy; a Kotlin `internal` interface in Runtime is not implementable by App code. Prove same-instance identity, Room/Gson/Parcelable exclusion, copy/restore reattachment and multiple-runtime concurrency before moving BookSource/BaseSource.
+3. Cover every direct BaseSource implementer (`BookSource`, App-only `RssSource`, `HttpTTS`, `BookCover.CoverRule`) and the `SourceNavigationBridge` delegation wrapper. Keep product models/UI in App; use generic `getKey()` identity.
+4. Move the pure `ConcurrentRateLimiter` and `SharedJsScope` core to Runtime only after behavior/ownership tests. Do not treat a typed aggregate as a generic map or callback registry.
+5. Implement the canonical upstream BookSource model and App AtomicFile catalog adapter only after the owner contract and Room/Gson/Parcelable exclusion tests pass. No Room schema v1, Room database/compiler/KSP or dual-write.
+6. Move the canonical Runtime API and production services out of `integration-contract`; ensure no duplicate DTO/model source of truth.
+7. Add the exact pinned core source closure and analyzer/JS/Rhino wiring to `:legado-runtime` with `:legado-rhino`; retain only host adapters in App.
+8. Add contract/model/differential tests before enabling any source execution path; then wire host implementations and real-source E2E.
+9. Run only separately authorized Runtime-focused tests and architecture checks. App compiled ABI remains unavailable and cannot be retried under §24.119; App/R8/device gates require a separately approved viable runner/evidence path.
 
-**No Phase B source edit is included in Task 026L.** The user previously authorized Phase B in principle, but the master workflow requires this addendum to be committed and both required lists reread before the first production source/build/test edit. That reread is a mandatory next gate, not permission to skip the implementation task registration.
+**No source/build/test edit is included in this read-only snapshot refresh.** The user previously authorized Phase B in principle, but the master workflow requires this refreshed addendum and result records to be committed and both required lists reread before registering the next bounded implementation task. The reread is a mandatory gate, not permission to skip task registration.
 
 ## 9. Task 026L result and disposition
 
 - Read-only inspected current module/build declarations, all `legado-runtime`, `legado-rhino` and `integration-contract` source/test inventories, current App Runtime implementation files, exact production facade callers, host port declarations/implementer search, and the Task 026K source/import/caller/dependency matrices.
-- Confirmed the current production implementation is split across App + `integration-contract`; `:legado-runtime` is only a small injected pinned rule-model slice; `:legado-rhino` is the real isolated Rhino module. Existing Host UI/WebView/browser/verification/product ports are not wired.
+- Confirmed the current production implementation is split across App + `integration-contract`; `:legado-runtime` owns the three 026M UI models plus eight injected pinned rule/serialization sources; `:legado-rhino` is the isolated Rhino module. `:legado-runtime-poc` remains a quarantined probe with no App dependency. Existing Host UI/WebView/browser/verification/product ports are not wired.
 - Produced the 33-path disposition table, target module/file ownership, exact current App Runtime file destinations, Host Port freeze/blocker matrix, dependency/build plan, test paths and acceptance/stop gates.
 - No source/build/test/manifest/schema/UI/Reader file changed. No Gradle invocation, dependency resolution, compile/build/test/assemble, CI, network or device action occurred. No App compile retry occurred.
-- **Task 026L:** complete as a design/addendum freeze only. **Task 026 Phase A:** remains open because compiled App ABI, complete port contracts, exact source execution and R8/device evidence remain unresolved. **Phase B:** not started. **Task 027:** blocked. **Stage-0:** not accepted. **Stage-1:** NO-GO. **Full Legado compatibility:** NOT ESTABLISHED.
-- **Next mandatory action:** commit this addendum and audit/overview result; reread `00-MASTER-WORKFLOW.md` and `03-LEGADO-RUNTIME-OVERVIEW.md` from the committed HEAD; only then register the first bounded Phase B implementation task. Do not start implementation until that registration exists.
+- **Task 026L:** complete as a design/addendum freeze only. **Task 026 Phase A:** remains open because compiled App ABI, complete port contracts, exact source execution and R8/device evidence remain unresolved. **Phase B:** started only with Task 026M's bounded UI-model ownership slice; no BookSource/BaseSource or source-engine migration is authorized. **Task 027:** blocked. **Stage-0:** not accepted. **Stage-1:** NO-GO. **Full Legado compatibility:** NOT ESTABLISHED.
+- **Next mandatory action:** commit this refreshed addendum and audit/overview result; reread `00-MASTER-WORKFLOW.md` and `03-LEGADO-RUNTIME-OVERVIEW.md` from the committed HEAD; only then register the next bounded Phase B implementation task. Do not start implementation until that registration exists.
+
+
+## 10. Task 026O evidence delta and refreshed inspection snapshot
+
+**Refresh identity:** Badcat `integration/legado-upstream-runtime` at `4e51c9c210c33e3784070e8a557b8c3f4ab54b9c`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`. Both tracked worktrees were clean at inspection. The changes since the original addendum snapshot include the bounded 026M model move and documentation-only 026N/026O/POC-scope commits; no App compile retry is authorized under audit §24.119.
+
+### 10.1 Current Runtime ownership after Task 026M
+
+- `:legado-runtime` now has three ordinary production source files: `RowUi.kt`, `ExploreKind.kt`, `FlexChildStyle.kt`. The module also injects the seven pinned rule DTOs and `GsonExtensions.kt` at Kotlin compile time. It still does **not** own `BaseSource`, `BookSource`, `JsExtensions`, `AnalyzeRule`, `AnalyzeUrl`, `SharedJsScope` or `JsSourceEngine`.
+- Task 026M moved exact `RowUi` and `ExploreKind`; moved `FlexChildStyle` data/default/equality/align behavior and extracted its View/Flexbox mutation into App-only `FlexStyleLayoutAdapter.kt`. Runtime-only tests passed 6/6; the App adapter remains uncompiled/unverified because of §24.119. See audit §24.128.
+- Task 026N selected pinned upstream `io.legado.app.data.entities.BookSource` as the only eventual Runtime source model, while retaining `FileBookSourceCatalog`/AtomicFile and raw JSON as the current App-owned persistence boundary. No Room schema/database/compiler/KSP or dual-write is authorized. See audit §24.130.
+
+### 10.2 Runtime POC quarantine decision
+
+- `settings.gradle.kts` includes `:legado-runtime-poc`, but `app/build.gradle.kts` has no dependency edge to it; App depends on `:legado-runtime`, `:legado-rhino` and the current `:integration-contract`.
+- The POC build script injects 12 pinned upstream source files into its own Debug/Release Kotlin compile tasks and depends on probe libraries plus `:legado-rhino`. Its `src/main` contains only an empty Android manifest; `source-closure-stage1.json` is metadata for the historical G2d stage-1 probe, not production source.
+- **Decision:** retain `:legado-runtime-poc` and its metadata as quarantined historical evidence for now, but exclude it from the production dependency graph. Never add it to App dependencies or merge its source set with `:legado-runtime`. Removing its settings include or deleting the historical artifact is outside this read-only refresh and requires a separate task. Evidence: `/root/stage0-runner/task026l-refresh-attempt1/poc-quarantine.txt` and `source-hashes.tsv`.
+
+### 10.3 BaseSource/JS ABI and identity contract from Task 026O
+
+| Upstream owner | Public declarations | `@JavascriptInterface` | Exact inventory |
+|---|---:|---:|---|
+| `JsEncodeUtils` | 30 | 20 | 27 unique names; crypto overloads |
+| `JsExtensions` | 118 | 48 | 77 unique names; 34 names overloaded |
+| `BaseSource` | 29 | 9 | source identity/login/session/cache/concurrency/JS |
+| **Combined** | **175 unique signatures** | **77 annotations** | `BaseSource` overrides `JsExtensions.getSource/getTag` |
+
+The exact method/overload/signature/annotation tables are in `/root/stage0-runner/task026-clean/task026o-attempt1/*-api.tsv`. Preserve all JS-visible names, overloads, default arguments, nullable/result/error behavior, `@Keep` and annotation retention. `BaseSource.evalJS` returns `Any?` and binds `java`, `source`, and `sourceApi` to the same BaseSource instance, `baseUrl` to `getKey()`, plus separate `cookie` and `cache` owners.
+
+Current Badcat is not ABI-compatible: the `source` object has 11 login-only methods; 14 BaseSource names and 17 unique JsExtensions names are missing; `java.getSource()` returns `Map<String,Any?>`; `sourceApi` and `baseUrl` are absent; `SourceScriptRuntime` accepts a shadow DTO/string bindings and returns `EngineResult<String>`. Existing bytecode tests codify the Map behavior. Do not use those tests as upstream parity evidence. See `legado-runtime-3.0-basesource-host-port-contract.md` and audit §24.132.
+
+### 10.4 Per-instance attachment design — selected concept, implementation contract still blocked
+
+- Preserve the exact concrete `BookSource` instance. Do not wrap it: `BookSource` is a final data class, `AnalyzeRule` has concrete BookSource casts, `getSource()` returns the same object, `getKey()` is `bookSourceUrl`, and `equals/hashCode` are URL-based.
+- A typed `BaseSourceHostServices` aggregate attached through a non-constructor body property remains the selected design direction. The attachment must be excluded from Room (`@Ignore`), Gson/JVM serialization (`@Transient`) and Parcelable (`@IgnoredOnParcel`), and must not become a JS-visible property/method. The aggregate contains individually typed ports only; it is not a generic service map or callback registry.
+- **Cross-module visibility correction:** the earlier 026O sketch called `BaseSourceHostServicesOwner` Kotlin `internal`. That is not implementable by App classes across the `:legado-runtime` → `:app` module boundary. The owner API/aggregate must be public to Kotlin App implementers (or exposed through an equivalent public Runtime factory), while the JVM accessor/method must be synthetic/hidden from Rhino. This is a design constraint, not a proven bytecode result; add a focused compile/reflection/Rhino test before implementation acceptance.
+- The owner cannot be BookSource-only. Direct BaseSource implementers are `BookSource`, App-only `RssSource`, App-only `HttpTTS`, and App-only `BookCover.CoverRule`; `SourceNavigationBridge` is an interface-delegation wrapper and must forward the original owner's services. All must retain their own generic `getKey()` identity. RSS/TTS/Cover/Reader/Login product models and UI remain App-side.
+- `SourceExecutionStatePort` must attach the same `BaseSource` instance (not return a wrapper) and support every direct implementer; `attach(source: BookSource)` alone is too narrow. It must attach after catalog decode/restore/parcel/copy before any host-effect method. `BookSource.copy()` does not copy a body property; the known `checkContent()` copy is a comparison copy, but exhaustive execution-copy/deserialize/parcel reattachment callsites remain unproven.
+- `BaseSourceExtensions.getSourceType()` currently branches on concrete `BookSource` and `RssSource`. Runtime cannot import App-only `RssSource`; add a typed `SourceTypePort` or a stable source-kind contract rather than reflection/type-name checks.
+- `SourceExecutionContext` must preserve the full active `CoroutineContext`; upstream navigation context may be `EmptyCoroutineContext`, and source tag/name may be empty. A mandatory non-null `Job`/nonblank name is not yet justified.
+
+### 10.5 Typed Host Port evidence and blockers
+
+The corrected 026L refresh matrix is `/root/stage0-runner/task026l-refresh-attempt1/host-port-contract-matrix.tsv` (SHA-256 recorded in the refresh evidence). Exact owner observations that constrain the next interface design:
+
+- **Cache:** upstream `CacheManager` has a 50 MiB memory LRU, Room cache persistence and ACache file/byte storage. `put(key,value,saveTime:Int=0)` uses seconds; memory values are `Any`; `getFromMemory` returns `Any?`; `getFile` returns `String?`; `putFile` accepts a String. `WebCacheManager` is a separate JS facade. The earlier candidate row incorrectly narrowed these signatures; do not freeze it as written. Current Badcat cache namespacing/LRU/file TTL are not equivalent.
+- **Cookie:** `CookieStore.getCookie/getKey` return non-null String; `setCookie(url,cookie:String?)`, `setWebCookie`, `replaceCookie`, `removeCookie`, `clear`, `cookieToMap/mapToCookie` are distinct. It merges persistent domain cookies with process session cookies, synchronizes WebView CookieManager state, and removes random keys above 4096 characters. `clear()` deletes persistent OkHttp cookies only; session/WebView cleanup is separate. Current Badcat bridge defaults to empty/no-op readers/removers or throwing writers; no verified WebView sync exists.
+- **Login/session:** preserve Android-ID-derived AES, nullable `getLoginHeader/getLoginInfo`, Unit `putLoginHeader`, Boolean `putLoginInfo`, source-key cache namespaces, cookie replacement/removal order, dynamic Login UI v2 default-map derivation and recursion guard. Current Rhino login bridge returns non-null empty strings/JSON strings and omits dynamic defaults.
+- **HTTP:** current `SourceHttpRequest` omits upstream `dnsIp`, `serverID`, `bodyJs`, `webView`, `webViewDelayTime`; the request factory explicitly excludes script-generated options. Synchronous JS entry points must bridge suspend transport using the active coroutine context and propagate cancellation.
+- **Rate/Explore/Shared JS:** `ConcurrentRateLimiter` can be Runtime core, but `BaseSource.putConcurrent` is missing from current JS source object. Preserve source-keyed dynamic update/wait/cancel semantics. Explore requires sourceUrl-keyed 99-entry LRU, same mutable `InfoMap` identity and dirty-only snapshot persistence. `SharedJsScope` is Runtime core but current Rhino maps are not proven equivalent.
+- **Context/config/resources/notifications/files:** Android ID, cache root, default/WebView UA, navigation policy, ReadBookConfig, ThemeConfig, resources, toast/log levels, external-cache path confinement, text/file helpers, ZIP/RAR/7z behavior, encoding and cleanup need separate typed owners. Do not move `appCtx`, AppConfig, generated App `R`, Room, FileUtils or ArchiveUtils implementations into Runtime.
+- **UI/WebView/browser/verification/events:** five current RuntimeHostPort interfaces have zero App-main implementers. `HostUiAction` lacks import-confirm/deep-link flow and toast/log/config; HiddenWebViewRequest wrongly requires nonblank URL and JS although upstream allows nullable combinations; SourceVerificationHelp needs lock/single-flight/correlation/refetch/cancel semantics; ProductEventPort must preserve refresh ordering.
+- **Batch content:** `BatchContentContext`/`BookHelp` save-token/version-fence path is absent; current `getBatchContext()` is null and `cacheContent()` fails closed. A separate typed `BatchContentPort` is required.
+- **Execution lifecycle:** `SourceExecutionStatePort` must coordinate attach/clear across runtime instances and source replace/remove. The current FileBookSourceCatalog default invalidation callback is a no-op while SourceCatalogActivity separately calls `clearSourceState`; this is not one lifecycle owner.
+
+No exact port signature is frozen merely because a candidate appears in the TSV. Freeze each signature only with its upstream owner/caller, argument/null/result/error semantics, threading/cancellation and lifecycle. The five existing UI/WebView/browser/verification/product declarations remain unimplemented.
+
+### 10.6 Required contract tests and disposition
+
+Before BookSource/BaseSource migration, add focused Runtime/App contract tests for:
+
+1. Full 175-signature/77-annotation API inventory, overloads, default arguments, `@Keep`, and JVM/Rhino visibility.
+2. `source === java === sourceApi`, `java.getSource() === source`, generic `getKey()`, URL-based BookSource equals/hashCode and all four concrete BaseSource implementers.
+3. Owner visibility across modules; owner accessor is synthetic/hidden from JS; Room/Gson/Parcelable exclusions; attach after catalog decode, parcel restore and execution copy; `copy()` starts detached; `SourceNavigationBridge` delegates the original owner.
+4. Same-source concurrency across multiple Runtime instances, cross-source isolation, lifecycle clear and no global service locator/ThreadLocal.
+5. Login nullable/Unit/Boolean/AES and dynamic Login UI defaults; header/cookie ordering; persistent/session/WebView cookie parity; CacheManager LRU/TTL/global namespace; rate updates; Explore LRU/dirty-save; all HTTP options; hidden WebView cancellation/release; visible browser single-flight/refetch/cancel; verification-code callback exactly once; batch content save tokens; UI/event ordering and file/archive parity.
+
+**Task 026L refresh result:** read-only addendum refresh completed at the current snapshot. The refresh also classified `:legado-runtime-poc` as quarantined evidence, not production dependency. No production source/build/test/manifest/schema/UI/Reader edit; no Gradle/compiler/build/test/CI/device/network action; no App compile retry. Evidence files are under `/root/stage0-runner/task026-clean/task026l-refresh-attempt1/` (`snapshot.txt`, `poc-quarantine.txt`, corrected port matrix and 64-row source hash manifest).
+
+**Disposition:** Task 026L snapshot refresh complete as documentation-only. Phase A remains open. Phase B has begun only with Task 026M's three UI-model ownership changes and Runtime-only 6/6 test pass; no BookSource/BaseSource or source-engine migration. Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
+
+**Next:** after this addendum/audit/overview commit, reread the master and third-category required list at the committed HEAD, then register Task 026P for the read-only exact typed Host Port signature freeze, including the public cross-module owner contract, all implementers and reattachment lifecycle. Do not begin BookSource/BaseSource production migration until 026P and a separately registered owner proof task pass.
