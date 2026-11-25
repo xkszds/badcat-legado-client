@@ -4319,3 +4319,18 @@ This is a proposed protocol requiring failure-injection/restart validation. Prog
 - License/SBOM, reproducibility and behavioral differential gates remain open. Task 018 assemble is bounded evidence only; duplicate DEX definitions and missing authentic core classes remain unresolved.
 - Task 024 complete as a bounded logical architecture decision and implementation plan only. No implementation, schema freeze, migration, build/test/CI/device validation or Stage-1 authorization.
 - Stage-0 remains `in_progress / not accepted`; Stage-1 remains **NO-GO**; full Legado compatibility remains **NOT ESTABLISHED**.
+
+
+## 24.84.0 Task 025 registration — canonical rule/model source ownership remediation PoC
+
+- **Task ID:** `R3-S0-CANONICAL-MODEL-SOURCE-OWNERSHIP-025`; registered after Task 024.
+- **Registration HEAD:** `926afed48e1f0a41f1a4722065e795a905aac75f`; branch `integration/legado-upstream-runtime`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9`.
+- **Goal:** implement only the Task 024 decision that `:legado-runtime` is the canonical compiler owner for the seven pinned rule-model files and `GsonExtensions.kt`, remove the redundant app copies after complete caller review, and prove app consumption/no-cycle/duplicate-class closure. Review the three adjacent source-contract models without automatically importing product UI or new dependencies.
+- **Allowed paths:** the eight exact app source paths listed in overview §4.25; the three adjacent model paths `RowUi.kt`, `ExploreKind.kt`, `FlexChildStyle.kt` only under the conditional rule in §4.25; additional test/build paths only after a written addendum identifies each exact path and its necessity before modification. Runtime upstream source copies are not to be edited unless a separate addendum proves they are missing or not pinned correctly.
+- **Evidence dependencies:** Task 020 DEX/source duplication (§24.79.1); Task 021 all-38-name/source/caller mapping (§24.80.1); Task 024 canonical ownership/module direction (§24.83.1).
+- **Inspection/implementation order:** (1) verify current branch ref and exact HEAD; (2) inspect all production/test references and source hashes; (3) confirm app dependency and runtime source-set ownership; (4) preregister any additional test/build file paths; (5) make only the approved source-owner changes; (6) run focused compilation/tests and duplicate-FQCN verification on the exact resulting commit if the runner is stable; (7) review the diff and record exact outcomes.
+- **Acceptance:** no app/runtime duplicate ownership for the eight declarations; app callers compile against runtime-owned types; no module cycle; duplicate-FQCN guard returns zero; if APK build is safely possible, DEX has zero duplicate definitions for these families. Record test/build exit codes and exact commit; no result may be inferred from an earlier APK or a stale checkout.
+- **Exclusions:** no CI/Actions/workflow edits or runs; no broad authentic source closure; no storage/schema/database changes; no UI/Reader changes; no dependency upgrade; no Stage-1 or release claim.
+- **Stop conditions:** unreviewed caller, source mismatch, dependency-cycle risk, adjacent model dependency not already available, test/build failure requiring out-of-scope changes, stale runner checkout, or resource instability. Preserve the blocker and register a new task if scope must expand.
+- **Expected result location:** overview §4.25.1 and audit §24.84.1.
+- **Registration itself authorizes only the bounded Task 025 scope above; it does not claim any source change, build, test, APK/DEX result, CI run, or compatibility pass has occurred.

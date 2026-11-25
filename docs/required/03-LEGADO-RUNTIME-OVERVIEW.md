@@ -799,3 +799,29 @@ Model-typed persistence/config/replacement/notification interfaces must live bes
 - **Task 024 disposition:** complete as a bounded logical architecture decision and implementation plan. No source/build/test/schema/database/UI changes; no build/test/CI/device/dependency resolution performed.
 - **Stage-0:** `in_progress / not accepted`. **Stage-1:** **NO-GO**. Complete Legado compatibility: **NOT ESTABLISHED**. No release readiness claim.
 - **Next:** separately preregister Task 025 source ownership remediation and Task 026 authentic source-closure PoC; do not begin storage implementation or Stage-1 until authentic closure and its module boundary are proven.
+
+
+## 4.25 Runtime-3.0 Stage-0 — canonical rule/model source ownership remediation PoC
+
+- **Task ID:** `R3-S0-CANONICAL-MODEL-SOURCE-OWNERSHIP-025`
+- **Status:** registered; implementation not started.
+- **Registration branch / start HEAD:** `926afed48e1f0a41f1a4722065e795a905aac75f`; branch `integration/legado-upstream-runtime`.
+- **Pinned upstream:** `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9`.
+- **Goal:** implement the narrow Task 024 ownership decision for the duplicate rule-model/Gson source family. Establish one compiler owner for the seven pinned rule models and `GsonExtensions.kt`, retain app callers through the existing `:app -> :legado-runtime` dependency, and verify no module cycle or duplicate FQCN remains. Review the adjacent `RowUi.kt`, `ExploreKind.kt`, and `FlexChildStyle.kt` contracts and move them only if their exact pinned dependencies are already satisfied without importing Legado product UI or adding an unreviewed dependency.
+- **Primary allowed source changes:** delete only these eight redundant app-owned source copies after caller review:
+  - `app/src/main/java/io/legado/app/data/entities/rule/BookListRule.kt`
+  - `app/src/main/java/io/legado/app/data/entities/rule/BookInfoRule.kt`
+  - `app/src/main/java/io/legado/app/data/entities/rule/ContentRule.kt`
+  - `app/src/main/java/io/legado/app/data/entities/rule/ExploreRule.kt`
+  - `app/src/main/java/io/legado/app/data/entities/rule/ReviewRule.kt`
+  - `app/src/main/java/io/legado/app/data/entities/rule/SearchRule.kt`
+  - `app/src/main/java/io/legado/app/data/entities/rule/TocRule.kt`
+  - `app/src/main/java/io/legado/app/utils/GsonExtensions.kt`
+- **Conditional adjacent-model scope:** `app/src/main/java/io/legado/app/data/entities/rule/RowUi.kt`, `ExploreKind.kt`, and `FlexChildStyle.kt` may be moved to the runtime owner only after source/caller/dependency inspection proves the existing runtime module can compile them without a new unreviewed dependency or any Badcat UI migration. If not, leave them untouched and record the exact blocker.
+- **Build/test/guard scope:** inspect existing app tests and build scripts; only edit exact test/build files after their paths and reason are recorded in a Task 025 registration addendum before modification. Add a focused duplicate-FQCN guard if it can be implemented without CI/workflow changes. No workflow/Actions/CI edits or executions.
+- **Dependencies:** Task 020 DEX duplicate inventory (§24.79.1); Task 021 source/caller ownership map (§24.80.1); Task 024 canonical ownership and module-direction decision (§24.83.1); fixed upstream SHA.
+- **Required inspection:** verify branch/HEAD and clean worktree; confirm exact file hashes against the pinned upstream; trace app production and test imports; confirm `:app` already consumes `:legado-runtime`; inspect runtime source-set declarations and adjacent model dependencies; do not use the stale detached runner snapshot as current branch evidence.
+- **Acceptance:** all eight duplicate app source copies removed or a path-specific stop reason recorded; app production/test references resolve to the runtime-owned declarations; runtime/app dependency graph has no cycle; focused compile/test evidence recorded; a duplicate-FQCN check exists and reports zero duplicate definitions, with exact APK/DEX evidence if a build can be run safely on an exact-HEAD checkout. A build or test not executed must remain NOT ESTABLISHED.
+- **Exclusions:** no Task 026 authentic runtime source closure; no BaseSource/BookSource/Book/BookChapter/AnalyzeRule/AnalyzeUrl/JsExtensions/SharedJsScope/JsSourceEngine migration; no Room/schema/database/data migration; no dual-write; no product UI/Reader changes; no dependency upgrade; no CI/Actions/workflow changes or runs; no release/compatibility claim; no Stage-1 authorization.
+- **Stop conditions:** missing/ambiguous caller evidence; adjacent model requiring unreviewed Android/Flexbox dependency; app test failure requiring broader product changes; Gradle cycle; inability to obtain exact current-HEAD checkout; or build-runner instability. Stop and record rather than widening the task.
+- **Next:** after Task 025 is complete, register Task 026 for the authentic runtime source/caller closure. Task 027 storage implementation remains blocked until that closure is buildable.
