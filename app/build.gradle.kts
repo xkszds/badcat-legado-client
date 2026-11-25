@@ -160,3 +160,82 @@ dependencies {
     androidTestImplementation("androidx.test:runner:1.6.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
 }
+
+
+// Explicit Stage-0 guard: ensure pinned Legado rule/Gson declarations have one
+// compiler owner across the app's own Debug output and its Android runtime classpath.
+// This task is intentionally standalone and is not attached to check/assemble/CI.
+val verifyNoDuplicatePinnedLegadoRuleClasses =
+    tasks.register("verifyNoDuplicatePinnedLegadoRuleClasses") {
+        dependsOn("compileDebugKotlin")
+        doLast {
+            val expectedClasses = listOf(
+                "io/legado/app/data/entities/rule/BookListRule.class",
+                "io/legado/app/data/entities/rule/BookInfoRule.class",
+                "io/legado/app/data/entities/rule/ContentRule.class",
+                "io/legado/app/data/entities/rule/ExploreRule.class",
+                "io/legado/app/data/entities/rule/ReviewRule.class",
+                "io/legado/app/data/entities/rule/SearchRule.class",
+                "io/legado/app/data/entities/rule/TocRule.class",
+                "io/legado/app/utils/GsonExtensionsKt.class",
+                "io/legado/app/utils/IntJsonDeserializer.class",
+                "io/legado/app/utils/StringJsonDeserializer.class",
+                "io/legado/app/utils/MapDeserializerDoubleAsIntFix.class",
+                "io/legado/app/utils/LocalDateTypeAdapter.class",
+            )
+            val owners = expectedClasses.associateWith { mutableListOf<String>() }
+
+            val appKotlinClasses =
+                layout.buildDirectory.dir("tmp/kotlin-classes/debug").get().asFile
+            expectedClasses.forEach { classEntry ->
+                if (appKotlinClasses.resolve(classEntry).isFile) {
+                    owners.getValue(classEntry).add(appKotlinClasses.absolutePath)
+                }
+            }
+
+            val runtimeFiles = configurations.getByName("debugRuntimeClasspath")
+                .incoming.artifactView {
+                    attributes {
+                        attribute(
+                            ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE,
+                            "android-classes-jar",
+                        )
+                    }
+                }
+                .artifacts.artifactFiles.files
+
+            runtimeFiles.forEach { artifact ->
+                when {
+                    artifact.isDirectory -> expectedClasses.forEach { classEntry ->
+                        if (artifact.resolve(classEntry).isFile) {
+                            owners.getValue(classEntry).add(artifact.absolutePath)
+                        }
+                    }
+                    artifact.isFile && artifact.extension.equals("jar", ignoreCase = true) ->
+                        ZipFile(artifact).use { zip ->
+                            expectedClasses.forEach { classEntry ->
+                                if (zip.getEntry(classEntry) != null) {
+                                    owners.getValue(classEntry).add(artifact.absolutePath)
+                                }
+                            }
+                        }
+                }
+            }
+
+            val missing = owners.filterValues { it.isEmpty() }
+            val duplicates = owners.filterValues { it.size > 1 }
+            check(missing.isEmpty()) {
+                "Pinned Legado rule/Gson classes missing from Debug classpath: " +
+                    missing.keys.joinToString()
+            }
+            check(duplicates.isEmpty()) {
+                "Duplicate pinned Legado rule/Gson class definitions: " +
+                    duplicates.map { (name, foundPaths) -> "$name => ${foundPaths.joinToString()}" }
+                        .joinToString("; ")
+            }
+            owners.forEach { (name, foundPaths) ->
+                logger.lifecycle("PINNED_LEGADO_CLASS_OWNER=$name|${foundPaths.single()}")
+            }
+            logger.lifecycle("PINNED_LEGADO_DUPLICATE_CLASS_GUARD=PASS")
+        }
+    }
