@@ -994,3 +994,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Changes:** audit-only evidence record §24.94 and this overview checkpoint. No production source, Gradle, test, workflow, schema or UI files changed.
 - **Disposition:** Task 026 Phase A remains in_progress/not closed; Phase B has not started; user authorization intent is acknowledged but does not waive the Phase A gate; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
 - **Next:** continue a bounded non-production method/reflection probe using the already compiled upstream Rhino artifacts and source caller maps; do not repeat the full upstream App compile until the HTTPS artifact transfer is identified or a bounded reproducible path is available.
+
+
+### 4.27.12 Task 026 Phase A continuation — Rhino class-file visibility and synthetic method evidence (2026-11-25)
+
+- **Inspection:** read-only `javap -p -v` on the already compiled Badcat and pinned upstream Debug Rhino JARs; no new build or dependency resolution.
+- **Result:** Badcat `RhinoScriptEngine` has 15 declared methods vs upstream 14. Both have four ACC_SYNTHETIC entries; Kotlin default helpers/accessors are public static synthetic, while Kotlin `internal` `createScriptException$<module>` and `topLevelThis$<module>` compile as public final non-synthetic methods with module-specific names. Badcat's additional `callSourceFunction(Function, VarScope)` is public final, non-synthetic and has no upstream counterpart. Both `ScriptBindings` classes have 11 declared methods/five synthetic entries; their public descriptor blocks match, and source files are byte-identical. Details and dump hashes are in audit §24.95.
+- **Boundary:** this is Debug class-file visibility evidence only; it does not prove runtime reflection, app-level inherited JsExtensions/BaseSource ABI or Release R8/DEX retention.
+- **Changes:** audit-only §24.95 plus this checkpoint; no production/build/test/workflow/schema/UI edits and no build/test/CI/DEX/R8/device execution.
+- **Disposition:** Task 026 Phase A remains open/not closed; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
+- **Next:** continue the remaining pinned app-level caller/reflection closure without retrying the stalled full App compile until the external artifact transfer is identified or a reproducible bounded route is established.
