@@ -5580,3 +5580,23 @@ The registered Login UI/WebView bridge scope includes subclasses of a shared App
 - **No dynamic/compiled claim:** no App compile retry, build, test, dependency resolution, DEX/R8, CI or device run. The 026P work is read-only source evidence.
 - **Disposition:** 026P complete as a bounded static signature/owner freeze; typed port implementation, public attachment ABI, compiled upstream App ABI/reflection, Release R8 and dynamic differential tests remain NOT MET. BookSource/BaseSource migration remains NO-GO; Task 027 blocked; Stage-0 in_progress / not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
 - **Next:** separately register the public typed sidecar visibility/serialization/reattachment proof before any BookSource/BaseSource migration. Do not retry the upstream App compile under §24.119.
+
+## 24.134 Task 026Q registration — cross-module sidecar visibility and serialization mechanism probe
+
+- **Task ID:** R3-S0-T026-PHASE-A-BASESOURCE-SIDECAR-ABI-PROBE-026Q.
+- **Status:** registered / not started; bounded non-production mechanism probe only.
+- **Start HEAD:** 51e7a9a0994d2b42b9b34a39eb0f29a647394db5 on local integration/legado-upstream-runtime.
+- **Pinned upstream:** 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** resolve the new 026P blocker with evidence: determine whether a public Kotlin-visible, JVM-synthetic typed per-instance Host Services attachment API can be called from a separate App Kotlin module while remaining invisible to the pinned Rhino JS bridge; verify the proposed body-property sidecar exclusion/reattachment mechanism at the bytecode/serialization boundary.
+- **Allowed repository files:** this audit and docs/required/03-LEGADO-RUNTIME-OVERVIEW.md only. All probe source, compiled classes/JARs, dumps and reports must live under /tmp/task026q-sidecar-probe/; no tracked production/test/build file may be edited.
+- **Probe design:**
+  1. Use only compiler/runtime artifacts already cached on the Ubuntu runner; no network, dependency resolution, tool installation or Gradle cache injection.
+  2. Compile a minimal Runtime module containing a public owner interface and HostServices type with public Kotlin-callable @JvmSynthetic attachment/accessor methods; compile a separate App consumer module against its JAR and call those methods from Kotlin.
+  3. Inspect descriptors, visibility, ACC_SYNTHETIC, annotations, fields and Kotlin metadata with javap -p -v. Check ordinary Java reflection separately from Kotlin source visibility.
+  4. If the exact pinned Rhino runtime JAR and dependencies are already available, expose the probe object through the same Rhino Java wrapping path and evaluate whether the synthetic owner/accessor is script-visible. Do not substitute generic reflection output for Rhino behavior. If the exact runtime path is unavailable, stop that sub-check as NOT ESTABLISHED.
+  5. With already-cached Gson and annotation/plugin artifacts only, test a minimal data-class body property annotated transient/Room Ignore/Parcelize IgnoredOnParcel; compare Gson JSON, Room annotation placement, Parcelable-related metadata and data-class copy behavior. This is a mechanism probe, not proof for the real BookSource class.
+  6. Record whether copy drops the body sidecar and the exact reattachment point required after import/deserialization/parcel restore/copy.
+- **Acceptance:** reproducible source and binary artifacts under /tmp; cross-module Kotlin consumer compile result; exact javap descriptor/flag evidence; Java reflection result; pinned Rhino JS visibility result or explicit unavailable blocker; Gson output proving whether sidecar is excluded; Room/Parcelize annotation metadata result; data-class equality/hash/copy result; explicit statement of what remains unproven for real BookSource and every BaseSource implementer.
+- **Exclusions:** no App compile retry under §24.119; no production source, Gradle/build, test, workflow, schema, UI or Reader edits; no App/Runtime module build, no full APK, no DEX/R8, no CI/device/network; no actual BookSource/BaseSource migration; no Task 027; no claim that a synthetic method is Rhino-hidden without the Rhino probe.
+- **Stop conditions:** required compiler/Gson/Room/Parcelize/Rhino artifact missing from existing caches; any need for network/download/install/cache injection; probe requires changing tracked source/build files; memory pressure; or any uncertainty that would require an App compile. Stop and record the exact missing evidence rather than retrying the prohibited App compile.
+- **Next:** after preregistration commit and required-list reread, run only the bounded scratch mechanism probe. Its result may select/reject a candidate owner API but does not authorize production migration.
