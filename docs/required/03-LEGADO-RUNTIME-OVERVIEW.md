@@ -1167,3 +1167,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Temporary filtered Maven repository and init script removed; verified KSP JAR retained under `/tmp/task026-ksp-aa-full/`; tracked worktrees remain clean.
 - **No further App compile retry is authorized.** Task 026J is preregistered in audit §24.120 for read-only extraction of existing class/JAR/AAR/DEX artifacts and JVM ABI metadata; no Gradle/compiler/build task.
 - **Disposition:** Task 026 Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
+
+### 4.27.32 Task 026J result — read-only existing artifact/ABI inventory (2026-11-25)
+
+- **Status:** completed for the existing-artifact scope only. Six existing archives and 159 loose `.class` files were inventoried; all loose classes are in `modules/book` (96) or `modules/rhino` (63), none in `app/build`. No `.aar` or `.dex` was found. App build contains only Cronet native and generated R archives, not an App class archive.
+- No requested App Runtime symbol was found in any archive or loose class file. `BaseSource`, `BookSource`, `BaseBook`, `Book`, `BookChapter`, `SearchBook`, `AnalyzeRule`, `AnalyzeUrl`, `JsExtensions`/inherited `JsEncodeUtils`, `SharedJsScope` and `JsSourceEngine` are all `COMPILED ABI NOT AVAILABLE`; exact source declaration owners are recorded in audit §24.121.
+- Existing Rhino module bytecode remains available: `RhinoScriptEngine`, `ScriptBindings`, `SharedGlobalStateHandle` and `CompiledScript` were found in the Rhino classes JAR and `javap` evidence retained. This does not establish App Runtime ABI. Full hashes and inventories are in `/root/stage0-runner/task026-clean/task026j-attempt1/` and audit §24.121.
+- **Next:** continue Phase A source/caller/Host-Port closure only. No further App compile retry is authorized.
+- **Disposition:** Task 026 Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
