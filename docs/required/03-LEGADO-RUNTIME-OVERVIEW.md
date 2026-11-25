@@ -1262,3 +1262,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Lifecycle:** factory catalog currently uses default no-op invalidation callback; SourceCatalogActivity separately wires `clearSourceState`. Centralize through SourceExecutionStatePort.
 - **Next:** register a dedicated BaseSource typed Host Port/delegate contract closure task before moving BookSource/BaseSource. No source/build/test action in 026N.
 - **Disposition:** Phase A remains open; Phase B has begun only with Task 026M; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
+
+### 4.27.42 Task 026O preregistration — BaseSource typed Host Port/delegate closure (2026-11-25)
+
+- **Task ID:** `R3-S0-T026-PHASE-B-BASESOURCE-HOST-PORT-CLOSURE-026O`; registered / not started. Start HEAD `3eea177532d100d0846349741fdc21e06524d576`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** resolve the 29 BaseSource methods plus inherited JsExtensions surface and all actual callsites; decide whether a per-source typed Host Services attachment preserves `BookSource : BaseSource`, `getSource() === this`, JS method ABI and concurrency without a global service locator.
+- **Scope:** read-only pinned BaseSource/BookSource/JsExtensions/SharedJsScope/JsSourceEngine/AnalyzeRule/AnalyzeUrl/source workflow/login bridge files; current Badcat Runtime Host Port/Rhino/cookie/session/cache/file/catalog adapters and matching tests. Reuse 026K–026N evidence; search-only BaseSource implementer/reference index allowed.
+- **Outputs:** exact JS/JVM API/overload/annotation/callsite matrix; typed Host Port method signatures with null/error/thread/cancel/callback/lifecycle semantics; per-source attachment design comparison including Gson/Room/Parcelable/copy restoration; all implementers; exact tests and BookSource migration GO/NO-GO.
+- **Hard constraints:** no `Map<String,Any?>`, reflection bag, global service locator, ThreadLocal shortcut, no-op or shadow DTO. Preserve source identity and all JS-visible behavior. No App compile retry under §24.119.
+- **Exclusions:** no source/build/test/schema/UI/Reader changes, no Gradle/build/test/CI/device/network, no Room schema/data migration, no Task 027.
+- **Next:** register BaseSource/BookSource implementation only if the per-source host bridge is proven; otherwise stop and reopen architecture decision. Stage-0 remains not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
