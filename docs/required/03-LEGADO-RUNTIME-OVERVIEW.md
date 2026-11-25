@@ -1021,3 +1021,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Snapshot:** branch HEAD before registration `83726efc09575bd7a58693bb6f8034dcf4597287`; runner source checkout `55b8f102...` remains clean and differs only by documentation-only commits; pinned upstream `330e606c...`.
 - **Scope:** one HTTPS GET per four uncached KSP artifact candidates (KSP AA-embeddable 2.3.12, coroutines 1.10.2, Room compiler 2.8.4, Glide KSP 5.0.7) into `/tmp`, 10-second connect / 30-second total timeout, no retries. No Gradle/build/KSP/test/source edits or cache injection.
 - **Next:** execute only this bounded artifact-transfer check; record status/size/hash/time and clean temporary downloads. It does not prove which artifact was stalled in the prior cancelled build. Keep Phase A open and Stage-1 NO-GO.
+
+
+### 4.27.15 Task 026 Phase A continuation — KSP AA-embeddable transfer bottleneck reproduced (2026-11-25)
+
+- **Diagnostic result:** one bounded HTTPS GET per four KSP artifact candidates. `symbol-processing-aa-embeddable:2.3.12` returned HTTP 200 but timed out at 30 seconds after 6,360,065 of 80,992,357 bytes; curl exit 28. Coroutines 1.10.2 (1,479,317 bytes), Room compiler 2.8.4 (1,670,310 bytes) and Glide KSP 5.0.7 (59,630 bytes) all downloaded successfully in under two seconds.
+- **Assessment:** KSP AA-embeddable is the high-confidence likely cause of the previous App KSP stall: it is an exact KSP task dependency, was absent from cache, is ~81 MB, and its transfer is independently slow. The original thread dump still does not prove that this was the exact historical URL.
+- **Cleanup:** all downloaded/partial JAR files were deleted after recording transfer metadata and hashes; no Gradle cache or repository source/build files were modified. Results file SHA-256 and per-artifact hashes are in audit §24.98.
+- **Next:** preregister and perform a checksum-verified full JAR transfer/staging step before retrying App KSP. Do not treat the cancelled exit-143 app compile as a pass or source failure.
+- **Disposition:** Phase A remains open/not closed; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
