@@ -5033,3 +5033,21 @@ These are candidates for a later committed addendum, not currently authorized ed
 - **Allowed execution:** one HTTPS GET each, in order, to the exact same Maven Central artifact path with suffixes `.jar.sha256`, `.jar.sha512`, then `.jar.sha1`; stop at the first valid sidecar. Each request has 10-second connect and 15-second total timeout, no retries. Validate response is HTTP 200 and content is a correctly sized hexadecimal digest (64, 128 or 40 hex chars respectively), optionally followed by filename. No mirror switch or other endpoint.
 - **Acceptance:** record exact URL, status, returned digest, response size and SHA-256 of the sidecar. If SHA-256 or SHA-512 exists, it can anchor the subsequent chunked download. If only SHA-1 exists, stop and request a separate decision before using it as the integrity anchor. If all sidecars are absent/invalid, stop; no full JAR download.
 - **Exclusions:** no full artifact chunk download, no Gradle cache injection, no local repo, no build/KSP/test/CI/DEX/R8/APK/device execution, no repository source/config edits, no Phase B or Task 027.
+
+
+## 24.102 Task 026 Phase A — authoritative KSP AA-embeddable SHA-256 sidecar found; chunk transfer preregistered (2026-11-25)
+
+- **Checksum task:** `R3-S0-T026-KSP-AA-CHECKSUM-SIDECAR-026C`; completed. The exact Maven Central `.jar.sha256` URL returned HTTP 200 with a 64-hex SHA-256 digest in 1.802584 s: `862f0042fc2467cdcf7752e15880f97396a29e2469741dc6453f37584f1b4c69`. No weaker SHA-1 fallback was needed. Sidecar result record `/tmp/task026-ksp-aa-full/checksum-sidecars.txt` SHA-256 `b93b94355583bca1b59f85b0ab96cfd9e5d89ba330ec27d155d05d532f715809`.
+- **Artifact identity:** `com.google.devtools.ksp:symbol-processing-aa-embeddable:2.3.12`; Maven Central URL under `com/google/devtools/ksp/symbol-processing-aa-embeddable/2.3.12/`; expected size `80,992,357` bytes (from the successful HTTP 206 Content-Range probe) and authoritative SHA-256 above.
+- **Next task ID:** `R3-S0-T026-KSP-AA-CHUNKED-TRANSFER-026D`; registered below in the next checkpoint. It will retrieve 5 MiB byte ranges sequentially, validate each HTTP 206/Content-Range/size, assemble only in `/tmp`, then require exact size and SHA-256 before retaining the JAR. No Gradle cache injection or build retry is included.
+- **Disposition:** no source/build/test/CI/DEX/R8/APK/device execution. Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
+
+## 24.103 Task 026 Phase A — checksum-verified KSP AA-embeddable chunk transfer preregistration (2026-11-25)
+
+- **Task ID:** `R3-S0-T026-KSP-AA-CHUNKED-TRANSFER-026D`.
+- **Status:** registered; not yet executed.
+- **Snapshot:** runner source checkout `55b8f102e8b0b2e1c27a3d44530accf06d5a07e4`, clean; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`; branch HEAD before registration `3a8d780cfca32a8224805fd840d46f0403c18b71`.
+- **Artifact:** `symbol-processing-aa-embeddable-2.3.12.jar`; exact size 80,992,357 bytes; authoritative SHA-256 `862f0042fc2467cdcf7752e15880f97396a29e2469741dc6453f37584f1b4c69`; same Maven Central URL used by §24.98.
+- **Allowed execution:** 16 sequential HTTPS Range GETs, each at most 5 MiB (last range is remainder), 10-second connect timeout, 60-second total timeout, no retries. Require HTTP 206, exact Content-Range boundaries and exact expected bytes for each chunk. Assemble in order in `/tmp/task026-ksp-aa-full/`; verify final size and SHA-256 exactly. Keep the complete JAR only if both match; preserve a manifest with per-range status/bytes/time and final hash.
+- **Stop conditions:** any non-206 response, mismatched Content-Range, chunk byte mismatch, timeout, changed artifact size/hash, or dirty/wrong runner/upstream identity. On any stop, delete all chunks and assembled JAR; no retry or mirror switch without a new preregistration.
+- **Exclusions:** no Gradle cache injection, no local Maven repo, no build/KSP task/app compile, no tests/CI/DEX/R8/APK/device validation, no source/config edits, no Phase B migration or Task 027.
