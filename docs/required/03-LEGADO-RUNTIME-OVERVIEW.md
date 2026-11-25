@@ -1192,3 +1192,5 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Evidence:** existing pinned upstream variant reports (§24.122), prior 1,085-node import graph (§24.85.1), and caller/Host-Port evidence (§§24.85–24.91). Do not rerun dependency reports or App compilation.
 - **Exclusions:** no Gradle/compiler/build/test/CI/device, no source/build/test/UI/Reader/schema edits, no dependency upgrades, no Phase B or Task 027.
 - **Next:** complete the import/coordinate/Host-Port matrix, then reconcile the path-exact implementation addendum and blockers. No further App compile retry is authorized.
+
+- **Task 026K preflight correction:** the pinned upstream uses Groovy `app/build.gradle`, `modules/rhino/build.gradle`, `modules/book/build.gradle`, root `build.gradle`/`settings.gradle`, and `gradle/libs.versions.toml`; no `.gradle.kts` variants exist. Exact correction is recorded in audit §24.123.1. The initial preflight stopped before any build or source mutation.

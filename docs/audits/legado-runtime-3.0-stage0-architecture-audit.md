@@ -5314,3 +5314,10 @@ These are candidates for a later committed addendum, not currently authorized ed
 - **Exclusions:** no Gradle invocation or dependency resolution; no compiler/build/test/assemble/DEX/R8/APK/CI/device; no network; no source/build/test/manifest/schema/UI/Reader edits; no dependency upgrades; no Phase B implementation and no Task 027.
 - **Stop conditions:** snapshot mismatch, dirty tracked worktree, missing pinned source, ambiguous owner/coordinate, need to download/resolve/build, or evidence that a required source path pulls in Legado product UI/Reader or broad AppDatabase without an isolated typed port. Record the blocker and do not widen scope silently.
 - **Next:** execute this read-only import/dependency mapping. Then reconcile the exact Phase B source/Host-Port/test/build addendum and remaining blockers. App-level compiled ABI remains unavailable; no further App compile retry is authorized.
+
+### 24.123.1 Task 026K preregistration amendment — upstream uses Groovy Gradle files
+
+- Preflight confirmed all 33 candidate source paths exist, but the assumed Kotlin-DSL build filenames do not. The pinned upstream uses `app/build.gradle`, `modules/rhino/build.gradle`, `modules/book/build.gradle`, root `build.gradle`, root `settings.gradle`, and `gradle/libs.versions.toml`; no corresponding `.gradle.kts` files exist.
+- Corrected the allowed build-evidence paths for Task 026K to those exact Groovy files and the version catalog. This amendment changes no source/task goal, does not authorize Gradle execution, and does not alter the pinned upstream.
+- The initial preflight stopped at the missing filename before any source/dependency mapping or build action. Candidate source manifest and existence check remain under `/root/stage0-runner/task026-clean/task026k-attempt1/`; all candidate source paths were present.
+- Reconfirm exact branch/upstream identities and clean worktrees before continuing. All other Task 026K exclusions and stop conditions remain unchanged.
