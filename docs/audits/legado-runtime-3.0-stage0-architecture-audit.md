@@ -4618,7 +4618,7 @@ This is a proposed protocol requiring failure-injection/restart validation. Prog
 ## 24.89 Task 026 Phase A — SharedJsScope invalidation and full source mutation entry-point closure (2026-11-25)
 
 - **Review HEAD:** `929a3053937e19216ebbee851e3d5a6ad513fb25`; branch `integration/legado-upstream-runtime`; comparison from the prior checkpoint is identical (0 ahead/behind). Pinned upstream: `LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a`.
-- **Allowed scope:** this audit and `docs/required/03-LEGADO-RUNTIME-OVERVIEW.md) only. Upstream source and caller searches were read-only. No production/test/Gradle/workflow/schema/UI/product changes; no build, test, dependency resolution, DEX/R8, CI or device execution.
+- **Allowed scope:** this audit and `docs/required/03-LEGADO-RUNTIME-OVERVIEW.md` only. Upstream source and caller searches were read-only. No production/test/Gradle/workflow/schema/UI/product changes; no build, test, dependency resolution, DEX/R8, CI or device execution.
 
 ### 24.89.1 Shared global state has two different invalidation keys
 
