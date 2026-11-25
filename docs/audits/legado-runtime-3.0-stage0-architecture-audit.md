@@ -5612,3 +5612,24 @@ The registered Login UI/WebView bridge scope includes subclasses of a shared App
 - **Disposition:** 026Q complete for the bounded mechanism probe. The public synthetic per-source owner method is rejected with the current Rhino wrapper. A method-level Rhino hiding mechanism or another non-reflective attachment design must be separately designed and proven before migration. Body-property transient/Ignore/IgnoredOnParcel remains a candidate only if explicit reattachment after copy/import/restore is proven on real BookSource.
 - **No execution expansion:** no Gradle task, App compile, build/test, Room KSP, DEX/R8, CI/device/network or production migration. Phase A remains open; Task 027 blocked; Stage-0 in_progress/not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
 - **Next:** register a bounded read-only Rhino member-filter feasibility probe. Test a method-level marker/filter in a scratch wrapper against the pinned Rhino object wrapper, while confirming all existing non-synthetic script APIs remain visible. Do not edit production Rhino or Runtime code in that probe.
+
+## 24.136 Task 026R registration — Rhino method-level host-member filter feasibility probe
+
+- **Task ID:** R3-S0-T026-PHASE-A-RHINO-MEMBER-FILTER-PROBE-026R.
+- **Status:** registered / not started; read-only source inspection and temporary scratch wrapper probe only.
+- **Start HEAD:** a7d5b71ba798687355a0a1bf975536c7836c33e4 on local integration/legado-upstream-runtime.
+- **Pinned upstream:** 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Trigger:** 026Q proved that public @JvmSynthetic owner methods remain visible through the pinned RhinoWrapFactory/CatchableNativeJavaObject path. The source object cannot carry a public attachment method until a method-level hiding strategy is proven.
+- **Goal:** determine whether a method-level marker plus a scratch CatchableNativeJavaObject/WrapFactory filter can hide host-only attachment methods from Rhino while preserving ordinary source-visible methods and existing non-synthetic JS APIs.
+- **Allowed repository files:** this audit and docs/required/03-LEGADO-RUNTIME-OVERVIEW.md only. All scratch source/classes/JARs/dumps/logs under /tmp/task026r-rhino-filter-probe/. No tracked production/test/build file may be edited.
+- **Probe design:**
+  1. Inspect exact pinned CatchableNativeJavaObject, CatchableJavaMethodCache, RhinoWrapFactory and HtmlUnit NativeJavaObject/NativeJavaMethod APIs. Record whether the custom wrapper can intercept method lookup before script dispatch.
+  2. Create a scratch runtime model with ordinary public methods, host-only @JvmSynthetic methods marked by a runtime-retained method annotation, an inherited marked method and overload cases.
+  3. Create a scratch wrapper that delegates to the pinned CatchableNativeJavaObject behavior but hides only the marked host-only methods. Use the pinned RhinoClassShutter and exact pinned Rhino runtime JARs.
+  4. Verify JavaScript sees ordinary getKey/getTag/ordinary methods and can call them; verifies host-only attachment methods resolve as undefined/NOT_FOUND; verify inherited methods; verify mixed marked/unmarked overload behavior. If mixed overloads cannot be filtered without hiding the public overload, require unique reserved host method names or reject the filter design.
+  5. Confirm Java/Kotlin host-side code can still call the marked methods and that marker reflection does not require making any extra helper object visible to scripts.
+  6. Measure no performance benchmark; only record correctness and exact reflection dispatch behavior.
+- **Acceptance:** exact source/JAR hashes; wrapper subclass/override feasibility; Rhino JS output for hidden and visible methods; Java/Kotlin host invocation; inherited and overload results; explicit limitations for real BookSource and the 77 existing annotated APIs.
+- **Exclusions:** no network/download/tool install/Gradle cache injection; no App compile retry; no production Rhino/Runtime source, build, test, workflow, schema, UI or Reader edit; no Gradle task, App/Runtime build, APK/DEX/R8, CI/device; no actual BookSource migration or Task 027.
+- **Stop conditions:** wrapper cannot intercept safely; marker requires exposing a helper class or broad class allowlist; any ordinary source-visible method is hidden; mixed overloads cannot be preserved; pinned runtime artifact unavailable; any need for production source/build changes, network or App compile. Stop and record the exact reason.
+- **Next:** after preregistration commit and required-list reread, run only this scratch filter probe. A positive result is a candidate design, not permission to edit production Rhino or migrate BaseSource.

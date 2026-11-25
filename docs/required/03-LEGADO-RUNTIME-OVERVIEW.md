@@ -1344,3 +1344,15 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Scope:** minimal probe only, not real BookSource or all BaseSource implementers. No tracked source/build/test/Gradle/workflow/schema/UI/Reader change, no App compile/build/test/Room KSP/DEX/R8/CI/device/network.
 - **Gate:** 026Q complete for the bounded probe; public synthetic attachment methods rejected with current Rhino. Sidecar body property remains a candidate only with real BookSource reattachment proof. Phase A remains open; Task 027 blocked; Stage-0 in_progress/not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
 - **Next:** register a read-only Rhino member-filter feasibility probe using a scratch wrapper/marker to determine whether host-only attachment methods can be hidden while all existing non-synthetic JS APIs remain visible. No production Rhino/Runtime edit in that probe.
+
+### 4.27.49 Task 026R preregistration — Rhino host-member filter feasibility probe (2026-11-26)
+
+- **Task ID:** R3-S0-T026-PHASE-A-RHINO-MEMBER-FILTER-PROBE-026R; registered / not started. Start HEAD a7d5b71ba798687355a0a1bf975536c7836c33e4; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Trigger:** 026Q showed public @JvmSynthetic owner methods are visible as JavaScript functions through the exact pinned Rhino wrapper.
+- **Goal:** test a method-level marker and scratch CatchableNativeJavaObject/WrapFactory filter that hides only host-only attachment methods while preserving ordinary/inherited source-visible methods and overload behavior.
+- **Allowed:** docs-only repository registration; all scratch source/classes/JARs/dumps/logs under /tmp/task026r-rhino-filter-probe/. Use only already-cached pinned Rhino/HtmlUnit/compiler artifacts.
+- **Probe:** inspect pinned wrapper method lookup; compile a scratch object with ordinary methods plus marker-annotated @JvmSynthetic owner methods; wrap through a scratch filter based on the pinned CatchableNativeJavaObject; evaluate JS visibility and host-side Kotlin/Java invocation; test inherited and mixed-overload names.
+- **Acceptance:** exact artifact hashes, filter interception point, JS output showing host methods hidden and ordinary APIs visible, inherited/overload behavior, and explicit real-BookSource limitations.
+- **Hard stops:** no network/install/cache injection, no App compile retry, no production Rhino/Runtime/test/build/Gradle/schema/UI/Reader edits, no App/Runtime build, no APK/DEX/R8/CI/device, no migration or Task 027. If mixed overloads or existing script APIs cannot be preserved, reject the design.
+- **Dependency:** Task 026Q result at commit a7d5b71ba798687355a0a1bf975536c7836c33e4: public @JvmSynthetic methods are Rhino-visible; minimal transient/Room Ignore/Parcelize body sidecar is not copied by data-class copy().
+- **Next:** after registration commit and required-list reread, run only the scratch filter feasibility probe. No production code changes are authorized by a positive scratch result. Phase A remains open; Stage-0 in_progress/not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
