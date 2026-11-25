@@ -1054,3 +1054,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Goal:** query only same-repository `.jar.sha256`, `.jar.sha512`, then `.jar.sha1` sidecars for the exact KSP AA-embeddable 2.3.12 artifact, one request each, bounded 10s connect/15s total, no retries.
 - **Gate:** accept SHA-256/SHA-512 as integrity anchor; if only SHA-1 exists, stop for a separate decision; if none exists, stop without downloading the full JAR.
 - **Next:** perform only this checksum-sidecar lookup. No full download, Gradle cache mutation, build or source edit.
+
+
+### 4.27.19 Task 026 Phase A — KSP AA-embeddable checksum verified; chunk transfer registered (2026-11-25)
+
+- **Checksum:** the exact Maven Central `.jar.sha256` sidecar returned HTTP 200 and authoritative SHA-256 `862f0042fc2467cdcf7752e15880f97396a29e2469741dc6453f37584f1b4c69` for `symbol-processing-aa-embeddable:2.3.12`. Expected artifact size remains 80,992,357 bytes.
+- **Task ID:** `R3-S0-T026-KSP-AA-CHUNKED-TRANSFER-026D`; registered/not started. It permits 16 sequential 5 MiB HTTPS range requests, each bounded at 60 seconds, with exact HTTP 206/Content-Range/size validation and final SHA-256 verification. Full details in audit §24.103.
+- **Boundary:** only `/tmp` artifact staging; no Gradle cache/local repo injection and no compile retry. If any chunk fails or final size/hash differs, delete partial data and stop.
+- **Disposition:** Phase A remains open/not closed; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
