@@ -1143,3 +1143,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Stop conditions:** source/upstream mismatch, dirty tracked worktree, missing/mismatched JAR or SDK, unresolved dependency transfer, memory/process instability, or timeout. Stop and record the precise blocker; do not kill unrelated processes or silently retry.
 - **Exclusions:** no full assemble, unit/instrumentation tests, DEX/R8, APK, CI/Actions, device, dependency upgrades, Gradle/source-set edits, production source migration, schema/database/Room work, UI/Reader changes, Phase B authorization or complete-compatibility claim.
 - **Next:** execute only the registered compile probe, then record and reread its evidence before registering any ABI/reflection or broader validation task. Task 027 and Stage-1 remain blocked.
+
+### 4.27.29 Task 026G result — App Kotlin compile stopped by memory-pressure gate (2026-11-25)
+
+- **Status:** incomplete / acceptance not met; not a source compile failure and not a pass.
+- The exact pinned `:app:compileAppDebugKotlin` task reached Kotlin compilation, but Gradle `-Xmx1g` plus a separately launched Kotlin daemon `-Xmx1g` exhausted the small runner's practical memory headroom. Kotlin daemon RSS reached about 1.19 GiB; available memory fell to about 99 MiB and swap use rose to about 1.3 GiB. No target App Kotlin `.class` output was produced. The process was stopped under the preregistered memory-pressure condition; exit code 143. Full evidence and hashes are in audit §24.115.
+- Temporary filtered Maven repository and init script were removed; verified KSP JAR retained under `/tmp/task026-ksp-aa-full/`; tracked Badcat and upstream worktrees remain clean.
+- **Next:** Task 026H is separately preregistered in audit §24.116 to run only `:app:compileAppDebugKotlin` with `-Pkotlin.compiler.execution.strategy=in-process` and a single Gradle JVM capped at 1 GiB, reusing the verified local KSP artifact. No tests/assemble/DEX/R8/APK/CI/device or source migration.
+- **Disposition:** Task 026 Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
