@@ -1108,3 +1108,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Pinned upstream requires compile SDK 36 and Java 21. Runner has no ANDROID_HOME/ANDROID_SDK_ROOT; `/usr/lib/android-sdk` contains only Debian build-tools 29.0.3, no platform 36/android.jar and no sdkmanager. No Android SDK package was installed.
 - **Next prerequisite:** obtain explicit acceptance of the Android SDK license, then preregister an isolated temporary SDK 36 setup (platform + required build-tools) before rerunning only `:app:kspAppDebugKotlin`. Official command-line tools package/checksum and the exact environment evidence are in audit §24.111.
 - **Disposition:** Task 026F blocked pending SDK prerequisite; Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
+
+
+### 4.27.26 Task 026F correction — runner SDK 36 already exists; export its environment (2026-11-25)
+
+- Correction to §4.27.25: a runner-specific Android SDK was present at `/root/stage0-runner/android-sdk`; the earlier preflight inspected only the Debian SDK path. It contains API 36 platform (revision 2), build-tools 35.0.0 and 36.0.0, command-line tools 19.0 and SDK license files. No installation or license acceptance is needed or was run.
+- Attempt 2 failed because `ANDROID_HOME`/`ANDROID_SDK_ROOT` were unset, not because SDK 36 was absent. Verified `android.jar` SHA-256 and component details are in audit §24.112.
+- **Next:** same Task 026F, attempt 3; export `JAVA_HOME=/root/stage0-runner/jdk21`, both Android SDK variables to `/root/stage0-runner/android-sdk`, and matching PATH. Use the preinstalled Gradle 8.14.4 and exact filtered temporary Maven repo; execute only `:app:kspAppDebugKotlin`. No SDK install/license command, other task, App compile, test, CI or source migration.
+- **Disposition:** Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
