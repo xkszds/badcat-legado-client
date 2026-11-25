@@ -1304,7 +1304,7 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 
 ### 4.27.45 Task 026P preregistration — exact typed BaseSource Host Port signature freeze (2026-11-25)
 
-- **Task ID:** `R3-S0-T026-PHASE-B-HOST-PORT-SIGNATURE-FREEZE-026P`; registered / not started. Start HEAD `b39a540c8d8f8854b5e2141177b7cd590b35d93d`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Task ID:** `R3-S0-T026-PHASE-B-HOST-PORT-SIGNATURE-FREEZE-026P`; registered / not started. Start HEAD `facdb5f8e7c636680a3047daa5abefddf71d79a3`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
 - **Goal:** freeze exact method-level Host Port signatures and semantics for BaseSource/JsExtensions before implementing the public per-source owner. Map all 175 API signatures to Runtime core, typed host owner or App-only product behavior; do not repeat completed inventories.
 - **Scope:** exact pinned BaseSource/BookSource/RssSource/HttpTTS/BookCover/SourceNavigationBridge, JsExtensions/JsEncodeUtils, SharedJsScope/JsSourceEngine, AnalyzeRule/AnalyzeUrl and source workflow; CacheManager/CookieStore/CookieManager/rate limiter/config/identity/crypto/file/archive/WebView/browser/verification/EventBus/batch-content owners; current Badcat RuntimeHostPort/Rhino/session/cookie/cache/file/catalog adapters and exact callers/tests already registered in audit §§24.131–24.132.
 - **Outputs:** method-level typed port matrix with exact owner/caller references, nullable/default/result/error, thread/CoroutineContext/cancel/timeout/callback/lifecycle semantics, all BaseSource implementers, cross-module owner visibility, source type and reattachment requirements, focused tests and GO/NO-GO. Candidate signatures without source evidence remain open.
