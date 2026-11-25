@@ -854,3 +854,16 @@ Model-typed persistence/config/replacement/notification interfaces must live bes
 - **CI:** not run, as explicitly excluded by Task 025. No CI pass is claimed. The Debug APK is verification evidence, not a release artifact.
 - **Disposition:** Task 025 acceptance is met. No duplicate app source remains in the eight registered paths; runtime ownership, focused compatibility test, Gradle guard, Debug assembly and target DEX uniqueness are verified on the exact commit tree.
 - **Next gate:** separately preregister Task 026 (authentic Runtime source/caller closure) before any implementation. Task 027 storage work remains blocked until Task 026 proves the authentic source closure and buildable module boundary. **Stage-0 remains in_progress/not accepted; Stage-1 remains NO-GO; full Legado compatibility remains NOT ESTABLISHED.**
+
+
+## 4.27 Runtime-3.0 Stage-0 — Task 026 registered: authentic Runtime source/caller closure
+
+- **Task ID:** `R3-S0-AUTHENTIC-RUNTIME-SOURCE-CLOSURE-026`.
+- **Status:** `registered`; Phase A read-only inventory is authorized; production source edits are not yet authorized.
+- **Start HEAD:** `088f7eb3935ecf508c3228f652a01debe4062731`; branch `integration/legado-upstream-runtime`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Registration commit:** `b0860c7f51561777d6ebff3785c0f4c39bdbd64d`; full task boundary is in audit §24.85.0.
+- **Goal:** prove a buildable, behavior-preserving authentic Legado source/caller closure inside `:legado-runtime`, with typed Host Ports for platform effects and no Legado product UI/Reader migration.
+- **Inventory targets:** BaseSource, BookSource, BaseBook, Book, BookChapter, SearchBook, AnalyzeRule, AnalyzeUrl, JsExtensions and actually reachable inherited extension groups, SharedJsScope, JsSourceEngine, RowUi, ExploreKind, FlexChildStyle; trace search/list, detail, TOC, content, explore, login, JS marshalling and lifecycle callers.
+- **Execution gate:** first complete the read-only declaration/API/overload/caller/reflection and transitive dependency/Gradle-variant inventory. Then write and commit a path-exact source/Host-Port/test/build addendum and reread both required lists. Only that addendum may authorize Phase B source/build/test edits.
+- **Hard exclusions:** no schema/Room/data migration, no dual-write, no Task 027 storage work, no Badcat UI/Reader changes, no Legado UI/Reader/product screens, no unproven broad AppDatabase/RSS/TTS/media dependencies, no CI/workflow run, no Stage-1.
+- **Next action:** perform Phase A against the fixed upstream and current integration branch, then preregister the exact implementation file boundary before changing code. Stage-0 remains in_progress/not accepted; Stage-1 remains NO-GO; complete Legado compatibility remains NOT ESTABLISHED.
