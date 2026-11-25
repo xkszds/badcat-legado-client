@@ -5051,3 +5051,23 @@ These are candidates for a later committed addendum, not currently authorized ed
 - **Allowed execution:** 16 sequential HTTPS Range GETs, each at most 5 MiB (last range is remainder), 10-second connect timeout, 60-second total timeout, no retries. Require HTTP 206, exact Content-Range boundaries and exact expected bytes for each chunk. Assemble in order in `/tmp/task026-ksp-aa-full/`; verify final size and SHA-256 exactly. Keep the complete JAR only if both match; preserve a manifest with per-range status/bytes/time and final hash.
 - **Stop conditions:** any non-206 response, mismatched Content-Range, chunk byte mismatch, timeout, changed artifact size/hash, or dirty/wrong runner/upstream identity. On any stop, delete all chunks and assembled JAR; no retry or mirror switch without a new preregistration.
 - **Exclusions:** no Gradle cache injection, no local Maven repo, no build/KSP task/app compile, no tests/CI/DEX/R8/APK/device validation, no source/config edits, no Phase B migration or Task 027.
+
+
+## 24.104 Task 026 Phase A — 5 MiB KSP AA chunk transfer stopped and cleaned (2026-11-25)
+
+- **Task:** `R3-S0-T026-KSP-AA-CHUNKED-TRANSFER-026D`; stopped at the second chunk as preregistered.
+- **Chunk 0:** HTTP 206, exact Content-Range `bytes 0-5242879/80992357`, 5,242,880 bytes, 21.167 s, SHA-256 `4a423585a3c5e7e68cbfcdcfe4757939a87bed84fcea9a4fd39e279b3da2d61b`.
+- **Chunk 1:** HTTP 206 and correct Content-Range `bytes 5242880-10485759/80992357`, but curl exit 28 after 60.000688 s with only 4,848,598 of 5,242,880 bytes; incomplete chunk SHA-256 `62de1cd83b0a28ebe2593e66928f6b5060953168356ce6440fc5b9826013e9d0`. No further chunks were requested.
+- **Cleanup:** the script deleted chunk 0, partial chunk 1, all headers and any assembled JAR. Cleanup inventory confirms no chunk or final JAR remains. Failure manifest `/tmp/task026-ksp-aa-full/chunk-manifest.txt` SHA-256 `7b1d82dcda6370a113881d8a7e109bd2a11767bf5367c5b3abe85b1f62f55cbb`.
+- **Assessment:** 5 MiB chunks are still too large/unreliable under the current transfer rate. No artifact integrity claim and no Gradle cache staging occurred.
+- **Next task:** preregister smaller sequential 2 MiB ranges with a 45-second per-chunk timeout, same authoritative SHA-256 and no retries. Keep the 80,992,357-byte total and expected hash fixed.
+- **Disposition:** no source/build/test/CI/DEX/R8/APK/device execution. Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
+
+## 24.105 Task 026 Phase A — 2 MiB KSP AA chunk transfer preregistration (2026-11-25)
+
+- **Task ID:** `R3-S0-T026-KSP-AA-CHUNKED-TRANSFER-026E`.
+- **Status:** registered; not yet executed.
+- **Snapshot:** runner source checkout `55b8f102e8b0b2e1c27a3d44530accf06d5a07e4`, clean; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`; branch HEAD before registration `50ece7a976de6a76323223212b52aaa71249ad92`.
+- **Artifact:** KSP AA-embeddable 2.3.12, expected size `80,992,357`, authoritative SHA-256 `862f0042fc2467cdcf7752e15880f97396a29e2469741dc6453f37584f1b4c69`.
+- **Allowed execution:** 39 sequential HTTPS Range GETs of at most 2 MiB each, 10-second connect timeout, 45-second total timeout, no retries. Require HTTP 206, exact Content-Range and exact byte count per chunk. Assemble in `/tmp/task026-ksp-aa-full/`; verify final size and SHA-256 exactly. Keep only a verified final JAR and manifest; delete all partial data on any failure.
+- **Stop conditions / exclusions:** stop and clean on any HTTP/range/size/timeout/hash mismatch. No mirror switch, retry, Gradle cache injection, local Maven repo, Gradle task, compile, KSP, test, CI, DEX/R8, APK, device run, source/config edit, Phase B or Task 027.
