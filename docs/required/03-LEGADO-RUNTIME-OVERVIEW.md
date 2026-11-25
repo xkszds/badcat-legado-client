@@ -1101,3 +1101,10 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Existing SDK root is `/root/stage0-runner/android-sdk`; set both environment variables to that existing directory in the next invocation. Do not edit `local.properties` or install SDK components. This is an environment blocker, not a KSP/source failure. See audit §24.111.
 - Temporary Maven repo/init script were removed; tracked worktrees clean; verified KSP JAR remains in `/tmp`. No KSP action or generated-output pass is claimed.
 - Next: rerun only `:app:kspAppDebugKotlin` with JDK21 and both Android SDK environment variables set. Phase A remains open; Stage-0 not accepted; Stage-1 NO-GO.
+
+### 4.27.25 Task 026F attempt 2 — Java 21 selected; Android SDK 36 missing (2026-11-25)
+
+- Attempt 2 used the preinstalled Gradle 8.14.4 binary with Microsoft OpenJDK 21.0.13.1. It stopped before KSP task execution/dependency resolution with `SDK location not found`; exit 1. This is an environment prerequisite failure, not a KSP source/processor failure or pass. Log SHA-256: `ef9ed8acd223297d51a46c13b59e5c01bb64947c826ed05a56ec769881ed1039`.
+- Pinned upstream requires compile SDK 36 and Java 21. Runner has no ANDROID_HOME/ANDROID_SDK_ROOT; `/usr/lib/android-sdk` contains only Debian build-tools 29.0.3, no platform 36/android.jar and no sdkmanager. No Android SDK package was installed.
+- **Next prerequisite:** obtain explicit acceptance of the Android SDK license, then preregister an isolated temporary SDK 36 setup (platform + required build-tools) before rerunning only `:app:kspAppDebugKotlin`. Official command-line tools package/checksum and the exact environment evidence are in audit §24.111.
+- **Disposition:** Task 026F blocked pending SDK prerequisite; Phase A remains open; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
