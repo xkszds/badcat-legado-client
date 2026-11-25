@@ -1272,3 +1272,5 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Hard constraints:** no `Map<String,Any?>`, reflection bag, global service locator, ThreadLocal shortcut, no-op or shadow DTO. Preserve source identity and all JS-visible behavior. No App compile retry under §24.119.
 - **Exclusions:** no source/build/test/schema/UI/Reader changes, no Gradle/build/test/CI/device/network, no Room schema/data migration, no Task 027.
 - **Next:** register BaseSource/BookSource implementation only if the per-source host bridge is proven; otherwise stop and reopen architecture decision. Stage-0 remains not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
+
+- **026O scope amendment:** search-only implementer inventory found additional shared `BaseSource` implementations in upstream `RssSource`, `HttpTTS`, anonymous `BookCover` and `SourceNavigationBridge` delegation, plus Review/Reader/Login/Verification/WebView callsites. Exact files are listed in audit §24.131.1 and are read only at BaseSource boundaries; these product features remain App-side and are not imported into Runtime.

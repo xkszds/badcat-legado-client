@@ -5452,3 +5452,24 @@ These are candidates for a later committed addendum, not currently authorized ed
 - **Stop conditions:** concrete BookSource-only callsites cannot be adapted without changing public ABI; `getSource`/`this` identity cannot be preserved; per-source attachment leaks into serialization/parcel/Room; copied/deserialized sources cannot be reliably reattached; host effects cannot be expressed as typed ports without a generic bridge; callback/thread/cancellation semantics are unknown. Record blockers rather than weakening the contract.
 - **Acceptance:** complete BaseSource/JsExtensions API and caller map; one proven per-source host attachment/delegate design or explicit NO-GO; exact typed port table with no guessed signatures; test matrix for identity/serialization/copy/concurrency/lifecycle; no code/build/test action.
 - **Next:** if the design is viable, register the bounded BaseSource + BookSource implementation and contract tests. If not, return to the Runtime-3.0 architecture decision before any source edits.
+
+### 24.131.1 Task 026O scope amendment — additional BaseSource implementers and real callers
+
+The registered search-only pass found three additional direct App product implementers of the shared upstream `BaseSource` interface (`RssSource`, `HttpTTS`, anonymous `BookCover` source) and a `SourceNavigationBridge` delegation wrapper, plus real callsites in Review, Reader, Login, verification and WebView. These are not all Legado Runtime product features, but they must be read to prove that moving the shared BaseSource type will not break Badcat's existing RSS/TTS/Cover/Reader/Login behavior.
+
+Add only the following exact upstream read paths to Task 026O; read only their BaseSource construction/implementation or BaseSource callsite sections, not unrelated product UI logic:
+
+- `app/src/main/java/io/legado/app/data/entities/RssSource.kt`
+- `app/src/main/java/io/legado/app/data/entities/HttpTTS.kt`
+- `app/src/main/java/io/legado/app/model/BookCover.kt`
+- `app/src/main/java/io/legado/app/help/source/SourceNavigationBridge.kt`
+- `app/src/main/java/io/legado/app/api/controller/ReviewController.kt`
+- `app/src/main/java/io/legado/app/ui/book/read/ReviewDetailDialog.kt`
+- `app/src/main/java/io/legado/app/ui/book/read/ReadBookActivity.kt`
+- `app/src/main/java/io/legado/app/ui/login/SourceLoginRoute.kt`
+- `app/src/main/java/io/legado/app/ui/login/SourceLoginV2Delegate.kt`
+- `app/src/main/java/io/legado/app/ui/login/SourceLoginDialog.kt`
+- `app/src/main/java/io/legado/app/help/source/SourceVerificationHelp.kt`
+- `app/src/main/java/io/legado/app/help/webView/WebJsExtensions.kt`
+
+These types/callers remain host/product-side; this amendment does not authorize moving RSS, TTS, Cover, Reader, Review or Login UI into Runtime. The purpose is to preserve the shared interface contract and enumerate any additional host adapter obligations. No other scope changes.
