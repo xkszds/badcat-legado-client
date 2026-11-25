@@ -1046,3 +1046,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Cleanup:** the probe and 404 response were deleted after recording; only the small result record remains under `/tmp`. No repository or Gradle cache changed. See audit §24.100.
 - **Next:** preregister a same-repository checksum-sidecar check (`.sha256`, then `.sha1` if necessary) before any full range download. Do not assemble or stage the JAR without a verifiable published checksum.
 - **Disposition:** Phase A remains open/not closed; Phase B not started; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
+
+
+### 4.27.18 Task 026 Phase A — KSP checksum-sidecar lookup registered (2026-11-25)
+
+- **Task ID:** `R3-S0-T026-KSP-AA-CHECKSUM-SIDECAR-026C`; registered/not started; scope in audit §24.101.
+- **Goal:** query only same-repository `.jar.sha256`, `.jar.sha512`, then `.jar.sha1` sidecars for the exact KSP AA-embeddable 2.3.12 artifact, one request each, bounded 10s connect/15s total, no retries.
+- **Gate:** accept SHA-256/SHA-512 as integrity anchor; if only SHA-1 exists, stop for a separate decision; if none exists, stop without downloading the full JAR.
+- **Next:** perform only this checksum-sidecar lookup. No full download, Gradle cache mutation, build or source edit.
