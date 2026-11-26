@@ -2366,3 +2366,14 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Boundary:** no build/test/Gradle/dependency/CI/DEX/R8/APK/device/network/source execution; no App compile retry; no production/source/test/Gradle/schema/UI/Reader/workflow changes.
 - **Disposition:** Phase A remains open; JavaImporter/Packages parity NO-GO; broad BookSource/BaseSource migration blocked; Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full Legado compatibility NOT ESTABLISHED.
 - **Next:** preserve unresolved call-site details unless immutable source bytes are available without network; continue remaining independent Phase A gates. Do not expose raw Thread or generic Hutool packages.
+
+### 4.27.133 Task 026BG preregistration — batch-content and source-navigation context Host Port contract closure (2026-11-27)
+
+- **Task ID:** R3-S0-T026-PHASE-A-BATCH-CONTENT-SOURCE-NAVIGATION-CONTEXT-PORT-CLOSURE-026BG; registered / not started. Start HEAD e55f1458a48fdd6b786763b1544b6431bfd61025; pinned upstream 330e606c4d57e08adc056ff8b7a4132c784da9.
+- **Scope:** read-only consolidation of getBatchContext/cacheContent and contentBatch batch-save lifecycle, plus getSourceNavigationContext/withSourceNavigationContext propagation and suppression.
+- **Reuse:** 026P; §21.2; §§24.20, 24.29, 24.49, 24.63–24.65; 026AB BaseSource entry binding; 026AI coroutine/dispatcher/cancellation; 026AX config; 026AY browser-await. Do not repeat DAO-wide lifecycle, coroutine import, HTTP/Cookie/HiddenWebView or JavaImporter audits.
+- **Required:** exact upstream method signatures/return/errors; batch entry/exit and BatchContentContext save-token/close semantics; chapter identity and duplicate URL matching; contentBatch/maxBatchSize eligibility; coroutine/navigation context element composition and propagation through BaseSource, AnalyzeRule, AnalyzeUrl, JsSourceEngine and BackstageWebView; current Badcat SourceExecutionContext, single-chapter engine/cache generation fence, runtime roots and typed Host Port gaps; candidate BatchContentPort/SourceNavigationContextPort; differential tests.
+- **Allowed:** audit and overview docs only; source/tests/build declarations read-only; temporary evidence /tmp/task026bg-batch-navigation-context/.
+- **Excluded:** no Gradle/dependency/variant resolution, download/cache mutation, build/compiler/test/CI/DEX/R8/APK/device/network/source execution; no App compile retry; no production/source/test/Gradle/shrinker/schema/database/UI/Reader/workflow changes; no implementation, migration, Task 027 or Stage-1.
+- **Procedure:** after registration commit, reread both required lists fully from that HEAD before substantive inspection.
+- **Disposition:** Phase A remains open; broad BookSource/BaseSource migration and Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full Legado compatibility NOT ESTABLISHED.
