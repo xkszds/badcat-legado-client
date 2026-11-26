@@ -2136,3 +2136,15 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Validation:** tests inspected only; no tests, UI dispatch, device ID read, WebView UA query, product event, player action, build or CI executed. No App compile retry or production/source/test/Gradle/schema/UI/Reader/workflow changes.
 - **Disposition:** Task 026AW complete for static classification only. Phase A remains open; broad BookSource/BaseSource migration blocked; Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full Legado compatibility NOT ESTABLISHED.
 - **Next:** complete any remaining source-visible JS API closure, then separately reconcile method-level Host Port contracts into the Phase B addendum. No App compile retry.
+
+### 4.27.115 Task 026AX preregistration — source-visible reading/theme config snapshot API closure (2026-11-26)
+
+- **Task ID:** R3-S0-T026-PHASE-A-JS-READING-THEME-CONFIG-SNAPSHOT-CLOSURE-026AX; registered / not started. Start HEAD b994f556fb0cbb60885440b3d7b0b368bdb5a660; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9.
+- **Trigger:** 026P/026AM identify five remaining JS-visible methods: getReadBookConfig, getReadBookConfigMap, getThemeMode, getThemeConfig and getThemeConfigMap. 026AJ already classified generic AppConfig/ThemeConfig/ReadBookConfig and Context/resource ownership, but exact method-level serialized payload, null/default/mutability behavior and current Badcat bridge wiring remain open.
+- **Goal/scope:** read-only source/API/caller closure for the five methods only. Freeze exact JSON String/Map result shape, snapshot/mutability/default semantics and RuntimeConfigPort/ResourcePort owner split.
+- **Required:** exact 026P declarations/annotations/generic types; ReadBookConfig durable map/JSON helpers; ThemeConfig durable config map/JSON helpers; themeMode fallback/update; shipped script/docs callers; current Badcat bridge and all production runtime injection roots; focused differential test matrix.
+- **Reuse:** 026AJ AppConfig defaults/resource/context boundary; 026AM Host Port matrix; 026P ABI declaration rows. Do not repeat general preference/config inventory or theme UI/resource framework review.
+- **Allowed:** audit/overview docs only; source/test/build declarations read-only; temporary evidence /tmp/task026ax-js-reading-theme-config/.
+- **Excluded:** no Gradle/dependency/variant resolution, download/cache mutation, build/compiler/test/CI/DEX/R8/APK/device/network, App compile retry under §24.119, production/source/test/Gradle/shrinker/schema/UI/Reader/workflow change, product settings/theme screen migration, BookSource/BaseSource migration, Task 027 or Stage-1.
+- **Procedure:** after registration commit, reread both required lists fully from this HEAD before substantive inspection.
+- **Disposition:** Phase A remains open; broad BookSource/BaseSource migration blocked; Task 027 blocked; Stage-0 in_progress / not accepted; Stage-1 NO-GO; full Legado compatibility NOT ESTABLISHED.\n
