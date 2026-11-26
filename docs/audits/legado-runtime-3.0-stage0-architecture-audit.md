@@ -5796,7 +5796,7 @@ The registered Login UI/WebView bridge scope includes subclasses of a shared App
 ## 24.146 Task 026W preregistration — scratch R8 marker/annotation/name-retention feasibility
 
 - Task ID: R3-S0-T026-PHASE-A-R8-HOST-MARKER-RETENTION-PROBE-026W.
-- Status: registered / not started; scratch-only R8 feasibility probe.
+- Status: completed as a bounded scratch R8 feasibility probe; see §24.147. Actual Badcat Release R8 remains unproved.
 - Start HEAD: 6141b1f7ffb55246468d81b6247ef88ae77c3aaa on integration/legado-upstream-runtime.
 - Pinned upstream: LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a.
 - Goal: use only an already-cached R8 executable and the existing 026T scratch classes to determine which minimal rules preserve runtime marker annotations and host-only method names through optimization/obfuscation, and whether name-based fail-open filtering is vulnerable to renamed-name collisions.
@@ -5805,4 +5805,20 @@ The registered Login UI/WebView bridge scope includes subclasses of a shared App
 - Acceptance: exact cached R8 version/JAR hash; exact command and rules; per-case mapping/classfile/reflection output; whether marker metadata survives; whether marker method names can collide with ordinary methods; candidate minimal rule set and limits versus a real Badcat Release build.
 - Hard stops: stop without execution if no exact R8 JAR is already cached; no network/download/cache injection; no App compile/build; no Gradle, project test, APK/DEX/device/CI; no production source/build/shrinker edits; no Room/KSP/Parcelize; no Task 027.
 - Disposition: scratch evidence only; it cannot close actual Badcat Release R8 or compiled App ABI. Phase A remains open; broad BookSource/BaseSource Phase B migration remains blocked; Task 027 blocked; Stage-0 in_progress/not accepted; Stage-1 NO-GO; full Legado compatibility NOT ESTABLISHED.
-- Next: after registration commit and rereading both required lists, check for an already-cached R8 JAR and execute only the scratch cases if present.
+- Next: see §24.147. Continue remaining Phase A real App ABI/Release R8 and Android lifecycle gates; no production changes.
+
+
+## 24.147 Task 026W result — R8 marker annotation retention and name-collision feasibility
+
+- **Task:** R3-S0-T026-PHASE-A-R8-HOST-MARKER-RETENTION-PROBE-026W; bounded scratch R8 probe complete, no production changes.
+- **Registration start HEAD:** 6141b1f7ffb55246468d81b6247ef88ae77c3aaa. **Execution HEAD:** 055cad276279c3b0eaa165b64dcf9c9297285caa. Branch integration/legado-upstream-runtime; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Evidence:** /tmp/task026w-r8-marker-probe/RESULT.md SHA-256 95939c1f1f2fa874e1be8e3a02bd60dfb087d2ce7a415dbafebafab533444515; HASHES.txt SHA-256 966bbfb80b2c321655a0cc7bd3789fcb8c2153b6609ff6b68af28755702a9976; R8 input JAR SHA-256 9a7d1e9e4c2d3ee05482b9695df5f4d8f92c22ebb74603d6be4eab0505467f1a.
+- **Tool:** cached R8 9.1.29 build 7130940ccb0c41990c77906b3d4f0a4412acb501. Three classfile Release scratch runs and two collision runs exited 0; no Gradle invocation.
+- **Case A:** keeping the annotation interface but omitting keepattributes removed RuntimeVisibleAnnotations from host methods. Runtime reflection found no RhinoHostOnly marker on BookSourceProbe methods. Annotation class retention alone is insufficient.
+- **Case B:** adding -keepattributes *Annotation* preserved the runtime marker, but allowing method obfuscation renamed host-only and ordinary methods into the same names. In BookSourceProbe, method name groups included both marked and unmarked methods. In a dedicated collision class, attachHostServices(HostServicesProbe) and nine ordinary methods with different descriptors all became method name a; reflection confirmed one marked plus nine unmarked methods in that same name group. The current name-based fail-open filter would expose the host-only method.
+- **Case C:** adding the marker-specific rule -keepclassmembers class * { @com.script.rhino.RhinoHostOnly <methods>; } preserved marker method names while ordinary methods remained obfuscatable. attachHostServices/requireHostServices stayed named and annotated on the interface, concrete class and Kotlin-generated delegation proxy. The collision class kept attachHostServices distinct while ordinary methods became a.
+- **Candidate minimal marker rules:** keep RuntimeVisibleAnnotations (*Annotation*), keep the RhinoHostOnly annotation type, and keep the names of methods annotated with RhinoHostOnly using the marker-specific keepclassmembers rule above. This is a candidate for module consumer rules, not yet validated in the actual Badcat Release dependency graph.
+- **Important:** marker metadata retention alone is not enough. Because Rhino resolves a JavaScript property by name, method-name collisions after R8 create a mixed overload group; fail-open then leaks the marked method. Keep marker-bearing names or redesign the exposure contract before any production integration.
+- **Limits:** scratch classes only; broad test keep rules intentionally kept classes/members while permitting obfuscation. R8 emitted informational duplicate-definition notices because modified scratch Rhino classes were program inputs while the pinned Rhino JAR was also a library. No actual Badcat Gradle Release/R8/DEX/APK run, no App ABI, no real BookSource/RssSource/HttpTTS/CoverRule, no Room/Gson/Parcelize, no CI/device/network.
+- **Disposition:** Task 026W complete as bounded R8 feasibility evidence. Actual Badcat Release marker retention and App ABI remain NOT ESTABLISHED. Phase A remains open; broad BookSource/BaseSource Phase B migration blocked; Task 027 blocked; Stage-0 in_progress/not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
+- **Next:** continue independent Phase A actual App ABI/Release R8 and real Android lifecycle gates. Do not treat this scratch result as release proof or begin production marker/sidecar changes.

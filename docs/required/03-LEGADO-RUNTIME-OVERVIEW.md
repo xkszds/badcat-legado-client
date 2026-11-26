@@ -1480,11 +1480,31 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 
 ### 4.27.59 Task 026W preregistration — scratch R8 host-marker retention probe (2026-11-26)
 
-- Task ID: R3-S0-T026-PHASE-A-R8-HOST-MARKER-RETENTION-PROBE-026W; registered / not started. Start HEAD 6141b1f7ffb55246468d81b6247ef88ae77c3aaa; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Task ID: R3-S0-T026-PHASE-A-R8-HOST-MARKER-RETENTION-PROBE-026W; completed as bounded scratch R8 feasibility evidence, no production integration. Registration start HEAD 6141b1f7ffb55246468d81b6247ef88ae77c3aaa; execution HEAD 055cad276279c3b0eaa165b64dcf9c9297285caa; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
 - Goal: test marker annotation retention and host-only method-name preservation with an already-cached R8 executable against 026T scratch classes only.
 - Allowed: scratch-only inputs/outputs under /tmp/task026w-r8-marker-probe/; no downloads, Gradle or cache mutation; repository changes only this audit and overview.
 - Cases: baseline minification; annotation-attribute retention; annotated method retention with obfuscation allowed; annotated method-name retention; mixed overload/name collision. Inspect mapping, classfile marker annotations, descriptors, synthetic flags and runtime reflection where possible.
 - Acceptance: exact cached R8 version/hash, rules/command, output/mapping hashes, annotation survival and method-name collision result, candidate rule set and limitations versus actual Badcat Release.
 - Exclusions: stop if R8 is not already cached; no network/download/cache injection, App compile/build, Gradle, project tests, APK/DEX/device/CI, production source/build/shrinker edits, Room/KSP/Parcelize or Task 027.
 - Gate: scratch-only; cannot close actual Badcat Release R8 or compiled App ABI. Phase A remains open; broad BookSource/BaseSource migration blocked; Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full compatibility NOT ESTABLISHED.
-- Next: after registration commit and rereading both required lists, inspect the local R8 cache and run only the bounded scratch cases if the exact executable is present.
+- Result: /tmp/task026w-r8-marker-probe/RESULT.md SHA-256 95939c1f1f2fa874e1be8e3a02bd60dfb087d2ce7a415dbafebafab533444515; HASHES.txt SHA-256 966bbfb80b2c321655a0cc7bd3789fcb8c2153b6609ff6b68af28755702a9976; cached R8 9.1.29 JAR SHA-256 9a7d1e9e4c2d3ee05482b9695df5f4d8f92c22ebb74603d6be4eab0505467f1a.
+- Case A: without annotation attributes, runtime marker annotations were stripped.
+- Case B: with annotation attributes but marker method obfuscation allowed, host-only and ordinary methods collided under the same obfuscated name; a dedicated class mapped one marked and nine unmarked methods to a. The current fail-open filter would expose the marked method.
+- Case C: marker-specific keepclassmembers preserved marked method names and annotations on interface, concrete and Kotlin delegation methods while ordinary methods remained obfuscatable.
+- Candidate rules require both annotation-attribute retention and preserving marker-annotated method names; actual Badcat Release R8 remains unproved.
+- Gate: scratch feasibility only; Phase A remains open; broad migration and Task 027 blocked.
+- Next: continue actual App ABI/Release R8 and real Android lifecycle gates. No production changes.
+
+
+### 4.27.60 Task 026W result — R8 host-marker annotation/name retention (2026-11-26)
+
+- **Status:** bounded scratch R8 feasibility probe complete; no production integration. Registration start HEAD 6141b1f7ffb55246468d81b6247ef88ae77c3aaa; execution HEAD 055cad276279c3b0eaa165b64dcf9c9297285caa; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Evidence:** /tmp/task026w-r8-marker-probe/RESULT.md SHA-256 95939c1f1f2fa874e1be8e3a02bd60dfb087d2ce7a415dbafebafab533444515; HASHES.txt SHA-256 966bbfb80b2c321655a0cc7bd3789fcb8c2153b6609ff6b68af28755702a9976; cached R8 9.1.29 JAR SHA-256 9a7d1e9e4c2d3ee05482b9695df5f4d8f92c22ebb74603d6be4eab0505467f1a.
+- Case A: annotation type retained but no annotation attributes caused RuntimeVisibleAnnotations to be stripped; reflection no longer detected the marker.
+- Case B: annotation attributes preserved marker metadata, but allowing method obfuscation caused host-only and ordinary methods to share obfuscated names. A collision class mapped one marked method plus nine unmarked methods to the same name a. Name-based fail-open filtering would expose the marked method.
+- Case C: marker-specific keepclassmembers preserved marker method names and annotations across BaseSource interface, concrete class and Kotlin delegation proxy; ordinary methods remained obfuscatable and no collision occurred.
+- Candidate rule set needs annotation attribute retention, marker annotation class retention, and name-preserving keepclassmembers for marker methods. It remains a candidate only; actual Badcat Release rules/variants have not been built or validated.
+- R8 emitted informational duplicate program/library definition notices for the scratch-modified Rhino wrapper classes; all scratch runs exited 0. This was classfile scratch R8, not Android Gradle Release R8.
+- No tracked source/build/shrinker/test changes; no App compile/build, Gradle, APK/DEX, CI/device/network or Room/KSP/Parcelize.
+- **Disposition:** Task 026W complete as bounded R8 feasibility evidence. Actual Badcat Release marker retention and App ABI remain NOT ESTABLISHED. Phase A open; broad BookSource/BaseSource Phase B migration blocked; Task 027 blocked; Stage-0 in_progress/not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
+- **Next:** continue actual App ABI/Release R8 and real Android lifecycle gates; no production marker/sidecar implementation until all Phase A gates and path-exact implementation addendum are reviewed.
