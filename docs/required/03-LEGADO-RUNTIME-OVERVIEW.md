@@ -1508,3 +1508,14 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - No tracked source/build/shrinker/test changes; no App compile/build, Gradle, APK/DEX, CI/device/network or Room/KSP/Parcelize.
 - **Disposition:** Task 026W complete as bounded R8 feasibility evidence. Actual Badcat Release marker retention and App ABI remain NOT ESTABLISHED. Phase A open; broad BookSource/BaseSource Phase B migration blocked; Task 027 blocked; Stage-0 in_progress/not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
 - **Next:** continue actual App ABI/Release R8 and real Android lifecycle gates; no production marker/sidecar implementation until all Phase A gates and path-exact implementation addendum are reviewed.
+
+
+### 4.27.61 Task 026X preregistration — exact-pinned upstream Release APK / DEX ABI artifact recovery
+
+- Task ID: `R3-S0-T026-PHASE-A-UPSTREAM-RELEASE-APK-DEX-ABI-RECOVERY-026X`; read-only external CI artifact provenance/DEX inspection in progress. No build or R8 execution.
+- Snapshot: Badcat HEAD `818f967e0d3d34e14f6b559258e90dbaaeeee950`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- Purpose: determine whether an existing official Release APK from the exact upstream pin can supply real compiled App ABI/R8 evidence without violating §24.119's no-more-App-compile restriction.
+- Allowed: existing public GitHub Actions artifact/job logs, SHA-256, ZIP inventory and read-only Android SDK `apkanalyzer` inspection; temporary files under `/tmp/task026x-upstream-release-artifact/`. Tracked changes only this overview and the architecture audit.
+- Required: exact run/commit/artifact provenance; Release/R8 task result; APK/Dex hashes; target class/method/annotation retention; class-name obfuscation and mapping-file availability; explicit separation of upstream baseline from Badcat integration.
+- Excluded: Gradle/compiler/build/test/dependency resolution/R8 execution/CI re-run/device and all production changes. No Task 027.
+- Gate: may close only pinned-upstream compiled Release ABI/R8 baseline; Badcat integrated ABI, host marker retention and Android lifecycle remain separate.
