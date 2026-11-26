@@ -5792,3 +5792,17 @@ The registered Login UI/WebView bridge scope includes subclasses of a shared App
 - **No production activity:** no tracked production/test/build/Gradle/dependency/Room/KSP/Parcelize/DEX/R8/APK/CI/device/network changes or actions; no App compile retry.
 - **Disposition:** Task 026V complete as bounded Rhino behavior evidence. Phase A remains open; compiled App ABI/Release R8, exact dependency-variant and real Android lifecycle gates remain separate blockers. Broad BookSource/BaseSource Phase B migration blocked; Task 027 blocked; Stage-0 in_progress/not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
 - **Next:** continue only independently registered Phase A evidence tasks. No production marker/sidecar implementation or Task 027 until all required gates and the path-exact implementation addendum are reviewed.
+
+## 24.146 Task 026W preregistration — scratch R8 marker/annotation/name-retention feasibility
+
+- Task ID: R3-S0-T026-PHASE-A-R8-HOST-MARKER-RETENTION-PROBE-026W.
+- Status: registered / not started; scratch-only R8 feasibility probe.
+- Start HEAD: 6141b1f7ffb55246468d81b6247ef88ae77c3aaa on integration/legado-upstream-runtime.
+- Pinned upstream: LegadoTeam/legado@330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Goal: use only an already-cached R8 executable and the existing 026T scratch classes to determine which minimal rules preserve runtime marker annotations and host-only method names through optimization/obfuscation, and whether name-based fail-open filtering is vulnerable to renamed-name collisions.
+- Allowed repository files: this audit and docs/required/03-LEGADO-RUNTIME-OVERVIEW.md only. Scratch inputs, R8 outputs, mapping, logs and hashes under /tmp/task026w-r8-marker-probe/. No download, Gradle invocation or repository-cache mutation.
+- Probe cases: (1) baseline minification with no marker keep rule; (2) keep RuntimeVisibleAnnotations only; (3) keep marker-annotated methods and annotation attributes while allowing method obfuscation; (4) keep marker-annotated method names plus attributes; (5) mixed marked/unmarked overload and same-class collision candidates. Inspect classfile annotations, method names/descriptors, ACC_SYNTHETIC and runtime reflection after R8 where possible.
+- Acceptance: exact cached R8 version/JAR hash; exact command and rules; per-case mapping/classfile/reflection output; whether marker metadata survives; whether marker method names can collide with ordinary methods; candidate minimal rule set and limits versus a real Badcat Release build.
+- Hard stops: stop without execution if no exact R8 JAR is already cached; no network/download/cache injection; no App compile/build; no Gradle, project test, APK/DEX/device/CI; no production source/build/shrinker edits; no Room/KSP/Parcelize; no Task 027.
+- Disposition: scratch evidence only; it cannot close actual Badcat Release R8 or compiled App ABI. Phase A remains open; broad BookSource/BaseSource Phase B migration remains blocked; Task 027 blocked; Stage-0 in_progress/not accepted; Stage-1 NO-GO; full Legado compatibility NOT ESTABLISHED.
+- Next: after registration commit and rereading both required lists, check for an already-cached R8 JAR and execute only the scratch cases if present.

@@ -1477,3 +1477,14 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Limits: scratch stand-ins only; no real Android models, Room/Gson/Parcelize, WebView, Release R8/DEX, real caller injection or source E2E.
 - **Disposition:** Task 026V complete as bounded Rhino behavior evidence. Phase A remains open; broad BookSource/BaseSource Phase B migration blocked; Task 027 blocked; Stage-0 in_progress/not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
 - **Next:** continue independently registered Phase A compiled ABI/Release R8 and real Android lifecycle gates. No production implementation until gates and path-exact addendum review.
+
+### 4.27.59 Task 026W preregistration — scratch R8 host-marker retention probe (2026-11-26)
+
+- Task ID: R3-S0-T026-PHASE-A-R8-HOST-MARKER-RETENTION-PROBE-026W; registered / not started. Start HEAD 6141b1f7ffb55246468d81b6247ef88ae77c3aaa; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Goal: test marker annotation retention and host-only method-name preservation with an already-cached R8 executable against 026T scratch classes only.
+- Allowed: scratch-only inputs/outputs under /tmp/task026w-r8-marker-probe/; no downloads, Gradle or cache mutation; repository changes only this audit and overview.
+- Cases: baseline minification; annotation-attribute retention; annotated method retention with obfuscation allowed; annotated method-name retention; mixed overload/name collision. Inspect mapping, classfile marker annotations, descriptors, synthetic flags and runtime reflection where possible.
+- Acceptance: exact cached R8 version/hash, rules/command, output/mapping hashes, annotation survival and method-name collision result, candidate rule set and limitations versus actual Badcat Release.
+- Exclusions: stop if R8 is not already cached; no network/download/cache injection, App compile/build, Gradle, project tests, APK/DEX/device/CI, production source/build/shrinker edits, Room/KSP/Parcelize or Task 027.
+- Gate: scratch-only; cannot close actual Badcat Release R8 or compiled App ABI. Phase A remains open; broad BookSource/BaseSource migration blocked; Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full compatibility NOT ESTABLISHED.
+- Next: after registration commit and rereading both required lists, inspect the local R8 cache and run only the bounded scratch cases if the exact executable is present.
