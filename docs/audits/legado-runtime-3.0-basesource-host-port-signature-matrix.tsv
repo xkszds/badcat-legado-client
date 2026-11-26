@@ -128,7 +128,7 @@ jsextensions	1189	toast	fun toast(msg: Any?) {	False	RuntimeNotificationPort	Run
 jsextensions	1197	longToast	fun longToast(msg: Any?) {	False	RuntimeNotificationPort	RuntimeNotificationPort	Long UI toast
 jsextensions	1205	log	fun log(msg: Any?): Any? {	False	RuntimeNotificationPort	RuntimeNotificationPort	Debug + AppLog; returns original Any?
 jsextensions	1217	logType	fun logType(any: Any?) {	False	RuntimeNotificationPort	RuntimeNotificationPort	Logs null or JVM class name
-jsextensions	1229	randomUUID	fun randomUUID(): String {	True	RUNTIME_CORE	RUNTIME_CORE	UUID generation
+jsextensions	1229	randomUUID	fun randomUUID(): String {	True	RUNTIME_CORE	RUNTIME_CORE	UUID.randomUUID().toString(); caller scan closed by 026BA: httpTTS.json:13 SignatureNonce, jsHelp.md:333, RuntimeObjectCompletionLanguage.kt:110; pure Runtime core; Badcat Rhino implementation identical; upstream JavascriptInterface annotation is WebView-only metadata
 jsextensions	1234	androidId	fun androidId(): String {	True	AppContextPort	AppContextPort	Android secure ID
 jsextensions	1239	openUrl	fun openUrl(url: String) {	True	HostUiPort	HostUiPort	Deep-link import vs confirm dialog; MIME/source origin/type
 jsextensions	1248	openUrl	fun openUrl(url: String, mimeType: String? = null) {	True	HostUiPort	HostUiPort	Deep-link import vs confirm dialog; MIME/source origin/type

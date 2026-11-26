@@ -2221,7 +2221,17 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Goal:** exact read-only declaration/annotation/return/implementation/caller/test comparison for randomUUID only, and update the 026P caller-scan disposition.
 - **Required:** pinned declaration and UUID semantics; source assets/help/completion/test caller scan; current Rhino bridge method and production roots; ABI/behavior test coverage; pure Runtime-core vs Host Port disposition.
 - **Reuse:** 026P, 026AU, 026AW and completed 026AX/AY/AZ. Do not repeat other 76 API investigations or generic Java UUID internals.
-- **Allowed:** audit/overview docs only; source/assets/tests/build declarations read-only; temporary evidence /tmp/task026ba-random-uuid/.
+- **Allowed:** audit/overview docs and the 026P signature matrix solely for the randomUUID row update; source/assets/tests/build declarations read-only; temporary evidence /tmp/task026ba-random-uuid/.
 - **Excluded:** no Gradle/dependency/variant resolution, download/cache mutation, build/compiler/test/CI/DEX/R8/APK/device/network, App compile retry, production/source/test/Gradle/shrinker/schema/UI/Reader/workflow changes, new Host Port, BookSource/BaseSource migration, Task 027 or Stage-1.
 - **Procedure:** after registration commit, reread both required lists completely from this HEAD before substantive source/caller inspection.
 - **Disposition:** Phase A remains open; broad BookSource/BaseSource migration blocked; Task 027 blocked; Stage-0 in_progress / not accepted; Stage-1 NO-GO; full Legado compatibility NOT ESTABLISHED.
+
+### 4.27.122 Task 026BA result — randomUUID source API and caller closure (2026-11-26)
+
+- **Status:** complete for bounded static declaration/caller/bridge closure. Registration start HEAD bdd0a6b33e07bf40c644171942a98443bdaa1b19; registration/substantive inspection HEAD 87756d63f9898cb716814858a7d94f34ae879ce7; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **API:** upstream randomUUID(): String is annotated @JavascriptInterface and calls UUID.randomUUID().toString(). Badcat RhinoSafeSourceJavaExtensions has the same zero-argument String implementation. The annotation difference is WebView metadata and does not affect Rhino visibility.
+- **Caller:** defaultData/httpTTS.json uses java.randomUUID() for Aliyun NLS SignatureNonce; jsHelp documents it; completion metadata lists it. No other shipped script caller or direct Kotlin caller was found.
+- **Tests:** existing Badcat Rhino runtime test checks only length 36; no dedicated upstream or ABI reflection test found. Inspected only, not run.
+- **Owner:** pure Runtime core; no Host Port. The 026P matrix randomUUID row was updated from caller-scan-pending to closed. The matrix was added to allowed tracked outputs solely for that one documentation-row update.
+- **Evidence:** RESULT.md SHA-256 cfc783587333a242a7544fa3cfb186d0e29ca977a236dd624eccf595203acb8d; declaration/caller matrix bdf3c2bee8d3fc1eec17b5f7304974c54c1396d3cc9a4f476e0bc4ae1cb4474c; caller scan bd586cb1cdc1ba73495d9ae57823575274c5e7dcabe23011baa670d781643286; test matrix 839710958503c9a6887caa516330705fe82128a52720627a9f1b014a0d1a999d; input manifest ed90488f614e6636fef302a2c7dfd94596854be9b1686be90f909c912adaa82c; checksums passed. Matrix SHA changed from 2d1ff13fb9c3db5ebe474a731818993ca1102ac86743bb2cafb4aa2b967f748d to ecbc4a13ebc8ba1a9bcfafd85b96e66f9712a40ebe48b4292a554bd69e859634.
+- **Boundary:** no tests/build/Gradle/dependency/CI/DEX/R8/APK/device/network action; no production code changes. Phase A remains open; broad migration and Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full compatibility NOT ESTABLISHED.
