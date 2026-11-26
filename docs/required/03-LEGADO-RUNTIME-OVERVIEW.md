@@ -2287,3 +2287,15 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Boundary:** no tests/build/Gradle/dependency/CI/DEX/R8/APK/device/network/source execution; no App compile retry; no production/source/test/Gradle/schema/UI/Reader/workflow changes.
 - **Disposition:** Task 026BC complete for this static slice only. JavaImporter/Packages parity remains NO-GO; Phase A remains open; broad migration and Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full Legado compatibility NOT ESTABLISHED.
 - **Next:** register a separate source-network Java API/strict transport boundary closure for URL/URLConnection/HttpURLConnection, OkHttp and Jsoup Connection; do not broaden TLS or expose generic Java packages.
+
+### 4.27.127 Task 026BD preregistration — source Java network class and strict transport closure (2026-11-27)
+
+- **Task ID:** R3-S0-T026-PHASE-A-JAVA-NETWORK-CLASS-AND-STRICT-TRANSPORT-CLOSURE-026BD; registered / not started. Start HEAD a55e33b3805867c68d04a4bdced86c9ebc67a0e2; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Scope:** read-only source-observed Java network APIs: URL/URLConnection/HttpURLConnection, OkHttpClient/Request/RequestBody/MediaType/Call/Response, and Jsoup Connection. Exact FQCN/import syntax, constructors, methods, overloads, return/body/stream lifecycle, errors, timeouts, redirects, headers, request bodies and cancellation.
+- **Reuse:** 026AT AnalyzeUrl UrlOption and source HTTP; 026AZ direct JsExtensions ajax/connect/get/head/post; 026AQ/026AR cookie identity; 026AH/026AD dependency and request caller matrix; 026BC stream/reader/byte[] lifecycle; §§24.24–24.28 immutable public source corpus. Do not repeat those inventories.
+- **Security:** ordinary source HTTP remains strict TLS and disallows HTTPS downgrade. Trust-all TLS/SSL redirect remains limited to dedicated SharedJsScope fetch. No raw sockets, unrestricted URLConnection/OkHttp, generic Packages reflection or ClassShutter widening.
+- **Allowed:** audit and overview docs only; pinned/Badcat source, tests and build declarations read-only; temporary evidence /tmp/task026bd-java-network/.
+- **Required:** exact class/caller matrix; transport method semantics; typed adapter and SourceHttpRequest/Response mapping; strict Host policy; Badcat wiring gaps; differential tests.
+- **Excluded:** no Gradle/dependency/variant resolution, download/cache mutation, build/compiler/test/CI/DEX/R8/APK/device/network/live HTTP; no App compile retry; no production/source/test/Gradle/shrinker/schema/UI/Reader/workflow changes; no TLS/cookie policy change, no broad migration, Task 027 or Stage-1.
+- **Procedure:** after registration commit, reread both required lists fully from that HEAD before substantive source/caller inspection.
+- **Disposition:** JavaImporter/Packages parity remains NO-GO; Phase A remains open; broad migration and Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full Legado compatibility NOT ESTABLISHED.
