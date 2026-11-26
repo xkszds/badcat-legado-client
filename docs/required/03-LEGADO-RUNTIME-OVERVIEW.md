@@ -1692,3 +1692,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - No project Gradle task, dependency resolution, compiler/build/test, cache mutation, artifact staging/download, process termination, DEX/R8/APK/CI/device/network action; no production changes; no App compile retry under §24.119.
 - **Disposition:** Task 026AE complete as readiness assessment with the disclosed deviation; Runtime-only dependency/compile gate is blocked by runner capacity. Phase A remains open; broad BookSource/BaseSource migration blocked; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
 - **Next:** connect a clean higher-memory runner, then separately preregister the Runtime-only dependency/compile probe. No App compile retry.
+
+### 4.27.78 Task 026AF preregistration — crypto/transliteration dependency caller closure
+
+- **Task ID:** R3-S0-T026-PHASE-A-CRYPTO-AND-TRANSLITERATION-DEPENDENCY-CLOSURE-026AF; start HEAD f89bb62cb43b9988301aa2c5d5cf0bc37b603a82; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Trigger/goal:** 026AD left Hutool crypto, BouncyCastle and quick-transfer recursive caller/dependency disposition open. With no safe Gradle runner, perform a bounded read-only source/API/caller audit to classify Runtime-visible requirements versus App/product-only use; do not claim a resolved Gradle graph.
+- **Allowed:** exact pinned source/import/caller reads; Gradle/catalog declaration reads; existing metadata and already-cached artifact metadata only; temporary report under /tmp/task026af-crypto-transliteration/; documentation-only tracked changes.
+- **Required:** exact source identities, method-level callsites, public API types, Runtime-vs-App classification, coordinates and unresolved items with report hashes.
+- **Excluded:** Gradle/dependency resolution/build/compiler/test/CI/DEX/R8/APK/device/network/download/cache mutation; App compile retry under §24.119; production/source/test/Gradle/shrinker/schema/UI/Reader changes; BaseSource migration or Task 027.
+- **Procedure note:** preliminary grep/source scoping occurred before this registration commit while selecting the next bounded task; this ordering deviation is disclosed in audit §24.165. Substantive evidence collection follows registration and required-list reread.
+- **Disposition at registration:** Phase A remains open; broad BookSource/BaseSource migration blocked; Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full compatibility NOT ESTABLISHED.
