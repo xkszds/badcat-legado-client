@@ -1554,3 +1554,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Gate:** this confirms the current integration gap; it does not close current Badcat ABI/R8, marker retention or Android lifecycle. The historical CookieManager/WebView tests do not cover BookSource sidecar, Room/Gson/copy/restore, active script cancellation, cache/Explore/InfoMap or resource lifecycle.
 - No new build/test/CI/device run or production changes. Phase A remains open; broad BookSource/BaseSource migration blocked; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
 - **Next:** continue the path-exact BaseSource/BookSource sidecar/filter implementation design and low-memory module/scratch verification; do not retry App compilation under §24.119 or claim Android lifecycle proof.
+
+
+### 4.27.65 Task 026X supplementary result — compiled JS scope identity in upstream Release DEX
+
+- Exact pinned upstream Release APK DEX now proves the BaseSource invocation contract: the compiled `BookSource.evalJS` bridge passes the same source instance to the R8-renamed BaseSource default helper; that helper binds the same `BaseSource` object as `java`, `source` and `sourceApi`. `baseUrl` is `getKey()`; CookieStore and CacheManager are bound.
+- The compiled `JsSourceEngine.buildScope` contract differs intentionally: `java` is the JsSourceEngine instance; `source` and `sourceApi` are the same BookSource instance. This is now backed by DEX, not only source inspection. Full dump/hash: `/tmp/task026x-upstream-release-artifact/BaseSourceDefaultImpls.smali.txt`, SHA-256 `4210cb0df081902ca9dc47207a8d217e4df35d37ad236bfc00223fedacf8bed4`; updated RESULT.md § Compiled JS scope identity proof.
+- Existing Badcat inventory has separate custom java/cookie/source/cache objects and no sourceApi binding, confirming a concrete identity/API mismatch that must be resolved by the future typed per-source Host Port integration.
+- This closes only the pinned-upstream Release DEX binding-identity reference slice. Badcat integration, sidecar lifecycle, Release marker retention and Android lifecycle remain open; no build/test/CI/device or production changes.
