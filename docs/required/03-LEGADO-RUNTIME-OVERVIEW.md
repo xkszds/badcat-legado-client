@@ -1452,11 +1452,28 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 
 ### 4.27.57 Task 026V preregistration — Rhino Java-wrapper descriptor/enumeration probe (2026-11-26)
 
-- Task ID: R3-S0-T026-PHASE-A-RHINO-JAVA-WRAPPER-DESCRIPTOR-ENUMERATION-PROBE-026V; registered / not started. Start HEAD 97d0b963d72ede60d6596da8d15c890300fc4b2b; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Task ID: R3-S0-T026-PHASE-A-RHINO-JAVA-WRAPPER-DESCRIPTOR-ENUMERATION-PROBE-026V; completed as bounded scratch dynamic Rhino evidence, no production integration. Registration start HEAD 97d0b963d72ede60d6596da8d15c890300fc4b2b; execution HEAD d4e85d84e4da7d33d00ffc6242a74cd60f7f2922; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
 - Goal: dynamically inspect pinned HtmlUnit Rhino Java wrapper behavior for property descriptors, own-property checks and enumeration after marker filtering, beyond the get/has/Object.keys cases already recorded in 026T.
 - Allowed: scratch-only runner/source under /tmp/task026v-rhino-descriptor-probe/; reuse existing compiled pinned Rhino Debug classes, HtmlUnit CoreJS and 026T scratch wrapper/classes. Repository changes limited to this audit and this overview.
 - Cases: NativeBaseSource special wrapper and generic CatchableNativeJavaObject; marked Host Services methods, ordinary getKey/getTag, setKey/setTag, setVariable, variable and unrelated tag. Probe get/has/getIds, Object.getOwnPropertyDescriptor, Object.getOwnPropertyNames, Reflect.ownKeys, Object.keys, for..in and hasOwnProperty.
 - Acceptance: exact outputs/errors, source/JAR hashes, whether JavaMembers descriptors are slot-backed, and whether own-property/enumeration APIs share getIds/has/get paths; distinguish Rhino engine facts from stand-in model limitations.
 - Exclusions: no production source/test/build/Gradle/dependency/DEX/R8/APK/CI/device/network actions; no Room/KSP/Parcelize; no App compile retry; no SourceNavigationBridge/WebView claim; no Task 027.
 - Gate: scratch evidence only; Phase A remains open and broad BookSource/BaseSource migration remains blocked pending compiled App ABI/R8, exact dependency and dynamic lifecycle gates.
-- Next: after registration commit and rereading both required lists, execute only this scratch descriptor/enumeration probe.
+- Result: /tmp/task026v-rhino-descriptor-probe/RESULT.md SHA-256 07d1bb1a2f8187f0f92fb1995cf5cca47ad8395d36256a819aba94e6fd37d482; HASHES.txt SHA-256 0deab0cb9bbb504e3ea1acc88ac69e9eeeb6f9de628c95969769adc85fba4760; Rhino output SHA-256 76929916e0c7516f5dd09e8612dccddcaa9f6c6559ab7f555b0bf79b11c18ed1.
+- NativeBaseSource: marked methods absent from reads, membership, own-property, propertyIsEnumerable, Object.keys and for..in. Setter names setKey/setTag are hidden from reads/hasOwn/propertyIsEnumerable; Object.keys lists them but for..in omits them. Preserve this existing distinction.
+- Generic wrapper: marked methods remain hidden; generated setters remain visible in Object.keys and for..in. Object.getOwnPropertyDescriptor, Object.getOwnPropertyNames and Reflect.ownKeys throw the same TypeError for visible and hidden Java members; exact output is retained in RESULT.md.
+- Gate: scratch evidence only; Phase A remains open, production implementation and Task 027 remain blocked.
+- Next: continue independent Phase A compiled App ABI/Release R8 and real Android lifecycle gates. No production code or Task 027.
+
+
+### 4.27.58 Task 026V result — Rhino Java-wrapper descriptor/enumeration behavior (2026-11-26)
+
+- **Status:** bounded scratch dynamic Rhino probe complete; no production integration. Registration start HEAD 97d0b963d72ede60d6596da8d15c890300fc4b2b; execution HEAD d4e85d84e4da7d33d00ffc6242a74cd60f7f2922; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Evidence:** /tmp/task026v-rhino-descriptor-probe/RESULT.md SHA-256 07d1bb1a2f8187f0f92fb1995cf5cca47ad8395d36256a819aba94e6fd37d482; HASHES.txt SHA-256 0deab0cb9bbb504e3ea1acc88ac69e9eeeb6f9de628c95969769adc85fba4760; Rhino log SHA-256 76929916e0c7516f5dd09e8612dccddcaa9f6c6559ab7f555b0bf79b11c18ed1.
+- NativeBaseSource special wrapper: marked methods absent from reads, membership, hasOwnProperty, propertyIsEnumerable, Object.keys and for..in. Ordinary methods remain visible. Setter names setKey/setTag are hidden on reads/membership/own-property/propertyIsEnumerable; Object.keys lists them but for..in omits them. Preserve this upstream distinction.
+- Generic CatchableNativeJavaObject: marked methods hidden; generated setters remain visible in Object.keys and for..in. This matches the distinct factory paths for NativeBaseSource and generic CoverRule.
+- Object.getOwnPropertyDescriptor, Object.getOwnPropertyNames and Reflect.ownKeys throw the exact TypeError for visible and hidden Java wrapper members; no descriptor/key list is returned. Do not claim they return null.
+- Reused 026T scratch classes and pinned Rhino/HtmlUnit artifacts; only a Java runner was compiled and executed. No project build/test or production changes.
+- Limits: scratch stand-ins only; no real Android models, Room/Gson/Parcelize, WebView, Release R8/DEX, real caller injection or source E2E.
+- **Disposition:** Task 026V complete as bounded Rhino behavior evidence. Phase A remains open; broad BookSource/BaseSource Phase B migration blocked; Task 027 blocked; Stage-0 in_progress/not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
+- **Next:** continue independently registered Phase A compiled ABI/Release R8 and real Android lifecycle gates. No production implementation until gates and path-exact addendum review.
