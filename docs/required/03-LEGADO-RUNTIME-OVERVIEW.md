@@ -1584,3 +1584,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **DEX:** existing upstream Release DEX corroborates fresh JsSourceEngine ScriptBindings allocation/mainJs evaluation and BaseSource identity; no SharedJsScope R8 mapping exists. Source test declarations cover concurrent global writes, library-scope initialization and invalidation but were not executed in this task.
 - No build/compiler/test/dependency resolution/DEX/R8/CI/device/network run and no production changes. Phase A remains open; broad BookSource/BaseSource migration blocked; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
 - **Next:** freeze exact App asset/fetch/cache/diagnostic adapters and separate same-object sidecar attachment from source/library invalidation before implementation; preserve fresh per-call scopes and upstream concurrency semantics. No App compile retry under §24.119.
+
+
+### 4.27.68 Task 026AA preregistration — SharedJsScope host adapters and BaseSource lifecycle contract
+
+- **Task ID:** R3-S0-T026-PHASE-A-SHARED-LIBRARY-HOST-ADAPTER-AND-SOURCE-LIFECYCLE-CONTRACT-026AA; registered / not started. Start HEAD 71e35bb35c7c72e2db1798f620bac06e2cbd9a52; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** freeze exact typed App adapter contracts for SharedJsScope's CryptoJS asset, source-less shared-library HTTP fetch, ACache storage and diagnostics; separately freeze same-object BaseSource sidecar attachment and source-key/jsLib invalidation lifecycle. Determine whether existing typed ports suffice without creating SharedJsScopePort or a same-source execution mutex.
+- **Allowed:** read-only pinned/Badcat source and caller/build/test inspection; temporary evidence under /tmp/task026aa-shared-library-host-adapters/; tracked changes only audit and overview.
+- **Required:** exact HTTP client/default/retry/redirect/cookie/header/charset/cancel semantics; ACache namespace/key/size/TTL/remove; resource/logging effects; existing port implementation comparison; sidecar identity/reattachment and all mutation-origin invalidation ordering; dynamic tests and unknowns.
+- **Excluded:** all production/test/Gradle/dependency/shrinker/schema/UI changes and all build/test/DEX/R8/CI/device/network actions; no App compile retry; no adapter/sidecar implementation or Task 027.
+- **Gate:** design-only; Phase A remains open, broad BookSource/BaseSource migration blocked, Task 027 blocked, Stage-0 not accepted, Stage-1 NO-GO, full compatibility NOT ESTABLISHED.
