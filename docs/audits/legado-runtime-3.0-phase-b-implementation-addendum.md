@@ -262,6 +262,16 @@ The source-visible file surface is not a single file service. Keep its boundarie
 
 Static source details and current Badcat comparison: Stage-0 audit §24.182 and /tmp/task026an-js-file-storage/RESULT.md. No dynamic parity test was run.
 
+### 5.3.1 Task 026AO — downloadFile type/path traversal security contract (decision pending)
+
+- AnalyzeUrl.analyzeUrl() parses the comma-JSON URL suffix and assigns UrlOption.type without validation. setType() only drops null/blank values; UrlOptionDialog inserts raw text into BookSource/RSS rule editors. The same value can be supplied directly by a source script through the JS-visible downloadFile(url) API.
+- Both pinned downloadFile overloads interpolate the raw type into <MD5-16(url)>.<type> and pass it to string-concatenating FileUtils.getPath. Neither canonicalizes or checks containment. The primary overload deletes the target before opening the network stream; both create parent directories through File.createFileReplace(). The deprecated hex overload also replaces the target before decoding/writing. getFile()'s separate path check is not involved.
+- With internal cache fallback root /data/user/0/<package>/cache, type=../../../files/x lexically normalizes to /data/user/0/<package>/files/x; analogous shared_prefs and databases siblings are reachable. From an illustrative external-cache root, a longer sequence of parent segments can normalize to an internal app-private target. This is path-construction proof only; no target was accessed or modified.
+- Do not change the generic UrlOption parser/setter globally: AnalyzeUrl.type also feeds BookInfo filename presentation. Enforce a file-suffix policy at both downloadFile sinks. Recommended grammar is ^[A-Za-z0-9]{1,5}$, aligned with UrlUtil.getSuffix and confirmed built-in extensions. Keep primary absent-type fallback to validated URL suffix/ext; keep deprecated absent-type return "". Recommended invalid explicit type behavior is fail closed before network, directory creation or target deletion. Whether invalid explicit values should instead fall back to URL suffix is a product/compatibility decision pending user approval.
+- Resolve the output as a single filename under a canonical per-source root; reject symlinked root/target/parent components; download to a unique temporary file inside that root and atomically replace only after successful completion. Never delete the existing target before the request/write succeeds. Validate/decode deprecated hex content before touching the target. Keep SourceHttpPort and SourceFilePort separate.
+- Required tests: valid common/generic suffixes; missing/blank/fallback; literal traversal at multiple depths; slash/backslash/absolute/MIME/whitespace/NUL/encoded/oversized values; both overloads; internal-cache fallback and external-cache roots; symlink/root/target cases; request/copy/hex failure preserving old targets; BookInfo display-suffix regression.
+- **Decision state:** recommendation only, not user-approved and not implemented. Exact source ingress, path proof, current Badcat comparison and fixtures: Stage-0 audit §24.184 and /tmp/task026ao-analyzeurl-type-security/RESULT.md (SHA-256 068eb8dcd56769ea8e0d9f298abafe815e5320c27931dac685a4d9367c3673f6). No dynamic test or exploit was run.
+
 ## 6. Dependency and build plan
 
 ### 6.1 Runtime dependencies to reconcile
