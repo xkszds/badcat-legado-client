@@ -1683,6 +1683,7 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 ### 4.27.77 Task 026AE result — connected runner is under-provisioned (2026-11-26)
 
 - **Status:** read-only readiness preflight complete with a disclosed command-scope deviation. Registration start HEAD bc3c0487a09a0e8e0a8a5034628247466de2fdb8; registration commit/execution HEAD 3d9d53a7ac02d472234d14b8cecf14a8885f65cb; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Result documentation commit:** 10a855c9e1384f33425ffd230e0a37f6e0d13158.
 - **Resources:** VM-0-5-ubuntu has 2 vCPU, 1.89 GiB RAM (~1.26 GiB available), 1.94 GiB swap (~274 MiB used), and 23 GiB free disk. No competing Gradle/Kotlin process. Only one connected runner is online.
 - **Toolchain:** JDK 21.0.13.1, Gradle distribution 8.14.4 and Android SDK 36/Build Tools 35.0.0 + 36.0.0 are present. A read-only gradle --version probe selected system Java 17 because JAVA_HOME was not exported; direct JDK 21 was verified. This was a procedural deviation from the task's no-Gradle-invocation exclusion, disclosed in audit §24.164 and RESULT.md; no project task or dependency resolution ran.
 - **Identity/evidence:** Badcat HEAD 3d9d53a7ac02d472234d14b8cecf14a8885f65cb and upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a are both clean. Task 026AD report checksums reverify. Full preflight report: /tmp/task026ae-runner-readiness/RESULT.md SHA-256 c7a700d6bc2737a9a5c79ba104e31c3ed1a33cf787540debfdc6ab8df4bba432.

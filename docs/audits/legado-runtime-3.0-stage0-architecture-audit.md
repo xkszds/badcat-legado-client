@@ -6080,6 +6080,7 @@ The registered Login UI/WebView bridge scope includes subclasses of a shared App
 ## 24.164 Task 026AE result — current runner is NO-GO for Runtime-only compile
 
 - **Task:** R3-S0-T026-PHASE-A-RUNTIME-ONLY-RUNNER-READINESS-026AE; read-only readiness preflight complete with one recorded command-scope deviation.
+- **Result documentation commit:** 10a855c9e1384f33425ffd230e0a37f6e0d13158.
 - **Identity:** registered at start HEAD bc3c0487a09a0e8e0a8a5034628247466de2fdb8; registration commit 3d9d53a7ac02d472234d14b8cecf14a8885f65cb; execution HEAD 3d9d53a7ac02d472234d14b8cecf14a8885f65cb; branch integration/legado-upstream-runtime; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
 - **Runner:** VM-0-5-ubuntu, Ubuntu x86_64, kernel 6.8.0-138-generic; 2 vCPU AMD EPYC 7K83; MemTotal 1,982,104 kB (~1.89 GiB), MemAvailable 1,322,132 kB (~1.26 GiB); swap 2,035,708 kB (~1.94 GiB), ~274 MiB in use; root disk 40 GiB total / 23 GiB available. No competing Gradle/Kotlin/KSP process was present. Only one Desktop Commander device was online.
 - **Toolchain:** JDK 21.0.13.1 Microsoft exists at /root/stage0-runner/jdk21; Gradle distribution directory 8.14.4 exists; Android SDK platform android-36, Build Tools 35.0.0 and 36.0.0 exist, including android.jar (27,768,026 bytes) and aapt. A read-only `gradle --version` invocation reported Gradle 8.14.4 but selected system Java 17.0.21 because JAVA_HOME was not exported; direct JDK 21 verification succeeded. No project task or dependency resolution ran.
