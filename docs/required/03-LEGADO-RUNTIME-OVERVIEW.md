@@ -1607,3 +1607,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Invalidation:** source class+key shared-global invalidation, jsLib-wide scope/cache/global invalidation and product cookie/session/variable/file cleanup are distinct. Existing mutation paths differ: SourceHelp delete clears source state before DAO; same-key edits can direct-delete/insert without source-key clear; jsLib changes remove old library; API/import/restore paths may bypass common cleanup. Active scripts are not cancelled by SharedJsScope invalidation.
 - No build/compiler/test/dependency resolution/DEX/R8/CI/device/network run and no production changes. Phase A remains open; broad BookSource/BaseSource migration blocked; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
 - **Next:** resolve isolated shared-library TLS policy and prove a central runtime-entry sidecar binder (or enumerate all entry points) before updating the implementation addendum. No App compile retry under §24.119.
+
+
+### 4.27.70 Task 026AB preregistration — BaseSource runtime-entry binding closure
+
+- Task ID: R3-S0-T026-PHASE-A-BASESOURCE-RUNTIME-ENTRY-BINDING-CLOSURE-026AB; registered / not started. Start HEAD 53fc7df485414746b65b5b9877bf7d1dc408b9db; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Goal: prove whether one Runtime/App boundary can attach typed Host Services before every BaseSource host-effect path, or enumerate the exact per-entry binder calls required. Distinguish Room/Gson materialization from runtime-bound object entry; preserve BaseSource identity and per-entry JS bindings.
+- Required: direct/indirect BaseSource.evalJS callers; JsSourceEngine and AnalyzeRule/AnalyzeUrl constructors/callers; null-source/config paths; BackstageWebView separation; current Badcat composition roots; attachment after copy/import/restore only for Runtime-bound instances; closed binder callsite matrix.
+- Allowed: read-only pinned/Badcat source and caller inspection, reusing 026K–026P and 026S–026AA evidence; temporary output under /tmp/task026ab-source-runtime-entry-binding/; tracked changes only audit and overview.
+- Excluded: all production/test/build/Gradle/dependency/DEX/R8/CI/device/network work; no App compile retry; no sidecar/binder implementation, Task 027 or TLS policy decision.
+- Gate: design-only; Phase A remains open, broad BookSource/BaseSource migration blocked, Task 027 blocked, Stage-0 not accepted, Stage-1 NO-GO, full compatibility NOT ESTABLISHED.
