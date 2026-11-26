@@ -2213,3 +2213,15 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Evidence:** RESULT.md SHA-256 5bc577eab1b47f230d308187f30c7fa52f73b6239c17a5628bb071c669894a58; declaration matrix a437d345f08a2ca42453510a9fa6e822bfae77ba67be75162bbca87ea07770e7; request/response matrix 99a7840d386c1c5038d72a4ca6fa5730517cd94ab105fd4f2a0cffeaa17da59b; caller matrix a8c6a8623a9fbe77befb11715bdc7ea96b137dfcd6efed4558e047bd03f2be88; port gap matrix e913658dd7f17cdbfbb32ceac42d3dd3d8d3bc4cd0ed5a21bf60ce539ba67448; test matrix d4bbb725eaedef65f08266dd0ed639dd7c19a4ea1a041db7de5efc90d6a71d21; input manifest 21a4575ed1eece2be87e77b7cb154fde4e2eb4213b2068f7d2e7ff7bce9b38da; checksums passed.
 - **Boundary:** no build/test/Gradle/dependency/CI/DEX/R8/APK/device/live HTTP/network action; no App compile retry; no production source/test/Gradle/schema/UI/Reader/workflow changes. Phase A remains open; broad migration and Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full compatibility NOT ESTABLISHED.
 - **Next:** continue remaining independent source-visible JS/Host Port closure; Runtime variant resolution/compile awaits a clean higher-capacity runner.
+
+### 4.27.121 Task 026BA preregistration — source-visible randomUUID caller closure (2026-11-26)
+
+- **Task ID:** R3-S0-T026-PHASE-A-JS-RANDOM-UUID-API-CALLER-CLOSURE-026BA; registered / not started. Start HEAD bdd0a6b33e07bf40c644171942a98443bdaa1b19; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Trigger/scope:** 026P's 77-name JsExtensions matrix has one remaining caller-scan-pending entry: randomUUID (one declaration, @JavascriptInterface, Runtime core). Other method groups have bounded audit records through 026AZ.
+- **Goal:** exact read-only declaration/annotation/return/implementation/caller/test comparison for randomUUID only, and update the 026P caller-scan disposition.
+- **Required:** pinned declaration and UUID semantics; source assets/help/completion/test caller scan; current Rhino bridge method and production roots; ABI/behavior test coverage; pure Runtime-core vs Host Port disposition.
+- **Reuse:** 026P, 026AU, 026AW and completed 026AX/AY/AZ. Do not repeat other 76 API investigations or generic Java UUID internals.
+- **Allowed:** audit/overview docs only; source/assets/tests/build declarations read-only; temporary evidence /tmp/task026ba-random-uuid/.
+- **Excluded:** no Gradle/dependency/variant resolution, download/cache mutation, build/compiler/test/CI/DEX/R8/APK/device/network, App compile retry, production/source/test/Gradle/shrinker/schema/UI/Reader/workflow changes, new Host Port, BookSource/BaseSource migration, Task 027 or Stage-1.
+- **Procedure:** after registration commit, reread both required lists completely from this HEAD before substantive source/caller inspection.
+- **Disposition:** Phase A remains open; broad BookSource/BaseSource migration blocked; Task 027 blocked; Stage-0 in_progress / not accepted; Stage-1 NO-GO; full Legado compatibility NOT ESTABLISHED.
