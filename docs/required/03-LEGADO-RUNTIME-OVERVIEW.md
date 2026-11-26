@@ -1562,3 +1562,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - The compiled `JsSourceEngine.buildScope` contract differs intentionally: `java` is the JsSourceEngine instance; `source` and `sourceApi` are the same BookSource instance. This is now backed by DEX, not only source inspection. Full dump/hash: `/tmp/task026x-upstream-release-artifact/BaseSourceDefaultImpls.smali.txt`, SHA-256 `4210cb0df081902ca9dc47207a8d217e4df35d37ad236bfc00223fedacf8bed4`; updated RESULT.md § Compiled JS scope identity proof.
 - Existing Badcat inventory has separate custom java/cookie/source/cache objects and no sourceApi binding, confirming a concrete identity/API mismatch that must be resolved by the future typed per-source Host Port integration.
 - This closes only the pinned-upstream Release DEX binding-identity reference slice. Badcat integration, sidecar lifecycle, Release marker retention and Android lifecycle remain open; no build/test/CI/device or production changes.
+
+
+### 4.27.66 Task 026Z preregistration — SharedJsScope / execution-state Host Port caller closure
+
+- Task ID: `R3-S0-T026-PHASE-A-SHARED-JS-SCOPE-EXECUTION-STATE-PORT-CLOSURE-026Z`; registered / not started. Start HEAD `2578baba73e3386a204a117148bdd4ce92f68681`; upstream pin `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- Goal: reconcile exact upstream SharedJsScope/BaseSource.evalJS/JsSourceEngine scope ownership, cache/hash/lock/invalidation and callers with Badcat's current RhinoSourceScriptRuntime. Determine whether SharedJsScope should remain Runtime-owned and whether a separate SharedJsScopePort is necessary; define only minimal typed execution-state/Host Port contracts supported by exact callers.
+- Allowed: read-only pinned source/current Badcat source/caller and existing upstream Release DEX inspection; output under `/tmp/task026z-shared-scope-port/`; tracked changes only this overview and audit.
+- Required: line-backed method/caller/owner matrix; same-source serialization/cross-source concurrency; scope/hash/cache invalidation; process/per-source cleanup; typed host side effects; exact DEX corroboration; dynamic tests still missing.
+- Excluded: all production changes, build/compiler/test/dependency resolution/DEX/R8/CI/device/network and App compile retry; no Task 027.
+- Gate: design refinement only; Phase A remains open; no production sidecar/filter or broad migration.
