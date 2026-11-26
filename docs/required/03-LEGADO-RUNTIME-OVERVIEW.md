@@ -2029,3 +2029,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Validation boundary:** no tests/build/CI/Gradle/dependency resolution/DEX/R8/APK/device/network/WebView execution; no App compile retry; no production/source/test/Gradle/manifest/schema/UI/Reader/workflow changes. `git diff --check` passed.
 - **Disposition:** Task 026AS complete for static policy review only. WebView SSL/mixed-content policy remains not approved/not implemented. Phase A open; broad migration blocked; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
 - **Next:** obtain explicit user approval before registering production WebView security/profile changes. Runtime variant resolution/compile still requires a clean higher-capacity runner; no App compile retry.
+
+### 4.27.106 User decision — WebView security policy Option A approved
+
+- The user explicitly selected **Option A** from Task 026AS: reproduce the pinned upstream permissive WebView behavior for the hidden BackstageWebView and visible browser/RSS/login/dialog surfaces.
+- Approved parity includes unconditional SSL-error `proceed()` behavior, pooled `MIXED_CONTENT_ALWAYS_ALLOW`, JavaScript/DOM storage enabled, `allowContentAccess=true`, and the existing shared WebViewPool reuse/release behavior.
+- `allowFileAccess` was not explicitly set by upstream WebViewPool; this decision does not newly enable it. It also does not authorize universal file-URL access, new JavaScript interfaces, third-party cookies, new cleartext exceptions, or any broader weakening.
+- This is an acknowledged compatibility-over-security tradeoff: invalid TLS identity can be accepted, HTTPS pages may load modifiable HTTP subresources, and pooled state may persist across trust contexts. It does not alter ordinary source HTTP TLS, the separately approved SharedJsScope client boundary, or current isolated Reader/CSS preview WebViews.
+- Decision recording is not implementation and does not close Phase A. Any production change needs a separately preregistered task and validation. Task 026AR's session-cookie clearing decision remains independent and unresolved.
