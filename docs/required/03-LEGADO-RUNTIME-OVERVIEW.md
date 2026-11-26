@@ -1638,3 +1638,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Scope:** document-only refresh of the path-exact Phase B addendum, reconciling Task 026AA §24.156 and Task 026AB §24.158. No production client, sidecar, marker filter or Host Port implementation.
 - **Exclusions:** no source/test/Gradle/build/dependency/DEX/R8/CI/device/network action; no App compile retry under §24.119; no Task 027.
 - **Next:** after this registration commit and required-list reread, record the selected TLS policy and explicit runtime-entry binding points in the addendum. Phase A remains open; broad BookSource/BaseSource migration blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
+
+### 4.27.73 Task 026AC result — isolated SharedJsScope TLS policy recorded (2026-11-26)
+
+- **Status:** complete as a documentation-only decision/addendum refresh. Registration HEAD 18ee9dbb70e16419a4a5dd038d8e21ae3ba26d13; registration commit aa71295779b2ce0a0645cf42a5428dd7ee47f580; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9.
+- **Decision:** option 1 selected for SharedJsScope shared-library downloads only: trust all TLS certificates and hostnames and allow HTTPS-to-HTTP redirects, matching pinned upstream. This deliberately accepts interception/hostname-spoofing and downgrade risk for that narrow path.
+- **Isolation:** future dedicated URL-only shared-library HTTP client; no source ID, source CookieJar/cookies, source headers or login/session context. Do not reuse or weaken SourceRequestClient, ordinary source HTTP, login, TTS, image or WebView networking. Ordinary source HTTP retains strict TLS and HTTPS downgrade refusal. No global TLS policy change.
+- **Addendum:** docs/audits/legado-runtime-3.0-phase-b-implementation-addendum.md §10.7 now records the TLS request contract, exact preserved upstream timeouts/retry/redirect/charset/cancellation behavior, security risk, required positive/isolation tests, and Task 026AB's explicit BaseSource runtime-entry bind points.
+- **Validation boundary:** docs/diff review only. No production HTTP client, Host Port, sidecar, marker filter or facade was implemented. No build/test/Gradle/dependency resolution/DEX/R8/CI/device/network action; no App compile retry under §24.119.
+- **Disposition:** Task 026AC complete for decision/addendum documentation. Phase A remains open; broad BookSource/BaseSource migration remains blocked; Task 027 blocked; Stage-0 in_progress / not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
+- **Next:** register a separate bounded Phase A task for an unmet non-build proof; do not start production HTTP/sidecar/filter implementation or retry App compilation under §24.119.

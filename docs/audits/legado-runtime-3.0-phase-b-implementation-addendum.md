@@ -425,3 +425,37 @@ Before BookSource/BaseSource migration, add focused Runtime/App contract tests f
 **Disposition:** Task 026L snapshot refresh complete as documentation-only. Phase A remains open. Phase B has begun only with Task 026M's three UI-model ownership changes and Runtime-only 6/6 test pass; no BookSource/BaseSource or source-engine migration. Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
 
 **Next:** after this addendum/audit/overview commit, reread the master and third-category required list at the committed HEAD, then register Task 026P for the read-only exact typed Host Port signature freeze, including the public cross-module owner contract, all implementers and reattachment lifecycle. Do not begin BookSource/BaseSource production migration until 026P and a separately registered owner proof task pass.
+
+## 10.7 Task 026AA/026AB reconciliation — SharedJsScope HTTP policy and source-entry binding
+
+**Decision recorded 2026-11-26 (Task 026AC):** the user selected the upstream-compatible option for the SharedJsScope shared-JS-library fetch path only. This is an explicit, narrowly scoped compatibility/security exception.
+
+### Shared-library HTTP adapter contract
+
+- Add a dedicated App-owned shared-library HTTP adapter/client for the Runtime-owned SharedJsScope manager. The exact public port signature remains to be frozen from the caller; do not assume that this paragraph implements or wires it.
+- Request identity is URL-only GET. Do not attach a BookSource/source ID, source CookieJar, source cookies, source headers, login/session state or source-specific request configuration. Preserve the pinned upstream behavior of consuming response body text without validating HTTP status, stripping UTF-8 BOM, honoring a declared Content-Type charset and falling back to the existing EncodingDetect behavior.
+- **TLS policy selected:** trust all server certificates and accept all hostnames for this dedicated client; permit redirects from HTTPS to HTTP, matching the pinned upstream shared-library client behavior. This intentionally accepts certificate/hostname interception and HTTPS-downgrade risk for remote shared JS library downloads.
+- Preserve the other already-audited upstream fetch characteristics unless a separately reviewed contract proves a necessary adaptation: per-call retry count zero; 15s connect/write and 60s read/call timeouts; normal and SSL redirects enabled; cancellation of the underlying OkHttp Call when the awaiting coroutine is cancelled. The existing SharedJsScope runBlocking boundary does not inherit the caller CoroutineContext; do not silently claim caller cancellation propagation that upstream does not provide.
+- The trust-all SSLSocketFactory/X509TrustManager and permissive HostnameVerifier must be confined to this client instance. Do not install them on a process/global OkHttp client, SourceRequestClient, BadcatSourceHttpGatewayFactory, WebView, login, TTS, image fetch or any ordinary source request path. Do not add a permissive fallback to a strict client.
+- **Ordinary source HTTP remains strict:** keep source-scoped cookie handling, URL/credential/header validation and the existing HTTPS-to-HTTP downgrade refusal in SourceRequestClient. No source request may select the shared-library client.
+- Shared-library cache remains a separate adapter/namespace (cacheDir/shareJs, MD5(URL), 50,000,000-byte decimal LRU budget, no TTL for these calls); it is not the sourceId-keyed SHA-256/AtomicFile cache. Diagnostics remain separate Debug/AppLog channels. No generic HTTP/cache/logger adapter may erase these distinctions.
+
+### Security and compatibility tests required before implementation acceptance
+
+- Positive compatibility cases: valid HTTPS; self-signed/expired certificate; hostname mismatch; HTTPS redirect to HTTP; UTF-8 BOM and declared charset; no-charset EncodingDetect; non-2xx response body; timeout and cancellation.
+- Isolation cases: assert the shared client is selected only for SharedJsScope library fetches; ordinary source requests still reject invalid certificates/hostname mismatch and HTTPS downgrade; source CookieJar/headers are not sent on shared-library fetch; no global OkHttp defaults or WebView TLS policy changed.
+- Tests must distinguish the deliberate trust-all compatibility behavior from a security regression in normal source HTTP. No such tests or implementation were performed by Task 026AC.
+
+### BaseSource attachment entrypoints reconciled from Task 026AB
+
+There is no universal existing binder. The future reusable typed binder/facade must be invoked at all outer runtime/host boundaries, including:
+1. Before source-bound search/explore/info/TOC/content/review/rule/URL/image/login/callback/task operations.
+2. Before any retained direct BaseSource host-effect call that is not routed through the facade (header/login/login-info/pay/click/callback/AutoTask/image/MCP callsites).
+3. Before SourceLoginJsExtensions and WebJsExtensions dispatch.
+4. Before constructing a source-bound AnalyzeUrl (its initializer synchronously calls source.getHeaderMap()).
+5. For BackstageWebView's own BookSource DAO re-query, attach the exact newly materialized original object before registering SourceNavigationBridge or WebJsExtensions.
+6. Reattach after copy, Gson/JSON/JS-config import, legacy conversion, replacement and backup restore only when the object crosses a Runtime/host-effect boundary; do not attach every DAO projection/read.
+
+Preserve each invocation's distinct java/source/sourceApi identity. Null-source AnalyzeRule/AnalyzeUrl and JsSourceConfig do not require a BaseSource sidecar. Source/library invalidation remains separate from active-script cancellation and product Cookie/Session/Variable/File cleanup.
+
+**Gate and limits:** this is a documentation-only policy/addendum update. It does not create a port, client, sidecar, marker filter or facade. Task 026AB closes the static entrypoint inventory only; actual attachment, Android Room/Gson/Parcelize/copy behavior, active-script lifecycle, Badcat App ABI/Release R8, exact minimal Runtime dependency closure and dynamic parity remain NOT ESTABLISHED. No App compile retry under audit §24.119. Phase A remains open; broad BookSource/BaseSource migration remains NO-GO; Task 027 remains blocked; Stage-0 remains in_progress/not accepted; Stage-1 remains **NO-GO**; full compatibility remains **NOT ESTABLISHED**.
