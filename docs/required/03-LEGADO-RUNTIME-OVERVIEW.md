@@ -2260,3 +2260,15 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Evidence:** RESULT.md SHA-256 28bae0a6c7474001ed035e992d486898e28f51a608b0d0f6ce03a234aecb3a17; class API matrix ac4630d5e3c7c9201af8286a7dd424b42366af15a76010b4eb4767685f7ee64d; import-shape matrix 1a95704542bf8a87021d30a5792c300814bc34a2d27a37073c273bbc0f350475; byte-array matrix e255e8d45f0ab7328e870c46b1240688fa054e9f779274632eeeeb71717ca1f8; test matrix 7e52b507c6dccc9c72a7ee1a98b10a4447a6a6dbcc18bd84b4d9224364d10e59; input manifest 074276a7633ea93c0de341aea7e41c27b1f68d53360a65278d6dc34333ff7ac5; checksums passed.
 - **Boundary:** no build/test/Gradle/dependency/CI/DEX/R8/APK/device/network action; no production changes. JavaImporter/Packages overall remains NO-GO; Phase A remains open; broad migration and Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full compatibility NOT ESTABLISHED.
 - **Next:** bounded Java IO/ZIP stream API closure, then source network Java classes through the strict host transport boundary.
+
+### 4.27.125 Task 026BC preregistration — JavaImporter memory stream and DEFLATE API closure (2026-11-26)
+
+- **Task ID:** R3-S0-T026-PHASE-A-JAVAIMPORTER-MEMORY-STREAM-DEFLATE-API-CLOSURE-026BC; registered / not started. Start HEAD feb3c326bc02c2f938bfcc2a983bf6004df3107d; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Trigger/scope:** §§24.24–24.28 contain real source callers for ByteArrayInputStream, ByteArrayOutputStream, InflaterInputStream, raw Inflater and InputStream/BufferedReader APIs. 026AL archive JS helpers do not replace direct Java stream APIs.
+- **Goal:** read-only exact API/caller/byte-array/lifecycle closure for the observed in-memory stream and DEFLATE classes only; preserve file-system denial and define decompression bounds.
+- **Required:** exact package imports, constructors, methods/overloads/return values, ClassShutter and WrapFactory behavior, current Badcat Packages shim, raw-vs-zlib distinction, close semantics, memory/CPU/cancellation bounds and differential test matrix.
+- **Reuse:** §§24.24–24.28, 026AL, 026BB and 026W. Do not repeat general JavaImporter, JCE, archive helper or broad corpus audits.
+- **Allowed:** audit/overview docs only; pinned source/tests and recorded corpus snapshots read-only; temporary evidence /tmp/task026bc-java-streams/.
+- **Excluded:** no Gradle/dependency/variant resolution, download/cache mutation, build/compiler/test/CI/DEX/R8/APK/device/network, App compile retry, production/source/test/Gradle/shrinker/schema/UI/Reader/workflow changes, file-system APIs, URL/URLConnection/OkHttp/Jsoup Connection, ZipInputStream/GZIP or arbitrary reflection, BookSource/BaseSource migration, Task 027 or Stage-1.
+- **Procedure:** after registration commit, reread both required lists completely from this HEAD before substantive source/caller inspection.
+- **Disposition:** JavaImporter/Packages parity remains NO-GO; Phase A remains open; broad migration and Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full compatibility NOT ESTABLISHED.
