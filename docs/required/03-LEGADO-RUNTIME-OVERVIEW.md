@@ -1449,3 +1449,14 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - No tracked source/test/build/Gradle/configuration/schema/UI/workflow changes; no build/test/dependency resolution/DEX/R8/APK/CI/device/network execution. No production implementation or Task 027.
 - **Disposition:** Task 026U complete as read-only design evidence. Phase A remains open; broad BookSource/BaseSource Phase B migration blocked; Task 027 blocked; Stage-0 in_progress/not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
 - **Next:** continue Phase A compiled ABI/Release R8, exact dependency-variant and dynamic lifecycle gates. No production filter/sidecar implementation until those gates and a path-exact implementation addendum are reviewed.
+
+### 4.27.57 Task 026V preregistration — Rhino Java-wrapper descriptor/enumeration probe (2026-11-26)
+
+- Task ID: R3-S0-T026-PHASE-A-RHINO-JAVA-WRAPPER-DESCRIPTOR-ENUMERATION-PROBE-026V; registered / not started. Start HEAD 97d0b963d72ede60d6596da8d15c890300fc4b2b; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Goal: dynamically inspect pinned HtmlUnit Rhino Java wrapper behavior for property descriptors, own-property checks and enumeration after marker filtering, beyond the get/has/Object.keys cases already recorded in 026T.
+- Allowed: scratch-only runner/source under /tmp/task026v-rhino-descriptor-probe/; reuse existing compiled pinned Rhino Debug classes, HtmlUnit CoreJS and 026T scratch wrapper/classes. Repository changes limited to this audit and this overview.
+- Cases: NativeBaseSource special wrapper and generic CatchableNativeJavaObject; marked Host Services methods, ordinary getKey/getTag, setKey/setTag, setVariable, variable and unrelated tag. Probe get/has/getIds, Object.getOwnPropertyDescriptor, Object.getOwnPropertyNames, Reflect.ownKeys, Object.keys, for..in and hasOwnProperty.
+- Acceptance: exact outputs/errors, source/JAR hashes, whether JavaMembers descriptors are slot-backed, and whether own-property/enumeration APIs share getIds/has/get paths; distinguish Rhino engine facts from stand-in model limitations.
+- Exclusions: no production source/test/build/Gradle/dependency/DEX/R8/APK/CI/device/network actions; no Room/KSP/Parcelize; no App compile retry; no SourceNavigationBridge/WebView claim; no Task 027.
+- Gate: scratch evidence only; Phase A remains open and broad BookSource/BaseSource migration remains blocked pending compiled App ABI/R8, exact dependency and dynamic lifecycle gates.
+- Next: after registration commit and rereading both required lists, execute only this scratch descriptor/enumeration probe.

@@ -5762,3 +5762,17 @@ The registered Login UI/WebView bridge scope includes subclasses of a shared App
 - **No execution claim:** no tracked source/test/build/Gradle/configuration/schema/UI/workflow changes; no build/test/dependency resolution/DEX/R8/APK/CI/device/network execution. Current Badcat tree has no BaseSource/NativeBaseSource/RhinoHostOnly/attachHostServices/requireHostServices production declaration.
 - **Disposition:** Task 026U complete as bounded read-only design evidence. Phase A remains open; broad BookSource/BaseSource Phase B migration remains blocked by compiled ABI/R8, exact variant and dynamic lifecycle evidence; Task 027 blocked; Stage-0 in_progress/not accepted; Stage-1 **NO-GO**; full Legado compatibility **NOT ESTABLISHED**.
 - **Next:** continue the independent Phase A compiled ABI/Release R8, exact dependency-variant and dynamic lifecycle gates. No production filter/sidecar implementation or Task 027 until those gates and a path-exact implementation addendum are reviewed.
+
+## 24.144 Task 026V preregistration — Rhino Java-wrapper descriptor/enumeration probe
+
+- Task ID: R3-S0-T026-PHASE-A-RHINO-JAVA-WRAPPER-DESCRIPTOR-ENUMERATION-PROBE-026V.
+- Status: registered / not started; scratch-only dynamic Rhino probe.
+- Start HEAD: 97d0b963d72ede60d6596da8d15c890300fc4b2b on integration/legado-upstream-runtime.
+- Pinned upstream: 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Goal: inspect pinned HtmlUnit Rhino Java-wrapper behavior for property descriptors, own-property checks and enumeration after marker filtering, beyond the get/has/Object.keys cases already recorded in 026T.
+- Allowed repository files: this audit and docs/required/03-LEGADO-RUNTIME-OVERVIEW.md only. Scratch under /tmp/task026v-rhino-descriptor-probe/. Reuse existing compiled pinned Rhino Debug classes, HtmlUnit CoreJS JAR and 026T scratch classes; no download/cache mutation.
+- Cases: NativeBaseSource special wrapper and generic CatchableNativeJavaObject; marked Host Services methods, ordinary getKey/getTag, setKey/setTag, setVariable, variable and unrelated tag. Probe get/has/getIds, Object.getOwnPropertyDescriptor, Object.getOwnPropertyNames, Reflect.ownKeys, Object.keys, for..in and hasOwnProperty.
+- Acceptance: exact outputs/errors and hashes; whether JavaMembers descriptors are slot-backed; whether own-property and enumeration APIs share getIds/has/get paths; distinguish Rhino engine facts from model stand-ins.
+- Exclusions: no production source/test/build/Gradle/dependency/DEX/R8/APK/CI/device/network; no Room/KSP/Parcelize; no App compile retry under 24.119; no SourceNavigationBridge/WebView claim; no Task 027.
+- Gate: scratch evidence only; Phase A remains open; broad BookSource/BaseSource migration remains blocked; Task 027 blocked; Stage-0 in_progress/not accepted; Stage-1 NO-GO; full Legado compatibility NOT ESTABLISHED.
+- Next: after registration commit and rereading both required lists, execute only this scratch descriptor/enumeration probe.
