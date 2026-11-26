@@ -2340,3 +2340,14 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Boundary:** no build/test/Gradle/dependency/CI/DEX/R8/APK/device/network/source execution; no App compile retry; no production/source/test/Gradle/schema/UI/Reader/workflow changes. This is not compatibility proof.
 - **Disposition:** Phase A remains open; JavaImporter/Packages parity NO-GO; broad BookSource/BaseSource migration blocked; Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full Legado compatibility NOT ESTABLISHED.
 - **Next:** separately register any path-exact implementation design only after remaining Phase A gates are reviewed. Do not expose raw network clients or weaken strict source TLS.
+
+### 4.27.131 Task 026BF preregistration — remaining Java utility and Hutool core-util caller closure (2026-11-27)
+
+- **Task ID:** R3-S0-T026-PHASE-A-JAVAIMPORTER-REMAINING-UTILITY-API-CLOSURE-026BF; registered / not started. Start HEAD c6fe7d316a015a7952d49f6a58b431fc8da73d3a; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Scope:** read-only exact source caller/API closure for the remaining corpus-observed StringBuilder/Integer, System.currentTimeMillis, Collections.reverse, Thread.sleep and Hutool core.util ArrayUtil/RandomUtil methods.
+- **Required:** exact immutable source/blob/line evidence; constructors/methods/overloads/returns; ClassShutter vs classpath/dependency distinction; current Packages shim gap; pure Runtime vs bounded Host scheduling vs Hutool dependency ownership; mutation/blocking/cancellation/resource semantics; focused differential fixtures.
+- **Reuse:** §§24.24–24.28; 026AF Hutool dependency/caller audit; 026BB ClassShutter and JavaImporter evidence; 026BE consolidated contract. Do not repeat corpus scans, javap families already closed, JCE, stream, network or general Hutool crypto analysis. Keep cn.hutool.core.io denied.
+- **Allowed:** audit and overview docs only; source/corpus reports/dependency evidence read-only; temporary evidence /tmp/task026bf-java-utility-closure/.
+- **Excluded:** no Gradle/dependency/variant resolution, download/cache mutation, build/compiler/test/CI/DEX/R8/APK/device/network/source execution; no App compile retry; no production/source/test/Gradle/shrinker/schema/UI/Reader/workflow changes; no generic Java/Thread/Hutool package exposure; no implementation, broad migration, Task 027 or Stage-1.
+- **Procedure:** after registration commit, reread both required lists completely from that HEAD before substantive inspection.
+- **Disposition:** JavaImporter/Packages parity remains NO-GO; Phase A open; broad BookSource/BaseSource migration and Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full Legado compatibility NOT ESTABLISHED.
