@@ -1531,3 +1531,14 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Gate delta:** pinned-upstream compiled ABI/Release R8 reference slice is now evidenced. Current Badcat integrated App ABI, Badcat Release R8/host-marker retention, sidecar serialization/reattachment and real Android lifecycle tests remain open. This artifact is not a Badcat APK and cannot close those gates.
 - No local Gradle/compiler/build/test/R8/CI/device execution or production changes occurred. Phase A remains open; broad BookSource/BaseSource migration blocked; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**. Phase B remains limited to the already completed Task 026M model slice.
 - **Next:** use the upstream Release DEX as the pinned ABI baseline while continuing low-memory static/scratch proof for Badcat's sidecar/filter/lifecycle contracts. Do not retry App compilation under §24.119.
+
+
+### 4.27.63 Task 026Y preregistration — existing Badcat Debug DEX integration-gap audit
+
+- Task ID: `R3-S0-T026-PHASE-A-BADCAT-DEBUG-DEX-INTEGRATION-GAP-026Y`; registered / not started. Start HEAD `bb2c969db641408a17371ca9dd8aa39f1933c90f`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- Goal: inspect existing Badcat CI Debug APK/DEX and host JVM ABI artifacts from run `45600808333` (head `288d14f178bc807f7729711a77dad0611f487b07`) and compare source changes since that snapshot to current HEAD. Determine whether authentic upstream BaseSource/BookSource ABI is already integrated or the app still exposes only the custom/shadow host facade.
+- Existing artifact IDs: Debug APK `15015902961`; DEX definitions `15016925348`; host JVM ABI `15016830848`; JS ABI inventory `15015078332`; Rhino surface `15015413030`.
+- Allowed: existing artifact retrieval, hash verification and read-only `apkanalyzer` inspection; source diff/FQCN inspection; temporary files under `/tmp/task026y-badcat-debug-dex/`. No new build/CI/test/device action.
+- Acceptance: exact historical run/artifact provenance, APK/DEX identities, class presence/absence, host facade ABI and current-source delta; explicitly mark the artifact as historical Debug evidence, not current HEAD or Release R8 proof.
+- Excluded: Gradle/compiler/build/test/dependency resolution/CI re-run/device and all production changes; no App compile retry; no Task 027.
+- Gate: this task can confirm the integration gap only; current Badcat App ABI/R8 and Android lifecycle remain open.
