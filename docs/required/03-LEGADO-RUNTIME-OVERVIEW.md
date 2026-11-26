@@ -1629,3 +1629,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Future shape: one BaseSourceRuntimeFacade for all source-bound operations, explicit binder before retained direct BaseSource calls, before SourceLogin/WebJsExtensions dispatch, before source-bound AnalyzeUrl construction, and after BackstageWebView's own DAO re-query. Do not bind every DAO read or only inside RhinoScriptEngine/SourceHelp.getSource.
 - No build/compiler/test/dependency resolution/DEX/R8/CI/device/network run and no production changes. Phase A remains open; broad BookSource/BaseSource migration blocked; Task 027 blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
 - **Next:** update the implementation addendum only after resolving the isolated shared-library TLS policy; no sidecar implementation or App compile retry under §24.119.
+
+### 4.27.72 Task 026AC preregistration — isolated SharedJsScope TLS policy and addendum refresh (2026-11-26)
+
+- **Task ID:** `R3-S0-T026-PHASE-A-SHARED-LIBRARY-TLS-POLICY-AND-ADENDUM-REFRESH-026AC`; registered / documentation-only at start HEAD `18ee9dbb70e16419a4a5dd038d8e21ae3ba26d13`; pinned upstream `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Decision:** the user selected option 1 for SharedJsScope shared-library downloads only: trust all TLS certificates and hostnames and allow HTTPS-to-HTTP redirects, matching pinned upstream. This deliberately accepts interception/hostname-spoofing and downgrade risk for this narrow request class.
+- **Required isolation:** implement later as a dedicated URL-only shared-library HTTP client with no source cookies/headers/source identity. Do not reuse or weaken SourceRequestClient, ordinary source HTTP, login, TTS, image or other network clients; no global TLS policy change.
+- **Scope:** document-only refresh of the path-exact Phase B addendum, reconciling Task 026AA §24.156 and Task 026AB §24.158. No production client, sidecar, marker filter or Host Port implementation.
+- **Exclusions:** no source/test/Gradle/build/dependency/DEX/R8/CI/device/network action; no App compile retry under §24.119; no Task 027.
+- **Next:** after this registration commit and required-list reread, record the selected TLS policy and explicit runtime-entry binding points in the addendum. Phase A remains open; broad BookSource/BaseSource migration blocked; Stage-0 not accepted; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
