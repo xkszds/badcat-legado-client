@@ -392,4 +392,46 @@ class RuntimeHostPortContractTest {
         assertEquals("UTF-8", request.effectiveEncoding)
     }
 
+
+    @Test
+    fun hiddenWebViewRejectsInvalidTimeoutDelayAndHeaderNames() {
+        val context = SourceExecutionContext(
+            source = SourceIdentity("https://source.example", "Book source", 0),
+            caller = SourceCallerKind.SOURCE_SCRIPT,
+            operationId = "invalid-bounds",
+            navigationPolicy = SourceNavigationPolicy.ALLOW,
+        )
+
+        assertThrows(IllegalArgumentException::class.java) {
+            HiddenWebViewRequest(
+                context = context,
+                operation = HiddenWebViewOperation.EVALUATE_PAGE,
+                url = "https://source.example",
+                html = null,
+                javascript = null,
+                timeoutMillis = 0,
+            )
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            HiddenWebViewRequest(
+                context = context,
+                operation = HiddenWebViewOperation.EVALUATE_PAGE,
+                url = "https://source.example",
+                html = null,
+                javascript = null,
+                delayMillis = -1,
+            )
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            HiddenWebViewRequest(
+                context = context,
+                operation = HiddenWebViewOperation.EVALUATE_PAGE,
+                url = "https://source.example",
+                html = null,
+                javascript = null,
+                headers = mapOf(" " to "bad"),
+            )
+        }
+    }
+
 }
