@@ -3211,3 +3211,9 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Required:** per-method dependency/caller table, file/network/cookie/archive/crypto/UI/config/device services, exact source inclusion and missing Host Ports.
 - **Forbidden:** source/test/build/Gradle/workflow/dependency/UI/schema/database changes; build/test/CI/GitHub/network/NDK/device; server push; Phase B/Task 027.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.210.1 Task 026CR scope expansion — include JsEncodeUtils parent interface (2026-11-28)
+
+- Task 026CR initially targeted 48 JsExtensions methods. JsExtensions extends JsEncodeUtils, which adds 20 more @JavascriptInterface declarations. Both are inherited by the java and source objects.
+- Updated scope: 68 inherited methods (48 JsExtensions +20 JsEncodeUtils), plus direct bridge methods; corrected object counts java 90, source 77, cache 9 =176; 189 expected JVM descriptors before annotation filtering.
+- Add MD5/AES/DES/3DES/digest/HMAC and their cryptographic dependency closure. Read-only scope remains unchanged; no code or CI.

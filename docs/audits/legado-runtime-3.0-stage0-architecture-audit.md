@@ -7842,3 +7842,10 @@ The registered Login UI/WebView bridge scope includes subclasses of a shared App
 - **Acceptance:** all 48 annotated methods traced (including overload pairs), dependencies not inferred from names, all missing sources/platform owners identified, and explicit effect on Stage-0 source/dependency/license closure. No runtime parity claim from static inspection.
 - **Exclusions:** no production source, test, Gradle, dependency, workflow, manifest, license/notice, packaging, schema/database/UI changes; no Gradle/build/test/CI/GitHub/network/NDK/device/live-source; no server push/ref update; no Phase B or Task 027. Standing remote-CI authorization remains active for a later exact-HEAD run after safe synchronization.
 - **Disposition at registration:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+### 24.263.1 Task 026CR scope expansion — include JsEncodeUtils inherited crypto bridge (2026-11-28)
+
+- **Reason:** initial Task 026CR registration said 48 annotated JsExtensions methods. Inspection proved JsExtensions extends JsEncodeUtils, which declares another 20 @JavascriptInterface methods; both are inherited by RssJsExtensions/WebJsExtensions and BaseSource. These methods are part of the same java/source object graph and cannot be excluded.
+- **Updated scope:** trace 68 inherited annotated declarations (48 JsExtensions +20 JsEncodeUtils), duplicated across java and source objects, plus their 40 direct bridge declarations. Correct object-level counts are now java 90, source 77, cache 9 = 176 declarations. Include MD5, AES/DES/3DES, digest and HMAC methods and their crypto dependency/license closure.
+- **Acceptance update:** 68 inherited method signatures and their callers/dependencies must be included; expected descriptors become 189 after the existing 13 @JvmOverloads additions. SourceNavigationBridge's five conditional overrides remain alternate implementations of existing signatures.
+- **No file-boundary change:** read-only audit/overview and /tmp report only. No code/build/test/CI/GitHub/network/NDK/device changes.
