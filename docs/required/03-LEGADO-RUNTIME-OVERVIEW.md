@@ -125,6 +125,7 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - 后续历史册：#0400–#0599、#0600–#0799、#0800–#0999、#1000–#1199、#1200–#1399、#1400–#1599、#1600–#1799、#1800–#1999、#2000–#2199、#2200–#2399、#2400–#2599、#2600–#2799、#2800–#2999、#3000–#3199，均待按第三类边界核查后建立。
 - 第 17 册：`docs/required/CI-3200-3399-AUDIT.md`（#3200–#3399；198/200 实际 run 已逐项登记，165 success / 33 failure；#3398–#3399 无真实 run）。
 - 第 18 册：`docs/required/CI-3400-3599-AUDIT.md`（#3400–#3599；已创建，当前 19 次实际 run，16 success / 3 failure / 0 pending）。
+- 第 19 册：`docs/required/CI-3600-3799-AUDIT.md`（#3600–#3799；已建立，当前 81 次实际 run，69 success / 12 failure / 0 pending；#3600–#3680 连续无缺号，#3681–#3799 当前未发现实际 run；整册保持开放，后续出现新 run 再追加）。
 - 每册只收第三类相关 CI；混合类别要标注交叉边界，纯其他类别 CI 不得计入第三类。历史初筛/元数据登记不等于逐 CI 详细审计完成。
 - 原始分段审计文件暂时保留为证据来源：`CI-3200-3299-AUDIT.md`、`CI-3300-3349-AUDIT.md`。新 200 册已吸收现有逐 CI 详细记录；旧账本保留作来源副本，不删除。
 - 技术实施历史与详细架构审计仍保留在本文件后续的技术历史文档：`03-LEGADO-RUNTIME.md`（旧版长档案，作为历史证据；日常入口以本总进度文件为准）。CI 功能流水以 200 册为准。
@@ -172,7 +173,7 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - #3350–#3357：8/8 已逐项审计并写入 `CI-3350-3357-DETAIL-AUDIT.md`；8 workflow/Job success、每个 Job 53/53 returned steps success；均为 docs-only/bookkeeping CI，真实书源部分仅外部 Python smoke。
 - #3358–#3397：40/40 已逐项审计并写入 `CI-3358-3397-DETAIL-AUDIT.md`；38 success、2 failure。#3361 为 Kotlin Parcelize 插件解析失败；#3389 为 Robolectric 依赖 HTTP 429。#3398–#3399 未发现实际 run，不造记录。
 
-**当前可确认统计：** #3200–#3399 第 17 册记录 198/200 个实际 CI（#3200–#3397），165 success / 33 failure / 0 pending；#3398–#3399 无真实 run。#3400–#3599 第 18 册记录 19 次实际 run（#3400–#3422 的 14 次 + #3463–#3467 的 5 次），16 success / 3 failure / 0 pending。两册 workflow 统计仅表示 CI 终态，不等于产品功能通过数。
+**当前可确认统计：** #3200–#3399 第 17 册记录 198/200 个实际 CI（#3200–#3397），165 success / 33 failure / 0 pending；#3398–#3399 无真实 run。#3400–#3599 第 18 册记录 19 次实际 run（#3400–#3422 的 14 次 + #3463–#3467 的 5 次），16 success / 3 failure / 0 pending。#3600–#3799 第 19 册已登记 #3600–#3680 共 81 次实际 run，69 success / 12 failure / 0 pending；#3681–#3799 当前无实际 run。三册 workflow 统计仅表示 CI 终态，不等于产品功能通过数。
 
 ## 7. 关联文件与读取顺序
 
@@ -187,6 +188,7 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 1. 历史第 1 册 #0001–#0199 已完成 151/151 候选审计；下一步建立/核验历史第 2 册 #0200–#0399，先检索真实 run 和第三类边界，不预造编号。
 2. 第 17 册 #3200–#3399 已登记 198/200 实际 run：165 success / 33 failure；#3398–#3399 无真实 run。
 3. 第 18 册 #3400–#3599 已建立，当前 19 次实际 run：16 success / 3 failure；完整状态见 CI-3400-3599-AUDIT.md。
+4. 第 19 册 #3600–#3799 已建立，当前 #3600–#3680 共 81 次实际 run：69 success / 12 failure；完整索引见 CI-3600-3799-AUDIT.md。该册保持开放，继续只登记后续真实 run。
 4. #3463–#3467 已完成终态核验：5/5 success、每个 Job 53/53 steps success；详细证据见 CI-3463-3467-DETAIL-AUDIT.md。
 5. 每次新发现真实第三类 CI，按对应 200 编号册登记 exact SHA、Run/Job/Step、日志/报告/产物及实际功能覆盖；无真实 run 的编号不造记录。
 6. CI 审计与 Runtime 技术任务分开登记；Stage-0 仍 in_progress/not accepted，Stage-1 仍 NO-GO。
@@ -2654,3 +2656,16 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Amended goal:** Task 026BQ must audit all 81 actual integration-branch runs #3600–#3680 exactly once, not just #3680. Build the 200-number index with every Run ID, Job ID, exact SHA, created time, event, status/conclusion and detail reference; inspect each run's job/steps, and inspect failure logs for all 12 failed runs. Reuse already verified run #3680 evidence from §4.27.153; do not repeat its CI/artifact downloads.
 - **Allowed files / exclusions:** unchanged from §4.27.154. Only the new `CI-3600-3799-AUDIT.md` and this overview may change; no CI rerun/dispatch, no build/test, no integration push, no source/workflow edits.
 - **Acceptance:** all 81 rows have unique Run IDs and exact SHA; job/step evidence is reconciled for all runs; all 12 failure causes are supported by logs and their downstream skipped/unexecuted scope is explicit; totals are 81 actual / 69 success / 12 failure / 0 pending; no missing numbers are invented.
+
+
+### 4.27.156 Task 026BQ result — 200-number CI volume #3600–#3799 established (2026-11-28)
+
+- **Status:** completed for the currently discoverable run set; the 200-number volume remains open for future runs. Registration HEAD `4885c8f7ec6f27cc9413f79b986340100f48d0cb`; branch `integration/legado-upstream-runtime`; pinned Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Deliverable:** `docs/required/CI-3600-3799-AUDIT.md`, SHA-256 `88671bbd972b447a23ff7188c04e0ffc3df3d7b6fcdaf4b0083e8589e6ad4b35` before this final overview writeback.
+- **Discovery:** the branch-filtered GitHub Actions listing returned 81 actual runs #3600–#3680, contiguous with no missing run numbers. 69 run conclusions are `success`; 12 are `failure`; 0 queued/in-progress/cancelled. No #3681–#3799 run was returned at audit time.
+- **Identity coverage:** all 81 rows include Run ID, Job ID, full exact workflow HEAD SHA, UTC creation timestamp and run conclusion. Each run's job endpoint was queried; all have one `assemble-debug` job and 53 returned steps. The ledger records the successful-run 53/53 outcome and each failed run's exact failed/skipped step set.
+- **Failure-step coverage:** #3613/#3653/#3674 have 22 success, 9 failure and 22 skipped steps; #3617/#3624/#3628/#3633/#3634/#3635/#3657/#3662/#3671 have 48 success, one failure and four skipped steps. Failed-run logs were retrieved and inspected.
+- **Run #3680:** reuses the exact CI/APK/DEX/JUnit/API28/API35/WebView/source-smoke evidence already recorded in §4.27.153; no CI rerun, dispatch, local compile or artifact redownload was performed. The #3680 artifact IDs and APK SHA-256 are copied into the new ledger for lookup.
+- **Boundaries:** ledger creation is documentation-only. No product source, tests, workflow, build files, APK, CI, or integration branch push were changed/performed. Successful Debug CI is not Release/device/product acceptance; external Python source smokes are not Android Runtime E2E.
+- **Disposition:** Stage-0 remains `in_progress / not accepted`; Stage-1 **NO-GO**; Task 027 **BLOCKED**; full Legado compatibility **NOT ESTABLISHED**.
+- **Next:** when a new real integration-branch workflow appears in #3681–#3799, add its exact Run/Job/Step/log/artifact evidence to this volume without rerunning existing entries. Do not close the 200-number volume until the range is checked again.
