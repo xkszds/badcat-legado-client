@@ -3638,3 +3638,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Artifacts live on the server at /tmp/task026dk-basesource-js-callgraph/. Key hashes: public API 5393239cd9283e7e7a2bf5e2de4b3d827424c981984d57d4487a2143bec5c229; exact JsExtensions map 4aa76f0b3898000e3a05f9f4b3982be; crypto map 999a6687ff4a5216bec3bee6d2d32afb456eedea44999f705b6b1b1b02bf7f40; result 3247f03c255ccc9e5d695fad66e9939dccc22912a3bd26209cc27b4c1da66ebe; output hash manifest 25134a6c98f89eb1ae7ba92c94821f532dc1a50c04fb5bd721a3518ba0e8644a.
 - Static validation passed: 36 source hashes, five reused input hashes, all output hashes; 275 methods/87 annotations; 118 JsExtensions mapped/zero unmapped; 30 crypto methods; 78 properties; 139 caller candidates/50 files; 15 implementors; 11 binding surfaces; 25 App bridge methods.
 - Task 026DK accepted as static audit only. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED. See audit §24.293.
+
+### 4.27.250 Task 026DL preregistration — RuntimeHostPort/App adapter wiring (2026-11-28)
+
+- Start branch integration/legado-upstream-runtime, HEAD b94d27aa85a1d24408bab1861a2d17ad3be69c7f; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Audit actual wiring of RuntimeHostPort interfaces and existing App adapters: RhinoSourceScriptRuntime, RhinoSafeSourceJavaExtensions, DefaultProcessCookieBridge, BadcatWebViewPurificationAdapter, UpstreamLegadoCssRuleAdapter and FlexStyleLayoutAdapter.
+- Distinguish production callsites from test-only use, helper-only classes, declaration-only interfaces and default unsupported lambdas. Compare each actual implementation with 026DI/026DK's exact method/port inventory.
+- Outputs: interface/method/reference matrix; runtime construction/caller graph; adapter and lambda wiring; cookie lifecycle; 118 JsExtensions + 30 JsEncodeUtils operation-to-adapter matrix; explicit gaps for authentic BookSource identity, batch content, shared scope, login/state, HTTP, file/archive, UI/verification and cancellation.
+- Allowed tracked files: audit + overview only; temp evidence /tmp/task026dl-hostport-adapter-wiring/. No source/test/Gradle/dependency/workflow/manifest/license/schema/database/data/UI change; no build/test/CI/ref update/push/network/NDK/device.
+- **Disposition:** documentation-only Phase-A adapter-wiring audit registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED. See audit §24.294.
