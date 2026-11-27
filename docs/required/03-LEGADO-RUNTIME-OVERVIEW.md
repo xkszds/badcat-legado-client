@@ -2928,3 +2928,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Verification boundary:** tests were read but not run; no Gradle, DB, migration, CI, process-death or device execution. No production source/build/test/schema/database change.
 - **Disposition:** Task 026CC static inventory complete, data ownership/transaction/migration/rollback/restart gate **NOT MET**. Phase A OPEN; Stage-0 `in_progress / not accepted`; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. No Phase B or migration authorization implied.
 - **Next:** keep Phase A open; next reconcile the remaining independent dependency/NDK provenance and notice-closure blockers, then consolidate all Stage-0 gates. Do not start production migration or Task 027.
+
+### 4.27.182 Task 026CD preregistration — dependency closure and license/NOTICE reconciliation (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-DEPENDENCY-LICENSE-NOTICE-CLOSURE-026CD; registered / in progress. Start HEAD `9c4db2298bc06e4712601ab199a6bb1b80451733`; fixed Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** consolidate existing dependency-coordinate/variant reports, exact AAR/APK artifact hashes and native payload evidence into one dependency → provenance → license → packaged NOTICE matrix. Distinguish source candidate closure from resolved binary closure and actual shipped payload.
+- **De-duplication:** reuse existing dependency closure work §§24.162–24.168 and packaging audits 026BS/026BW; no repeated broad resolution or artifact download.
+- **Allowed:** read-only tracked source, Gradle reports, local artifacts and existing temporary reports; temporary reconciliation under `/tmp/task026cd-dependency-notice/`; documentation result only in this overview and Stage-0 audit.
+- **Required result:** exact coordinates/versions/variants, provenance/license mapping, complete packaged NOTICE inventory, unresolved transitive/native provenance, and clear PASS/NOT MET.
+- **Forbidden:** source/build/test/workflow/dependency/manifest/packaging/license-file changes; Gradle, dependency resolution, build, test, CI or GitHub; external NDK source/archive retrieval; database/device/Phase B/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
