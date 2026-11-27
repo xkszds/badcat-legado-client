@@ -3103,3 +3103,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Required:** complete constructor-site list, exact field/caller lines, request-to-runtime mapping, WebView lifecycle/cookie/cache/SSL/cancellation behavior, and precise gaps.
 - **Forbidden:** source/test/build/Gradle/workflow/dependency/UI/schema/database changes; build/test/CI/GitHub/network/NDK/device; server push; Phase B/Task 027.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.201 Task 026CM result — WebView request contract blocks WebJs rule parity (2026-11-28)
+
+- **Review HEAD:** f2df8ddf817ed09614295fb7eccd8ecb698ffddf; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a. Report /tmp/task026cm-hidden-webview-fields/RESULT.md, SHA-256 b10732a039c61b26a6ccd9a613483ed0de5a111e5b0a1d61a0128f91eedc6271; raw scan SHA-256 2c0b646cf4a719836755658952b13e21c0a8fe3c8af18bdacd6a684a0384e934.
+- **Callsite closure:** seven production and four instrumentation constructor sites inventoried. AnalyzeRule.getWebJsResult has five actual rule callsites and uses result JSON plus isRule=true; BackstageWebView then attaches WebCacheManager/BaseSource/WebJsExtensions, initializes window.result and injects rule JS helpers. This is a source-runtime path, not only editor UI.
+- **Contract gaps:** current HiddenWebViewRequest cannot represent nullable URL, nullable/default JS, 60-second default timeout, initial result JSON or WebJs rule/bridge bootstrap. Current UTF-8 default covers all observed callsites; no production callsite overrides encode. AnalyzeUrl POST also requires HTTP-response-then-WebView semantics.
+- **Disposition:** request type is insufficient; no App adapter should be wired yet. Static-only audit; no build/test/CI. Host Port wiring NOT MET; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next:** register a bounded Host Port contract amendment plus bridge bootstrap design, preserving source identity, WebCacheManager, BaseSource/WebJsExtensions exposure, result seeding, nullable/default behavior and AnalyzeUrl POST semantics. Add differential tests before any production adapter.
