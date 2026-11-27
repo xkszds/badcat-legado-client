@@ -7849,3 +7849,39 @@ The registered Login UI/WebView bridge scope includes subclasses of a shared App
 - **Updated scope:** trace 68 inherited annotated declarations (48 JsExtensions +20 JsEncodeUtils), duplicated across java and source objects, plus their 40 direct bridge declarations. Correct object-level counts are now java 90, source 77, cache 9 = 176 declarations. Include MD5, AES/DES/3DES, digest and HMAC methods and their crypto dependency/license closure.
 - **Acceptance update:** 68 inherited method signatures and their callers/dependencies must be included; expected descriptors become 189 after the existing 13 @JvmOverloads additions. SourceNavigationBridge's five conditional overrides remain alternate implementations of existing signatures.
 - **No file-boundary change:** read-only audit/overview and /tmp report only. No code/build/test/CI/GitHub/network/NDK/device changes.
+
+### 24.259.3 Task 026CN second correction — JsEncodeUtils parent expands surface to 176
+
+- JsExtensions itself extends JsEncodeUtils, adding 20 @JavascriptInterface declarations (MD5, AES, DES, Triple-DES, digest and HMAC). Both sets are inherited by java and source objects. The 68 inherited methods are therefore 48 JsExtensions +20 JsEncodeUtils.
+- Correct object counts: java 90, source 77, cache 9 = **176 source-level object.method declarations**. The 13 expected @JvmOverloads additions make 189 expected public JVM descriptors before bytecode/annotation filtering.
+- This supersedes the prior 136/149 correction. Updated 026CN report: /tmp/task026cn-webjs-bridge-closure/RESULT.md, SHA-256 dae3608cf15cfb1778eeb87e961b165ed5a3a9e93ad0d6c70fcbbe82a22259c9.
+
+### 24.260.3 Task 026CO second correction — typed bridge interface counts 90/77/9
+
+- The typed Java interface must preserve 90 declarations (68 inherited +12 WebJs +10 Rss); source interface 77 (68 inherited +9 BaseSource); cache interface 9. Total 176 object.method declarations; expected descriptor count 189.
+- Updated 026CO architecture report: /tmp/task026co-webjs-bridge-architecture/RESULT.md, SHA-256 74e8574907d18949511c254d1a0b15a686b80226d76386bb129618eb3dd899e3.
+
+### 24.261.3 Task 026CP second follow-up correction — typed bridge binding scope 90/77/9
+
+- Typed bridge follow-up must cover java 90, source 77, cache 9 declarations, total 176; expected JVM descriptors 189. The 68 inherited methods are 48 JsExtensions +20 JsEncodeUtils.
+- Updated 026CP report: /tmp/task026cp-hidden-webview-request-contract/RESULT.md, SHA-256 d8a8d45f50d14171226f07234d97e2c337422b15be84fd62a285ab71204301f8.
+
+### 24.262.2 Task 026CQ second correction — 20 JsEncodeUtils signatures included
+
+- JsExtensions extends JsEncodeUtils; the parent contributes 20 additional annotated methods inherited by both java and source objects. Correct totals are java 90, source 77, cache 9 =176; 13 expected overloads yield 189 expected descriptors.
+- Exact 20 crypto signatures (MD5, AES, DES, Triple-DES, digest, HMAC), return types, deprecation and JVM erasure are now in the report. JsEncodeUtils has no @JvmOverloads. The inherited method count is 68, not 48.
+- Updated 026CQ report: /tmp/task026cq-webjs-descriptors/RESULT.md, SHA-256 c13b46f1d4633ba7b6a13b8e0df7f5c3baaf5db3875ab93e3a28dd10d2532925; full JsEncodeUtils source evidence SHA-256 322dae1d35d2130b950fc2d44d34911dab7f180ebd3d5a21b089697c6a6b4c7e.
+- Actual interface/default/delegation annotation visibility and WebView exposure remain unverified until class/DEX/runtime inspection.
+
+### 24.263.2 Task 026CR result — 68 inherited methods dependency closure traced (2026-11-28)
+
+- **Identity:** registration HEAD b5e0192be5491bd59f9e5e88072524a296427f0d; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a. Report /tmp/task026cr-js-extensions-dependencies/RESULT.md, SHA-256 25edc011850dd828dc83af4cf5095e5382249a0542455345c25d9ee0bd5065d9.
+- **Scope:** 68 inherited @JavascriptInterface declarations (48 JsExtensions +20 JsEncodeUtils), duplicated on java and source objects. Object counts remain java 90, source 77, cache 9 =176.
+- **JsExtensions dependencies:** batch content/save tokens; source navigation/video UI; script import, file cache, HTTP download, persistent/session/WebView cookies; Base64/hex; time/URI/HTML; Chinese conversion; WebView UA; safe file read/delete; ZIP/RAR/7z extraction/content; chapter normalization; Android ID; reader/theme configuration.
+- **JsEncodeUtils dependencies:** MD5, AES/DES/Triple-DES, digest and HMAC. Requires SymmetricCryptoAndroid, MD5Utils, EncoderUtils, Hutool crypto and Bouncy Castle. Badcat EncoderUtils differs from upstream and lacks ByteArray encode/decode overloads; CharsetDetector is byte-identical.
+- **Critical data semantics:** BatchContentContext is a chapter-index/token-fenced save path through BookHelp, not generic cache. CookieStore merges persistent DAO cookies, session cookies and Android WebView cookies, with domain normalization and 4096-character pruning. File access is constrained to a canonical external-cache parent boundary; getTxtInFolder deletes its folder after reading. ArchivePathUtils rejects absolute paths and traversal; ZIP text uses JDK ZipInputStream while RAR/7z uses libarchive JNI.
+- **Platform/data owners:** App must own source repository, BookHelp persistence, Cookie DAO/session/WebView cookies, file/cache/archive storage, HTTP, Android WebView UA/device identity, navigation/media UI and reader/theme config. Runtime owns source/crypto/format semantics. Do not import Legado Reader/video UI into Badcat.
+- **Dependencies:** App-level Hutool/BC/OkHttp/Jsoup/libarchive dependencies are not on :legado-runtime compile classpath. QuickTransfer coordinate differs from pinned upstream. libarchive AAR 1.1.6 lacks embedded LICENSE/COPYING/NOTICE (026CD); NDK r28b zlib source revision remains unproven (026BR). Archive methods make libarchive a required compatibility path.
+- **Evidence:** raw evidence SHA-256 43d2e3e47cf9591fc5c6eee7891847485520e705bdafe6bf6e3131b8e1ba97c9; JsEncodeUtils source SHA-256 322dae1d35d2130b950fc2d44d34911dab7f180ebd3d5a21b089697c6a6b4c7e; EncoderUtils upstream/Badcat SHA-256 7f0b671208ee55205f70a0b6c4b165237f473cc88d74f0c1c619d6f27260d61b / d2a1413c58254d2b725628820df88fa9663a92c79a8ca334a52595e3c6db7261; CharsetDetector SHA-256 98988942b54f8fc841e440e821b126b2cb4afc32808cc3d1a6872add4e7de226.
+- **Verification:** static source/dependency inspection only; no compile, dependency resolution, tests, CI, APK, NDK, device or runtime WebView execution.
+- **Disposition:** dependency closure complete as static audit. Missing typed Host Ports, source inclusion and license/native gates remain NOT MET. Phase A OPEN; Stage-0 in_progress / NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.

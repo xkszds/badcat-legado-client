@@ -3217,3 +3217,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Task 026CR initially targeted 48 JsExtensions methods. JsExtensions extends JsEncodeUtils, which adds 20 more @JavascriptInterface declarations. Both are inherited by the java and source objects.
 - Updated scope: 68 inherited methods (48 JsExtensions +20 JsEncodeUtils), plus direct bridge methods; corrected object counts java 90, source 77, cache 9 =176; 189 expected JVM descriptors before annotation filtering.
 - Add MD5/AES/DES/3DES/digest/HMAC and their cryptographic dependency closure. Read-only scope remains unchanged; no code or CI.
+
+### 4.27.211 Task 026CR result — inherited source/crypto bridge dependencies traced (2026-11-28)
+
+- **Task 026CR report:** /tmp/task026cr-js-extensions-dependencies/RESULT.md, SHA-256 25edc011850dd828dc83af4cf5095e5382249a0542455345c25d9ee0bd5065d9; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9.
+- **68 inherited methods:** 48 JsExtensions +20 JsEncodeUtils are inherited by both java and source objects. Correct bridge counts are java 90, source 77, cache 9 =176 source-level declarations; 189 expected descriptors after 13 @JvmOverloads additions.
+- **Dependencies:** batch content/save fencing; CookieStore persistent/session/WebView cookies; HTTP/download/file cache; safe filesystem and archive extraction; MD5/AES/DES/3DES/digest/HMAC; text conversion; WebView UA/device ID; navigation/media UI; reader/theme config.
+- **Important gaps:** BatchContentContext/BookHelp, CookieStore/CacheManager, ArchiveUtils/LibArchiveUtils/ArchivePathUtils/FileDoc, SourceHelp/VideoPlay, AppConfig/AppConst, ReadBookConfig/ThemeConfig and crypto helpers are absent from Badcat Runtime. CharsetDetector is exact; EncoderUtils differs and misses upstream byte-array overloads. App-level dependencies do not satisfy Runtime compile classpath. QuickTransfer coordinate mismatch; libarchive license and NDK zlib provenance remain open.
+- **Data/security:** batch save uses chapter index and ContentSaveToken; cookie stores must remain separate and merge correctly; file reads enforce canonical path bounds; folder text read deletes folder; archive extraction rejects path traversal.
+- **Verification:** static only, no dependency resolution/build/test/CI/APK/NDK/device. Standing remote-CI authorization active; exact server HEAD still not synchronized to workflow branch, no push/ref update.
+- **Disposition:** dependency map complete; Host Port implementation and Stage-0 gates remain NOT MET; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
