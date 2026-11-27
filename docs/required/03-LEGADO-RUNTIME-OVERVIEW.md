@@ -2582,3 +2582,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Allowed:** audit/overview documentation and temporary SPDX/report/checksum outputs only. All prior source, build, license and binary evidence is read-only.
 - **Excluded:** no network/download/NDK retrieval, Gradle/dependency resolution/build/test/CI/DEX/R8/APK/device/native rebuild, cache mutation, production or packaging/notice/license changes, legal opinion, complete-SBOM claim or App compile retry under §24.119.
 - **Next:** after registration commit, reread both required lists from this HEAD, then execute the bounded local SPDX reconciliation. Phase A remains open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+
+### 4.27.150 Task 026BO scope amendment — do not invent raw-source SPDX checksums
+
+- 026BN stores Git blob SHA-1 values and SHA-256 hashes of first-100-line header excerpts, not complete raw source files. A Git blob object ID is not a raw-file checksum; an excerpt hash is not a whole-file checksum. Do not place either in an SPDX File checksum field.
+- The file-level source/license deliverable is therefore a separate checksum-verified FILE-LICENSE-EVIDENCE.tsv sidecar with 123 C translation-unit rows and eight relevant-header rows. It must label Git blob object IDs and header-excerpt hashes accurately, include exact license classifications/exceptions and source commit/tree, and reconcile one-to-one with the 026BN matrices.
+- Add source-only SPDX package nodes with filesAnalyzed=false where full source bytes are unavailable; keep libarchive aggregate license NOASSERTION because of per-file exceptions. Use extracted LicenseRef text only where exact custom notice text is present. Do not fabricate SPDX File objects or raw-source checksums.
+- Keep the four AAR ELF payloads separate, with exact AAR member paths, sizes, SHA-256 and Build IDs, but NOASSERTION for native license/source relationship. Do not assert a binary-to-source relationship.
+- Validate SPDX package/relationship/custom-license structure and sidecar coverage; explicitly report the unavailable raw-source checksums. All other 026BO boundaries and exclusions remain unchanged.
