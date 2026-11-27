@@ -4,6 +4,16 @@ on:
   push:
     branches:
       - catalog-lifecycle/026DH
+    paths:
+      - '.github/workflows/catalog-lifecycle-test.yml'
+      - 'app/src/main/java/app/badcat/client/FileBookSourceCatalog.kt'
+      - 'app/src/test/java/app/badcat/client/FileBookSourceCatalogLifecycleTest.kt'
+      - 'app/build.gradle.kts'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle/**'
+      - 'gradle.properties'
+      - 'upstream/legado'
 
 permissions:
   contents: read

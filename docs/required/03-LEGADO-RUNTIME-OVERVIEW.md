@@ -3543,3 +3543,14 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Scope:** workflow + audit + overview only. Existing seven-test class and production sources remain read-only. No local test/build or production change.
 - **Next:** static validate, push correction only to `catalog-lifecycle/026DH`, inspect the new exact-SHA run and artifact. Old run is not evidence. Accept only seven tests, zero failures/errors/skips, correct filtered task, and complete evidence.
 - **Disposition:** 026DH in_progress; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED. See audit §24.285.
+
+
+### 4.27.241 Task 026DH result — focused hosted Robolectric test accepted (2026-11-28)
+
+- GitHub Actions run `46080745396`, job `140778887055`, exact Badcat SHA `5463965ddd6d4ec163a02265cfbbc6380b39d664`, fixed Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`: completed success. The earlier in-progress status snapshot was stale; terminal API confirms completion.
+- Exact command: `:app:testDebugUnitTest --tests app.badcat.client.FileBookSourceCatalogLifecycleTest`; Gradle BUILD SUCCESSFUL in 2m33s, 59 actionable tasks. Only this filtered App test task ran; no other test task, broad build, APK or instrumentation.
+- JUnit: 1 suite / 7 tests / 0 failures / 0 errors / 0 skipped. All seven case names and outcomes are recorded in audit §24.286.
+- Runner gate PASS: 16.76 GB total, 15.68 GB available, 4 vCPU; pinned Legado clean; HtmlUnit JAR hash exact; 12 Rhino source blob hashes exact; JDK 21.0.13.1 / Gradle 8.14.4 / Android SDK 36.
+- Artifact `15237092561`, 14,288 bytes, ZIP SHA-256 `514f9d310934183426572abaf6b2b09b6d19cedc62ca64d12f51ab96f09a09de`; independently downloaded, inspected, and all 15 internal SHA256SUMS entries verified. JUnit XML and HTML, Gradle log and identity/toolchain evidence included.
+- Task 026DH focused test gap is ACCEPTED for the exact SHA above. This is only focused AtomicFile/catalog lifecycle test evidence; it does not promote Stage-0 or prove complete Runtime/catalog compatibility. Workflow hardening commit `13b71eb2ca93785652738d1f0ad9be529d4cac4b` has a separate exact-SHA validation run `46081058522` whose status was still in progress at the last poll.
+- **Disposition:** Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete Legado compatibility NOT ESTABLISHED. See audit §24.286.
