@@ -3521,3 +3521,15 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Next bounded action:** separately register a focused hosted Robolectric test for `FileBookSourceCatalogLifecycleTest` (absent file, `.bak` recovery, malformed persisted catalog). Use a dedicated workflow that executes only this test; do not trigger broad `android-build.yml` for this one correction. Then reconcile source/Host Port extraction DAG and continue remaining Phase-A gates.
 - **Execution boundary:** docs/report only; `git diff --check` PASS; only the two preregistered docs files modified. No Gradle/build/test/CI/GitHub/network/NDK/database/device operation; no production source or data change.
 - **Disposition:** Task 026DG completed as a documentation-only evidence reconciliation. Phase A OPEN; Stage-0 `in_progress / NOT ACCEPTED`; Stage-1 NO-GO; Task 027 BLOCKED; full pinned Legado compatibility NOT ESTABLISHED; no backend/schema/migration/dual-write/Room promotion/BatchContentPort/Stage-1.
+
+
+### 4.27.239 Task 026DH registration — focused hosted BookSource catalog lifecycle test (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-BOOKSOURCE-CATALOG-LIFECYCLE-ROBOLECTRIC-026DH; registered / in progress at HEAD `d178c1a7804c5baf4ed9091ae5b25a920c00e0cb`; pinned Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Reason:** 026CF AtomicFile recovery source correction and test class exist, but focused Robolectric execution remains NOT RUN after 026DG matrix review.
+- **Existing target:** `app.badcat.client.FileBookSourceCatalogLifecycleTest`, seven existing tests; includes absent base+backup, interrupted AtomicFile write with `.bak` recovery, malformed persisted JSON, and four catalog lifecycle/invalidation cases. No test source edit is authorized.
+- **Goal/command:** exact hosted run of `:app:testDebugUnitTest --tests app.badcat.client.FileBookSourceCatalogLifecycleTest`; verify all seven tests, zero failures/errors/skips, exact source SHA and pinned submodule; archive JUnit/log/toolchain/capacity/hash evidence.
+- **Allowed:** new `.github/workflows/catalog-lifecycle-test.yml`, audit and this overview only; temporary CI evidence under `build/catalog-lifecycle-proof/`. Dedicated branch `catalog-lifecycle/026DH` only, avoiding integration-branch broad Android workflow trigger.
+- **Workflow:** capacity preflight >=8 GiB effective+available RAM and >=4 vCPU; JDK 21 / Android SDK 36 / Gradle 8.14.4; restore and hash-check pinned HtmlUnit CoreJS artifact and 12 Rhino extension sources; run only the filtered test class; upload exact-SHA JUnit XML/HTML, logs, identity and toolchain evidence.
+- **Forbidden:** test/production source, Gradle dependency declarations, schema/data/UI, APK/Release/R8, broad Android build, device/live-source, Stage-1 and Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full pinned Legado compatibility NOT ESTABLISHED. See audit §24.284 for complete task contract.
