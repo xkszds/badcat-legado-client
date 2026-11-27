@@ -3480,3 +3480,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Review found the registered acceptance criteria explicitly required metadata/body identity mismatch and hash mismatch rejection, but the first 8 raw-body cases did not test these. Thus run #10 is accepted only as evidence for its exact SHA; 026DF is not yet complete.
 - Correction commit `d74dfa6e04955793e191bd114e9e3bedf7756c02` updates only the disposable `RawBodyRecoveryPoCTest.kt`: journal stores expected `(bookUrl,chapterIndex)`; pre-write and replay validation reject mismatched identity or SHA-256; ninth raw-body test proves both rejections leave body/metadata/journal untouched. Static contract and `git diff --check` PASS. Pushed fast-forward to both integration and storage PoC branches.
 - **Current disposition:** 026DF `in_progress`, waiting for exact-SHA remote CI on the corrected test source. No production code/schema/migration/user data/UI changes; no storage backend selected. Phase A OPEN; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+
+### 4.27.235 Task 026DF candidate fence comparison correction (2026-11-28)
+
+- Review of run #12 (`46079097292`, SHA `da362216d1c3d97e7170ce36e1568179823bf8a2`, 21/21 passed) found the legacy arm tested clear-cache stale-writer resurrection, but the candidate recovery store did not yet model its own token/fence. The registered task requires generation/token comparison, so 026DF remains in progress.
+- Test-only candidate correction adds synchronized `RecoveryToken(bookUrl,chapterIndex,version)` capture/advance/clear, rejects stale writes before journal/body mutation, persists token generation in the pending journal and revalidates it on replay. Clear advances generation and deletes the chapter's body/metadata/journal; fresh token writes remain allowed.
+- Added tenth raw-body test covering stale writer after replacement, stale writer after clear, no resurrection, and fresh post-clear write. Only `RawBodyRecoveryPoCTest.kt` changed; static contract and `git diff --check` PASS. Exact-SHA remote CI pending.
+- No production source/schema/dependency/migration/data/UI changes; no storage backend selected. Phase A OPEN; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
