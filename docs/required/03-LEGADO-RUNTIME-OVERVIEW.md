@@ -3201,3 +3201,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Related corrections:** updated Task 026CN report /tmp/task026cn-webjs-bridge-closure/RESULT.md SHA-256 802d314afd9611eb87c33403483437858ddc96fe7149f5e843d50100918178c6; updated 026CO architecture report SHA-256 648fd7a0123a2e9dd5db82f3535c7824558c93405d226141e76cd1aa1037a528; updated 026CP report SHA-256 5e8cd67dc0637222efe1e5fd771e242f6ced4654a11467dc2f961f8a0fc276c0.
 - **Verification:** static only; no compile/DEX/APK/JUnit/CI/device. Standing remote-CI authorization active; exact server HEAD not synchronized to workflow branch, no push/ref update.
 - **Disposition:** source descriptor inventory complete; runtime exposure unverified; WebJs bridge source closure and Host Port wiring NOT MET. Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.210 Task 026CR preregistration — inherited JsExtensions dependency closure (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-INHERITED-JSEXTENSIONS-DEPENDENCY-CLOSURE-026CR; registered / in progress. Start HEAD 326e29105dda56411f94d339e7f6f468030b0e42; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** trace all 48 annotated JsExtensions methods inherited by java and source objects through their direct/transitive upstream helpers, host services, native dependencies and Badcat source inclusion.
+- **De-duplication:** reuse 026CB ABI inventory, 026CN/026CQ bridge inventory, 026CH Host Port DAG and 026CD license/native audit; add method-level dependency closure.
+- **Allowed:** read-only source inspection; temporary report /tmp/task026cr-js-extensions-dependencies/; audit and overview only.
+- **Required:** per-method dependency/caller table, file/network/cookie/archive/crypto/UI/config/device services, exact source inclusion and missing Host Ports.
+- **Forbidden:** source/test/build/Gradle/workflow/dependency/UI/schema/database changes; build/test/CI/GitHub/network/NDK/device; server push; Phase B/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
