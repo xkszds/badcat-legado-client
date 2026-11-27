@@ -3160,3 +3160,14 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Ownership:** App source DAO, Cookie/login/encryption, cache disk/memory/file, HTTP/crypto/files, WebViewPool and UI; Runtime owns rule/bridge semantics. SourceExecutionContext Job-vs-CoroutineContext mismatch must be resolved without fabricating a Job.
 - **Disposition:** decision only, no source implementation/build/test/CI. Host Port wiring NOT MET; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
 - **Next:** register a narrow contract-amendment implementation for HiddenWebViewRequest and the typed bridge binding models, with tests for defaults/null/result/rule mode and cancellation context before implementing App adapters.
+
+### 4.27.206 Task 026CP preregistration — Hidden WebView request contract amendment (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-HIDDEN-WEBVIEW-REQUEST-CONTRACT-AMENDMENT-026CP; registered / in progress. Start HEAD 2f87df0b865427e2d2c518dfe33ff11af7003fe3; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** align HiddenWebViewRequest and SourceExecutionContext with pinned nullable/default/result/rule/cancellation semantics; no App implementation.
+- **Allowed:** RuntimeHostPort.kt, RuntimeHostPortContractTest.kt, audit and overview only.
+- **Required:** nullable URL/JS; HTML/URL validation; 60-second timeout default; UTF-8 default; optional initial result JSON; explicit plain/WebJs rule mode; optional Job; regression tests for null vs empty and cancellation.
+- **Deferred:** typed 40-method JavaScript bridge binding interfaces are not part of this task; register after exact source/AnalyzeRule type closure.
+- **Forbidden:** App adapters, WebView/DAO/cache/login/network implementations, Gradle/workflow/dependency/UI/schema/database changes; local Gradle; server push; Phase B/Task 027.
+- **CI:** standing remote-CI authorization acknowledged; exact current commit still requires a separately registered safe synchronization route before remote execution.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
