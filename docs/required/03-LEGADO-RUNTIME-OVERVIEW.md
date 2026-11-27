@@ -3617,3 +3617,9 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Outputs: line-exact BaseSource API and implementor matrix; method/caller/receiver graph; host-operation reachability; lifecycle sequence; minimal book-source Runtime inheritance set; explicit dynamic/ABI blockers.
 - Allowed tracked files: audit + this overview only; temporary evidence /tmp/task026dk-basesource-js-callgraph/. No source/test/Gradle/dependency/workflow/manifest/license/schema/database/data/UI change; no build/test/CI/GitHub/ref update/push/network/NDK/device/live-source.
 - **Disposition:** documentation-only Phase-A call-graph task registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED. See audit §24.292.
+
+### 4.27.248 Task 026DK scope amendment — Rhino public Java surface exceeds the 68 annotated methods (2026-11-28)
+
+- The 68-row 026CS/026DI inventory is the annotated WebView bridge subset, not the full Rhino-visible API. BaseSource.evalJS binds the source object as java/source/sourceApi; NativeBaseSource wraps BookSource/RssSource/HttpTTS through NativeJavaObject and only filters property-style setters. It does not filter methods by @JavascriptInterface.
+- JsExtensions/JsEncodeUtils expose additional public unannotated methods, and JS-source execution binds JsSourceEngine itself as java plus BookSource as source/sourceApi. These are distinct public surfaces.
+- 026DK now adds exact public-method/overload inventory and wrapper path reconciliation while reusing the existing 68 annotated rows; no broad scan. Runtime reflection/R8/DEX proof remains a separate gate. See audit §24.292.1.
