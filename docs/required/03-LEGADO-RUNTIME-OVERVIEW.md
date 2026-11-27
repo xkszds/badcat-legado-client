@@ -3587,3 +3587,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - 026DH path-filter validation Run `46081271543` at exact SHA `408beae6429816e07c515950df1605135f7d3d1f` completed success: JUnit 7/7, 0 failures/errors/skips; artifact `15237387022`, ZIP SHA-256 `05a8687cc5c33ce12f5e9bb6d94ee55459b6ac50bd867d971e2d4829b61aa128`; all 16 internal hashes verified. Catalog-only evidence.
 - Report hashes: RESULT `6b6dea4efaf49e9df561699eb9f94b5bde501eb099ab71b931b22f8db29b16dc`; source DAG `bcc1873ddebfe111e1b0b80507e0785cebeba63058ca2cb5bb8005ab2ada9fb2`; transitive closure `732d31f1214839378a9d28f389cdd3b22737f345f41a76f40dddf7128cf2992b`; JS method map `08f18dedb3cfaa080ac70272c42644497b9a5f7812d4869e4d94c8da01049183`; output hash manifest `abb81b1398a1f35fb94dcee6cf6792ffea0b46f08df5d327b99fc3edba852c1e`.
 - Static documentation-only task; no source/build/test/CI. **Task 026DI accepted as static DAG only**. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED. See audit §24.289.
+
+
+### 4.27.245 Task 026DJ preregistration — AnalyzeUrl method-level caller partition (2026-11-28)
+
+- Start branch `integration/legado-upstream-runtime`, HEAD `263ee8cbf9a1ecb9d8aec31128a1040e6b1d769c`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- Trigger: 026DI retains 32 AnalyzeUrl caller files but source-runtime vs product-only usage remains unresolved. The class combines authentic source request/JS behavior with Glide, Media3, WebView, Activity, RSS/audio/video and product consumers.
+- Output: exact callsite/line/argument inventory; method/property/result use matrix; per-caller classification; minimal source API; App-only adapters; unresolved dynamic/reflection paths.
+- Reuse only the pinned 32-file inventory and 026CS/026DI artifacts; no broad repository scan or 703-row import scan.
+- Allowed tracked files: audit + this overview only; temp directory `/tmp/task026dj-analyzeurl-partition/`. No source/test/Gradle/dependency/workflow/manifest/license/schema/database/data/UI changes; no build/test/CI/GitHub/ref update/push/network/NDK/device/live-source.
+- **Disposition:** documentation-only Phase-A caller-boundary task registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED. See audit §24.290.
