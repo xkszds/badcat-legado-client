@@ -74,7 +74,7 @@ jobs:
         run: |
           set -euo pipefail
           out="build/runtime-variant-proof"
-          expected="330e606c4d57e08adc056ff8b7a4132c784da9a"
+          expected="330e606c4d57e08adc056ff8ab7a4132c784da9a"
           actual="$(git -C upstream/legado rev-parse HEAD)"
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           test "$actual" = "$expected"
@@ -177,7 +177,7 @@ jobs:
           {
             echo "RESULT=PASS"
             echo "BADCAT_COMMIT=$GITHUB_SHA"
-            echo "LEGADO_COMMIT=330e606c4d57e08adc056ff8b7a4132c784da9a"
+            echo "LEGADO_COMMIT=330e606c4d57e08adc056ff8ab7a4132c784da9a"
             echo "COMPILED_VARIANTS=debug,release,debugUnitTest"
             echo "CLASS_FILE_COUNT=$(wc -l < "$out/class-files.txt" | tr -d ' ')"
             echo "APP_COMPILE=NOT_RUN"
