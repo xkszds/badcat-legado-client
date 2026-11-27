@@ -3278,3 +3278,16 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Required:** module DAG, dependency/port ownership, data single-writer, source compatibility, exact migration waves, GO/NO-GO.
 - **Forbidden:** production/test/Gradle/settings/dependency/workflow/manifest/license/packaging/schema/database/UI changes; build/test/CI/GitHub/push/ref update/network/NDK/device; no Stage-1/Task 027.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.217 Task 026CU result — Runtime-owned model/core architecture direction selected (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-AUTHENTIC-MODEL-OWNERSHIP-ARCHITECTURE-DECISION-026CU; complete as static architecture decision.
+- **Registration HEAD:** b48327659f68c94b2781855f79bb1e8d14d5db5e; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a. Report /tmp/task026cu-model-ownership-decision/RESULT.md, SHA-256 79887c7357f4722db3fefed4c84cc31f8e7d958de93b8525080d8f5d9ee6a0b1.
+- **Selected direction:** existing :legado-runtime owns authentic model/source-runtime core; App owns concrete data/platform/UI adapters; :legado-rhino stays low-level; :integration-contract stays App-facing with no Runtime edge. No new model module for now.
+- **Why:** Runtime is already an Android library with Parcelize; a new model module would split internal ContentSaveToken/fence and BaseSource/JsExtensions/HostPort ownership, requiring another shared API module. App-owned models would invert dependencies or force forbidden DTO/Any bridges.
+- **Hard caveat:** no Room DB or full Book/BookChapter store exists in App. File catalog, SharedPreferences reading state and parsed chapter cache are separate existing owners; they are not equivalent to upstream BookHelp raw content storage. Data owner/transaction/recovery remains unresolved; do not add Room or duplicate caches.
+- **Extraction rule:** adapt direct AppDb/AppConfig/UI/WebView/network/cookie calls behind typed Runtime Host Ports; retain authentic FQCN, fields, JS-visible object identity, CoroutineContext, token/fence and lifecycle. Do not wholesale copy BookHelp or import Reader UI.
+- **Implementation remains NO-GO:** wait for 026CC data ownership, 026CS HostPort acceptance, full model/API/caller/dependency/license closure and an explicit safe per-object/per-execution host binding mechanism. BatchContentPort not approved yet.
+- **Verification:** static only; no source/build/test/CI/device changes. Standing remote-CI authorization not used.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next mainline:** detailed source extraction inventory for Book/BookChapter/BookSource/BaseSource/AnalyzeUrl and safe per-object Host Port binding, followed by data ownership PoC. Do not implement source classes before the remaining gates.
