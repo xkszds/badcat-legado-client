@@ -2847,3 +2847,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Evidence:** /tmp/task026by-source-identity/local-assertions.txt, SHA-256 67faf745d06531b2a6951a0d440d848d8ce0d3b982ab4bd3c9aad1678cb45ca5. Parent gitlink and submodule HEAD agree exactly on the 40-character pin.
 - **Correction:** expected workflow literal must be exactly 330e606c4d57e08adc056ff8ab7a4132c784da9a. No workflow change or CI action was made in this read-only task. Any correction requires a separate task; remote update/CI needs fresh explicit authorization.
 - **Status:** Task 026BY closed / root cause confirmed. Runtime compile proof remains NOT ESTABLISHED because Gradle never ran. Phase A open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.174 Task 026BZ preregistration — local workflow pin-literal correction only
+
+- **Task ID:** R3-S0-T026-PHASE-A-RUNTIME-WORKFLOW-PIN-LITERAL-FIX-026BZ; registered / not started. Start HEAD f50a02349f6f1ef458951b636c639d28f8e7d42c; fixed gitlink/submodule SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Cause:** Task 026BY established the workflow's expected Legado SHA has only 39 characters and differs from the exact 40-character gitlink by one omitted a.
+- **Scope:** correct only the expected SHA literal in the server-local dedicated Runtime compile proof workflow; preserve all other workflow logic and scope.
+- **Allowed files:** workflow, this overview and Stage-0 audit. No remote GitHub update/ref mutation.
+- **Checks:** exact gitlink/submodule SHA equality; YAML and embedded Bash syntax; immutable Action pins; trigger and Runtime-only task list; memory/CPU preflight; wrapper marker absence; diff check; no product/source/build/test/dependency/manifest/packaging/upstream changes.
+- **Prohibited:** GitHub Contents update, push, dispatch, rerun, CI, Gradle, dependency resolution, compile, APK or submodule changes. New hosted validation requires fresh explicit authorization.
+- **Acceptance:** corrected local workflow and static checks pass; no claim of compile success.
