@@ -15,7 +15,7 @@ concurrency:
 jobs:
   catalog-lifecycle:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 50
     env:
       GRADLE_USER_HOME: ${{ github.workspace }}/.gradle-user-home
     steps:
@@ -182,10 +182,16 @@ jobs:
         run: |
           set -euo pipefail
           log="build/catalog-lifecycle-proof/catalog-lifecycle-test.log"
-          if ! gradle --no-daemon --no-build-cache --no-configuration-cache --console plain --stacktrace \
-            :app:testDebugUnitTest --tests app.badcat.client.FileBookSourceCatalogLifecycleTest > "$log" 2>&1; then
-            tail -n 240 "$log"
-            exit 1
+          set +e
+          timeout --foreground --signal=TERM --kill-after=60s 35m \
+            gradle --no-daemon --no-build-cache --no-configuration-cache --console plain --stacktrace --info --max-workers=2 \
+            :app:testDebugUnitTest --tests app.badcat.client.FileBookSourceCatalogLifecycleTest > "$log" 2>&1
+          gradle_status=$?
+          set -e
+          echo "GRADLE_EXIT_CODE=$gradle_status" | tee build/catalog-lifecycle-proof/gradle-exit.txt
+          if (( gradle_status != 0 )); then
+            tail -n 240 "$log" || true
+            exit "$gradle_status"
           fi
           tail -n 100 "$log"
           test "$(grep -cE '^> Task :app:testDebugUnitTest$' "$log")" -ge 1
@@ -198,14 +204,23 @@ jobs:
         if: always()
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          out="build/catalog-lifecycle-proof"
+          mkdir -p "$out"
+          junit_root="app/build/test-results/testDebugUnitTest"
+          report="$out/junit-summary.txt"
           python3 - <<'PY'
           import glob, os, xml.etree.ElementTree as ET
           expected = "app.badcat.client.FileBookSourceCatalogLifecycleTest"
           paths = sorted(glob.glob("app/build/test-results/testDebugUnitTest/TEST-*.xml"))
           matches = []
+          parse_errors = []
           for path in paths:
-              root = ET.parse(path).getroot()
+              try:
+                  root = ET.parse(path).getroot()
+              except Exception as exc:
+                  parse_errors.append("%s: %s" % (path, exc))
+                  continue
               suites = [root] if root.tag == "testsuite" else list(root.iter("testsuite"))
               for suite in suites:
                   names = {suite.attrib.get("name", ""), suite.attrib.get("classname", "")}
@@ -215,29 +230,45 @@ jobs:
           for _, suite in matches:
               for key in totals:
                   totals[key] += int(suite.attrib.get(key, 0))
-          report = "build/catalog-lifecycle-proof/junit-summary.txt"
-          with open(report, "w") as out:
+          with open("build/catalog-lifecycle-proof/junit-summary.txt", "w") as out:
               out.write("TARGET_CLASS=%s\n" % expected)
               out.write("MATCHING_JUNIT_SUITES=%d\n" % len(matches))
               for key, value in totals.items():
                   out.write("%s=%d\n" % (key.upper(), value))
-          print(open(report).read(), end="")
-          if os.environ.get("GITHUB_STEP_SUMMARY"):
-              with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
-                  summary.write("### Focused BookSource catalog lifecycle tests\n\n")
-                  summary.write(open(report).read().replace("\n", "  \n"))
-          if len(matches) != 1 or totals != {"tests": 7, "failures": 0, "errors": 0, "skipped": 0}:
-              raise SystemExit("Focused JUnit acceptance failed; expected exactly 7 passing tests.")
+              for error in parse_errors:
+                  out.write("JUNIT_PARSE_ERROR=%s\n" % error)
+          print(open("build/catalog-lifecycle-proof/junit-summary.txt").read(), end="")
           PY
-          find app/build/test-results/testDebugUnitTest -type f -name 'TEST-*.xml' -exec cp --parents {} build/catalog-lifecycle-proof/ \;
-          find app/build/reports/tests/testDebugUnitTest -type f -exec cp --parents {} build/catalog-lifecycle-proof/ \; 2>/dev/null || true
+          if [[ -d "$junit_root" ]]; then
+            find "$junit_root" -type f -name '*.xml' -exec cp --parents {} "$out/" \;
+          fi
+          if [[ -d app/build/reports/tests/testDebugUnitTest ]]; then
+            find app/build/reports/tests/testDebugUnitTest -type f -exec cp --parents {} "$out/" \;
+          fi
+          [[ -f "$out/catalog-lifecycle-test.log" ]] || echo "Gradle log was not produced." > "$out/gradle-log-missing.txt"
+          status="FAIL"
+          reason="focused test acceptance not met"
+          if [[ -f "$out/gradle-exit.txt" ]] && grep -q '^GRADLE_EXIT_CODE=0$' "$out/gradle-exit.txt" &&
+             grep -q '^MATCHING_JUNIT_SUITES=1$' "$report" &&
+             grep -q '^TESTS=7$' "$report" &&
+             grep -q '^FAILURES=0$' "$report" &&
+             grep -q '^ERRORS=0$' "$report" &&
+             grep -q '^SKIPPED=0$' "$report" &&
+             grep -qE '^> Task :app:testDebugUnitTest$' "$out/catalog-lifecycle-test.log" &&
+             ! grep -hE '^> Task :(app|integration-contract|legado-runtime|legado-runtime-poc):test' "$out/catalog-lifecycle-test.log" | grep -v '^> Task :app:testDebugUnitTest$'; then
+            status="PASS"
+            reason="exact focused class: 7 tests, 0 failures/errors/skips"
+          fi
           {
-            echo "RESULT=PASS"
+            echo "RESULT=$status"
+            echo "REASON=$reason"
             echo "BADCAT_COMMIT=$GITHUB_SHA"
             echo "LEGADO_COMMIT=330e606c4d57e08adc056ff8ab7a4132c784da9a"
-            cat build/catalog-lifecycle-proof/junit-summary.txt
-          } > build/catalog-lifecycle-proof/result.txt
-          sha256sum $(find build/catalog-lifecycle-proof -type f ! -name SHA256SUMS | sort) > build/catalog-lifecycle-proof/SHA256SUMS
+            cat "$report"
+          } > "$out/result.txt"
+          find "$out" -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 -r sha256sum > "$out/SHA256SUMS"
+          cat "$out/result.txt"
+          [[ "$status" == "PASS" ]]
 
       - name: Upload exact-SHA focused test evidence
         if: always()

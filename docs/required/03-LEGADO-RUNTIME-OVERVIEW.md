@@ -3533,3 +3533,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Workflow:** capacity preflight >=8 GiB effective+available RAM and >=4 vCPU; JDK 21 / Android SDK 36 / Gradle 8.14.4; restore and hash-check pinned HtmlUnit CoreJS artifact and 12 Rhino extension sources; run only the filtered test class; upload exact-SHA JUnit XML/HTML, logs, identity and toolchain evidence.
 - **Forbidden:** test/production source, Gradle dependency declarations, schema/data/UI, APK/Release/R8, broad Android build, device/live-source, Stage-1 and Task 027.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full pinned Legado compatibility NOT ESTABLISHED. See audit §24.284 for complete task contract.
+
+
+### 4.27.240 Task 026DH CI stall review and bounded evidence correction (2026-11-28)
+
+- **Prior run:** GitHub Actions run `46080745396`, job `140778887055`, branch `catalog-lifecycle/026DH`, exact Badcat SHA `5463965ddd6d4ec163a02265cfbbc6380b39d664`, pinned Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Observed:** all pre-test steps pass (capacity, source/submodule, HtmlUnit and 12 Rhino hashes, JDK 21, SDK 36, Gradle 8.14.4). The single focused Gradle test step remains in_progress since `2026-11-27T23:08:34Z`; run `updated_at` is unchanged at `23:08:12Z`; job-log endpoint returned BlobNotFound while still active. No JUnit or artifact is available. Mark as stalled/unresolved, not test failure/pass; root cause unknown.
+- **Workflow correction:** job timeout 50 minutes; Gradle bounded to 35 minutes with captured exit code, `--info` log and two workers. The `if: always()` evidence step now copies whatever JUnit XML/HTML exists before evaluating acceptance, records missing/zero tests and PASS/FAIL reason, hashes all evidence and then returns failure if acceptance is unmet. Upload remains unconditional.
+- **Scope:** workflow + audit + overview only. Existing seven-test class and production sources remain read-only. No local test/build or production change.
+- **Next:** static validate, push correction only to `catalog-lifecycle/026DH`, inspect the new exact-SHA run and artifact. Old run is not evidence. Accept only seven tests, zero failures/errors/skips, correct filtered task, and complete evidence.
+- **Disposition:** 026DH in_progress; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED. See audit §24.285.
