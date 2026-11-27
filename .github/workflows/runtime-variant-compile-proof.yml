@@ -1,3 +1,5 @@
+[Reading 195 lines from start (total: 195 lines, 0 remaining)]
+
 name: Runtime-only exact variant compile proof
 
 on:
@@ -17,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      GRADLE_USER_HOME: ${{ runner.temp }}/gradle-user-home
+      GRADLE_USER_HOME: ${{ github.workspace }}/.gradle-user-home
     steps:
       - name: Check out exact source and pinned submodules
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -193,3 +195,5 @@ jobs:
           path: build/runtime-variant-proof/**
           if-no-files-found: error
           retention-days: 30
+
+[executed on device: VM-0-5-ubuntu (92122d1d-9cc5-4df4-82e1-413a88155d1f)]
