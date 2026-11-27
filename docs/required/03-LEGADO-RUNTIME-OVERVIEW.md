@@ -2604,4 +2604,17 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Integrity:** 026BJ's 12 output checks, 026BM's 67 input hashes / 65 output checks, 026BN's 18 input hashes / 20 output checks, the new 64-entry input manifest and all seven output checksums passed. Custom SPDX structural checks passed. No official SPDX schema validator is installed, so official schema validation is not claimed.
 - **Remaining:** NDK 28.1.13356709 zlib source/license/notice; native binary reproducibility; AAR/APK LICENSE/COPYING/NOTICE packaging; complete SBOM/current-HEAD package closure remain NOT ESTABLISHED.
 - **Boundary:** no build, test, CI, Gradle/dependency resolution, APK/device/native rebuild, network or NDK download; no production or packaging/license/notice changes; no App compile retry.
-- **Disposition:** Phase A remains open; Stage-0 not accepted; Stage-1 **NO-GO**; Task 027 **BLOCKED**; full Legado compatibility **NOT ESTABLISHED**. Next, obtain a separate authorization for exact Android NDK zlib source provenance; keep App compile prohibited under §24.119.
+- **Disposition:** Phase A remains open; Stage-0 not accepted; Stage-1 **NO-GO**; Task 027 **BLOCKED**; full Legado compatibility **NOT ESTABLISHED**. Next, obtain a separate authorization for exact Android NDK zlib source provenance. The historical §24.119 stop is prospectively superseded only for the one-time GitHub Actions CI retry registered in §4.27.152; local server retries remain prohibited.
+
+
+### 4.27.152 Task 026BP preregistration — one-time GitHub-hosted Android CI retry (2026-11-28)
+
+- **Task ID:** `R3-S0-T026-GITHUB-ACTIONS-ANDROID-CI-RETRY-026BP`; registered / not yet executed. Start HEAD `8ba1f6bf23fdbf1c778a03791496dc1ade88df1f`; branch `integration/legado-upstream-runtime`; pinned Legado `330e606c4d57e08adc056ff8b7a4132c784da9a`.
+- **Authorization and policy change:** the user explicitly asked to remove the §24.119 no-retry restriction and retry GitHub CI. The historical 026I memory-stop result remains intact, but its prospective prohibition is superseded for exactly one GitHub-hosted run. No local App compile retry is authorized.
+- **Goal:** fast-forward-sync the current server integration branch to GitHub and run the existing `.github/workflows/android-build.yml` once on GitHub-hosted `ubuntu-latest`, bound to the resulting exact commit SHA.
+- **Workflow scope:** run the workflow without edits: pinned-source verification, Gradle contract/runtime/unit tasks, existing diagnostics, conditional API 28/35 emulator instrumentation, `:app:assembleDebug`, APK DEX verification and configured artifacts. This is Debug CI only, not Release/signing/publishing.
+- **Push safety:** first verify GitHub's integration ref is an ancestor of the server HEAD; normal fast-forward push only. Never force-push, reset, rebase, rewrite history or update `main`.
+- **Retry policy:** one run only; no second dispatch or automatic retry. On failure, capture run/job/step and logs/artifacts, record the exact failure, then stop pending a new explicit decision.
+- **Acceptance evidence:** exact push/HEAD, run ID/URL and `head_sha`; job/step conclusions; unit-test reports; emulator results; Debug APK artifact and SHA-256; APK DEX verification output. A successful CI is not Phase A closure, Stage-0/Stage-1 acceptance, Task 027 authorization or proof of full compatibility.
+- **Exclusions:** no production/source/build/test/workflow edits, no local compile, no Release signing/publishing, no additional CI run, no Phase B migration or Task 027.
+- **Next:** after committing this registration, fully reread both required lists from the new HEAD, then fast-forward-push and observe the one push-triggered GitHub run.
