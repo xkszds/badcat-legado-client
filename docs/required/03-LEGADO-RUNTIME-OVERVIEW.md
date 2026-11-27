@@ -3236,3 +3236,14 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Required:** method-to-port map; typed request/result/error/cancel/thread/lifecycle contracts; data/platform ownership; source navigation context preservation; staged implementation order; exact consumers/factory requirements.
 - **Forbidden:** production/test/Gradle/dependency/workflow/manifest/license/packaging/schema/database/UI changes; build/test/CI/GitHub/push/ref update/network/NDK/device. Standing remote-CI authorization applies to separately registered validation tasks only.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.213 Task 026CS result — inherited JS Host Port contract design (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-INHERITED-JS-SERVICE-HOST-PORT-CONTRACT-DESIGN-026CS; completed as documentation-only architecture evidence.
+- **Registration HEAD:** a9a9c05cc475e0197beff6eba9fac7a7bd1fd19; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a. Report /tmp/task026cs-host-port-contracts/RESULT.md, SHA-256 2795c1d88fa3cfd07d34c23752da1841f9a0b1b6fb0f65973c99a11ec6ba48bb.
+- **Coverage:** explicit method-to-contract mapping for 48 JsExtensions +20 JsEncodeUtils declarations, inherited by both java and source (68 unique methods / 136 object.method entries). Crypto/codec/text helpers remain Runtime-owned implementations; Android/data/network/UI effects are App-owned ports.
+- **Required services:** BatchContentPort, SourceCookiePort, SourceHttpPort, SourceFilePort, archive stream/operation contract, DeviceEnvironmentPort, ReaderThemeConfigPort and arbitrary CoroutineContext preservation. Reuse HostUiPort for OpenUrl/OpenVideoPlayer.
+- **Current status:** five Runtime Host Ports remain declaration-only; no production consumers/factory/adapters. App runtime directly constructs RhinoSafeSourceJavaExtensions and injects lambdas. Batch save is unsupported; reader/theme config JS methods are absent. Existing App file/cookie/archive/crypto helpers are partial, not proof of Runtime integration.
+- **Verification:** static only; no source/test/build/Gradle/CI/device changes. Standing remote-CI authorization was not used in this docs-only task.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next mainline:** preregister an exact pinned source dependency closure for authentic Book/BookChapter/AnalyzeUrl/ContentSaveToken/BatchContentContext/BookHelp before defining BatchContentPort or changing source bridge implementation.
