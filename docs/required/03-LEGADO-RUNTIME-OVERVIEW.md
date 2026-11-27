@@ -3247,3 +3247,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Verification:** static only; no source/test/build/Gradle/CI/device changes. Standing remote-CI authorization was not used in this docs-only task.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
 - **Next mainline:** preregister an exact pinned source dependency closure for authentic Book/BookChapter/AnalyzeUrl/ContentSaveToken/BatchContentContext/BookHelp before defining BatchContentPort or changing source bridge implementation.
+
+### 4.27.214 Task 026CT preregistration — authentic batch-content/request model closure (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-BATCH-CONTENT-AUTHENTIC-MODEL-CLOSURE-026CT; registered / in progress. Start HEAD a850ffe75112b2cd11883cd2a4da8589bc2505ab; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** trace pinned Book, BookChapter, AnalyzeUrl, ContentSaveToken, BatchContentContext and BookHelp models/callers/transactions before defining BatchContentPort or changing bridge code.
+- **Allowed:** audit/overview docs and /tmp/task026ct-batch-model-closure/ only; inspect exact upstream and Badcat sources/callers/tests/DAO/Gradle.
+- **Required:** per-type field/API matrix, complete callers, chapter identity/index and duplicate URL semantics, token fence, replacement/cancel/close, persistence transaction, AnalyzeUrl request semantics, current Badcat gap and minimum authentic source/dependency closure.
+- **Forbidden:** production/test/Gradle/dependency/workflow/manifest/license/packaging/schema/database/UI edits; build/test/CI/GitHub/push/ref update/network/NDK/device; no shadow DTO, Stage-1 or Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
