@@ -2774,3 +2774,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Acceptance/evidence:** exactly one new run, exact SHA, job/step, capacity report, Gradle logs, dependency reports, artifact ID and hashes recorded. If workflow fails before job creation or capacity gate fails, capture evidence and stop.
 - **Exclusions/retry:** no App/broad CI/APK/DEX/R8/device/live-source, no integration/main update, no force-push/reset/rebase, no rerun/failed-job retry/second dispatch or update. Any further attempt requires a new preregistered task and explicit authorization.
 - **Status:** Phase A remains open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED. This Runtime-only compile proof cannot independently close license/provenance/dependency/ABI/data-owner gates.
+
+
+### 4.27.167 Task 026BV result — one failed pre-job run; no Runtime compile evidence
+
+- Registration commit: `5193b5b072e4dff67746c40dd4230efe1fbfde96`; Master and Runtime Overview reread from that HEAD before the remote action.
+- Updated only the dedicated workflow on GitHub branch `runtime-proof/026BT`; remote commit `cd56213eb1fb50dc68a7a5f0d514ce93db71cd3a`, parent `12ad4a1c13b2a4719ad81676ec9d6eba5e29dc19`; blob `147593e6de7358ac73d5f5af7f9c9b020714d591`.
+- **Payload defect:** file-read response wrapper text was accidentally included in the remote workflow content: a `[Reading 195 lines ...]` line near the top and an `[executed on device: ...]` footer at the end. The remote YAML is contaminated. The server-local corrected workflow remains clean; no source/build files were changed.
+- Run #2 / ID `46062075055`, push event, exact SHA `cd56213eb1fb50dc68a7a5f0d514ce93db71cd3a`, completed/failure, attempt 1. Jobs empty, artifacts empty, logs endpoint HTTP 404, check-runs total_count 0. No runner/capacity/Gradle/dependency/compile evidence. Failure before job creation; no exact GitHub diagnostic available.
+- Exactly one remote update and one run occurred. No repair update, rerun, dispatch, failed-job retry or additional CI was attempted; further work needs new explicit authorization and a new preregistered task.
+- **Disposition:** Runtime variant compile proof NOT ESTABLISHED. Phase A remains open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. The independent license/notice, NDK provenance, dependency closure, ABI/reflection and data-owner gates also remain open.
