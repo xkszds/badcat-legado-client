@@ -3019,3 +3019,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **DAG:** freeze ownership/ports first; then data/rule models with Room/KSP proof; Rhino/JS foundation; source/analyzer core; WebBook/reading pipeline; finally App-only UI/login/RSS/WebView/browser/image/Media3/Flexbox/Room adapters. Required dependency and acceptance gates are in the report.
 - **Disposition:** this is a static proposal, not implementation approval. Room/KSP, direct Runtime dependency closure, Host Port production wiring, ABI/R8, data recovery, notices and dynamic proof remain open. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. No source/build/test/CI/network/device action.
 - **Next:** convert Wave 0 into a concrete Host Port ownership decision, then register only the smallest foundation implementation slice. Do not copy the 27 missing candidate files as one batch or begin schema migration.
+
+### 4.27.192 Task 026CI preregistration — Host Port ownership and module-edge decision (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-HOST-PORT-OWNERSHIP-MODULE-EDGE-DECISION-026CI; registered / in progress. Start HEAD `68e47a3dc9b04852770c14bede0e8827fbf63f7f`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** choose between Runtime-owned ports, a small pure Kotlin/JVM host-contract module, and reuse of `:integration-contract`, with explicit arrows and typed data identity.
+- **Allowed:** read-only module/API/source inspection; temporary report `/tmp/task026ci-host-port-decision/`; audit and overview only.
+- **Required:** option comparison, target module graph, execution-context/error/cancellation ownership, DTO facade boundary, dependencies, rollback and next implementation task.
+- **Forbidden:** source/build/test/Gradle/module settings/dependency/workflow/manifest/license/notice/packaging/schema/database/UI changes; build/test/CI/GitHub/network/device; Phase B/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
