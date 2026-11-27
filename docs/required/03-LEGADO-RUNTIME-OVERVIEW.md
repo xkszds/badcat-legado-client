@@ -3358,3 +3358,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **PoC:** compare per-domain stores + journal, unified AtomicFile metadata, and minimal throwaway Room using copied data, fault injection, migration dry-run/idempotence/rollback and restart recovery. No production data mutation.
 - **Verification:** static only; no code/build/test/CI/device changes. Standing remote-CI authorization remains active.
 - **Disposition:** logical owner GO; physical backend and Book/Chapter persistence NO-GO until no-data-loss PoC. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.223 Task 026CY preregistration — quarantined Book/BookChapter storage no-loss PoC (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-BOOK-CHAPTER-STORAGE-NO-LOSS-POC-026CY; registered / in progress. Start HEAD `6ebdc0f98133c7ab4bc93b0e55572c3fc2db0af0`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** compare a disposable file-backed metadata + durable journal/atomic blob prototype with a minimal throwaway Room Book/BookChapter store using identical synthetic fixtures and failure injection. Prove identity, duplicate semantics, idempotent recovery, dry-run/rollback and bounded resource behavior before selecting any production backend.
+- **Allowed:** quarantined `:legado-runtime-poc` build/test/source files only, audit/overview and `/tmp/task026cy-storage-poc/`. No App/Runtime production source, user data, production schema or migration.
+- **Required:** same-URL/different-index chapter identity; Book `bookUrl`; null/missing/unknown fields; large TOC; raw-vs-parsed content separation; stale save fence; crash at each journal/publication step; restart/replay; duplicate replay; dry-run/idempotence/rollback with counts and hashes; concurrent and bounded-size cases; file-vs-Room comparison.
+- **Acceptance:** deterministic executable tests/harness, exact commands/results and fixture hashes, no lost/crossed records, replay/rollback proven. If Room arm cannot run, explicitly NOT RUN and no backend selection.
+- **Forbidden:** production schema/Room dependency/migration/dual-write/data mutation, Runtime model migration, BatchContentPort/Host Port wiring, UI, Stage-1/Task 027, push/ref update. Remote CI only on exact synchronized commit.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
