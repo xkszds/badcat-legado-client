@@ -3121,3 +3121,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Required:** JS object names, all annotated methods/signatures, injection entrypoints, backing services/data/cache/network, lifecycle/context semantics, Badcat source-inclusion status, missing Host Port families.
 - **Forbidden:** production/test/build/Gradle/workflow/dependency/UI/schema/database changes; build/test/CI/GitHub/network/NDK/device; server push; Phase B/Task 027.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.203 Task 026CN result — WebJs bridge closure absent from Badcat Runtime (2026-11-28)
+
+- **Review HEAD:** 2ae545e2669e32f0db43624b8737bb1ed6e9c5c3; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a. Report /tmp/task026cn-webjs-bridge-closure/RESULT.md, SHA-256 798bc9ee9ed6908d9480e79a5ce653ea6c0693e2f681714526540e8c397155c7; raw scan SHA-256 4249a4a270cea3d98313a2d0f09665211f20ddcd68dff1933a834bb7246bca3a.
+- **Bridge graph:** WebJs rule mode attaches WebCacheManager, BaseSource and WebJsExtensions, then aliases them as cache/source/java. There are 40 @JavascriptInterface declarations: WebJsExtensions 12, inherited RssJsExtensions 10, BaseSource 9, WebCacheManager 9.
+- **Important semantics:** BackstageWebView passes activity=null and no upConfig callback. WebJsExtensions.request and activity-dependent Rss UI methods cannot launch their activity/lifecycle behavior in this path. BackstageWebView injects getInjectionString only; JS_INJECTION/JS_INJECTION2/basicJs are for other visible UI surfaces.
+- **Closure:** all five bridge/engine classes are absent from Badcat production source roots. Required dependencies include source DAO/entity, AnalyzeRule/JsExtensions, cache disk/memory/file stores, CookieStore/login encryption, HTTP/crypto/file operations, WebView bridge registration and coroutine lifecycle.
+- **Disposition:** WebJs bridge/source closure NOT PRESENT; no plain WebView adapter. Static-only; no build/test/CI. Host Port wiring NOT MET; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next:** register the bridge ownership/Host Port architecture decision and source extraction boundary before production implementation; preserve the activity-null behavior and every exposed JS method/overload.
