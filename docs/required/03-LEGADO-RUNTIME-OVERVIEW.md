@@ -3564,3 +3564,26 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Capacity PASS: 16.76 GB total / 15.76 GB available / 4 vCPU. JDK 21 / Gradle 8.14.4 / SDK 36.
 - Workflow correction accepted. Commit `408beae6429816e07c515950df1605135f7d3d1f` adds path filters to avoid docs-only reruns; exact-SHA run `46081271543` was pending at the last poll. See audit §24.287.
 - Task 026DH accepted; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED.
+
+
+### 4.27.243 Task 026DI preregistration — exact source / caller / Host Port / dependency extraction DAG (2026-11-28)
+
+- Start branch `integration/legado-upstream-runtime`, HEAD `b93cf723cc6a982b7231981060ebf787ce12d63d`; pinned Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- Consolidates 026CG/026CH source-path and extraction-wave work with 026CS–026CW method/port/model/ownership/construction evidence into a single path-exact, deduplicated DAG. Reuse prior reports and hashes; do not repeat broad scans.
+- Outputs: exact upstream file/SHA/FQCN/declaration descriptors and callers; local equivalents/deltas; dependency roots by category; Host Port operation semantics and actual implementation status; module/source-set closure; dependency-ordered waves; tests/rollback/stop gates; explicit unknowns.
+- Allowed tracked files: this overview + Stage-0 audit only; temp output `/tmp/task026di-extraction-dag/`. No source/test/Gradle/dependency/workflow/manifest/license/packaging/schema/database/data/UI changes; no build/test/CI/GitHub/ref update/push/network/NDK/device/live source; no backend selection or Stage-1/Task 027.
+- Acceptance requires no unowned edge silently assigned to Runtime, no Runtime→App/DAO/cycle, exact authentic-source vs DTO/fixture distinction, all known callers/dependencies traced or explicitly blocked, and declaration-only ports not misreported as implemented.
+- **Disposition:** documentation-only Phase-A DAG task completed; accepted as static DAG only. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED. See audit §24.288.
+
+
+### 4.27.244 Task 026DI result — exact source/port/dependency DAG consolidated (2026-11-28)
+
+- Review branch `integration/legado-upstream-runtime`, exact Badcat HEAD at review `b93cf723cc6a982b7231981060ebf787ce12d63d`; fixed Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`; pinned submodule clean and all 33 candidate source hashes match.
+- Consolidated 33 candidate files: 3 present locally (2 byte-identical, 1 adapted), 30 absent (27 Runtime candidates, 2 App bridges, 1 LoginUiV2 owner open); 489 import edges across 29 roots; 37 Host Port rows; 22 dependency prefixes. Existing evidence reused; no broad scan repeated.
+- Extraction waves: W1 models/rules 11; W2 Rhino/JS 7; W3 source/analyzer 5; W4 WebBook/search/TOC/content 7; W5 App-only/selective host 3. Exact file/hash/declaration/source-set/import-edge table: `/tmp/task026di-extraction-dag/source-port-dependency-dag.tsv`; transitive closure: `transitive-source-closure.tsv`.
+- 32 AnalyzeUrl caller files and 8 batch/save/token caller files retained. The AnalyzeUrl source-vs-product split remains incomplete and is explicitly marked as a next blocker. 68 annotated JS declarations (48 JsExtensions + 20 JsEncodeUtils) were joined by exact overload arity to method/Host Port dispositions, zero unmapped; source-level only, not compiled JVM/DEX ABI.
+- Only five RuntimeHostPort interfaces are declared; none has a production adapter/factory/consumer. Missing families include model repositories, variables, content save/fence, cookies/session, HTTP, file/archive, shared JS scope, resources/config, device environment and login/action callbacks. Full CoroutineContext/SuppressSourceNavigation is not carried by current SourceExecutionContext.
+- Current graph remains App -> integration-contract/runtime/rhino and POC -> Rhino. Runtime has no Rhino project edge and no Runtime -> App/DAO/contract edge. Runtime direct dependencies: coroutines-core 1.11.0, Gson 2.14.0, AndroidX annotation 1.10.0; remaining candidate dependencies and native/license provenance are unresolved.
+- 026DH path-filter validation Run `46081271543` at exact SHA `408beae6429816e07c515950df1605135f7d3d1f` completed success: JUnit 7/7, 0 failures/errors/skips; artifact `15237387022`, ZIP SHA-256 `05a8687cc5c33ce12f5e9bb6d94ee55459b6ac50bd867d971e2d4829b61aa128`; all 16 internal hashes verified. Catalog-only evidence.
+- Report hashes: RESULT `6b6dea4efaf49e9df561699eb9f94b5bde501eb099ab71b931b22f8db29b16dc`; source DAG `bcc1873ddebfe111e1b0b80507e0785cebeba63058ca2cb5bb8005ab2ada9fb2`; transitive closure `732d31f1214839378a9d28f389cdd3b22737f345f41a76f40dddf7128cf2992b`; JS method map `08f18dedb3cfaa080ac70272c42644497b9a5f7812d4869e4d94c8da01049183`; output hash manifest `abb81b1398a1f35fb94dcee6cf6792ffea0b46f08df5d327b99fc3edba852c1e`.
+- Static documentation-only task; no source/build/test/CI. **Task 026DI accepted as static DAG only**. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED. See audit §24.289.
