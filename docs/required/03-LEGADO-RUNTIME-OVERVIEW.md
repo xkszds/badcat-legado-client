@@ -3471,3 +3471,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Allowed: POC test sources/resources, audit/overview, narrowly required evidence workflow output only. No production code/schema/dependency/data/UI changes.
 - The legacy arm is a model based on source evidence, not execution of upstream Android BookHelp. Candidate is test-only. Exact-SHA GitHub runner evidence required.
 - No backend selection, migration, dual-write, BatchContentPort, Stage-1 or Task 027. Phase A OPEN; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+
+### 4.27.234 Task 026DF first remote result and corrected validation (2026-11-28)
+
+- First exact-SHA GitHub Actions run #10 / `46078285794`, job `140771066871`, branch `storage-poc/026CZ`, SHA `c4d2172b24881002b513dd01378ae8521a062e81`: completed success. Pinned Legado SHA exact/clean; capacity gate PASS (16.76 GB total, 15.71 GB available, 4 vCPU); JDK 21 / Gradle 8.14.4 / SDK 36; `:legado-runtime-poc:testDebugUnitTest` BUILD SUCCESSFUL, 50 actionable tasks.
+- JUnit 3 suites / 20 tests / 0 failures / 0 errors / 0 skipped: raw-body recovery 8, file+journal 7, Room fixture 5. Generated Room DB/DAO collection succeeded. Evidence artifact `15235938554`, 24,777 bytes, SHA-256 `ab5c4ad02709fee370120eb9a13066cf10b7524ce2db1b90e8831bfdbd80ece5`; downloaded and inspected; three JUnit XML files and generated Java/checksums verified.
+- Review found the registered acceptance criteria explicitly required metadata/body identity mismatch and hash mismatch rejection, but the first 8 raw-body cases did not test these. Thus run #10 is accepted only as evidence for its exact SHA; 026DF is not yet complete.
+- Correction commit `d74dfa6e04955793e191bd114e9e3bedf7756c02` updates only the disposable `RawBodyRecoveryPoCTest.kt`: journal stores expected `(bookUrl,chapterIndex)`; pre-write and replay validation reject mismatched identity or SHA-256; ninth raw-body test proves both rejections leave body/metadata/journal untouched. Static contract and `git diff --check` PASS. Pushed fast-forward to both integration and storage PoC branches.
+- **Current disposition:** 026DF `in_progress`, waiting for exact-SHA remote CI on the corrected test source. No production code/schema/migration/user data/UI changes; no storage backend selected. Phase A OPEN; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
