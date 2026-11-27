@@ -2795,3 +2795,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Procedure/acceptance:** reconfirm artifact/run identity, download exact artifact ID, verify embedded APK byte size/SHA, inventory every APK path and nested notice payload, hash/compare notices against existing source evidence, classify package coverage honestly, and checksum all reports. If artifact unavailable or hash mismatch, stop.
 - **Exclusions:** no build, Gradle, source/product/manifest/packaging/license/notice changes, APK modification/repackaging, device work, GitHub branch mutation, workflow dispatch, CI/rerun/retry. This does not by itself accept the AAR notice package.
 - **Status:** Phase A open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+
+### 4.27.169 Task 026BW result — #3680 APK notice inventory and AAR native propagation
+
+- Exact GitHub run #3680 ID `46040803723`, exact head `16468b277a9638b58be09caa5e9c7328806f9ea8`; artifact ID `15221176066`, ZIP 13,426,693 bytes, SHA-256 `c936800696e757d6b9957511a2da3af014bb0d85ef37d0efec141092e7cf677a` (matches GitHub digest). ZIP contains only `app-debug.apk`.
+- Extracted APK: 31,991,966 bytes, SHA-256 `65507bdfc3d12bebffb03d07e93ed4f40835a5be1125b20581b89b1c6b7db0d9`, exact Task 026BS expected hash.
+- 54 APK entries; exactly four license/notice paths: Bouncy Castle MIT `META-INF/LICENSE.md` (SHA-256 `0e01f1549c9022f406392ac2947d32223b7c2e977d21ea2f8c182fdeb4dae5fd`); AndroidX Annotation and Collection Apache-2.0 entries (both SHA-256 `809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0`); jsoup MIT `META-INF/jsoup/LICENSE` (SHA-256 `f5d724c5818010c61bff2e177f5b6452434bc054807522bf241940bca8b1d6b1`).
+- No NOTICE/COPYING/third-party path, Legado GPL license/NOTICE, HtmlUnit license/notice, or libarchive/codec/crypto/zlib notice was present. Root third-party notices and upstream license/notice files were not packaged.
+- All four APK `libarchive-jni.so` payload hashes exactly match the AAR hashes from 026BL/026BO (4/4 ABI). This proves AAR native binary propagation into this APK, but not the native source/build provenance.
+- **Result:** exact artifact and APK hashes verified; archive inventory complete; AAR native payload propagated byte-for-byte; APK notice coverage **NOT ACCEPTED / INCOMPLETE**; AAR notice package remains **NOT ACCEPTED**. The missing notices remain a Phase-A release blocker. This evidence is only for GitHub SHA `16468b277a9638b58be09caa5e9c7328806f9ea8`, not current server HEAD. No CI/build/branch update or product change.
