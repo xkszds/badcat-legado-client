@@ -3301,3 +3301,15 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Allowed:** audit/overview docs and /tmp/task026cv-model-host-binding/ only.
 - **Forbidden:** production/test/Gradle/dependency/workflow/manifest/license/packaging/schema/database/UI edits; build/test/CI/GitHub/push/ref update/network/NDK/device; no Stage-1/Task 027.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.219 Task 026CV result — safe per-object Host Binding and context design (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-MODEL-HOST-BINDING-CONTEXT-DESIGN-026CV; complete as static design evidence.
+- **Registration HEAD:** 2ef1808e3594340f1dd23e0b1759598e02d2a965; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9. Report /tmp/task026cv-model-host-binding/RESULT.md, SHA-256 15fdf7892fd9b296e2d6a1341bba1a1a07f1920fa1847261140fd018f5db8871.
+- **Preferred design:** immutable App-scoped Host Port bundle + transient body-property binding on authentic BookSource/Book/BookChapter + explicit full RuntimeExecutionContext per invocation. No Activity/View/UI state in model binding.
+- **Avoid:** ordinary WeakHashMap (model equals/hashCode collisions), ThreadLocal (coroutine/WebView thread hops), global mutable context/service locator, general wrappers/decorators (identity/type change), DTO/Any/Map.
+- **Lifecycle:** exclude binding from constructor/component/copy/equality, Room, Parcelable and Gson; reattach after copy/parcel/reload/materialization; validate source/book/chapter identity. BaseSource gets no new abstract property because RssSource/HttpTTS also implement it.
+- **Context:** preserve the original full CoroutineContext including SuppressSourceNavigation through AnalyzeRule/AnalyzeUrl/Rhino/WebView callbacks; SourceExecutionContext remains host projection, not a replacement.
+- **Verification:** static only; no source/test/build/CI/device changes. Standing remote-CI authorization not used.
+- **Disposition:** design recommended, implementation NO-GO pending callsite/rebind inventory and 026CC data-owner decision. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next mainline:** inventory every construction/copy/parcel/reload path for BookSource/Book/BookChapter and exact direct App imports before implementing transient binding; reconcile with 026CC single-writer data owner.
