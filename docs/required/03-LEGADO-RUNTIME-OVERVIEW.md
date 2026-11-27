@@ -3074,3 +3074,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Verification:** static only; no Gradle/JUnit/CI. Existing Runtime workflow does not compile integration-contract tests or execute JUnit, and its trigger branch does not contain the current server commit chain. No push/ref synchronization.
 - **Disposition:** Host Port production wiring NOT MET; stale test likely blocks :integration-contract test compilation; Stage-0 remains in_progress / NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
 - **Next:** narrowly remove or deliberately relocate the stale test, then separately register remote exact-HEAD sync plus both module test compilation and Runtime JUnit execution. No App adapter wiring before authentic Runtime consumers and remaining port closure.
+
+### 4.27.198 Task 026CL preregistration — consolidate Host Port tests under Runtime owner (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-CONSOLIDATE-HOST-PORT-CONTRACT-TESTS-026CL; registered / in progress. Start HEAD 87375b1c1846c30eb61db7a6e34d58d82355d998; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** move unique assertions from the obsolete :integration-contract Host Port test into the :legado-runtime-owned suite and delete the stale old-package test; do not add a Runtime→integration-contract dependency.
+- **Allowed:** update only RuntimeHostPortContractTest.kt, delete integration-contract/src/test/kotlin/app/badcat/engine/RuntimeHostPortContractTest.kt, and update audit/overview.
+- **Required:** preserve all old unique assertions plus current Runtime tests; static inventory, exact paths/hashes, diff check; distinguish test source from executed tests.
+- **Forbidden:** production source, Gradle/workflow/dependency/UI/schema/database changes; local Gradle on 2-GB host; server push/ref update; Phase B/Task 027.
+- **CI note:** standing remote-CI authorization acknowledged, but exact commit must first be available to the authorized remote workflow; no push is implied.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
