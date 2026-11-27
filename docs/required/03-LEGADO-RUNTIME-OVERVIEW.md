@@ -3379,3 +3379,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - No CI: exact HEAD is not synchronized to GitHub; server branch remains ahead 225 / behind 1 and no push/ref update was performed. Standing remote-CI authorization does not imply push authorization.
 - **Disposition:** harness staged only; storage candidate comparison not accepted; no backend selected; production Room/schema/migration/dual-write and BatchContentPort remain NO-GO. Task 026CY `in_progress / blocked on exact-HEAD remote test execution`; Phase A OPEN; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
 - **Next:** safely synchronize exact commit to authorized workflow branch, run `:legado-runtime-poc:testDebugUnitTest` remotely and inspect JUnit/logs at exact SHA before any backend decision.
+
+### 4.27.225 Task 026CZ preregistration — GitHub-hosted storage PoC test execution (2026-11-28)
+
+- Task `R3-S0-T026-PHASE-A-STORAGE-POC-REMOTE-TEST-EXECUTION-026CZ` registered at base HEAD `ba295685412a414bf0e4f6801552f1eea261f252`; fixed Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- User granted permanent authorization for routine project operations, including Git synchronization/push, branch creation, GitHub Actions, remote build/test, logs/artifact retrieval and evidence recording; do not ask for these authorizations again.
+- Goal: run `:legado-runtime-poc:testDebugUnitTest` at exact SHA on GitHub-hosted runner; capture Gradle log, JUnit XML/HTML, Room processor outputs and hashes. Dedicated workflow `.github/workflows/storage-poc-test.yml` triggers only on `storage-poc/026CZ`, uses JDK 21, SDK 36/build tools 36.0.0, Gradle 8.14.4, and gates >=8 GiB effective+available RAM / >=4 vCPU before Gradle.
+- Only workflow + audit + overview may change for setup. No production app/runtime source, schema, migration, data or test assertion changes. No APK/Release/emulator/signing/publishing in this task.
+- Existing integration remote commit `16468b277a9638b58be09caa5e9c7328806f9ea8` has been incorporated into local history with merge commit `ba295685412a414bf0e4f6801552f1eea261f252`; preserve branch safety and never force-push/rewrite history. Integration Android CI and dedicated PoC CI are separate evidence and must be attributed to exact SHA/run.
+- Task 026CY remains dynamically unverified; no storage backend selected. Phase A OPEN; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
