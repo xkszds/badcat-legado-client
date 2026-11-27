@@ -3111,3 +3111,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Contract gaps:** current HiddenWebViewRequest cannot represent nullable URL, nullable/default JS, 60-second default timeout, initial result JSON or WebJs rule/bridge bootstrap. Current UTF-8 default covers all observed callsites; no production callsite overrides encode. AnalyzeUrl POST also requires HTTP-response-then-WebView semantics.
 - **Disposition:** request type is insufficient; no App adapter should be wired yet. Static-only audit; no build/test/CI. Host Port wiring NOT MET; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
 - **Next:** register a bounded Host Port contract amendment plus bridge bootstrap design, preserving source identity, WebCacheManager, BaseSource/WebJsExtensions exposure, result seeding, nullable/default behavior and AnalyzeUrl POST semantics. Add differential tests before any production adapter.
+
+### 4.27.202 Task 026CN preregistration — WebJs rule bridge surface/closure audit (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-WEBJS-RULE-BRIDGE-SURFACE-CLOSURE-026CN; registered / in progress. Start HEAD 55d109f8c670e1c1a62aaddb24a6c2fdd6f4a162; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** inventory all JS bridge objects and methods attached when AnalyzeRule runs WebJs, including WebJsExtensions, BaseSource, WebCacheManager and injected helper scripts; map their service/data dependencies and Badcat source inclusion.
+- **De-duplication:** reuse 026CM, 026CB ABI/reflection inventory and 026CH Host Port DAG; add only WebView-specific bridge method/dependency closure.
+- **Allowed:** read-only source inspection; temporary report /tmp/task026cn-webjs-bridge-closure/; audit and overview docs only.
+- **Required:** JS object names, all annotated methods/signatures, injection entrypoints, backing services/data/cache/network, lifecycle/context semantics, Badcat source-inclusion status, missing Host Port families.
+- **Forbidden:** production/test/build/Gradle/workflow/dependency/UI/schema/database changes; build/test/CI/GitHub/network/NDK/device; server push; Phase B/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
