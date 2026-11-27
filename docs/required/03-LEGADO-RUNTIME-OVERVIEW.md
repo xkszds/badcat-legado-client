@@ -3404,3 +3404,10 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Verified pinned submodule jar SHA-1 `d240cdd66f5269ed33da53cde7e4e690cee6e162`, size 1,900,654 bytes; all 12 required Rhino extension source files exist at pinned SHA. Existing Android workflow already documents these inputs.
 - Task 026DA registered to restore and hash-check this jar and all 12 source files from the pinned submodule before rerunning only `:legado-runtime-poc:testDebugUnitTest`. Workflow-only fix; no production/test assertions/data/schema changes. Standing permanent authorization applies; no repeated permission request.
 - Storage backend remains undecided; Task 026CY dynamic proof pending; Phase A OPEN; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.227 Task 026DA implementation checkpoint — pinned Rhino bootstrap fix staged (2026-11-28)
+
+- Implementation commit `bd8cbafa45e37c7cb7b17137f753f4a3ab68a816`; registration `b920dcd4302d6b65bf9c164275f81f296aacc4fc`; branch `storage-poc/026CZ`; fixed Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- Reused the committed pinned HtmlUnit CoreJS JAR/POM/license staging step and added restore+per-file Git blob SHA checks for all 12 Rhino extension source files from the pinned submodule. No external unpinned download.
+- Static workflow checks PASS. Server-side dry-run: jar 1,900,654 bytes, SHA-256 `d720f34285515025e4ccc80a5b92aed42cb26c03a7715ca53583d2c74ae51df7`, Git blob `d240cdd66f5269ed33da53cde7e4e690cee6e162`; POM SHA-256 `7d81c799e9835596330f00f9d197f85b27c134de929d980a6f06c4f5e6b84fbe`; license SHA-256 `3f991eff87a6212affed07c2d2cc0a8bb681a72ecefeff54f4915de7b5aa5a52`; all 12 source hashes matched pinned Git blobs.
+- Corrected workflow not yet remotely executed. Next: fast-forward push branch and inspect new exact-SHA run. Prior #1–#4 remain dependency-bootstrap failures, 0 JUnit tests. No production changes; storage decision remains open; Phase A OPEN; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
