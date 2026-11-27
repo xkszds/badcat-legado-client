@@ -3322,3 +3322,16 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Allowed:** audit/overview docs and /tmp/task026cw-model-rebind-inventory/ only. Reuse 026CC data-owner evidence.
 - **Forbidden:** production/test/Gradle/dependency/workflow/manifest/license/packaging/schema/database/UI edits; build/test/CI/GitHub/push/ref update/network/NDK/device; no Stage-1/Task 027.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.221 Task 026CW result — model construction/copy/rebind inventory (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-MODEL-CONSTRUCTION-REBIND-INVENTORY-026CW; complete as static evidence.
+- **Registration HEAD:** 082c02c1f3285c88f2624f4de15540ee4623ab90; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9. Report /tmp/task026cw-model-rebind-inventory/RESULT.md, SHA-256 8351fd430931c4dba3ba2eacbaeb51bd999df6a86ba4aec421f49659688a8fa1.
+- **Inventory:** 8 BookSource declaration/construction occurrences (one declaration + seven constructors), 10 Book constructor/declaration occurrences, 22 BookChapter constructor calls; explicit copy() and Parcelable/Room/Gson paths recorded.
+- **Attach points:** BookSource after final import/save/DAO/catalog lookup; Book after accepted data-owner materialization and before source rules; BookChapter immediately after TOC parser construction (before AnalyzeRule.setChapter) and after DAO reload; preserve same bound instances through BatchContentContext and JS. Copies re-entering Runtime require explicit copy-and-bind.
+- **Parcelable:** all three are Parcelable/Room entities, but targeted search found no direct Parcelable transfer of these exact models; navigation generally passes stable keys and reloads through DAO. Badcat has no Room database.
+- **Current gap:** Badcat uses host BookSource/BookDetail/BookChapter DTOs and raw JSON Map conversion; no authentic model factory or binding. 026CC full data owner remains unaccepted.
+- **Decision:** transient binding design still preferred, but factory implementation NO-GO until full data owner and source model extraction gates pass. No DTO binding.
+- **Verification:** static only; no source/build/test/CI/device changes. Standing remote-CI authorization not used.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next mainline:** reconcile 026CC data ownership and 026CS port design; then design the minimal App repository adapters for authentic model fields/variables/content persistence before implementing model factories.
