@@ -31,6 +31,8 @@ kotlin {
 }
 
 dependencies {
+    // Host Port public context exposes Job to App-side implementations.
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
     implementation("com.google.code.gson:gson:2.14.0")
     implementation("androidx.annotation:annotation:1.10.0")
     testImplementation("junit:junit:4.13.2")
