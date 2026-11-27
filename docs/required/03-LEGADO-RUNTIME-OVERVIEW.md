@@ -3130,3 +3130,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Closure:** all five bridge/engine classes are absent from Badcat production source roots. Required dependencies include source DAO/entity, AnalyzeRule/JsExtensions, cache disk/memory/file stores, CookieStore/login encryption, HTTP/crypto/file operations, WebView bridge registration and coroutine lifecycle.
 - **Disposition:** WebJs bridge/source closure NOT PRESENT; no plain WebView adapter. Static-only; no build/test/CI. Host Port wiring NOT MET; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
 - **Next:** register the bridge ownership/Host Port architecture decision and source extraction boundary before production implementation; preserve the activity-null behavior and every exposed JS method/overload.
+
+### 4.27.204 Task 026CO preregistration — typed WebJs bridge ownership architecture (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-WEBJS-BRIDGE-OWNERSHIP-ARCHITECTURE-DECISION-026CO; registered / in progress. Start HEAD 37722942a65ea0aa337f55e171a225356d0dd510; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** define a typed Runtime↔App architecture for WebJs rule bridge: preserve 40 JS declarations, three bridge objects, rule bootstrap, nullable/default semantics, source/cache/cookie/login/network/files/UI lifecycle and cancellation.
+- **De-duplication:** reuse 026CI, 026CK, 026CM, 026CN, 026CH and 026CB; add only the WebJs-specific ownership and typed Host Port design.
+- **Allowed:** audit/overview docs and temporary report /tmp/task026co-webjs-bridge-architecture/ only.
+- **Required:** ownership matrix, typed port family proposals, object/method binding design, data owners, lifecycle, dependency DAG, module edges and implementation order.
+- **Forbidden:** source/test/Gradle/workflow/dependency/manifest/license/notice/packaging/schema/database/UI changes; build/test/CI/GitHub/network/NDK/device; server push; Phase B/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
