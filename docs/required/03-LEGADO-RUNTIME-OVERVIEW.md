@@ -3335,3 +3335,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Verification:** static only; no source/build/test/CI/device changes. Standing remote-CI authorization not used.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
 - **Next mainline:** reconcile 026CC data ownership and 026CS port design; then design the minimal App repository adapters for authentic model fields/variables/content persistence before implementing model factories.
+
+### 4.27.222 Task 026CX preregistration — App runtime data owner strategy decision (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-APP-RUNTIME-DATA-OWNER-STRATEGY-026CX; registered / in progress. Start HEAD dcefcecdc46e5c47f5580e05a27f60d9d1039076; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9.
+- **Goal:** reconcile 026CC data gaps with 026CS–026CW Runtime-owned models/Host Ports and select logical single-writer owner and physical storage PoC strategy.
+- **Compare:** current AtomicFile/SharedPreferences, unified file repository + journal, minimal Room schema, full upstream AppDatabase migration.
+- **Required:** per-domain owner/writer/identity/transaction/recovery, cross-domain journal, migration/backup/dry-run/idempotence/rollback, content fence and no-data-loss PoC.
+- **Allowed:** docs and /tmp/task026cx-data-owner-strategy/ only. Reuse 026CC/026CF and pinned schema evidence.
+- **Forbidden:** source/test/Gradle/dependency/workflow/manifest/license/packaging/schema/database/UI changes; build/test/CI/GitHub/push/ref update/network/NDK/device; no Room/schema freeze/data migration/dual-write/Stage-1/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
