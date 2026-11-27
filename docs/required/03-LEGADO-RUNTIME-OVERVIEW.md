@@ -2429,3 +2429,15 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 
 
 - **026BI scope amendment:** include the omitted 026BF StringBuilder evidence target: ljun223/legado2xsgg commit 2cb6e6ec04c29738fd64c54981b1b31ab9888c1a, docs/legado-书源规则.md, blob 6538c3d1a66f43d8883269827d0877072292906e. It is a documentation example, not an executing source fixture. Local-only search and blob verification rules are unchanged.
+
+
+### 4.27.138 Task 026BI result — local-only recovery of unresolved Java utility callsites (2026-11-27)
+
+- **Status:** complete as a negative local-only availability check. Registration/result HEAD 6447ee6745b8f9b095abe95bf09daafa5982a82e; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- All six exact source blobs listed in 026BF (StringBuilder docs, yuyuan System.currentTimeMillis, mumuceo Collections.reverse/Thread.sleep, shidahuilang Thread.sleep, yolo52 Thread.sleep/RandomUtil, jing332 ArrayUtil.resize) are NOT FOUND in any of five local Git object databases. Exact target basenames and distinctive source-text calls were also absent from /root/.gradle/caches, /root/.cache, /root/.m2, /root/stage0-runner and /tmp local roots.
+- Three local 13.json matches are pinned AppDatabase schema files, not the yuyuan corpus source: Git blob 3226a6f0566952b2bfc64d2e0eda0cd313f987f8, not expected a0274bc6930ae2ecbe1b072652cbb12b02bcf0dc.
+- No source bytes were opened and no call shape was inferred. Preserve the exact 026BF unknowns: StringBuilder.append argument/overload; Collections.reverse receiver/list; Thread.sleep overload/argument/interruption/total wait; ArrayUtil.resize argument/overload/result use; RandomUtil member/arguments/security purpose. No network retrieval is authorized by this negative result.
+- Evidence: /tmp/task026bi-local-corpus-recovery/RESULT.md SHA-256 3c134bb888c939f90c2504c2ef4f7613fdd9ad53ee27bd2bc0f2831b9d4432ec; search manifests and checksums are recorded in audit §24.225. 026BF source matrix SHA-256 28c6389c62d6cc0617a10f1076da522523954dd841659be7e370ebf2c1563db6.
+- No web/GitHub/API/network/fetch/clone/download, build/compiler/test/CI/DEX/R8/APK/device or production change. No App compile retry under §24.119.
+- **Disposition:** JavaImporter/Packages remains NO-GO; Phase A open; broad BookSource/BaseSource migration and Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full compatibility NOT ESTABLISHED.
+- **Next:** keep 026BF unresolved details explicit; continue independent Phase A gates only. Runtime-only variant resolution/compile awaits a clean higher-capacity runner.
