@@ -2983,3 +2983,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Tests added:** genuinely absent catalog; interrupted AtomicFile write restores prior committed source ID and consumes `.bak`; malformed persisted catalog remains failure. Source SHA `db86e48fe4725cb7271995a4c20fd1f907553b8d1a64740c67beaf4c28092a5f`; test SHA `f57fe4d8f394fd4a672056342265aab3f3d7dd77797efe0088cd972d0ad57334`. Static checks 5/5 PASS and diff check PASS.
 - **Verification:** focused Robolectric test NOT RUN because the server has 2 GB RAM and prior App compile attempts are prohibited; no fresh hosted CI authorization. No Gradle/build/test/CI execution.
 - **Disposition:** source fix and regression test source added; runtime test proof remains pending. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next validation needs separately authorized adequate runner.
+
+### 4.27.188 Task 026CG preregistration — reconcile 33 candidate Runtime source paths with actual module inclusion (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-33PATH-RUNTIME-SOURCE-INCLUSION-RECONCILIATION-026CG; registered / in progress. Start HEAD `ed1bdc867faa9af33a90198ffb1657aed04de4ae`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** map each of the existing 33 candidate Runtime paths to exact pinned source identity, current Badcat path, Gradle inclusion, actual module owner, compiled evidence and production caller/Host Port dependencies.
+- **De-duplication:** reuse Task 026K candidate/import matrix, 026AD dependency reports, 026BH source-visible API crosswalk and 026CB ABI findings; no repeated method inventory.
+- **Allowed:** read-only repository/source/build declaration inspection; temporary matrix `/tmp/task026cg-source-inclusion/`; audit and overview docs only.
+- **Required:** 33-row path-exact matrix; label file presence, Gradle inclusion, exact-SHA compilation and runtime proof separately; state missing roots and bounded next closure.
+- **Forbidden:** source/build/test/Gradle/dependency/workflow/manifest/license/notice/packaging/schema/database/UI edits; build/test/CI/GitHub/network/NDK/device; Phase B/Task 027. No App compile retry or new CI authorization.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
