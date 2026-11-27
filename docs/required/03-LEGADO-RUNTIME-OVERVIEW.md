@@ -2966,3 +2966,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Do not conflate evidence:** successful metadata reports do not prove full source closure; Runtime-only compilation does not prove App or test execution; static APIs do not prove compiled ABI; source license files do not prove packaged notices; historical #3680 APK does not represent current HEAD; native symbols do not attest source builds.
 - **Next order:** (1) separately register the narrow BookSource AtomicFile `.bak` recovery fix and regression test; (2) close exact source/Host Port contract; (3) obtain fresh explicit authorization before any hosted full Runtime dependency/compile run; (4) close ABI/R8 and data ownership/migration design; (5) close native provenance and packaged notices; (6) assemble Stage-0 acceptance bundle and request independent review. No migration execution before ownership/schema approval.
 - **Disposition:** Stage-0 `in_progress / NOT ACCEPTED`; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED. No implementation/build/test/CI/network/database/device work occurred.
+
+### 4.27.186 Task 026CF preregistration — BookSource AtomicFile backup recovery fix (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-BOOKSOURCE-ATOMICFILE-RECOVERY-FIX-026CF; registered / in progress. Start HEAD `d37ef9265f2afac27df71a24e39d862269c80e91`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** correct the BookSource `AtomicFile` read order so `.bak` recovery runs before any absent-base fallback, and add a regression test for backup-present recovery plus genuinely absent catalog behavior.
+- **Allowed:** only `FileBookSourceCatalog.kt`, `FileBookSourceCatalogLifecycleTest.kt`, audit and overview; temporary diagnostics `/tmp/task026cf-atomicfile-recovery/`.
+- **Required:** preserve JSON and catalog semantics; deterministic interrupted-write fixture; test absent, recovered and malformed cases; diff check and exact scope review. Do not report test PASS unless the focused test actually executes.
+- **Forbidden:** Room/schema/database migration, multi-store transaction redesign, UI/product changes, broad build/test/CI/GitHub, external retrieval, device/live-source, Phase B or Task 027. No App compile retry on the constrained server.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
