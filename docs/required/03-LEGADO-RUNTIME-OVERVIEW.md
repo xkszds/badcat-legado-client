@@ -3046,3 +3046,10 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Required:** preserve all signatures/validation semantics; prove no old FQCN consumers; tests cover context, error/cancellation, SSL metadata and WebView request validation. No test pass claim unless executed.
 - **Forbidden:** App adapter/factory wiring, additional port families, source engine migration, database/schema/UI changes, broad build/test/CI/GitHub, network/NDK/device, Phase B/Task 027. No App compile retry or new CI authorization.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+### 4.27.195 Task 026CJ result — Host Port API now owned by Runtime (2026-11-28)
+
+- **Final code HEAD:** `b84334dd1b98ac6dd16d0a7a0e6d19d8a39b5e4c`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`. Report `/tmp/task026cj-host-port-foundation/RESULT.md`, SHA-256 `5f02cf0d7964982298b2938746933cc06534093fbb00a33ac12b7977e52159da`; audit §24.255.1.
+- **Change:** moved `RuntimeHostPort.kt` into `:legado-runtime` package `io.legado.runtime.port`; preserved all five existing interfaces and payload/result/error/cancellation types. Added exported coroutines-core 1.11.0 API dependency because public context exposes `Job`. `ReadingEngine` DTO facade remains in integration-contract; no Runtime→integration-contract/App edge.
+- **Tests:** five JUnit contract test methods added; static assertions 7/7 PASS; no old FQCN source references. Test SHA `04d9b056405c1bb7aecad0bce7b36ad3cfe5f87210ccd77dba29b0143e65a277`. Gradle/JUnit NOT RUN due server memory and no new CI authorization.
+- **Disposition:** Runtime owns the API, but no App implementation/factory or runtime consumer is wired yet. Host Port production wiring NOT MET; test execution pending. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
