@@ -3084,3 +3084,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Forbidden:** production source, Gradle/workflow/dependency/UI/schema/database changes; local Gradle on 2-GB host; server push/ref update; Phase B/Task 027.
 - **CI note:** standing remote-CI authorization acknowledged, but exact commit must first be available to the authorized remote workflow; no push is implied.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.199 Task 026CL result — Host Port tests consolidated under Runtime; execution pending (2026-11-28)
+
+- **Code/review HEAD:** 4b46fc168f9cee1d8c0211b6c36fdb4eb70202d1; registration HEAD 172b1ae6e38e1a63fe4d69c29f29e48170100c90; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a. Report /tmp/task026cl-host-port-tests/RESULT.md.
+- **Change:** deleted the stale integration-contract Host Port test and consolidated its unique assertions into the Runtime-owned contract suite. Runtime suite now has 12 JUnit test methods; added result/nullability, browser delivery, verification-code validation, Job cancellation, UI outcomes, product refresh enum and reflection no-Android-leak checks. No production/Gradle/workflow/dependency change.
+- **Static verification:** old test path absent; no Host Port references remain in integration-contract tests; diff check PASS. Runtime test source SHA-256 d48ba0fdfd0bfb7beba5cfb2cdb548cde6098ebc29185bfdbcd3936c1cbc3aed.
+- **Test status:** no Gradle/JUnit execution. Standing remote-CI authorization is active, but the current exact server commit is not yet available to the existing workflow branch; no server push/ref update.
+- **Disposition:** source/test consolidation complete; JUnit pending; Host Port production wiring NOT MET. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next:** register exact-HEAD remote CI for Runtime JUnit and integration-contract test compilation/execution after a safe, separately preregistered source synchronization path is established.
