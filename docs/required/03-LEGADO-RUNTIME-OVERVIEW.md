@@ -3368,3 +3368,14 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Acceptance:** deterministic executable tests/harness, exact commands/results and fixture hashes, no lost/crossed records, replay/rollback proven. If Room arm cannot run, explicitly NOT RUN and no backend selection.
 - **Forbidden:** production schema/Room dependency/migration/dual-write/data mutation, Runtime model migration, BatchContentPort/Host Port wiring, UI, Stage-1/Task 027, push/ref update. Remote CI only on exact synchronized commit.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.224 Task 026CY implementation checkpoint — storage PoC harness staged, execution pending (2026-11-28)
+
+- **Commit:** `23b925c2f07404cd20943620c3d88040006b05ce`; registration `c448940bf3278b737d38903934ecf3d8da523c53`; pinned Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- Added quarantined `:legado-runtime-poc` test-only file+journal and Room comparison harness. File arm covers PREPARED/COMMITTED replay, two crash windows, identity conflicts, dry-run, backup/rollback of snapshot+journal, 1,000-chapter TOC, raw/parsed content separation, stale save fence, 512 KiB payload and 12 concurrent book writes. Room arm uses test-only Java fixtures matching `(url,bookUrl)` PK and `(bookUrl,index)` unique index; includes transaction rollback, idempotence and 1,000-chapter ordered query.
+- All PoC entity/test files live under `src/test`; no POC production Java/Kotlin sources and no production module depends on `:legado-runtime-poc`. No user data or production schema touched.
+- Fixture manifest: 13 cases; SHA-256 `ff52681cb45fc241825514737e753ae5fbcd73066d809b6eb6402b088fcda533`. Static report `/tmp/task026cy-storage-poc/STATIC-RESULT.md`, SHA-256 `6ee161219ff934eb9ee582d33f44fa669caf0a24c29a83b4431846d0fb72a3be`.
+- Static checks PASS (manifest/identity, source isolation, production dependency boundary, diff whitespace); 5 Room + 7 file/journal tests authored. **No Gradle executable/wrapper is available on server; compilation, Room processor, SQLite/Robolectric and all runtime tests remain NOT RUN / NOT VERIFIED.**
+- No CI: exact HEAD is not synchronized to GitHub; server branch remains ahead 225 / behind 1 and no push/ref update was performed. Standing remote-CI authorization does not imply push authorization.
+- **Disposition:** harness staged only; storage candidate comparison not accepted; no backend selected; production Room/schema/migration/dual-write and BatchContentPort remain NO-GO. Task 026CY `in_progress / blocked on exact-HEAD remote test execution`; Phase A OPEN; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next:** safely synchronize exact commit to authorized workflow branch, run `:legado-runtime-poc:testDebugUnitTest` remotely and inspect JUnit/logs at exact SHA before any backend decision.
