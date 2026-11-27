@@ -3256,3 +3256,15 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Required:** per-type field/API matrix, complete callers, chapter identity/index and duplicate URL semantics, token fence, replacement/cancel/close, persistence transaction, AnalyzeUrl request semantics, current Badcat gap and minimum authentic source/dependency closure.
 - **Forbidden:** production/test/Gradle/dependency/workflow/manifest/license/packaging/schema/database/UI edits; build/test/CI/GitHub/push/ref update/network/NDK/device; no shadow DTO, Stage-1 or Task 027.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.215 Task 026CT result — authentic batch model and AnalyzeUrl closure (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-BATCH-CONTENT-AUTHENTIC-MODEL-CLOSURE-026CT; complete as static audit only.
+- **Registration HEAD:** 3df7aa8cc05c934110d35ea074d7581da2c3befb; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a. Report /tmp/task026ct-batch-model-closure/RESULT.md, SHA-256 8c43b9644b11ebac857d9520e06b3a29b73172cf5e125c146f47454a4df81edd.
+- **Required transitive types:** Book, BookChapter, BookSource, BaseSource, BaseBook, RuleDataInterface, ContentRule, AnalyzeUrl, BatchContentContext, ContentSaveToken and BookHelp. Book has 33 constructor fields; BookChapter 17. Host BookChapter is a separate seven-field DTO.
+- **Batch semantics:** chapter index is the save identity; URL aliases can be ambiguous; tokens fence stale writes; batch contexts preserve CoroutineContext, source replacement, lock/cancellation/close and missing-chapter fallback. JS source and ordinary contentBatch paths both capture tokens and close in finally.
+- **AnalyzeUrl:** 32 direct caller files; it is a 1,052-line URL/JS/HTTP execution object, not a request DTO. Full live object bindings, UrlOption, CookieStore/CacheManager, shared scope, WebView, HTTP, proxy/Cronet, upload and response lifecycles are not covered by SourceRequestFactory/SourceHttpGateway.
+- **Decision:** BatchContentPort implementation NO-GO until authentic model ownership, token/fence, BookHelp storage and CoroutineContext boundaries are solved. Copying upstream entities/helpers as-is into Runtime would pull Room/AppDb/Reader/UI/WebView/SAF/EventBus/Glide/Media3/HTTP dependencies across the module boundary. No shadow DTO is acceptable.
+- **Verification:** static only; no source/test/build/Gradle/CI/device changes. Standing remote-CI authorization was not used in this read-only audit.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next mainline:** make a registered architecture decision on authentic model placement and App-owned storage boundary for Book/BookChapter/BookSource/BaseSource and AnalyzeUrl before writing any BatchContent or HTTP Host Port code.
