@@ -3093,3 +3093,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Test status:** no Gradle/JUnit execution. Standing remote-CI authorization is active, but the current exact server commit is not yet available to the existing workflow branch; no server push/ref update.
 - **Disposition:** source/test consolidation complete; JUnit pending; Host Port production wiring NOT MET. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
 - **Next:** register exact-HEAD remote CI for Runtime JUnit and integration-contract test compilation/execution after a safe, separately preregistered source synchronization path is established.
+
+### 4.27.200 Task 026CM preregistration — hidden WebView request-field reachability audit (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-HIDDEN-WEBVIEW-REQUEST-FIELD-REACHABILITY-026CM; registered / in progress. Start HEAD b93032ca600cc7f3c46052eb294de04d8c987cdd; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** trace all fixed-upstream BackstageWebView construction sites and reachable JsExtensions methods to decide whether encode/result/isRule are actually source-reachable and required by HiddenWebViewRequest.
+- **De-duplication:** reuse 026CK's method matrix and existing WebView/JsExtensions audits; add only constructor-site and per-field dataflow closure.
+- **Allowed:** read-only source inspection; temporary report /tmp/task026cm-hidden-webview-fields/; audit and overview docs only.
+- **Required:** complete constructor-site list, exact field/caller lines, request-to-runtime mapping, WebView lifecycle/cookie/cache/SSL/cancellation behavior, and precise gaps.
+- **Forbidden:** source/test/build/Gradle/workflow/dependency/UI/schema/database changes; build/test/CI/GitHub/network/NDK/device; server push; Phase B/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
