@@ -203,9 +203,9 @@ class RuntimeHostPortContractTest {
             coroutineJob = job,
         )
 
-        assertTrue(context.coroutineJob.isActive)
+        assertTrue(context.coroutineJob?.isActive == true)
         job.cancel()
-        assertFalse(context.coroutineJob.isActive)
+        assertFalse(context.coroutineJob?.isActive == true)
     }
 
     @Test
@@ -278,6 +278,118 @@ class RuntimeHostPortContractTest {
                 it.type.name.contains("android.") || it.type.name.contains("androidx.")
             },
         )
+    }
+
+
+    @Test
+    fun sourceExecutionContextAllowsAnEmptyUpstreamCoroutineContext() {
+        val context = SourceExecutionContext(
+            source = SourceIdentity("https://source.example", "Book source", 0),
+            caller = SourceCallerKind.SOURCE_SCRIPT,
+            operationId = "empty-context",
+            navigationPolicy = SourceNavigationPolicy.ALLOW,
+        )
+
+        assertEquals(null, context.coroutineJob)
+    }
+
+    @Test
+    fun hiddenWebViewAllowsNullUrlWhenHtmlIsPresentAndUsesUpstreamDefaults() {
+        val context = SourceExecutionContext(
+            source = SourceIdentity("https://source.example", "Book source", 0),
+            caller = SourceCallerKind.SOURCE_SCRIPT,
+            operationId = "html-page",
+            navigationPolicy = SourceNavigationPolicy.ALLOW,
+        )
+        val request = HiddenWebViewRequest(
+            context = context,
+            operation = HiddenWebViewOperation.EVALUATE_PAGE,
+            url = null,
+            html = "<html/>",
+            javascript = null,
+        )
+
+        assertEquals(null, request.url)
+        assertEquals("utf-8", request.effectiveEncoding)
+        assertEquals(60_000L, request.timeoutMillis)
+        assertEquals(900L, request.effectiveDelayMillis)
+        assertEquals(HiddenWebViewRuleMode.PLAIN, request.ruleMode)
+    }
+
+    @Test
+    fun hiddenWebViewRequiresUrlWhenHtmlIsAbsent() {
+        val context = SourceExecutionContext(
+            source = SourceIdentity("https://source.example", "Book source", 0),
+            caller = SourceCallerKind.SOURCE_SCRIPT,
+            operationId = "url-required",
+            navigationPolicy = SourceNavigationPolicy.ALLOW,
+        )
+
+        assertThrows(IllegalArgumentException::class.java) {
+            HiddenWebViewRequest(
+                context = context,
+                operation = HiddenWebViewOperation.EVALUATE_PAGE,
+                url = null,
+                html = null,
+                javascript = "return document.title",
+            )
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            HiddenWebViewRequest(
+                context = context,
+                operation = HiddenWebViewOperation.EVALUATE_PAGE,
+                url = " ",
+                html = "",
+                javascript = "return document.title",
+            )
+        }
+    }
+
+    @Test
+    fun hiddenWebViewKeepsNullJavascriptDistinctFromEmptyJavascript() {
+        val context = SourceExecutionContext(
+            source = SourceIdentity("https://source.example", "Book source", 0),
+            caller = SourceCallerKind.SOURCE_SCRIPT,
+            operationId = "js-null-empty",
+            navigationPolicy = SourceNavigationPolicy.ALLOW,
+        )
+        val defaultScript = HiddenWebViewRequest(
+            context = context,
+            operation = HiddenWebViewOperation.EVALUATE_PAGE,
+            url = "https://source.example",
+            html = null,
+            javascript = null,
+        )
+        val emptyScript = defaultScript.copy(javascript = "")
+
+        assertEquals(null, defaultScript.javascript)
+        assertEquals("", emptyScript.javascript)
+        assertEquals(900L, defaultScript.effectiveDelayMillis)
+        assertEquals(0L, emptyScript.effectiveDelayMillis)
+    }
+
+    @Test
+    fun hiddenWebViewRuleModePreservesInitialResultAndEncodingOverride() {
+        val context = SourceExecutionContext(
+            source = SourceIdentity("https://source.example", "Book source", 0),
+            caller = SourceCallerKind.SOURCE_SCRIPT,
+            operationId = "webjs-rule",
+            navigationPolicy = SourceNavigationPolicy.ALLOW,
+        )
+        val request = HiddenWebViewRequest(
+            context = context,
+            operation = HiddenWebViewOperation.EVALUATE_PAGE,
+            url = null,
+            html = "<html/>",
+            javascript = "return window.result",
+            encoding = "UTF-8",
+            initialResultJson = "{\"page\":1}",
+            ruleMode = HiddenWebViewRuleMode.WEBJS_RULE,
+        )
+
+        assertEquals("{\"page\":1}", request.initialResultJson)
+        assertEquals(HiddenWebViewRuleMode.WEBJS_RULE, request.ruleMode)
+        assertEquals("UTF-8", request.effectiveEncoding)
     }
 
 }

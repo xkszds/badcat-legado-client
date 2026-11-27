@@ -32,16 +32,17 @@ enum class SourceNavigationPolicy {
 }
 
 /**
- * Immutable execution snapshot. [coroutineJob] is the cancellation parent;
- * suspend implementations must propagate coroutine cancellation rather than
- * converting CancellationException into an ordinary host failure.
+ * Immutable execution snapshot. [coroutineJob] is the optional cancellation
+ * parent; null represents an upstream CoroutineContext without a Job. Suspend
+ * implementations must propagate cancellation rather than converting
+ * CancellationException into an ordinary host failure.
  */
 data class SourceExecutionContext(
     val source: SourceIdentity,
     val caller: SourceCallerKind,
     val operationId: String,
     val navigationPolicy: SourceNavigationPolicy,
-    val coroutineJob: Job,
+    val coroutineJob: Job? = null,
 ) {
     init {
         require(operationId.isNotBlank()) { "operationId must not be blank" }
@@ -132,31 +133,62 @@ enum class HiddenWebViewCachePolicy {
     CACHE_FIRST,
 }
 
+/** Whether the hidden page is an ordinary JS evaluation or a source WebJs rule. */
+enum class HiddenWebViewRuleMode {
+    PLAIN,
+    WEBJS_RULE,
+}
+
 /**
  * One hidden/background WebView operation. Resource/override capture is not
  * equivalent to HTTP fetch and must be implemented by a real WebView owner.
+ *
+ * A null JavaScript value selects the upstream built-in script; an empty string
+ * remains a distinct explicit script. A null URL is valid only when HTML is
+ * supplied. WEBJS_RULE signals that the host must install the typed source,
+ * cache and java bridge bindings before evaluating the rule script.
  */
 data class HiddenWebViewRequest(
     val context: SourceExecutionContext,
     val operation: HiddenWebViewOperation,
-    val url: String,
+    val url: String?,
     val html: String?,
-    val javascript: String,
+    val javascript: String?,
     val headers: Map<String, String> = emptyMap(),
+    val encoding: String? = null,
     val cachePolicy: HiddenWebViewCachePolicy = HiddenWebViewCachePolicy.BYPASS,
     val captureRegex: String? = null,
     val delayMillis: Long = 0,
-    val timeoutMillis: Long,
+    val timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS,
+    val initialResultJson: String? = null,
+    val ruleMode: HiddenWebViewRuleMode = HiddenWebViewRuleMode.PLAIN,
 ) {
+    val effectiveEncoding: String
+        get() = encoding ?: DEFAULT_ENCODING
+
+    val effectiveDelayMillis: Long
+        get() = if (javascript == null && delayMillis == 0L) {
+            DEFAULT_NULL_JAVASCRIPT_DELAY_MILLIS
+        } else {
+            delayMillis
+        }
+
     init {
-        require(url.isNotBlank()) { "url must not be blank" }
-        require(javascript.isNotBlank()) { "javascript must not be blank" }
+        if (html.isNullOrEmpty()) {
+            require(!url.isNullOrBlank()) { "url is required when HTML is absent" }
+        }
         require(timeoutMillis > 0) { "timeoutMillis must be positive" }
         require(delayMillis >= 0) { "delayMillis must not be negative" }
         require(headers.keys.none(String::isBlank)) { "header names must not be blank" }
         if (operation != HiddenWebViewOperation.EVALUATE_PAGE) {
             require(!captureRegex.isNullOrBlank()) { "captureRegex is required for URL capture" }
         }
+    }
+
+    companion object {
+        const val DEFAULT_ENCODING = "utf-8"
+        const val DEFAULT_TIMEOUT_MILLIS = 60_000L
+        const val DEFAULT_NULL_JAVASCRIPT_DELAY_MILLIS = 900L
     }
 }
 
