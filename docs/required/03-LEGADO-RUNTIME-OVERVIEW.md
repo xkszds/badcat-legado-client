@@ -2839,3 +2839,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Allowed writes:** this overview and architecture audit for registration/result; temporary diagnostics in /tmp/task026by-source-identity/. No product/source/workflow/build/test/dependency/manifest/packaging changes; no upstream gitlink change.
 - **Prohibited:** any GitHub Contents update, push, dispatch, rerun, CI, Gradle or compile; no network retrieval. Further CI requires a new task and explicit authorization.
 - **Acceptance:** assertion-by-assertion evidence with exact output and a conservative conclusion. If remote root cause remains ambiguous, explicitly close as inconclusive and keep Runtime compile proof NOT ESTABLISHED.
+
+### 4.27.173 Task 026BY result — confirmed malformed expected upstream SHA
+
+- **Root cause confirmed:** workflow line 77 expected literal is 330e606c4d57e08adc056ff8b7a4132c784da9a (39 hex characters), but exact submodule HEAD and parent gitlink are 330e606c4d57e08adc056ff8ab7a4132c784da9a (40 hex characters). The expected value omitted the a after ...ff8; therefore the pin assertion necessarily fails.
+- **Other local assertions:** LICENSE exists PASS; GPL marker grep PASS; submodule worktree clean PASS. Badcat HEAD vs hosted GITHUB_SHA cannot be reproduced from the later server checkout, but does not explain away the independently deterministic pin assertion failure.
+- **Evidence:** /tmp/task026by-source-identity/local-assertions.txt, SHA-256 67faf745d06531b2a6951a0d440d848d8ce0d3b982ab4bd3c9aad1678cb45ca5. Parent gitlink and submodule HEAD agree exactly on the 40-character pin.
+- **Correction:** expected workflow literal must be exactly 330e606c4d57e08adc056ff8ab7a4132c784da9a. No workflow change or CI action was made in this read-only task. Any correction requires a separate task; remote update/CI needs fresh explicit authorization.
+- **Status:** Task 026BY closed / root cause confirmed. Runtime compile proof remains NOT ESTABLISHED because Gradle never ran. Phase A open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
