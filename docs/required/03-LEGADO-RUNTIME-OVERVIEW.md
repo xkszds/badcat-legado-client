@@ -2975,3 +2975,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Required:** preserve JSON and catalog semantics; deterministic interrupted-write fixture; test absent, recovered and malformed cases; diff check and exact scope review. Do not report test PASS unless the focused test actually executes.
 - **Forbidden:** Room/schema/database migration, multi-store transaction redesign, UI/product changes, broad build/test/CI/GitHub, external retrieval, device/live-source, Phase B or Task 027. No App compile retry on the constrained server.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+### 4.27.187 Task 026CF result — BookSource AtomicFile backup recovery correction (2026-11-28)
+
+- **Final code HEAD:** `dc3a7652a6d86aff4b47e99f3aa9ccb9c73a9817`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`. Full report `/tmp/task026cf-atomicfile-recovery/RESULT.md`, SHA-256 `9132e98581c0221bd008d0c8622a2dd3754293b8a7692bacc2482a94745a4a97`; audit §24.251.1.
+- **Change:** `FileBookSourceCatalog.readSources()` now calls `AtomicFile.openRead()` before absent-file fallback, preserving `.bak` restoration. Only a FileNotFoundException with neither base nor `.bak` present yields the empty catalog. Malformed or otherwise unreadable persisted data remains a failure. JSON and catalog semantics unchanged.
+- **Tests added:** genuinely absent catalog; interrupted AtomicFile write restores prior committed source ID and consumes `.bak`; malformed persisted catalog remains failure. Source SHA `db86e48fe4725cb7271995a4c20fd1f907553b8d1a64740c67beaf4c28092a5f`; test SHA `f57fe4d8f394fd4a672056342265aab3f3d7dd77797efe0088cd972d0ad57334`. Static checks 5/5 PASS and diff check PASS.
+- **Verification:** focused Robolectric test NOT RUN because the server has 2 GB RAM and prior App compile attempts are prohibited; no fresh hosted CI authorization. No Gradle/build/test/CI execution.
+- **Disposition:** source fix and regression test source added; runtime test proof remains pending. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next validation needs separately authorized adequate runner.
