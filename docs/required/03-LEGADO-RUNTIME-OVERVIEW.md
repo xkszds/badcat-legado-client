@@ -3028,3 +3028,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Required:** option comparison, target module graph, execution-context/error/cancellation ownership, DTO facade boundary, dependencies, rollback and next implementation task.
 - **Forbidden:** source/build/test/Gradle/module settings/dependency/workflow/manifest/license/notice/packaging/schema/database/UI changes; build/test/CI/GitHub/network/device; Phase B/Task 027.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+### 4.27.193 Task 026CI result — Runtime-owned Host Port API selected (2026-11-28)
+
+- **Review HEAD:** `4e99435daffc5fb0368156539e2d2872e7706247`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`. Report `/tmp/task026ci-host-port-decision/RESULT.md`, SHA-256 `42b33dcbb1ae206401473f3352b49a5086126c1c1b8bbc318b8a4bf6195fa780`; audit §24.254.1.
+- **Decision:** `:legado-runtime` owns Host Port interfaces and execution/error/cancellation contracts; `:app` implements Android ports. Keep `:integration-contract` for App-facing `ReadingEngine` DTO/parser facade; do not make Runtime depend on it. A separate pure JVM contract module is unnecessary unless an independent consumer appears. No Runtime→App edge.
+- **Target graph:** App → integration-contract + legado-runtime + legado-rhino; legado-runtime → legado-rhino when exact public JsSourceEngine API requires it; Runtime POC remains quarantined. Public `SourceExecutionContext.Job` requires Runtime `api(kotlinx-coroutines-core:1.11.0)`.
+- **Current state:** five port interfaces are declarations only; no production implementation/factory injection. Moving them and wiring the complete port set is a separate implementation task; ReadingEngine DTOs remain an App facade and must not replace authentic upstream models.
+- **Disposition:** architecture decision complete, Host Port wiring NOT MET. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. No source/module/Gradle changes or build/test/CI/network/device operation.
+- **Next:** register the smallest implementation slice to relocate the five existing contracts into Runtime, expose coroutine API, and add contract tests before expanding the missing port families.
