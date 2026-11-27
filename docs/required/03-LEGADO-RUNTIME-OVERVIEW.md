@@ -3171,3 +3171,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Forbidden:** App adapters, WebView/DAO/cache/login/network implementations, Gradle/workflow/dependency/UI/schema/database changes; local Gradle; server push; Phase B/Task 027.
 - **CI:** standing remote-CI authorization acknowledged; exact current commit still requires a separately registered safe synchronization route before remote execution.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.207 Task 026CP result — Hidden WebView request contract amended; bridge remains open (2026-11-28)
+
+- **Review HEAD:** 2541d2f313e279f3b9feed926f27fee80e57c5f3; registration HEAD c92aa7c20848a8e2a694ff7df1e400530058573e. Report /tmp/task026cp-hidden-webview-request-contract/RESULT.md.
+- **Change:** optional Job; nullable URL/JS; HTML-vs-URL validation; null-vs-empty JS and 900 ms default delay; 60-second timeout; UTF-8 default; initial result JSON; PLAIN/WEBJS_RULE mode. Test suite has 18 methods. RuntimeHostPort SHA-256 71667c9469dbffd6455b14e5543420e4da2f5fd1ffa5bd9b868276a30f76e710; test SHA-256 06ed378b772b4b3ca78d73bf27c5905f9ae28d9462d737bb8bd3ca1658d85aff.
+- **Verification:** static checks PASS; no Gradle/JUnit. Remote-CI authorization is active but exact server commit is not synced to the workflow branch; no push/ref update.
+- **Remaining:** typed WebJs bridge bindings, arbitrary CoroutineContext preservation, App adapters and production consumers absent. WEBJS_RULE flag does not itself implement the bridge.
+- **Disposition:** contract partial step complete; Host Port wiring NOT MET; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next:** register typed WebJs bridge binding contract for 22 java, 9 source and 9 cache declarations and exact overload descriptors; then App wrappers/ports in separate tasks.
