@@ -3396,3 +3396,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Run #4 `46075860117` at exact SHA `65b75744fffc807a8936837e20f8c9d28cdc8926` was in progress at checkpoint; job `140763301837`.
 - Scope only `.github/workflows/storage-poc-test.yml` + audit/overview. Copy the pinned JAR from `upstream/legado/third_party/maven/...` to the corresponding root `third_party/maven/...` workspace path before Gradle, verify SHA before/after, retain root POM and license; do not change tracked dependency metadata or test assertions.
 - Acceptance requires a new exact-SHA run to reach Gradle tests and emit JUnit cases. This fix does not establish storage parity or production backend acceptance. Phase A OPEN; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.226 Task 026CZ remote result and Task 026DA preregistration (2026-11-28)
+
+- Dedicated PoC workflow runs #1–#4 (`46075617806`, `46075658599`, `46075715169`, `46075860117`) all failed at `Run isolated storage PoC unit tests`; job IDs `140762525061`, `140762657600`, `140762833905`, `140763301837`. All shared the same missing local Maven artifact root cause: `org.htmlunit:htmlunit-core-js:5.3.0-legado.4`. No JUnit XML; 0 suites / 0 tests; no PoC assertions executed.
+- #4 evidence artifact ID `15234364981`, 7,199 bytes, SHA-256 `d416f1278a6ac1c3f840db4a1636c9b94af761b29e4a8f03112e95e270199b69`. Runner passed capacity: 16,758,394,880 total bytes, 15,655,301,120 available, 4 vCPU. Pinned Legado exact and clean.
+- Verified pinned submodule jar SHA-1 `d240cdd66f5269ed33da53cde7e4e690cee6e162`, size 1,900,654 bytes; all 12 required Rhino extension source files exist at pinned SHA. Existing Android workflow already documents these inputs.
+- Task 026DA registered to restore and hash-check this jar and all 12 source files from the pinned submodule before rerunning only `:legado-runtime-poc:testDebugUnitTest`. Workflow-only fix; no production/test assertions/data/schema changes. Standing permanent authorization applies; no repeated permission request.
+- Storage backend remains undecided; Task 026CY dynamic proof pending; Phase A OPEN; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
