@@ -2619,6 +2619,7 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Exclusions:** no production/source/build/test/workflow edits, no local compile, no Release signing/publishing, no additional CI run, no Phase B migration or Task 027.
 - **Next:** after committing this registration, fully reread both required lists from the new HEAD, then fast-forward-push and observe the one push-triggered GitHub run.
 
+
 ### 4.27.153 Task 026BP result — one-time GitHub-hosted Android CI retry (2026-11-28)
 
 - **Status:** the single authorized GitHub Actions run completed successfully. Run #3680 / ID `46040803723`, attempt 1, event `push`, branch `integration/legado-upstream-runtime`, workflow `.github/workflows/android-build.yml`; run URL: https://github.com/xkszds/badcat-legado-client/actions/runs/46040803723. Exact run commit SHA: `16468b277a9638b58be09caa5e9c7328806f9ea8`; GitHub commit tree SHA: `f5416451a5d81e3cec69f56492d4279350bc9172`. Run-level status/conclusion: `completed / success`; Job `assemble-debug` ID `140647754309`: `completed / success`; all 53 returned steps completed successfully, no skipped steps and no step conclusion failures.
