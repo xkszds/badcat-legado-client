@@ -3437,3 +3437,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Four non-fatal Room constructor warnings were observed because both Java fixtures expose no-arg and parameterized constructors; Room chooses the no-arg constructor. No warning cleanup was allowed in Task 026DB.
 - Boundary: this is generated code from disposable test fixtures only; it does not select production Room, establish upstream Book/BookChapter parity, validate migration/no-loss against user data, or prove BookHelp raw-content token semantics. No production schema or data changed. Task 026DB accepted. Task 026CY remains candidate comparison only; no backend selected. Phase A OPEN; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
 - Next: continue real data-owner parity, raw content/token and recovery comparison under a separately registered task. Do not enter Stage-1 or Task 027.
+
+
+### 4.27.231 Task 026DE preregistration — BookHelp raw-content token/data-owner trace
+
+- Task R3-S0-T026-PHASE-A-BOOKHELP-RAW-CONTENT-TOKEN-DATA-OWNER-TRACE-026DE registered at HEAD 3d83c4668be335bf61f2fa5c62542dee5d49f7b4; fixed Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Goal: read-only, evidence-indexed trace of authentic ContentSaveToken / BatchContentContext / BookHelp raw-content persistence, cacheContent lifecycle, stale-save fencing and callers; compare with Badcat's existing FileChapterContentCache and App-owned metadata/progress/history stores.
+- Required outputs: exact pinned paths/line ranges, token fields and lifecycle, raw vs parsed content key/serialization, write/atomicity/partial-success/cancellation/recovery semantics, caller/data-owner matrix, proven gaps and next bounded task.
+- Allowed changes: audit + this overview only; temporary notes in /tmp/task026de-bookhelp-owner/. No production/test/build/workflow/schema/data/UI changes.
+- Acceptance is static source evidence only. No DTO fabrication, production backend choice, Room schema/migration/dual-write, ContentSaveToken implementation, BatchContentPort wiring, Stage-1 or Task 027.
+- Phase A OPEN; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
