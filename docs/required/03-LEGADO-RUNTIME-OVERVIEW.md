@@ -3388,3 +3388,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Only workflow + audit + overview may change for setup. No production app/runtime source, schema, migration, data or test assertion changes. No APK/Release/emulator/signing/publishing in this task.
 - Existing integration remote commit `16468b277a9638b58be09caa5e9c7328806f9ea8` has been incorporated into local history with merge commit `ba295685412a414bf0e4f6801552f1eea261f252`; preserve branch safety and never force-push/rewrite history. Integration Android CI and dedicated PoC CI are separate evidence and must be attributed to exact SHA/run.
 - Task 026CY remains dynamically unverified; no storage backend selected. Phase A OPEN; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.226 Task 026DA preregistration — stage pinned HtmlUnit artifact for storage PoC CI (2026-11-28)
+
+- Task `R3-S0-T026-PHASE-A-STORAGE-POC-CI-PINNED-ARTIFACT-STAGING-026DA` registered at start HEAD `65b75744fffc807a8936837e20f8c9d28cdc8926`, branch `storage-poc/026CZ`, pinned Legado `330e606c4d57e08adc056ff8ab7a4132c784da9`.
+- Run #3 `46075715169`, job `140762833905`, exact SHA `27981073a2be52f81c329b794dab09a30eeb2a4e`, failed at Gradle dependency resolution because `org.htmlunit:htmlunit-core-js:5.3.0-legado.4` JAR was absent from root `third_party/maven`; the exact JAR is present in the pinned upstream submodule. No JUnit XML: 0 tests ran. Artifact ID `15234738341`, SHA-256 `fb27fbe28359c076d98e32360cc8e2b28492a4f953fce65b6351658b49bf07f7`.
+- Run #4 `46075860117` at exact SHA `65b75744fffc807a8936837e20f8c9d28cdc8926` was in progress at checkpoint; job `140763301837`.
+- Scope only `.github/workflows/storage-poc-test.yml` + audit/overview. Copy the pinned JAR from `upstream/legado/third_party/maven/...` to the corresponding root `third_party/maven/...` workspace path before Gradle, verify SHA before/after, retain root POM and license; do not change tracked dependency metadata or test assertions.
+- Acceptance requires a new exact-SHA run to reach Gradle tests and emit JUnit cases. This fix does not establish storage parity or production backend acceptance. Phase A OPEN; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
