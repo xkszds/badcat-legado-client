@@ -48,7 +48,9 @@ class FileBookSourceCatalogLifecycleTest {
         val recovered = FileBookSourceCatalog(context).all()
 
         assertTrue(recovered is EngineResult.Success)
-        assertEquals(1, (recovered as EngineResult.Success).value.size)
+        val recoveredSources = (recovered as EngineResult.Success).value
+        assertEquals(1, recoveredSources.size)
+        assertEquals(sourceId, recoveredSources.single().id)
         assertFalse(File(catalogFile.path + ".bak").exists())
     }
 
