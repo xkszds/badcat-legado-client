@@ -2830,3 +2830,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Artifact:** ID `15229372382`, ZIP size 336 bytes, SHA-256 `967460bb9d881050c404268d2ff4deea3a017f03d7ec710123b40c28c7d4daaa`; independently downloaded hash matches GitHub digest. Contains only 252-byte `runner-capacity.txt`; no compile output or source-identity report.
 - **Authorization:** exactly one remote update and one push-triggered run consumed. No rerun, retry, dispatch or second update. Any further CI attempt requires a new task and explicit authorization.
 - **Status:** workflow repair/static checks PASS; runner capacity PASS; source identity verification FAIL / exact assertion unknown; Runtime compile proof NOT ESTABLISHED. Phase A remains open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED. No product/source/build/test changes and no integration/main ref update.
+
+### 4.27.172 Task 026BY preregistration — read-only source-identity failure forensics
+
+- **Task ID:** R3-S0-T026-PHASE-A-RUNTIME-CI-SOURCE-IDENTITY-FORENSICS-026BY; registered / in progress. Start HEAD 7e5c09023fa08feb2e80646a6c7a42bae6ba81af; fixed Legado 330e606c4d57e08adc056ff8b7a4132c784da9a.
+- **Trigger:** Task 026BX Run #3 / ID 46063076479 passed capacity preflight but its source identity verification step failed with exit code 1 and no assertion-specific output. Compile tasks never ran. The single-run authorization is exhausted.
+- **Scope:** read-only analysis of the exact workflow block and already captured Run #3 logs/artifact; test each assertion locally against the server checkout and exact pinned submodule; evaluate whether the existing evidence uniquely identifies the failed condition.
+- **Allowed writes:** this overview and architecture audit for registration/result; temporary diagnostics in /tmp/task026by-source-identity/. No product/source/workflow/build/test/dependency/manifest/packaging changes; no upstream gitlink change.
+- **Prohibited:** any GitHub Contents update, push, dispatch, rerun, CI, Gradle or compile; no network retrieval. Further CI requires a new task and explicit authorization.
+- **Acceptance:** assertion-by-assertion evidence with exact output and a conservative conclusion. If remote root cause remains ambiguous, explicitly close as inconclusive and keep Runtime compile proof NOT ESTABLISHED.
