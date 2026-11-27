@@ -16,6 +16,8 @@ private data class LegacyToken(val bookUrl: String, val chapterIndex: Int, val f
 private data class BodyMetadata(val bookUrl: String, val chapterIndex: Int, val title: String, val bodySha256: String)
 private data class PendingBodyOperation(
     val operationId: String,
+    val bookUrl: String,
+    val chapterIndex: Int,
     val body: String,
     val metadata: BodyMetadata,
     val state: String,
@@ -102,11 +104,13 @@ private class RecoverableBodyStore(private val root: File) {
     fun metadata(): BodyMetadata? = read(metadata)?.let { gson.fromJson(it, BodyMetadata::class.java) }
     fun journal(): PendingBodyOperation? = read(journal)?.let { gson.fromJson(it, PendingBodyOperation::class.java) }
 
-    fun apply(operationId: String, bodyText: String, meta: BodyMetadata, crashAfterBody: Boolean = false, crashAfterMetadata: Boolean = false) {
+    fun apply(operationId: String, bookUrl: String, chapterIndex: Int, bodyText: String, meta: BodyMetadata, crashAfterBody: Boolean = false, crashAfterMetadata: Boolean = false) {
+        require(meta.bookUrl == bookUrl && meta.chapterIndex == chapterIndex) { "body/metadata identity mismatch" }
+        require(meta.bodySha256 == sha256(bodyText)) { "body/metadata hash mismatch" }
         val old = journal()
         if (old != null && old.operationId == operationId && old.state == "COMMITTED") return
         require(old == null || old.operationId == operationId) { "another operation is pending" }
-        val pending = PendingBodyOperation(operationId, bodyText, meta, "PREPARED")
+        val pending = PendingBodyOperation(operationId, bookUrl, chapterIndex, bodyText, meta, "PREPARED")
         write(journal, gson.toJson(pending))
         write(body, bodyText)
         if (crashAfterBody) throw RawBodySimulatedProcessDeath()
@@ -118,6 +122,8 @@ private class RecoverableBodyStore(private val root: File) {
     fun replayPending() {
         val pending = journal() ?: return
         if (pending.state == "COMMITTED") return
+        require(pending.metadata.bookUrl == pending.bookUrl && pending.metadata.chapterIndex == pending.chapterIndex) { "journal identity mismatch" }
+        require(pending.metadata.bodySha256 == sha256(pending.body)) { "journal body hash mismatch" }
         write(body, pending.body)
         write(metadata, gson.toJson(pending.metadata))
         write(journal, gson.toJson(pending.copy(state = "COMMITTED")))
@@ -223,7 +229,7 @@ class RawBodyRecoveryPoCTest {
         try {
             val first = RecoverableBodyStore(dir)
             val next = "complete replacement body"
-            try { first.apply("op-1", next, meta("replacement", next), crashAfterBody = true) }
+            try { first.apply("op-1", "book-A", 0, next, meta("replacement", next), crashAfterBody = true) }
             catch (_: RawBodySimulatedProcessDeath) { }
             assertEquals(next, first.body())
             assertNull(first.metadata())
@@ -245,7 +251,7 @@ class RawBodyRecoveryPoCTest {
         try {
             val store = RecoverableBodyStore(dir)
             val next = "body committed before journal marker"
-            try { store.apply("op-2", next, meta("title-2", next), crashAfterMetadata = true) }
+            try { store.apply("op-2", "book-A", 0, next, meta("title-2", next), crashAfterMetadata = true) }
             catch (_: RawBodySimulatedProcessDeath) { }
             assertEquals(next, store.body())
             assertEquals(meta("title-2", next), store.metadata())
@@ -256,6 +262,31 @@ class RawBodyRecoveryPoCTest {
             val hash = restarted.bodyHash()
             restarted.replayPending()
             assertEquals(hash, restarted.bodyHash())
+        } finally { dir.deleteRecursively() }
+    }
+
+    @Test fun journalRejectsBodyMetadataIdentityAndHashMismatchBeforeMutation() {
+        val dir = tempDir()
+        try {
+            val store = RecoverableBodyStore(dir)
+            val body = "verified body"
+            val wrongIdentity = meta("wrong identity", body).copy(bookUrl = "book-B")
+            try {
+                store.apply("op-bad-identity", "book-A", 0, body, wrongIdentity)
+                fail("identity mismatch must be rejected")
+            } catch (_: IllegalArgumentException) { }
+            assertNull(store.body())
+            assertNull(store.metadata())
+            assertNull(store.journal())
+
+            val wrongHash = meta("wrong hash", body).copy(bodySha256 = "0".repeat(64))
+            try {
+                store.apply("op-bad-hash", "book-A", 0, body, wrongHash)
+                fail("body hash mismatch must be rejected")
+            } catch (_: IllegalArgumentException) { }
+            assertNull(store.body())
+            assertNull(store.metadata())
+            assertNull(store.journal())
         } finally { dir.deleteRecursively() }
     }
 
