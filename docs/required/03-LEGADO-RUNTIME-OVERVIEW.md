@@ -2426,3 +2426,6 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Excluded:** no web/GitHub/API/network, git fetch/clone or download; no source execution, build/test/CI/Gradle/dependency resolution, App compile retry, production changes, JavaImporter implementation, generic package exposure, raw Thread/Hutool exposure, Task 027 or Stage-1.
 - **Procedure:** after this registration commit, reread both required lists completely from the new HEAD before substantive local inspection.
 - **Disposition:** Phase A remains open; JavaImporter/Packages parity NO-GO; broad BookSource/BaseSource migration and Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full compatibility NOT ESTABLISHED.
+
+
+- **026BI scope amendment:** include the omitted 026BF StringBuilder evidence target: ljun223/legado2xsgg commit 2cb6e6ec04c29738fd64c54981b1b31ab9888c1a, docs/legado-书源规则.md, blob 6538c3d1a66f43d8883269827d0877072292906e. It is a documentation example, not an executing source fixture. Local-only search and blob verification rules are unchanged.

@@ -6990,3 +6990,10 @@ The registered Login UI/WebView bridge scope includes subclasses of a shared App
 - **Acceptance:** exact local path + verified blob SHA for each recovered file; minimal line-backed callsite evidence and exact overload/argument/receiver where recoverable; explicit NOT AVAILABLE for every absent target; checksummed result; audit and overview updated and reread. A negative local search is a valid result and must not trigger network retrieval.
 - **Procedure:** this registration is committed first. Reread Master Workflow and Runtime Overview completely from the registration HEAD before the local-only search. No substantive source inspection occurs before that reread.
 - **Disposition at registration:** Phase A remains open; JavaImporter/Packages parity remains NO-GO; broad BookSource/BaseSource migration and Task 027 remain blocked; Stage-0 in_progress / not accepted; Stage-1 NO-GO; full Legado compatibility NOT ESTABLISHED.
+
+
+### Task 026BI scope amendment — include the documented StringBuilder source blob
+
+- The 026BF source-evidence matrix identifies an additional exact target omitted from the initial 026BI target list: ljun223/legado2xsgg commit 2cb6e6ec04c29738fd64c54981b1b31ab9888c1a, docs/legado-书源规则.md, Git blob 6538c3d1a66f43d8883269827d0877072292906e.
+- Add this blob to the same local-only availability search. It is a published BookSource rule documentation example, not a running source fixture. Recover only the exact StringBuilder.append argument expression/overload and surrounding string assembly if its bytes are already present locally.
+- All other Task 026BI boundaries remain unchanged: no network/GitHub/fetch/clone/download; verify Git blob identity before reading; a missing local blob remains NOT AVAILABLE.
