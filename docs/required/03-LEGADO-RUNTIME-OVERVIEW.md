@@ -3345,3 +3345,16 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Allowed:** docs and /tmp/task026cx-data-owner-strategy/ only. Reuse 026CC/026CF and pinned schema evidence.
 - **Forbidden:** source/test/Gradle/dependency/workflow/manifest/license/packaging/schema/database/UI changes; build/test/CI/GitHub/push/ref update/network/NDK/device; no Room/schema freeze/data migration/dual-write/Stage-1/Task 027.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.222.1 Task 026CX result — logical AppRuntimeDataOwner selected, physical store deferred (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-APP-RUNTIME-DATA-OWNER-STRATEGY-026CX; complete as static architecture decision.
+- **Registration HEAD:** 8f4215dffed122a0243ab7282dc8a0fec0583ecc; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a. Report /tmp/task026cx-data-owner-strategy/RESULT.md, SHA-256 1cd03f96b507b068dd0e593ee729be57502719d926167ed0e01bce663489347b.
+- **Logical owner:** AppRuntimeDataOwner in App is the only writer authority for Runtime data; all typed Runtime Host Ports and Badcat UI route through its domain repositories/coordinators.
+- **Physical storage:** retain current per-domain stores temporarily. No Room/schema v1/data migration/dual-write. Minimal Room is a candidate for a throwaway Book/BookChapter metadata PoC; unified file snapshot is another candidate. Full upstream AppDatabase v113 is rejected for current scope.
+- **Missing domains:** no full Book/BookChapter/ReadConfig repository and no upstream raw BookHelp content store. Existing chapter cache is parsed/purified offline data and is not equivalent.
+- **Cross-store gaps:** source cleanup after catalog commit, no durable replay journal, login/cookie split, progress/history split, favorite book/folder two-step writes, raw content/metadata/cache fence separation.
+- **026CF:** AtomicFile read-before-absent-fallback source fix is present; test source added but Robolectric execution NOT RUN.
+- **PoC:** compare per-domain stores + journal, unified AtomicFile metadata, and minimal throwaway Room using copied data, fault injection, migration dry-run/idempotence/rollback and restart recovery. No production data mutation.
+- **Verification:** static only; no code/build/test/CI/device changes. Standing remote-CI authorization remains active.
+- **Disposition:** logical owner GO; physical backend and Book/Chapter persistence NO-GO until no-data-loss PoC. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
