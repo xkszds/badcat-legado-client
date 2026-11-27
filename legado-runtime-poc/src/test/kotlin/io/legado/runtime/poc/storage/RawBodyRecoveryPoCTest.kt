@@ -52,13 +52,13 @@ private class LegacyBookHelpModel(private val root: File, private val fence: Leg
         if (!fence.isCurrent(token)) return
         bodyFile.parentFile!!.mkdirs()
         bodyFile.writeText(body) // mirrors BookHelp.writeText: ordinary File.writeText, not AtomicFile
-        if (crashAfterBody) throw SimulatedProcessDeath()
+        if (crashAfterBody) throw RawBodySimulatedProcessDeath()
         metadataFile.writeText(gson.toJson(metadata)) // separate owner; not atomic with body
     }
     fun partialOverwriteAndCrash(prefix: String) {
         bodyFile.parentFile!!.mkdirs()
         FileOutputStream(bodyFile, false).use { it.write(prefix.toByteArray()) }
-        throw SimulatedProcessDeath()
+        throw RawBodySimulatedProcessDeath()
     }
     fun authoritativeReplace() = fence.replace("book-A", 0)
     fun clearBookCache() {
@@ -103,9 +103,9 @@ private class RecoverableBodyStore(private val root: File) {
         val pending = PendingBodyOperation(operationId, bodyText, meta, "PREPARED")
         write(journal, gson.toJson(pending))
         write(body, bodyText)
-        if (crashAfterBody) throw SimulatedProcessDeath()
+        if (crashAfterBody) throw RawBodySimulatedProcessDeath()
         write(metadata, gson.toJson(meta))
-        if (crashAfterMetadata) throw SimulatedProcessDeath()
+        if (crashAfterMetadata) throw RawBodySimulatedProcessDeath()
         write(journal, gson.toJson(pending.copy(state = "COMMITTED")))
     }
 
@@ -125,7 +125,7 @@ private class RecoverableBodyStore(private val root: File) {
             .joinToString("") { "%02x".format(it) }
 }
 
-private class SimulatedProcessDeath : RuntimeException("simulated process death")
+private class RawBodySimulatedProcessDeath : RuntimeException("simulated process death")
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -146,7 +146,7 @@ class RawBodyRecoveryPoCTest {
             val legacy = LegacyBookHelpModel(dir)
             val old = "old complete body"
             legacy.seed(old, meta("old-title", old))
-            try { legacy.partialOverwriteAndCrash("new-") } catch (_: SimulatedProcessDeath) { }
+            try { legacy.partialOverwriteAndCrash("new-") } catch (_: RawBodySimulatedProcessDeath) { }
             assertEquals("new-", legacy.body())
             assertEquals("old-title", legacy.metadata()!!.title)
             assertNotEquals(legacy.metadata()!!.bodySha256, meta("new-", "new-").bodySha256)
@@ -161,7 +161,7 @@ class RawBodyRecoveryPoCTest {
             legacy.seed(old, meta("old", old))
             val next = "new body"
             try { legacy.save(legacy.token(), next, meta("new", next), crashAfterBody = true) }
-            catch (_: SimulatedProcessDeath) { }
+            catch (_: RawBodySimulatedProcessDeath) { }
             assertEquals(next, legacy.body())
             assertEquals("old", legacy.metadata()!!.title)
             assertNotEquals(legacy.metadata()!!.bodySha256, meta("new", next).bodySha256)
@@ -203,7 +203,7 @@ class RawBodyRecoveryPoCTest {
             val first = RecoverableBodyStore(dir)
             val next = "complete replacement body"
             try { first.apply("op-1", next, meta("replacement", next), crashAfterBody = true) }
-            catch (_: SimulatedProcessDeath) { }
+            catch (_: RawBodySimulatedProcessDeath) { }
             assertEquals(next, first.body())
             assertNull(first.metadata())
             val restarted = RecoverableBodyStore(dir)
@@ -225,7 +225,7 @@ class RawBodyRecoveryPoCTest {
             val store = RecoverableBodyStore(dir)
             val next = "body committed before journal marker"
             try { store.apply("op-2", next, meta("title-2", next), crashAfterMetadata = true) }
-            catch (_: SimulatedProcessDeath) { }
+            catch (_: RawBodySimulatedProcessDeath) { }
             assertEquals(next, store.body())
             assertEquals(meta("title-2", next), store.metadata())
             assertEquals("PREPARED", store.journal()!!.state)
