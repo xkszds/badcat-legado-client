@@ -2857,3 +2857,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Checks:** exact gitlink/submodule SHA equality; YAML and embedded Bash syntax; immutable Action pins; trigger and Runtime-only task list; memory/CPU preflight; wrapper marker absence; diff check; no product/source/build/test/dependency/manifest/packaging/upstream changes.
 - **Prohibited:** GitHub Contents update, push, dispatch, rerun, CI, Gradle, dependency resolution, compile, APK or submodule changes. New hosted validation requires fresh explicit authorization.
 - **Acceptance:** corrected local workflow and static checks pass; no claim of compile success.
+
+### 4.27.175 Task 026BZ result — fixed 40-character Legado pin restored locally
+
+- Corrected both malformed workflow constants (source assertion and emitted evidence manifest) from the 39-character value to the exact 40-character pinned SHA: 330e606c4d57e08adc056ff8ab7a4132c784da9a. Both match parent gitlink and checked-out submodule HEAD.
+- Static checks: YAML parse PASS; 7/7 embedded Bash blocks pass bash -n; 4/4 immutable Action pins PASS; branch push filter remains runtime-proof/026BT; Gradle home uses github.workspace; 8 GiB/4 vCPU preflight retained; three Runtime-only tasks retained; no wrapper markers or runner.temp.
+- git diff --check PASS. Only workflow source changed; no product/source/build/test/dependency/manifest/packaging/upstream gitlink changes. Corrected workflow blob SHA-1: c1817f733a55d7da835dd06ab7ae03c09f266f84.
+- No GitHub remote update, push, dispatch, CI, Gradle, dependency resolution, compile or APK. Existing remote validation branch is not repaired by this local commit; Run #3 remains failed. Runtime compile proof NOT ESTABLISHED.
+- Task 026BZ closed. Phase A open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED. A new hosted run needs fresh explicit authorization and a new preregistered task.

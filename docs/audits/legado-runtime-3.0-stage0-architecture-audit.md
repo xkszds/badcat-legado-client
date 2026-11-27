@@ -7399,3 +7399,12 @@ The registered Login UI/WebView bridge scope includes subclasses of a shared App
 - **Validation:** exact 40-character equality to parent gitlink and submodule HEAD; YAML parse; all embedded Bash syntax; immutable action pins; branch filter; runtime task allowlist; capacity threshold; no wrapper text/runner.temp; git diff --check; ensure no product/source/Gradle/test/dependency/manifest/packaging/upstream gitlink changes.
 - **Exclusions:** no GitHub Contents API, push, dispatch, rerun, CI, Gradle, dependency resolution, compile, APK, source change, submodule change, integration/main remote update. The previous Task 026BX CI authorization is exhausted; remote update or a new run requires fresh explicit authorization.
 - **Acceptance:** local workflow contains the exact 40-character fixed SHA and all static checks pass. Compile proof remains NOT ESTABLISHED until a separately authorized hosted run actually executes the Runtime compile tasks.
+
+### 24.245.1 Task 026BZ result — local fixed-pin correction and static validation PASS
+
+- Corrected both malformed 39-character fixed-pin literals in the dedicated workflow: the source assertion's expected value and the evidence manifest's LEGADO_COMMIT value. Both now equal the exact 40-character parent gitlink and submodule HEAD: 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Static validation: YAML parse PASS; all 7 embedded Bash blocks pass bash -n; four immutable Action pins PASS; push trigger remains restricted to runtime-proof/026BT; job-level Gradle home uses github.workspace; 8 GiB effective+available RAM and >=4 vCPU gate retained; three Runtime compile tasks retained; no wrapper markers or runner.temp.
+- git diff --check PASS. Only tracked file changed by implementation is .github/workflows/runtime-variant-compile-proof.yml. No product/source/Gradle/test/dependency/manifest/packaging paths or upstream gitlink changed.
+- Corrected workflow blob SHA-1: c1817f733a55d7da835dd06ab7ae03c09f266f84.
+- No GitHub Contents update, push, dispatch, CI, Gradle, dependency resolution, compile or APK work. The remote validation branch still contains the prior payload and its run #3 remains failed. This local fix does not create compile evidence.
+- **Disposition:** Task 026BZ local correction complete. Runtime Debug/Release/DebugUnitTest compile proof remains NOT ESTABLISHED until separately authorized hosted validation executes. Phase A open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
