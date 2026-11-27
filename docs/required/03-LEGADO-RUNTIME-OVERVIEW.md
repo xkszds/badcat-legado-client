@@ -3140,3 +3140,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Required:** ownership matrix, typed port family proposals, object/method binding design, data owners, lifecycle, dependency DAG, module edges and implementation order.
 - **Forbidden:** source/test/Gradle/workflow/dependency/manifest/license/notice/packaging/schema/database/UI changes; build/test/CI/GitHub/network/NDK/device; server push; Phase B/Task 027.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.205 Task 026CO result — typed WebJs bridge ownership decision recorded (2026-11-28)
+
+- **Review HEAD:** f8e46bbff009b34d4e60a859c4ce3078d9a1d4b9; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9. Report /tmp/task026co-webjs-bridge-architecture/RESULT.md, SHA-256 d85094afdf38c4f513b7481f88349e05c96c7d7414da48f0067d9528e3d7137e.
+- **Decision:** Runtime owns source/AnalyzeRule/WebJs behavior and typed Host Ports; App owns Android wrappers and service adapters. No Runtime→App or Runtime→integration-contract edge. integration-contract stays App-facing.
+- **Typed bridge:** three typed interfaces (java 22 methods, source 9, cache 9) bundled in WebJsRuleBridgeBindings; App provides exact @JavascriptInterface wrappers. Any/Map/generic method dispatch prohibited.
+- **Request changes needed:** nullable URL/JS, UTF-8 default, 60-second timeout, initial result JSON, WebJs rule bootstrap and typed bridge binding. Keep activity=null/callback=null behavior explicit.
+- **Ownership:** App source DAO, Cookie/login/encryption, cache disk/memory/file, HTTP/crypto/files, WebViewPool and UI; Runtime owns rule/bridge semantics. SourceExecutionContext Job-vs-CoroutineContext mismatch must be resolved without fabricating a Job.
+- **Disposition:** decision only, no source implementation/build/test/CI. Host Port wiring NOT MET; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next:** register a narrow contract-amendment implementation for HiddenWebViewRequest and the typed bridge binding models, with tests for defaults/null/result/rule mode and cancellation context before implementing App adapters.
