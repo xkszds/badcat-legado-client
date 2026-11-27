@@ -3190,3 +3190,14 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Required:** full per-method signature matrix, overload counts, JS call route, return-type dependency, current Runtime availability and typed interface design recommendation.
 - **Forbidden:** source/test/build/Gradle/workflow/dependency/UI/schema/database changes; build/test/CI/GitHub/network/NDK/device; server push; Phase B/Task 027.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.209 Task 026CQ result and inherited-interface correction (2026-11-28)
+
+- **Task 026CQ review HEAD:** 69485ca072028932be17b7d38986ae382cee008c; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a. Report /tmp/task026cq-webjs-descriptors/RESULT.md, SHA-256 7b461a74ae35685079fe031481f8e8a3a2e978eb79934fa0daa1c6656cced1da.
+- **Corrected bridge counts:** 136 source-level object.method declarations: java 70 (48 inherited JsExtensions +12 WebJs +10 Rss), source 57 (48 inherited JsExtensions +9 BaseSource), cache 9. SourceNavigationBridge conditionally overrides five existing signatures. Thirteen expected @JvmOverloads additions produce 149 expected JVM descriptors before compiler/annotation filtering.
+- **This supersedes the earlier 40 count** in Task 026CN: 40 was only the direct class declarations and omitted 48 JsExtensions annotations inherited by both java and source objects.
+- **Exact methods:** report contains all 48 JsExtensions signatures and all direct WebJs/Rss/BaseSource/Cache signatures, nullability/defaults, JVM erasures and overload counts. AnalyzeRule return types are absent from Badcat Runtime. Actual Kotlin interface/delegation annotation propagation and final DEX exposure are unverified.
+- **Source navigation:** wrapper is conditional on SuppressSourceNavigation in CoroutineContext and the AppConfig flag; the five overrides preserve login execution context and suppress source navigation. Current context snapshot does not carry arbitrary context elements.
+- **Related corrections:** updated Task 026CN report /tmp/task026cn-webjs-bridge-closure/RESULT.md SHA-256 802d314afd9611eb87c33403483437858ddc96fe7149f5e843d50100918178c6; updated 026CO architecture report SHA-256 648fd7a0123a2e9dd5db82f3535c7824558c93405d226141e76cd1aa1037a528; updated 026CP report SHA-256 5e8cd67dc0637222efe1e5fd771e242f6ced4654a11467dc2f961f8a0fc276c0.
+- **Verification:** static only; no compile/DEX/APK/JUnit/CI/device. Standing remote-CI authorization active; exact server HEAD not synchronized to workflow branch, no push/ref update.
+- **Disposition:** source descriptor inventory complete; runtime exposure unverified; WebJs bridge source closure and Host Port wiring NOT MET. Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
