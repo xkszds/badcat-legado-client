@@ -2441,3 +2441,14 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - No web/GitHub/API/network/fetch/clone/download, build/compiler/test/CI/DEX/R8/APK/device or production change. No App compile retry under §24.119.
 - **Disposition:** JavaImporter/Packages remains NO-GO; Phase A open; broad BookSource/BaseSource migration and Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full compatibility NOT ESTABLISHED.
 - **Next:** keep 026BF unresolved details explicit; continue independent Phase A gates only. Runtime-only variant resolution/compile awaits a clean higher-capacity runner.
+
+
+### 4.27.139 Task 026BJ preregistration — existing-evidence SPDX partial SBOM (2026-11-27)
+
+- **Task ID:** `R3-S0-T026-PHASE-A-EXISTING-EVIDENCE-SPDX-PARTIAL-SBOM-026BJ`; registered / not started. Start HEAD `fa189ff751faadaa0afc27102506061372d496e3`; pinned upstream `330e606c4d57e08adc056ff8b7a4132c784da9a`.
+- **Trigger:** Task 019 §24.78.1 and Task 026BH §24.223 leave machine-readable SBOM absent and source/license/notice coverage partial. Existing Task 026AD Badcat/upstream dependency reports and Task 018/020 APK/DEX evidence are available; no new Gradle resolution or build is permitted.
+- **Goal:** produce a checksum-verified SPDX 2.3 JSON *partial evidence artifact* using only existing immutable dependency reports, source/license metadata, notices and historical Task 018 APK evidence. Distinguish declared/resolved dependencies, historically packaged components and source-only vendored components; use `NOASSERTION` for missing licenses/provenance and never infer native libarchive licensing from the wrapper POM.
+- **Allowed tracked files:** Stage-0 audit and this overview only. Existing source/build/license/notice/report files are read-only. Generated SPDX, manifests, validation output and hashes remain under `/tmp/task026bj-spdx-partial-sbom/`.
+- **Required:** verify input hashes; parse existing 44 Badcat and ten upstream dependency reports; preserve exact coordinates/versions and evidence-backed license expressions; separately represent Legado, Rhino, HtmlUnit fork/packaging and native libarchive where supported; record GPL/HtmlUnit/native notices, source attribution and root-license gaps; validate SPDX JSON with local tools; hash inputs/outputs and state exact coverage limits.
+- **Exclusions:** no Gradle/dependency/variant resolution, build/compiler/test/CI/DEX/R8/APK/device/network/download/cache mutation; no App compile retry under §24.119; no source/dependency/version-catalog/shrinker/manifest/notice/license/asset/schema/database/UI/Reader/workflow edits; no tooling install, legal opinion, complete-SBOM claim, production implementation, Task 027 or Stage-1.
+- **Next:** after registration commit, reread both required lists from the new HEAD, then execute only the existing-evidence SPDX construction. Stage-0 remains `in_progress / not accepted`; Stage-1 **NO-GO**; full compatibility **NOT ESTABLISHED**.
