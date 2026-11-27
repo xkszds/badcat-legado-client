@@ -2414,3 +2414,15 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Policy:** ordinary source HTTP remains strict TLS; SharedJsScope-only trust-all/downgrade stays isolated; WebView Option A is separate; global WebView session-cookie clearing remains undecided.
 - **Next:** stop repeating broad source API scans. Obtain a clean, adequately provisioned runner and separately register a Runtime-only variant-resolution/compile proof. Do not start broad BookSource/BaseSource migration or Task 027 until Phase A mandatory gates pass.
 - **Disposition:** Phase A open; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED. No production/test/Gradle/schema/UI/Reader/workflow changes, builds/tests/CI/DEX/R8/APK/device/network actions occurred.
+
+
+### 4.27.137 Task 026BI preregistration — local-only recovery of unresolved Java utility callsites (2026-11-27)
+
+- **Task ID:** R3-S0-T026-PHASE-A-LOCAL-CORPUS-CALLSITE-RECOVERY-026BI; registered / not started. Start HEAD 0e3e0b2ae0e226b2e2b3c8181c721a5dcf03b7cd; pinned upstream 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Trigger:** Task 026BF left exact StringBuilder.append, Collections.reverse, Thread.sleep, ArrayUtil.resize and RandomUtil call details unresolved because the immutable corpus summaries did not retain the exact invocation. 026BF permits recovery only from exact local immutable bytes without network access.
+- **Goal:** search existing local runner/repository/evidence directories for the five already-identified exact blob targets; verify Git blob identity before reading; extract only the named callsites. If unavailable, record that and retain the unknowns.
+- **Targets:** yuyuan-cc/shuyuan blob a0274bc6930ae2ecbe1b072652cbb12b02bcf0dc; mumuceo/file01 blob 9d19ba42a267e2092465bf8265a291c7f7e9a5b9; shidahuilang/shuyuan-bak blob c6ae2d6b1eb649ca1a485537459daf43fe8abecd; yolo52/Yuedu blob 63a4c986bd5e3b8fa01c02d49e64aa18000ece2e; jing332/file blob b0f80d3fb7f7f8d5dc167fc74d8ca6a3f169006d.
+- **Allowed:** docs-only audit/overview updates; local read-only filesystem/evidence inspection; temporary outputs under /tmp/task026bi-local-corpus-recovery/.
+- **Excluded:** no web/GitHub/API/network, git fetch/clone or download; no source execution, build/test/CI/Gradle/dependency resolution, App compile retry, production changes, JavaImporter implementation, generic package exposure, raw Thread/Hutool exposure, Task 027 or Stage-1.
+- **Procedure:** after this registration commit, reread both required lists completely from the new HEAD before substantive local inspection.
+- **Disposition:** Phase A remains open; JavaImporter/Packages parity NO-GO; broad BookSource/BaseSource migration and Task 027 blocked; Stage-0 not accepted; Stage-1 NO-GO; full compatibility NOT ESTABLISHED.
