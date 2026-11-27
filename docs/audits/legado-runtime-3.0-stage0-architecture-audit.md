@@ -7972,3 +7972,13 @@ The registered Login UI/WebView bridge scope includes subclasses of a shared App
 - **Evidence:** Gradle/settings SHA inventory /tmp/task026cu-model-ownership-decision/gradle-sha256.txt, SHA-256 493a6f76d03f7283c31265892ea19dd374b76226a156e38a218ef36241719f5a.
 - **Verification:** static module/build/source inspection only; no source/test/Gradle/dependency/settings/workflow/CI/GitHub/build/device changes. Standing remote-CI authorization not used for this docs-only decision.
 - **Disposition:** target module direction selected, but source implementation remains NO-GO pending gates. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+## 24.267 Task 026CV registration — per-object model Host Binding and CoroutineContext propagation design (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-MODEL-HOST-BINDING-CONTEXT-DESIGN-026CV; registered / in progress. Start HEAD adc84ce704a9a2fd8a5bcd150882d6c9ca620ac7; branch integration/legado-upstream-runtime; fixed Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Trigger:** Task 026CU selected :legado-runtime as the owner of authentic models and Host Port API, but Book/BookChapter/BookSource/BaseSource currently call storage/config services through upstream App globals and methods without explicit context. A safe binding design is required before moving source files.
+- **Goal:** compare per-object transient host binding, explicit execution-context threading, wrapper/decorator, weak identity registry and application service locator. Design how BookSource/BaseSource, Book, BookChapter, AnalyzeRule, AnalyzeUrl and BatchContentContext receive App-owned typed ports while preserving object identity, data class equality/copy, Room/Parcelable/Gson behavior, concurrent executions and original CoroutineContext elements.
+- **Required output:** exact binding surface per model; attach/detach/rebind lifecycle; serialization/parcel/Room ignore rules; copy() behavior; concurrency/isolation and cancellation; no Activity/View retention; SourceNavigation marker preservation; host port ownership and test matrix; explicit GO/NO-GO.
+- **Allowed files:** audit and required overview only; temporary report /tmp/task026cv-model-host-binding/. Read pinned source and current RuntimeHostPort/SourceExecutionContext/tests/DI. No source/build/test edits.
+- **Exclusions:** no production/test/Gradle/dependency/workflow/manifest/license/packaging/schema/database/UI changes; no build/test/CI/GitHub/ref update/push/network/NDK/device; no Stage-1/Task 027.
+- **Disposition at registration:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.

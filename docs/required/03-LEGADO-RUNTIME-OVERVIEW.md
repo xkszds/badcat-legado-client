@@ -3291,3 +3291,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Verification:** static only; no source/build/test/CI/device changes. Standing remote-CI authorization not used.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
 - **Next mainline:** detailed source extraction inventory for Book/BookChapter/BookSource/BaseSource/AnalyzeUrl and safe per-object Host Port binding, followed by data ownership PoC. Do not implement source classes before the remaining gates.
+
+### 4.27.218 Task 026CV preregistration — per-object Host Binding and CoroutineContext design (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-MODEL-HOST-BINDING-CONTEXT-DESIGN-026CV; registered / in progress. Start HEAD adc84ce704a9a2fd8a5bcd150882d6c9ca620ac7; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9.
+- **Goal:** design safe typed App Host Port binding for authentic BookSource/BaseSource/Book/BookChapter and full CoroutineContext propagation through AnalyzeRule/AnalyzeUrl/BatchContentContext.
+- **Compare:** transient per-object binding, explicit execution context, wrappers, weak identity registry, app-scoped service locator.
+- **Required:** identity/equality/copy/parcel/Gson/Room lifecycle, attach/rebind, concurrency/isolation/cancel, no Activity retention, SourceNavigation marker preservation, test matrix and GO/NO-GO.
+- **Allowed:** audit/overview docs and /tmp/task026cv-model-host-binding/ only.
+- **Forbidden:** production/test/Gradle/dependency/workflow/manifest/license/packaging/schema/database/UI edits; build/test/CI/GitHub/push/ref update/network/NDK/device; no Stage-1/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
