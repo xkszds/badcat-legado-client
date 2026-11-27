@@ -15,6 +15,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileNotFoundException
 
 private val catalogFileMutex = Mutex()
 
@@ -180,12 +181,19 @@ class FileBookSourceCatalog(
     }
 
     private fun readSources(): List<LegadoBookSource> {
-        if (!file.baseFile.exists()) return emptyList()
-        val bytes = file.openRead().use { input ->
+        // Always let AtomicFile inspect/restore its backup before treating the catalog as absent.
+        val input = try {
+            file.openRead()
+        } catch (error: FileNotFoundException) {
+            val backupFile = File(file.baseFile.path + ".bak")
+            if (!file.baseFile.exists() && !backupFile.exists()) return emptyList()
+            throw error
+        }
+        val bytes = input.use { stream ->
             val output = ByteArrayOutputStream()
             val buffer = ByteArray(8 * 1024)
             while (true) {
-                val count = input.read(buffer)
+                val count = stream.read(buffer)
                 if (count < 0) break
                 require(output.size() + count <= LegadoBookSourceCodec.MAX_IMPORT_BYTES) {
                     "Local book-source catalog exceeds the 5 MiB limit"

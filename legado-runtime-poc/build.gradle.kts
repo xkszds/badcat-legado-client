@@ -12,6 +12,10 @@ android {
         minSdk = 26
     }
 
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
@@ -27,6 +31,7 @@ kotlin {
 dependencies {
     // Real upstream external dependencies; unresolved app-internal imports are intentionally not stubbed.
     implementation("androidx.room:room-runtime:2.8.4")
+    testAnnotationProcessor("androidx.room:room-compiler:2.8.4")
     implementation("androidx.annotation:annotation:1.10.0")
     implementation("com.google.code.gson:gson:2.14.0")
     implementation("cn.hutool:hutool-crypto:5.8.22")
@@ -35,6 +40,11 @@ dependencies {
     implementation("org.jetbrains:annotations:26.0.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
     implementation(project(":legado-rhino"))
+
+    // Quarantined storage PoC only; these dependencies are not exposed to production modules.
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("androidx.test:core:1.6.1")
 }
 
 // G2d stage 1: compile an independently bounded, authentic upstream source group.

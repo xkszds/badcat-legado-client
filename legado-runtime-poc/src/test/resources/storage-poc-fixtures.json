@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "purpose": "disposable Book/BookChapter storage parity and recovery fixtures",
+  "pinnedLegado": "330e606c4d57e08adc056ff8ab7a4132c784da9a",
+  "identity": {
+    "book": ["bookUrl"],
+    "chapterPrimaryKey": ["url", "bookUrl"],
+    "chapterUniqueIndex": ["bookUrl", "index"]
+  },
+  "cases": [
+    "same chapter URL under different books is allowed",
+    "same (url,bookUrl) with a different index is rejected",
+    "same (bookUrl,index) with a different URL is rejected",
+    "unknown and explicit-null JSON fields survive opaque payload storage",
+    "1000-chapter TOC preserves all indices and deterministic order",
+    "raw BookHelp content and parsed offline cache use separate files",
+    "stale save token cannot publish after fence invalidation",
+    "journal replay after PREPARED and metadata-committed crash windows is idempotent",
+    "dry-run does not mutate snapshot or journal",
+    "migration replay is idempotent and rollback restores snapshot plus journal hashes",
+    "AtomicFile backup is recovered before interpreting the catalog as absent",
+    "concurrent writes across distinct books do not cross identities",
+    "512 KiB raw content payload round-trips without truncation"
+  ],
+  "failurePoints": ["AFTER_PREPARED", "AFTER_SNAPSHOT"],
+  "limits": {
+    "largeTocChapters": 1000,
+    "rawContentBytes": 524288,
+    "concurrentBookWriters": 12,
+    "workerThreads": 4
+  }
+}

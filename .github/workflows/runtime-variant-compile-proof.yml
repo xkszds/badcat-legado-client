@@ -1,0 +1,195 @@
+name: Runtime-only exact variant compile proof
+
+on:
+  push:
+    branches:
+      - runtime-proof/026BT
+
+permissions:
+  contents: read
+
+concurrency:
+  group: runtime-variant-compile-proof-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  runtime-variant-compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GRADLE_USER_HOME: ${{ github.workspace }}/.gradle-user-home
+    steps:
+      - name: Check out exact source and pinned submodules
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          submodules: recursive
+
+      - name: Preflight runner capacity before Gradle
+        id: runner-capacity
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="build/runtime-variant-proof"
+          mkdir -p "$out"
+          mem_total_kib="$(awk '$1 == "MemTotal:" {print $2}' /proc/meminfo)"
+          mem_available_kib="$(awk '$1 == "MemAvailable:" {print $2}' /proc/meminfo)"
+          effective_limit_bytes=$((mem_total_kib * 1024))
+          cgroup_limit="unlimited"
+          if [[ -r /sys/fs/cgroup/memory.max ]]; then
+            raw_limit="$(cat /sys/fs/cgroup/memory.max)"
+            if [[ "$raw_limit" =~ ^[0-9]+$ ]]; then
+              cgroup_limit="$raw_limit"
+              if (( raw_limit < effective_limit_bytes )); then
+                effective_limit_bytes="$raw_limit"
+              fi
+            fi
+          elif [[ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ]]; then
+            raw_limit="$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes)"
+            if [[ "$raw_limit" =~ ^[0-9]+$ ]] && (( raw_limit < 1000000000000000 )); then
+              cgroup_limit="$raw_limit"
+              if (( raw_limit < effective_limit_bytes )); then
+                effective_limit_bytes="$raw_limit"
+              fi
+            fi
+          fi
+          cpu_count="$(nproc)"
+          {
+            echo "GITHUB_SHA=$GITHUB_SHA"
+            echo "RUNNER_OS=$RUNNER_OS"
+            echo "RUNNER_ARCH=$RUNNER_ARCH"
+            echo "MEM_TOTAL_BYTES=$((mem_total_kib * 1024))"
+            echo "MEM_AVAILABLE_BYTES=$((mem_available_kib * 1024))"
+            echo "CGROUP_MEMORY_LIMIT_BYTES=$cgroup_limit"
+            echo "EFFECTIVE_MEMORY_LIMIT_BYTES=$effective_limit_bytes"
+            echo "CPU_COUNT=$cpu_count"
+          } | tee "$out/runner-capacity.txt"
+          if (( effective_limit_bytes < 8589934592 || mem_available_kib * 1024 < 8589934592 || cpu_count < 4 )); then
+            echo "CAPACITY_GATE=FAIL (requires >=8 GiB effective and available RAM, >=4 vCPU)" | tee -a "$out/runner-capacity.txt"
+            exit 78
+          fi
+          echo "CAPACITY_GATE=PASS" | tee -a "$out/runner-capacity.txt"
+
+      - name: Verify exact source and fixed Legado submodule
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="build/runtime-variant-proof"
+          expected="330e606c4d57e08adc056ff8ab7a4132c784da9a"
+          actual="$(git -C upstream/legado rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$actual" = "$expected"
+          test -f upstream/legado/LICENSE
+          grep -q "GNU GENERAL PUBLIC LICENSE" upstream/legado/LICENSE
+          test -z "$(git -C upstream/legado status --porcelain)"
+          {
+            echo "BADCAT_COMMIT=$GITHUB_SHA"
+            echo "LEGADO_COMMIT=$actual"
+            echo "LEGADO_WORKTREE=CLEAN"
+          } | tee "$out/source-identity.txt"
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Configure Android SDK platform 36
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${ANDROID_HOME:?Android SDK is not configured}"
+          sdkmanager_path="$(find "$ANDROID_HOME/cmdline-tools" -maxdepth 3 -type f -name sdkmanager | head -n 1)"
+          test -n "$sdkmanager_path"
+          echo "$(dirname "$sdkmanager_path")" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          "$sdkmanager_path" --sdk_root="$ANDROID_HOME" --install "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up isolated Gradle 8.14.4 without cache restore
+        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a
+        with:
+          gradle-version: '8.14.4'
+          cache-disabled: true
+
+      - name: Record exact toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="build/runtime-variant-proof"
+          {
+            echo "BADCAT_COMMIT=$GITHUB_SHA"
+            java -version 2>&1
+            gradle --version
+            sdkmanager --list_installed
+          } > "$out/toolchain.txt" 2>&1
+          cat "$out/toolchain.txt"
+
+      - name: Verify Runtime-only tasks and compile classpath configurations
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="build/runtime-variant-proof"
+          gradle --no-daemon --no-build-cache --console plain :legado-runtime:tasks --all > "$out/runtime-tasks.txt" 2>&1
+          for task in compileDebugKotlin compileReleaseKotlin compileDebugUnitTestKotlin; do
+            if ! grep -Eq "^[[:space:]]*${task}[[:space:]]+-" "$out/runtime-tasks.txt"; then
+              echo "Required task missing: :legado-runtime:$task" >&2
+              exit 1
+            fi
+          done
+          for configuration in debugCompileClasspath releaseCompileClasspath debugUnitTestCompileClasspath; do
+            gradle --no-daemon --no-build-cache --console plain :legado-runtime:dependencies --configuration "$configuration" > "$out/$configuration.txt" 2>&1
+          done
+
+      - name: Compile Runtime Debug, Release and Debug unit-test variants only
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="build/runtime-variant-proof"
+          for task in compileDebugKotlin compileReleaseKotlin compileDebugUnitTestKotlin; do
+            log="$out/$task.log"
+            if ! gradle --no-daemon --no-build-cache --console plain --stacktrace ":legado-runtime:$task" > "$log" 2>&1; then
+              tail -n 160 "$log"
+              exit 1
+            fi
+            tail -n 35 "$log"
+          done
+          if grep -hE '^> Task :(app|integration-contract|legado-runtime-poc):' "$out"/*.log; then
+            echo "An out-of-scope module task executed." >&2
+            exit 1
+          fi
+
+      - name: Hash compiled Runtime class outputs and prepare evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="build/runtime-variant-proof"
+          classes="legado-runtime/build/tmp/kotlin-classes"
+          test -d "$classes"
+          find "$classes" -type f -name '*.class' -print | sort > "$out/class-files.txt"
+          test -s "$out/class-files.txt"
+          for variant in debug release debugUnitTest; do
+            if ! grep -F "/$variant/" "$out/class-files.txt" >/dev/null; then
+              echo "No compiled class output found for $variant" >&2
+              exit 1
+            fi
+          done
+          while IFS= read -r file; do sha256sum "$file"; done < "$out/class-files.txt" > "$out/class-sha256.txt"
+          tar -czf "$out/runtime-kotlin-classes.tar.gz" -C legado-runtime/build tmp/kotlin-classes
+          {
+            echo "RESULT=PASS"
+            echo "BADCAT_COMMIT=$GITHUB_SHA"
+            echo "LEGADO_COMMIT=330e606c4d57e08adc056ff8ab7a4132c784da9a"
+            echo "COMPILED_VARIANTS=debug,release,debugUnitTest"
+            echo "CLASS_FILE_COUNT=$(wc -l < "$out/class-files.txt" | tr -d ' ')"
+            echo "APP_COMPILE=NOT_RUN"
+            echo "APK_DEX_R8_DEVICE=NOT_RUN"
+          } | tee "$out/result.txt"
+          sha256sum "$out"/* > "$out/SHA256SUMS"
+
+      - name: Upload Runtime-only compile evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: runtime-variant-compile-proof
+          path: build/runtime-variant-proof/**
+          if-no-files-found: error
+          retention-days: 30

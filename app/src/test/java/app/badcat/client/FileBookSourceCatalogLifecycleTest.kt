@@ -1,5 +1,6 @@
 package app.badcat.client
 
+import android.util.AtomicFile
 import app.badcat.engine.EngineResult
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -22,6 +23,44 @@ class FileBookSourceCatalogLifecycleTest {
         catalogFile.delete()
         File(catalogFile.path + ".bak").delete()
         File(catalogFile.path + ".new").delete()
+    }
+
+    @Test
+    fun allReturnsEmptyWhenCatalogAndAtomicBackupAreAbsent() = runBlocking {
+        val result = FileBookSourceCatalog(context).all()
+
+        assertTrue(result is EngineResult.Success)
+        assertEquals(0, (result as EngineResult.Success).value.size)
+        assertFalse(catalogFile.exists())
+    }
+
+    @Test
+    fun allRestoresLastCommittedCatalogAfterInterruptedAtomicWrite() = runBlocking {
+        val sourceId = "https://catalog-atomic-recovery.example"
+        val catalog = FileBookSourceCatalog(context)
+        assertTrue(catalog.importJson(source("Committed", sourceId)) is EngineResult.Success)
+
+        val interruptedWrite = AtomicFile(catalogFile).startWrite()
+        interruptedWrite.write("{\"partial\":true}".toByteArray(Charsets.UTF_8))
+        interruptedWrite.flush()
+        // Deliberately leave AtomicFile unfinished to model process death after backup creation.
+
+        val recovered = FileBookSourceCatalog(context).all()
+
+        assertTrue(recovered is EngineResult.Success)
+        val recoveredSources = (recovered as EngineResult.Success).value
+        assertEquals(1, recoveredSources.size)
+        assertEquals(sourceId, recoveredSources.single().id)
+        assertFalse(File(catalogFile.path + ".bak").exists())
+    }
+
+    @Test
+    fun malformedPersistedCatalogStillReturnsFailure() = runBlocking {
+        catalogFile.writeText("{not valid json")
+
+        val result = FileBookSourceCatalog(context).all()
+
+        assertTrue(result is EngineResult.Failure)
     }
 
     @Test

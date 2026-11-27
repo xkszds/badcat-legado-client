@@ -125,6 +125,7 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - 后续历史册：#0400–#0599、#0600–#0799、#0800–#0999、#1000–#1199、#1200–#1399、#1400–#1599、#1600–#1799、#1800–#1999、#2000–#2199、#2200–#2399、#2400–#2599、#2600–#2799、#2800–#2999、#3000–#3199，均待按第三类边界核查后建立。
 - 第 17 册：`docs/required/CI-3200-3399-AUDIT.md`（#3200–#3399；198/200 实际 run 已逐项登记，165 success / 33 failure；#3398–#3399 无真实 run）。
 - 第 18 册：`docs/required/CI-3400-3599-AUDIT.md`（#3400–#3599；已创建，当前 19 次实际 run，16 success / 3 failure / 0 pending）。
+- 第 19 册：`docs/required/CI-3600-3799-AUDIT.md`（#3600–#3799；已建立，当前 81 次实际 run，69 success / 12 failure / 0 pending；#3600–#3680 连续无缺号，#3681–#3799 当前未发现实际 run；整册保持开放，后续出现新 run 再追加）。
 - 每册只收第三类相关 CI；混合类别要标注交叉边界，纯其他类别 CI 不得计入第三类。历史初筛/元数据登记不等于逐 CI 详细审计完成。
 - 原始分段审计文件暂时保留为证据来源：`CI-3200-3299-AUDIT.md`、`CI-3300-3349-AUDIT.md`。新 200 册已吸收现有逐 CI 详细记录；旧账本保留作来源副本，不删除。
 - 技术实施历史与详细架构审计仍保留在本文件后续的技术历史文档：`03-LEGADO-RUNTIME.md`（旧版长档案，作为历史证据；日常入口以本总进度文件为准）。CI 功能流水以 200 册为准。
@@ -172,7 +173,7 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 - #3350–#3357：8/8 已逐项审计并写入 `CI-3350-3357-DETAIL-AUDIT.md`；8 workflow/Job success、每个 Job 53/53 returned steps success；均为 docs-only/bookkeeping CI，真实书源部分仅外部 Python smoke。
 - #3358–#3397：40/40 已逐项审计并写入 `CI-3358-3397-DETAIL-AUDIT.md`；38 success、2 failure。#3361 为 Kotlin Parcelize 插件解析失败；#3389 为 Robolectric 依赖 HTTP 429。#3398–#3399 未发现实际 run，不造记录。
 
-**当前可确认统计：** #3200–#3399 第 17 册记录 198/200 个实际 CI（#3200–#3397），165 success / 33 failure / 0 pending；#3398–#3399 无真实 run。#3400–#3599 第 18 册记录 19 次实际 run（#3400–#3422 的 14 次 + #3463–#3467 的 5 次），16 success / 3 failure / 0 pending。两册 workflow 统计仅表示 CI 终态，不等于产品功能通过数。
+**当前可确认统计：** #3200–#3399 第 17 册记录 198/200 个实际 CI（#3200–#3397），165 success / 33 failure / 0 pending；#3398–#3399 无真实 run。#3400–#3599 第 18 册记录 19 次实际 run（#3400–#3422 的 14 次 + #3463–#3467 的 5 次），16 success / 3 failure / 0 pending。#3600–#3799 第 19 册已登记 #3600–#3680 共 81 次实际 run，69 success / 12 failure / 0 pending；#3681–#3799 当前无实际 run。三册 workflow 统计仅表示 CI 终态，不等于产品功能通过数。
 
 ## 7. 关联文件与读取顺序
 
@@ -187,6 +188,7 @@ CI 审计按连续编号区间建立分册，每册最多 200 个 CI 编号，�
 1. 历史第 1 册 #0001–#0199 已完成 151/151 候选审计；下一步建立/核验历史第 2 册 #0200–#0399，先检索真实 run 和第三类边界，不预造编号。
 2. 第 17 册 #3200–#3399 已登记 198/200 实际 run：165 success / 33 failure；#3398–#3399 无真实 run。
 3. 第 18 册 #3400–#3599 已建立，当前 19 次实际 run：16 success / 3 failure；完整状态见 CI-3400-3599-AUDIT.md。
+4. 第 19 册 #3600–#3799 已建立，当前 #3600–#3680 共 81 次实际 run：69 success / 12 failure；完整索引见 CI-3600-3799-AUDIT.md。该册保持开放，继续只登记后续真实 run。
 4. #3463–#3467 已完成终态核验：5/5 success、每个 Job 53/53 steps success；详细证据见 CI-3463-3467-DETAIL-AUDIT.md。
 5. 每次新发现真实第三类 CI，按对应 200 编号册登记 exact SHA、Run/Job/Step、日志/报告/产物及实际功能覆盖；无真实 run 的编号不造记录。
 6. CI 审计与 Runtime 技术任务分开登记；Stage-0 仍 in_progress/not accepted，Stage-1 仍 NO-GO。
@@ -2618,3 +2620,771 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Acceptance evidence:** exact push/HEAD, run ID/URL and `head_sha`; job/step conclusions; unit-test reports; emulator results; Debug APK artifact and SHA-256; APK DEX verification output. A successful CI is not Phase A closure, Stage-0/Stage-1 acceptance, Task 027 authorization or proof of full compatibility.
 - **Exclusions:** no production/source/build/test/workflow edits, no local compile, no Release signing/publishing, no additional CI run, no Phase B migration or Task 027.
 - **Next:** after committing this registration, fully reread both required lists from the new HEAD, then fast-forward-push and observe the one push-triggered GitHub run.
+
+
+### 4.27.153 Task 026BP result — one-time GitHub-hosted Android CI retry (2026-11-28)
+
+- **Status:** the single authorized GitHub Actions run completed successfully. Run #3680 / ID `46040803723`, attempt 1, event `push`, branch `integration/legado-upstream-runtime`, workflow `.github/workflows/android-build.yml`; run URL: https://github.com/xkszds/badcat-legado-client/actions/runs/46040803723. Exact run commit SHA: `16468b277a9638b58be09caa5e9c7328806f9ea8`; GitHub commit tree SHA: `f5416451a5d81e3cec69f56492d4279350bc9172`. Run-level status/conclusion: `completed / success`; Job `assemble-debug` ID `140647754309`: `completed / success`; all 53 returned steps completed successfully, no skipped steps and no step conclusion failures.
+- **Server/GitHub snapshot identity:** server integration branch immediately before this result-only documentation edit was clean at `891429210c29e34f016123c36fa460b6780b91e4`, tree `f5416451a5d81e3cec69f56492d4279350bc9172`, clean worktree. GitHub run commit `16468b277a9638b58be09caa5e9c7328806f9ea8` has the same exact tree, but is a separate Git commit (`sync integration snapshot 8914292`, parent `288d14f178bc807f7729711a77dad0611f487b07`); do not conflate the two commit SHAs or claim identical ancestry. No force-push/reset/rebase or second CI run was performed.
+- **Pinned source / build:** fixed Legado SHA verification passed; JDK 21, Android SDK/platform/build-tools setup and Gradle setup passed. Runtime model contract tests, JS API inventory/dependency closure generation, Rhino artifact verification, Android runtime classpath RuleAnalyzer verification, G2d stage-1 compiler probe and transient Maven 429 classification all completed successfully.
+- **Unit tests:** uploaded JUnit reports contain 42 suites / 338 tests, 0 failures, 0 errors and 0 skipped. This is the exact uploaded report set, not proof of complete upstream behavior parity.
+- **Android instrumentation:** API 28 and API 35 each uploaded RuleAnalyzer instrumentation reports with 5 tests, 0 failures/errors/skips. Both WebView provider reports recorded successful String/Number/Null/Undefined overload observations selecting `INT`; API 28 provider Chrome 69.0.3497.100, API 35 provider Android WebView 124.0.6367.219. API 28/35 CookieManager/WebView instrumentation steps completed successfully.
+- **APK / DEX:** `:app:assembleDebug` passed and Debug APK artifact ID `15221176066` (`badcat-legado-debug`) was downloaded and independently hashed. APK size 31,991,966 bytes; SHA-256 `65507bdfc3d12bebffb03d07e93ed4f40835a5be1125b20581b89b1c6b7db0d9`. DEX evidence artifact ID `15221196016`; report status `pass`, 14 DEX files inspected, defined class `io.legado.app.model.analyzeRule.RuleAnalyzer`, extracted smali 61,707 bytes. This establishes the class definition in this Debug APK and the workflow's defined-only check, not complete Legado compatibility or Release/R8 retention.
+- **Real-source smoke — distinguish best-effort layers:** imported Nyasama collection probe reported 3/5 named sources with usable search results. Its script exited 1 due to two empty-result cases, but the workflow step is explicitly `continue-on-error: true`; the job's green conclusion must not hide this partial result. Five additional enabled endpoints were sampled: two returned non-empty HTTP 200 bodies, while other attempts included 404, redirect-loop and invalid-URL errors; non-empty bodies were not treated as parsed book results. Public repository probe self-test for multi-class CSS passed; four curated collections contained 267, 714, 48 and 22 entries; bounded endpoint sweep attempted 14 GETs and got 8 non-empty HTTP 200 responses. Static POST-source probe attempted 0 requests because all candidate hosts were in the pre-existing four-source user pause set; the pause was respected.
+- **Real-source E2E — external Python smoke only, not Android Runtime E2E:** workflow step labelled imported Feisuzhong executed `.github/scripts/live-bixiange-reading-smoke.py`; Bixiange GBK POST search → detail → TOC AJAX page → chapter content passed (114 TOC pages, 2,884 content characters). Maintained Pinshuzhai search → detail → TOC → content passed (1,650 chapters; first chapter 3,116 characters). Both reports are external Python/HTTP smoke evidence and must not be described as Android-app execution or complete source compatibility.
+- **Artifacts:** Debug APK artifact `15221176066`; DEX class-definition evidence `15221196016`; unit reports `15220746567`; API28 RuleAnalyzer `15221045834`; API35 RuleAnalyzer `15220886455`; API28 WebView provider report `15220596286`; API35 WebView provider report `15220551839`; JVM ABI `15220751507`; Nyasama/public-source smoke report `15220677151`; Pinshuzhai E2E report `15220921833`. Downloaded APK SHA-256 is recorded above; supporting report artifacts were downloaded and inspected.
+- **Limits / disposition:** this is a successful one-time Debug CI snapshot only. No Release build/signing/publishing, no Android physical-device install/acceptance, no full fixed-SHA API/behavior differential closure, no complete multi-type Android Runtime E2E, no UI parity review, no five-domain single-source-of-truth/migration acceptance, and no full license/notice/SBOM/reproducible-native-build acceptance. Phase A remains open; Stage-0 remains `in_progress / not accepted`; Stage-1 **NO-GO**; Task 027 **BLOCKED**; full Legado compatibility **NOT ESTABLISHED**.
+- **Boundary:** no local App compile retry, no production/source/build/test/workflow edits, no Release signing/publishing and no second GitHub CI run. This result record changes only this overview.
+- **Next:** preserve the exact APK/report evidence; continue only independently preregistered Phase-A closure work. Do not treat this green CI or the two external Python source smokes as permission to start Stage-1/Task 027 or declare compatibility complete.
+
+### 4.27.154 Task 026BQ preregistration — create next CI volume and audit run #3680 (2026-11-28)
+
+- **Task ID:** `R3-S0-T026-CI-3600-3799-RUN-3680-AUDIT-026BQ`; registered / not started. Start HEAD `a6f944022ec3ac03ba7ba6a9110ee2938fef1c58`; branch `integration/legado-upstream-runtime`; pinned Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Trigger:** Task 026BP produced the first newly confirmed integration-branch CI after the prior volume's #3467. Run #3680 is outside `CI-3400-3599-AUDIT.md`; the existing 200-number volume rule requires the next non-overlapping volume `CI-3600-3799-AUDIT.md`.
+- **Goal:** create the 19th 200-number CI ledger and audit the already completed run #3680 using the exact run/job/step/log/JUnit/emulator/APK/DEX/source-smoke evidence already retrieved for Task 026BP. This is bookkeeping and evidence reconciliation only; do not repeat network retrieval unless a specific evidence gap is found.
+- **Allowed tracked files:** `docs/required/CI-3600-3799-AUDIT.md` (new) and this overview only. No source, workflow, test, build, manifest, product or historical ledger edits.
+- **Required:** register #3680 exactly once with Run ID `46040803723`, Job ID `140647754309`, exact run SHA `16468b277a9638b58be09caa5e9c7328806f9ea8`, event/branch/time/conclusion; enumerate all 53 returned steps and conclusions; distinguish successful JUnit/API28/API35/Debug APK/DEX gates from best-effort source probes; explicitly record the Nyasama script's exit 1 hidden by `continue-on-error`, 3/5 named-source result, public-source endpoint counts and four paused hosts; classify Bixiange/Pinshuzhai as external Python smoke rather than Android Runtime E2E; list artifact IDs and APK SHA-256; preserve same-tree/different-commit distinction between server `891429...` and GitHub run `16468...`.
+- **Reuse:** Task 026BP result §4.27.153, exact downloaded APK/DEX/JUnit/WebView/RuleAnalyzer/smoke artifacts and run logs. Do not repeat CI polling, dispatch, rerun, local compile or artifact download unless a hash/report gap blocks the ledger.
+- **Exclusions:** no new CI run/dispatch/rerun, no integration-branch push, no local build/test, no Stage-1/Task 027, no claim of full Legado compatibility, no Release acceptance. A separate docs-only sync branch may mirror the final ledger and overview without triggering the integration workflow.
+- **Acceptance:** a non-overlapping #3600–#3799 volume with #3680 recorded once, every step and partial smoke limitation accurately classified, run/job/exact SHA and artifact evidence cross-checked, totals updated, and final files reread. The run is one terminal success in the new volume; do not invent missing CI numbers.
+- **Next:** after this registration commit, reread Master Workflow and Runtime Overview from the new HEAD, then create the #3600–#3799 ledger and write back its index/state.
+
+### 4.27.155 Task 026BQ scope amendment — 81 actual runs found in #3600–#3680 (2026-11-28)
+
+- **Amendment HEAD:** `4885c8f7ec6f27cc9413f79b986340100f48d0cb`; same integration branch and fixed Legado SHA as Task 026BQ.
+- **Discovery correction:** a branch-filtered GitHub Actions listing (`per_page=100`) returned 81 actual runs across the full contiguous range #3600–#3680, not only #3680. There are no missing run numbers in this interval: 69 completed/success and 12 completed/failure; no pending/in-progress/cancelled runs were returned. Run #3680 is the newest and is already detailed in Task 026BP.
+- **Amended goal:** Task 026BQ must audit all 81 actual integration-branch runs #3600–#3680 exactly once, not just #3680. Build the 200-number index with every Run ID, Job ID, exact SHA, created time, event, status/conclusion and detail reference; inspect each run's job/steps, and inspect failure logs for all 12 failed runs. Reuse already verified run #3680 evidence from §4.27.153; do not repeat its CI/artifact downloads.
+- **Allowed files / exclusions:** unchanged from §4.27.154. Only the new `CI-3600-3799-AUDIT.md` and this overview may change; no CI rerun/dispatch, no build/test, no integration push, no source/workflow edits.
+- **Acceptance:** all 81 rows have unique Run IDs and exact SHA; job/step evidence is reconciled for all runs; all 12 failure causes are supported by logs and their downstream skipped/unexecuted scope is explicit; totals are 81 actual / 69 success / 12 failure / 0 pending; no missing numbers are invented.
+
+
+### 4.27.156 Task 026BQ result — 200-number CI volume #3600–#3799 established (2026-11-28)
+
+- **Status:** completed for the currently discoverable run set; the 200-number volume remains open for future runs. Registration HEAD `4885c8f7ec6f27cc9413f79b986340100f48d0cb`; branch `integration/legado-upstream-runtime`; pinned Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Deliverable:** `docs/required/CI-3600-3799-AUDIT.md`, SHA-256 `38344ba12c6354b4798c2a1991f2c2f299557820db1db0d7f034727cc816f4ae`.
+- **Discovery:** the branch-filtered GitHub Actions listing returned 81 actual runs #3600–#3680, contiguous with no missing run numbers. 69 run conclusions are `success`; 12 are `failure`; 0 queued/in-progress/cancelled. No #3681–#3799 run was returned at audit time.
+- **Identity coverage:** all 81 rows include Run ID, Job ID, full exact workflow HEAD SHA, UTC creation timestamp and run conclusion. Each run's job endpoint was queried; all have one `assemble-debug` job and 53 returned steps. The ledger records the successful-run 53/53 outcome and each failed run's exact failed/skipped step set.
+- **Failure-step coverage:** #3613/#3653/#3674 have 22 success, 9 failure and 22 skipped steps; #3617/#3624/#3628/#3633/#3634/#3635/#3657/#3662/#3671 have 48 success, one failure and four skipped steps. Failed-run logs were retrieved and inspected.
+- **Run #3680:** reuses the exact CI/APK/DEX/JUnit/API28/API35/WebView/source-smoke evidence already recorded in §4.27.153; no CI rerun, dispatch, local compile or artifact redownload was performed. The #3680 artifact IDs and APK SHA-256 are copied into the new ledger for lookup.
+- **Boundaries:** ledger creation is documentation-only. No product source, tests, workflow, build files, APK, CI, or integration branch push were changed/performed. Successful Debug CI is not Release/device/product acceptance; external Python source smokes are not Android Runtime E2E.
+- **Disposition:** Stage-0 remains `in_progress / not accepted`; Stage-1 **NO-GO**; Task 027 **BLOCKED**; full Legado compatibility **NOT ESTABLISHED**.
+- **Next:** when a new real integration-branch workflow appears in #3681–#3799, add its exact Run/Job/Step/log/artifact evidence to this volume without rerunning existing entries. Do not close the 200-number volume until the range is checked again.
+
+### 4.27.157 Task 026BR preregistration — exact Android NDK 28.1.13356709 zlib source provenance (2026-11-28)
+
+- **Task ID:** `R3-S0-T026-PHASE-A-NDK-ZLIB-SOURCE-PROVENANCE-026BR`; registered / not started. Start HEAD `ae4ec2c746eedcd00a62c424cb346ee8bac53075`; branch `integration/legado-upstream-runtime`; pinned Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Authorization:** the user's explicit instruction to proceed with Phase A authorizes this next open Phase-A provenance gate. This registration expands the earlier GitHub-only 026BN evidence boundary solely to official Android NDK/AOSP source and release metadata; it does not authorize downloading the NDK binary package.
+- **Trigger:** 026BN/026BO establish that the native wrapper links Android NDK `libz.a` and pins NDK `28.1.13356709`, but exact zlib source revision, license and notice remain `NOASSERTION` / `NOT ESTABLISHED`.
+- **Goal:** establish a defensible immutable evidence chain from the exact NDK package revision `28.1.13356709` to the zlib source revision actually used to build its `libz.a`, then classify the exact license/notice. If official release metadata cannot establish that chain, preserve the unresolved result; do not substitute the current AOSP zlib head or infer provenance from ABI/symbols.
+- **Allowed source endpoints:** official Android NDK release/package metadata and official Android Open Source Project manifest/source repositories only (including `android.googlesource.com` and official `android/ndk` GitHub metadata where directly relevant). No general web search, third-party mirrors, unrelated repositories, or unofficial package indexes.
+- **Allowed tracked files:** this overview only. Downloaded source/manifest excerpts, evidence matrices, input manifests, reports and checksums stay under `/tmp/task026br-ndk-zlib-provenance/`. Existing source, build and license evidence is read-only.
+- **Required:** identify the exact NDK release/package metadata and immutable package build/manifest identity; trace the NDK build manifest or release recipe to the exact `external/zlib` source commit/tree; verify source blob/tree identities; inspect the exact zlib LICENSE/COPYING and file-level notices; record the source-to-NDK relationship confidence and all missing links; hash every input/output and produce a concise evidence report.
+- **Stop conditions:** if official metadata does not map NDK `28.1.13356709` to an immutable zlib source revision, stop and record `NOT ESTABLISHED`; do not guess based on date proximity, current AOSP HEAD, symbols, or a different NDK release. Do not download the NDK binary package to reverse-engineer it under this task.
+- **Exclusions:** no NDK package/binary download or installation; no Gradle/dependency resolution/build/compiler/test/CI/DEX/R8/APK/device/native rebuild; no cache mutation; no production/source/build/manifest/packaging/notice/license edits; no legal opinion; no complete-SBOM or binary-reproducibility claim; no App compile retry; no Phase B migration, Task 027 or Stage-1.
+- **Acceptance:** an immutable NDK-release-to-zlib-source evidence chain with exact source/license/notice and checksum-verifiable inputs/outputs, or an evidence-backed explicit `NOT ESTABLISHED` result with the exact missing provenance link. Commit and reread the result. Phase A remains open unless all independent mandatory gates are also met; Stage-0 remains not accepted and Stage-1 NO-GO.
+
+### 4.27.158 Task 026BR result — NDK r28b zlib provenance remains NOT ESTABLISHED (2026-11-28)
+
+- **Status:** completed for the bounded official-metadata/source-notice investigation; exact NDK `28.1.13356709` zlib source revision remains **NOT ESTABLISHED**. Registration HEAD `9246918e6a8010578d6c29ec1a3e902c72adebab`; pinned Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Official NDK release:** `android/ndk` tag `r28b`; tag object `ada48d7aba1aa2c383bfc46578fc1ce7b4a0f0f1`, target commit `126df29c00ab5612a1d7745b80f7610183ad45ea`, tag timestamp `2025-04-17T23:39:18Z`; release ID `213738237`, published `2025-04-21T18:21:27Z`. Release metadata specifies `ndkVersion 28.1.13356709`; Linux archive metadata is 722,264,879 bytes with SHA-1 `f574d3165405bd59ffc5edaadac02689075a729f`. The release notes state `libz.a` and `libdl.a` are no longer built with LTO. No NDK archive was downloaded.
+- **Release-branch manifest:** official `aosp-mirror/platform_manifest` commit `c6a4c05ce6a4f06773ecd6597144eb4145f184f3`, timestamp `2025-04-14T22:41:51Z`, pins branch `ndk-r28-release`; it pins `platform/ndk` to `f1c87f4ca16e672587f64fe186efc9b8224370ec` and `platform/prebuilts/ndk` to `35fbbcd449f03cbb515538d0572d564e9984ef13`. It has no `external/zlib` project. `platform/external/zlib` at `refs/heads/ndk-r28-release` returned 404. This manifest predates the r28b tag by three days but no official attestation links that manifest snapshot to the published r28b binary archive.
+- **Prebuilt sysroot:** at `platform/prebuilts/ndk@35fbbcd449f03cbb515538d0572d564e9984ef13`, the four `libz.a` Git blob IDs are recorded in `/tmp/task026br-ndk-zlib-provenance/RESULT.md` (aarch64, arm, i686, x86_64). These are Git object IDs, not raw binary SHA-256 values; no binary was downloaded. `sysroot/usr/include/zlib.h` blob `7f7c26cffb4b5b4a70da29fd40a7a3e7b20c7020` was byte-verified and declares `ZLIB_VERSION "1.3.0.1-motley"` (1995–2023 copyright). `sysroot/NOTICE` blob `89dee48fde6bab71918b145ebd1f2a130d12a5e8` was byte-verified and contains an aggregate zlib notice labelled `1.2.12, March 27th, 2022` (1995–2022 copyright). The header/NOTICE version mismatch means the aggregate notice cannot be assigned to the exact compiled `libz.a` revision.
+- **Disposition:** release metadata establishes NDK package version and the LTO note; the release-branch manifest identifies a prebuilt sysroot commit and its `libz.a` blobs; the manifest does not pin zlib source and does not attest the r28b package build relationship. Exact source commit, source-to-binary relationship and per-binary notice mapping remain `NOASSERTION / NOT ESTABLISHED`. Do not substitute current AOSP zlib HEAD or an approximate 1.2.12/1.3.0.1 commit.
+- **Evidence:** `/tmp/task026br-ndk-zlib-provenance/RESULT.md` SHA-256 `db58f06419fd87cbc0cbd5c390e2de88c7466835534be89f7c7731038275ab3b`; `INPUTS.sha256` SHA-256 `81eaab2cbb8736a56c488c4eb3ad0e5a8e7aa7a8a717f0534e065c17ba69225b`; `OUTPUT.sha256` covers both result and input manifest. All 23 input file checks and both output checks passed. The exact zlib.h and NOTICE Git blob IDs were independently reproduced with `git hash-object`.
+- **Boundary:** read-only official GitHub API/Gitiles metadata and text retrieval; no NDK package/binary download/install, no build/Gradle/dependency resolution/test/CI/DEX/R8/APK/device/native rebuild, no cache mutation, no production/source/build/manifest/packaging/notice/license changes, no App compile retry, no Phase B migration/Task 027/Stage-1.
+- **Disposition:** Phase A remains open; Stage-0 `in_progress / not accepted`; Stage-1 **NO-GO**; Task 027 **BLOCKED**; full Legado compatibility **NOT ESTABLISHED**. Next independent Phase-A gates remain AAR/APK notice/package closure and the Runtime-only exact-variant/compile proof on a clean higher-capacity runner; each requires its own preregistration and must not reuse this provenance result as binary-source proof.
+
+### 4.27.159 Task 026BS preregistration — existing AAR/Debug APK license-notice packaging closure (2026-11-28)
+
+- **Task ID:** `R3-S0-T026-PHASE-A-AAR-APK-LICENSE-NOTICE-PACKAGING-CLOSURE-026BS`; registered / not started. Start HEAD `6c19361f9f044b1d781c21036349083f3f4a1713`; branch `integration/legado-upstream-runtime`; pinned Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Trigger:** 026BO records AAR/APK LICENSE/COPYING/NOTICE packaging as `NOT ESTABLISHED`; 026BP/#3680 provides an already-downloaded Debug APK artifact ID `15221176066`, size 31,991,966 bytes, SHA-256 `65507bdfc3d12bebffb03d07e93ed4f40835a5be1125b20581b89b1c6b7db0d9`. 026BK/026BL/026BM/026BN/026BO contain prior AAR/native-source/license inventories.
+- **Goal:** establish, using only existing local artifacts and prior checksum-verified evidence, which LICENSE/COPYING/NOTICE/third-party notice files are physically present in the exact cached AAR and #3680 Debug APK; record archive paths, byte sizes, SHA-256 values, component attribution where evidence supports it, and whether the AAR notices survive into the APK. Distinguish source license declarations from files actually packaged for redistribution.
+- **Reuse:** read existing `/tmp/task026bk-repro-packaging/`, `/tmp/task026bl-libarchive-provenance/`, `/tmp/task026bm-libarchive-source-provenance/`, `/tmp/task026bn-libarchive-license-coverage/`, `/tmp/task026bo-spdx-libarchive-reconciliation/`, `/tmp/task026bj-spdx-partial-sbom/` and prior #3680 artifact evidence where present. Preserve all prior evidence unchanged; do not repeat source scans or native license analysis already closed in those tasks.
+- **Allowed tracked files:** this overview only. New inventory, extraction manifests, per-entry hashes and result/checksum reports stay under `/tmp/task026bs-license-packaging/`. Existing AAR/APK bytes and prior evidence are read-only.
+- **Required:** verify exact artifact identity before inspecting; enumerate notice/license files in the AAR and APK (including case/path variants and nested archives where already present); hash extracted notice files; map each notice to source/component only when prior evidence supports it; report missing, dropped, aggregate, duplicated or mismatched notices; reconcile the outcome against the existing SPDX partial without inventing binary/source links.
+- **Stop conditions:** if the exact cached AAR or already-downloaded #3680 APK bytes are unavailable, stop for that artifact and record `NOT AVAILABLE FROM EXISTING EVIDENCE`; do not re-download from GitHub, resolve dependencies, or substitute a different build. If a notice cannot be attributed, keep attribution `NOASSERTION`.
+- **Exclusions:** no network/download/artifact redownload, no Gradle/dependency/variant resolution, build/compiler/test/CI/DEX/R8/APK/device/native rebuild, no cache mutation, no production/source/test/build/manifest/packaging/notice/license changes, no legal opinion, no complete-SBOM claim, no App compile retry under §24.119, no Phase B migration/Task 027/Stage-1.
+- **Acceptance:** a checksum-verified inventory of existing AAR and APK notice payloads, or explicit per-artifact `NOT AVAILABLE FROM EXISTING EVIDENCE`; clearly state whether package notice closure is accepted. Phase A remains open until every independent mandatory gate is met; Stage-0 remains not accepted and Stage-1 NO-GO.
+
+### 4.27.160 Task 026BS result — AAR notice absent; #3680 APK bytes unavailable locally (2026-11-28)
+
+- **Status:** complete for the exact cached AAR and local APK availability check; overall AAR/APK notice package closure remains **NOT ESTABLISHED**. Registration HEAD `b5c1f1895ed55d363806dabae936759e8a1e1918`; pinned Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Exact AAR:** `me.zhanghai.android.libarchive:library:1.1.6`, cached size 3,980,193 bytes, SHA-256 `06d97a37872a9574ceb2bf94a3ad8dc38fcc89a60f2424067b20eb5efaa62189`, SHA-1 `cccf06cbecc843fd0553e82178c7c443a1128ff6`; exact SHA matches 026BK/026BL. `unzip -t` passed. All 14 AAR entries and nested `classes.jar` entries were scanned for case-insensitive LICENSE/LICENCE/COPYING/COPYRIGHT/NOTICE/third-party/legal names: zero matches. `classes.jar` contains wrapper classes only and no META-INF license/notice. The AAR physically contains no LICENSE/COPYING/NOTICE/third-party notice payload.
+- **License declaration boundary:** the external POM declares Apache-2.0 (POM SHA-256 `0dff81146a55cf3cafeb2dba7c75ac4e1addf42b500b613f524fceaf180982d8`); module metadata SHA-256 `daee93ccfc998c5b521a35b2935856d6d5409d66486fd58d10a79b74c3ab05a4`. The generated AndroidManifest's Google LLC Apache header applies only to that file. Neither is a packaged third-party notice or proof that the four embedded native ELF payloads are Apache-2.0. Source-side 026BN/026BO notices remain distinct from actual archive contents. AAR notice packaging is **NOT ACCEPTED**.
+- **#3680 APK:** known CI identity remains Run ID `46040803723`, artifact ID `15221176066`, size 31,991,966 bytes, SHA-256 `65507bdfc3d12bebffb03d07e93ed4f40835a5be1125b20581b89b1c6b7db0d9`. No local APK under `/tmp` or `/root/stage0-runner` matches that SHA. The only same-size local APK is SHA-256 `23fe1e5731d6f448abeccbcfe56ce8c87946e22e6d1fd33103f0fa1bc3a21241`, from historical Run ID `45600808333` / HEAD `288d14f178bc807f7729711a77dad0611f487b07`; it is not #3680 and was not substituted. Other local APKs also have different hashes. No artifact was re-downloaded. Therefore #3680 APK notice contents and AAR-to-APK notice propagation are **NOT AVAILABLE FROM EXISTING EVIDENCE**.
+- **Historical evidence caution:** 026BJ's older Task 018 APK notice inventory belongs to another source commit and is not transferred to #3680. Do not infer current APK packaging from it.
+- **Evidence:** `/tmp/task026bs-license-packaging/RESULT.md` SHA-256 `6f7a179e110b8e0a6cf285115a17ddf037cbd5bc703e259a79f47bf9c2aca8a6`; `INPUTS.sha256` SHA-256 `f76d8d441d4c3a9f4db438a83171b70e9e82c72614ab39ad7e676cf7fbb9f2e8`; `OUTPUT.sha256` covers both. All 14 input checks and both output checks passed. AAR identity was independently re-hashed; nested archive notice scan returned zero matches.
+- **Boundary:** read-only existing AAR, prior AAR evidence and local APK identity checks only. No network/download/artifact redownload, Gradle/dependency resolution, build/compiler/test/CI/DEX/R8/APK/device/native rebuild, cache mutation, production/source/test/build/manifest/packaging/notice/license edits or legal opinion. No App compile retry under §24.119.
+- **Disposition:** AAR notice package **NOT ACCEPTED**; #3680 APK notice package **NOT AVAILABLE FROM EXISTING EVIDENCE**; overall AAR/APK notice closure **NOT ESTABLISHED**. Phase A remains open; Stage-0 `in_progress / not accepted`; Stage-1 **NO-GO**; Task 027 **BLOCKED**; full Legado compatibility **NOT ESTABLISHED**. The remaining exact-variant/Runtime-only compile proof still requires a clean higher-capacity runner and its own authorization; no new CI or local compile is implied by this result.
+
+### 4.27.161 Task 026BT preregistration — isolated Runtime-only exact-variant compile proof (2026-11-28)
+
+- **Task ID:** `R3-S0-T026-PHASE-A-RUNTIME-ONLY-EXACT-VARIANT-COMPILE-PROOF-026BT`; registered / not started. Start HEAD `df74e6669cd42f2f6e9017a43a6cef5479ccc41f`; branch `integration/legado-upstream-runtime`; pinned Legado `330e606c4d57e08adc056ff8b7a4132c784da9a`.
+- **Authorization:** the user's “继续” response to the direct request for one additional GitHub Actions validation authorizes exactly one isolated Runtime-only hosted-runner run; it does not authorize another App compile, broad Android CI, Release/APK build or second run.
+- **Branch plan:** integration branch is diverged from GitHub (server 149 unique commits, GitHub 1 unique commit). Leave both refs untouched. Create and push only a new branch `runtime-proof/026BT` from the exact registered server snapshot; verify the remote branch is absent first; never force-push or rewrite history.
+- **Allowed tracked files:** this overview, `docs/audits/legado-runtime-3.0-stage0-architecture-audit.md`, and one dedicated workflow `.github/workflows/runtime-variant-compile-proof.yml`.
+- **Goal / scope:** resolve exact `:legado-runtime` Debug and Release compile classpaths and compile its Debug and Release variants plus Debug unit-test compile task on GitHub-hosted Linux. Before Gradle, require measured runner capacity of at least 8 GiB RAM and 4 vCPU; otherwise stop without Gradle. Verify fixed Legado SHA `330e606c4d57e08adc056ff8b7a4132c784da9a`; capture exact toolchain, compile logs and dependency reports; hash outputs.
+- **Exclusions:** no integration-branch push; no App, integration-contract or legado-runtime-poc compile unless a direct dependency makes it unavoidable (then stop); no `:app:assembleDebug`, existing broad `android-build.yml`, APK/DEX/R8/emulator/device/live-source tasks, product/Gradle/source/test/manifest/packaging/license/notice/UI/Reader/schema/database edits, Phase B migration, Task 027 or Stage-1.
+- **Retry limit / acceptance:** exactly one push-triggered run, no rerun or failed-job retry. Accept only if runner threshold is met, exact pinned source is verified, all registered Runtime-only variants/test compile tasks and classpath resolutions pass, and logs/reports are checksum-verified. This does not establish App integration or full Legado compatibility.
+- **Next:** after this registration commit, reread both required lists; inspect exact module tasks and action pins; create/review the dedicated workflow; push only the new branch. Phase A remains open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED.
+
+### 4.27.162 Task 026BT scope amendment — Runtime-only task graph and dedicated workflow
+
+- Static module inspection confirms `:legado-runtime` is an Android library with compileSdk 36, minSdk 26 and Java/Kotlin 21. Direct dependencies are Gson 2.14.0, AndroidX Annotation 1.10.0 and JUnit 4.13.2; there is no direct project dependency on App, integration-contract or legado-runtime-poc. Three host UI model source files plus eight explicitly selected pinned upstream rule/Gson source files compile in Debug/Release; two unit-test source files cover those model contracts.
+- New workflow `.github/workflows/runtime-variant-compile-proof.yml` is dedicated to push on `runtime-proof/026BT`. It measures effective/cgroup/available RAM and vCPU before Gradle, requires >=8 GiB effective and available RAM plus >=4 vCPU, verifies exact source/submodule, uses JDK 21 / Gradle 8.14.4 / Android 36, disables Gradle cache restore/write, resolves Debug/Release/DebugUnitTest compile classpaths, compiles only `:legado-runtime:compileDebugKotlin`, `:legado-runtime:compileReleaseKotlin`, `:legado-runtime:compileDebugUnitTestKotlin`, checks no out-of-scope module task executed, hashes class outputs and uploads logs even on failure.
+- Immutable action pins verified from v4 tags: checkout `11d5960a326750d5838078e36cf38b85af677262`; setup-java `cf277c60eb25467037889841efdb72551f06f6c3`; setup-gradle `ed408507eac070d1f99cc633dbcf757c94c7933a`; upload-artifact `ea165f8d65b6e75b540449e92b4886f43607fa02`. setup-gradle metadata confirms `cache-disabled` support.
+- Registration commit: `ed5ddb1661fde90aea6c67edd64df041b66fecd0`. Final workflow commit SHA, after this allowed workflow/docs-only update, will be the exact CI identity. Verify no product/source/Gradle/test files or upstream gitlink changed from registration before pushing.
+- **Status:** workflow authored and statically validated (YAML parse, seven embedded Bash blocks, all action pins); no Gradle, dependency resolution, compile, tests or CI have run. Local host is undersized and remains untouched. New branch absence must be checked before normal non-force push. Integration/main refs remain unchanged.
+
+### 4.27.163 Task 026BT result — GitHub workflow failed before runner/job creation
+
+- **GitHub validation ref:** `runtime-proof/026BT`, created from GitHub integration base `16468b277a9638b58be09caa5e9c7328806f9ea8`. Workflow commit `12ad4a1c13b2a4719ad81676ec9d6eba5e29dc19`; GitHub tree `c2d10aff45fc7b929ec41a2f5798fa1b620fb66a`; workflow blob SHA `c41bfe1ad9786c22ed8c1c19513319e1b98675f0`, matching the server file. The server normal Git HTTPS push stalled and was terminated; the validation ref/file were created via the GitHub connection.
+- **Source snapshot parity:** server task commit `ba6da76150277d444432b4baa4b7706cf597bfcd` differs from GitHub integration base only in four documentation/workflow paths. A local read-only diff check over product/source modules, Gradle build/settings, tests and upstream submodule passed; both trees pin Legado gitlink `330e606c4d57e08adc056ff8b7a4132c784da9a`. Product/source/build/test/submodule inputs used by the run are identical, but the complete Git tree/commit is not.
+- **Run:** #1 / ID `46061209130`, attempt 1, push event, branch `runtime-proof/026BT`, exact SHA `12ad4a1c13b2a4719ad81676ec9d6eba5e29dc19`, completed / failure. URL: https://github.com/xkszds/badcat-legado-client/actions/runs/46061209130.
+- **Evidence:** jobs endpoint `total_count=0`; no Job ID or Step; check-runs `total_count=0`; logs endpoint HTTP 404; no billable runner time; no capacity report, Gradle/dependency resolution, compiler log or artifact. Failure is classified **workflow-level before job creation; cause UNKNOWN / NOT ESTABLISHED**. It is not a source compile failure or a runner-capacity failure.
+- **Retry:** the single Task 026BT run authorization is consumed. No rerun or second dispatch. Any correction followed by another run needs a new preregistered task and new explicit authorization.
+- **Disposition:** Runtime Debug/Release/Debug-unit-test compile proof **NOT ESTABLISHED**. Phase A remains open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+### 4.27.164 Task 026BU preregistration — fix invalid runner context in dedicated workflow
+
+- **Task ID:** `R3-S0-T026-PHASE-A-RUNTIME-WORKFLOW-CONTEXT-FIX-026BU`; registered / not started. Start HEAD `5d63641a10101877ad7f84f9d67c4a8708255b5e`; branch `integration/legado-upstream-runtime`; pinned Legado `330e606c4d57e08adc056ff8b7a4132c784da9a`.
+- **Trigger:** Task 026BT run #46061209130 failed before job creation. GitHub's context table excludes `runner` from `jobs.<job_id>.env`, but the workflow used `${{ runner.temp }}` there; `github` is allowed. This is a confirmed workflow configuration defect and likely pre-job failure cause; the run has no job logs, so no direct GitHub diagnostic is available.
+- **Goal:** change only job-level `GRADLE_USER_HOME` to `${{ github.workspace }}/.gradle-user-home`, preserving isolated Gradle cache behavior.
+- **Allowed files:** dedicated workflow, audit and this overview only. No source/product/build/test changes.
+- **Validation:** GitHub context-table verification, YAML parse, seven embedded Bash syntax checks, immutable action-pin checks, `git diff --check`, exact upstream SHA and unchanged product/source/Gradle/test/submodule paths.
+- **Exclusions:** no push/update to validation/integration/main refs, no CI dispatch/rerun/second run, no Gradle/dependency resolution/compile/test/APK/DEX/R8/device work.
+- **Next:** commit and reread both lists, then stop. Another run requires a separate preregistered task and new explicit authorization. Phase A remains open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED.
+
+### 4.27.165 Task 026BU result — invalid runner context corrected locally; no CI retriggered
+
+- Changed only job-level `GRADLE_USER_HOME` from `${{ runner.temp }}` (not allowed in `jobs.<job_id>.env`) to `${{ github.workspace }}/.gradle-user-home` (allowed there by GitHub's context availability table).
+- Static checks: YAML parse PASS; 7/7 embedded Bash blocks pass `bash -n`; all four immutable action pins remain valid; branch trigger unchanged; `runner.temp` absent; `git diff --check` PASS.
+- Only changed path is `.github/workflows/runtime-variant-compile-proof.yml`; product/source/Gradle/test paths and Legado submodule unchanged. Fixed Legado SHA remains `330e606c4d57e08adc056ff8b7a4132c784da9a`. Corrected workflow blob SHA-1: `4f82f36fe8772f97819785c212286e1d8903fd59`.
+- No GitHub push/update, dispatch, rerun, Gradle, dependency resolution, compile, test, artifact or runner execution. GitHub branch still has the previous workflow; its single run #46061209130 remains failed before job creation.
+- **Status:** local static fix complete; Runtime compile proof **NOT ESTABLISHED**. A new preregistered task and explicit authorization are required before syncing this correction to the validation branch and triggering another run. Phase A remains open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED.
+
+
+### 4.27.166 Task 026BV preregistration — one corrected Runtime-only GitHub validation attempt
+
+- **Task ID:** `R3-S0-T026-PHASE-A-RUNTIME-WORKFLOW-RETRY-026BV`; registered / not started. Start HEAD `3fbbef4156f238eda5b5fd62024fe9f2facac49b`; branch `integration/legado-upstream-runtime`; fixed Legado SHA `330e606c4d57e08adc056ff8b7a4132c784da9a`.
+- **Authorization:** the user's “继续” response to the direct request to synchronize the corrected workflow and start one more GitHub Actions run authorizes exactly one update/run on `runtime-proof/026BT`. No rerun or second run is authorized.
+- **Remote scope:** update only `.github/workflows/runtime-variant-compile-proof.yml` on the existing GitHub validation branch, using the fetched current blob SHA; do not modify integration/main or push the diverged server integration history. Exactly one Contents update/push event; no manual dispatch.
+- **Workflow gate/scope:** corrected `github.workspace` job env; before Gradle require >=8 GiB effective and available RAM plus >=4 vCPU. If capacity is insufficient, stop before Gradle. Otherwise resolve the three Runtime compile classpaths and execute only `:legado-runtime:compileDebugKotlin`, `:legado-runtime:compileReleaseKotlin`, `:legado-runtime:compileDebugUnitTestKotlin`; never compile App or unrelated modules.
+- **Allowed server files:** this overview and the architecture audit for registration/result only. Remote update touches only the dedicated workflow. No production/source/Gradle/dependency/test/UI/Reader/schema/packaging/license changes.
+- **Acceptance/evidence:** exactly one new run, exact SHA, job/step, capacity report, Gradle logs, dependency reports, artifact ID and hashes recorded. If workflow fails before job creation or capacity gate fails, capture evidence and stop.
+- **Exclusions/retry:** no App/broad CI/APK/DEX/R8/device/live-source, no integration/main update, no force-push/reset/rebase, no rerun/failed-job retry/second dispatch or update. Any further attempt requires a new preregistered task and explicit authorization.
+- **Status:** Phase A remains open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED. This Runtime-only compile proof cannot independently close license/provenance/dependency/ABI/data-owner gates.
+
+
+### 4.27.167 Task 026BV result — one failed pre-job run; no Runtime compile evidence
+
+- Registration commit: `5193b5b072e4dff67746c40dd4230efe1fbfde96`; Master and Runtime Overview reread from that HEAD before the remote action.
+- Updated only the dedicated workflow on GitHub branch `runtime-proof/026BT`; remote commit `cd56213eb1fb50dc68a7a5f0d514ce93db71cd3a`, parent `12ad4a1c13b2a4719ad81676ec9d6eba5e29dc19`; blob `147593e6de7358ac73d5f5af7f9c9b020714d591`.
+- **Payload defect:** file-read response wrapper text was accidentally included in the remote workflow content: a `[Reading 195 lines ...]` line near the top and an `[executed on device: ...]` footer at the end. The remote YAML is contaminated. The server-local corrected workflow remains clean; no source/build files were changed.
+- Run #2 / ID `46062075055`, push event, exact SHA `cd56213eb1fb50dc68a7a5f0d514ce93db71cd3a`, completed/failure, attempt 1. Jobs empty, artifacts empty, logs endpoint HTTP 404, check-runs total_count 0. No runner/capacity/Gradle/dependency/compile evidence. Failure before job creation; no exact GitHub diagnostic available.
+- Exactly one remote update and one run occurred. No repair update, rerun, dispatch, failed-job retry or additional CI was attempted; further work needs new explicit authorization and a new preregistered task.
+- **Disposition:** Runtime variant compile proof NOT ESTABLISHED. Phase A remains open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. The independent license/notice, NDK provenance, dependency closure, ABI/reflection and data-owner gates also remain open.
+
+
+### 4.27.168 Task 026BW preregistration — retrieve exact existing #3680 APK notice evidence
+
+- **Task ID:** `R3-S0-T026-PHASE-A-EXISTING-CI-APK-NOTICE-ARTIFACT-RETRIEVAL-026BW`; registered / not started. Start HEAD `b2c6bb06dfe3f9a3ec889f936a91b5938407d6c6`; branch `integration/legado-upstream-runtime`; fixed Legado SHA `330e606c4d57e08adc056ff8b7a4132c784da9a`.
+- **Trigger/target:** Task 026BS could not inspect exact #3680 APK bytes. Existing immutable target is run `46040803723`, artifact `15221176066`, APK size 31,991,966 bytes and SHA-256 `65507bdfc3d12bebffb03d07e93ed4f40835a5be1125b20581b89b1c6b7db0d9`. Do not substitute a historical same-size APK with a different hash.
+- **Scope:** download only that existing artifact from GitHub; verify ZIP/APK hashes and inspect APK license/notice paths/content and AAR-to-APK notice propagation. No workflow or CI execution.
+- **Allowed writes:** temporary evidence under `/tmp/task026bw-apk-notice-retrieval/`; tracked edits limited to this audit and this overview. No repository payload additions.
+- **Procedure/acceptance:** reconfirm artifact/run identity, download exact artifact ID, verify embedded APK byte size/SHA, inventory every APK path and nested notice payload, hash/compare notices against existing source evidence, classify package coverage honestly, and checksum all reports. If artifact unavailable or hash mismatch, stop.
+- **Exclusions:** no build, Gradle, source/product/manifest/packaging/license/notice changes, APK modification/repackaging, device work, GitHub branch mutation, workflow dispatch, CI/rerun/retry. This does not by itself accept the AAR notice package.
+- **Status:** Phase A open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+
+### 4.27.169 Task 026BW result — #3680 APK notice inventory and AAR native propagation
+
+- Exact GitHub run #3680 ID `46040803723`, exact head `16468b277a9638b58be09caa5e9c7328806f9ea8`; artifact ID `15221176066`, ZIP 13,426,693 bytes, SHA-256 `c936800696e757d6b9957511a2da3af014bb0d85ef37d0efec141092e7cf677a` (matches GitHub digest). ZIP contains only `app-debug.apk`.
+- Extracted APK: 31,991,966 bytes, SHA-256 `65507bdfc3d12bebffb03d07e93ed4f40835a5be1125b20581b89b1c6b7db0d9`, exact Task 026BS expected hash.
+- 54 APK entries; exactly four license/notice paths: Bouncy Castle MIT `META-INF/LICENSE.md` (SHA-256 `0e01f1549c9022f406392ac2947d32223b7c2e977d21ea2f8c182fdeb4dae5fd`); AndroidX Annotation and Collection Apache-2.0 entries (both SHA-256 `809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0`); jsoup MIT `META-INF/jsoup/LICENSE` (SHA-256 `f5d724c5818010c61bff2e177f5b6452434bc054807522bf241940bca8b1d6b1`).
+- No NOTICE/COPYING/third-party path, Legado GPL license/NOTICE, HtmlUnit license/notice, or libarchive/codec/crypto/zlib notice was present. Root third-party notices and upstream license/notice files were not packaged.
+- All four APK `libarchive-jni.so` payload hashes exactly match the AAR hashes from 026BL/026BO (4/4 ABI). This proves AAR native binary propagation into this APK, but not the native source/build provenance.
+- **Evidence report:** `/tmp/task026bw-apk-notice-retrieval/RESULT.md`, SHA-256 `c584831c74418d0f7c99db7fd02966c3612e5d63048ec96c0d88f4abac8b3a2e`; checksum manifest `/tmp/task026bw-apk-notice-retrieval/RESULT.sha256`.
+- **Result:** exact artifact and APK hashes verified; archive inventory complete; AAR native payload propagated byte-for-byte; APK notice coverage **NOT ACCEPTED / INCOMPLETE**; AAR notice package remains **NOT ACCEPTED**. The missing notices remain a Phase-A release blocker. This evidence is only for GitHub SHA `16468b277a9638b58be09caa5e9c7328806f9ea8`, not current server HEAD. No CI/build/branch update or product change.
+
+### 4.27.170 Task 026BX preregistration — repair contaminated workflow and exactly one Runtime-only validation attempt
+
+- **Task ID:** `R3-S0-T026-PHASE-A-RUNTIME-WORKFLOW-PAYLOAD-REPAIR-026BX`; registered / not started. Start HEAD `dd71ed92a1837f0a90f7ea6b959fec18189ee6bd`; branch `integration/legado-upstream-runtime`; fixed Legado SHA `330e606c4d57e08adc056ff8b7a4132c784da9a`.
+- **Authorization:** user replied with the required “先看必读清单再做继续” directly after the explicit request to authorize a new task, remote workflow repair and exactly one more Runtime-only GitHub Actions run. Scope is exactly one workflow Contents update and its one push-triggered run; no retry/rerun/second update.
+- **Cause to repair:** GitHub validation branch `runtime-proof/026BT` currently contains contaminated workflow commit `cd56213eb1fb50dc68a7a5f0d514ce93db71cd3a`; its YAML payload includes the read-file wrapper prefix and device footer. Clean authoritative workflow remains on the server at this registration snapshot.
+- **Allowed changes:** this overview and the Stage-0 audit for registration/result only; one remote path `.github/workflows/runtime-variant-compile-proof.yml` on `runtime-proof/026BT`. No integration/main update or server push.
+- **Procedure:** freshly fetch and compare validation branch HEAD/file blob; extract the clean server file as raw bytes (e.g. base64 payload only, decoded and hash-checked); statically validate YAML, seven embedded Bash blocks, four immutable action pins, push filter, capacity preflight and scope; update via exact current blob SHA only if identities match; find the resulting run by exact commit SHA and inspect jobs/logs/artifacts. Do not trigger a separate dispatch.
+- **Compile boundary:** if the job is created and runner meets >=8 GiB effective and available RAM plus >=4 vCPU, execute only `:legado-runtime:compileDebugKotlin`, `:legado-runtime:compileReleaseKotlin`, `:legado-runtime:compileDebugUnitTestKotlin` and their registered Runtime compile-classpath reports. No App compile or APK build.
+- **Stop/retry:** exactly one Contents update and one push-triggered run. If remote identity differs, stop before update. If no job, undersized runner, or failure, record exact evidence and stop. No rerun, failed-job retry, second update/push/dispatch, force-push/reset/rebase. Another attempt requires a new preregistered task and explicit authorization.
+- **Exclusions:** no source/product/Gradle/dependency/test/manifest/packaging/license/notice/UI/Reader/schema/database changes; no server build, broad CI, APK/DEX/R8/device/live-source, integration/main ref update, Phase B, Task 027 or Stage-1.
+- **Status:** Phase A remains open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED. Runtime-only compile evidence, if successful, does not close other Phase-A gates.
+
+### 4.27.171 Task 026BX result — remote workflow payload repaired; one hosted run stopped at source identity verification
+
+- **Remote update:** existing validation branch `runtime-proof/026BT` was confirmed at `cd56213eb1fb50dc68a7a5f0d514ce93db71cd3a`; contaminated workflow blob `147593e6de7358ac73d5f5af7f9c9b020714d591`. Extracted only the raw server file body, excluding Desktop Commander wrapper prefix/footer. One Contents update changed only the dedicated workflow. New commit `af0b9ae4e009f9a9d283d94abc8d1cab02e2eb5d`; parent `cd56213eb1fb50dc68a7a5f0d514ce93db71cd3a`; new blob `f61030f957e23385a39ca4c02f5df60cec412006`. Remote file reread confirms clean YAML without wrapper markers or `runner.temp`.
+- **Static validation:** YAML parse PASS; 7/7 embedded Bash syntax PASS; 4/4 immutable action pins PASS; branch push filter unchanged; `github.workspace` job env; all 3 Runtime task names and 8 GiB/4 vCPU gate present; `git diff --check` PASS.
+- **Run identity:** GitHub Actions #3 / ID `46063076479`, attempt 1, push event, branch `runtime-proof/026BT`, exact SHA `af0b9ae4e009f9a9d283d94abc8d1cab02e2eb5d`, completed/failure. Job ID `140721768385`; run URL https://github.com/xkszds/badcat-legado-client/actions/runs/46063076479.
+- **Capacity:** preflight **PASS**: total RAM 16,759,431,168 bytes; available RAM 15,689,674,752 bytes; effective limit 16,759,431,168 bytes; cgroup limit unlimited; 4 vCPU.
+- **Execution matrix:** checkout and capacity gate success; exact source/submodule verification step failed; JDK/SDK/Gradle setup, classpath resolution, Runtime Debug/Release/DebugUnitTest compile and class hashing all skipped. No Gradle invocation, dependency resolution or compile was executed.
+- **Failure boundary:** step 4 log exits 1 but does not reveal which assertion failed (HEAD, pin, LICENSE path/text or clean submodule status). Same source/pin/license/clean-status checks pass on the server, which does not establish the runner's exact failing assertion. Root cause remains UNKNOWN / NOT ESTABLISHED.
+- **Artifact:** ID `15229372382`, ZIP size 336 bytes, SHA-256 `967460bb9d881050c404268d2ff4deea3a017f03d7ec710123b40c28c7d4daaa`; independently downloaded hash matches GitHub digest. Contains only 252-byte `runner-capacity.txt`; no compile output or source-identity report.
+- **Authorization:** exactly one remote update and one push-triggered run consumed. No rerun, retry, dispatch or second update. Any further CI attempt requires a new task and explicit authorization.
+- **Status:** workflow repair/static checks PASS; runner capacity PASS; source identity verification FAIL / exact assertion unknown; Runtime compile proof NOT ESTABLISHED. Phase A remains open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED. No product/source/build/test changes and no integration/main ref update.
+
+### 4.27.172 Task 026BY preregistration — read-only source-identity failure forensics
+
+- **Task ID:** R3-S0-T026-PHASE-A-RUNTIME-CI-SOURCE-IDENTITY-FORENSICS-026BY; registered / in progress. Start HEAD 7e5c09023fa08feb2e80646a6c7a42bae6ba81af; fixed Legado 330e606c4d57e08adc056ff8b7a4132c784da9a.
+- **Trigger:** Task 026BX Run #3 / ID 46063076479 passed capacity preflight but its source identity verification step failed with exit code 1 and no assertion-specific output. Compile tasks never ran. The single-run authorization is exhausted.
+- **Scope:** read-only analysis of the exact workflow block and already captured Run #3 logs/artifact; test each assertion locally against the server checkout and exact pinned submodule; evaluate whether the existing evidence uniquely identifies the failed condition.
+- **Allowed writes:** this overview and architecture audit for registration/result; temporary diagnostics in /tmp/task026by-source-identity/. No product/source/workflow/build/test/dependency/manifest/packaging changes; no upstream gitlink change.
+- **Prohibited:** any GitHub Contents update, push, dispatch, rerun, CI, Gradle or compile; no network retrieval. Further CI requires a new task and explicit authorization.
+- **Acceptance:** assertion-by-assertion evidence with exact output and a conservative conclusion. If remote root cause remains ambiguous, explicitly close as inconclusive and keep Runtime compile proof NOT ESTABLISHED.
+
+### 4.27.173 Task 026BY result — confirmed malformed expected upstream SHA
+
+- **Root cause confirmed:** workflow line 77 expected literal is 330e606c4d57e08adc056ff8b7a4132c784da9a (39 hex characters), but exact submodule HEAD and parent gitlink are 330e606c4d57e08adc056ff8ab7a4132c784da9a (40 hex characters). The expected value omitted the a after ...ff8; therefore the pin assertion necessarily fails.
+- **Other local assertions:** LICENSE exists PASS; GPL marker grep PASS; submodule worktree clean PASS. Badcat HEAD vs hosted GITHUB_SHA cannot be reproduced from the later server checkout, but does not explain away the independently deterministic pin assertion failure.
+- **Evidence:** /tmp/task026by-source-identity/local-assertions.txt, SHA-256 67faf745d06531b2a6951a0d440d848d8ce0d3b982ab4bd3c9aad1678cb45ca5. Parent gitlink and submodule HEAD agree exactly on the 40-character pin.
+- **Correction:** expected workflow literal must be exactly 330e606c4d57e08adc056ff8ab7a4132c784da9a. No workflow change or CI action was made in this read-only task. Any correction requires a separate task; remote update/CI needs fresh explicit authorization.
+- **Status:** Task 026BY closed / root cause confirmed. Runtime compile proof remains NOT ESTABLISHED because Gradle never ran. Phase A open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.174 Task 026BZ preregistration — local workflow pin-literal correction only
+
+- **Task ID:** R3-S0-T026-PHASE-A-RUNTIME-WORKFLOW-PIN-LITERAL-FIX-026BZ; registered / not started. Start HEAD f50a02349f6f1ef458951b636c639d28f8e7d42c; fixed gitlink/submodule SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Cause:** Task 026BY established the workflow's expected Legado SHA has only 39 characters and differs from the exact 40-character gitlink by one omitted a.
+- **Scope:** correct only the expected SHA literal in the server-local dedicated Runtime compile proof workflow; preserve all other workflow logic and scope.
+- **Allowed files:** workflow, this overview and Stage-0 audit. No remote GitHub update/ref mutation.
+- **Checks:** exact gitlink/submodule SHA equality; YAML and embedded Bash syntax; immutable Action pins; trigger and Runtime-only task list; memory/CPU preflight; wrapper marker absence; diff check; no product/source/build/test/dependency/manifest/packaging/upstream changes.
+- **Prohibited:** GitHub Contents update, push, dispatch, rerun, CI, Gradle, dependency resolution, compile, APK or submodule changes. New hosted validation requires fresh explicit authorization.
+- **Acceptance:** corrected local workflow and static checks pass; no claim of compile success.
+
+### 4.27.175 Task 026BZ result — fixed 40-character Legado pin restored locally
+
+- Corrected both malformed workflow constants (source assertion and emitted evidence manifest) from the 39-character value to the exact 40-character pinned SHA: 330e606c4d57e08adc056ff8ab7a4132c784da9a. Both match parent gitlink and checked-out submodule HEAD.
+- Static checks: YAML parse PASS; 7/7 embedded Bash blocks pass bash -n; 4/4 immutable Action pins PASS; branch push filter remains runtime-proof/026BT; Gradle home uses github.workspace; 8 GiB/4 vCPU preflight retained; three Runtime-only tasks retained; no wrapper markers or runner.temp.
+- git diff --check PASS. Only workflow source changed; no product/source/build/test/dependency/manifest/packaging/upstream gitlink changes. Corrected workflow blob SHA-1: c1817f733a55d7da835dd06ab7ae03c09f266f84.
+- No GitHub remote update, push, dispatch, CI, Gradle, dependency resolution, compile or APK. Existing remote validation branch is not repaired by this local commit; Run #3 remains failed. Runtime compile proof NOT ESTABLISHED.
+- Task 026BZ closed. Phase A open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED. A new hosted run needs fresh explicit authorization and a new preregistered task.
+
+### 4.27.176 Task 026CA preregistration — corrected Runtime-only workflow sync and one authorized run (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-RUNTIME-WORKFLOW-PIN-REPAIR-AND-ONE-RUN-026CA; registered / in progress. Start HEAD 4b5cdc59d979bf189eee9fdd332bfc5eb9323cc0; branch integration/legado-upstream-runtime; fixed Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Authorization:** the user's direct instruction “修改错误并且继续任务” responds to the immediately preceding authorization request. Exactly one GitHub Contents update to .github/workflows/runtime-variant-compile-proof.yml on runtime-proof/026BT and its one push-triggered run are authorized. No manual dispatch, rerun, retry, second update or second run.
+- **Goal:** verify expected remote ref/blob and corrected local workflow blob, repeat static validation, update only the dedicated workflow using the fetched blob SHA precondition, then inspect the one resulting run's exact SHA, job, steps, logs and artifact.
+- **Expected identities:** remote ref af0b9ae4e009f9a9d283d94abc8d1cab02e2eb5d; remote workflow blob f61030f957e23385a39ca4c02f5df60cec412006; local corrected workflow blob c1817f733a55d7da835dd06ab7ae03c09f266f84; exact Legado gitlink/submodule 330e606c4d57e08adc056ff8ab7a4132c784da9a. Stop if any differs.
+- **Static gates:** YAML parse, all 7 Bash blocks bash -n, 4 immutable action pins, push-only branch filter, valid github.workspace Gradle home, 8 GiB effective+available RAM and 4 vCPU gate, three Runtime Kotlin compile tasks, no wrapper markers/runner.temp, git diff --check.
+- **Run scope:** only :legado-runtime:compileDebugKotlin, :legado-runtime:compileReleaseKotlin, :legado-runtime:compileDebugUnitTestKotlin and registered prerequisite/classpath evidence. Require all three tasks to execute and pass before calling compile proof accepted. If the one run fails, collect evidence and stop without retry.
+- **Exclusions:** no integration/main ref update or server Git push; no broad App CI/build, APK/DEX/R8/emulator/device/live-source, source/build/test/dependency/manifest/packaging/license/notice/UI/Reader/schema/database changes, no Release signing/publishing, no Stage-1, Phase B or Task 027.
+- **Disposition:** Runtime compile proof remains NOT ESTABLISHED pending the one run. Phase A remains open; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED. A successful compile run cannot close the independent provenance, notice, dependency, ABI/reflection and data-owner gates.
+
+### 4.27.177 Task 026CA result — Runtime-only Debug/Release/unit-test compilation passed once (2026-11-28)
+
+- **Remote workflow correction:** one update to only .github/workflows/runtime-variant-compile-proof.yml on runtime-proof/026BT; prior branch head af0b9ae4e009f9a9d283d94abc8d1cab02e2eb5d, prior blob f61030f957e23385a39ca4c02f5df60cec412006; new commit d97a1aab803f3b03a7718ba7d34fa06ec0ef3b20, workflow blob c1817f733a55d7da835dd06ab7ae03c09f266f84. Fresh fetch confirms two correct 40-character fixed-pin literals and no malformed literal. Commit changed only the dedicated workflow.
+- **CI:** Run #4 ID 46064212504, exact SHA d97a1aab803f3b03a7718ba7d34fa06ec0ef3b20, push event, completed / success; job runtime-variant-compile ID 140725490278, success; all 12 main steps and cleanup succeeded. Run URL https://github.com/xkszds/badcat-legado-client/actions/runs/46064212504.
+- **Runner/source/toolchain:** capacity PASS, 16759431168 bytes total RAM, 15731073024 available, 4 vCPU; exact pinned Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a and clean submodule PASS; Temurin JDK 21.0.13.1, Gradle 8.14.4, Android SDK 36 / Build Tools 36.0.0 setup PASS.
+- **Resolved configurations:** debugCompileClasspath, releaseCompileClasspath, debugUnitTestCompileClasspath all completed successfully without FAILED markers.
+- **Compile results:** :legado-runtime:compileDebugKotlin PASS (22s); :legado-runtime:compileReleaseKotlin PASS (15s); :legado-runtime:compileDebugUnitTestKotlin PASS (16s). The last is test-source compilation only, not test execution. No out-of-scope App/integration-contract/runtime-poc task executed.
+- **Artifact:** ID 15230726047, runtime-variant-compile-proof, 104631 bytes; SHA-256 8e089fe16266f40129c542c07cff72419db5fbdc4bed75c565fb39ce8a2044f0. Independently checked all 14 manifest entries; 78 unique class files / 78 class hashes (Debug 35, Release 35, Debug unit-test 8). Evidence result RESULT=PASS; APP_COMPILE=NOT_RUN; APK_DEX_R8_DEVICE=NOT_RUN.
+- **Scope/limits:** one Contents update and one push-triggered run only; no retry/rerun/manual dispatch; no integration/main ref update or server push. This is exact-SHA proof for the existing :legado-runtime module's three compile tasks only. It does not establish full pinned-upstream source closure/behavior parity, unit-test execution, App build, APK/DEX/R8, device, Release packaging, license/notice, native provenance or data migration.
+- **Disposition:** Runtime compile gate PASS for this exact run SHA. Phase A remains OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED. NDK zlib provenance, AAR/APK notice closure, full authentic dependency/source closure, compiled ABI/reflection and data ownership/transaction/recovery remain open. No further CI attempt is authorized by Task 026CA.
+
+### 4.27.178 Task 026CB preregistration — fixed-upstream JVM ABI/reflection closure audit (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-UPSTREAM-JVM-ABI-REFLECTION-CLOSURE-026CB; registered / in progress. Start HEAD 3736485b07da0e1dfb29735473bac83564d3b72a; branch integration/legado-upstream-runtime; pinned Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Trigger:** Task 026CA proves only the three existing :legado-runtime compile tasks. Full upstream public JVM ABI, inherited members, overloads, reflection/JS lookup strings and optimized R8 retention remain unproven.
+- **Goal:** read-only inventory of fixed-upstream source declarations and actual production caller/reflection sites; reconcile them against exact compiled classes already present in Badcat artifacts. Classify symbols as compiled, source-only, adapted, intentionally excluded with boundary evidence, or unresolved.
+- **Allowed writes:** only this overview and the Stage-0 architecture audit; temporary inventories under /tmp/task026cb-abi-reflection/. Read-only pinned upstream and Badcat source/compiled-output inspection.
+- **Checks:** public/protected constructors and methods, inherited members, JVM descriptors only from compiled artifacts, overloads, annotations/serialization names, reflection/class-name strings, Rhino/JS extension lookups, and existing keep-rule coverage. Record exact paths/lines, exact upstream SHA and Badcat HEAD. Source presence must never be reported as compiled presence; do not claim R8 retention without optimized output and mapping evidence.
+- **Prohibited:** no source/build/test/workflow/manifest/dependency/schema/UI/packaging/notice edits; no GitHub update/push/dispatch/rerun/CI; no Gradle/dependency resolution/compile/test; no APK/DEX/R8, signing, emulator/device/live-source, no source migration, Phase B or Task 027.
+- **Acceptance:** path-exact declaration/caller/reflection/compiled-evidence reconciliation, coverage counts, and explicit unresolved/NOT MET list. This static task does not itself close dynamic ABI/reflection or R8 retention.
+- **Disposition at registration:** Phase A remains OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+### 4.27.179 Task 026CB result — fixed-upstream ABI/reflection gate remains NOT MET (2026-11-28)
+
+- **Review identity:** Badcat HEAD d1e6e3a25a2e8b05b0cefb5836b258f18f9ca5f8; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a. Detailed path/hash/method inventory: /tmp/task026cb-abi-reflection/inventory.txt, SHA-256 b7429031d87b1f56a1813dcba056d6ec385e39b3d0413b41fc0e9e53ef55626c; method coverage list: method-coverage.txt, SHA-256 47fe6d25e0f108a03d860a53c8d5a3841430614606e30eb531e0ad276f00763f. Full audit §24.247.1.
+- **Compiled inclusion:** :legado-runtime includes only seven pinned rule models + GsonExtensions.kt; Task 026CA's 78 classes are 35 Debug, 35 Release, 8 Debug-unit-test classes from this module. :integration-contract selects a limited parser slice (RuleAnalyzer, AnalyzeByJSoup/Regex, SourceHtmlParser, adapted JSONPath/XPath); its current local class output is not exact-HEAD CI evidence, and AnalyzeRule's app-coupled lifecycle is explicitly left separate.
+- **Missing upstream classes:** no exact-FQCN compiled classes found for BaseSource, BookSource, BookChapter, SearchBook, AnalyzeRule, AnalyzeUrl, RuleData/RuleDataInterface, JsSourceEngine, SharedJsScope, NativeBaseSource or JsExtensions. The BookSource/BookChapter bytecode found belongs to app.badcat.engine, not upstream model packages.
+- **JS surface screen:** pinned JsExtensions has 77 unique names; Badcat java bridge has 60 by-name matches and 17 absent names (full list §24.247.1). JsEncodeUtils's 27 unique names all appear by name, but exact descriptors/overloads/annotations and behavior remain unverified. Fourteen BaseSource method names are absent across java/source objects; AnalyzeRule has 8 and AnalyzeUrl 16 names absent from java bridge. Method-name matching is not ABI parity.
+- **Type mismatch:** existing app ABI test explicitly documents upstream JsExtensions/BaseSource not compiled; Badcat getSource returns Map and getBatchContext returns Any, not upstream BaseSource?/BatchContentContext?. Runtime binding uses custom java/cookie/source/cache objects rather than upstream NativeBaseSource/RhinoWrapFactory registrations.
+- **R8:** Badcat app has no minify/proguard configuration; Runtime consumer rules empty; Rhino consumer rules cover HtmlUnit only. No optimized APK/DEX/mapping proof.
+- **CI scope:** successful Run #4 at d97a1aab803f3b03a7718ba7d34fa06ec0ef3b20 ran only three :legado-runtime compile tasks, not :app or :integration-contract. No new Gradle/test/CI/build/device work in this audit.
+- **Disposition:** Task 026CB inventory completed, but upstream JVM ABI/reflection/R8 gate remains NOT MET. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED. No Phase B migration authorization implied.
+\n### 4.27.180 Task 026CC preregistration — data single-writer, transaction and recovery audit (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-DATA-OWNERSHIP-TRANSACTION-RECOVERY-CLOSURE-026CC; registered / in progress. Start HEAD efaa4b91f6b1278930d92e9659388e2ff0827bef; fixed Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** close the remaining Phase-A data gate by tracing per-domain authoritative owners, all production writers/read projections, durable versus cache state, transaction boundaries, import/backup/restore/migration semantics, rollback and restart recovery. Domains include BookSource, Book, BookChapter, progress, chapter cache, Cookie/login, source variables/config and related user state where actually used.
+- **De-duplication:** reuse existing BookSource caller/invalidation findings in audit §§24.88–24.90; first inspect all earlier data/transaction/migration records and scope this task only to missing evidence. Do not repeat old findings as new proof.
+- **Allowed:** read-only source/database/build-artifact inspection; temporary reports under /tmp/task026cc-data-ownership/; documentation registration/result only in this overview and Stage-0 audit.
+- **Required result:** per-domain owner/writer/read matrix; transaction and crash-window map; backup/restore/migration/rollback/restart evidence; exact unresolved risks and explicit static-vs-dynamic proof limits.
+- **Forbidden:** source/build/test/workflow/schema/database/dependency/UI changes; database mutation; Gradle/build/test/CI/GitHub; migration execution, device/live-source; Phase B and Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+### 4.27.181 Task 026CC result — data ownership / transaction / recovery gate NOT MET (2026-11-28)
+
+- **Review HEAD:** `a57681841a2f875e10e2e37a84076d1e617515e1`; pinned Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`. Full static matrix: `/tmp/task026cc-data-ownership/RESULT.md`, SHA-256 `ddca521fe3bcf53f9654011a6a9b237b7447eb5945d72d364a5836e3b3e0c6d8`; audit details §24.248.1.
+- **Confirmed host topology:** there is no Badcat Room DB/entity/DAO/migration chain in the inspected app/build sources. BookSource JSON, progress/bookmarks, history, favorites/folders, Cookie/session, login, source variables, source-file cache and chapter-content cache are independent stores. No persisted host Book/BookChapter/ReadConfig model is present. Upstream Room v113 schema/DAO/migration semantics remain a compatibility requirement, not a currently integrated host database.
+- **Concrete defect:** `FileBookSourceCatalog.readSources()` checks base-file existence and returns empty before `AtomicFile.openRead()` can restore `.bak` after interrupted write. Existing lifecycle tests do not cover this crash window. No runtime fault injection was run.
+- **Transaction gaps:** catalog mutation commits before cleanup; tests explicitly show cleanup failure after committed deletion. Runtime cleanup traverses independent stores sequentially with aggregated exceptions, not rollback. Reading progress/history and favorite folders/books also span separate writes; favorite v1 backup is not a whole-app/runtime backup. Cookie/login projections are not atomically joined.
+- **Verification boundary:** tests were read but not run; no Gradle, DB, migration, CI, process-death or device execution. No production source/build/test/schema/database change.
+- **Disposition:** Task 026CC static inventory complete, data ownership/transaction/migration/rollback/restart gate **NOT MET**. Phase A OPEN; Stage-0 `in_progress / not accepted`; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. No Phase B or migration authorization implied.
+- **Next:** keep Phase A open; next reconcile the remaining independent dependency/NDK provenance and notice-closure blockers, then consolidate all Stage-0 gates. Do not start production migration or Task 027.
+
+### 4.27.182 Task 026CD preregistration — dependency closure and license/NOTICE reconciliation (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-DEPENDENCY-LICENSE-NOTICE-CLOSURE-026CD; registered / in progress. Start HEAD `9c4db2298bc06e4712601ab199a6bb1b80451733`; fixed Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** consolidate existing dependency-coordinate/variant reports, exact AAR/APK artifact hashes and native payload evidence into one dependency → provenance → license → packaged NOTICE matrix. Distinguish source candidate closure from resolved binary closure and actual shipped payload.
+- **De-duplication:** reuse existing dependency closure work §§24.162–24.168 and packaging audits 026BS/026BW; no repeated broad resolution or artifact download.
+- **Allowed:** read-only tracked source, Gradle reports, local artifacts and existing temporary reports; temporary reconciliation under `/tmp/task026cd-dependency-notice/`; documentation result only in this overview and Stage-0 audit.
+- **Required result:** exact coordinates/versions/variants, provenance/license mapping, complete packaged NOTICE inventory, unresolved transitive/native provenance, and clear PASS/NOT MET.
+- **Forbidden:** source/build/test/workflow/dependency/manifest/packaging/license-file changes; Gradle, dependency resolution, build, test, CI or GitHub; external NDK source/archive retrieval; database/device/Phase B/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+### 4.27.183 Task 026CD result — dependency closure and license/NOTICE gates NOT MET (2026-11-28)
+
+- **Review HEAD:** `2f79d7c2441a9b90e6b10c18990b88623d697cae`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`. Full reconciliation `/tmp/task026cd-dependency-notice/RESULT.md`, SHA-256 `c56cf0223ff84a3d1b5df7a1195c78e598f29160259dcba5d19aed0c7dd5fa50`; detailed audit §24.249.1.
+- **Dependency reports:** all 44 Badcat metadata reports and ten upstream reference reports hash-verified. The 44 Badcat reports cover App/Runtime/Rhino/POC/integration-contract configurations and resolve 82 Maven package/version pairs with no FAILED markers; App Debug/Release runtime each show 28. These are dependency metadata, not an exact APK package inventory or full 33-path authentic Runtime closure. Only eight pinned rule/Gson source files are currently in `:legado-runtime`; candidate direct dependencies and Host Port decisions remain open. Upstream quick-transfer coordinate differs from the current Badcat declaration.
+- **SBOM:** Task 026BJ remains partial (95 packages; 46/82 Maven package versions have `NOASSERTION` license declarations). Task 026BO native reconciliation remains partial (104 packages, four binary files, 131 source/header rows; custom structural checks only). Aggregate native license and source-to-binary relationships remain `NOASSERTION` / NOT ESTABLISHED.
+- **AAR/APK:** cached libarchive AAR 1.1.6 exact SHA `06d97a...62189` has 14 entries and no license/notice payload. Exact historical #3680 APK SHA `65507b...b7db0d9` has only Bouncy Castle MIT, AndroidX Annotation/Collection Apache-2.0 and Jsoup MIT notice paths. Its four native libarchive ABI payload hashes exactly match the AAR, but no corresponding native notices are packaged. APK belongs to historical head `16468b...`, not current server HEAD.
+- **Native/license gaps:** selected libarchive/codec source files are individually classified (123 C translation units + 8 headers), but no build attestation/reproducible rebuild ties them to the AAR binaries. NDK r28b zlib source revision remains unknown; header/NOTICE version labels differ. Root `THIRD_PARTY_NOTICES.md` exists but is incomplete; root LICENSE/COPYING/NOTICE absent. Legado GPL and HtmlUnit notices are not present in #3680 APK.
+- **Verification boundary:** checksums and exact AAR bytes verified; no Gradle, build, test, CI, GitHub update, network, download, APK edit, native rebuild or device install.
+- **Disposition:** Task 026CD completed as a read-only evidence reconciliation; dependency closure, complete SBOM, native provenance and notice gates remain **NOT MET**. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. No legal or release approval implied.
+- **Next:** consolidate all Stage-0 gates into a single remaining-blocker and acceptance matrix before any implementation work. Do not start Phase B or Task 027.
+
+### 4.27.184 Task 026CE preregistration — consolidate Phase-A Stage-0 gates (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-STAGE0-GATE-CONSOLIDATION-026CE; registered / in progress. Start HEAD `014f6bfe2ebd432f589ceb66439a055f139586fa`; fixed Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** one evidence-indexed matrix for every Phase-A Stage-0 acceptance gate, including source/API coverage, dependency/source closure, exact compile/test scope, ABI/reflection/R8, data ownership/recovery, native and NDK provenance, license/NOTICE/SBOM, reproducibility and dynamic app integration.
+- **Allowed:** read-only reconciliation of prior audit records and reports; temporary matrix `/tmp/task026ce-stage0-gates/`; audit and overview documentation only.
+- **Required:** status PASS/PARTIAL/NOT MET/NOT AVAILABLE, exact evidence SHA/task/report, limitations, blockers, smallest next action and dependency order for every gate. A Runtime-only compile pass must not be promoted to app/compatibility pass.
+- **Forbidden:** production/build/test/workflow/dependency/license/notice/packaging/schema/database/UI edits; Gradle/build/test/CI/GitHub/network/NDK retrieval; database migration, device/live-source, Phase B or Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+### 4.27.185 Task 026CE result — Phase-A Stage-0 consolidated gate matrix (2026-11-28)
+
+- **Review HEAD:** `23507bb393024a564458d5515cd2ef2eedd8f66c`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`. Matrix `/tmp/task026ce-stage0-gates/RESULT.md`, SHA-256 `36e351ccb1a4fbcc60f0d6b087aa40c30c50f3beaf34e9367d1c3409388d4741`; full gate detail in audit §24.250.1.
+- **Twelve gates reconciled:** source/model/caller closure PARTIAL; full Runtime dependency closure NOT MET; exact compile/test PARTIAL (three compile tasks for the current narrow module only); ABI/reflection/R8 NOT MET; production Host Port wiring PARTIAL; data ownership/transaction/recovery NOT MET; native libarchive/zlib provenance NOT MET; license/NOTICE/SBOM NOT MET; reproducible current-HEAD packaging NOT MET; semantic/security parity PARTIAL; dynamic Android/real-source/UI integration NOT RUN (downstream); reproducible Stage-0 bundle NOT DONE.
+- **Do not conflate evidence:** successful metadata reports do not prove full source closure; Runtime-only compilation does not prove App or test execution; static APIs do not prove compiled ABI; source license files do not prove packaged notices; historical #3680 APK does not represent current HEAD; native symbols do not attest source builds.
+- **Next order:** (1) separately register the narrow BookSource AtomicFile `.bak` recovery fix and regression test; (2) close exact source/Host Port contract; (3) obtain fresh explicit authorization before any hosted full Runtime dependency/compile run; (4) close ABI/R8 and data ownership/migration design; (5) close native provenance and packaged notices; (6) assemble Stage-0 acceptance bundle and request independent review. No migration execution before ownership/schema approval.
+- **Disposition:** Stage-0 `in_progress / NOT ACCEPTED`; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED. No implementation/build/test/CI/network/database/device work occurred.
+
+### 4.27.186 Task 026CF preregistration — BookSource AtomicFile backup recovery fix (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-BOOKSOURCE-ATOMICFILE-RECOVERY-FIX-026CF; registered / in progress. Start HEAD `d37ef9265f2afac27df71a24e39d862269c80e91`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** correct the BookSource `AtomicFile` read order so `.bak` recovery runs before any absent-base fallback, and add a regression test for backup-present recovery plus genuinely absent catalog behavior.
+- **Allowed:** only `FileBookSourceCatalog.kt`, `FileBookSourceCatalogLifecycleTest.kt`, audit and overview; temporary diagnostics `/tmp/task026cf-atomicfile-recovery/`.
+- **Required:** preserve JSON and catalog semantics; deterministic interrupted-write fixture; test absent, recovered and malformed cases; diff check and exact scope review. Do not report test PASS unless the focused test actually executes.
+- **Forbidden:** Room/schema/database migration, multi-store transaction redesign, UI/product changes, broad build/test/CI/GitHub, external retrieval, device/live-source, Phase B or Task 027. No App compile retry on the constrained server.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+### 4.27.187 Task 026CF result — BookSource AtomicFile backup recovery correction (2026-11-28)
+
+- **Final code HEAD:** `dc3a7652a6d86aff4b47e99f3aa9ccb9c73a9817`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`. Full report `/tmp/task026cf-atomicfile-recovery/RESULT.md`, SHA-256 `9132e98581c0221bd008d0c8622a2dd3754293b8a7692bacc2482a94745a4a97`; audit §24.251.1.
+- **Change:** `FileBookSourceCatalog.readSources()` now calls `AtomicFile.openRead()` before absent-file fallback, preserving `.bak` restoration. Only a FileNotFoundException with neither base nor `.bak` present yields the empty catalog. Malformed or otherwise unreadable persisted data remains a failure. JSON and catalog semantics unchanged.
+- **Tests added:** genuinely absent catalog; interrupted AtomicFile write restores prior committed source ID and consumes `.bak`; malformed persisted catalog remains failure. Source SHA `db86e48fe4725cb7271995a4c20fd1f907553b8d1a64740c67beaf4c28092a5f`; test SHA `f57fe4d8f394fd4a672056342265aab3f3d7dd77797efe0088cd972d0ad57334`. Static checks 5/5 PASS and diff check PASS.
+- **Verification:** focused Robolectric test NOT RUN because the server has 2 GB RAM and prior App compile attempts are prohibited; no fresh hosted CI authorization. No Gradle/build/test/CI execution.
+- **Disposition:** source fix and regression test source added; runtime test proof remains pending. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next validation needs separately authorized adequate runner.
+
+### 4.27.188 Task 026CG preregistration — reconcile 33 candidate Runtime source paths with actual module inclusion (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-33PATH-RUNTIME-SOURCE-INCLUSION-RECONCILIATION-026CG; registered / in progress. Start HEAD `ed1bdc867faa9af33a90198ffb1657aed04de4ae`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** map each of the existing 33 candidate Runtime paths to exact pinned source identity, current Badcat path, Gradle inclusion, actual module owner, compiled evidence and production caller/Host Port dependencies.
+- **De-duplication:** reuse Task 026K candidate/import matrix, 026AD dependency reports, 026BH source-visible API crosswalk and 026CB ABI findings; no repeated method inventory.
+- **Allowed:** read-only repository/source/build declaration inspection; temporary matrix `/tmp/task026cg-source-inclusion/`; audit and overview docs only.
+- **Required:** 33-row path-exact matrix; label file presence, Gradle inclusion, exact-SHA compilation and runtime proof separately; state missing roots and bounded next closure.
+- **Forbidden:** source/build/test/Gradle/dependency/workflow/manifest/license/notice/packaging/schema/database/UI edits; build/test/CI/GitHub/network/NDK/device; Phase B/Task 027. No App compile retry or new CI authorization.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+### 4.27.189 Task 026CG result — 33-path authentic Runtime source inclusion remains NOT MET (2026-11-28)
+
+- **Review HEAD:** `383f80f1c94e5245cbf48eb1c775cd1c97418c9d`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`. Matrix `/tmp/task026cg-source-inclusion/33-path-matrix.tsv`, SHA-256 `55736ba855b1bb557086cdf5818ee7328d1e629d9ca3ccb8aeecf6ca792bd1a9`; report `/tmp/task026cg-source-inclusion/RESULT.md`, SHA-256 `4ecb6fca8e31ee37a5c55a3c2ba9bad2470e0d5857c896f400b382d4d8b1802e`; audit §24.252.1.
+- **33 candidate paths:** only three local production copies exist: `RowUi` and `ExploreKind` byte-identical; `FlexChildStyle` adapted with App-only `FlexStyleLayoutAdapter`. 30 absent: 27 Runtime core candidates, two App bridge classes, and one LoginUiV2 model/host contract. Exact hashes and per-path owner/inclusion status are in the matrix.
+- **Actual modules:** `:legado-runtime` includes the three models via main source set plus eight additional rule/Gson files; Run #4 compiled only this narrow module. `:integration-contract` compiles a different four-file parser slice plus six adapters; not the 33 candidate sources and not compiled by Run #4. `:legado-rhino` provides Rhino dependency, not upstream JsSourceEngine/SharedJsScope. `:legado-runtime-poc` is quarantined and its separate 12-file source experiment does not include these 33 candidates.
+- **Disposition:** full authentic source inclusion and Host Port closure NOT MET. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. No source/build/test/Gradle/CI/network/device changes.
+- **Next:** use this 33-path matrix and Task 026K Host Port map to define a minimum source-by-source extraction and dependency plan; keep App-only login/RSS UI and Room database ownership in the host. Do not bulk-copy upstream app source or start Phase B.
+
+### 4.27.190 Task 026CH preregistration — minimum Runtime extraction DAG and Host Port plan (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-MINIMAL-RUNTIME-EXTRACTION-DAG-026CH; registered / in progress. Start HEAD `73b092224c88b2b73d7570088bebaa86c2f18ab4`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** reconcile the existing 490-row import-owner map, 38-row Host Port matrix, 33-path source matrix and dependency candidates into a minimal, dependency-ordered extraction DAG.
+- **Allowed:** read-only evidence reconciliation; temporary plan `/tmp/task026ch-extraction-plan/`; audit and overview docs only.
+- **Required:** exact source roots, import owners, module destination, Host Port dependencies, dependency prerequisites, tests/rollback and stop conditions per wave. Preserve App-only UI/Room/Android boundaries and no Runtime→App cycle.
+- **Forbidden:** source/build/test/Gradle/dependency/workflow/manifest/license/notice/packaging/schema/database/UI changes; build/test/CI/GitHub/network/NDK/device; Phase B/Task 027. No new CI authorization.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+### 4.27.191 Task 026CH result — minimum Runtime extraction DAG and Host Port boundaries (2026-11-28)
+
+- **Review HEAD:** `fb4d34e7723169c023ed319b859ed7e09a570874`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`. Plan `/tmp/task026ch-extraction-plan/RESULT.md`, SHA-256 `d0a09157064d2190c7944560601aa37c0e90b2dd438b65d2ab875895f36af1ac`; audit §24.253.1.
+- **Evidence normalized:** 489 import edges across 29 roots; 37 Host Port rows. Only five typed port interfaces currently exist, in `integration-contract/RuntimeHostPort.kt`; they are declarations only, not production-wired. Most data, repository, HTTP, Cookie, cache, config, resource, Explore, replacement and notification ports remain proposed or missing.
+- **Module decision:** App currently consumes integration-contract, legado-runtime and legado-rhino; Runtime has no project dependency to Rhino or host ports. Do not blindly make Runtime depend on integration-contract because it also contains App DTO/parser dependencies. Decide a small runtime-host-contract module or Runtime-owned port API before implementation; never Runtime→App.
+- **DAG:** freeze ownership/ports first; then data/rule models with Room/KSP proof; Rhino/JS foundation; source/analyzer core; WebBook/reading pipeline; finally App-only UI/login/RSS/WebView/browser/image/Media3/Flexbox/Room adapters. Required dependency and acceptance gates are in the report.
+- **Disposition:** this is a static proposal, not implementation approval. Room/KSP, direct Runtime dependency closure, Host Port production wiring, ABI/R8, data recovery, notices and dynamic proof remain open. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. No source/build/test/CI/network/device action.
+- **Next:** convert Wave 0 into a concrete Host Port ownership decision, then register only the smallest foundation implementation slice. Do not copy the 27 missing candidate files as one batch or begin schema migration.
+
+### 4.27.192 Task 026CI preregistration — Host Port ownership and module-edge decision (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-HOST-PORT-OWNERSHIP-MODULE-EDGE-DECISION-026CI; registered / in progress. Start HEAD `68e47a3dc9b04852770c14bede0e8827fbf63f7f`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** choose between Runtime-owned ports, a small pure Kotlin/JVM host-contract module, and reuse of `:integration-contract`, with explicit arrows and typed data identity.
+- **Allowed:** read-only module/API/source inspection; temporary report `/tmp/task026ci-host-port-decision/`; audit and overview only.
+- **Required:** option comparison, target module graph, execution-context/error/cancellation ownership, DTO facade boundary, dependencies, rollback and next implementation task.
+- **Forbidden:** source/build/test/Gradle/module settings/dependency/workflow/manifest/license/notice/packaging/schema/database/UI changes; build/test/CI/GitHub/network/device; Phase B/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+### 4.27.193 Task 026CI result — Runtime-owned Host Port API selected (2026-11-28)
+
+- **Review HEAD:** `4e99435daffc5fb0368156539e2d2872e7706247`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`. Report `/tmp/task026ci-host-port-decision/RESULT.md`, SHA-256 `42b33dcbb1ae206401473f3352b49a5086126c1c1b8bbc318b8a4bf6195fa780`; audit §24.254.1.
+- **Decision:** `:legado-runtime` owns Host Port interfaces and execution/error/cancellation contracts; `:app` implements Android ports. Keep `:integration-contract` for App-facing `ReadingEngine` DTO/parser facade; do not make Runtime depend on it. A separate pure JVM contract module is unnecessary unless an independent consumer appears. No Runtime→App edge.
+- **Target graph:** App → integration-contract + legado-runtime + legado-rhino; legado-runtime → legado-rhino when exact public JsSourceEngine API requires it; Runtime POC remains quarantined. Public `SourceExecutionContext.Job` requires Runtime `api(kotlinx-coroutines-core:1.11.0)`.
+- **Current state:** five port interfaces are declarations only; no production implementation/factory injection. Moving them and wiring the complete port set is a separate implementation task; ReadingEngine DTOs remain an App facade and must not replace authentic upstream models.
+- **Disposition:** architecture decision complete, Host Port wiring NOT MET. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. No source/module/Gradle changes or build/test/CI/network/device operation.
+- **Next:** register the smallest implementation slice to relocate the five existing contracts into Runtime, expose coroutine API, and add contract tests before expanding the missing port families.
+
+### 4.27.194 Task 026CJ preregistration — move Host Port API to Runtime owner (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-RUNTIME-OWNED-HOST-PORT-API-FOUNDATION-026CJ; registered / in progress. Start HEAD `45a1de05fdc074e074ddd702b08b74c150615ba0`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** relocate the five platform-neutral Host Port interfaces and their typed request/result/context/error/cancellation models into `:legado-runtime`; export coroutines-core 1.11.0 because the public context exposes `Job`; add focused JUnit contract tests.
+- **Allowed:** only move `RuntimeHostPort.kt` to `legado-runtime/src/main/java/io/legado/runtime/port/`, change its package, add Runtime `api(kotlinx-coroutines-core:1.11.0)`, add focused Runtime unit tests, and update audit/overview.
+- **Required:** preserve all signatures/validation semantics; prove no old FQCN consumers; tests cover context, error/cancellation, SSL metadata and WebView request validation. No test pass claim unless executed.
+- **Forbidden:** App adapter/factory wiring, additional port families, source engine migration, database/schema/UI changes, broad build/test/CI/GitHub, network/NDK/device, Phase B/Task 027. No App compile retry or new CI authorization.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+### 4.27.195 Task 026CJ result — Host Port API now owned by Runtime (2026-11-28)
+
+- **Final code HEAD:** `b84334dd1b98ac6dd16d0a7a0e6d19d8a39b5e4c`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`. Report `/tmp/task026cj-host-port-foundation/RESULT.md`, SHA-256 `5f02cf0d7964982298b2938746933cc06534093fbb00a33ac12b7977e52159da`; audit §24.255.1.
+- **Change:** moved `RuntimeHostPort.kt` into `:legado-runtime` package `io.legado.runtime.port`; preserved all five existing interfaces and payload/result/error/cancellation types. Added exported coroutines-core 1.11.0 API dependency because public context exposes `Job`. `ReadingEngine` DTO facade remains in integration-contract; no Runtime→integration-contract/App edge.
+- **Tests:** five JUnit contract test methods added; static assertions 7/7 PASS; no old FQCN source references. Test SHA `04d9b056405c1bb7aecad0bce7b36ad3cfe5f87210ccd77dba29b0143e65a277`. Gradle/JUnit NOT RUN due server memory and no new CI authorization.
+- **Disposition:** Runtime owns the API, but no App implementation/factory or runtime consumer is wired yet. Host Port production wiring NOT MET; test execution pending. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.196 Task 026CK preregistration — Runtime-owned Host Port caller/contract coverage audit (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-RUNTIME-HOST-PORT-CALLER-CONTRACT-COVERAGE-026CK; registered / in progress. Start HEAD `1decbeede7293bf5561ef29e7a427bd5bc66f5f0`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** reconcile every method in the five Runtime-owned Host Port interfaces against pinned upstream callers, Badcat production implementations/factories, and cancellation/thread/timeout/error semantics. Determine whether an App composition root can safely be wired before authentic Runtime consumers exist.
+- **De-duplication:** reuse 026CH's 37-row Host Port matrix/DAG, 026CI ownership decision, 026CJ relocation/API/test work, and prior lifecycle caller audits; add only path-exact post-relocation evidence.
+- **Allowed:** read-only source/build declaration inspection; temporary report under `/tmp/task026ck-host-port-coverage/`; audit and overview docs only.
+- **Required:** method-level matrix for all five interfaces, exact caller and implementation paths/lines, declared-only vs production-wired counts, contract gaps and bounded next task. Tests are not production wiring.
+- **Forbidden:** source/build/test/workflow/dependency/manifest/license/notice/packaging/schema/database/UI changes; Gradle/build/test/CI/GitHub/network/NDK/device; server push; Phase B/Task 027.
+- **Authorization note:** user's standing authorization for remote CI is acknowledged for future exact-SHA tasks; it does not authorize server push/ref synchronization or bypass task registration.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+### 4.27.197 Task 026CK result — Host Port wiring NOT MET; stale integration test is a likely blocker (2026-11-28)
+
+- **Review HEAD:** f10b71e4b3a88fd5ae3a224041bb70f8d9d864e1; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a. Report /tmp/task026ck-host-port-coverage/RESULT.md, SHA-256 e54621851d47e9db3a283d9858cb306db9d4051062b32c00910ac14b1cdeb8ea; raw scan SHA-256 a488953e50e7beeaba23b999f185693febd0443055a1eed75adb21a2a55b7f3c; audit §24.256.1.
+- **Caller coverage:** five interfaces / six methods mapped to pinned upstream JsExtensions, BackstageWebView, SourceVerificationHelp, EventBus and page listeners. No App production adapter/factory or Runtime consumer found; declaration-only API does not satisfy production wiring.
+- **New compile-risk finding:** old integration-contract/src/test/kotlin/app/badcat/engine/RuntimeHostPortContractTest.kt remains after the move, refers to 25 old-package API symbols and has no import of the new Runtime package. Kotlin JVM default test source set includes it; module has no Runtime project dependency and no exclusion. Likely unresolved-reference test compile blocker; compiler not run.
+- **Contract gaps:** hidden WebView request omits upstream encode/result/isRule inputs; SSL behavior differs in risk (upstream active WebView proceeds on certificate errors); browser verification uses UUID attempts, a five-minute flight wait, same-source/host coalescing, UI serialization and cancellation/cleanup; refresh event payload true is not explicit in ProductEventPort; required Job availability is not proven.
+- **Verification:** static only; no Gradle/JUnit/CI. Existing Runtime workflow does not compile integration-contract tests or execute JUnit, and its trigger branch does not contain the current server commit chain. No push/ref synchronization.
+- **Disposition:** Host Port production wiring NOT MET; stale test likely blocks :integration-contract test compilation; Stage-0 remains in_progress / NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next:** narrowly remove or deliberately relocate the stale test, then separately register remote exact-HEAD sync plus both module test compilation and Runtime JUnit execution. No App adapter wiring before authentic Runtime consumers and remaining port closure.
+
+### 4.27.198 Task 026CL preregistration — consolidate Host Port tests under Runtime owner (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-CONSOLIDATE-HOST-PORT-CONTRACT-TESTS-026CL; registered / in progress. Start HEAD 87375b1c1846c30eb61db7a6e34d58d82355d998; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** move unique assertions from the obsolete :integration-contract Host Port test into the :legado-runtime-owned suite and delete the stale old-package test; do not add a Runtime→integration-contract dependency.
+- **Allowed:** update only RuntimeHostPortContractTest.kt, delete integration-contract/src/test/kotlin/app/badcat/engine/RuntimeHostPortContractTest.kt, and update audit/overview.
+- **Required:** preserve all old unique assertions plus current Runtime tests; static inventory, exact paths/hashes, diff check; distinguish test source from executed tests.
+- **Forbidden:** production source, Gradle/workflow/dependency/UI/schema/database changes; local Gradle on 2-GB host; server push/ref update; Phase B/Task 027.
+- **CI note:** standing remote-CI authorization acknowledged, but exact commit must first be available to the authorized remote workflow; no push is implied.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.199 Task 026CL result — Host Port tests consolidated under Runtime; execution pending (2026-11-28)
+
+- **Code/review HEAD:** 4b46fc168f9cee1d8c0211b6c36fdb4eb70202d1; registration HEAD 172b1ae6e38e1a63fe4d69c29f29e48170100c90; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a. Report /tmp/task026cl-host-port-tests/RESULT.md.
+- **Change:** deleted the stale integration-contract Host Port test and consolidated its unique assertions into the Runtime-owned contract suite. Runtime suite now has 12 JUnit test methods; added result/nullability, browser delivery, verification-code validation, Job cancellation, UI outcomes, product refresh enum and reflection no-Android-leak checks. No production/Gradle/workflow/dependency change.
+- **Static verification:** old test path absent; no Host Port references remain in integration-contract tests; diff check PASS. Runtime test source SHA-256 d48ba0fdfd0bfb7beba5cfb2cdb548cde6098ebc29185bfdbcd3936c1cbc3aed.
+- **Test status:** no Gradle/JUnit execution. Standing remote-CI authorization is active, but the current exact server commit is not yet available to the existing workflow branch; no server push/ref update.
+- **Disposition:** source/test consolidation complete; JUnit pending; Host Port production wiring NOT MET. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next:** register exact-HEAD remote CI for Runtime JUnit and integration-contract test compilation/execution after a safe, separately preregistered source synchronization path is established.
+
+### 4.27.200 Task 026CM preregistration — hidden WebView request-field reachability audit (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-HIDDEN-WEBVIEW-REQUEST-FIELD-REACHABILITY-026CM; registered / in progress. Start HEAD b93032ca600cc7f3c46052eb294de04d8c987cdd; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** trace all fixed-upstream BackstageWebView construction sites and reachable JsExtensions methods to decide whether encode/result/isRule are actually source-reachable and required by HiddenWebViewRequest.
+- **De-duplication:** reuse 026CK's method matrix and existing WebView/JsExtensions audits; add only constructor-site and per-field dataflow closure.
+- **Allowed:** read-only source inspection; temporary report /tmp/task026cm-hidden-webview-fields/; audit and overview docs only.
+- **Required:** complete constructor-site list, exact field/caller lines, request-to-runtime mapping, WebView lifecycle/cookie/cache/SSL/cancellation behavior, and precise gaps.
+- **Forbidden:** source/test/build/Gradle/workflow/dependency/UI/schema/database changes; build/test/CI/GitHub/network/NDK/device; server push; Phase B/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.201 Task 026CM result — WebView request contract blocks WebJs rule parity (2026-11-28)
+
+- **Review HEAD:** f2df8ddf817ed09614295fb7eccd8ecb698ffddf; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a. Report /tmp/task026cm-hidden-webview-fields/RESULT.md, SHA-256 b10732a039c61b26a6ccd9a613483ed0de5a111e5b0a1d61a0128f91eedc6271; raw scan SHA-256 2c0b646cf4a719836755658952b13e21c0a8fe3c8af18bdacd6a684a0384e934.
+- **Callsite closure:** seven production and four instrumentation constructor sites inventoried. AnalyzeRule.getWebJsResult has five actual rule callsites and uses result JSON plus isRule=true; BackstageWebView then attaches WebCacheManager/BaseSource/WebJsExtensions, initializes window.result and injects rule JS helpers. This is a source-runtime path, not only editor UI.
+- **Contract gaps:** current HiddenWebViewRequest cannot represent nullable URL, nullable/default JS, 60-second default timeout, initial result JSON or WebJs rule/bridge bootstrap. Current UTF-8 default covers all observed callsites; no production callsite overrides encode. AnalyzeUrl POST also requires HTTP-response-then-WebView semantics.
+- **Disposition:** request type is insufficient; no App adapter should be wired yet. Static-only audit; no build/test/CI. Host Port wiring NOT MET; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next:** register a bounded Host Port contract amendment plus bridge bootstrap design, preserving source identity, WebCacheManager, BaseSource/WebJsExtensions exposure, result seeding, nullable/default behavior and AnalyzeUrl POST semantics. Add differential tests before any production adapter.
+
+### 4.27.202 Task 026CN preregistration — WebJs rule bridge surface/closure audit (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-WEBJS-RULE-BRIDGE-SURFACE-CLOSURE-026CN; registered / in progress. Start HEAD 55d109f8c670e1c1a62aaddb24a6c2fdd6f4a162; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** inventory all JS bridge objects and methods attached when AnalyzeRule runs WebJs, including WebJsExtensions, BaseSource, WebCacheManager and injected helper scripts; map their service/data dependencies and Badcat source inclusion.
+- **De-duplication:** reuse 026CM, 026CB ABI/reflection inventory and 026CH Host Port DAG; add only WebView-specific bridge method/dependency closure.
+- **Allowed:** read-only source inspection; temporary report /tmp/task026cn-webjs-bridge-closure/; audit and overview docs only.
+- **Required:** JS object names, all annotated methods/signatures, injection entrypoints, backing services/data/cache/network, lifecycle/context semantics, Badcat source-inclusion status, missing Host Port families.
+- **Forbidden:** production/test/build/Gradle/workflow/dependency/UI/schema/database changes; build/test/CI/GitHub/network/NDK/device; server push; Phase B/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.203 Task 026CN result — WebJs bridge closure absent from Badcat Runtime (2026-11-28)
+
+- **Review HEAD:** 2ae545e2669e32f0db43624b8737bb1ed6e9c5c3; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a. Report /tmp/task026cn-webjs-bridge-closure/RESULT.md, SHA-256 798bc9ee9ed6908d9480e79a5ce653ea6c0693e2f681714526540e8c397155c7; raw scan SHA-256 4249a4a270cea3d98313a2d0f09665211f20ddcd68dff1933a834bb7246bca3a.
+- **Bridge graph:** WebJs rule mode attaches WebCacheManager, BaseSource and WebJsExtensions, then aliases them as cache/source/java. There are 40 @JavascriptInterface declarations: WebJsExtensions 12, inherited RssJsExtensions 10, BaseSource 9, WebCacheManager 9.
+- **Important semantics:** BackstageWebView passes activity=null and no upConfig callback. WebJsExtensions.request and activity-dependent Rss UI methods cannot launch their activity/lifecycle behavior in this path. BackstageWebView injects getInjectionString only; JS_INJECTION/JS_INJECTION2/basicJs are for other visible UI surfaces.
+- **Closure:** all five bridge/engine classes are absent from Badcat production source roots. Required dependencies include source DAO/entity, AnalyzeRule/JsExtensions, cache disk/memory/file stores, CookieStore/login encryption, HTTP/crypto/file operations, WebView bridge registration and coroutine lifecycle.
+- **Disposition:** WebJs bridge/source closure NOT PRESENT; no plain WebView adapter. Static-only; no build/test/CI. Host Port wiring NOT MET; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next:** register the bridge ownership/Host Port architecture decision and source extraction boundary before production implementation; preserve the activity-null behavior and every exposed JS method/overload.
+
+### 4.27.204 Task 026CO preregistration — typed WebJs bridge ownership architecture (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-WEBJS-BRIDGE-OWNERSHIP-ARCHITECTURE-DECISION-026CO; registered / in progress. Start HEAD 37722942a65ea0aa337f55e171a225356d0dd510; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** define a typed Runtime↔App architecture for WebJs rule bridge: preserve 40 JS declarations, three bridge objects, rule bootstrap, nullable/default semantics, source/cache/cookie/login/network/files/UI lifecycle and cancellation.
+- **De-duplication:** reuse 026CI, 026CK, 026CM, 026CN, 026CH and 026CB; add only the WebJs-specific ownership and typed Host Port design.
+- **Allowed:** audit/overview docs and temporary report /tmp/task026co-webjs-bridge-architecture/ only.
+- **Required:** ownership matrix, typed port family proposals, object/method binding design, data owners, lifecycle, dependency DAG, module edges and implementation order.
+- **Forbidden:** source/test/Gradle/workflow/dependency/manifest/license/notice/packaging/schema/database/UI changes; build/test/CI/GitHub/network/NDK/device; server push; Phase B/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.205 Task 026CO result — typed WebJs bridge ownership decision recorded (2026-11-28)
+
+- **Review HEAD:** f8e46bbff009b34d4e60a859c4ce3078d9a1d4b9; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9. Report /tmp/task026co-webjs-bridge-architecture/RESULT.md, SHA-256 d85094afdf38c4f513b7481f88349e05c96c7d7414da48f0067d9528e3d7137e.
+- **Decision:** Runtime owns source/AnalyzeRule/WebJs behavior and typed Host Ports; App owns Android wrappers and service adapters. No Runtime→App or Runtime→integration-contract edge. integration-contract stays App-facing.
+- **Typed bridge:** three typed interfaces (java 22 methods, source 9, cache 9) bundled in WebJsRuleBridgeBindings; App provides exact @JavascriptInterface wrappers. Any/Map/generic method dispatch prohibited.
+- **Request changes needed:** nullable URL/JS, UTF-8 default, 60-second timeout, initial result JSON, WebJs rule bootstrap and typed bridge binding. Keep activity=null/callback=null behavior explicit.
+- **Ownership:** App source DAO, Cookie/login/encryption, cache disk/memory/file, HTTP/crypto/files, WebViewPool and UI; Runtime owns rule/bridge semantics. SourceExecutionContext Job-vs-CoroutineContext mismatch must be resolved without fabricating a Job.
+- **Disposition:** decision only, no source implementation/build/test/CI. Host Port wiring NOT MET; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next:** register a narrow contract-amendment implementation for HiddenWebViewRequest and the typed bridge binding models, with tests for defaults/null/result/rule mode and cancellation context before implementing App adapters.
+
+### 4.27.205 Task 026CO result — typed WebJs bridge ownership decision recorded (2026-11-28)
+
+- **Review HEAD:** f8e46bbff009b34d4e60a859c4ce3078d9a1d4b9; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9. Report /tmp/task026co-webjs-bridge-architecture/RESULT.md, SHA-256 d85094afdf38c4f513b7481f88349e05c96c7d7414da48f0067d9528e3d7137e.
+- **Decision:** Runtime owns source/AnalyzeRule/WebJs behavior and typed Host Ports; App owns Android wrappers and service adapters. No Runtime→App or Runtime→integration-contract edge. integration-contract stays App-facing.
+- **Typed bridge:** three typed interfaces (java 22 methods, source 9, cache 9) bundled in WebJsRuleBridgeBindings; App provides exact @JavascriptInterface wrappers. Any/Map/generic method dispatch prohibited.
+- **Request changes needed:** nullable URL/JS, UTF-8 default, 60-second timeout, initial result JSON, WebJs rule bootstrap and typed bridge binding. Keep activity=null/callback=null behavior explicit.
+- **Ownership:** App source DAO, Cookie/login/encryption, cache disk/memory/file, HTTP/crypto/files, WebViewPool and UI; Runtime owns rule/bridge semantics. SourceExecutionContext Job-vs-CoroutineContext mismatch must be resolved without fabricating a Job.
+- **Disposition:** decision only, no source implementation/build/test/CI. Host Port wiring NOT MET; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next:** register a narrow contract-amendment implementation for HiddenWebViewRequest and the typed bridge binding models, with tests for defaults/null/result/rule mode and cancellation context before implementing App adapters.
+
+### 4.27.206 Task 026CP preregistration — Hidden WebView request contract amendment (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-HIDDEN-WEBVIEW-REQUEST-CONTRACT-AMENDMENT-026CP; registered / in progress. Start HEAD 2f87df0b865427e2d2c518dfe33ff11af7003fe3; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** align HiddenWebViewRequest and SourceExecutionContext with pinned nullable/default/result/rule/cancellation semantics; no App implementation.
+- **Allowed:** RuntimeHostPort.kt, RuntimeHostPortContractTest.kt, audit and overview only.
+- **Required:** nullable URL/JS; HTML/URL validation; 60-second timeout default; UTF-8 default; optional initial result JSON; explicit plain/WebJs rule mode; optional Job; regression tests for null vs empty and cancellation.
+- **Deferred:** typed 40-method JavaScript bridge binding interfaces are not part of this task; register after exact source/AnalyzeRule type closure.
+- **Forbidden:** App adapters, WebView/DAO/cache/login/network implementations, Gradle/workflow/dependency/UI/schema/database changes; local Gradle; server push; Phase B/Task 027.
+- **CI:** standing remote-CI authorization acknowledged; exact current commit still requires a separately registered safe synchronization route before remote execution.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.207 Task 026CP result — Hidden WebView request contract amended; bridge remains open (2026-11-28)
+
+- **Review HEAD:** 2541d2f313e279f3b9feed926f27fee80e57c5f3; registration HEAD c92aa7c20848a8e2a694ff7df1e400530058573e. Report /tmp/task026cp-hidden-webview-request-contract/RESULT.md.
+- **Change:** optional Job; nullable URL/JS; HTML-vs-URL validation; null-vs-empty JS and 900 ms default delay; 60-second timeout; UTF-8 default; initial result JSON; PLAIN/WEBJS_RULE mode. Test suite has 18 methods. RuntimeHostPort SHA-256 71667c9469dbffd6455b14e5543420e4da2f5fd1ffa5bd9b868276a30f76e710; test SHA-256 06ed378b772b4b3ca78d73bf27c5905f9ae28d9462d737bb8bd3ca1658d85aff.
+- **Verification:** static checks PASS; no Gradle/JUnit. Remote-CI authorization is active but exact server commit is not synced to the workflow branch; no push/ref update.
+- **Remaining:** typed WebJs bridge bindings, arbitrary CoroutineContext preservation, App adapters and production consumers absent. WEBJS_RULE flag does not itself implement the bridge.
+- **Disposition:** contract partial step complete; Host Port wiring NOT MET; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next:** register typed WebJs bridge binding contract for 22 java, 9 source and 9 cache declarations and exact overload descriptors; then App wrappers/ports in separate tasks.
+
+### 4.27.208 Task 026CQ preregistration — exact WebJs bridge signatures/overloads (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-WEBJS-BRIDGE-EXACT-DESCRIPTOR-INVENTORY-026CQ; registered / in progress. Start HEAD 69485ca072028932be17b7d38986ae382cee008c; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** resolve exact signatures, nullability, defaults, annotations, inherited methods, @JvmOverloads-generated JVM descriptors and return-type source closure for all 40 WebJs bridge declarations.
+- **De-duplication:** reuse 026CN object/method inventory and 026CB ABI scan; add exact descriptor/return-type proof only.
+- **Allowed:** read-only source inspection; temporary report /tmp/task026cq-webjs-descriptors/; audit and overview only.
+- **Required:** full per-method signature matrix, overload counts, JS call route, return-type dependency, current Runtime availability and typed interface design recommendation.
+- **Forbidden:** source/test/build/Gradle/workflow/dependency/UI/schema/database changes; build/test/CI/GitHub/network/NDK/device; server push; Phase B/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.209 Task 026CQ result and inherited-interface correction (2026-11-28)
+
+- **Task 026CQ review HEAD:** 69485ca072028932be17b7d38986ae382cee008c; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a. Report /tmp/task026cq-webjs-descriptors/RESULT.md, SHA-256 7b461a74ae35685079fe031481f8e8a3a2e978eb79934fa0daa1c6656cced1da.
+- **Corrected bridge counts:** 136 source-level object.method declarations: java 70 (48 inherited JsExtensions +12 WebJs +10 Rss), source 57 (48 inherited JsExtensions +9 BaseSource), cache 9. SourceNavigationBridge conditionally overrides five existing signatures. Thirteen expected @JvmOverloads additions produce 149 expected JVM descriptors before compiler/annotation filtering.
+- **This supersedes the earlier 40 count** in Task 026CN: 40 was only the direct class declarations and omitted 48 JsExtensions annotations inherited by both java and source objects.
+- **Exact methods:** report contains all 48 JsExtensions signatures and all direct WebJs/Rss/BaseSource/Cache signatures, nullability/defaults, JVM erasures and overload counts. AnalyzeRule return types are absent from Badcat Runtime. Actual Kotlin interface/delegation annotation propagation and final DEX exposure are unverified.
+- **Source navigation:** wrapper is conditional on SuppressSourceNavigation in CoroutineContext and the AppConfig flag; the five overrides preserve login execution context and suppress source navigation. Current context snapshot does not carry arbitrary context elements.
+- **Related corrections:** updated Task 026CN report /tmp/task026cn-webjs-bridge-closure/RESULT.md SHA-256 802d314afd9611eb87c33403483437858ddc96fe7149f5e843d50100918178c6; updated 026CO architecture report SHA-256 648fd7a0123a2e9dd5db82f3535c7824558c93405d226141e76cd1aa1037a528; updated 026CP report SHA-256 5e8cd67dc0637222efe1e5fd771e242f6ced4654a11467dc2f961f8a0fc276c0.
+- **Verification:** static only; no compile/DEX/APK/JUnit/CI/device. Standing remote-CI authorization active; exact server HEAD not synchronized to workflow branch, no push/ref update.
+- **Disposition:** source descriptor inventory complete; runtime exposure unverified; WebJs bridge source closure and Host Port wiring NOT MET. Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.210 Task 026CR preregistration — inherited JsExtensions dependency closure (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-INHERITED-JSEXTENSIONS-DEPENDENCY-CLOSURE-026CR; registered / in progress. Start HEAD 326e29105dda56411f94d339e7f6f468030b0e42; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** trace all 48 annotated JsExtensions methods inherited by java and source objects through their direct/transitive upstream helpers, host services, native dependencies and Badcat source inclusion.
+- **De-duplication:** reuse 026CB ABI inventory, 026CN/026CQ bridge inventory, 026CH Host Port DAG and 026CD license/native audit; add method-level dependency closure.
+- **Allowed:** read-only source inspection; temporary report /tmp/task026cr-js-extensions-dependencies/; audit and overview only.
+- **Required:** per-method dependency/caller table, file/network/cookie/archive/crypto/UI/config/device services, exact source inclusion and missing Host Ports.
+- **Forbidden:** source/test/build/Gradle/workflow/dependency/UI/schema/database changes; build/test/CI/GitHub/network/NDK/device; server push; Phase B/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.210.1 Task 026CR scope expansion — include JsEncodeUtils parent interface (2026-11-28)
+
+- Task 026CR initially targeted 48 JsExtensions methods. JsExtensions extends JsEncodeUtils, which adds 20 more @JavascriptInterface declarations. Both are inherited by the java and source objects.
+- Updated scope: 68 inherited methods (48 JsExtensions +20 JsEncodeUtils), plus direct bridge methods; corrected object counts java 90, source 77, cache 9 =176; 189 expected JVM descriptors before annotation filtering.
+- Add MD5/AES/DES/3DES/digest/HMAC and their cryptographic dependency closure. Read-only scope remains unchanged; no code or CI.
+
+### 4.27.211 Task 026CR result — inherited source/crypto bridge dependencies traced (2026-11-28)
+
+- **Task 026CR report:** /tmp/task026cr-js-extensions-dependencies/RESULT.md, SHA-256 25edc011850dd828dc83af4cf5095e5382249a0542455345c25d9ee0bd5065d9; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9.
+- **68 inherited methods:** 48 JsExtensions +20 JsEncodeUtils are inherited by both java and source objects. Correct bridge counts are java 90, source 77, cache 9 =176 source-level declarations; 189 expected descriptors after 13 @JvmOverloads additions.
+- **Dependencies:** batch content/save fencing; CookieStore persistent/session/WebView cookies; HTTP/download/file cache; safe filesystem and archive extraction; MD5/AES/DES/3DES/digest/HMAC; text conversion; WebView UA/device ID; navigation/media UI; reader/theme config.
+- **Important gaps:** BatchContentContext/BookHelp, CookieStore/CacheManager, ArchiveUtils/LibArchiveUtils/ArchivePathUtils/FileDoc, SourceHelp/VideoPlay, AppConfig/AppConst, ReadBookConfig/ThemeConfig and crypto helpers are absent from Badcat Runtime. CharsetDetector is exact; EncoderUtils differs and misses upstream byte-array overloads. App-level dependencies do not satisfy Runtime compile classpath. QuickTransfer coordinate mismatch; libarchive license and NDK zlib provenance remain open.
+- **Data/security:** batch save uses chapter index and ContentSaveToken; cookie stores must remain separate and merge correctly; file reads enforce canonical path bounds; folder text read deletes folder; archive extraction rejects path traversal.
+- **Verification:** static only, no dependency resolution/build/test/CI/APK/NDK/device. Standing remote-CI authorization active; exact server HEAD still not synchronized to workflow branch, no push/ref update.
+- **Disposition:** dependency map complete; Host Port implementation and Stage-0 gates remain NOT MET; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.212 Task 026CS preregistration — inherited JS service Host Port contracts (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-INHERITED-JS-SERVICE-HOST-PORT-CONTRACT-DESIGN-026CS; registered / in progress. Start HEAD ad2ece2ca1f3a36fa216fb2f003526e9b0f58d9d; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** design the minimum authentic typed Host Port contracts for 68 inherited JsExtensions/JsEncodeUtils declarations, based on Task 026CR's method-level dependency evidence.
+- **Allowed:** audit/overview documentation and /tmp/task026cs-host-port-contracts/ only. Read pinned source, Runtime ports and App callers.
+- **Required:** method-to-port map; typed request/result/error/cancel/thread/lifecycle contracts; data/platform ownership; source navigation context preservation; staged implementation order; exact consumers/factory requirements.
+- **Forbidden:** production/test/Gradle/dependency/workflow/manifest/license/packaging/schema/database/UI changes; build/test/CI/GitHub/push/ref update/network/NDK/device. Standing remote-CI authorization applies to separately registered validation tasks only.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.213 Task 026CS result — inherited JS Host Port contract design (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-INHERITED-JS-SERVICE-HOST-PORT-CONTRACT-DESIGN-026CS; completed as documentation-only architecture evidence.
+- **Registration HEAD:** a9a9c05cc475e0197beff6eba9fac7a7bd1fd19; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a. Report /tmp/task026cs-host-port-contracts/RESULT.md, SHA-256 2795c1d88fa3cfd07d34c23752da1841f9a0b1b6fb0f65973c99a11ec6ba48bb.
+- **Coverage:** explicit method-to-contract mapping for 48 JsExtensions +20 JsEncodeUtils declarations, inherited by both java and source (68 unique methods / 136 object.method entries). Crypto/codec/text helpers remain Runtime-owned implementations; Android/data/network/UI effects are App-owned ports.
+- **Required services:** BatchContentPort, SourceCookiePort, SourceHttpPort, SourceFilePort, archive stream/operation contract, DeviceEnvironmentPort, ReaderThemeConfigPort and arbitrary CoroutineContext preservation. Reuse HostUiPort for OpenUrl/OpenVideoPlayer.
+- **Current status:** five Runtime Host Ports remain declaration-only; no production consumers/factory/adapters. App runtime directly constructs RhinoSafeSourceJavaExtensions and injects lambdas. Batch save is unsupported; reader/theme config JS methods are absent. Existing App file/cookie/archive/crypto helpers are partial, not proof of Runtime integration.
+- **Verification:** static only; no source/test/build/Gradle/CI/device changes. Standing remote-CI authorization was not used in this docs-only task.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next mainline:** preregister an exact pinned source dependency closure for authentic Book/BookChapter/AnalyzeUrl/ContentSaveToken/BatchContentContext/BookHelp before defining BatchContentPort or changing source bridge implementation.
+
+### 4.27.214 Task 026CT preregistration — authentic batch-content/request model closure (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-BATCH-CONTENT-AUTHENTIC-MODEL-CLOSURE-026CT; registered / in progress. Start HEAD a850ffe75112b2cd11883cd2a4da8589bc2505ab; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** trace pinned Book, BookChapter, AnalyzeUrl, ContentSaveToken, BatchContentContext and BookHelp models/callers/transactions before defining BatchContentPort or changing bridge code.
+- **Allowed:** audit/overview docs and /tmp/task026ct-batch-model-closure/ only; inspect exact upstream and Badcat sources/callers/tests/DAO/Gradle.
+- **Required:** per-type field/API matrix, complete callers, chapter identity/index and duplicate URL semantics, token fence, replacement/cancel/close, persistence transaction, AnalyzeUrl request semantics, current Badcat gap and minimum authentic source/dependency closure.
+- **Forbidden:** production/test/Gradle/dependency/workflow/manifest/license/packaging/schema/database/UI edits; build/test/CI/GitHub/push/ref update/network/NDK/device; no shadow DTO, Stage-1 or Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.215 Task 026CT result — authentic batch model and AnalyzeUrl closure (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-BATCH-CONTENT-AUTHENTIC-MODEL-CLOSURE-026CT; complete as static audit only.
+- **Registration HEAD:** 3df7aa8cc05c934110d35ea074d7581da2c3befb; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a. Report /tmp/task026ct-batch-model-closure/RESULT.md, SHA-256 8c43b9644b11ebac857d9520e06b3a29b73172cf5e125c146f47454a4df81edd.
+- **Required transitive types:** Book, BookChapter, BookSource, BaseSource, BaseBook, RuleDataInterface, ContentRule, AnalyzeUrl, BatchContentContext, ContentSaveToken and BookHelp. Book has 33 constructor fields; BookChapter 17. Host BookChapter is a separate seven-field DTO.
+- **Batch semantics:** chapter index is the save identity; URL aliases can be ambiguous; tokens fence stale writes; batch contexts preserve CoroutineContext, source replacement, lock/cancellation/close and missing-chapter fallback. JS source and ordinary contentBatch paths both capture tokens and close in finally.
+- **AnalyzeUrl:** 32 direct caller files; it is a 1,052-line URL/JS/HTTP execution object, not a request DTO. Full live object bindings, UrlOption, CookieStore/CacheManager, shared scope, WebView, HTTP, proxy/Cronet, upload and response lifecycles are not covered by SourceRequestFactory/SourceHttpGateway.
+- **Decision:** BatchContentPort implementation NO-GO until authentic model ownership, token/fence, BookHelp storage and CoroutineContext boundaries are solved. Copying upstream entities/helpers as-is into Runtime would pull Room/AppDb/Reader/UI/WebView/SAF/EventBus/Glide/Media3/HTTP dependencies across the module boundary. No shadow DTO is acceptable.
+- **Verification:** static only; no source/test/build/Gradle/CI/device changes. Standing remote-CI authorization was not used in this read-only audit.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next mainline:** make a registered architecture decision on authentic model placement and App-owned storage boundary for Book/BookChapter/BookSource/BaseSource and AnalyzeUrl before writing any BatchContent or HTTP Host Port code.
+
+### 4.27.216 Task 026CU preregistration — authentic model ownership architecture decision (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-AUTHENTIC-MODEL-OWNERSHIP-ARCHITECTURE-DECISION-026CU; registered / in progress. Start HEAD 8707d4186b95bae62d801b414c81a5c49474d69a; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** compare module placement and dependency ownership for authentic Book/BookChapter/BookSource/BaseSource/AnalyzeUrl/BatchContentContext/BookHelp, including typed host-port boundaries, persistence and no Runtime→App/DAO edge.
+- **Options:** current Runtime absorbs exact sources; separate authentic model/API module; models remain App-owned; broader controlled upstream App-core module; reject DTO/shadow facade.
+- **Allowed:** docs and /tmp/task026cu-model-ownership-decision/ only; inspect Gradle/settings/source/callers/dependency graph.
+- **Required:** module DAG, dependency/port ownership, data single-writer, source compatibility, exact migration waves, GO/NO-GO.
+- **Forbidden:** production/test/Gradle/settings/dependency/workflow/manifest/license/packaging/schema/database/UI changes; build/test/CI/GitHub/push/ref update/network/NDK/device; no Stage-1/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.217 Task 026CU result — Runtime-owned model/core architecture direction selected (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-AUTHENTIC-MODEL-OWNERSHIP-ARCHITECTURE-DECISION-026CU; complete as static architecture decision.
+- **Registration HEAD:** b48327659f68c94b2781855f79bb1e8d14d5db5e; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a. Report /tmp/task026cu-model-ownership-decision/RESULT.md, SHA-256 79887c7357f4722db3fefed4c84cc31f8e7d958de93b8525080d8f5d9ee6a0b1.
+- **Selected direction:** existing :legado-runtime owns authentic model/source-runtime core; App owns concrete data/platform/UI adapters; :legado-rhino stays low-level; :integration-contract stays App-facing with no Runtime edge. No new model module for now.
+- **Why:** Runtime is already an Android library with Parcelize; a new model module would split internal ContentSaveToken/fence and BaseSource/JsExtensions/HostPort ownership, requiring another shared API module. App-owned models would invert dependencies or force forbidden DTO/Any bridges.
+- **Hard caveat:** no Room DB or full Book/BookChapter store exists in App. File catalog, SharedPreferences reading state and parsed chapter cache are separate existing owners; they are not equivalent to upstream BookHelp raw content storage. Data owner/transaction/recovery remains unresolved; do not add Room or duplicate caches.
+- **Extraction rule:** adapt direct AppDb/AppConfig/UI/WebView/network/cookie calls behind typed Runtime Host Ports; retain authentic FQCN, fields, JS-visible object identity, CoroutineContext, token/fence and lifecycle. Do not wholesale copy BookHelp or import Reader UI.
+- **Implementation remains NO-GO:** wait for 026CC data ownership, 026CS HostPort acceptance, full model/API/caller/dependency/license closure and an explicit safe per-object/per-execution host binding mechanism. BatchContentPort not approved yet.
+- **Verification:** static only; no source/build/test/CI/device changes. Standing remote-CI authorization not used.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next mainline:** detailed source extraction inventory for Book/BookChapter/BookSource/BaseSource/AnalyzeUrl and safe per-object Host Port binding, followed by data ownership PoC. Do not implement source classes before the remaining gates.
+
+### 4.27.218 Task 026CV preregistration — per-object Host Binding and CoroutineContext design (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-MODEL-HOST-BINDING-CONTEXT-DESIGN-026CV; registered / in progress. Start HEAD adc84ce704a9a2fd8a5bcd150882d6c9ca620ac7; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9.
+- **Goal:** design safe typed App Host Port binding for authentic BookSource/BaseSource/Book/BookChapter and full CoroutineContext propagation through AnalyzeRule/AnalyzeUrl/BatchContentContext.
+- **Compare:** transient per-object binding, explicit execution context, wrappers, weak identity registry, app-scoped service locator.
+- **Required:** identity/equality/copy/parcel/Gson/Room lifecycle, attach/rebind, concurrency/isolation/cancel, no Activity retention, SourceNavigation marker preservation, test matrix and GO/NO-GO.
+- **Allowed:** audit/overview docs and /tmp/task026cv-model-host-binding/ only.
+- **Forbidden:** production/test/Gradle/dependency/workflow/manifest/license/packaging/schema/database/UI edits; build/test/CI/GitHub/push/ref update/network/NDK/device; no Stage-1/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.219 Task 026CV result — safe per-object Host Binding and context design (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-MODEL-HOST-BINDING-CONTEXT-DESIGN-026CV; complete as static design evidence.
+- **Registration HEAD:** 2ef1808e3594340f1dd23e0b1759598e02d2a965; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9. Report /tmp/task026cv-model-host-binding/RESULT.md, SHA-256 15fdf7892fd9b296e2d6a1341bba1a1a07f1920fa1847261140fd018f5db8871.
+- **Preferred design:** immutable App-scoped Host Port bundle + transient body-property binding on authentic BookSource/Book/BookChapter + explicit full RuntimeExecutionContext per invocation. No Activity/View/UI state in model binding.
+- **Avoid:** ordinary WeakHashMap (model equals/hashCode collisions), ThreadLocal (coroutine/WebView thread hops), global mutable context/service locator, general wrappers/decorators (identity/type change), DTO/Any/Map.
+- **Lifecycle:** exclude binding from constructor/component/copy/equality, Room, Parcelable and Gson; reattach after copy/parcel/reload/materialization; validate source/book/chapter identity. BaseSource gets no new abstract property because RssSource/HttpTTS also implement it.
+- **Context:** preserve the original full CoroutineContext including SuppressSourceNavigation through AnalyzeRule/AnalyzeUrl/Rhino/WebView callbacks; SourceExecutionContext remains host projection, not a replacement.
+- **Verification:** static only; no source/test/build/CI/device changes. Standing remote-CI authorization not used.
+- **Disposition:** design recommended, implementation NO-GO pending callsite/rebind inventory and 026CC data-owner decision. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next mainline:** inventory every construction/copy/parcel/reload path for BookSource/Book/BookChapter and exact direct App imports before implementing transient binding; reconcile with 026CC single-writer data owner.
+
+### 4.27.220 Task 026CW preregistration — authentic model rebind callsite inventory (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-MODEL-CONSTRUCTION-REBIND-INVENTORY-026CW; registered / in progress. Start HEAD 645ed0df0c47c9a2b7c2a4c286b17f6e9cd1b0d2; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9.
+- **Goal:** inventory every BookSource/Book/BookChapter construction, copy, Parcelable, Room and Gson/source JSON rehydrate path; define rebind factory points for transient model Host Binding.
+- **Required:** path/line-backed caller matrix, BaseSource implementors, equality/copy hazards, rebind lifecycle and GO/NO-GO.
+- **Allowed:** audit/overview docs and /tmp/task026cw-model-rebind-inventory/ only. Reuse 026CC data-owner evidence.
+- **Forbidden:** production/test/Gradle/dependency/workflow/manifest/license/packaging/schema/database/UI edits; build/test/CI/GitHub/push/ref update/network/NDK/device; no Stage-1/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.221 Task 026CW result — model construction/copy/rebind inventory (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-MODEL-CONSTRUCTION-REBIND-INVENTORY-026CW; complete as static evidence.
+- **Registration HEAD:** 082c02c1f3285c88f2624f4de15540ee4623ab90; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9. Report /tmp/task026cw-model-rebind-inventory/RESULT.md, SHA-256 8351fd430931c4dba3ba2eacbaeb51bd999df6a86ba4aec421f49659688a8fa1.
+- **Inventory:** 8 BookSource declaration/construction occurrences (one declaration + seven constructors), 10 Book constructor/declaration occurrences, 22 BookChapter constructor calls; explicit copy() and Parcelable/Room/Gson paths recorded.
+- **Attach points:** BookSource after final import/save/DAO/catalog lookup; Book after accepted data-owner materialization and before source rules; BookChapter immediately after TOC parser construction (before AnalyzeRule.setChapter) and after DAO reload; preserve same bound instances through BatchContentContext and JS. Copies re-entering Runtime require explicit copy-and-bind.
+- **Parcelable:** all three are Parcelable/Room entities, but targeted search found no direct Parcelable transfer of these exact models; navigation generally passes stable keys and reloads through DAO. Badcat has no Room database.
+- **Current gap:** Badcat uses host BookSource/BookDetail/BookChapter DTOs and raw JSON Map conversion; no authentic model factory or binding. 026CC full data owner remains unaccepted.
+- **Decision:** transient binding design still preferred, but factory implementation NO-GO until full data owner and source model extraction gates pass. No DTO binding.
+- **Verification:** static only; no source/build/test/CI/device changes. Standing remote-CI authorization not used.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next mainline:** reconcile 026CC data ownership and 026CS port design; then design the minimal App repository adapters for authentic model fields/variables/content persistence before implementing model factories.
+
+### 4.27.222 Task 026CX preregistration — App runtime data owner strategy decision (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-APP-RUNTIME-DATA-OWNER-STRATEGY-026CX; registered / in progress. Start HEAD dcefcecdc46e5c47f5580e05a27f60d9d1039076; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9.
+- **Goal:** reconcile 026CC data gaps with 026CS–026CW Runtime-owned models/Host Ports and select logical single-writer owner and physical storage PoC strategy.
+- **Compare:** current AtomicFile/SharedPreferences, unified file repository + journal, minimal Room schema, full upstream AppDatabase migration.
+- **Required:** per-domain owner/writer/identity/transaction/recovery, cross-domain journal, migration/backup/dry-run/idempotence/rollback, content fence and no-data-loss PoC.
+- **Allowed:** docs and /tmp/task026cx-data-owner-strategy/ only. Reuse 026CC/026CF and pinned schema evidence.
+- **Forbidden:** source/test/Gradle/dependency/workflow/manifest/license/packaging/schema/database/UI changes; build/test/CI/GitHub/push/ref update/network/NDK/device; no Room/schema freeze/data migration/dual-write/Stage-1/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.222.1 Task 026CX result — logical AppRuntimeDataOwner selected, physical store deferred (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-APP-RUNTIME-DATA-OWNER-STRATEGY-026CX; complete as static architecture decision.
+- **Registration HEAD:** 8f4215dffed122a0243ab7282dc8a0fec0583ecc; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a. Report /tmp/task026cx-data-owner-strategy/RESULT.md, SHA-256 1cd03f96b507b068dd0e593ee729be57502719d926167ed0e01bce663489347b.
+- **Logical owner:** AppRuntimeDataOwner in App is the only writer authority for Runtime data; all typed Runtime Host Ports and Badcat UI route through its domain repositories/coordinators.
+- **Physical storage:** retain current per-domain stores temporarily. No Room/schema v1/data migration/dual-write. Minimal Room is a candidate for a throwaway Book/BookChapter metadata PoC; unified file snapshot is another candidate. Full upstream AppDatabase v113 is rejected for current scope.
+- **Missing domains:** no full Book/BookChapter/ReadConfig repository and no upstream raw BookHelp content store. Existing chapter cache is parsed/purified offline data and is not equivalent.
+- **Cross-store gaps:** source cleanup after catalog commit, no durable replay journal, login/cookie split, progress/history split, favorite book/folder two-step writes, raw content/metadata/cache fence separation.
+- **026CF:** AtomicFile read-before-absent-fallback source fix is present; test source added but Robolectric execution NOT RUN.
+- **PoC:** compare per-domain stores + journal, unified AtomicFile metadata, and minimal throwaway Room using copied data, fault injection, migration dry-run/idempotence/rollback and restart recovery. No production data mutation.
+- **Verification:** static only; no code/build/test/CI/device changes. Standing remote-CI authorization remains active.
+- **Disposition:** logical owner GO; physical backend and Book/Chapter persistence NO-GO until no-data-loss PoC. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.223 Task 026CY preregistration — quarantined Book/BookChapter storage no-loss PoC (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-BOOK-CHAPTER-STORAGE-NO-LOSS-POC-026CY; registered / in progress. Start HEAD `6ebdc0f98133c7ab4bc93b0e55572c3fc2db0af0`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** compare a disposable file-backed metadata + durable journal/atomic blob prototype with a minimal throwaway Room Book/BookChapter store using identical synthetic fixtures and failure injection. Prove identity, duplicate semantics, idempotent recovery, dry-run/rollback and bounded resource behavior before selecting any production backend.
+- **Allowed:** quarantined `:legado-runtime-poc` build/test/source files only, audit/overview and `/tmp/task026cy-storage-poc/`. No App/Runtime production source, user data, production schema or migration.
+- **Required:** same-URL/different-index chapter identity; Book `bookUrl`; null/missing/unknown fields; large TOC; raw-vs-parsed content separation; stale save fence; crash at each journal/publication step; restart/replay; duplicate replay; dry-run/idempotence/rollback with counts and hashes; concurrent and bounded-size cases; file-vs-Room comparison.
+- **Acceptance:** deterministic executable tests/harness, exact commands/results and fixture hashes, no lost/crossed records, replay/rollback proven. If Room arm cannot run, explicitly NOT RUN and no backend selection.
+- **Forbidden:** production schema/Room dependency/migration/dual-write/data mutation, Runtime model migration, BatchContentPort/Host Port wiring, UI, Stage-1/Task 027, push/ref update. Remote CI only on exact synchronized commit.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.224 Task 026CY implementation checkpoint — storage PoC harness staged, execution pending (2026-11-28)
+
+- **Commit:** `23b925c2f07404cd20943620c3d88040006b05ce`; registration `c448940bf3278b737d38903934ecf3d8da523c53`; pinned Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- Added quarantined `:legado-runtime-poc` test-only file+journal and Room comparison harness. File arm covers PREPARED/COMMITTED replay, two crash windows, identity conflicts, dry-run, backup/rollback of snapshot+journal, 1,000-chapter TOC, raw/parsed content separation, stale save fence, 512 KiB payload and 12 concurrent book writes. Room arm uses test-only Java fixtures matching `(url,bookUrl)` PK and `(bookUrl,index)` unique index; includes transaction rollback, idempotence and 1,000-chapter ordered query.
+- All PoC entity/test files live under `src/test`; no POC production Java/Kotlin sources and no production module depends on `:legado-runtime-poc`. No user data or production schema touched.
+- Fixture manifest: 13 cases; SHA-256 `ff52681cb45fc241825514737e753ae5fbcd73066d809b6eb6402b088fcda533`. Static report `/tmp/task026cy-storage-poc/STATIC-RESULT.md`, SHA-256 `6ee161219ff934eb9ee582d33f44fa669caf0a24c29a83b4431846d0fb72a3be`.
+- Static checks PASS (manifest/identity, source isolation, production dependency boundary, diff whitespace); 5 Room + 7 file/journal tests authored. **No Gradle executable/wrapper is available on server; compilation, Room processor, SQLite/Robolectric and all runtime tests remain NOT RUN / NOT VERIFIED.**
+- No CI: exact HEAD is not synchronized to GitHub; server branch remains ahead 225 / behind 1 and no push/ref update was performed. Standing remote-CI authorization does not imply push authorization.
+- **Disposition:** harness staged only; storage candidate comparison not accepted; no backend selected; production Room/schema/migration/dual-write and BatchContentPort remain NO-GO. Task 026CY `in_progress / blocked on exact-HEAD remote test execution`; Phase A OPEN; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+- **Next:** safely synchronize exact commit to authorized workflow branch, run `:legado-runtime-poc:testDebugUnitTest` remotely and inspect JUnit/logs at exact SHA before any backend decision.
+
+### 4.27.225 Task 026CZ preregistration — GitHub-hosted storage PoC test execution (2026-11-28)
+
+- Task `R3-S0-T026-PHASE-A-STORAGE-POC-REMOTE-TEST-EXECUTION-026CZ` registered at base HEAD `ba295685412a414bf0e4f6801552f1eea261f252`; fixed Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- User granted permanent authorization for routine project operations, including Git synchronization/push, branch creation, GitHub Actions, remote build/test, logs/artifact retrieval and evidence recording; do not ask for these authorizations again.
+- Goal: run `:legado-runtime-poc:testDebugUnitTest` at exact SHA on GitHub-hosted runner; capture Gradle log, JUnit XML/HTML, Room processor outputs and hashes. Dedicated workflow `.github/workflows/storage-poc-test.yml` triggers only on `storage-poc/026CZ`, uses JDK 21, SDK 36/build tools 36.0.0, Gradle 8.14.4, and gates >=8 GiB effective+available RAM / >=4 vCPU before Gradle.
+- Only workflow + audit + overview may change for setup. No production app/runtime source, schema, migration, data or test assertion changes. No APK/Release/emulator/signing/publishing in this task.
+- Existing integration remote commit `16468b277a9638b58be09caa5e9c7328806f9ea8` has been incorporated into local history with merge commit `ba295685412a414bf0e4f6801552f1eea261f252`; preserve branch safety and never force-push/rewrite history. Integration Android CI and dedicated PoC CI are separate evidence and must be attributed to exact SHA/run.
+- Task 026CY remains dynamically unverified; no storage backend selected. Phase A OPEN; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
