@@ -3037,3 +3037,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Current state:** five port interfaces are declarations only; no production implementation/factory injection. Moving them and wiring the complete port set is a separate implementation task; ReadingEngine DTOs remain an App facade and must not replace authentic upstream models.
 - **Disposition:** architecture decision complete, Host Port wiring NOT MET. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. No source/module/Gradle changes or build/test/CI/network/device operation.
 - **Next:** register the smallest implementation slice to relocate the five existing contracts into Runtime, expose coroutine API, and add contract tests before expanding the missing port families.
+
+### 4.27.194 Task 026CJ preregistration — move Host Port API to Runtime owner (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-RUNTIME-OWNED-HOST-PORT-API-FOUNDATION-026CJ; registered / in progress. Start HEAD `45a1de05fdc074e074ddd702b08b74c150615ba0`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** relocate the five platform-neutral Host Port interfaces and their typed request/result/context/error/cancellation models into `:legado-runtime`; export coroutines-core 1.11.0 because the public context exposes `Job`; add focused JUnit contract tests.
+- **Allowed:** only move `RuntimeHostPort.kt` to `legado-runtime/src/main/java/io/legado/runtime/port/`, change its package, add Runtime `api(kotlinx-coroutines-core:1.11.0)`, add focused Runtime unit tests, and update audit/overview.
+- **Required:** preserve all signatures/validation semantics; prove no old FQCN consumers; tests cover context, error/cancellation, SSL metadata and WebView request validation. No test pass claim unless executed.
+- **Forbidden:** App adapter/factory wiring, additional port families, source engine migration, database/schema/UI changes, broad build/test/CI/GitHub, network/NDK/device, Phase B/Task 027. No App compile retry or new CI authorization.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
