@@ -3461,3 +3461,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Upstream source tests found: ContentSaveFenceTest 5 cases and BatchContentContextTest 10 cases; not run in this task and do not prove process-restart or cross-store crash recovery. Current Badcat cacheContent bridge explicitly throws because batch persistence is not wired.
 - Task 026DE static trace accepted. No production changes, schema, data migration or backend selection. Raw-content parity remains NO-GO; Phase A OPEN; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
 - Next: preregister a disposable test-only raw-body + metadata + fence failure/restart/clear-cache race comparison. Do not promote the existing parsed cache or Room fixture to production.
+
+
+### 4.27.233 Task 026DF preregistration — raw-body / metadata / fence recovery PoC
+
+- Task R3-S0-T026-PHASE-A-RAW-BODY-METADATA-FENCE-RECOVERY-POC-026DF registered at HEAD 6276d626bceb8be19fbcadb83f14deba19436809; pinned Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Build a disposable test-only comparison between the pinned BookHelp behavior model (plain body file write, separately updated metadata, process-local fence) and a candidate recoverable body+metadata journal protocol.
+- Deterministic cases: partial overwrite, crash between body and metadata, process restart/version reset, clear-cache with stale request in flight, replay/idempotence, body/metadata identity mismatch and rollback/no-loss hashes/counts.
+- Allowed: POC test sources/resources, audit/overview, narrowly required evidence workflow output only. No production code/schema/dependency/data/UI changes.
+- The legacy arm is a model based on source evidence, not execution of upstream Android BookHelp. Candidate is test-only. Exact-SHA GitHub runner evidence required.
+- No backend selection, migration, dual-write, BatchContentPort, Stage-1 or Task 027. Phase A OPEN; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
