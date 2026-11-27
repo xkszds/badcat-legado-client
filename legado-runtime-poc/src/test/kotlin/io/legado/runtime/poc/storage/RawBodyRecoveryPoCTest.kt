@@ -27,6 +27,11 @@ private class LegacyProcessFence {
         LegacyToken(bookUrl, index, folder, versions[bookUrl to index] ?: 0L)
     @Synchronized fun isCurrent(token: LegacyToken) =
         (versions[token.bookUrl to token.chapterIndex] ?: 0L) == token.version
+    @Synchronized fun writeIfCurrent(token: LegacyToken, write: () -> Unit): Boolean {
+        if (!isCurrent(token)) return false
+        write()
+        return true
+    }
     @Synchronized fun replace(bookUrl: String, index: Int) {
         versions[bookUrl to index] = (versions[bookUrl to index] ?: 0L) + 1L
     }
@@ -49,11 +54,12 @@ private class LegacyBookHelpModel(private val root: File, private val fence: Leg
 
     fun save(token: LegacyToken, body: String, metadata: BodyMetadata, crashAfterBody: Boolean = false) {
         require(token.bookUrl == "book-A" && token.chapterIndex == 0 && token.folderName == "book-A")
-        if (!fence.isCurrent(token)) return
-        bodyFile.parentFile!!.mkdirs()
-        bodyFile.writeText(body) // mirrors BookHelp.writeText: ordinary File.writeText, not AtomicFile
-        if (crashAfterBody) throw RawBodySimulatedProcessDeath()
-        metadataFile.writeText(gson.toJson(metadata)) // separate owner; not atomic with body
+        fence.writeIfCurrent(token) {
+            bodyFile.parentFile!!.mkdirs()
+            bodyFile.writeText(body) // mirrors BookHelp.writeText: ordinary File.writeText, not AtomicFile
+            if (crashAfterBody) throw RawBodySimulatedProcessDeath()
+            metadataFile.writeText(gson.toJson(metadata)) // separate owner; not atomic with body
+        }
     }
     fun partialOverwriteAndCrash(prefix: String) {
         bodyFile.parentFile!!.mkdirs()
@@ -180,6 +186,21 @@ class RawBodyRecoveryPoCTest {
             val next = "late stale response"
             legacy.save(token, next, meta("late", next))
             assertEquals("late stale response", legacy.body())
+        } finally { dir.deleteRecursively() }
+    }
+
+    @Test fun legacyAuthoritativeReplaceFencesAnOlderRequest() {
+        val dir = tempDir()
+        try {
+            val legacy = LegacyBookHelpModel(dir)
+            val old = "old body"
+            legacy.seed(old, meta("old", old))
+            val token = legacy.token()
+            legacy.authoritativeReplace()
+            val stale = "stale network response"
+            legacy.save(token, stale, meta("stale", stale))
+            assertEquals(old, legacy.body())
+            assertEquals("old", legacy.metadata()!!.title)
         } finally { dir.deleteRecursively() }
     }
 
