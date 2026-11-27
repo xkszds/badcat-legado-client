@@ -3001,3 +3001,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Actual modules:** `:legado-runtime` includes the three models via main source set plus eight additional rule/Gson files; Run #4 compiled only this narrow module. `:integration-contract` compiles a different four-file parser slice plus six adapters; not the 33 candidate sources and not compiled by Run #4. `:legado-rhino` provides Rhino dependency, not upstream JsSourceEngine/SharedJsScope. `:legado-runtime-poc` is quarantined and its separate 12-file source experiment does not include these 33 candidates.
 - **Disposition:** full authentic source inclusion and Host Port closure NOT MET. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. No source/build/test/Gradle/CI/network/device changes.
 - **Next:** use this 33-path matrix and Task 026K Host Port map to define a minimum source-by-source extraction and dependency plan; keep App-only login/RSS UI and Room database ownership in the host. Do not bulk-copy upstream app source or start Phase B.
+
+### 4.27.190 Task 026CH preregistration — minimum Runtime extraction DAG and Host Port plan (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-MINIMAL-RUNTIME-EXTRACTION-DAG-026CH; registered / in progress. Start HEAD `73b092224c88b2b73d7570088bebaa86c2f18ab4`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** reconcile the existing 490-row import-owner map, 38-row Host Port matrix, 33-path source matrix and dependency candidates into a minimal, dependency-ordered extraction DAG.
+- **Allowed:** read-only evidence reconciliation; temporary plan `/tmp/task026ch-extraction-plan/`; audit and overview docs only.
+- **Required:** exact source roots, import owners, module destination, Host Port dependencies, dependency prerequisites, tests/rollback and stop conditions per wave. Preserve App-only UI/Room/Android boundaries and no Runtime→App cycle.
+- **Forbidden:** source/build/test/Gradle/dependency/workflow/manifest/license/notice/packaging/schema/database/UI changes; build/test/CI/GitHub/network/NDK/device; Phase B/Task 027. No new CI authorization.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
