@@ -2784,3 +2784,14 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Run #2 / ID `46062075055`, push event, exact SHA `cd56213eb1fb50dc68a7a5f0d514ce93db71cd3a`, completed/failure, attempt 1. Jobs empty, artifacts empty, logs endpoint HTTP 404, check-runs total_count 0. No runner/capacity/Gradle/dependency/compile evidence. Failure before job creation; no exact GitHub diagnostic available.
 - Exactly one remote update and one run occurred. No repair update, rerun, dispatch, failed-job retry or additional CI was attempted; further work needs new explicit authorization and a new preregistered task.
 - **Disposition:** Runtime variant compile proof NOT ESTABLISHED. Phase A remains open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. The independent license/notice, NDK provenance, dependency closure, ABI/reflection and data-owner gates also remain open.
+
+
+### 4.27.168 Task 026BW preregistration — retrieve exact existing #3680 APK notice evidence
+
+- **Task ID:** `R3-S0-T026-PHASE-A-EXISTING-CI-APK-NOTICE-ARTIFACT-RETRIEVAL-026BW`; registered / not started. Start HEAD `b2c6bb06dfe3f9a3ec889f936a91b5938407d6c6`; branch `integration/legado-upstream-runtime`; fixed Legado SHA `330e606c4d57e08adc056ff8b7a4132c784da9a`.
+- **Trigger/target:** Task 026BS could not inspect exact #3680 APK bytes. Existing immutable target is run `46040803723`, artifact `15221176066`, APK size 31,991,966 bytes and SHA-256 `65507bdfc3d12bebffb03d07e93ed4f40835a5be1125b20581b89b1c6b7db0d9`. Do not substitute a historical same-size APK with a different hash.
+- **Scope:** download only that existing artifact from GitHub; verify ZIP/APK hashes and inspect APK license/notice paths/content and AAR-to-APK notice propagation. No workflow or CI execution.
+- **Allowed writes:** temporary evidence under `/tmp/task026bw-apk-notice-retrieval/`; tracked edits limited to this audit and this overview. No repository payload additions.
+- **Procedure/acceptance:** reconfirm artifact/run identity, download exact artifact ID, verify embedded APK byte size/SHA, inventory every APK path and nested notice payload, hash/compare notices against existing source evidence, classify package coverage honestly, and checksum all reports. If artifact unavailable or hash mismatch, stop.
+- **Exclusions:** no build, Gradle, source/product/manifest/packaging/license/notice changes, APK modification/repackaging, device work, GitHub branch mutation, workflow dispatch, CI/rerun/retry. This does not by itself accept the AAR notice package.
+- **Status:** Phase A open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
