@@ -197,6 +197,28 @@ jobs:
             exit 1
           fi
 
+      - name: Collect generated Room implementation
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          generated_root="legado-runtime-poc/build/generated"
+          database_impl="$(find "$generated_root" -type f -name 'StoragePoCDatabase_Impl.java' -print -quit)"
+          dao_impl="$(find "$generated_root" -type f -name 'StoragePoCDao_Impl.java' -print -quit)"
+          test -n "$database_impl"
+          test -n "$dao_impl"
+          output="build/storage-poc-proof/room-generated"
+          mkdir -p "$output"
+          cp -- "$database_impl" "$output/StoragePoCDatabase_Impl.java"
+          cp -- "$dao_impl" "$output/StoragePoCDao_Impl.java"
+          {
+            echo "ROOM_GENERATED_ROOT=$generated_root"
+            echo "DATABASE_IMPL_SOURCE=$database_impl"
+            echo "DAO_IMPL_SOURCE=$dao_impl"
+            echo "ROOM_GENERATED_IMPL_COUNT=2"
+            sha256sum "$output/StoragePoCDatabase_Impl.java" "$output/StoragePoCDao_Impl.java"
+          } | tee build/storage-poc-proof/room-generated-summary.txt
+
       - name: Summarize JUnit results and hash evidence
         if: always()
         shell: bash
