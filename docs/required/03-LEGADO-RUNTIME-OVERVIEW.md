@@ -3053,3 +3053,14 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Change:** moved `RuntimeHostPort.kt` into `:legado-runtime` package `io.legado.runtime.port`; preserved all five existing interfaces and payload/result/error/cancellation types. Added exported coroutines-core 1.11.0 API dependency because public context exposes `Job`. `ReadingEngine` DTO facade remains in integration-contract; no Runtime→integration-contract/App edge.
 - **Tests:** five JUnit contract test methods added; static assertions 7/7 PASS; no old FQCN source references. Test SHA `04d9b056405c1bb7aecad0bce7b36ad3cfe5f87210ccd77dba29b0143e65a277`. Gradle/JUnit NOT RUN due server memory and no new CI authorization.
 - **Disposition:** Runtime owns the API, but no App implementation/factory or runtime consumer is wired yet. Host Port production wiring NOT MET; test execution pending. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.196 Task 026CK preregistration — Runtime-owned Host Port caller/contract coverage audit (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-RUNTIME-HOST-PORT-CALLER-CONTRACT-COVERAGE-026CK; registered / in progress. Start HEAD `1decbeede7293bf5561ef29e7a427bd5bc66f5f0`; fixed Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** reconcile every method in the five Runtime-owned Host Port interfaces against pinned upstream callers, Badcat production implementations/factories, and cancellation/thread/timeout/error semantics. Determine whether an App composition root can safely be wired before authentic Runtime consumers exist.
+- **De-duplication:** reuse 026CH's 37-row Host Port matrix/DAG, 026CI ownership decision, 026CJ relocation/API/test work, and prior lifecycle caller audits; add only path-exact post-relocation evidence.
+- **Allowed:** read-only source/build declaration inspection; temporary report under `/tmp/task026ck-host-port-coverage/`; audit and overview docs only.
+- **Required:** method-level matrix for all five interfaces, exact caller and implementation paths/lines, declared-only vs production-wired counts, contract gaps and bounded next task. Tests are not production wiring.
+- **Forbidden:** source/build/test/workflow/dependency/manifest/license/notice/packaging/schema/database/UI changes; Gradle/build/test/CI/GitHub/network/NDK/device; server push; Phase B/Task 027.
+- **Authorization note:** user's standing authorization for remote CI is acknowledged for future exact-SHA tasks; it does not authorize server push/ref synchronization or bypass task registration.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
