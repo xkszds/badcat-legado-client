@@ -2744,3 +2744,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Evidence:** jobs endpoint `total_count=0`; no Job ID or Step; check-runs `total_count=0`; logs endpoint HTTP 404; no billable runner time; no capacity report, Gradle/dependency resolution, compiler log or artifact. Failure is classified **workflow-level before job creation; cause UNKNOWN / NOT ESTABLISHED**. It is not a source compile failure or a runner-capacity failure.
 - **Retry:** the single Task 026BT run authorization is consumed. No rerun or second dispatch. Any correction followed by another run needs a new preregistered task and new explicit authorization.
 - **Disposition:** Runtime Debug/Release/Debug-unit-test compile proof **NOT ESTABLISHED**. Phase A remains open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+### 4.27.164 Task 026BU preregistration — fix invalid runner context in dedicated workflow
+
+- **Task ID:** `R3-S0-T026-PHASE-A-RUNTIME-WORKFLOW-CONTEXT-FIX-026BU`; registered / not started. Start HEAD `5d63641a10101877ad7f84f9d67c4a8708255b5e`; branch `integration/legado-upstream-runtime`; pinned Legado `330e606c4d57e08adc056ff8b7a4132c784da9a`.
+- **Trigger:** Task 026BT run #46061209130 failed before job creation. GitHub's context table excludes `runner` from `jobs.<job_id>.env`, but the workflow used `${{ runner.temp }}` there; `github` is allowed. This is a confirmed workflow configuration defect and likely pre-job failure cause; the run has no job logs, so no direct GitHub diagnostic is available.
+- **Goal:** change only job-level `GRADLE_USER_HOME` to `${{ github.workspace }}/.gradle-user-home`, preserving isolated Gradle cache behavior.
+- **Allowed files:** dedicated workflow, audit and this overview only. No source/product/build/test changes.
+- **Validation:** GitHub context-table verification, YAML parse, seven embedded Bash syntax checks, immutable action-pin checks, `git diff --check`, exact upstream SHA and unchanged product/source/Gradle/test/submodule paths.
+- **Exclusions:** no push/update to validation/integration/main refs, no CI dispatch/rerun/second run, no Gradle/dependency resolution/compile/test/APK/DEX/R8/device work.
+- **Next:** commit and reread both lists, then stop. Another run requires a separate preregistered task and new explicit authorization. Phase A remains open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED.
