@@ -2754,3 +2754,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Validation:** GitHub context-table verification, YAML parse, seven embedded Bash syntax checks, immutable action-pin checks, `git diff --check`, exact upstream SHA and unchanged product/source/Gradle/test/submodule paths.
 - **Exclusions:** no push/update to validation/integration/main refs, no CI dispatch/rerun/second run, no Gradle/dependency resolution/compile/test/APK/DEX/R8/device work.
 - **Next:** commit and reread both lists, then stop. Another run requires a separate preregistered task and new explicit authorization. Phase A remains open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED.
+
+### 4.27.165 Task 026BU result — invalid runner context corrected locally; no CI retriggered
+
+- Changed only job-level `GRADLE_USER_HOME` from `${{ runner.temp }}` (not allowed in `jobs.<job_id>.env`) to `${{ github.workspace }}/.gradle-user-home` (allowed there by GitHub's context availability table).
+- Static checks: YAML parse PASS; 7/7 embedded Bash blocks pass `bash -n`; all four immutable action pins remain valid; branch trigger unchanged; `runner.temp` absent; `git diff --check` PASS.
+- Only changed path is `.github/workflows/runtime-variant-compile-proof.yml`; product/source/Gradle/test paths and Legado submodule unchanged. Fixed Legado SHA remains `330e606c4d57e08adc056ff8b7a4132c784da9a`. Corrected workflow blob SHA-1: `4f82f36fe8772f97819785c212286e1d8903fd59`.
+- No GitHub push/update, dispatch, rerun, Gradle, dependency resolution, compile, test, artifact or runner execution. GitHub branch still has the previous workflow; its single run #46061209130 remains failed before job creation.
+- **Status:** local static fix complete; Runtime compile proof **NOT ESTABLISHED**. A new preregistered task and explicit authorization are required before syncing this correction to the validation branch and triggering another run. Phase A remains open; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED.
