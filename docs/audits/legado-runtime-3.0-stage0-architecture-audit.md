@@ -8293,3 +8293,12 @@ The registered Login UI/WebView bridge scope includes subclasses of a shared App
 - **Changes:** test and production source remained unchanged. Only workflow and audit/overview docs changed. No production runtime/backend/schema/data/UI/APK change.
 - **Acceptance:** Task 026DH focused Robolectric test evidence ACCEPTED for exact SHA `5463965ddd6d4ec163a02265cfbbc6380b39d664`. The evidence closes only the 026CF focused test execution gap; it does not establish complete catalog correctness, full Runtime closure, Stage-0 acceptance or full Legado compatibility.
 - **Disposition:** Task 026DH focused test accepted; Phase A OPEN; Stage-0 `in_progress / NOT ACCEPTED`; Stage-1 NO-GO; Task 027 BLOCKED; complete pinned Legado compatibility NOT ESTABLISHED.
+
+
+## 24.287 Task 026DH bounded-workflow validation — exact SHA PASS
+
+- **Run:** GitHub Actions `46081058522`, job `140779876308`, branch `catalog-lifecycle/026DH`, exact Badcat SHA `13b71eb2ca93785652738d1f0ad9be529d4cac4b`, pinned Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`; run and job completed success.
+- **Workflow hardening proof:** the 35-minute bounded Gradle invocation exited 0; always-run evidence step completed; result file says `RESULT=PASS`, exact class 7 tests, 0 failures/errors/skips. JUnit XML independently reports one suite / 7 tests / 0 failures / 0 errors / 0 skipped. Gradle log shows only `:app:testDebugUnitTest` as a test task (three task log lines are Gradle progress/repetition, not additional task targets); no other test task.
+- **Artifact:** ID `15236718860`, 76,113 bytes, ZIP SHA-256 `52c71d651b2a99e1f5e7968d96efa93494fb6bbeaf2851a9e1caee0f675a2502`. Downloaded and inspected: 17 files; all 16 internal SHA256SUMS entries match. Includes Gradle exit code, full `--info` log, JUnit XML/HTML, result, capacity, source identity, toolchain and dependency provenance.
+- **Runner:** capacity PASS, 16,759,431,168 bytes total / 15,758,548,992 bytes available / 4 vCPU; fixed upstream clean; JDK 21 / Gradle 8.14.4 / Android SDK 36.
+- **Disposition:** bounded timeout/evidence-preservation workflow correction is validated. Task 026DH remains accepted. The next commit `408beae6429816e07c515950df1605135f7d3d1f` adds only workflow path filters and the result writeback; its separate run `46081271543` was still in progress at the last poll. Docs-only commits are excluded from workflow paths, so subsequent evidence writeback does not trigger duplicate tests.

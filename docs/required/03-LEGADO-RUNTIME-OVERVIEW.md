@@ -3554,3 +3554,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Artifact `15237092561`, 14,288 bytes, ZIP SHA-256 `514f9d310934183426572abaf6b2b09b6d19cedc62ca64d12f51ab96f09a09de`; independently downloaded, inspected, and all 15 internal SHA256SUMS entries verified. JUnit XML and HTML, Gradle log and identity/toolchain evidence included.
 - Task 026DH focused test gap is ACCEPTED for the exact SHA above. This is only focused AtomicFile/catalog lifecycle test evidence; it does not promote Stage-0 or prove complete Runtime/catalog compatibility. Workflow hardening commit `13b71eb2ca93785652738d1f0ad9be529d4cac4b` has a separate exact-SHA validation run `46081058522` whose status was still in progress at the last poll.
 - **Disposition:** Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete Legado compatibility NOT ESTABLISHED. See audit §24.286.
+
+
+### 4.27.242 Task 026DH bounded workflow correction validated (2026-11-28)
+
+- GitHub Actions run `46081058522`, job `140779876308`, exact Badcat SHA `13b71eb2ca93785652738d1f0ad9be529d4cac4b`, pinned Legado exact/clean: completed success.
+- The 35-minute Gradle timeout wrapper returned exit code 0. The always-run evidence step recorded `RESULT=PASS`; JUnit 1 suite / 7 tests / 0 failures / 0 errors / 0 skipped; only `:app:testDebugUnitTest` test task. No other test target.
+- Artifact `15236718860`, 76,113 bytes, SHA-256 `52c71d651b2a99e1f5e7968d96efa93494fb6bbeaf2851a9e1caee0f675a2502`; downloaded and independently verified all 16 internal hash entries. Evidence includes exit code, Gradle `--info` log, JUnit XML/HTML, source/capacity/toolchain/provenance.
+- Capacity PASS: 16.76 GB total / 15.76 GB available / 4 vCPU. JDK 21 / Gradle 8.14.4 / SDK 36.
+- Workflow correction accepted. Commit `408beae6429816e07c515950df1605135f7d3d1f` adds path filters to avoid docs-only reruns; exact-SHA run `46081271543` was pending at the last poll. See audit §24.287.
+- Task 026DH accepted; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED.
