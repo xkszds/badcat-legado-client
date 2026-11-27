@@ -2661,7 +2661,7 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 ### 4.27.156 Task 026BQ result — 200-number CI volume #3600–#3799 established (2026-11-28)
 
 - **Status:** completed for the currently discoverable run set; the 200-number volume remains open for future runs. Registration HEAD `4885c8f7ec6f27cc9413f79b986340100f48d0cb`; branch `integration/legado-upstream-runtime`; pinned Legado `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
-- **Deliverable:** `docs/required/CI-3600-3799-AUDIT.md`, SHA-256 `88671bbd972b447a23ff7188c04e0ffc3df3d7b6fcdaf4b0083e8589e6ad4b35` before this final overview writeback.
+- **Deliverable:** `docs/required/CI-3600-3799-AUDIT.md`, SHA-256 `38344ba12c6354b4798c2a1991f2c2f299557820db1db0d7f034727cc816f4ae`.
 - **Discovery:** the branch-filtered GitHub Actions listing returned 81 actual runs #3600–#3680, contiguous with no missing run numbers. 69 run conclusions are `success`; 12 are `failure`; 0 queued/in-progress/cancelled. No #3681–#3799 run was returned at audit time.
 - **Identity coverage:** all 81 rows include Run ID, Job ID, full exact workflow HEAD SHA, UTC creation timestamp and run conclusion. Each run's job endpoint was queried; all have one `assemble-debug` job and 53 returned steps. The ledger records the successful-run 53/53 outcome and each failed run's exact failed/skipped step set.
 - **Failure-step coverage:** #3613/#3653/#3674 have 22 success, 9 failure and 22 skipped steps; #3617/#3624/#3628/#3633/#3634/#3635/#3657/#3662/#3671 have 48 success, one failure and four skipped steps. Failed-run logs were retrieved and inspected.
