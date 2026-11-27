@@ -2949,3 +2949,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Verification boundary:** checksums and exact AAR bytes verified; no Gradle, build, test, CI, GitHub update, network, download, APK edit, native rebuild or device install.
 - **Disposition:** Task 026CD completed as a read-only evidence reconciliation; dependency closure, complete SBOM, native provenance and notice gates remain **NOT MET**. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. No legal or release approval implied.
 - **Next:** consolidate all Stage-0 gates into a single remaining-blocker and acceptance matrix before any implementation work. Do not start Phase B or Task 027.
+
+### 4.27.184 Task 026CE preregistration — consolidate Phase-A Stage-0 gates (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-STAGE0-GATE-CONSOLIDATION-026CE; registered / in progress. Start HEAD `014f6bfe2ebd432f589ceb66439a055f139586fa`; fixed Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- **Goal:** one evidence-indexed matrix for every Phase-A Stage-0 acceptance gate, including source/API coverage, dependency/source closure, exact compile/test scope, ABI/reflection/R8, data ownership/recovery, native and NDK provenance, license/NOTICE/SBOM, reproducibility and dynamic app integration.
+- **Allowed:** read-only reconciliation of prior audit records and reports; temporary matrix `/tmp/task026ce-stage0-gates/`; audit and overview documentation only.
+- **Required:** status PASS/PARTIAL/NOT MET/NOT AVAILABLE, exact evidence SHA/task/report, limitations, blockers, smallest next action and dependency order for every gate. A Runtime-only compile pass must not be promoted to app/compatibility pass.
+- **Forbidden:** production/build/test/workflow/dependency/license/notice/packaging/schema/database/UI edits; Gradle/build/test/CI/GitHub/network/NDK retrieval; database migration, device/live-source, Phase B or Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
