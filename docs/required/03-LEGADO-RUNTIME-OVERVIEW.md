@@ -3180,3 +3180,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Remaining:** typed WebJs bridge bindings, arbitrary CoroutineContext preservation, App adapters and production consumers absent. WEBJS_RULE flag does not itself implement the bridge.
 - **Disposition:** contract partial step complete; Host Port wiring NOT MET; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
 - **Next:** register typed WebJs bridge binding contract for 22 java, 9 source and 9 cache declarations and exact overload descriptors; then App wrappers/ports in separate tasks.
+
+### 4.27.208 Task 026CQ preregistration — exact WebJs bridge signatures/overloads (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-WEBJS-BRIDGE-EXACT-DESCRIPTOR-INVENTORY-026CQ; registered / in progress. Start HEAD 69485ca072028932be17b7d38986ae382cee008c; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** resolve exact signatures, nullability, defaults, annotations, inherited methods, @JvmOverloads-generated JVM descriptors and return-type source closure for all 40 WebJs bridge declarations.
+- **De-duplication:** reuse 026CN object/method inventory and 026CB ABI scan; add exact descriptor/return-type proof only.
+- **Allowed:** read-only source inspection; temporary report /tmp/task026cq-webjs-descriptors/; audit and overview only.
+- **Required:** full per-method signature matrix, overload counts, JS call route, return-type dependency, current Runtime availability and typed interface design recommendation.
+- **Forbidden:** source/test/build/Gradle/workflow/dependency/UI/schema/database changes; build/test/CI/GitHub/network/NDK/device; server push; Phase B/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
