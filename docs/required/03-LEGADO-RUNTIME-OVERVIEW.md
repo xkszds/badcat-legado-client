@@ -3227,3 +3227,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Data/security:** batch save uses chapter index and ContentSaveToken; cookie stores must remain separate and merge correctly; file reads enforce canonical path bounds; folder text read deletes folder; archive extraction rejects path traversal.
 - **Verification:** static only, no dependency resolution/build/test/CI/APK/NDK/device. Standing remote-CI authorization active; exact server HEAD still not synchronized to workflow branch, no push/ref update.
 - **Disposition:** dependency map complete; Host Port implementation and Stage-0 gates remain NOT MET; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+### 4.27.212 Task 026CS preregistration — inherited JS service Host Port contracts (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-INHERITED-JS-SERVICE-HOST-PORT-CONTRACT-DESIGN-026CS; registered / in progress. Start HEAD ad2ece2ca1f3a36fa216fb2f003526e9b0f58d9d; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** design the minimum authentic typed Host Port contracts for 68 inherited JsExtensions/JsEncodeUtils declarations, based on Task 026CR's method-level dependency evidence.
+- **Allowed:** audit/overview documentation and /tmp/task026cs-host-port-contracts/ only. Read pinned source, Runtime ports and App callers.
+- **Required:** method-to-port map; typed request/result/error/cancel/thread/lifecycle contracts; data/platform ownership; source navigation context preservation; staged implementation order; exact consumers/factory requirements.
+- **Forbidden:** production/test/Gradle/dependency/workflow/manifest/license/packaging/schema/database/UI changes; build/test/CI/GitHub/push/ref update/network/NDK/device. Standing remote-CI authorization applies to separately registered validation tasks only.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
