@@ -1,5 +1,3 @@
-[Reading 195 lines from start (total: 195 lines, 0 remaining)]
-
 name: Runtime-only exact variant compile proof
 
 on:
@@ -195,5 +193,3 @@ jobs:
           path: build/runtime-variant-proof/**
           if-no-files-found: error
           retention-days: 30
-
-[executed on device: VM-0-5-ubuntu (92122d1d-9cc5-4df4-82e1-413a88155d1f)]
