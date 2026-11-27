@@ -3268,3 +3268,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Verification:** static only; no source/test/build/Gradle/CI/device changes. Standing remote-CI authorization was not used in this read-only audit.
 - **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
 - **Next mainline:** make a registered architecture decision on authentic model placement and App-owned storage boundary for Book/BookChapter/BookSource/BaseSource and AnalyzeUrl before writing any BatchContent or HTTP Host Port code.
+
+### 4.27.216 Task 026CU preregistration — authentic model ownership architecture decision (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-AUTHENTIC-MODEL-OWNERSHIP-ARCHITECTURE-DECISION-026CU; registered / in progress. Start HEAD 8707d4186b95bae62d801b414c81a5c49474d69a; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Goal:** compare module placement and dependency ownership for authentic Book/BookChapter/BookSource/BaseSource/AnalyzeUrl/BatchContentContext/BookHelp, including typed host-port boundaries, persistence and no Runtime→App/DAO edge.
+- **Options:** current Runtime absorbs exact sources; separate authentic model/API module; models remain App-owned; broader controlled upstream App-core module; reject DTO/shadow facade.
+- **Allowed:** docs and /tmp/task026cu-model-ownership-decision/ only; inspect Gradle/settings/source/callers/dependency graph.
+- **Required:** module DAG, dependency/port ownership, data single-writer, source compatibility, exact migration waves, GO/NO-GO.
+- **Forbidden:** production/test/Gradle/settings/dependency/workflow/manifest/license/packaging/schema/database/UI changes; build/test/CI/GitHub/push/ref update/network/NDK/device; no Stage-1/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
