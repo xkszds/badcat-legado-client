@@ -7994,3 +7994,13 @@ The registered Login UI/WebView bridge scope includes subclasses of a shared App
 - **Open gates:** all copy/reload/parcel callsites; exact annotation placement/compile behavior; concurrent source isolation; model methods with no context parameter; SourceNavigationBridge delegated annotation/R8/DEX proof; 026CC data owner and writer; lifecycle/rebind tests.
 - **Verification:** static source/API design only. No code/test/Gradle/CI/GitHub/build/device changes. Standing remote-CI authorization remains active for future registered validation tasks; not used here.
 - **Disposition:** binding design recommended, implementation NO-GO until rebind/callsite inventory and data-owner acceptance. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.
+
+## 24.268 Task 026CW registration — authentic model construction/copy/parcel/reload rebind inventory (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-MODEL-CONSTRUCTION-REBIND-INVENTORY-026CW; registered / in progress. Start HEAD 645ed0df0c47c9a2b7c2a4c286b17f6e9cd1b0d2; branch integration/legado-upstream-runtime; fixed Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Trigger:** Task 026CV recommended transient per-object Host Binding, but Kotlin data-class copy(), Parcelable, Room materialization and Gson/source JSON decode lose body properties. Before implementation, every construction/copy/reload/parcel boundary must be inventoried and a complete rebind plan proved.
+- **Goal:** read-only inventory of BookSource, Book, BookChapter and BaseSource implementors across pinned upstream construction, copy, Room DAO, Parcelable, Gson/import/export, source-runtime callers and current Badcat facades. Identify exact locations where authentic models are created/copied/reloaded and where binding can be attached without changing public constructors or object identity.
+- **Required output:** source-path/line-backed callsite matrix; constructor/copy/parcel/Room/Gson/JSON paths; equality/hash identity hazards; all BaseSource implementors and which require book-source binding; missing current Badcat data owner; rebind factory placement; explicit gaps and GO/NO-GO.
+- **Allowed files:** audit and required overview only; temporary evidence under /tmp/task026cw-model-rebind-inventory/. No production/test changes.
+- **Exclusions:** no source/test/Gradle/dependency/workflow/manifest/license/packaging/schema/database/UI changes; no build/test/CI/GitHub/ref update/push/network/NDK/device; no Stage-1/Task 027. 026CC data-owner findings are reused, not re-litigated.
+- **Disposition at registration:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full Legado compatibility NOT ESTABLISHED.

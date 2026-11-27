@@ -3313,3 +3313,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **Verification:** static only; no source/test/build/CI/device changes. Standing remote-CI authorization not used.
 - **Disposition:** design recommended, implementation NO-GO pending callsite/rebind inventory and 026CC data-owner decision. Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
 - **Next mainline:** inventory every construction/copy/parcel/reload path for BookSource/Book/BookChapter and exact direct App imports before implementing transient binding; reconcile with 026CC single-writer data owner.
+
+### 4.27.220 Task 026CW preregistration — authentic model rebind callsite inventory (2026-11-28)
+
+- **Task ID:** R3-S0-T026-PHASE-A-MODEL-CONSTRUCTION-REBIND-INVENTORY-026CW; registered / in progress. Start HEAD 645ed0df0c47c9a2b7c2a4c286b17f6e9cd1b0d2; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9.
+- **Goal:** inventory every BookSource/Book/BookChapter construction, copy, Parcelable, Room and Gson/source JSON rehydrate path; define rebind factory points for transient model Host Binding.
+- **Required:** path/line-backed caller matrix, BaseSource implementors, equality/copy hazards, rebind lifecycle and GO/NO-GO.
+- **Allowed:** audit/overview docs and /tmp/task026cw-model-rebind-inventory/ only. Reuse 026CC data-owner evidence.
+- **Forbidden:** production/test/Gradle/dependency/workflow/manifest/license/packaging/schema/database/UI edits; build/test/CI/GitHub/push/ref update/network/NDK/device; no Stage-1/Task 027.
+- **Disposition:** Phase A OPEN; Stage-0 in_progress / not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
