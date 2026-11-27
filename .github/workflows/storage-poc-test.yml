@@ -111,6 +111,41 @@ jobs:
             echo "ARTIFACT_BYTES=$(stat -c '%s' "$target")"
           } | tee build/storage-poc-proof/pinned-artifacts.txt
 
+      - name: Restore and verify pinned Rhino extension sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="330e606c4d57e08adc056ff8ab7a4132c784da9a"
+          upstream_root="modules/rhino/src/main/java/org/htmlunit/corejs/javascript"
+          local_root="legado-rhino/src/main/java/org/htmlunit/corejs/javascript"
+          files=(
+            "ConcurrentNativeObject.java"
+            "xmlimpl/Namespace.java"
+            "xmlimpl/QName.java"
+            "xmlimpl/XML.java"
+            "xmlimpl/XMLLibImpl.java"
+            "xmlimpl/XMLList.java"
+            "xmlimpl/XMLLoaderImpl.java"
+            "xmlimpl/XMLName.java"
+            "xmlimpl/XMLObjectImpl.java"
+            "xmlimpl/XMLWithScope.java"
+            "xmlimpl/XmlNode.java"
+            "xmlimpl/XmlProcessor.java"
+          )
+          report="build/storage-poc-proof/rhino-extension-sources.txt"
+          : > "$report"
+          for file in "${files[@]}"; do
+            source="$upstream_root/$file"
+            destination="$local_root/$file"
+            mkdir -p "$(dirname "$destination")"
+            git -C upstream/legado show "$expected:$source" > "$destination"
+            expected_blob="$(git -C upstream/legado rev-parse "$expected:$source")"
+            actual_blob="$(git hash-object "$destination")"
+            test "$actual_blob" = "$expected_blob"
+            echo "$actual_blob  $file" | tee -a "$report"
+          done
+          echo "RHINO_EXTENSION_SOURCE_COUNT=${#files[@]}" | tee -a "$report"
+
       - name: Set up JDK 21
         uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
         with:
