@@ -1,5 +1,3 @@
-[Reading 2490 lines from start (total: 2490 lines, 0 remaining)]
-
 # 第三类总进度与 CI 分册索引：Legado Runtime
 
 > **第三类唯一总入口。** 每次第三类任务必须先读 `docs/required/00-MASTER-WORKFLOW.md`，再读本文件；随后只读当前任务需要的 CI 分册或技术历史段。所有工作只在 `integration/legado-upstream-runtime`，禁止写入 main。
@@ -2490,5 +2488,3 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **GitHub sync:** required docs synced to `sync/required-docs-24b1609` commit `328cc72800869d51534927569614c85f777b79a1`; exact server/GitHub Blob SHA matched at sync time. Integration branch not updated; no CI workflow dispatched.
 - **Boundary:** no Gradle/dependency resolution/build/compiler/test/CI/DEX/R8/APK/emulator/device/source execution. No production/build/workflow/manifest/packaging/license/notice/asset/schema/UI/Reader changes. Only audit and overview documentation updated.
 - **Disposition:** current-head APK reproducibility, dependency locking, native/license packaging and Release behavior remain NOT ESTABLISHED. Phase A open; Stage-0 `in_progress / not accepted`; Stage-1 **NO-GO**; Task 027 **BLOCKED**; full Legado compatibility **NOT ESTABLISHED**. Next permitted gate needs a clean high-capacity runner and separate Runtime-only variant/compile authorization; do not retry App compilation on current host.
-
-[executed on device: VM-0-5-ubuntu (92122d1d-9cc5-4df4-82e1-413a88155d1f)]
