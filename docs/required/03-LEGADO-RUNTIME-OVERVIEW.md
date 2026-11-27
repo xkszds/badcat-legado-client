@@ -2488,3 +2488,15 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - **GitHub sync:** required docs synced to `sync/required-docs-24b1609` commit `328cc72800869d51534927569614c85f777b79a1`; exact server/GitHub Blob SHA matched at sync time. Integration branch not updated; no CI workflow dispatched.
 - **Boundary:** no Gradle/dependency resolution/build/compiler/test/CI/DEX/R8/APK/emulator/device/source execution. No production/build/workflow/manifest/packaging/license/notice/asset/schema/UI/Reader changes. Only audit and overview documentation updated.
 - **Disposition:** current-head APK reproducibility, dependency locking, native/license packaging and Release behavior remain NOT ESTABLISHED. Phase A open; Stage-0 `in_progress / not accepted`; Stage-1 **NO-GO**; Task 027 **BLOCKED**; full Legado compatibility **NOT ESTABLISHED**. Next permitted gate needs a clean high-capacity runner and separate Runtime-only variant/compile authorization; do not retry App compilation on current host.
+
+
+### 4.27.143 Task 026BL preregistration — cached native libarchive artifact provenance closure
+
+- **Task ID:** `R3-S0-T026-PHASE-A-NATIVE-LIBARCHIVE-ARTIFACT-PROVENANCE-026BL`; registered / not started. Start HEAD `ea3f5e2b817b0d274f688f24100badf7793ca177`; pinned upstream `330e606c4d57e08adc056ff8b7a4132c784da9a`.
+- **Trigger:** 026BJ/026BK show that the libarchive AAR is cache-only, includes four native ABI payloads and has no verified native license/notice; wrapper POM metadata cannot establish the native payload's license.
+- **Goal:** read-only local evidence audit of cached AAR origin, Maven/Gradle metadata, AAR manifest, native ELF identity, hashes, symbols/strings and any matching local source/license/notice evidence. Do not infer project identity or license from the wrapper coordinate.
+- **Allowed:** this overview and Stage-0 audit only; local cache/artifact/source/notice reads; temporary evidence under `/tmp/task026bl-libarchive-provenance/`.
+- **Required:** exact artifact/AAR and per-ABI hashes; cache origin/descriptor metadata; ELF SONAME/NEEDED/build-id/symbol/version/strings inventory; locally found source/version/license matches; separate wrapper/JNI/native licensing status; checksum manifest and explicit proven/candidate/unknown classifications.
+- **Excluded:** no network/GitHub/package repository/fetch/clone/download; no Gradle/dependency resolution/build/compiler/test/CI/DEX/R8/APK/device; no cache mutation or staging; no source/build/manifest/notice/license/asset/schema/UI/Reader/workflow edits; no legal opinion, guessed license, App compile retry, Task 027 or Stage-1.
+- **Procedure:** after registration commit, reread both required lists from the new HEAD before substantive inspection.
+- **Disposition:** Phase A open; native license/notice and clean-checkout reproducibility NOT ESTABLISHED; Stage-0 not accepted; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
