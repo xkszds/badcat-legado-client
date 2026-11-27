@@ -33,9 +33,10 @@ enum class SourceNavigationPolicy {
 
 /**
  * Immutable execution snapshot. [coroutineJob] is the optional cancellation
- * parent; null represents an upstream CoroutineContext without a Job. Suspend
- * implementations must propagate cancellation rather than converting
- * CancellationException into an ordinary host failure.
+ * parent; null represents an upstream CoroutineContext without a Job. Other
+ * CoroutineContext elements remain owned by the Runtime caller and must not be
+ * reconstructed from this snapshot. Suspend implementations must propagate
+ * cancellation rather than converting CancellationException into a host failure.
  */
 data class SourceExecutionContext(
     val source: SourceIdentity,
@@ -145,8 +146,9 @@ enum class HiddenWebViewRuleMode {
  *
  * A null JavaScript value selects the upstream built-in script; an empty string
  * remains a distinct explicit script. A null URL is valid only when HTML is
- * supplied. WEBJS_RULE signals that the host must install the typed source,
- * cache and java bridge bindings before evaluating the rule script.
+ * supplied. WEBJS_RULE signals that source/cache/java bridge bootstrap is
+ * required; the typed binding factory is a separate contract not yet included
+ * in this request model.
  */
 data class HiddenWebViewRequest(
     val context: SourceExecutionContext,
