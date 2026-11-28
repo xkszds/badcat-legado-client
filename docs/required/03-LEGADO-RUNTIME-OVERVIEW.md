@@ -3752,3 +3752,14 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Allowed tracked files: audit + this overview only; temporary evidence /tmp/task026dp-book-chapter-commit-contracts/.
 - Exclusions: no production/test source, schema/database/data, Gradle/dependency/workflow, manifest/license/packaging, UI, build/test/CI/GitHub/push/ref update, device/live-source or persistence implementation; no schema freeze, Stage-1 or Task 027.
 - **Disposition:** documentation-only Phase-A contract specification registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED. See audit §24.302.
+
+
+### 4.27.259 Task 026DP result — typed Book/Chapter persistence and content-commit contracts (2026-11-28)
+
+- Pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a; start HEAD e2dbccc37010cd53c1124c33a5cf8e07a2bef410; registration commit cec51dc5a598554f0010d0e61891b925716db097.
+- Exact Book (34 fields) and BookChapter (17 fields) remain the model types. Proposed minimal App Room DB + narrow typed appDb facade; do not import upstream 26-entity AppDatabase. App currently has no Room runtime/database/KSP wiring.
+- Defined Book/Chapter DAO facade, ContentCommitCoordinator API, journal/generation state machine, recovery rules, migration constraints and 25 failure-injection tests. Existing 49 upstream/App tests inspected, not run.
+- Corrected content key to upstream (bookUrl,index); sourceId is only provenance. Durable fence semantics preserve repeated writeIfCurrent and failed authoritative replacement invalidation.
+- Blockers: BookMemo/ReadRecord owners absent; BookChapter persisted duplicate-URL constraint conflicts with in-memory batch URL twins; direct BookHelp file paths and sourceId migration are not closed. No schema freeze or implementation.
+- Artifacts /tmp/task026dp-book-chapter-commit-contracts/; 26 source hashes + 14 input hashes + output manifest validated. Docs-only commit; no build/test/CI.
+- **Disposition:** Task 026DP accepted as static contract design only. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next: 026DQ source/Gradle closure and compile-only proof plan; no Room implementation yet. See audit §24.303.
