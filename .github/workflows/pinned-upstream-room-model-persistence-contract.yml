@@ -335,7 +335,7 @@ jobs:
                   project.plugins.withId('com.android.application') {
                       def androidComponents = project.extensions.getByName('androidComponents')
                       androidComponents.finalizeDsl { androidDsl ->
-                          def original = androidDsl.defaultConfig.minSdk.apiLevel
+                          def original = androidDsl.defaultConfig.minSdk
                           if (original != 23) {
                               throw new GradleException("expected pinned upstream app minSdk 23, found " + original)
                           }
