@@ -1,0 +1,499 @@
+name: HtmlUnit SlotMap API 23 compatibility source PoC
+
+on:
+  push:
+    branches: [integration/legado-upstream-runtime]
+  workflow_dispatch:
+
+concurrency:
+  group: htmlunit-slotmap-api23-poc-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  slotmap-api23-poc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check out exact Badcat source and pinned Legado
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Verify source identity and runner capacity
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          test "$(git -C upstream/legado rev-parse HEAD)" = "330e606c4d57e08adc056ff8ab7a4132c784da9a"
+          test -z "$(git -C upstream/legado status --porcelain --untracked-files=all)"
+          mkdir -p build/pinned-htmlunit-slotmap-api23
+          {
+            echo "BADCAT_COMMIT=$(git rev-parse HEAD)"
+            echo "LEGADO_COMMIT=$(git -C upstream/legado rev-parse HEAD)"
+            echo "LEGADO_INITIAL_WORKTREE=CLEAN"
+          } | tee build/pinned-htmlunit-slotmap-api23/source-identity.txt
+          mem_total="$(awk '/MemTotal:/ {print $2 * 1024}' /proc/meminfo)"
+          mem_available="$(awk '/MemAvailable:/ {print $2 * 1024}' /proc/meminfo)"
+          cpu_count="$(nproc)"
+          effective_limit="$(cat /sys/fs/cgroup/memory.max 2>/dev/null || echo max)"
+          if [ "$effective_limit" = "max" ]; then effective_limit="$mem_total"; else
+            effective_limit="$(awk -v a="$mem_total" -v b="$effective_limit" 'BEGIN {print (a < b ? a : b)}')"
+          fi
+          {
+            echo "MEM_TOTAL_BYTES=$mem_total"
+            echo "MEM_AVAILABLE_BYTES=$mem_available"
+            echo "EFFECTIVE_MEMORY_LIMIT_BYTES=$effective_limit"
+            echo "CPU_COUNT=$cpu_count"
+          } | tee build/pinned-htmlunit-slotmap-api23/runner-capacity.txt
+          test "$effective_limit" -ge 7516192768
+          test "$mem_available" -ge 6442450944
+          test "$cpu_count" -ge 2
+          echo "CAPACITY_GATE=PASS" | tee -a build/pinned-htmlunit-slotmap-api23/runner-capacity.txt
+
+      - name: Set up JDK 21 and Gradle
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle 8.14.4
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.4'
+
+      - name: Install Maven and Android SDK packages
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y maven
+          : "${ANDROID_HOME:?Android SDK is not configured}"
+          sdkmanager_path="$(find "$ANDROID_HOME/cmdline-tools" -maxdepth 3 -type f -name sdkmanager | head -n 1)"
+          test -n "$sdkmanager_path"
+          echo "$(dirname "$sdkmanager_path")" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          sdkmanager --sdk_root="$ANDROID_HOME" --install "platforms;android-36" "build-tools;36.0.0" "system-images;android-23;default;x86_64"
+          {
+            java -version 2>&1
+            mvn -version
+            gradle --version
+          } | tee build/pinned-htmlunit-slotmap-api23/toolchain.txt
+
+      - name: Fetch exact HtmlUnit source revisions
+        run: |
+          set -euo pipefail
+          mkdir -p external
+          git clone --no-checkout https://github.com/mgz0227/htmlunit-rhino-fork.git external/htmlunit-rhino-fork
+          git -C external/htmlunit-rhino-fork checkout --detach 76460c0312bfd351df6f2bb11168102cdb54170a
+          git clone --no-checkout https://github.com/mgz0227/htmlunit-core-js.git external/htmlunit-core-js
+          git -C external/htmlunit-core-js checkout --detach 3eb5071cdca4a357119d1063a53d5f2d47984ed2
+          test "$(git -C external/htmlunit-rhino-fork rev-parse HEAD)" = "76460c0312bfd351df6f2bb11168102cdb54170a"
+          test "$(git -C external/htmlunit-core-js rev-parse HEAD)" = "3eb5071cdca4a357119d1063a53d5f2d47984ed2"
+          {
+            echo "RHINO_FORK_COMMIT=$(git -C external/htmlunit-rhino-fork rev-parse HEAD)"
+            echo "HTMLUNIT_PACKAGING_COMMIT=$(git -C external/htmlunit-core-js rev-parse HEAD)"
+            sha256sum upstream/legado/third_party/maven/org/htmlunit/htmlunit-core-js/5.3.0-legado.4/htmlunit-core-js-5.3.0-legado.4.jar
+            sha256sum upstream/legado/third_party/maven/org/htmlunit/htmlunit-core-js/5.3.0-legado.4/htmlunit-core-js-5.3.0-legado.4.pom
+          } | tee build/pinned-htmlunit-slotmap-api23/upstream-source-identity.txt
+
+      - name: Apply ephemeral SlotMap updater patch and focused concurrency tests
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("external/htmlunit-rhino-fork/rhino/src/main/java/org/mozilla/javascript/SlotMapOwner.java")
+          s = p.read_text()
+          old_imports = "import java.lang.invoke.MethodHandles;\nimport java.lang.invoke.VarHandle;\n"
+          assert s.count(old_imports) == 1
+          s = s.replace(old_imports, "import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;\n")
+          old_field = "    private SlotMap<T> slotMap;\n"
+          new_field = """    private volatile SlotMap<T> slotMap;
+
+              @SuppressWarnings({"rawtypes", "unchecked"})
+              private static final AtomicReferenceFieldUpdater<SlotMapOwner, SlotMap> SLOT_MAP_UPDATER =
+                      AtomicReferenceFieldUpdater.newUpdater(SlotMapOwner.class, SlotMap.class, "slotMap");
+          """
+          assert s.count(old_field) == 1
+          s = s.replace(old_field, new_field)
+          start = s.index('    @SuppressWarnings("AndroidJdkLibsChecker")')
+          end = s.index("    private static class EmptySlotMap", start)
+          replacement = """    // API-23-compatible implementation of the exact compare-and-exchange witness contract.
+              static final class ThreadedAccess {
+                  static <T extends PropHolder<T>> SlotMap<T> checkAndReplaceMap(
+                          SlotMapOwner<T> owner, SlotMap<T> oldMap, SlotMap<T> newMap) {
+                      SlotMap<T> witness = owner.slotMap;
+                      while (witness == oldMap) {
+                          if (SLOT_MAP_UPDATER.compareAndSet(owner, oldMap, newMap)) {
+                              return oldMap;
+                          }
+                          witness = owner.slotMap;
+                      }
+                      return witness;
+                  }
+              }
+
+          """
+          s = s[:start] + replacement + s[end:]
+          p.write_text(s)
+
+          test = Path("external/htmlunit-rhino-fork/rhino/src/test/java/org/mozilla/javascript/SlotMapApi23AtomicUpdaterTest.java")
+          test.write_text("""package org.mozilla.javascript;
+
+          import static org.junit.jupiter.api.Assertions.assertEquals;
+          import static org.junit.jupiter.api.Assertions.assertNotSame;
+          import static org.junit.jupiter.api.Assertions.assertSame;
+          import static org.junit.jupiter.api.Assertions.assertTrue;
+
+          import java.util.ArrayList;
+          import java.util.List;
+          import java.util.concurrent.CountDownLatch;
+          import java.util.concurrent.ExecutorService;
+          import java.util.concurrent.Executors;
+          import java.util.concurrent.Future;
+          import java.util.concurrent.TimeUnit;
+          import org.junit.jupiter.api.Test;
+
+          class SlotMapApi23AtomicUpdaterTest {
+              private static final class TestObject extends ScriptableObject {
+                  @Override
+                  public String getClassName() {
+                      return "slot-map-api23-probe";
+                  }
+              }
+
+              @Test
+              @SuppressWarnings("unchecked")
+              void compareAndExchangePreservesWitnessAndMismatchBehavior() {
+                  TestObject owner = new TestObject();
+                  SlotMap<ScriptableObject> initial =
+                          (SlotMap<ScriptableObject>) SlotMapOwner.THREAD_SAFE_EMPTY_SLOT_MAP;
+                  SlotMap<ScriptableObject> replacement = new ThreadSafeEmbeddedSlotMap<>();
+                  owner.setMap(initial);
+
+                  assertSame(initial, SlotMapOwner.ThreadedAccess.checkAndReplaceMap(owner, initial, replacement));
+                  assertSame(replacement, owner.getMap());
+
+                  SlotMap<ScriptableObject> unused = new ThreadSafeEmbeddedSlotMap<>();
+                  assertSame(replacement, SlotMapOwner.ThreadedAccess.checkAndReplaceMap(owner, initial, unused));
+                  assertSame(replacement, owner.getMap());
+              }
+
+              @Test
+              @SuppressWarnings("unchecked")
+              void contendedPromotionHasOneWinnerAndReturnsTheWinningWitness() throws Exception {
+                  TestObject owner = new TestObject();
+                  SlotMap<ScriptableObject> initial =
+                          (SlotMap<ScriptableObject>) SlotMapOwner.THREAD_SAFE_EMPTY_SLOT_MAP;
+                  owner.setMap(initial);
+
+                  int count = 12;
+                  ExecutorService pool = Executors.newFixedThreadPool(count);
+                  CountDownLatch ready = new CountDownLatch(count);
+                  CountDownLatch start = new CountDownLatch(1);
+                  List<Future<SlotMap<ScriptableObject>>> futures = new ArrayList<>();
+                  try {
+                      for (int i = 0; i < count; i++) {
+                          SlotMap<ScriptableObject> candidate = new ThreadSafeEmbeddedSlotMap<>();
+                          futures.add(pool.submit(() -> {
+                              ready.countDown();
+                              assertTrue(start.await(10, TimeUnit.SECONDS));
+                              return SlotMapOwner.ThreadedAccess.checkAndReplaceMap(owner, initial, candidate);
+                          }));
+                      }
+                      assertTrue(ready.await(10, TimeUnit.SECONDS));
+                      start.countDown();
+
+                      List<SlotMap<ScriptableObject>> witnesses = new ArrayList<>();
+                      for (Future<SlotMap<ScriptableObject>> future : futures) {
+                          witnesses.add(future.get(10, TimeUnit.SECONDS));
+                      }
+                      SlotMap<ScriptableObject> winner = owner.getMap();
+                      assertNotSame(initial, winner);
+                      assertEquals(1L, witnesses.stream().filter(value -> value == initial).count());
+                      for (SlotMap<ScriptableObject> witness : witnesses) {
+                          if (witness != initial) {
+                              assertSame(winner, witness);
+                          }
+                      }
+                  } finally {
+                      pool.shutdownNow();
+                  }
+              }
+          }
+          """)
+          PY
+          mkdir -p build/pinned-htmlunit-slotmap-api23
+          git -C external/htmlunit-rhino-fork diff -- rhino/src/main/java/org/mozilla/javascript/SlotMapOwner.java > build/pinned-htmlunit-slotmap-api23/SlotMapOwner.patch
+          git -C external/htmlunit-rhino-fork diff --no-index /dev/null external/htmlunit-rhino-fork/rhino/src/test/java/org/mozilla/javascript/SlotMapApi23AtomicUpdaterTest.java >> build/pinned-htmlunit-slotmap-api23/SlotMapOwner.patch || test "$?" -eq 1
+          sha256sum build/pinned-htmlunit-slotmap-api23/SlotMapOwner.patch | tee build/pinned-htmlunit-slotmap-api23/source-patch.sha256
+
+      - name: Run exact fork SlotMap and concurrency tests
+        run: |
+          set -euo pipefail
+          cd external/htmlunit-rhino-fork
+          ./gradlew --no-daemon :rhino:test --tests org.mozilla.javascript.SlotMapApi23AtomicUpdaterTest --tests org.mozilla.javascript.SlotMapConcurrentLocksPromotionTest | tee ../../build/pinned-htmlunit-slotmap-api23/fork-tests.log
+
+      - name: Rebuild exact HtmlUnit core-js package from patched fork source
+        run: |
+          set -euo pipefail
+          cd external/htmlunit-core-js
+          mvn --batch-mode -T 1 -U clean install -Dmaven.test.skip=true -Dgpg.skip=true -Dmaven.javadoc.skip=true -Dmaven.compiler.showWarnings=false | tee ../../build/pinned-htmlunit-slotmap-api23/maven-package.log
+          jarfile=target/htmlunit-core-js-5.3.0-legado.4.jar
+          test -s "$jarfile"
+          cp "$jarfile" ../../build/pinned-htmlunit-slotmap-api23/htmlunit-core-js-api23-poc.jar
+          sha256sum ../../build/pinned-htmlunit-slotmap-api23/htmlunit-core-js-api23-poc.jar | tee ../../build/pinned-htmlunit-slotmap-api23/patched-jar.sha256
+          javap -classpath "$jarfile" -p -c org.htmlunit.corejs.javascript.SlotMapOwner\$ThreadedAccess > ../../build/pinned-htmlunit-slotmap-api23/patched-threaded-access.javap
+          ! grep -E 'VarHandle|MethodHandle|findVarHandle|compareAndExchange' ../../build/pinned-htmlunit-slotmap-api23/patched-threaded-access.javap
+
+      - name: Install ephemeral patched dependency and generate API23 runtime probe
+        run: |
+          set -euo pipefail
+          version=5.3.0-legado.4-api23poc
+          source_dir=upstream/legado/third_party/maven/org/htmlunit/htmlunit-core-js/5.3.0-legado.4
+          target_dir="upstream/legado/third_party/maven/org/htmlunit/htmlunit-core-js/$version"
+          mkdir -p "$target_dir"
+          cp build/pinned-htmlunit-slotmap-api23/htmlunit-core-js-api23-poc.jar "$target_dir/htmlunit-core-js-$version.jar"
+          sed "s#<version>5.3.0-legado.4</version>#<version>$version</version>#" "$source_dir/htmlunit-core-js-5.3.0-legado.4.pom" > "$target_dir/htmlunit-core-js-$version.pom"
+          sed -i "s/htmlunitCoreJs = \"5.3.0-legado.4\"/htmlunitCoreJs = \"$version\"/" upstream/legado/gradle/libs.versions.toml
+          grep -F "htmlunitCoreJs = \"$version\"" upstream/legado/gradle/libs.versions.toml
+          mkdir -p upstream/legado/app/src/main/java/org/htmlunit/corejs/javascript
+          mkdir -p upstream/legado/app/src/androidTest/java/io/legado/app/data
+          cat > upstream/legado/app/src/main/java/org/htmlunit/corejs/javascript/SlotMapApi23CompatibilityProbe.java <<'JAVA'
+          package org.htmlunit.corejs.javascript;
+
+          import java.util.ArrayList;
+          import java.util.List;
+          import java.util.concurrent.CountDownLatch;
+          import java.util.concurrent.ExecutorService;
+          import java.util.concurrent.Executors;
+          import java.util.concurrent.Future;
+          import java.util.concurrent.TimeUnit;
+
+          public final class SlotMapApi23CompatibilityProbe {
+              private SlotMapApi23CompatibilityProbe() {}
+
+              private static void require(boolean condition, String message) {
+                  if (!condition) throw new AssertionError(message);
+              }
+
+              private static final class TestObject extends ScriptableObject {
+                  @Override public String getClassName() { return "slot-map-api23-runtime-probe"; }
+              }
+
+              @SuppressWarnings("unchecked")
+              public static void run() throws Exception {
+                  TestObject owner = new TestObject();
+                  SlotMap<ScriptableObject> initial =
+                          (SlotMap<ScriptableObject>) SlotMapOwner.THREAD_SAFE_EMPTY_SLOT_MAP;
+                  owner.setMap(initial);
+                  SlotMap<ScriptableObject> replacement = new ThreadSafeEmbeddedSlotMap<>();
+                  require(SlotMapOwner.ThreadedAccess.checkAndReplaceMap(owner, initial, replacement) == initial,
+                          "successful compare-exchange must return the expected witness");
+                  require(owner.getMap() == replacement, "successful compare-exchange must publish replacement");
+                  SlotMap<ScriptableObject> unused = new ThreadSafeEmbeddedSlotMap<>();
+                  require(SlotMapOwner.ThreadedAccess.checkAndReplaceMap(owner, initial, unused) == replacement,
+                          "mismatch must return the current witness");
+                  require(owner.getMap() == replacement, "mismatch must not replace the current map");
+
+                  TestObject concurrentOwner = new TestObject();
+                  concurrentOwner.setMap(initial);
+                  int count = 8;
+                  ExecutorService pool = Executors.newFixedThreadPool(count);
+                  CountDownLatch ready = new CountDownLatch(count);
+                  CountDownLatch start = new CountDownLatch(1);
+                  List<Future<SlotMap<ScriptableObject>>> futures = new ArrayList<>();
+                  try {
+                      for (int i = 0; i < count; i++) {
+                          SlotMap<ScriptableObject> candidate = new ThreadSafeEmbeddedSlotMap<>();
+                          futures.add(pool.submit(() -> {
+                              ready.countDown();
+                              if (!start.await(10, TimeUnit.SECONDS)) throw new AssertionError("start gate timeout");
+                              return SlotMapOwner.ThreadedAccess.checkAndReplaceMap(concurrentOwner, initial, candidate);
+                          }));
+                      }
+                      require(ready.await(10, TimeUnit.SECONDS), "workers did not become ready");
+                      start.countDown();
+                      List<SlotMap<ScriptableObject>> witnesses = new ArrayList<>();
+                      for (Future<SlotMap<ScriptableObject>> future : futures) {
+                          witnesses.add(future.get(10, TimeUnit.SECONDS));
+                      }
+                      SlotMap<ScriptableObject> winner = concurrentOwner.getMap();
+                      require(winner != initial, "one candidate must win");
+                      long winners = witnesses.stream().filter(value -> value == initial).count();
+                      require(winners == 1, "exactly one CAS winner expected, got " + winners);
+                      for (SlotMap<ScriptableObject> witness : witnesses) {
+                          if (witness != initial) require(witness == winner, "loser must observe winning map");
+                      }
+                  } finally {
+                      pool.shutdownNow();
+                  }
+              }
+          }
+          JAVA
+          cat > upstream/legado/app/src/androidTest/java/io/legado/app/data/SlotMapApi23CompatibilityProbeTest.java <<'JAVA'
+          package io.legado.app.data;
+
+          import android.os.Build;
+          import androidx.test.ext.junit.runners.AndroidJUnit4;
+          import org.htmlunit.corejs.javascript.SlotMapApi23CompatibilityProbe;
+          import org.junit.Test;
+          import org.junit.runner.RunWith;
+
+          @RunWith(AndroidJUnit4.class)
+          public class SlotMapApi23CompatibilityProbeTest {
+              @Test
+              public void atomicUpdaterRunsOnDeviceAndPreservesWitnessSemantics() throws Exception {
+                  if (Build.VERSION.SDK_INT < 23) throw new AssertionError("expected API 23 or newer");
+                  SlotMapApi23CompatibilityProbe.run();
+              }
+          }
+          JAVA
+          sha256sum upstream/legado/app/src/main/java/org/htmlunit/corejs/javascript/SlotMapApi23CompatibilityProbe.java upstream/legado/app/src/androidTest/java/io/legado/app/data/SlotMapApi23CompatibilityProbeTest.java | tee build/pinned-htmlunit-slotmap-api23/generated-probes.sha256
+          printf '%s\n' 'PRODUCT_MIN_SDK=23' 'PATCHED_TEST_MIN_SDK=23' 'API23_EMULATOR=23' 'PRODUCT_BUILD_FILES_MODIFIED=false' | tee build/pinned-htmlunit-slotmap-api23/api23-build-config.txt
+
+      - name: Verify D8 with patched artifact at product minSdk 23
+        run: |
+          set -euo pipefail
+          grep -n 'minSdk 23' upstream/legado/app/build.gradle
+          gradle --no-daemon -p upstream/legado :app:mergeExtDexAppDebug --stacktrace > build/pinned-htmlunit-slotmap-api23/d8-api23.log 2>&1
+          cat build/pinned-htmlunit-slotmap-api23/d8-api23.log
+          ! grep -F 'MethodHandle.invoke and MethodHandle.invokeExact are only supported' build/pinned-htmlunit-slotmap-api23/d8-api23.log
+          echo "D8_PRODUCT_MINSDK23=PASS" | tee build/pinned-htmlunit-slotmap-api23/d8-api23-result.txt
+
+      - name: Run patched artifact on Android API23
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 23
+          target: default
+          arch: x86_64
+          disable-animations: true
+          disable-linux-hw-accel: false
+          pre-emulator-launch-script: $ANDROID_HOME/emulator/emulator -accel-check
+          script: bash -c 'set -euo pipefail; adb wait-for-device; test "$(adb shell getprop sys.boot_completed | tr -d "\r")" = "1"; echo "API23_DEVICE=$(adb shell getprop ro.build.fingerprint | tr -d "\r")" > build/pinned-htmlunit-slotmap-api23/api23-device.txt; set +e; gradle --no-daemon -p upstream/legado :app:connectedAppDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.legado.app.data.SlotMapApi23CompatibilityProbeTest > build/pinned-htmlunit-slotmap-api23/api23-gradle.log 2>&1; status=$?; set -e; echo "$status" > build/pinned-htmlunit-slotmap-api23/api23-exit.txt; cat build/pinned-htmlunit-slotmap-api23/api23-gradle.log; exit "$status"'
+
+      - name: Capture API23 instrumentation report
+        if: always()
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+          import xml.etree.ElementTree as ET
+          root = Path("build/pinned-htmlunit-slotmap-api23")
+          base = Path("upstream/legado/app/build/outputs/androidTest-results/connected")
+          files = sorted(base.rglob("*.xml")) if base.exists() else []
+          if len(files) != 1:
+              raise SystemExit(f"expected one API23 JUnit XML, found {files}")
+          target = root / "api23-patched-junit.xml"
+          shutil.copy2(files[0], target)
+          suite = ET.parse(target).getroot()
+          cases = suite.findall(".//testcase")
+          totals = {k: int(suite.attrib.get(k, 0)) for k in ("tests", "failures", "errors", "skipped")}
+          if len(cases) != 1 or totals != {"tests": 1, "failures": 0, "errors": 0, "skipped": 0}:
+              raise SystemExit(f"API23 test failed: {totals}")
+          if (root / "api23-exit.txt").read_text().strip() != "0":
+              raise SystemExit("API23 Gradle exit was not zero")
+          (root / "api23-result.txt").write_text("API23_PATCHED_RUNTIME=PASS\nTESTS=1\nFAILURES=0\nERRORS=0\nSKIPPED=0\n")
+          PY
+
+      - name: Restore original dependency and prepare API35 baseline
+        run: |
+          set -euo pipefail
+          git -C upstream/legado checkout -- gradle/libs.versions.toml
+          rm -rf upstream/legado/third_party/maven/org/htmlunit/htmlunit-core-js/5.3.0-legado.4-api23poc
+          init=build/pinned-htmlunit-slotmap-api23/original-api35-minsdk26.init.gradle
+          cat > "$init" <<'GROOVY'
+          gradle.beforeProject { project ->
+              if (project.path == ':app') {
+                  project.plugins.withId('com.android.application') {
+                      def components = project.extensions.getByName('androidComponents')
+                      components.finalizeDsl { dsl ->
+                          def sourceMinSdk = dsl.defaultConfig.minSdk
+                          if (sourceMinSdk != 23) throw new GradleException("expected source minSdk 23, found " + sourceMinSdk)
+                          dsl.defaultConfig.minSdk = 26
+                          println "ORIGINAL_BASELINE_TEST_ONLY_MINSDK=23->26"
+                      }
+                  }
+              }
+          }
+          GROOVY
+          rm -rf upstream/legado/app/build/outputs/androidTest-results/connected
+
+      - name: Run unmodified pinned artifact baseline on API35
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          disable-linux-hw-accel: false
+          pre-emulator-launch-script: $ANDROID_HOME/emulator/emulator -accel-check
+          script: bash -c 'set -euo pipefail; adb wait-for-device; test "$(adb shell getprop sys.boot_completed | tr -d "\r")" = "1"; echo "API35_DEVICE=$(adb shell getprop ro.build.fingerprint | tr -d "\r")" > build/pinned-htmlunit-slotmap-api23/api35-device.txt; set +e; gradle --no-daemon --init-script "$GITHUB_WORKSPACE/build/pinned-htmlunit-slotmap-api23/original-api35-minsdk26.init.gradle" -p upstream/legado :app:connectedAppDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.legado.app.data.SlotMapApi23CompatibilityProbeTest > build/pinned-htmlunit-slotmap-api23/api35-original-gradle.log 2>&1; status=$?; set -e; echo "$status" > build/pinned-htmlunit-slotmap-api23/api35-exit.txt; cat build/pinned-htmlunit-slotmap-api23/api35-original-gradle.log; exit "$status"'
+
+      - name: Capture API35 original-artifact baseline report
+        if: always()
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+          import xml.etree.ElementTree as ET
+          root = Path("build/pinned-htmlunit-slotmap-api23")
+          base = Path("upstream/legado/app/build/outputs/androidTest-results/connected")
+          files = sorted(base.rglob("*.xml")) if base.exists() else []
+          if len(files) != 1:
+              raise SystemExit(f"expected one API35 baseline JUnit XML, found {files}")
+          target = root / "api35-original-junit.xml"
+          shutil.copy2(files[0], target)
+          suite = ET.parse(target).getroot()
+          cases = suite.findall(".//testcase")
+          totals = {k: int(suite.attrib.get(k, 0)) for k in ("tests", "failures", "errors", "skipped")}
+          if len(cases) != 1 or totals != {"tests": 1, "failures": 0, "errors": 0, "skipped": 0}:
+              raise SystemExit(f"API35 original baseline failed: {totals}")
+          if (root / "api35-exit.txt").read_text().strip() != "0":
+              raise SystemExit("API35 baseline Gradle exit was not zero")
+          (root / "api35-result.txt").write_text("API35_ORIGINAL_BASELINE=PASS\nTESTS=1\nFAILURES=0\nERRORS=0\nSKIPPED=0\n")
+          PY
+
+      - name: Remove transient probes and restore pinned submodule
+        if: always()
+        run: |
+          set -euo pipefail
+          rm -f upstream/legado/app/src/main/java/org/htmlunit/corejs/javascript/SlotMapApi23CompatibilityProbe.java
+          rm -f upstream/legado/app/src/androidTest/java/io/legado/app/data/SlotMapApi23CompatibilityProbeTest.java
+          git -C upstream/legado checkout -- gradle/libs.versions.toml
+          rm -rf upstream/legado/third_party/maven/org/htmlunit/htmlunit-core-js/5.3.0-legado.4-api23poc
+          rm -rf external
+          git -C upstream/legado clean -fd
+          test -z "$(git -C upstream/legado status --porcelain --untracked-files=all)"
+          echo "LEGADO_WORKTREE_AFTER_POC=CLEAN" | tee build/pinned-htmlunit-slotmap-api23/submodule-cleanup.txt
+
+      - name: Finalize PoC evidence and checksums
+        if: always()
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path("build/pinned-htmlunit-slotmap-api23")
+          required = ["fork-tests.log", "maven-package.log", "patched-jar.sha256",
+                      "d8-api23-result.txt", "api23-result.txt", "api35-result.txt",
+                      "submodule-cleanup.txt"]
+          missing = [name for name in required if not (root / name).exists()]
+          if missing:
+              raise SystemExit("missing required PoC evidence: " + repr(missing))
+          (root / "poc-summary.txt").write_text(
+              "FORK_CONCURRENCY_TESTS=PASS\nPATCHED_JAR_REBUILT=PASS\n"
+              "PRODUCT_MINSDK23_D8=PASS\nAPI23_PATCHED_RUNTIME=PASS\n"
+              "API35_ORIGINAL_BASELINE=PASS\nPINNED_SUBMODULE_CLEAN=CLEAN\n")
+          PY
+          find build/pinned-htmlunit-slotmap-api23 -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 -r sha256sum > build/pinned-htmlunit-slotmap-api23/SHA256SUMS
+
+      - name: Upload exact-source SlotMap API23 PoC evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pinned-htmlunit-slotmap-api23-compatibility-poc
+          path: build/pinned-htmlunit-slotmap-api23/**
+          if-no-files-found: warn
+          retention-days: 14
