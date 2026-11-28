@@ -3961,3 +3961,12 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - Recorded 17 generated/reflection obligations including Room, Parcelize, generated resources, appCtx and Rhino API. No source/build/test/CI changes.
 - 132 source + 11 prior inputs hash-verified. Lexical inventory only; nested declarations, exact method callers and compiled ABI not proven.
 - **Disposition:** Task 026DZ PARTIAL / NOT ACCEPTED; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next: 026EA exact callsite and method-body review of the 524 open declarations. See audit §24.325.
+
+
+### 4.27.282 Task 026EA preregistration — exact caller/method-body review (2026-11-28)
+
+- Start branch integration/legado-upstream-runtime, HEAD 5baa82700e652f387305e77b9bf57c3033042a31; fixed Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Review 524 declarations left open by 026DZ, using method bodies, exact callsites, inheritance, reflection/Rhino reachability and lifecycle semantics. Separate pure core, typed host ports, App adapters and product-only features.
+- Required ledgers: 524 method review rows, exact caller matrix, utility/host split, source model decisions, product exclusion and revised core/App closure.
+- No source/test/module/Gradle/dependency/plugin/Room/KSP/schema/database/data/manifest/license/notice/packaging/UI changes; no build/test/CI/GitHub/push/network/device/live-source.
+- **Disposition:** documentation-only method ownership audit registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.326.
