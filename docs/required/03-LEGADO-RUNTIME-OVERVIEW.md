@@ -3773,3 +3773,14 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Allowed tracked files: audit + overview; temporary evidence /tmp/task026dq-book-chapter-compile-closure/.
 - Exclusions: no source/test/Gradle/dependency/workflow/schema/database/data/manifest/license/UI changes; no build/test/CI/GitHub/push/ref update/device/live-source; no Room installation or persistence implementation; no Stage-1/Task 027.
 - **Disposition:** documentation-only Phase-A compile-closure audit registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED. See audit §24.304.
+
+
+### 4.27.261 Task 026DQ result — Book/Chapter AppDb compile closure (2026-11-28)
+
+- Pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a; start HEAD 550fa0d9dbeb4313af27ed0bdb6c06f43412f16d; registration commit 30baecccd46b2e77188fe99f3f2372db4386d82f.
+- 124 import edges across six owners; 40 source hashes and 18 prior-task input hashes. Current acyclic model owner is :app; :legado-runtime stays App-independent, :integration-contract JVM-only, :legado-rhino engine-only.
+- Narrow typed appDb facade needs BookDao/BookChapterDao/ReplaceRule/content ports plus reader/history/variable/config/log/UI adapters. Full upstream AppDatabase, DAO files and BookHelp are excluded.
+- App already has Parcelize, Kotlin 2.4.20 and AGP 8.13.2; Room/KSP are absent. Pinned upstream candidates: KSP 2.3.12, Room 2.8.4, commons-text 1.13.1, Splitties 3.0.0. No Gradle changes or compile executed.
+- BookHelp source slice is method-level only; extract pure chapter-index matching and delegate raw-content methods to PinnedContentCommitPort. BookSource's AudioPlay import is unused; avoid its large UI service.
+- Artifacts `/tmp/task026dq-book-chapter-compile-closure/`; all 40 source, 18 input and output hashes verified. Docs-only result.
+- **Disposition:** Task 026DQ accepted as static compile-closure/proof-plan audit. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED. Next: 026DR host facade symbol/callsite bridge design, no Room installation yet. See audit §24.305.
