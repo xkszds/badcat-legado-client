@@ -3885,3 +3885,8 @@ Runtime-3.0 master workflow §2.3 prohibits schema-v1 freeze, Room installation,
 - This avoids a pure-JVM/Android model mismatch, App dependency cycles and Map/Any? shadow DTOs. Proposed DAG forbids all lower-module -> App edges.
 - 32 source hashes and 22 prior-task inputs verified; 13 DAG edges, 10 port families and five module options validated. No source/module/Gradle/Room/build/test/CI changes.
 - **Disposition:** architecture direction only; implementation NO-GO pending Stage-0 source/caller/dependency/ABI/host-port closure. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED. Next: 026DW exact source/import closure. See audit §24.316.
+
+
+### 4.27.273 Clarification — :legado-runtime module type
+
+Correction to the 026DV preregistration wording: :legado-runtime is an Android library module with a model-neutral HostPort API surface, not a pure-JVM module. :integration-contract is the JVM module. The recommended module boundary in audit §24.316 already reflects this exact distinction.

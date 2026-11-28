@@ -8772,3 +8772,8 @@ The Runtime-3.0 master workflow §2.3 explicitly requires proving the real upstr
 - **Scope:** documentation-only. No module creation, source/Gradle/dependency/plugin/workflow/Room/schema/database/data/manifest/license/notice/packaging/UI changes; no build/compile/test/CI/GitHub/push/device/live-source.
 - **Disposition:** Task 026DV accepted as architecture direction only. Option B recommended; implementation remains NO-GO until Stage-0 source/caller/dependency/ABI/build closure and typed host adapters are proven. Phase A OPEN; Stage-0 in_progress / NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full pinned Legado compatibility NOT ESTABLISHED.
 - **Next:** Task 026DW should close exact :legado-core source/import closure and map every global appCtx/AppConfig/appDb/AppLog/Context/network/cookie/file/JS reference to a typed port or core utility. No source/module changes.
+
+
+### 24.317 Clarification — existing :legado-runtime is an Android library, not a pure-JVM module
+
+The 026DV overview preregistration's phrase “existing pure-JVM runtime” was imprecise. The current :legado-runtime uses the Android library Gradle plugin; its current source/API surface is deliberately model-neutral HostPort contracts. :integration-contract is the JVM module. The 026DV option comparison and recommendation already use the correct distinction: do not turn :legado-runtime's port layer into the full upstream core; keep it as the low-level contract module and place exact Android/Room/Parcelable upstream source in the proposed :legado-core only after Stage-0 closure.
