@@ -4129,3 +4129,17 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - Important unresolved tension: BatchContentContext supports duplicate URLs in memory, but Room BookChapter primary key (url,bookUrl) disallows duplicate rows for that same pair. Need a DAO persistence test; source reading alone cannot resolve it.
 - Missing ABI captures: BaseBook, nested ReadConfig/ParagraphAnchor, six rule models, Room converters, ContentSaveKey/State/Fence and Gson adapters. No serialization behavior tests were run in 026EJ. Differential fixture backlog is recorded in audit §24.345.
 - 026EJ complete for source-level contract inventory only. No code/UI/DB/schema change. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next candidate: 026EK compiled ABI coverage for the missing dependency classes, then separate executable differential fixtures.
+### 4.27.301 Documentation-only Android CI result — run 3707 (2026-11-28)
+
+- Android Debug run 46135219100 / #3707 / job 140948886980 on documentation-only SHA c3415a3c3a9c13bb9e7166d2b0085799481aa102: SUCCESS, 53/53 steps completed.
+- Unit tests: 43 suites / 359 tests / 0 failures / 0 errors / 0 skipped. API 28 instrumentation: 5 tests, zero failures/errors/skips; API 35: 5 tests, zero failures/errors/skips.
+- Bookkeeping/integration evidence only; no new product or ABI source change in this commit. See audit §24.346.
+
+### 4.27.302 Task 026EK preregistration — nested model/rule/Gson/content-save compiled ABI (2026-11-28)
+
+- Start branch integration/legado-upstream-runtime, HEAD 2826a346b5f1f46980605875f0f1c055ff2a5b20; fixed Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Extend the exact compiled ABI/reflection set from 15 to 40 classes, adding BaseBook, Book nested ReadConfig/ParagraphAnchor and converters, BookSource converters, BookListRule and six nested rule models, ContentSaveKey/State/ChapterSourceMatch and its three variants/ContentSaveFence/PendingResourceChapter, GsonExtensionsKt and four Gson adapters.
+- Nested JVM class names containing '$' must be correctly quoted in shell arrays. ChapterSourceMatch may be a zero-method marker interface; allow that exact class record only. All 40 class files must still be present exactly once and have SHA-256 + complete javap output. Java reflection/Rhino checks remain fail-closed for all other targets.
+- GitHub runner only. No production/upstream/test/Gradle/dependency/module/Room/schema/database/data/UI changes, no serialization fixture tests in this task, no Stage-1 or Task 027. Existing Android workflow collateral is not 026EK acceptance.
+- Android Debug run 46135893948 / #3708 on start SHA 2826a346b5f1f46980605875f0f1c055ff2a5b20 is in progress as a separate baseline integration run.
+- Registered / in progress. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.347.

@@ -153,7 +153,7 @@ jobs:
         run: |
           set -euo pipefail
           out="../../build/pinned-upstream-abi-proof"
-          classes=(BaseSource AnalyzeRule AnalyzeUrl JsExtensions JsEncodeUtils RegexJsExtensions JsSourceEngine BookSource Book BookChapter RuleData RuleDataInterface BatchContentContext ContentSaveToken BookHelp)
+          classes=(BaseSource AnalyzeRule AnalyzeUrl JsExtensions JsEncodeUtils RegexJsExtensions JsSourceEngine BookSource Book BookChapter RuleData RuleDataInterface BatchContentContext ContentSaveToken BookHelp BaseBook 'Book$ReadConfig' 'Book$ParagraphAnchor' 'Book$Converters' 'BookSource$Converters' BookListRule ExploreRule SearchRule BookInfoRule TocRule ContentRule ReviewRule ContentSaveKey ContentSaveState ChapterSourceMatch 'ChapterSourceMatch$Unique' 'ChapterSourceMatch$Ambiguous' 'ChapterSourceMatch$Missing' ContentSaveFence PendingResourceChapter GsonExtensionsKt StringJsonDeserializer IntJsonDeserializer MapDeserializerDoubleAsIntFix LocalDateTypeAdapter)
           root="app/build/tmp/kotlin-classes"
           test -d "$root"
           : > "$out/class-files.txt"

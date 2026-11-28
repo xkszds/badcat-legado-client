@@ -9159,3 +9159,50 @@ The 026DV overview preregistration's phrase “existing pure-JVM runtime” was 
 - Differential fixture backlog for a separate test task: absent vs explicit-null vs explicit-default vs unknown fields for each model; BookSource enabledCookieJar Kotlin-vs-SQL default; object-form vs stringified-rule JSON and malformed/non-object forms; Gson vs INITIAL_GSON vs GSONStrict; numeric 3 vs 3.0 vs 3.5, invalid Int strings, ISO/legacy/invalid LocalDate; ReadConfig legacy JSON with missing manualReplaceRuleIds/paragraphAnchor; ContentRule.toString with/without batch fields; variable thresholds 9,999/10,000 and null removal; same-book duplicate chapter URLs across index identity and DAO constraints; ambiguous URL/numeric identifier rejection; stale ContentSaveToken write and failed replace version progression; BookChapter/Book equality versus database keys.
 - Scope/result: read-only source and ABI crosswalk; no source, tests, scripts, workflows, Gradle, dependency, module, Room/schema/database/data or UI changes. No runtime serialization behavior has been tested in 026EJ. Task 026EJ complete for source-level contract inventory only; differential behavior remains unverified.
 - Next candidate after checklist re-read: preregister 026EK to extend compiled ABI capture to nested rule/ReadConfig/serialization/converter/content-save dependency classes, then separately preregister executable differential fixtures. Phase A OPEN; Stage-0 in_progress / NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full pinned Legado compatibility NOT ESTABLISHED.
+## 24.346 Documentation-only Android CI result — run 3707
+
+- Run 46135219100 (#3707), job 140948886980, exact SHA c3415a3c3a9c13bb9e7166d2b0085799481aa102 (docs(runtime): record pinned model ABI evidence), completed SUCCESS; 53/53 steps completed, zero failed steps.
+- Unit reports artifact 15259304103, SHA-256 e77b2f4c4204ce378f409cf2611d8db001dccd36a9e152bf752263dc5153b9d4: 43 suites / 359 tests / 0 failures / 0 errors / 0 skipped.
+- API 28 instrumentation artifact 15259298702, SHA-256 a41d991765a9c849fcd27210a2be8100734acd7fbb2819b66bc7ebcc1bd378a9: 5 tests / 0 failures / 0 errors / 0 skipped. API 35 artifact 15259772641, SHA-256 37f02778e2e08c2a24d673253e4029a7993f31741a55faa9485151613ba393e5: 5 tests / 0 failures / 0 errors / 0 skipped.
+- This was a documentation-only commit after 026EI result recording. It contains no new production/build source change and is bookkeeping/integration evidence only; the substantive 026EI Android result remains run 46132259004 on the actual probe-change SHA. Do not use run 3707 to claim new ABI or product behavior.
+- Other existing workflow artifacts (G2d compile-only group, Debug APK/DEX, external Python site smoke) remain bounded collateral as described in §24.343. The public source repository probe step was best-effort and completed successfully.
+
+## 24.347 Task 026EK preregistration — nested model/rule/Gson/content-save compiled ABI capture
+
+- Task ID: R3-S0-T026-PHASE-A-PINNED-MODEL-RULE-GSON-CONTENT-SAVE-DEPENDENCY-COMPILED-ABI-026EK; registered / in_progress.
+- Start branch/HEAD: integration/legado-upstream-runtime / 2826a346b5f1f46980605875f0f1c055ff2a5b20. Fixed Legado SHA: 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Trigger: 026EI/026EJ confirmed main model ABI and source contracts but identified unproven compiled identities for the nested rule models, nested ReadConfig/ParagraphAnchor, Room converters, BaseBook, Gson adapter stack and ContentSaveFence key/state types. These types are referenced directly by BookSource/Book/BookChapter/BatchContentContext and must not be assumed from enclosing-class bytecode.
+- Goal: extend exact pinned class hash + complete javap -p -s -v + Java reflection capture from 15 to 40 targets (25 additions):
+  1. io.legado.app.data.entities.BaseBook
+  2. io.legado.app.data.entities.Book$ReadConfig
+  3. io.legado.app.data.entities.Book$ParagraphAnchor
+  4. io.legado.app.data.entities.Book$Converters
+  5. io.legado.app.data.entities.BookSource$Converters
+  6. io.legado.app.data.entities.rule.BookListRule
+  7. io.legado.app.data.entities.rule.ExploreRule
+  8. io.legado.app.data.entities.rule.SearchRule
+  9. io.legado.app.data.entities.rule.BookInfoRule
+  10. io.legado.app.data.entities.rule.TocRule
+  11. io.legado.app.data.entities.rule.ContentRule
+  12. io.legado.app.data.entities.rule.ReviewRule
+  13. io.legado.app.help.book.ContentSaveKey
+  14. io.legado.app.help.book.ContentSaveState
+  15. io.legado.app.help.book.ChapterSourceMatch
+  16. io.legado.app.help.book.ChapterSourceMatch$Unique
+  17. io.legado.app.help.book.ChapterSourceMatch$Ambiguous
+  18. io.legado.app.help.book.ChapterSourceMatch$Missing
+  19. io.legado.app.help.book.ContentSaveFence
+  20. io.legado.app.help.book.PendingResourceChapter
+  21. io.legado.app.utils.GsonExtensionsKt
+  22. io.legado.app.utils.StringJsonDeserializer
+  23. io.legado.app.utils.IntJsonDeserializer
+  24. io.legado.app.utils.MapDeserializerDoubleAsIntFix
+  25. io.legado.app.utils.LocalDateTypeAdapter
+- The existing 15 targets remain unchanged. Capture must use quoted/escaped shell array entries for nested class names containing '$'; fail closed if any target class file is absent or appears more than once. Update the Java reflection target array and target count to 40. ChapterSourceMatch is a marker sealed interface and may legitimately declare zero methods; allow that exact target to emit a zero-method class record while retaining fail-closed checks for all other classes. Do not weaken class-file presence, hash, javap or artifact checksum checks.
+- Preserve Java reflection/Rhino JavaMembers checks already passing for the original targets. New targets must emit exact class name, declared/public/inherited method counts, synthetic/bridge/default and JavascriptInterface metadata. Fields and constructors remain fully captured by javap -p -s -v; do not describe method-only reflection rows as field reflection.
+- Allowed tracked files: .github/scripts/pinned-upstream-abi-reflection-probe.sh, .github/workflows/pinned-upstream-abi-compile.yml, this audit and docs/required/03-LEGADO-RUNTIME-OVERVIEW.md only.
+- Exclusions: no upstream/Badcat production source, test source, Gradle build definitions, dependency/plugin/module, Room/KSP/schema/database/data, manifest/license/notice/packaging/UI changes; no JSON behavioral fixture implementation in this task; no APK/R8/DEX/device task-specific work; no Stage-1 or Task 027. Existing Android workflow may execute collateral checks; do not count them as 026EK acceptance.
+- Validation: exact Badcat SHA and fixed Legado SHA; GitHub runner capacity/toolchain gate; Kotlin+Java compile; exactly one class file per target; SHA-256 and full javap output for all 40; Java reflection class records and Rhino checks; 40/40 class inventory; all internal artifact checksums; bash -n, workflow YAML parse and git diff --check.
+- Stop conditions: missing or ambiguous class path, any class identity mismatch, unresolved FQCN, malformed nested-class path, or reflection failure other than the explicitly permitted zero-method ChapterSourceMatch marker interface. Do not add stubs, copy classes, shadow models or modify upstream sources to force success.
+- Concurrent Android Debug run 46135893948 (#3708) is in progress on the preregistration start SHA 2826a346b5f1f46980605875f0f1c055ff2a5b20; record its completion separately. It is a baseline/current-HEAD integration run, not 026EK acceptance.
+- Gate at registration: Phase A OPEN; Stage-0 in_progress / NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full pinned Legado compatibility NOT ESTABLISHED.

@@ -111,7 +111,32 @@ public final class PinnedUpstreamAbiReflectionProbe {
         "io.legado.app.model.analyzeRule.RuleDataInterface",
         "io.legado.app.model.BatchContentContext",
         "io.legado.app.help.book.ContentSaveToken",
-        "io.legado.app.help.book.BookHelp"
+        "io.legado.app.help.book.BookHelp",
+        "io.legado.app.data.entities.BaseBook",
+        "io.legado.app.data.entities.Book$ReadConfig",
+        "io.legado.app.data.entities.Book$ParagraphAnchor",
+        "io.legado.app.data.entities.Book$Converters",
+        "io.legado.app.data.entities.BookSource$Converters",
+        "io.legado.app.data.entities.rule.BookListRule",
+        "io.legado.app.data.entities.rule.ExploreRule",
+        "io.legado.app.data.entities.rule.SearchRule",
+        "io.legado.app.data.entities.rule.BookInfoRule",
+        "io.legado.app.data.entities.rule.TocRule",
+        "io.legado.app.data.entities.rule.ContentRule",
+        "io.legado.app.data.entities.rule.ReviewRule",
+        "io.legado.app.help.book.ContentSaveKey",
+        "io.legado.app.help.book.ContentSaveState",
+        "io.legado.app.help.book.ChapterSourceMatch",
+        "io.legado.app.help.book.ChapterSourceMatch$Unique",
+        "io.legado.app.help.book.ChapterSourceMatch$Ambiguous",
+        "io.legado.app.help.book.ChapterSourceMatch$Missing",
+        "io.legado.app.help.book.ContentSaveFence",
+        "io.legado.app.help.book.PendingResourceChapter",
+        "io.legado.app.utils.GsonExtensionsKt",
+        "io.legado.app.utils.StringJsonDeserializer",
+        "io.legado.app.utils.IntJsonDeserializer",
+        "io.legado.app.utils.MapDeserializerDoubleAsIntFix",
+        "io.legado.app.utils.LocalDateTypeAdapter"
     };
 
     public static void main(String[] args) throws Exception {
@@ -150,7 +175,9 @@ public final class PinnedUpstreamAbiReflectionProbe {
                 + "\tpublicDeclared=" + publicCount + "\tinheritedPublic=" + inheritedPublic
                 + "\tsynthetic=" + syntheticCount + "\tbridge=" + bridgeCount
                 + "\tJavascriptInterface=" + jsCount);
-            if (declared.length == 0 || publicCount == 0) {
+            boolean permittedMarker = name.equals("io.legado.app.help.book.ChapterSourceMatch");
+            if ((declared.length == 0 && !permittedMarker)
+                || (declared.length > 0 && publicCount == 0)) {
                 throw new AssertionError("No usable declared methods found for " + name);
             }
             totalDeclared += declared.length;
@@ -361,7 +388,7 @@ else
 fi
 echo "BADCAT_COMMIT=$expected_badcat" >> "$out/reflection-result.txt"
 echo "LEGADO_COMMIT=$expected_legado" >> "$out/reflection-result.txt"
-echo "TARGET_CLASS_COUNT=15" >> "$out/reflection-result.txt"
+echo "TARGET_CLASS_COUNT=40" >> "$out/reflection-result.txt"
 if (( probe_status != 0 )); then
     echo "RHINO_JAVAMEMBERS=FAILED_DIAGNOSTIC" >> "$out/reflection-result.txt"
     exit "$probe_status"
