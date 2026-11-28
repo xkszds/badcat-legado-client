@@ -3834,3 +3834,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Allowed tracked files: audit + overview; temporary evidence /tmp/task026dt-book-data-owner-contracts/.
 - Exclusions: no source/test/Gradle/dependency/workflow/schema/database/data/manifest/license/UI changes; no build/test/CI/GitHub/push/ref update/device/live-source; no Room install or migration; no Stage-1/Task 027.
 - **Disposition:** documentation-only Phase-A data-owner contract design registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.310.
+
+
+### 4.27.267 Task 026DT result — minimal data-owner contracts and PPRule adapter (2026-11-28)
+
+- Pinned Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a; start HEAD 0347b1be01e66cb93f72523bcbf25126a14e6935; registration commit 24d3e7348060dbceab8b839ce546f40e68682390.
+- Defined BookMemo/ReadRecord/cover/RuleBigData/config/PPRule owner contracts and exact BookMemo/ReadRecord backup/restore ordering. RuleBigData remains local file data and is not in upstream standard backup.
+- PPRule can reuse FileReplaceRuleCatalog as the sole AtomicFile writer through a synchronous worker-thread DAO adapter; no parallel Room table. It must wait for finishWrite and propagate failures.
+- 33 failure-injection tests specified, not run; 31 source hashes and 12 prior-task input hashes verified. No source/schema/build/test/CI changes.
+- **Disposition:** Task 026DT accepted as static design only. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next: 026DU schema/backup/ABI closure; no Room install yet. See audit §24.311.
