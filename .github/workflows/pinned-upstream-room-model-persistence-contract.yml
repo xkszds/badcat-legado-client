@@ -1,0 +1,424 @@
+name: Pinned upstream Room and model persistence contracts
+
+on:
+  push:
+    branches: [integration/legado-upstream-runtime]
+  workflow_dispatch:
+
+concurrency:
+  group: pinned-upstream-room-model-persistence-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  room-model-persistence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out exact source and pinned submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Verify source identity and runner capacity
+        run: |
+          set -euo pipefail
+          expected_badcat="${{ github.sha }}"
+          actual_badcat="$(git rev-parse HEAD)"
+          expected_legado="330e606c4d57e08adc056ff8ab7a4132c784da9a"
+          actual_legado="$(git -C upstream/legado rev-parse HEAD)"
+          test "$actual_badcat" = "$expected_badcat"
+          test "$actual_legado" = "$expected_legado"
+          test -z "$(git -C upstream/legado status --porcelain --untracked-files=all)"
+          mkdir -p build/pinned-upstream-room-model-persistence
+          {
+            echo "BADCAT_COMMIT=$actual_badcat"
+            echo "LEGADO_COMMIT=$actual_legado"
+            echo "LEGADO_WORKTREE=CLEAN"
+          } | tee build/pinned-upstream-room-model-persistence/source-identity.txt
+
+          mem_total="$(awk '/MemTotal:/ {print $2 * 1024}' /proc/meminfo)"
+          mem_available="$(awk '/MemAvailable:/ {print $2 * 1024}' /proc/meminfo)"
+          cpu_count="$(nproc)"
+          effective_limit="$(cat /sys/fs/cgroup/memory.max 2>/dev/null || echo max)"
+          if [ "$effective_limit" = "max" ]; then
+            effective_limit="$mem_total"
+          else
+            effective_limit="$(awk -v a="$mem_total" -v b="$effective_limit" 'BEGIN {print (a < b ? a : b)}')"
+          fi
+          {
+            echo "BADCAT_COMMIT=$actual_badcat"
+            echo "RUN_ID=${{ github.run_id }}"
+            echo "MEM_TOTAL_BYTES=$mem_total"
+            echo "MEM_AVAILABLE_BYTES=$mem_available"
+            echo "EFFECTIVE_MEMORY_LIMIT_BYTES=$effective_limit"
+            echo "CPU_COUNT=$cpu_count"
+          } | tee build/pinned-upstream-room-model-persistence/runner-capacity.txt
+          test "$effective_limit" -ge 7516192768
+          test "$mem_available" -ge 6442450944
+          test "$cpu_count" -ge 2
+          echo "CAPACITY_GATE=PASS" | tee -a build/pinned-upstream-room-model-persistence/runner-capacity.txt
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Configure Android SDK command-line tools
+        run: |
+          set -euo pipefail
+          : "${ANDROID_HOME:?Android SDK is not configured}"
+          sdkmanager_path="$(find "$ANDROID_HOME/cmdline-tools" -maxdepth 3 -type f -name sdkmanager | head -n 1)"
+          test -n "$sdkmanager_path"
+          echo "$(dirname "$sdkmanager_path")" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+
+      - name: Install Android SDK platforms and build tools
+        run: sdkmanager --sdk_root="$ANDROID_HOME" --install "platforms;android-35" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle 8.14.4
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.4'
+
+      - name: Record exact toolchain
+        run: |
+          mkdir -p build/pinned-upstream-room-model-persistence
+          gradle --version | tee build/pinned-upstream-room-model-persistence/toolchain.txt
+
+      - name: Generate transient pinned Room and RuleData instrumentation probe
+        run: |
+          set -euo pipefail
+          probe="upstream/legado/app/src/androidTest/java/io/legado/app/data/RuntimeModelPersistenceProbeTest.kt"
+          test ! -e "$probe"
+          mkdir -p "$(dirname "$probe")"
+          cat > "$probe" <<'KOTLIN'
+          package io.legado.app.data
+
+          import android.content.ContentValues
+          import android.database.sqlite.SQLiteDatabase
+          import androidx.room.Room
+          import androidx.sqlite.db.SupportSQLiteDatabase
+          import androidx.test.ext.junit.runners.AndroidJUnit4
+          import androidx.test.platform.app.InstrumentationRegistry
+          import io.legado.app.data.entities.Book
+          import io.legado.app.data.entities.BookChapter
+          import io.legado.app.data.entities.BookSource
+          import io.legado.app.help.RuleBigDataHelp
+          import org.junit.Assert.assertEquals
+          import org.junit.Assert.assertNull
+          import org.junit.Assert.assertTrue
+          import org.junit.Test
+          import org.junit.runner.RunWith
+          import java.util.UUID
+
+          @RunWith(AndroidJUnit4::class)
+          class RuntimeModelPersistenceProbeTest {
+
+              private fun database(): AppDatabase {
+                  val context = InstrumentationRegistry.getInstrumentation().targetContext
+                  return Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
+                      .allowMainThreadQueries()
+                      .build()
+              }
+
+              private fun defaults(db: SupportSQLiteDatabase, table: String): Map<String, String?> {
+                  val result = linkedMapOf<String, String?>()
+                  db.query("PRAGMA table_info(" + table + ")").use { cursor ->
+                      val nameIndex = cursor.getColumnIndexOrThrow("name")
+                      val defaultIndex = cursor.getColumnIndexOrThrow("dflt_value")
+                      while (cursor.moveToNext()) {
+                          result[cursor.getString(nameIndex)] =
+                              if (cursor.isNull(defaultIndex)) null else cursor.getString(defaultIndex)
+                      }
+                  }
+                  return result
+              }
+
+              private fun insertUsingSqlDefaults(
+                  db: SupportSQLiteDatabase,
+                  table: String,
+                  primaryKey: String,
+                  id: String,
+              ) {
+                  val values = ContentValues()
+                  db.query("PRAGMA table_info(" + table + ")").use { cursor ->
+                      val nameIndex = cursor.getColumnIndexOrThrow("name")
+                      val typeIndex = cursor.getColumnIndexOrThrow("type")
+                      val notNullIndex = cursor.getColumnIndexOrThrow("notnull")
+                      val defaultIndex = cursor.getColumnIndexOrThrow("dflt_value")
+                      while (cursor.moveToNext()) {
+                          val name = cursor.getString(nameIndex)
+                          if (name == primaryKey) {
+                              values.put(name, id)
+                              continue
+                          }
+                          if (!cursor.isNull(defaultIndex) || cursor.getInt(notNullIndex) == 0) {
+                              continue
+                          }
+                          val type = cursor.getString(typeIndex).uppercase()
+                          when {
+                              type.contains("INT") -> values.put(name, 0)
+                              type.contains("REAL") || type.contains("FLOA") || type.contains("DOUB") ->
+                                  values.put(name, 0.0)
+                              type.contains("BLOB") -> values.put(name, byteArrayOf())
+                              else -> values.put(name, "probe_" + id + "_" + name)
+                          }
+                      }
+                  }
+                  val inserted = db.insert(table, SQLiteDatabase.CONFLICT_ABORT, values)
+                  assertTrue("raw SQL default insert failed for " + table, inserted != -1L)
+              }
+
+              private fun longValue(
+                  db: SupportSQLiteDatabase,
+                  sql: String,
+                  args: Array<out Any?>,
+              ): Long {
+                  db.query(sql, args).use { cursor ->
+                      assertTrue("query returned no row: " + sql, cursor.moveToFirst())
+                      return cursor.getLong(0)
+                  }
+              }
+
+              private fun intValue(
+                  db: SupportSQLiteDatabase,
+                  sql: String,
+                  args: Array<out Any?>,
+              ): Int {
+                  db.query(sql, args).use { cursor ->
+                      assertTrue("query returned no row: " + sql, cursor.moveToFirst())
+                      return cursor.getInt(0)
+                  }
+              }
+
+              @Test
+              fun roomSqlDefaultsDifferFromKotlinAndDaoDefaults() {
+                  val database = database()
+                  try {
+                      val sql = database.openHelper.writableDatabase
+                      assertEquals("0", defaults(sql, "book_sources")["enabledCookieJar"])
+                      assertEquals(true, BookSource().enabledCookieJar)
+
+                      val sourceUrl = "https://probe.invalid/sql-default/" + UUID.randomUUID()
+                      insertUsingSqlDefaults(sql, "book_sources", "bookSourceUrl", sourceUrl)
+                      assertEquals(
+                          0,
+                          intValue(sql, "SELECT enabledCookieJar FROM book_sources WHERE bookSourceUrl = ?", arrayOf(sourceUrl)),
+                      )
+
+                      val daoSourceUrl = "https://probe.invalid/dao-default/" + UUID.randomUUID()
+                      database.bookSourceDao.insert(BookSource(bookSourceUrl = daoSourceUrl))
+                      assertEquals(
+                          1,
+                          intValue(sql, "SELECT enabledCookieJar FROM book_sources WHERE bookSourceUrl = ?", arrayOf(daoSourceUrl)),
+                      )
+
+                      val bookDefaults = defaults(sql, "books")
+                      listOf("latestChapterTime", "lastCheckTime", "durChapterTime").forEach { field ->
+                          assertEquals("0", bookDefaults[field])
+                      }
+                      val constructed = Book()
+                      assertTrue(constructed.latestChapterTime > 0L)
+                      assertTrue(constructed.lastCheckTime > 0L)
+                      assertTrue(constructed.durChapterTime > 0L)
+
+                      val sqlBookUrl = "https://probe.invalid/sql-book/" + UUID.randomUUID()
+                      insertUsingSqlDefaults(sql, "books", "bookUrl", sqlBookUrl)
+                      listOf("latestChapterTime", "lastCheckTime", "durChapterTime").forEach { field ->
+                          assertEquals(
+                              0L,
+                              longValue(sql, "SELECT " + field + " FROM books WHERE bookUrl = ?", arrayOf(sqlBookUrl)),
+                          )
+                      }
+
+                      val daoBookUrl = "https://probe.invalid/dao-book/" + UUID.randomUUID()
+                      val daoBook = Book(
+                          bookUrl = daoBookUrl,
+                          name = "DAO defaults " + daoBookUrl,
+                          author = "author " + daoBookUrl,
+                      )
+                      database.bookDao.insert(daoBook)
+                      assertTrue(database.bookDao.getBook(daoBookUrl)!!.latestChapterTime > 0L)
+                      assertTrue(database.bookDao.getBook(daoBookUrl)!!.lastCheckTime > 0L)
+                      assertTrue(database.bookDao.getBook(daoBookUrl)!!.durChapterTime > 0L)
+                  } finally {
+                      database.close()
+                  }
+              }
+
+              @Test
+              fun chapterCompositeIdentityAndUniqueIndexUseReplaceSemantics() {
+                  val database = database()
+                  try {
+                      val bookAUrl = "https://probe.invalid/book-a/" + UUID.randomUUID()
+                      val bookBUrl = "https://probe.invalid/book-b/" + UUID.randomUUID()
+                      database.bookDao.insert(
+                          Book(bookUrl = bookAUrl, name = "book A " + bookAUrl, author = "author A"),
+                          Book(bookUrl = bookBUrl, name = "book B " + bookBUrl, author = "author B"),
+                      )
+                      val dao = database.bookChapterDao
+                      val sharedUrl = "https://probe.invalid/shared-chapter"
+                      dao.insert(BookChapter(url = sharedUrl, bookUrl = bookAUrl, index = 0, title = "first"))
+                      dao.insert(BookChapter(url = sharedUrl, bookUrl = bookBUrl, index = 0, title = "other book"))
+                      assertEquals(1, dao.getChapterCount(bookAUrl))
+                      assertEquals(1, dao.getChapterCount(bookBUrl))
+
+                      dao.insert(BookChapter(url = sharedUrl, bookUrl = bookAUrl, index = 1, title = "same composite key replaced"))
+                      assertEquals(1, dao.getChapterCount(bookAUrl))
+                      assertNull(dao.getChapter(bookAUrl, 0))
+                      assertEquals("same composite key replaced", dao.getChapter(bookAUrl, 1)!!.title)
+
+                      val replacementUrl = "https://probe.invalid/replacement-chapter"
+                      dao.insert(BookChapter(url = replacementUrl, bookUrl = bookAUrl, index = 1, title = "unique index replaced"))
+                      assertEquals(1, dao.getChapterCount(bookAUrl))
+                      assertEquals(replacementUrl, dao.getChapter(bookAUrl, 1)!!.url)
+                      assertEquals(1, dao.getChapterCount(bookBUrl))
+                      assertEquals(sharedUrl, dao.getChapter(bookBUrl, 0)!!.url)
+                  } finally {
+                      database.close()
+                  }
+              }
+
+              @Test
+              fun chapterBigVariableUsesFileAtTenThousandAndSupportsObjectRecreationAndDeletion() {
+                  val suffix = UUID.randomUUID().toString()
+                  val bookUrl = "https://probe.invalid/big-variable-book/" + suffix
+                  val chapterUrl = "https://probe.invalid/big-variable-chapter/" + suffix
+                  val key = "runtimePersistenceProbe"
+                  val small = "s".repeat(9999)
+                  val large = "L".repeat(10000)
+                  val chapter = BookChapter(url = chapterUrl, bookUrl = bookUrl)
+
+                  try {
+                      assertTrue(chapter.putVariable(key, small))
+                      assertEquals(small, chapter.getVariable(key))
+                      assertNull(RuleBigDataHelp.getChapterVariable(bookUrl, chapterUrl, key))
+
+                      assertTrue(chapter.putVariable(key, large))
+                      assertEquals(large, chapter.getVariable(key))
+                      assertEquals(large, RuleBigDataHelp.getChapterVariable(bookUrl, chapterUrl, key))
+                      val recreated = BookChapter(
+                          url = chapterUrl,
+                          bookUrl = bookUrl,
+                          variable = chapter.variable,
+                      )
+                      assertEquals(large, recreated.getVariable(key))
+
+                      assertTrue(recreated.putVariable(key, small))
+                      assertEquals(small, recreated.getVariable(key))
+                      assertNull(RuleBigDataHelp.getChapterVariable(bookUrl, chapterUrl, key))
+
+                      assertTrue(recreated.putVariable(key, null))
+                      assertEquals("", recreated.getVariable(key))
+                      assertNull(RuleBigDataHelp.getChapterVariable(bookUrl, chapterUrl, key))
+                  } finally {
+                      RuleBigDataHelp.putChapterVariable(bookUrl, chapterUrl, key, null)
+                  }
+              }
+          }
+          KOTLIN
+          cp "$probe" build/pinned-upstream-room-model-persistence/generated-probe.kt
+          sha256sum "$probe" | tee build/pinned-upstream-room-model-persistence/generated-probe.sha256
+          echo "GENERATED_PROBE=$probe"
+
+      - name: Enable KVM access for Android emulator
+        run: |
+          set -euo pipefail
+          test -e /dev/kvm
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          sudo chmod 0666 /dev/kvm
+          test -r /dev/kvm && test -w /dev/kvm
+
+      - name: Run exact pinned Room and RuleData instrumentation probe on API 35
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: false
+          disable-linux-hw-accel: false
+          pre-emulator-launch-script: $ANDROID_HOME/emulator/emulator -accel-check
+          script: |
+            set -euo pipefail
+            adb wait-for-device
+            test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1"
+            {
+              echo "EMULATOR_API=$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
+              echo "EMULATOR_FINGERPRINT=$(adb shell getprop ro.build.fingerprint | tr -d '\r')"
+            } | tee build/pinned-upstream-room-model-persistence/emulator-identity.txt
+            test "$(adb shell getprop ro.build.version.sdk | tr -d '\r')" = "35"
+            set +e
+            gradle --no-daemon -p upstream/legado :app:connectedAppDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.legado.app.data.RuntimeModelPersistenceProbeTest > build/pinned-upstream-room-model-persistence/gradle.log 2>&1
+            status=$?
+            set -e
+            echo "$status" > build/pinned-upstream-room-model-persistence/instrumentation-exit.txt
+            cat build/pinned-upstream-room-model-persistence/gradle.log
+            exit "$status"
+
+      - name: Finalize exact-SHA Room and RuleData evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          import shutil
+
+          root = Path("build/pinned-upstream-room-model-persistence")
+          candidates = list(Path("upstream/legado/app/build/outputs/androidTest-results/connected").rglob("*RuntimeModelPersistenceProbeTest*.xml"))
+          if len(candidates) != 1:
+              raise SystemExit(f"expected exactly one probe JUnit XML, found {len(candidates)}")
+          source = candidates[0]
+          destination = root / "RuntimeModelPersistenceProbeTest.xml"
+          shutil.copy2(source, destination)
+          suite = ET.parse(destination).getroot()
+          totals = {key: int(float(suite.attrib.get(key, 0))) for key in ("tests", "failures", "errors", "skipped")}
+          cases = [case.attrib.get("name", "") for case in suite.findall(".//testcase")]
+          if len(cases) != 3 or totals != {"tests": 3, "failures": 0, "errors": 0, "skipped": 0}:
+              raise SystemExit(f"probe tests did not all pass: totals={totals}, cases={cases}")
+          exit_file = root / "instrumentation-exit.txt"
+          if not exit_file.exists() or exit_file.read_text().strip() != "0":
+              raise SystemExit("instrumentation Gradle exit was not zero")
+          (root / "test-summary.txt").write_text(
+              "EXPECTED_TEST_COUNT=3\nFOUND_TEST_COUNT=3\nFAILURES=0\nERRORS=0\nSKIPPED=0\n"
+              "GRADLE_EXIT_CODE=0\nRESULT=PASS\n" + "\n".join("TEST_CASE=" + name for name in cases) + "\n",
+              encoding="utf-8",
+          )
+          print((root / "test-summary.txt").read_text())
+          PY
+
+      - name: Remove transient probe and verify pinned submodule clean
+        if: always()
+        run: |
+          set -euo pipefail
+          rm -f upstream/legado/app/src/androidTest/java/io/legado/app/data/RuntimeModelPersistenceProbeTest.kt
+          git -C upstream/legado diff --exit-code
+          status="$(git -C upstream/legado status --porcelain --untracked-files=all)"
+          if [ -n "$status" ]; then
+            echo "$status"
+            exit 1
+          fi
+          echo "LEGADO_WORKTREE_AFTER_PROBE=CLEAN" | tee build/pinned-upstream-room-model-persistence/submodule-cleanup.txt
+
+      - name: Generate evidence checksums
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -d build/pinned-upstream-room-model-persistence ]; then
+            find build/pinned-upstream-room-model-persistence -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 -r sha256sum > build/pinned-upstream-room-model-persistence/SHA256SUMS
+          fi
+
+      - name: Upload pinned Room and RuleData evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pinned-upstream-room-model-persistence-contract
+          path: build/pinned-upstream-room-model-persistence/**
+          if-no-files-found: warn
+          retention-days: 14
