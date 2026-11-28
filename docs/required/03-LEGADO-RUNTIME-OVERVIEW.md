@@ -3804,3 +3804,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Current Badcat has partial progress state and replace-rule catalog only; no full ReadRecord, BookMemo, Book/Chapter variable, settings or AppLog owner. No custom Application exists; new Application installation/readiness gate required.
 - 30 source hashes + 12 input hashes + output manifest verified. Docs-only; no source/Gradle/build/test/CI changes.
 - **Disposition:** Task 026DR accepted as static typed facade design. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next: 026DS owner/migration decision closure; no Room install yet. See audit §24.307.
+
+
+### 4.27.264 Task 026DS preregistration — Book model data-owner and migration decisions (2026-11-28)
+
+- Start branch integration/legado-upstream-runtime, HEAD 3d1898ad8dcf4bf8d37e8db09137b06a555ba7e0; pinned Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Compare pinned BookMemo, ReadRecord, RuleBigData, ReplaceRule and AppConfig/ReadBookConfig owners against Badcat's existing progress/history, FileReplaceRuleCatalog, reader settings, source KV/catalog and content cache.
+- Decide exact reuse/adaptation/new-owner/block status, identity keys, delete/conflict semantics, source/book mapping, backup/restore, migration/rollback and failure tests. No storage implementation.
+- Allowed tracked files: audit + overview; temporary evidence /tmp/task026ds-book-model-data-owners/.
+- Exclusions: no source/test/Gradle/dependency/workflow/schema/database/data/manifest/license/UI changes; no build/test/CI/GitHub/push/ref update/device/live-source; no Room install or migration; no Stage-1/Task 027.
+- **Disposition:** documentation-only Phase-A data-owner/migration audit registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.308.
