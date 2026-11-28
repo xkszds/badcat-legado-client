@@ -3741,3 +3741,14 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Artifacts: /tmp/task026do-book-chapter-transaction/. Key hashes: upstream contract 49a7d1499856c4493620586d49bcdf18a525703d18124ac5205ee92a5685cba6; token diff aaf5a6b7e5e4debfb08e93cd9b90cc4847b5043b626078442542506cda4426be; commit protocol 4ee94da0e793b399c62b1b983fc7e0001494029989da1a4451d7e30ff7af02f8; source manifest 78700ac79f145db3577f5adb0ad12202e477c6e801678d3bb69b696ee0ed38d2; result 022d7450be3364f6498497b6b3a6e7558747de3e25c57507c4fdbe69239a414d; output manifest ee0d19adab47758cc26f98d6f86ff88d4b113a2e3a8a8c7bce88615e9faddb69.
 - Validation: 16 source hashes, six reused inputs and all output hashes pass; pinned SHA/clean status pass; no build/test/CI.
 - Task 026DO accepted as a static persistence/transaction design only. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.301.
+
+
+### 4.27.258 Task 026DP preregistration — exact Book/Chapter metadata and content commit contracts (2026-11-28)
+
+- Start branch integration/legado-upstream-runtime, HEAD e2dbccc37010cd53c1124c33a5cf8e07a2bef410; fixed Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Specify exact typed App-owned Book/BookChapter metadata and TOC DAO/repository contracts, generation-specific content file store, journal state machine/recovery, ContentCommitCoordinator, upstream token/batch HostPort bridge and deterministic failure-injection seams.
+- Preserve exact upstream Book/BookChapter identity, chapter index and duplicate-URL ambiguity rules, folderName/version token behavior, full CoroutineContext cancellation, per-chapter token snapshots, missing-chapter fallback and event-after-commit ordering.
+- Reconcile 026DN/026DO/026DL evidence with pinned upstream callers and existing FileBookSourceCatalog/FileChapterContentCache implementations/tests. Do not repeat source/JS API inventories.
+- Allowed tracked files: audit + this overview only; temporary evidence /tmp/task026dp-book-chapter-commit-contracts/.
+- Exclusions: no production/test source, schema/database/data, Gradle/dependency/workflow, manifest/license/packaging, UI, build/test/CI/GitHub/push/ref update, device/live-source or persistence implementation; no schema freeze, Stage-1 or Task 027.
+- **Disposition:** documentation-only Phase-A contract specification registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED. See audit §24.302.
