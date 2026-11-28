@@ -388,11 +388,18 @@ jobs:
               raise SystemExit(f"expected one API23 JUnit XML, found {files}")
           target = root / "api23-patched-junit.xml"
           shutil.copy2(files[0], target)
-          suite = ET.parse(target).getroot()
-          cases = suite.findall(".//testcase")
-          totals = {k: int(suite.attrib.get(k, 0)) for k in ("tests", "failures", "errors", "skipped")}
-          if len(cases) != 1 or totals != {"tests": 1, "failures": 0, "errors": 0, "skipped": 0}:
-              raise SystemExit(f"API23 test failed: {totals}")
+          document = ET.parse(target).getroot()
+          suites = [node for node in document.iter() if node.tag.rsplit("}", 1)[-1] == "testsuite"]
+          if suites:
+              totals = {k: sum(int(float(node.attrib.get(k, 0))) for node in suites)
+                        for k in ("tests", "failures", "errors", "skipped")}
+          else:
+              totals = {k: int(float(document.attrib.get(k, 0)))
+                        for k in ("tests", "failures", "errors", "skipped")}
+          cases = [node.attrib.get("name", "") for node in document.iter()
+                   if node.tag.rsplit("}", 1)[-1] == "testcase"]
+          if cases != ["atomicUpdaterRunsOnDeviceAndPreservesWitnessSemantics"] or totals != {"tests": 1, "failures": 0, "errors": 0, "skipped": 0}:
+              raise SystemExit(f"API23 test failed: {totals}, cases={cases}")
           if (root / "api23-exit.txt").read_text().strip() != "0":
               raise SystemExit("API23 Gradle exit was not zero")
           (root / "api23-result.txt").write_text("API23_PATCHED_RUNTIME=PASS\nTESTS=1\nFAILURES=0\nERRORS=0\nSKIPPED=0\n")
@@ -447,11 +454,18 @@ jobs:
               raise SystemExit(f"expected one API35 baseline JUnit XML, found {files}")
           target = root / "api35-original-junit.xml"
           shutil.copy2(files[0], target)
-          suite = ET.parse(target).getroot()
-          cases = suite.findall(".//testcase")
-          totals = {k: int(suite.attrib.get(k, 0)) for k in ("tests", "failures", "errors", "skipped")}
-          if len(cases) != 1 or totals != {"tests": 1, "failures": 0, "errors": 0, "skipped": 0}:
-              raise SystemExit(f"API35 original baseline failed: {totals}")
+          document = ET.parse(target).getroot()
+          suites = [node for node in document.iter() if node.tag.rsplit("}", 1)[-1] == "testsuite"]
+          if suites:
+              totals = {k: sum(int(float(node.attrib.get(k, 0))) for node in suites)
+                        for k in ("tests", "failures", "errors", "skipped")}
+          else:
+              totals = {k: int(float(document.attrib.get(k, 0)))
+                        for k in ("tests", "failures", "errors", "skipped")}
+          cases = [node.attrib.get("name", "") for node in document.iter()
+                   if node.tag.rsplit("}", 1)[-1] == "testcase"]
+          if cases != ["atomicUpdaterRunsOnDeviceAndPreservesWitnessSemantics"] or totals != {"tests": 1, "failures": 0, "errors": 0, "skipped": 0}:
+              raise SystemExit(f"API35 original baseline failed: {totals}, cases={cases}")
           if (root / "api35-exit.txt").read_text().strip() != "0":
               raise SystemExit("API35 baseline Gradle exit was not zero")
           (root / "api35-result.txt").write_text("API35_ORIGINAL_BASELINE=PASS\nTESTS=1\nFAILURES=0\nERRORS=0\nSKIPPED=0\n")
