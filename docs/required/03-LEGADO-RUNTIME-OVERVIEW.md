@@ -3853,3 +3853,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Allowed tracked files: audit + overview; temporary evidence /tmp/task026du-minimal-app-schema/.
 - Exclusions: no source/test/Gradle/dependency/plugin/workflow/schema/database/data/manifest/license/UI changes; no build/test/CI/GitHub/push/ref update/device/live-source; no Room/KSP install or migration; no Stage-1/Task 027.
 - **Disposition:** documentation-only schema/ABI ownership audit registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.312.
+
+
+### 4.27.269 Task 026DU result — minimal App schema and ABI/compile ownership (2026-11-28)
+
+- Pinned Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a; start HEAD b48805f3c84bc3391871ca03660eb60ea76c347f; registration commit c98f5d96de4dccfb555de9124440ee6444b5d266.
+- Six-table Room schema candidate: Book, BookChapter, BookMemo, ReadRecord, ChapterContentRecord, ContentCommitJournal. Exact PK/index/FK/converter semantics recorded; Book 34 fields, Chapter 17, Memo 3, ReadRecord 13. No full upstream AppDatabase copy.
+- AGP/Kotlin already match upstream; KSP 2.3.12 and Room 2.8.4 are pinned upstream but absent from current root/App. Root Gradle wrapper and wrapper properties are also absent; upstream wrapper 8.14.4. App source models and Application bootstrap are not present/compiled.
+- Backup manifest has 13 entries; 12 ABI/Rhino assertions and 11 install gates. RuleBigData and content journal/cache are local-only; PPRule stays FileReplaceRuleCatalog.
+- 34 source hashes + 14 input hashes verified. No build/compile/test or source changes.
+- **Disposition:** Task 026DU accepted as static schema candidate only; Room implementation NO-GO pending recovery, startup, backup and ABI proof. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED. Next: 026DV source inclusion/AppDb facade plan. See audit §24.313.
