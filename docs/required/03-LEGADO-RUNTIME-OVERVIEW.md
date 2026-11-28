@@ -3877,3 +3877,11 @@ Runtime-3.0 master workflow §2.3 prohibits schema-v1 freeze, Room installation,
 - Explicitly no schema freeze, Room/KSP install, source/Gradle changes, build/test/CI, persistence implementation, migration or dual-write. 026DU schema inventory remains provisional only.
 - Allowed tracked files: audit + overview; temporary evidence /tmp/task026dv-runtime-core-module-decision/.
 - **Disposition:** documentation-only Runtime-3.0 architecture decision registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.315.
+
+
+### 4.27.272 Task 026DV result — Runtime-3.0 Android core module-boundary decision (2026-11-28)
+
+- Recommended Option B: new Android library :legado-core; :legado-runtime remains model-neutral typed HostPort contracts; :legado-rhino remains interpreter; :app remains Badcat UI + Android adapters; :integration-contract is temporary legacy-only; :legado-runtime-poc stays quarantined.
+- This avoids a pure-JVM/Android model mismatch, App dependency cycles and Map/Any? shadow DTOs. Proposed DAG forbids all lower-module -> App edges.
+- 32 source hashes and 22 prior-task inputs verified; 13 DAG edges, 10 port families and five module options validated. No source/module/Gradle/Room/build/test/CI changes.
+- **Disposition:** architecture direction only; implementation NO-GO pending Stage-0 source/caller/dependency/ABI/host-port closure. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED. Next: 026DW exact source/import closure. See audit §24.316.
