@@ -3661,3 +3661,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Artifacts: /tmp/task026dl-hostport-adapter-wiring/. Key hashes: bridge coverage a56263f472b6ec99e70fd08f4037a9bea378d202415c0b153429e323dac70dee; adapter ownership a67c3dc575b69971385b12282430b7a68effe26d856cd86b91eaaa4e10b4b37c; source manifest 0a53a32141489f59a2cc50cafb256656c6e0cd04d58ce1439a68aa2100cd683f; result 61422a7b8cc9a5b0316b20d2c0d735c8da110fe1008e2b77077ebfc8ceee61a3; output manifest 54ffc6aa767373cf9d25f296316522513801022f0fb66de21e16c40adc2b738f.
 - Validation: 39 source hashes, six reused input hashes and all output hashes pass; five interfaces/six methods/zero App main refs; 18 contract tests inspected, not run; 150 public/38 private bridge methods; method coverage 84/4/30, 28/2/0, 11/0/18; six runtime construction/default sites; 22 constructor defaults; 15 adapter rows.
 - Task 026DL accepted as static wiring audit only. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.295.
+
+### 4.27.252 Task 026DM preregistration — Runtime convergence route decision (2026-11-28)
+
+- Start branch integration/legado-upstream-runtime, HEAD 14a579b71a331375e394adcb8325eb93602a08ab; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Compare expanding the custom Rhino runtime, integrating the pinned upstream runtime behind App Host Ports, and a DTO/facade hybrid.
+- Preserve Badcat UI and App single-writer data ownership; require authentic BookSource/BaseSource identity at the script boundary; reuse existing App HTTP/cookie/login/file/cache adapters rather than duplicate them.
+- Reconcile module topology: legado-runtime Android library, legado-rhino Android library, integration-contract Kotlin/JVM custom contracts, and isolated legado-runtime-poc not consumed by App.
+- Deliver module/option matrix, selected route, model identity contract, adapter reuse map, rejected options and staged acceptance gates. Documentation only; no build/test/CI/source/dependency/UI changes.
+- **Disposition:** documentation-only Phase-A route decision registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED. See audit §24.296.
