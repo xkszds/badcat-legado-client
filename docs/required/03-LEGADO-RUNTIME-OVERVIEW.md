@@ -3943,3 +3943,12 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - 275 public method source declarations, 87 JavascriptInterface annotations and 204 selected annotation occurrences inventoried. No compiled javap/reflection/Rhino/R8/DEX proof was run; ABI parity remains unproven.
 - 132 source + 13 prior inputs SHA-256 verified. Documentation/evidence only; no production/build/CI changes or execution.
 - **Disposition:** Task 026DY PARTIAL / NOT ACCEPTED; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next: 026DZ method-level ownership and cycle treatment, then separately authorized compiled ABI/variant proof. See audit §24.323.
+
+
+### 4.27.280 Task 026DZ preregistration — method-level ownership and cycle decomposition (2026-11-28)
+
+- Start branch integration/legado-upstream-runtime, HEAD a77c477ee656557b5a9ad7482ce564eb56879a0e; fixed Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Inventory declarations/callers across the 132-file transitive closure; assign authentic runtime, host adapter, product UI, product-only and unresolved ownership. Map exact edges and seams in the 8-file and 4-file source SCCs.
+- Include generated Room/Parcelable/resource/plugin obligations and core/App source closure. Static only.
+- No source/test/module/Gradle/dependency/plugin/Room/KSP/schema/database/data/manifest/license/notice/packaging/UI changes; no build/compile/test/CI/GitHub/push/network/device/live-source.
+- **Disposition:** documentation-only ownership/cycle audit registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.324.
