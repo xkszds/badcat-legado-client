@@ -103,7 +103,15 @@ public final class PinnedUpstreamAbiReflectionProbe {
         "io.legado.app.help.JsExtensions",
         "io.legado.app.help.JsEncodeUtils",
         "io.legado.app.help.RegexJsExtensions",
-        "io.legado.app.model.jsSource.JsSourceEngine"
+        "io.legado.app.model.jsSource.JsSourceEngine",
+        "io.legado.app.data.entities.BookSource",
+        "io.legado.app.data.entities.Book",
+        "io.legado.app.data.entities.BookChapter",
+        "io.legado.app.model.analyzeRule.RuleData",
+        "io.legado.app.model.analyzeRule.RuleDataInterface",
+        "io.legado.app.model.BatchContentContext",
+        "io.legado.app.help.book.ContentSaveToken",
+        "io.legado.app.help.book.BookHelp"
     };
 
     public static void main(String[] args) throws Exception {
@@ -353,7 +361,7 @@ else
 fi
 echo "BADCAT_COMMIT=$expected_badcat" >> "$out/reflection-result.txt"
 echo "LEGADO_COMMIT=$expected_legado" >> "$out/reflection-result.txt"
-echo "TARGET_CLASS_COUNT=7" >> "$out/reflection-result.txt"
+echo "TARGET_CLASS_COUNT=15" >> "$out/reflection-result.txt"
 if (( probe_status != 0 )); then
     echo "RHINO_JAVAMEMBERS=FAILED_DIAGNOSTIC" >> "$out/reflection-result.txt"
     exit "$probe_status"
