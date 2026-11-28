@@ -3824,3 +3824,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Source identity uncertainty is resolved: sourceId == bookSourceUrl == Book.origin. But FileChapterContentCache stores already parsed/purified final text, not raw BookHelp content; keep cache domains separate and do not migrate it into raw content records.
 - 27 source hashes + 12 input hashes + 25 failure-injection cases; all output hashes validated. Docs-only, no build/test/CI.
 - **Disposition:** Task 026DS accepted as static owner/migration audit. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next: 026DT owner implementation contracts; no Room install yet. See audit §24.309.
+
+
+### 4.27.266 Task 026DT preregistration — minimal data-owner contracts and PPRule adapter (2026-11-28)
+
+- Start branch integration/legado-upstream-runtime, HEAD 0347b1be01e66cb93f72523bcbf25126a14e6935; pinned Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Specify minimal typed owner contracts for BookMemo, ReadRecord/cover cache, RuleBigData book/chapter variables, BookRuntimeConfig and the FileReplaceRuleCatalog-to-pinned-ReplaceRule adapter.
+- Define Book replacement/delete transactions, backup/restore ordering, config defaults, file lock/cleanup semantics, synchronous durable rule updates, error propagation and failure-injection tests. Keep all existing single-writer domains distinct.
+- Allowed tracked files: audit + overview; temporary evidence /tmp/task026dt-book-data-owner-contracts/.
+- Exclusions: no source/test/Gradle/dependency/workflow/schema/database/data/manifest/license/UI changes; no build/test/CI/GitHub/push/ref update/device/live-source; no Room install or migration; no Stage-1/Task 027.
+- **Disposition:** documentation-only Phase-A data-owner contract design registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.310.
