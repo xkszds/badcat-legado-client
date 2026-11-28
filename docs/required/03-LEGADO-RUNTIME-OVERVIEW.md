@@ -4158,3 +4158,18 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - Execute :app:testAppDebugUnitTest from upstream/legado with exact class filters; verify all eight JUnit suites, aggregate counts and zero failures/errors/skips. Capture exact source identity, runner capacity/toolchain, logs, reports and checksums.
 - No upstream or Badcat test/production source changes, no Gradle/dependency/module/schema/database/data/UI changes, no device/APK/R8/DEX, no Stage-1 or Task 027. This is an upstream behavior baseline, not proof that Badcat host adapters are equivalent.
 - 026EL registered / in progress. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.349.
+
+### 4.27.305 Task 026EL result — focused pinned upstream model/lifecycle tests (2026-11-28)
+
+- Exact Badcat SHA de4934b9770a72984ced3ec331c93e2ec977699a; fixed Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a, clean submodule. GitHub run 46142711434 / job 140971989403: SUCCESS; 11 primary steps passed. Runner 16.76 GB effective RAM / 15.76 GB available / 4 CPUs; JDK 21.0.13.1, Gradle 8.14.4, Android SDK 36.
+- Exact upstream :app:testAppDebugUnitTest with eight filters: 8/8 JUnit suites, 30 tests, 0 failures, 0 errors, 0 skipped; Gradle BUILD SUCCESSFUL (6m21s). Artifact 15261939557, 11,312 bytes, SHA-256 c2f1dbe50bdc04f7bed78cbe369dfe7b0e7d517c99bb56824dad24804ce09076; downloaded archive matched GitHub digest and all 14 internal SHA256SUMS entries passed.
+- Independent Android Debug run 46142711361 / #3710 on the same SHA: SUCCESS. Unit artifact 15263006691 SHA-256 6c4bc3ecda3e22d6c37e772cbaadc249d5d00edf1c7fd392bdf1e041965b7ed6: 43 suites / 359 tests / 0 failures/errors/skips. API 28/35 instrumentation steps, Debug APK assembly/upload and pinned RuleAnalyzer DEX class-definition check completed successfully. This is collateral integration evidence, not full Runtime or release acceptance.
+- No upstream/Badcat production or test source, Gradle/dependency/module, Room/schema/database/data/UI or packaging changes. 026EL complete for its exact eight-suite upstream test objective only. Remaining SQL defaults, Room duplicate chapter persistence, ReadConfig legacy missing/null fields and RuleData threshold/persistent storage remain untested. See audit §24.350.
+
+### 4.27.306 Task 026EM preregistration — pinned chapter-identity and ReadConfig tests (2026-11-28)
+
+- Start HEAD de4934b9770a72984ced3ec331c93e2ec977699a; fixed Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Run exactly three existing upstream App test classes without changing the submodule or test sources: io.legado.app.model.BatchContentContextTest, io.legado.app.data.entities.SimulatedReadingConfigTest, and io.legado.app.help.storage.ReadConfigRestoreOrderingTest.
+- GitHub-hosted runner only; verify exact Badcat/pinned-submodule identity, clean submodule, >=7 GiB effective RAM / >=6 GiB available / >=2 vCPU, JDK 21, Gradle 8.14.4 and Android SDK 36. Execute :app:testAppDebugUnitTest from upstream/legado with exactly three --tests filters; archive the complete log, three JUnit suites, aggregate totals, identity/capacity/toolchain and checksums.
+- Allowed changes: new .github/workflows/pinned-upstream-chapter-readconfig-contract.yml, audit and this overview only. No source/test, Gradle/dependency/module, Room/schema/database/data/UI, APK/R8/DEX/device, Stage-1 or Task 027 changes.
+- This task covers in-memory chapter identity and existing ReadConfig/restore behavior only; it does not close SQL-default, Room duplicate-persistence, missing/null ParagraphAnchor/manualReplaceRuleIds, or RuleData big-variable persistence gaps. Registered / in progress; see audit §24.351.
