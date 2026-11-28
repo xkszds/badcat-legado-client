@@ -3994,3 +3994,11 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - Resolved getWebViewUA to DeviceEnvironmentPort. Documented BaseSource inheritance, BookSource/RssSource/HttpTTS implementors, NativeBaseSource and ReadOnlyJavaObject wrapping, JS scope identity and separate WebView/App login/RSS bridges. RegexJsExtensions is ReplacePreview-only and stays App-side.
 - 18 source + nine prior inputs hash-verified. Static evidence only; no compile/javap/reflection/Rhino runtime/R8 proof.
 - **Disposition:** Task 026EB PARTIAL / NOT ACCEPTED; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next: separately register a resource-bounded pinned upstream compiled ABI/variant proof task. See audit §24.329.
+
+
+### 4.27.286 Task 026EC preregistration — capped upstream Debug compile (2026-11-28)
+
+- Start branch integration/legado-upstream-runtime, HEAD a3c869ac4efb487a550fd9666c3b74300f32728b; pinned Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Server has 1.9 GiB RAM total / 1.2 GiB available, 1.9 GiB swap and 22 GiB disk free. No upstream App class outputs exist. One bounded offline :app Debug compile only, one worker, no daemon, Kotlin in-process, 768 MiB heap / 384 MiB metaspace; stop if preflight or resource limits fail.
+- If compile succeeds, capture class hashes and javap descriptors for seven exact core JS classes. No source/Gradle/dependency changes, tests, CI, network or push.
+- **Disposition:** resource-capped ABI baseline attempt registered; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.330.
