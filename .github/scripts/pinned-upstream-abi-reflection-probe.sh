@@ -22,15 +22,22 @@ gradle.projectsEvaluated {
     app.tasks.register('writePinnedAbiCompileClasspath') {
         doLast {
             def configuration = app.configurations.getByName('appDebugCompileClasspath')
+            def artifactType = org.gradle.api.attributes.Attribute.of('artifactType', String)
+            def classpathView = configuration.incoming.artifactView {
+                attributes {
+                    attribute(artifactType, 'android-classes-jar')
+                }
+            }
             def output = new File(System.getenv('GITHUB_WORKSPACE') + '/build/pinned-upstream-abi-proof/compile-classpath.txt')
             output.parentFile.mkdirs()
-            output.text = configuration.asPath
-            println("PINNED_ABI_CLASSPATH_ENTRIES=" + configuration.files.size())
+            output.text = classpathView.files.asPath
+            println("PINNED_ABI_CLASSPATH_ENTRIES=" + classpathView.files.size())
         }
     }
 }
 GRADLE
 
+set +e
 (
     cd "$legado_root"
     gradle --no-daemon --offline --console plain --max-workers=2 \
@@ -40,8 +47,15 @@ GRADLE
         -I "$out/abi-classpath.init.gradle" \
         :app:writePinnedAbiCompileClasspath
 ) > "$out/reflection-classpath-gradle.log" 2>&1
+gradle_status=$?
+set -e
 cat "$out/reflection-classpath-gradle.log"
+if [[ "$gradle_status" -ne 0 ]]; then
+    echo "ABI_CLASSPATH_RESOLUTION=FAILED" | tee "$out/reflection-classpath-summary.txt"
+    exit "$gradle_status"
+fi
 test -s "$out/compile-classpath.txt"
+echo "ABI_CLASSPATH_RESOLUTION=PASS" | tee "$out/reflection-classpath-summary.txt"
 
 android_jar="$ANDROID_HOME/platforms/android-36/android.jar"
 test -s "$android_jar"

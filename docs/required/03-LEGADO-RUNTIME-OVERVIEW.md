@@ -4040,3 +4040,11 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - Allowed: audit, required overview, .github/workflows/pinned-upstream-abi-compile.yml, one focused .github/scripts/pinned-upstream-abi-reflection-probe.sh; no upstream source or production source changes.
 - Preserve GitHub capacity gate, fixed upstream SHA, exact-HEAD artifact and fail-closed classpath/probe handling. No R8/DEX/APK/device, source migration, Stage-1 or Task 027.
 - Disposition at registration: Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.334.
+
+
+### 4.27.291 Task 026EE interim result — 233 source-to-bytecode mappings and GitHub probe diagnosis
+
+- Static reconciliation of all 233 026EB source method rows against pinned 026ED javap output now yields 233 unique compiled JVM descriptors, 0 ambiguous and 0 unresolved. Seven historical source arity cells were corrected in a separate derived ledger; five suspend Continuation expansions, three Kotlin internal-name manglings and ten parameter-type overload disambiguations are explicit. Also recorded: three @JvmOverloads additions and 16 Kotlin $default helpers. Original historical ledger unchanged.
+- Server evidence directory: /tmp/task026ee-compiled-abi-reconciliation/. Reconciliation TSV SHA-256 897b2feb868ce639414fa29288420de68fa603df0660aa16fbc28acd96c1a237; corrected ledger SHA-256 009d1d438a2dda88582109e286bb1da16f11338e423dee7a035d880542088ea5.
+- GitHub run 46125701798 / #2, exact HEAD f65972d2d202a885978fb9a4fd1a7839dd44c10d: pinned upstream App compile PASS (3m46s), seven class descriptor capture PASS; Java/Rhino step failed before reflection because direct appDebugCompileClasspath resolution hit AGP artifact variant ambiguity for modules:book and modules:rhino. Artifact 15255826644 SHA-256 3e46d32619828076a321d8e7eee52636e5397a86fa8226056b86786316b4fce3 contains failure log and successful compile evidence.
+- Corrective retry uses artifactView with artifactType android-classes-jar and exposes the Gradle log on failure. No production source changes. Task 026EE remains in progress; Stage-0 not accepted. See audit §24.335.
