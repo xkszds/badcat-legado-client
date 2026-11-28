@@ -4048,3 +4048,11 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - Server evidence directory: /tmp/task026ee-compiled-abi-reconciliation/. Reconciliation TSV SHA-256 897b2feb868ce639414fa29288420de68fa603df0660aa16fbc28acd96c1a237; corrected ledger SHA-256 009d1d438a2dda88582109e286bb1da16f11338e423dee7a035d880542088ea5.
 - GitHub run 46125701798 / #2, exact HEAD f65972d2d202a885978fb9a4fd1a7839dd44c10d: pinned upstream App compile PASS (3m46s), seven class descriptor capture PASS; Java/Rhino step failed before reflection because direct appDebugCompileClasspath resolution hit AGP artifact variant ambiguity for modules:book and modules:rhino. Artifact 15255826644 SHA-256 3e46d32619828076a321d8e7eee52636e5397a86fa8226056b86786316b4fce3 contains failure log and successful compile evidence.
 - Corrective retry uses artifactView with artifactType android-classes-jar and exposes the Gradle log on failure. No production source changes. Task 026EE remains in progress; Stage-0 not accepted. See audit §24.335.
+
+
+### 4.27.292 Task 026EE attempt 2 — artifact-view fixed; Java compile output missing
+
+- GitHub run 46126188190, exact HEAD 74b87102c74792a62973e61593e35242dfc63069, fixed Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a. Upstream App Kotlin compile and seven-class javap capture PASS; android-classes-jar artifact view PASS (224 entries; 228 assembled classpath entries).
+- Probe then failed before reflection: `NoClassDefFoundError: io/legado/app/model/analyzeRule/QueryTTF`. The class is an App Java source at `app/src/main/java/io/legado/app/model/analyzeRule/QueryTTF.java`; Kotlin-only compilation does not produce it.
+- Corrective change adds `:app:compileAppDebugJavaWithJavac`, includes the exact App javac classes output directory, and requires/hashes `QueryTTF.class` before running reflection. Workflow YAML parse, helper `bash -n`, and `git diff --check` pass. No production/upstream source or local build change.
+- Task 026EE remains IN_PROGRESS / NOT ACCEPTED pending the next exact-SHA GitHub Java reflection + Rhino JavaMembers run. Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.335.1.

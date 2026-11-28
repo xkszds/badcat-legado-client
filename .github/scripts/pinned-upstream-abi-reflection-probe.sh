@@ -61,9 +61,13 @@ android_jar="$ANDROID_HOME/platforms/android-36/android.jar"
 test -s "$android_jar"
 app_classes="$legado_root/app/build/tmp/kotlin-classes/appDebug"
 test -d "$app_classes"
+app_javac_classes="$legado_root/app/build/intermediates/javac/appDebug/compileAppDebugJavaWithJavac/classes"
+test -d "$app_javac_classes"
+test -s "$app_javac_classes/io/legado/app/model/analyzeRule/QueryTTF.class"
+sha256sum "$app_javac_classes/io/legado/app/model/analyzeRule/QueryTTF.class" | tee "$out/queryttf-class-sha256.txt"
 
 classpath="$(cat "$out/compile-classpath.txt")"
-classpath="$classpath:$android_jar:$app_classes"
+classpath="$classpath:$android_jar:$app_classes:$app_javac_classes"
 for classes_dir in "$legado_root"/app/build/intermediates/javac/appDebug/*/classes; do
     if [[ -d "$classes_dir" ]]; then classpath="$classpath:$classes_dir"; fi
 done
@@ -71,7 +75,7 @@ for module_jar in "$legado_root"/modules/*/build/intermediates/compile_library_c
     if [[ -f "$module_jar" ]]; then classpath="$classpath:$module_jar"; fi
 done
 printf 'CLASSPATH_ENTRY_COUNT=%s\n' "$(tr ':' '\n' <<< "$classpath" | wc -l)" | tee "$out/reflection-classpath-summary.txt"
-printf 'ANDROID_JAR=%s\nAPP_CLASSES=%s\n' "$android_jar" "$app_classes" >> "$out/reflection-classpath-summary.txt"
+printf 'ANDROID_JAR=%s\nAPP_CLASSES=%s\nAPP_JAVAC_CLASSES=%s\n' "$android_jar" "$app_classes" "$app_javac_classes" >> "$out/reflection-classpath-summary.txt"
 sha256sum "$out/compile-classpath.txt" "$out/abi-classpath.init.gradle" > "$out/reflection-classpath-SHA256SUMS.txt"
 
 cat > "$out/PinnedUpstreamAbiReflectionProbe.java" <<'JAVA'

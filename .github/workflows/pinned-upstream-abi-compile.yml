@@ -119,7 +119,7 @@ jobs:
           } > build/pinned-upstream-abi-proof/toolchain.txt 2>&1
           cat build/pinned-upstream-abi-proof/toolchain.txt
 
-      - name: Compile only pinned upstream App Debug Kotlin
+      - name: Compile pinned upstream App Debug Kotlin and Java
         id: upstream-compile
         shell: bash
         working-directory: upstream/legado
@@ -132,7 +132,7 @@ jobs:
             --max-workers=2 -Dorg.gradle.parallel=false \
             -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" \
             -Pkotlin.compiler.execution.strategy=in-process \
-            :app:compileAppDebugKotlin > "$out/compileAppDebugKotlin.log" 2>&1
+            :app:compileAppDebugKotlin :app:compileAppDebugJavaWithJavac > "$out/compileAppDebugKotlin.log" 2>&1
           compile_status=$?
           set -e
           echo "GRADLE_EXIT_CODE=$compile_status" | tee "$out/compile-exit.txt"
@@ -142,6 +142,8 @@ jobs:
             exit "$compile_status"
           fi
           grep -qE '^> Task :app:compileAppDebugKotlin$' "$out/compileAppDebugKotlin.log"
+          grep -qE '^> Task :app:compileAppDebugJavaWithJavac$' "$out/compileAppDebugKotlin.log"
+          echo "COMPILE_TASKS=:app:compileAppDebugKotlin,:app:compileAppDebugJavaWithJavac" | tee "$out/compile-tasks.txt"
           echo "RESULT=COMPILE_PASS" | tee "$out/compile-result.txt"
 
       - name: Capture pinned upstream class hashes and JVM descriptors
