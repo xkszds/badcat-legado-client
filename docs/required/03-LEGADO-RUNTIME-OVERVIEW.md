@@ -3925,3 +3925,12 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - Full CoroutineContext/cancellation, HTTP Response close/cancel, Cookie/WebView synchronization and typed HiddenWebView JS bootstrap remain open. No build/compile/test/CI proof; static design only.
 - 49 source files + 15 prior-task inputs SHA-256 verified. No source/module/Gradle/dependency/schema/data changes.
 - **Disposition:** Task 026DX accepted as static dependency/ABI catalog only; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next: 026DY exact transitive import and ABI proof closure. See audit §24.321.
+
+
+### 4.27.278 Task 026DY preregistration — exact import and ABI proof closure (2026-11-28)
+
+- Start branch integration/legado-upstream-runtime, HEAD a75daf79e776cf3ccb2e2cfb14495c9553f48873; pinned Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Resolve every import edge from the 33 pinned source DAG entries, transitive module/dependency visibility, exact public JVM/Rhino descriptors, overloads/defaults/nullability/serialization/reflection and caller entry points.
+- Produce exact import, dependency graph, unresolved roots, Gradle visibility, ABI inventory, reproducible proof commands and GO/NO-GO gates. Static only.
+- No source/test/module/Gradle/dependency/plugin/workflow/Room/KSP/schema/database/data/manifest/license/notice/packaging/UI changes; no build/compile/test/CI/GitHub/push/ref update/network/device/live-source.
+- **Disposition:** documentation-only Stage-0 import/ABI proof audit registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.322.
