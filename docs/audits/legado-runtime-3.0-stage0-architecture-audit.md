@@ -9025,3 +9025,24 @@ The 026DV overview preregistration's phrase “existing pure-JVM runtime” was 
 - Corrective action: extend the bounded compile invocation to run `:app:compileAppDebugJavaWithJavac` after `:app:compileAppDebugKotlin`; add the exact app javac output directory to the reflection classpath; fail closed unless the generated `QueryTTF.class` exists and record its SHA-256. This remains within the existing 026EE workflow/helper scope.
 - Local validation: `bash -n .github/scripts/pinned-upstream-abi-reflection-probe.sh` PASS; PyYAML parse of the workflow PASS; `git diff --check` PASS. No local Gradle compile, upstream source change, production source change, APK/R8/DEX/device test.
 - Task 026EE remains IN_PROGRESS / NOT ACCEPTED until a new exact-SHA GitHub run completes Java reflection and Rhino JavaMembers checks. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full pinned Legado compatibility NOT ESTABLISHED.
+
+
+## 24.336 Task 026EF preregistration — pinned Rhino delegated-method overload probe
+
+- Task ID: R3-S0-T026-PHASE-A-RHINO-CATCHABLE-FUNCTION-DELEGATE-OVERLOAD-PROBE-026EF; registered / in_progress.
+- Start branch/HEAD: integration/legado-upstream-runtime / 964047a7007566d6ef1bcc0102777a994b4b9c09. Pinned Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- Trigger: GitHub run `46126883833` (#4) passed runner/source identity, upstream Kotlin+Java compile, seven-class javap capture, classpath export, QueryTTF output and Java reflection (1,163 declared method rows; 1,110 public declarations; 382 synthetic; 301 JavascriptInterface). Rhino probe failed because `CatchableJavaFunction` delegates to a NativeJavaMethod through its private `function` field, while the probe searched only the wrapper hierarchy for MemberBox arrays.
+- Goal: unwrap the actual delegated NativeJavaMethod and inspect its overload table; retain fail-closed Rhino JavaMembers property, required-function, bean-filter and overload checks. Record both Kotlin and Java compile tasks in ABI metadata.
+- Allowed files: `.github/scripts/pinned-upstream-abi-reflection-probe.sh`, `.github/workflows/pinned-upstream-abi-compile.yml`, audit and required overview only.
+- Exclusions: no upstream/production source, tests, Gradle build files, module/dependency/plugin, data/schema/database, manifest/license/notice/packaging/UI changes; no local compile, APK/R8/DEX/device test, Stage-1 or Task 027.
+- Validation: exact SHA and fixed submodule; helper bash syntax, workflow YAML parse and diff check; new exact-SHA GitHub run must pass Kotlin+Java compile, seven-class descriptors, Java reflection and Rhino JavaMembers checks.
+- Gate: Task 026EE IN_PROGRESS / NOT ACCEPTED; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+## 24.337 Task 026EE attempt 3 result — Java outputs fixed; Rhino wrapper delegate not unwrapped
+
+- Exact identity: GitHub run `46126883833` (#4), Badcat HEAD `964047a7007566d6ef1bcc0102777a994b4b9c09`, fixed Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- Passed: runner 16 GiB RAM / 4 vCPU; source/submodule identity; JDK 21.0.13, Gradle 8.14.4, Android SDK 36; App Kotlin and Java compile; seven target class hashes and javap descriptors; 224-entry Android compile artifact view and 228-entry runtime classpath; QueryTTF.class; Java reflection across seven classes (1,163 declared methods, 1,110 public declared, 382 synthetic, 301 JavascriptInterface).
+- Failed: Rhino lookup returned `com.script.rhino.CatchableJavaFunction`. Pinned `CatchableJavaMethodCache` stores a `NativeJavaMethod` and a delegated `Function`; `CatchableJavaFunction` uses Kotlin `Function by function`. The probe inspected the wrapper rather than the delegated NativeJavaMethod. This is a probe introspection defect, not evidence of missing Rhino functions or upstream ABI mismatch. Overload checks did not complete.
+- Artifact: ID `15256088190`, 377526 bytes, archive SHA-256 `c93ec34790fa5f67453361a69a8d19ced9909229d27c915cd9df6bb256783267`.
+- Correction registered as 026EF: unwrap the delegate by inspecting wrapper instance fields (prefer `function`) and count the overload table on the underlying NativeJavaMethod; record both compile task names. Local helper bash syntax, workflow YAML parse and diff check pass.
+- Disposition: 026EE IN_PROGRESS / NOT ACCEPTED. Java reflection passed for this SHA; Rhino JavaMembers overload verification remains incomplete. No R8/DEX/APK/device/runtime behavior proof. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.

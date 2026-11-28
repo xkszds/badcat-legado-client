@@ -176,7 +176,7 @@ jobs:
             echo "RESULT=ABI_CAPTURE_PASS"
             echo "BADCAT_COMMIT=$GITHUB_SHA"
             echo "LEGADO_COMMIT=330e606c4d57e08adc056ff8ab7a4132c784da9a"
-            echo "COMPILED_TASK=:app:compileAppDebugKotlin"
+            echo "COMPILED_TASKS=:app:compileAppDebugKotlin,:app:compileAppDebugJavaWithJavac"
             echo "ABI_CLASS_COUNT=${#classes[@]}"
             sha256sum "$out"/javap/*.javap.txt
           } | tee "$out/abi-result.txt"

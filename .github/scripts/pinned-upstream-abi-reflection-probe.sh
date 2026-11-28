@@ -241,18 +241,44 @@ public final class PinnedUpstreamAbiReflectionProbe {
     }
 
     private static int nativeJavaMethodOverloadCount(Object function) throws Exception {
-        for (Class<?> current = function.getClass(); current != null; current = current.getSuperclass()) {
+        Object nativeMethod = findNativeJavaMethod(function, 0);
+        if (nativeMethod == null) {
+            throw new AssertionError("Rhino NativeJavaMethod delegate not found behind "
+                + function.getClass().getName());
+        }
+        for (Class<?> current = nativeMethod.getClass(); current != null; current = current.getSuperclass()) {
             for (Field field : current.getDeclaredFields()) {
                 if (!field.getType().isArray()) continue;
                 String component = field.getType().getComponentType().getName();
                 if (!component.endsWith("MemberBox")) continue;
                 field.setAccessible(true);
-                Object values = field.get(function);
+                Object values = field.get(nativeMethod);
                 return Array.getLength(values);
             }
         }
-        throw new AssertionError("Rhino NativeJavaMethod MemberBox[] overload table not found on "
-            + function.getClass().getName());
+        throw new AssertionError("Rhino NativeJavaMethod MemberBox[] overload table not found on delegate "
+            + nativeMethod.getClass().getName());
+    }
+
+    private static Object findNativeJavaMethod(Object value, int depth) throws Exception {
+        if (value == null || depth > 5) return null;
+        Class<?> type = value.getClass();
+        if (type.getName().endsWith(".NativeJavaMethod")) return value;
+        for (Class<?> current = type; current != null; current = current.getSuperclass()) {
+            Field[] fields = current.getDeclaredFields();
+            Arrays.sort(fields, Comparator.comparing((Field f) -> !f.getName().equals("function"))
+                .thenComparing(Field::getName));
+            for (Field field : fields) {
+                if (java.lang.reflect.Modifier.isStatic(field.getModifiers())
+                    || field.getType().isPrimitive() || field.getType().isArray()) continue;
+                field.setAccessible(true);
+                Object nested = field.get(value);
+                if (nested == null || nested == value) continue;
+                Object found = findNativeJavaMethod(nested, depth + 1);
+                if (found != null) return found;
+            }
+        }
+        return null;
     }
 }
 JAVA

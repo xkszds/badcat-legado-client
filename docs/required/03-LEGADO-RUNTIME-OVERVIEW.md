@@ -4056,3 +4056,11 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - Probe then failed before reflection: `NoClassDefFoundError: io/legado/app/model/analyzeRule/QueryTTF`. The class is an App Java source at `app/src/main/java/io/legado/app/model/analyzeRule/QueryTTF.java`; Kotlin-only compilation does not produce it.
 - Corrective change adds `:app:compileAppDebugJavaWithJavac`, includes the exact App javac classes output directory, and requires/hashes `QueryTTF.class` before running reflection. Workflow YAML parse, helper `bash -n`, and `git diff --check` pass. No production/upstream source or local build change.
 - Task 026EE remains IN_PROGRESS / NOT ACCEPTED pending the next exact-SHA GitHub Java reflection + Rhino JavaMembers run. Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.335.1.
+
+
+### 4.27.293 Task 026EE attempt 3 — Java reflection passed; Rhino wrapper unwrapping required
+
+- GitHub run `46126883833` (#4), exact Badcat SHA `964047a7007566d6ef1bcc0102777a994b4b9c09`, fixed Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- Upstream App Kotlin and Java compile PASS; seven class hashes/javap descriptors PASS; `QueryTTF.class` present; classpath artifact view 224 entries / assembled runtime 228 entries. Java reflection PASS for seven target classes: 1,163 declared methods, 1,110 public declared, 382 synthetic, 301 `@JavascriptInterface`.
+- Rhino probe failed because `CatchableJavaFunction` delegates to a private `NativeJavaMethod function`, but the probe searched the wrapper for `MemberBox[]`. This is a probe defect, not a proven Rhino compatibility failure. Artifact 15256088190, archive SHA-256 `c93ec34790fa5f67453361a69a8d19ced9909229d27c915cd9df6bb256783267`.
+- Task 026EF registers a bounded probe-only correction to unwrap the delegate and inspect its overload table; both Kotlin and Java compile tasks will be recorded. No production/upstream source changes. Task 026EE remains IN_PROGRESS / NOT ACCEPTED pending successful Rhino verification. Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED. See audit §§24.336–24.337.
