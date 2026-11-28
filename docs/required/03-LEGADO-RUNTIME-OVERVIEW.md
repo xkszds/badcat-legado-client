@@ -3890,3 +3890,12 @@ Runtime-3.0 master workflow §2.3 prohibits schema-v1 freeze, Room installation,
 ### 4.27.273 Clarification — :legado-runtime module type
 
 Correction to the 026DV preregistration wording: :legado-runtime is an Android library module with a model-neutral HostPort API surface, not a pure-JVM module. :integration-contract is the JVM module. The recommended module boundary in audit §24.316 already reflects this exact distinction.
+
+
+### 4.27.274 Task 026DW preregistration — exact core source/import closure and global-to-port mapping (2026-11-28)
+
+- Start branch integration/legado-upstream-runtime, HEAD 06ca3d40e27705b3f6fbec46a59f8096aa9324a0; pinned Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Map every pinned source import and global service reference (appCtx, appDb, AppConfig, AppLog, network, CookieStore, files/cache/archive, WebView/browser/CAPTCHA, UI/events, device/font/concurrency, JS scope/batch/token) to one core utility or typed HostPort with exact callers and unresolved blockers.
+- Preserve :legado-core -> :legado-runtime/:legado-rhino DAG; no core -> App, no Map/Any?, no no-op. No schema freeze, Room/KSP, module creation, source changes, build/test/CI, migration or dual-write.
+- Allowed tracked files: audit + overview; temporary evidence /tmp/task026dw-core-source-port-closure/.
+- **Disposition:** documentation-only Runtime-3.0 source/import/port closure registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.318.
