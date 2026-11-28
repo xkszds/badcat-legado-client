@@ -3670,3 +3670,16 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Reconcile module topology: legado-runtime Android library, legado-rhino Android library, integration-contract Kotlin/JVM custom contracts, and isolated legado-runtime-poc not consumed by App.
 - Deliver module/option matrix, selected route, model identity contract, adapter reuse map, rejected options and staged acceptance gates. Documentation only; no build/test/CI/source/dependency/UI changes.
 - **Disposition:** documentation-only Phase-A route decision registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED. See audit §24.296.
+
+
+### 4.27.253 Task 026DM result — Runtime convergence route selected (2026-11-28)
+
+- Pinned Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a; start Badcat HEAD 14a579b71a331375e394adcb8325eb93602a08ab.
+- Module topology: :app consumes :integration-contract, :legado-runtime and :legado-rhino; not :legado-runtime-poc. :legado-runtime is an Android library but currently compiles only seven upstream rule models + GsonExtensions, not the core BaseSource/BookSource/Book/Chapter/AnalyzeRule/AnalyzeUrl/JS runtime. :integration-contract is JVM/custom DTO contract. :legado-runtime-poc is quarantined and not an App dependency.
+- Upstream BookSource is Parcelable + Room @Entity and implements BaseSource. BaseSource extends JsExtensions but directly depends on AppConfig, CookieStore, CacheManager, ConcurrentRateLimiter and SharedJsScope. Exact source placement requires typed ports and Room/helper closure.
+- **Selected route:** direct pinned upstream runtime source closure behind typed App Host Ports in :legado-runtime (or an equally acyclic Android runtime source set). Reject expanding the custom Rhino runtime, DTO/facade as core source object, or importing the entire upstream app.
+- App remains sole persistence writer and UI owner. One live upstream BookSource/BaseSource/Book/BookChapter graph must reach Rhino; no Map/custom DTO at the script boundary. Existing OkHttp/cookie/login/key-value/file-cache/rate-limit/device adapters should be reused behind ports. Room KSP consumption of a library-defined BookSource is an explicit compile gate.
+- Next stages: exact module/source manifest; HostPort contract; source closure compile; App adapter wiring; JVM/Rhino/R8 ABI; batch/content transactions; semantic/security/cancellation/UI parity; native provenance/SBOM/licenses; exact-head Stage-0 bundle.
+- Artifacts: /tmp/task026dm-runtime-convergence/. Key hashes: module topology 4837c454ab45c7dffeec4d18732ecb4959e40bc225a01ae86a3487ca01b83bfd; route decision 2dc9bb054067646bd773c689a81903edcde100d8c715e17dbbc25730360e9caf; model identity fb06dc5e7d84dbf0fdff7763e36f8f33fa57d55559ce9c6659a49c4ead76b1cb; source manifest da97953bc62d433c7e55d322daa84cff68e052edc69be1463ff25a9de4690ef0; result 1e1ced178f00e3381d156ac2a7f1d374b203a6d3dd6784f08d5864f3bb1d32e2; output manifest ad40b671eb1f81600184d84c5fd512ed74511519e0a437076f64cfc6ce55e76d.
+- Validation: 27 source hashes, nine reused input hashes and all output hashes pass; pinned SHA/clean status pass.
+- Task 026DM accepted as a static route decision only. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.297.
