@@ -3978,3 +3978,11 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - Made 24 focused ownership decisions for BookHelp/BookExtensions/RuleBigDataHelp/CacheManager/SourceHelp/SourceVerificationHelp/InfoMap/ConcurrentRateLimiter/SourceNavigationPolicy. Preserved distinctions between source variable storage, cache, InfoMap identity, verification flights, catalog lifecycle and product-only RSS/video.
 - 132 source + eight prior inputs SHA-256 verified. No production/build/test/CI changes.
 - **Disposition:** Task 026EA PARTIAL / NOT ACCEPTED; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next: 026EB exact method split for core JS/BaseSource/AnalyzeRule surfaces. See audit §24.327.
+
+
+### 4.27.284 Task 026EB preregistration — BaseSource/AnalyzeRule/JS method ownership (2026-11-28)
+
+- Start branch integration/legado-upstream-runtime, HEAD 5ca9a3b024760a445bb043a5f059393af4f6f3e5; fixed Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Method-level ownership for BaseSource, AnalyzeRule/AnalyzeUrl, JsExtensions/JsEncodeUtils/RegexJsExtensions and JsSourceEngine; include subclass/override, direct callers, Rhino/JS binding, overload/default/null and host-port boundaries.
+- No source/test/module/Gradle/dependency/plugin/Room/KSP/schema/database/data/manifest/license/notice/packaging/UI changes; no build/test/CI/GitHub/push/network/device/live-source.
+- **Disposition:** documentation-only core JS API ownership audit registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.328.
