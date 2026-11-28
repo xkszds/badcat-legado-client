@@ -3843,3 +3843,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - PPRule can reuse FileReplaceRuleCatalog as the sole AtomicFile writer through a synchronous worker-thread DAO adapter; no parallel Room table. It must wait for finishWrite and propagate failures.
 - 33 failure-injection tests specified, not run; 31 source hashes and 12 prior-task input hashes verified. No source/schema/build/test/CI changes.
 - **Disposition:** Task 026DT accepted as static design only. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next: 026DU schema/backup/ABI closure; no Room install yet. See audit §24.311.
+
+
+### 4.27.268 Task 026DU preregistration — minimal App schema and ABI/compile ownership (2026-11-28)
+
+- Start branch integration/legado-upstream-runtime, HEAD b48805f3c84bc3391871ca03660eb60ea76c347f; pinned Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Freeze a minimal Room schema candidate, exact keys/indexes/FKs/converters, dependency/plugin ownership, module direction, backup/restore manifest and public/JVM/Rhino ABI assertions before storage code.
+- Keep PPRule on FileReplaceRuleCatalog, RuleBigData file-backed, BookRuntimeConfig preferences-backed, and Badcat progress/parsed cache separate. No Room/KSP installation or implementation.
+- Allowed tracked files: audit + overview; temporary evidence /tmp/task026du-minimal-app-schema/.
+- Exclusions: no source/test/Gradle/dependency/plugin/workflow/schema/database/data/manifest/license/UI changes; no build/test/CI/GitHub/push/ref update/device/live-source; no Room/KSP install or migration; no Stage-1/Task 027.
+- **Disposition:** documentation-only schema/ABI ownership audit registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.312.
