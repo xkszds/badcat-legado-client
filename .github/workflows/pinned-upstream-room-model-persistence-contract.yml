@@ -344,22 +344,7 @@ jobs:
           disable-animations: false
           disable-linux-hw-accel: false
           pre-emulator-launch-script: $ANDROID_HOME/emulator/emulator -accel-check
-          script: |
-            set -euo pipefail
-            adb wait-for-device
-            test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1"
-            {
-              echo "EMULATOR_API=$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
-              echo "EMULATOR_FINGERPRINT=$(adb shell getprop ro.build.fingerprint | tr -d '\r')"
-            } | tee build/pinned-upstream-room-model-persistence/emulator-identity.txt
-            test "$(adb shell getprop ro.build.version.sdk | tr -d '\r')" = "35"
-            set +e
-            gradle --no-daemon -p upstream/legado :app:connectedAppDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.legado.app.data.RuntimeModelPersistenceProbeTest > build/pinned-upstream-room-model-persistence/gradle.log 2>&1
-            status=$?
-            set -e
-            echo "$status" > build/pinned-upstream-room-model-persistence/instrumentation-exit.txt
-            cat build/pinned-upstream-room-model-persistence/gradle.log
-            exit "$status"
+          script: bash -c 'set -euo pipefail; adb wait-for-device; test "$(adb shell getprop sys.boot_completed | tr -d "\r")" = "1"; echo "EMULATOR_API=$(adb shell getprop ro.build.version.sdk | tr -d "\r")" | tee build/pinned-upstream-room-model-persistence/emulator-identity.txt; echo "EMULATOR_FINGERPRINT=$(adb shell getprop ro.build.fingerprint | tr -d "\r")" | tee -a build/pinned-upstream-room-model-persistence/emulator-identity.txt; test "$(adb shell getprop ro.build.version.sdk | tr -d "\r")" = "35"; set +e; gradle --no-daemon -p upstream/legado :app:connectedAppDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.legado.app.data.RuntimeModelPersistenceProbeTest > build/pinned-upstream-room-model-persistence/gradle.log 2>&1; status=$?; set -e; echo "$status" > build/pinned-upstream-room-model-persistence/instrumentation-exit.txt; cat build/pinned-upstream-room-model-persistence/gradle.log; exit "$status"'
 
       - name: Finalize exact-SHA Room and RuleData evidence
         if: always()
