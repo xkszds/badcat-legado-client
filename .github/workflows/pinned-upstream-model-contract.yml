@@ -1,0 +1,228 @@
+name: Pinned upstream model and lifecycle contract tests
+
+on:
+  push:
+    branches:
+      - integration/legado-upstream-runtime
+    paths:
+      - '.github/workflows/pinned-upstream-model-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pinned-upstream-model-contract-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  upstream-model-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      GRADLE_USER_HOME: ${{ github.workspace }}/.gradle-user-home
+    steps:
+      - name: Check out exact source and pinned submodules
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          submodules: recursive
+
+      - name: Preflight runner capacity before Gradle
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="build/pinned-upstream-model-contract"
+          mkdir -p "$out"
+          mem_total_kib="$(awk '$1 == "MemTotal:" {print $2}' /proc/meminfo)"
+          mem_available_kib="$(awk '$1 == "MemAvailable:" {print $2}' /proc/meminfo)"
+          effective_limit_bytes=$((mem_total_kib * 1024))
+          cgroup_limit="unlimited"
+          if [[ -r /sys/fs/cgroup/memory.max ]]; then
+            raw_limit="$(cat /sys/fs/cgroup/memory.max)"
+            if [[ "$raw_limit" =~ ^[0-9]+$ ]]; then
+              cgroup_limit="$raw_limit"
+              if (( raw_limit < effective_limit_bytes )); then effective_limit_bytes="$raw_limit"; fi
+            fi
+          elif [[ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ]]; then
+            raw_limit="$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes)"
+            if [[ "$raw_limit" =~ ^[0-9]+$ ]] && (( raw_limit < 1000000000000000 )); then
+              cgroup_limit="$raw_limit"
+              if (( raw_limit < effective_limit_bytes )); then effective_limit_bytes="$raw_limit"; fi
+            fi
+          fi
+          cpu_count="$(nproc)"
+          {
+            echo "BADCAT_COMMIT=$GITHUB_SHA"
+            echo "RUN_ID=$GITHUB_RUN_ID"
+            echo "RUNNER_OS=$RUNNER_OS"
+            echo "RUNNER_ARCH=$RUNNER_ARCH"
+            echo "MEM_TOTAL_BYTES=$((mem_total_kib * 1024))"
+            echo "MEM_AVAILABLE_BYTES=$((mem_available_kib * 1024))"
+            echo "CGROUP_MEMORY_LIMIT_BYTES=$cgroup_limit"
+            echo "EFFECTIVE_MEMORY_LIMIT_BYTES=$effective_limit_bytes"
+            echo "CPU_COUNT=$cpu_count"
+          } | tee "$out/runner-capacity.txt"
+          if (( effective_limit_bytes < 7516192768 || mem_available_kib * 1024 < 6442450944 || cpu_count < 2 )); then
+            echo "CAPACITY_GATE=FAIL (requires >=7 GiB effective, >=6 GiB available RAM and >=2 vCPU)" | tee -a "$out/runner-capacity.txt"
+            exit 78
+          fi
+          echo "CAPACITY_GATE=PASS" | tee -a "$out/runner-capacity.txt"
+
+      - name: Verify exact source and fixed Legado submodule
+        id: source-identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="330e606c4d57e08adc056ff8ab7a4132c784da9a"
+          actual="$(git -C upstream/legado rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$actual" = "$expected"
+          test -f upstream/legado/LICENSE
+          grep -q "GNU GENERAL PUBLIC LICENSE" upstream/legado/LICENSE
+          test -z "$(git -C upstream/legado status --porcelain)"
+          {
+            echo "BADCAT_COMMIT=$GITHUB_SHA"
+            echo "LEGADO_COMMIT=$actual"
+            echo "LEGADO_WORKTREE=CLEAN"
+          } | tee build/pinned-upstream-model-contract/source-identity.txt
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Configure Android SDK platform 36
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${ANDROID_HOME:?Android SDK is not configured}"
+          sdkmanager_path="$(find "$ANDROID_HOME/cmdline-tools" -maxdepth 3 -type f -name sdkmanager | head -n 1)"
+          test -n "$sdkmanager_path"
+          echo "$(dirname "$sdkmanager_path")" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          "$sdkmanager_path" --sdk_root="$ANDROID_HOME" --install "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle 8.14.4
+        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a
+        with:
+          gradle-version: '8.14.4'
+          cache-disabled: true
+
+      - name: Record exact toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "BADCAT_COMMIT=$GITHUB_SHA"
+            java -version 2>&1
+            gradle --version
+            sdkmanager --list_installed
+          } > build/pinned-upstream-model-contract/toolchain.txt 2>&1
+          cat build/pinned-upstream-model-contract/toolchain.txt
+
+      - name: Run focused pinned upstream model and lifecycle tests
+        id: upstream-model-tests
+        shell: bash
+        working-directory: upstream/legado
+        timeout-minutes: 55
+        run: |
+          set -euo pipefail
+          out="../../build/pinned-upstream-model-contract"
+          mkdir -p "$out/reports"
+          set +e
+          gradle --no-daemon --no-build-cache --no-configuration-cache --console plain --stacktrace \
+            --max-workers=2 -Dorg.gradle.parallel=false \
+            -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" \
+            -Pkotlin.compiler.execution.strategy=in-process \
+            :app:testAppDebugUnitTest \
+            --tests 'io.legado.app.data.entities.rule.ContentRuleCompatibilityTest' \
+            --tests 'io.legado.app.help.book.ContentSaveFenceTest' \
+            --tests 'io.legado.app.help.book.BookHelpChapterIndexContractTest' \
+            --tests 'io.legado.app.help.book.BookHelpChapterMatchTest' \
+            --tests 'io.legado.app.data.entities.BookSourceMainJsTest' \
+            --tests 'io.legado.app.data.entities.BookSourcePartBatchResolveTest' \
+            --tests 'io.legado.app.data.entities.BookSourcePartHasJsTest' \
+            --tests 'io.legado.app.data.entities.BookSourcePartLoginEntryTest' \
+            > "$out/upstream-model-contract-tests.log" 2>&1
+          gradle_status=$?
+          set -e
+          echo "GRADLE_EXIT_CODE=$gradle_status" | tee "$out/gradle-exit.txt"
+          tail -n 180 "$out/upstream-model-contract-tests.log" || true
+          python3 - "$out" "$gradle_status" <<'PY'
+          import shutil
+          import sys
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          out = Path(sys.argv[1])
+          gradle_status = int(sys.argv[2])
+          expected = {
+              "io.legado.app.data.entities.rule.ContentRuleCompatibilityTest",
+              "io.legado.app.help.book.ContentSaveFenceTest",
+              "io.legado.app.help.book.BookHelpChapterIndexContractTest",
+              "io.legado.app.help.book.BookHelpChapterMatchTest",
+              "io.legado.app.data.entities.BookSourceMainJsTest",
+              "io.legado.app.data.entities.BookSourcePartBatchResolveTest",
+              "io.legado.app.data.entities.BookSourcePartHasJsTest",
+              "io.legado.app.data.entities.BookSourcePartLoginEntryTest",
+          }
+          report_root = Path("app/build/test-results/testAppDebugUnitTest")
+          found = {}
+          totals = {"tests": 0, "failures": 0, "errors": 0, "skipped": 0}
+          if report_root.is_dir():
+              for path in sorted(report_root.glob("TEST-*.xml")):
+                  root = ET.parse(path).getroot()
+                  name = root.attrib.get("name", "")
+                  if name not in expected:
+                      continue
+                  found[name] = path
+                  for key in totals:
+                      totals[key] += int(root.attrib.get(key, 0))
+                  shutil.copy2(path, out / "reports" / path.name)
+          missing = sorted(expected - set(found))
+          result = [
+              f"EXPECTED_SUITE_COUNT={len(expected)}",
+              f"FOUND_SUITE_COUNT={len(found)}",
+              f"TEST_COUNT={totals['tests']}",
+              f"FAILURES={totals['failures']}",
+              f"ERRORS={totals['errors']}",
+              f"SKIPPED={totals['skipped']}",
+              f"MISSING_SUITES={','.join(missing)}",
+              f"GRADLE_EXIT_CODE={gradle_status}",
+          ]
+          passed = gradle_status == 0 and not missing and not any(
+              totals[key] for key in ("failures", "errors", "skipped")
+          )
+          result.append("RESULT=PASS" if passed else "RESULT=NOT_ACCEPTED")
+          (out / "test-summary.txt").write_text("\n".join(result) + "\n")
+          print("\n".join(result))
+          if not passed:
+              raise SystemExit(1)
+          PY
+
+      - name: Finalize exact-SHA evidence and checksums
+        if: always()
+        shell: bash
+        run: |
+          set -uo pipefail
+          out="build/pinned-upstream-model-contract"
+          mkdir -p "$out"
+          if [[ ! -f "$out/test-summary.txt" ]]; then
+            {
+              echo "RESULT=NOT_COMPLETED"
+              echo "BADCAT_COMMIT=$GITHUB_SHA"
+              echo "LEGADO_COMMIT=330e606c4d57e08adc056ff8ab7a4132c784da9a"
+            } > "$out/test-summary.txt"
+          fi
+          find "$out" -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 -r sha256sum > "$out/SHA256SUMS"
+          cat "$out/test-summary.txt"
+
+      - name: Upload pinned upstream model/lifecycle test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pinned-upstream-model-lifecycle-contract-tests
+          path: build/pinned-upstream-model-contract/**
+          if-no-files-found: warn
+          retention-days: 30

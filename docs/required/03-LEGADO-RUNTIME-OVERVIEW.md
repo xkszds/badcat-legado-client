@@ -4143,3 +4143,18 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - GitHub runner only. No production/upstream/test/Gradle/dependency/module/Room/schema/database/data/UI changes, no serialization fixture tests in this task, no Stage-1 or Task 027. Existing Android workflow collateral is not 026EK acceptance.
 - Android Debug run 46135893948 / #3708 on start SHA 2826a346b5f1f46980605875f0f1c055ff2a5b20 is in progress as a separate baseline integration run.
 - Registered / in progress. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.347.
+### 4.27.303 Task 026EK result — 40-class pinned model/rule/Gson/content-save compiled ABI (2026-11-28)
+
+- ABI run 46136267997 / job 140952154289 on exact Badcat SHA 6ab3674cec3639a6542b2cd1089d7b8686cfe4c3 and pinned Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a: SUCCESS, 17/17 steps. Kotlin + Java App compile passed; all 40 classes found exactly once, with 40 SHA-256 hashes, 40 complete javap outputs and 40 Java reflection class records.
+- Java reflection: 2,382 declared method rows / 2,285 public / 444 synthetic / 378 JavascriptInterface. Rhino JavaMembers PASS; verified ExecutableBox[] entries and overloads ajax=2, connect=3, webView=2, getZipStringContent=2, digestHex=1. Required JS function and NativeBaseSource visibility checks passed. ChapterSourceMatch marker interface has zero methods as expected.
+- ABI artifact 15260146496, 801,641 bytes, SHA-256 b91439a3a6cbb02c4d91f0b7db3d89cc618babd59e7a99243acb04db4a10ee87; downloaded archive matched artifact digest and all 61 internal checksums passed.
+- Android Debug run 46136267991 / #3709 on the same SHA: SUCCESS, 359/359 unit tests, API 28 instrumentation 5/5, API 35 instrumentation 5/5. Debug APK assembled; DEX evidence confirms only the pinned RuleAnalyzer class definition. Baseline run 46135893948 / #3708 on start SHA 2826a346b5f1f46980605875f0f1c055ff2a5b20 also passed 359 unit tests and 5/5 instrumentation on both APIs.
+- Bixiange and Pinshuzhai external Python HTTP/HTML smoke reached search/detail/TOC/chapter, but neither ran inside Badcat/Legado Runtime; not E2E. 026EK is complete only for compiled ABI/reflection. See audit §24.348.
+
+### 4.27.304 Task 026EL preregistration — focused tests from exact pinned upstream App model/lifecycle suite (2026-11-28)
+
+- Start HEAD 6ab3674cec3639a6542b2cd1089d7b8686cfe4c3; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Add a separate GitHub Actions workflow to run eight existing upstream App unit-test classes against the pinned submodule: ContentRuleCompatibilityTest, ContentSaveFenceTest, BookHelpChapterIndexContractTest, BookHelpChapterMatchTest, BookSourceMainJsTest, BookSourcePartBatchResolveTest, BookSourcePartHasJsTest and BookSourcePartLoginEntryTest.
+- Execute :app:testAppDebugUnitTest from upstream/legado with exact class filters; verify all eight JUnit suites, aggregate counts and zero failures/errors/skips. Capture exact source identity, runner capacity/toolchain, logs, reports and checksums.
+- No upstream or Badcat test/production source changes, no Gradle/dependency/module/schema/database/data/UI changes, no device/APK/R8/DEX, no Stage-1 or Task 027. This is an upstream behavior baseline, not proof that Badcat host adapters are equivalent.
+- 026EL registered / in progress. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.349.
