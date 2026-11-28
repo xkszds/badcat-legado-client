@@ -3814,3 +3814,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Allowed tracked files: audit + overview; temporary evidence /tmp/task026ds-book-model-data-owners/.
 - Exclusions: no source/test/Gradle/dependency/workflow/schema/database/data/manifest/license/UI changes; no build/test/CI/GitHub/push/ref update/device/live-source; no Room install or migration; no Stage-1/Task 027.
 - **Disposition:** documentation-only Phase-A data-owner/migration audit registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.308.
+
+
+### 4.27.265 Task 026DS result — Book model data owners and migration decisions (2026-11-28)
+
+- Pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a; start HEAD 3d1898ad8dcf4bf8d37e8db09137b06a555ba7e0; registration commit 050e4329c75a80c60c2a6d586e1287c0cb84dd1d.
+- BookMemo, ReadRecord, RuleBigData variables and BookRuntimeConfig have no Badcat-equivalent owner; each requires a new owner. Badcat progress/history/bookmarks and source KV remain separate.
+- PPRule can conditionally reuse FileReplaceRuleCatalog as the single AtomicFile writer: 14 persisted fields map, raw JSON unknown fields survive and scope selection mirrors pinned SQL. Still needs typed ReplaceRule conversion and synchronous durable adapter; no Room PPRule table.
+- Source identity uncertainty is resolved: sourceId == bookSourceUrl == Book.origin. But FileChapterContentCache stores already parsed/purified final text, not raw BookHelp content; keep cache domains separate and do not migrate it into raw content records.
+- 27 source hashes + 12 input hashes + 25 failure-injection cases; all output hashes validated. Docs-only, no build/test/CI.
+- **Disposition:** Task 026DS accepted as static owner/migration audit. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next: 026DT owner implementation contracts; no Room install yet. See audit §24.309.
