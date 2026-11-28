@@ -3691,3 +3691,17 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Determine acyclic module placement across app, integration-contract, legado-runtime, legado-rhino and isolated legado-runtime-poc. Preserve one authoritative BookSource object and App single-writer persistence; no runtime -> app dependency or script-visible DTO substitution.
 - Reuse 026DI/026DK/026DL/026DM artifacts; no repeat of method/adapter inventories. Documentation only; no source/build/dependency/test/CI/data/UI changes.
 - **Disposition:** documentation-only Phase-A model placement audit registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED. See audit §24.298.
+
+
+### 4.27.255 Task 026DN result — App-hosted pinned source set and data-owner gaps (2026-11-28)
+
+- Pinned Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a; start Badcat HEAD 5ad5729312332216d67d775ae686cf517ed3ccfe.
+- Ten pinned core files contain 386 direct imports; 170 are App host/product imports. BaseSource, BookSource, Book, BookChapter, AnalyzeRule, AnalyzeUrl, JsExtensions, JsEncodeUtils, JsSourceEngine and SharedJsScope are too App-coupled to move as-is into :legado-runtime.
+- **Placement:** compile exact pinned upstream classes in an App-hosted source set under original FQCNs. :legado-runtime supplies typed HostPorts + existing rule models/GsonExtensions; :legado-rhino supplies Rhino; integration-contract remains transitional; legado-runtime-poc remains quarantined. No runtime -> app dependency.
+- App currently lacks kotlin-parcelize and Room runtime; upstream BookSource/Book/BookChapter require Parcelize/Room annotations. No appDb/RoomDatabase exists, but upstream Book/Chapter call appDb; replace with App repository ports. Room KSP only if an App Room database is selected.
+- Current App writers: FileBookSourceCatalog for source JSON (AtomicFile, preserves unknown fields) and FileChapterContentCache for raw content (AtomicFile, process lock, save fence, 4 MiB entry / 64 MiB cache). Both currently use custom DTOs/tokens, not upstream object identity.
+- **Blocker:** no durable Book metadata or TOC metadata owner exists in app/src/main; BookCandidate/BookDetail are transient and SourceBookActivity chapter lists are in memory. Book/BookChapter single-writer ownership is NOT ESTABLISHED.
+- Require one live upstream BookSource/BaseSource/Book/BookChapter graph at the script boundary; custom DTOs only at import/export/UI edges. Next task 026DO defines Book/Chapter persistence and ContentSaveToken/BatchContentContext transaction.
+- Artifacts: /tmp/task026dn-booksource-model-placement/. Key hashes: source import matrix e3ac7c80a42ba1d89de53613e8c85c172e3ccdacaf33c0fc1434fa14afe70176; module placement 5f72b5fd625d20ba7e633a5c91020289623620f9b7ae144f04ffaa4cf798bdba; source manifest 38701614378f03120e730438e367aa1eea48f86ff356d8d3305ed15e6567c28e; result dd6b68e6230214e84edb3fdf42827b022644baf2ef1cead3e99648bdfe9f42ef; output manifest f8bdcbee2dd366ef358497128074755bdba84b89df41773ce52ac3f9f315bed5.
+- Validation: 27 source hashes, nine reused inputs and all output hashes pass; 386 imports accounted; 15-entry source allowlist.
+- Task 026DN accepted as static placement audit with Book/Chapter metadata owner blocked. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.299.
