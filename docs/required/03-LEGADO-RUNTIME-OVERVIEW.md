@@ -3683,3 +3683,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Artifacts: /tmp/task026dm-runtime-convergence/. Key hashes: module topology 4837c454ab45c7dffeec4d18732ecb4959e40bc225a01ae86a3487ca01b83bfd; route decision 2dc9bb054067646bd773c689a81903edcde100d8c715e17dbbc25730360e9caf; model identity fb06dc5e7d84dbf0fdff7763e36f8f33fa57d55559ce9c6659a49c4ead76b1cb; source manifest da97953bc62d433c7e55d322daa84cff68e052edc69be1463ff25a9de4690ef0; result 1e1ced178f00e3381d156ac2a7f1d374b203a6d3dd6784f08d5864f3bb1d32e2; output manifest ad40b671eb1f81600184d84c5fd512ed74511519e0a437076f64cfc6ce55e76d.
 - Validation: 27 source hashes, nine reused input hashes and all output hashes pass; pinned SHA/clean status pass.
 - Task 026DM accepted as a static route decision only. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.297.
+
+### 4.27.254 Task 026DN preregistration — BookSource/BaseSource exact model placement (2026-11-28)
+
+- Start branch integration/legado-upstream-runtime, HEAD 5ad5729312332216d67d775ae686cf517ed3ccfe; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Resolve exact source/import/dependency DAG for pinned BaseSource, BookSource, Book, BookChapter and rule/constant/converter classes; classify Android/Room/Parcelable/Gson and App-host dependencies.
+- Determine acyclic module placement across app, integration-contract, legado-runtime, legado-rhino and isolated legado-runtime-poc. Preserve one authoritative BookSource object and App single-writer persistence; no runtime -> app dependency or script-visible DTO substitution.
+- Reuse 026DI/026DK/026DL/026DM artifacts; no repeat of method/adapter inventories. Documentation only; no source/build/dependency/test/CI/data/UI changes.
+- **Disposition:** documentation-only Phase-A model placement audit registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED. See audit §24.298.
