@@ -3970,3 +3970,11 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - Required ledgers: 524 method review rows, exact caller matrix, utility/host split, source model decisions, product exclusion and revised core/App closure.
 - No source/test/module/Gradle/dependency/plugin/Room/KSP/schema/database/data/manifest/license/notice/packaging/UI changes; no build/test/CI/GitHub/push/network/device/live-source.
 - **Disposition:** documentation-only method ownership audit registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.326.
+
+
+### 4.27.283 Task 026EA result — method body and caller review (2026-11-28)
+
+- Reviewed 524 open declarations with body excerpts; provisional split: 469 pure-core candidates, 27 typed-host-port methods, 28 product/UI candidates. Captured 20,587 lexical call candidates (239 declarations) and 276 receiver-qualified helper references; lexical matches are not overload/receiver proof.
+- Made 24 focused ownership decisions for BookHelp/BookExtensions/RuleBigDataHelp/CacheManager/SourceHelp/SourceVerificationHelp/InfoMap/ConcurrentRateLimiter/SourceNavigationPolicy. Preserved distinctions between source variable storage, cache, InfoMap identity, verification flights, catalog lifecycle and product-only RSS/video.
+- 132 source + eight prior inputs SHA-256 verified. No production/build/test/CI changes.
+- **Disposition:** Task 026EA PARTIAL / NOT ACCEPTED; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next: 026EB exact method split for core JS/BaseSource/AnalyzeRule surfaces. See audit §24.327.
