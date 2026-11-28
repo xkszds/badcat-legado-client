@@ -3916,3 +3916,12 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - No source/module/Gradle/dependency/plugin/Room/KSP/schema/database/data changes; no build/test/CI, migration, dual runtime or dual-write. No schema freeze.
 - Allowed tracked files: audit + overview; temporary evidence /tmp/task026dx-core-dependency-adapter-abi/.
 - **Disposition:** documentation-only dependency/adapter ABI audit registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.320.
+
+
+### 4.27.277 Task 026DX result — dependency closure and typed adapter ABI (2026-11-28)
+
+- Reconciled 22 pinned upstream direct import roots with current Badcat module dependencies and version catalog; recorded 17 version-alignment rows, 15 model-neutral HostPorts, 13 model-aware CorePorts and 10 NO-GO gates.
+- Core must directly own its imported dependencies; :legado-rhino implementation-only OkHttp/Collection edges are not exported. Root Gradle wrapper is absent (upstream pins 8.14.4); KSP 2.3.12/Room 2.8.4 remain prohibited until Stage-0 acceptance.
+- Full CoroutineContext/cancellation, HTTP Response close/cancel, Cookie/WebView synchronization and typed HiddenWebView JS bootstrap remain open. No build/compile/test/CI proof; static design only.
+- 49 source files + 15 prior-task inputs SHA-256 verified. No source/module/Gradle/dependency/schema/data changes.
+- **Disposition:** Task 026DX accepted as static dependency/ABI catalog only; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next: 026DY exact transitive import and ABI proof closure. See audit §24.321.
