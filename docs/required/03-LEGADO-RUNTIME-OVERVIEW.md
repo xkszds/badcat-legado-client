@@ -3719,3 +3719,11 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Artifacts: /tmp/task026dn-booksource-model-placement/. Key hashes: source import matrix e3ac7c80a42ba1d89de53613e8c85c172e3ccdacaf33c0fc1434fa14afe70176; module placement 5f72b5fd625d20ba7e633a5c91020289623620f9b7ae144f04ffaa4cf798bdba; source manifest 38701614378f03120e730438e367aa1eea48f86ff356d8d3305ed15e6567c28e; result dd6b68e6230214e84edb3fdf42827b022644baf2ef1cead3e99648bdfe9f42ef; output manifest f8bdcbee2dd366ef358497128074755bdba84b89df41773ce52ac3f9f315bed5.
 - Validation: 27 source hashes, nine reused inputs and all output hashes pass; 386 imports accounted; 15-entry source allowlist.
 - Task 026DN accepted as static placement audit with Book/Chapter metadata owner blocked. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.299.
+
+### 4.27.256 Task 026DO preregistration — Book/Chapter persistence and batch content transaction (2026-11-28)
+
+- Start branch integration/legado-upstream-runtime, HEAD 101370d748bebceba83fec38b71e56f90caf852b; fixed Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Define App-owned Book/BookChapter metadata and TOC repository plus raw-content commit/recovery protocol. Reconcile upstream ContentSaveToken/ContentSaveFence/BatchContentContext/BookHelp.saveContent with custom ChapterContentSaveToken/FileChapterContentCache.
+- Preserve exact chapter identity/index, duplicate URL ambiguity rejection, token snapshots, CoroutineContext cancellation, missing-chapter fallback and event order; reuse FileChapterContentCache only if atomic file+metadata semantics are safe.
+- Reuse 026DN/026DL/026DI evidence and existing focused cache tests. Documentation only; no source/schema/database/test/build/CI/data/UI changes.
+- **Disposition:** documentation-only Phase-A persistence transaction design registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED. See audit §24.300.
