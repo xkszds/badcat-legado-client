@@ -8589,3 +8589,17 @@ The registered Login UI/WebView bridge scope includes subclasses of a shared App
 - **Scope:** docs-only. No production/test source, Gradle/dependency, schema/database/data, workflow, manifest/license/packaging, UI or product files changed. git diff --check passes.
 - **Disposition:** Task 026DP accepted as a static contract specification only. Phase A OPEN; Stage-0 in_progress / NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full pinned Legado compatibility NOT ESTABLISHED.
 - **Next:** Task 026DQ should close the AppDb facade and Book/Chapter DAO source/Gradle dependency closure and define a compile-only proof plan. Do not add Room or implement persistence until BookMemo/ReadRecord ownership, duplicate-URL schema semantics and legacy source mapping have explicit decisions.
+
+
+## 24.304 Task 026DQ registration — Book/Chapter AppDb facade source and Gradle compile-closure audit
+
+- **Task ID:** R3-S0-T026-PHASE-A-BOOK-CHAPTER-APPDB-COMPILE-CLOSURE-026DQ; registered / in_progress.
+- **Start identity:** branch integration/legado-upstream-runtime; start HEAD 550fa0d9dbeb4313af27ed0bdb6c06f43412f16d; pinned Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- **Trigger:** 026DP specified model-typed DAO/content ports but identified that the exact pinned Book/BookChapter/BookHelp source references a wider AppDb/Android/Room/helper surface. A minimal facade must be proven compile-closed without importing the upstream 26-entity AppDatabase or creating runtime -> app cycles.
+- **Goal:** produce an exact source/import/symbol closure and compile-only Gradle proof plan for the pinned Book, BookChapter, BookSource, BatchContentContext and BookHelp surfaces plus the narrow appDb facade and typed DAO/content ports. Identify which upstream DAO/database files are excluded, every unresolved direct/transitive symbol, required plugins/dependencies/Room annotations, and the smallest acyclic App-hosted source-set boundary.
+- **Required outputs:** (1) direct import + referenced symbol inventory for each selected file; (2) transitive project-source dependency DAG; (3) exact appDb property/method signature closure and callsites; (4) Room/Parcelize/KSP/Android/third-party Gradle configuration delta list, without editing Gradle; (5) excluded full AppDatabase/DAO/product UI dependency proof; (6) compile-only task graph and expected compiler gates; (7) blocker matrix separating compile blockers from unresolved runtime/data semantics.
+- **Dependencies:** 026DN §§24.298–24.299; 026DL §24.295; 026DP §§24.302–24.303; existing 026DI source-port DAG and 026DN module-source placement edges.
+- **Allowed tracked files:** audit + required overview only. Temporary evidence under /tmp/task026dq-book-chapter-compile-closure/.
+- **Exclusions:** no production/test source, Gradle/dependency/workflow, schema/database/data, manifest/license/notice/packaging, UI/product code; no build/test/CI/GitHub/ref update/push/network/NDK/device/live-source; no Room installation, source migration or persistence implementation; no Stage-1/Task 027.
+- **Validation:** fixed upstream SHA/clean status; source and reused-input SHA-256 manifests; every import/symbol edge accounted or explicitly unresolved; acyclic module graph check; compile task names and plugin availability checked from current Gradle files only; git diff --check; exact documentation-only diff; reread both task records.
+- **Disposition at registration:** Phase A OPEN; Stage-0 in_progress / NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full pinned Legado compatibility NOT ESTABLISHED.

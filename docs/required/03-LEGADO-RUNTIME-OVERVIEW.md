@@ -3763,3 +3763,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Blockers: BookMemo/ReadRecord owners absent; BookChapter persisted duplicate-URL constraint conflicts with in-memory batch URL twins; direct BookHelp file paths and sourceId migration are not closed. No schema freeze or implementation.
 - Artifacts /tmp/task026dp-book-chapter-commit-contracts/; 26 source hashes + 14 input hashes + output manifest validated. Docs-only commit; no build/test/CI.
 - **Disposition:** Task 026DP accepted as static contract design only. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next: 026DQ source/Gradle closure and compile-only proof plan; no Room implementation yet. See audit §24.303.
+
+
+### 4.27.260 Task 026DQ preregistration — Book/Chapter AppDb facade compile closure (2026-11-28)
+
+- Start branch integration/legado-upstream-runtime, HEAD 550fa0d9dbeb4313af27ed0bdb6c06f43412f16d; pinned Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Audit exact source/import/symbol closure for pinned Book, BookChapter, BookSource, BatchContentContext and BookHelp plus the minimal typed appDb facade. Determine Room/Parcelize/KSP/Android dependencies, excluded full upstream AppDatabase/DAO/product surface and acyclic source-set placement.
+- Deliver symbol/import DAG, appDb signature/caller matrix, Gradle dependency delta proposal, compile-only task plan and unresolved compile/runtime/data blockers. Static audit only.
+- Allowed tracked files: audit + overview; temporary evidence /tmp/task026dq-book-chapter-compile-closure/.
+- Exclusions: no source/test/Gradle/dependency/workflow/schema/database/data/manifest/license/UI changes; no build/test/CI/GitHub/push/ref update/device/live-source; no Room installation or persistence implementation; no Stage-1/Task 027.
+- **Disposition:** documentation-only Phase-A compile-closure audit registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED. See audit §24.304.
