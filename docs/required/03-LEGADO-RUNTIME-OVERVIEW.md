@@ -4002,3 +4002,11 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - Server has 1.9 GiB RAM total / 1.2 GiB available, 1.9 GiB swap and 22 GiB disk free. No upstream App class outputs exist. One bounded offline :app Debug compile only, one worker, no daemon, Kotlin in-process, 768 MiB heap / 384 MiB metaspace; stop if preflight or resource limits fail.
 - If compile succeeds, capture class hashes and javap descriptors for seven exact core JS classes. No source/Gradle/dependency changes, tests, CI, network or push.
 - **Disposition:** resource-capped ABI baseline attempt registered; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.330.
+
+
+### 4.27.287 Task 026EC result — compile baseline blocked (2026-11-28)
+
+- Server: 1.9 GiB RAM / 1.2 GiB available, 22 GiB disk free, JDK 17.0.21.0.3. Gradle 8.14.4 distribution is not cached; no system Gradle. Android SDK has only build-tools/debian and no platforms; SDK env/tools absent.
+- Wrapper-only offline preflight attempted; Gradle wrapper bootstrap tried to fetch distribution before Gradle starts. No bytes downloaded; stopped immediately and removed zero-byte partial/lock. No Gradle task/build/compile/javap/Rhino/R8/CI ran.
+- Source/input/output hashes PASS; repository and upstream clean; fixed SHA unchanged. No tracked production/config changes.
+- **Disposition:** Task 026EC NO-GO / BLOCKED before compile. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next prerequisite: approved offline Gradle 8.14.4 distribution and Android SDK platform packages. See audit §24.331.
