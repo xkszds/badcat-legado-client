@@ -8737,3 +8737,8 @@ The registered Login UI/WebView bridge scope includes subclasses of a shared App
 - **Scope:** documentation-only; no source/test/Gradle/plugin/workflow/schema/database/data/manifest/license/notice/packaging/UI changes; no build/compile/test/CI/GitHub/push/device/live-source.
 - **Disposition:** Task 026DU accepted as static schema/backup/ABI candidate only. Phase A OPEN; Stage-0 in_progress / NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full pinned Legado compatibility NOT ESTABLISHED.
 - **Next:** Task 026DV should define exact App source inclusion and the AppDb/DAO facade compile plan, with a bounded KSP/Room prototype only after 026DP recovery gates are approved.
+
+
+### 24.314 Clarification — 026DU schema inventory is not a schema freeze
+
+The Runtime-3.0 master workflow §2.3 explicitly requires proving the real upstream execution closure and build boundary first, and prohibits freezing schema v1, adding Room, migrating user data or dual-writing at this stage. Therefore 026DU's six-table list, database filename and hypothetical version=1 are **provisional inventory only**, not an approved/frozen schema or implementation authorization. No schema version is frozen, no Room/KSP prototype is authorized, and no migration is authorized. The prior registration phrase “freeze a minimal Room schema candidate” and the result's hypothetical version wording must be read under this clarification. The earlier next-step suggestion of a bounded KSP/Room prototype after 026DP alone was incomplete: the complete Runtime-3.0 source/caller/dependency/ABI/build-boundary review must also pass Stage-0 before any Room experiment. Next work returns to the Runtime-3.0 module/core boundary decision, not schema implementation.

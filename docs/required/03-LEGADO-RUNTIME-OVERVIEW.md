@@ -3863,3 +3863,8 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Backup manifest has 13 entries; 12 ABI/Rhino assertions and 11 install gates. RuleBigData and content journal/cache are local-only; PPRule stays FileReplaceRuleCatalog.
 - 34 source hashes + 14 input hashes verified. No build/compile/test or source changes.
 - **Disposition:** Task 026DU accepted as static schema candidate only; Room implementation NO-GO pending recovery, startup, backup and ABI proof. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED. Next: 026DV source inclusion/AppDb facade plan. See audit §24.313.
+
+
+### 4.27.270 Clarification — 026DU is not schema-v1 approval
+
+Runtime-3.0 master workflow §2.3 prohibits schema-v1 freeze, Room installation, data migration and dual-write before real upstream execution closure/build-boundary proof. 026DU's six-table list and hypothetical database filename/version are provisional inventory only; no schema is frozen and no KSP/Room prototype is authorized. The earlier preregistration wording “freeze” and suggestion of a Room prototype after 026DP are superseded by this clarification. Next task must resolve Runtime-3.0 module/core boundary and full upstream source/caller/dependency/ABI closure first. See audit §24.314.
