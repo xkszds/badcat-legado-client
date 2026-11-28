@@ -3986,3 +3986,11 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - Method-level ownership for BaseSource, AnalyzeRule/AnalyzeUrl, JsExtensions/JsEncodeUtils/RegexJsExtensions and JsSourceEngine; include subclass/override, direct callers, Rhino/JS binding, overload/default/null and host-port boundaries.
 - No source/test/module/Gradle/dependency/plugin/Room/KSP/schema/database/data/manifest/license/notice/packaging/UI changes; no build/test/CI/GitHub/push/network/device/live-source.
 - **Disposition:** documentation-only core JS API ownership audit registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.328.
+
+
+### 4.27.285 Task 026EB result — BaseSource/JS API method ownership (2026-11-28)
+
+- Mapped 233 public source methods: BaseSource 29, AnalyzeRule 23, AnalyzeUrl 20, JsExtensions 118, JsEncodeUtils 30, RegexJsExtensions 6, JsSourceEngine 7. 77 JavascriptInterface methods; 118 JsExtensions port mappings; 30 crypto mappings; 139 BaseSource callers and 15 implementors.
+- Resolved getWebViewUA to DeviceEnvironmentPort. Documented BaseSource inheritance, BookSource/RssSource/HttpTTS implementors, NativeBaseSource and ReadOnlyJavaObject wrapping, JS scope identity and separate WebView/App login/RSS bridges. RegexJsExtensions is ReplacePreview-only and stays App-side.
+- 18 source + nine prior inputs hash-verified. Static evidence only; no compile/javap/reflection/Rhino runtime/R8 proof.
+- **Disposition:** Task 026EB PARTIAL / NOT ACCEPTED; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next: separately register a resource-bounded pinned upstream compiled ABI/variant proof task. See audit §24.329.
