@@ -380,16 +380,30 @@ jobs:
           import shutil
 
           root = Path("build/pinned-upstream-room-model-persistence")
-          candidates = list(Path("upstream/legado/app/build/outputs/androidTest-results/connected").rglob("*RuntimeModelPersistenceProbeTest*.xml"))
+          report_root = Path("upstream/legado/app/build/outputs/androidTest-results/connected")
+          candidates = sorted(report_root.rglob("*.xml")) if report_root.exists() else []
+          print("CONNECTED_ANDROID_TEST_XML_CANDIDATES=" + repr([str(path) for path in candidates]))
           if len(candidates) != 1:
-              raise SystemExit(f"expected exactly one probe JUnit XML, found {len(candidates)}")
+              raise SystemExit(f"expected exactly one connected-device JUnit XML, found {len(candidates)}")
           source = candidates[0]
           destination = root / "RuntimeModelPersistenceProbeTest.xml"
           shutil.copy2(source, destination)
-          suite = ET.parse(destination).getroot()
-          totals = {key: int(float(suite.attrib.get(key, 0))) for key in ("tests", "failures", "errors", "skipped")}
-          cases = [case.attrib.get("name", "") for case in suite.findall(".//testcase")]
-          if len(cases) != 3 or totals != {"tests": 3, "failures": 0, "errors": 0, "skipped": 0}:
+          document = ET.parse(destination).getroot()
+          suites = [node for node in document.iter() if node.tag.rsplit("}", 1)[-1] == "testsuite"]
+          if suites:
+              totals = {key: sum(int(float(suite.attrib.get(key, 0))) for suite in suites)
+                        for key in ("tests", "failures", "errors", "skipped")}
+          else:
+              totals = {key: int(float(document.attrib.get(key, 0)))
+                        for key in ("tests", "failures", "errors", "skipped")}
+          cases = [case.attrib.get("name", "") for case in document.iter()
+                   if case.tag.rsplit("}", 1)[-1] == "testcase"]
+          expected_cases = {
+              "roomSqlDefaultsDifferFromKotlinAndDaoDefaults",
+              "chapterCompositeIdentityAndUniqueIndexUseReplaceSemantics",
+              "chapterBigVariableUsesFileAtTenThousandAndSupportsObjectRecreationAndDeletion",
+          }
+          if len(cases) != 3 or set(cases) != expected_cases or totals != {"tests": 3, "failures": 0, "errors": 0, "skipped": 0}:
               raise SystemExit(f"probe tests did not all pass: totals={totals}, cases={cases}")
           gradle_log = (root / "gradle.log").read_text(encoding="utf-8", errors="replace")
           if "CI_ONLY_TEST_MIN_SDK_OVERRIDE=23->26" not in gradle_log:
