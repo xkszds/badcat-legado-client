@@ -153,6 +153,7 @@ public final class PinnedUpstreamAbiReflectionProbe {
 
         System.out.println("REFLECT_TOTAL declared=" + totalDeclared + " publicDeclared=" + totalPublic
             + " synthetic=" + totalSynthetic + " JavascriptInterface=" + totalJsAnnotated);
+        System.out.println("JAVA_REFLECTION_RESULT=PASS");
 
         Context context = Context.enter();
         try {
@@ -246,17 +247,46 @@ public final class PinnedUpstreamAbiReflectionProbe {
             throw new AssertionError("Rhino NativeJavaMethod delegate not found behind "
                 + function.getClass().getName());
         }
+        StringBuilder layout = new StringBuilder();
         for (Class<?> current = nativeMethod.getClass(); current != null; current = current.getSuperclass()) {
             for (Field field : current.getDeclaredFields()) {
-                if (!field.getType().isArray()) continue;
-                String component = field.getType().getComponentType().getName();
-                if (!component.endsWith("MemberBox")) continue;
-                field.setAccessible(true);
-                Object values = field.get(nativeMethod);
-                return Array.getLength(values);
+                if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) continue;
+                Object value = null;
+                String valueDescription = "unreadable";
+                try {
+                    field.setAccessible(true);
+                    value = field.get(nativeMethod);
+                    if (value == null) {
+                        valueDescription = "null";
+                    } else if (value.getClass().isArray()) {
+                        int length = Array.getLength(value);
+                        String component = value.getClass().getComponentType().getName();
+                        valueDescription = "array<" + component + ">[" + length + "]";
+                        if (component.endsWith("MemberBox")) return length;
+                        if (component.equals("java.lang.Object") && length > 0) {
+                            boolean allMemberBoxes = true;
+                            for (int i = 0; i < length; i++) {
+                                Object item = Array.get(value, i);
+                                if (item == null || !item.getClass().getSimpleName().equals("MemberBox")) {
+                                    allMemberBoxes = false;
+                                    break;
+                                }
+                            }
+                            if (allMemberBoxes) return length;
+                        }
+                    } else {
+                        valueDescription = value.getClass().getName();
+                    }
+                } catch (Throwable error) {
+                    valueDescription = "ERROR:" + error.getClass().getName() + ":" + error.getMessage();
+                }
+                layout.append(current.getName()).append("#").append(field.getName())
+                    .append(":").append(field.getType().getName())
+                    .append("=").append(valueDescription).append(";");
             }
         }
-        throw new AssertionError("Rhino NativeJavaMethod MemberBox[] overload table not found on delegate "
+        System.out.println("RHINO_NATIVE_JAVA_METHOD_LAYOUT\t" + layout);
+        throw new AssertionError("Rhino overload table not found; actual NativeJavaMethod field layout emitted above for "
             + nativeMethod.getClass().getName());
     }
 
@@ -286,15 +316,26 @@ JAVA
 probe_classes="$out/reflection-probe-classes"
 mkdir -p "$probe_classes"
 javac -encoding UTF-8 -proc:none -cp "$classpath" -d "$probe_classes" "$out/PinnedUpstreamAbiReflectionProbe.java"
+set +e
 java -Xmx1g -cp "$probe_classes:$classpath" PinnedUpstreamAbiReflectionProbe \
-    | tee "$out/java-reflection-rhino-probe.txt"
+    > "$out/java-reflection-rhino-probe.txt" 2>&1
+probe_status=$?
+set -e
+cat "$out/java-reflection-rhino-probe.txt"
+if grep -q '^JAVA_REFLECTION_RESULT=PASS$' "$out/java-reflection-rhino-probe.txt"; then
+    echo "JAVA_REFLECTION=PASS" > "$out/reflection-result.txt"
+else
+    echo "JAVA_REFLECTION=FAILED" > "$out/reflection-result.txt"
+fi
+echo "BADCAT_COMMIT=$expected_badcat" >> "$out/reflection-result.txt"
+echo "LEGADO_COMMIT=$expected_legado" >> "$out/reflection-result.txt"
+echo "TARGET_CLASS_COUNT=7" >> "$out/reflection-result.txt"
+if (( probe_status != 0 )); then
+    echo "RHINO_JAVAMEMBERS=FAILED_DIAGNOSTIC" >> "$out/reflection-result.txt"
+    exit "$probe_status"
+fi
 grep -q '^RESULT=JAVA_REFLECTION_AND_RHINO_JAVAMEMBERS_PASS$' "$out/java-reflection-rhino-probe.txt"
-{
-    echo "BADCAT_COMMIT=$expected_badcat"
-    echo "LEGADO_COMMIT=$expected_legado"
-    echo "JAVA_REFLECTION=PASS"
-    echo "RHINO_JAVAMEMBERS=PASS"
-    echo "TARGET_CLASS_COUNT=7"
-    echo "APP_APK=NOT_RUN"
-    echo "R8_DEX_DEVICE=NOT_RUN"
-} | tee "$out/reflection-result.txt"
+echo "RHINO_JAVAMEMBERS=PASS" >> "$out/reflection-result.txt"
+echo "APP_APK=NOT_RUN" >> "$out/reflection-result.txt"
+echo "R8_DEX_DEVICE=NOT_RUN" >> "$out/reflection-result.txt"
+cat "$out/reflection-result.txt"
