@@ -3899,3 +3899,11 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - Preserve :legado-core -> :legado-runtime/:legado-rhino DAG; no core -> App, no Map/Any?, no no-op. No schema freeze, Room/KSP, module creation, source changes, build/test/CI, migration or dual-write.
 - Allowed tracked files: audit + overview; temporary evidence /tmp/task026dw-core-source-port-closure/.
 - **Disposition:** documentation-only Runtime-3.0 source/import/port closure registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.318.
+
+
+### 4.27.275 Task 026DW result — core source/import and global-to-port assignment (2026-11-28)
+
+- 33 pinned upstream source DAG rows mapped; 287 exact global reference hits across 29 symbol families. appDb -> core data facade; appCtx/Context -> AndroidContextPort; AppConfig/ReadBookConfig -> typed config; AppLog/toast -> log/UI ports; OkHttp/CookieStore/WebView/browser/CAPTCHA/files/archive/device/font -> typed host ports; SharedJsScope/BatchContentContext/ContentSaveToken remain core-owned.
+- 12 port layers and 14 blockers recorded. Current :legado-runtime has five interfaces/six methods and zero App production implementors; no exact upstream source compile/ABI/R8 proof.
+- 42 source hashes + 23 prior-task inputs verified. No source/module/Gradle/Room/schema/build/test/CI changes.
+- **Disposition:** static mapping only; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED. Next: 026DX transitive dependency closure and exact adapter signatures. See audit §24.319.
