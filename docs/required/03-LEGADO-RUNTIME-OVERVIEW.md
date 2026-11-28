@@ -3934,3 +3934,12 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - Produce exact import, dependency graph, unresolved roots, Gradle visibility, ABI inventory, reproducible proof commands and GO/NO-GO gates. Static only.
 - No source/test/module/Gradle/dependency/plugin/workflow/Room/KSP/schema/database/data/manifest/license/notice/packaging/UI changes; no build/compile/test/CI/GitHub/push/ref update/network/device/live-source.
 - **Disposition:** documentation-only Stage-0 import/ABI proof audit registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.322.
+
+
+### 4.27.279 Task 026DY result — exact imports and ABI proof status (2026-11-28)
+
+- Parsed 703 raw import directives from 33 pinned source roots; all imports assigned to pinned source, platform, plugin/generated ABI, project API or named dependency owners. Recursive closure: 132 source files / 374 edges / two source-level SCCs (8 + 4 files). The cycles are file-level, not proven Gradle module cycles.
+- Corrected 026DI count interpretation: 489 rows were internal-owner-map records, while 703 is the raw import-directive count; different measures. 26 non-source owner buckets and 13 App UI/bridge, 29 utility-split, 22 model/rule and 11 HTTP/Cookie/WebView source owners recorded.
+- 275 public method source declarations, 87 JavascriptInterface annotations and 204 selected annotation occurrences inventoried. No compiled javap/reflection/Rhino/R8/DEX proof was run; ABI parity remains unproven.
+- 132 source + 13 prior inputs SHA-256 verified. Documentation/evidence only; no production/build/CI changes or execution.
+- **Disposition:** Task 026DY PARTIAL / NOT ACCEPTED; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next: 026DZ method-level ownership and cycle treatment, then separately authorized compiled ABI/variant proof. See audit §24.323.
