@@ -3868,3 +3868,12 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 ### 4.27.270 Clarification — 026DU is not schema-v1 approval
 
 Runtime-3.0 master workflow §2.3 prohibits schema-v1 freeze, Room installation, data migration and dual-write before real upstream execution closure/build-boundary proof. 026DU's six-table list and hypothetical database filename/version are provisional inventory only; no schema is frozen and no KSP/Room prototype is authorized. The earlier preregistration wording “freeze” and suggestion of a Room prototype after 026DP are superseded by this clarification. Next task must resolve Runtime-3.0 module/core boundary and full upstream source/caller/dependency/ABI closure first. See audit §24.314.
+
+
+### 4.27.271 Task 026DV preregistration — Runtime-3.0 Android core module-boundary decision (2026-11-28)
+
+- Start branch integration/legado-upstream-runtime, HEAD f08f054cba5f5d59f2fa94e1a8e4777a8f51cbc8; pinned Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Compare App-hosted exact upstream sources, new Android library controlled core, existing pure-JVM runtime and hybrid App-model/runtime options. Choose an acyclic DAG preserving real upstream FQCN/ABI/object identity and full source/dependency closure with typed Host Ports.
+- Explicitly no schema freeze, Room/KSP install, source/Gradle changes, build/test/CI, persistence implementation, migration or dual-write. 026DU schema inventory remains provisional only.
+- Allowed tracked files: audit + overview; temporary evidence /tmp/task026dv-runtime-core-module-decision/.
+- **Disposition:** documentation-only Runtime-3.0 architecture decision registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.315.
