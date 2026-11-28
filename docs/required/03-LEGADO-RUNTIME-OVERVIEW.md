@@ -4073,3 +4073,11 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - Separate Android Debug run 46128004959: APK assemble and RuleAnalyzer DEX class-definition verification passed; :app:testDebugUnitTest failed because Maven Central returned HTTP 429 for org.robolectric:nativeruntime-dist-compat:1.0.16 on all three bounded attempts. Unit tests are blocked/uncompleted, not test assertion failures.
 - 026EG is limited to Rhino field-layout introspection, verified overload extraction and independent Java/Rhino result recording. No production/upstream changes or Stage-1.
 - Disposition: 026EG IN_PROGRESS; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.
+
+
+### 4.27.295 Task 026EG / 026EH — HtmlUnit Rhino overload representation (2026-11-28)
+
+- On Badcat SHA 4928d9e129ce169c4463b937ddcd5ca8167a7526 / pinned Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a, ABI run 46129103362 passed exact source identity, Kotlin+Java compile, seven target class descriptor/hash capture and Java reflection (1,163 declared methods; 1,110 public; 382 synthetic; 301 JavascriptInterface), but the Rhino probe failed while assuming MemberBox[].
+- Runtime reflection showed the actual HtmlUnit fork representation: org.htmlunit.corejs.javascript.NativeJavaMethod.methods is org.htmlunit.corejs.javascript.lc.member.ExecutableBox[] (length 2 in the first checked method). The failure was the probe's stale Rhino class-layout assumption, not an upstream API mismatch. 026EG closed as diagnostic; 026EH registered to verify exact entries and expected overload counts.
+- Android Debug run 46129103399 passed on the same exact SHA. Report artifact 15256854299: 43 suites, 359 tests, 0 failures/errors/skips. API 28 CookieManager/WebView and API 35 WebView instrumentation passed; Debug APK and RuleAnalyzer DEX class verification passed. APK artifact 15257297929 SHA-256 277c08c8aeaeae98f22984ddac1081e5daa26f1b550554f98d6458d38c17067e. These results do not establish full Stage-0 acceptance. G2d compile probe is not Stage-1 authorization.
+- Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED.

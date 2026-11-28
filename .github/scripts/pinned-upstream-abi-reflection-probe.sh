@@ -262,6 +262,30 @@ public final class PinnedUpstreamAbiReflectionProbe {
                         int length = Array.getLength(value);
                         String component = value.getClass().getComponentType().getName();
                         valueDescription = "array<" + component + ">[" + length + "]";
+                        if (field.getName().equals("methods")
+                            && component.endsWith(".ExecutableBox") && length > 0) {
+                            StringBuilder entries = new StringBuilder();
+                            for (int i = 0; i < length; i++) {
+                                Object executableBox = Array.get(value, i);
+                                if (executableBox == null
+                                    || !executableBox.getClass().getName().equals(component)) {
+                                    throw new AssertionError("Unexpected Rhino methods[] entry at index "
+                                        + i + ": " + (executableBox == null ? "null" : executableBox.getClass().getName()));
+                                }
+                                Class<?> boxType = executableBox.getClass();
+                                StringBuilder boxMembers = new StringBuilder();
+                                for (Field boxField : boxType.getDeclaredFields()) {
+                                    boxMembers.append(boxField.getName()).append(":")
+                                        .append(boxField.getType().getName()).append(",");
+                                }
+                                entries.append("[").append(i).append("]=")
+                                    .append(boxType.getName()).append("{").append(boxMembers).append("};");
+                            }
+                            System.out.println("RHINO_EXECUTABLE_BOX_ENTRIES\t" + entries);
+                            System.out.println("RHINO_OVERLOAD_TABLE\tfield=methods,component="
+                                + component + ",count=" + length);
+                            return length;
+                        }
                         if (component.endsWith("MemberBox")) return length;
                         if (component.equals("java.lang.Object") && length > 0) {
                             boolean allMemberBoxes = true;
