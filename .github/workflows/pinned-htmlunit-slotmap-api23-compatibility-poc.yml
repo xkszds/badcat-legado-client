@@ -225,7 +225,7 @@ jobs:
           PY
           mkdir -p build/pinned-htmlunit-slotmap-api23
           git -C external/htmlunit-rhino-fork diff -- rhino/src/main/java/org/mozilla/javascript/SlotMapOwner.java > build/pinned-htmlunit-slotmap-api23/SlotMapOwner.patch
-          git -C external/htmlunit-rhino-fork diff --no-index /dev/null external/htmlunit-rhino-fork/rhino/src/test/java/org/mozilla/javascript/SlotMapApi23AtomicUpdaterTest.java >> build/pinned-htmlunit-slotmap-api23/SlotMapOwner.patch || test "$?" -eq 1
+          git -C external/htmlunit-rhino-fork diff --no-index /dev/null rhino/src/test/java/org/mozilla/javascript/SlotMapApi23AtomicUpdaterTest.java >> build/pinned-htmlunit-slotmap-api23/SlotMapOwner.patch || test "$?" -eq 1
           sha256sum build/pinned-htmlunit-slotmap-api23/SlotMapOwner.patch | tee build/pinned-htmlunit-slotmap-api23/source-patch.sha256
 
       - name: Run exact fork SlotMap and concurrency tests
