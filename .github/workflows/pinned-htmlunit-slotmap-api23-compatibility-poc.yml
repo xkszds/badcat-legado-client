@@ -167,15 +167,15 @@ jobs:
               @SuppressWarnings("unchecked")
               void compareAndExchangePreservesWitnessAndMismatchBehavior() {
                   TestObject owner = new TestObject();
-                  SlotMap<ScriptableObject> initial =
-                          (SlotMap<ScriptableObject>) SlotMapOwner.THREAD_SAFE_EMPTY_SLOT_MAP;
-                  SlotMap<ScriptableObject> replacement = new ThreadSafeEmbeddedSlotMap<>();
+                  SlotMap<Scriptable> initial =
+                          (SlotMap<Scriptable>) SlotMapOwner.THREAD_SAFE_EMPTY_SLOT_MAP;
+                  SlotMap<Scriptable> replacement = new ThreadSafeEmbeddedSlotMap<>();
                   owner.setMap(initial);
 
                   assertSame(initial, SlotMapOwner.ThreadedAccess.checkAndReplaceMap(owner, initial, replacement));
                   assertSame(replacement, owner.getMap());
 
-                  SlotMap<ScriptableObject> unused = new ThreadSafeEmbeddedSlotMap<>();
+                  SlotMap<Scriptable> unused = new ThreadSafeEmbeddedSlotMap<>();
                   assertSame(replacement, SlotMapOwner.ThreadedAccess.checkAndReplaceMap(owner, initial, unused));
                   assertSame(replacement, owner.getMap());
               }
@@ -184,18 +184,18 @@ jobs:
               @SuppressWarnings("unchecked")
               void contendedPromotionHasOneWinnerAndReturnsTheWinningWitness() throws Exception {
                   TestObject owner = new TestObject();
-                  SlotMap<ScriptableObject> initial =
-                          (SlotMap<ScriptableObject>) SlotMapOwner.THREAD_SAFE_EMPTY_SLOT_MAP;
+                  SlotMap<Scriptable> initial =
+                          (SlotMap<Scriptable>) SlotMapOwner.THREAD_SAFE_EMPTY_SLOT_MAP;
                   owner.setMap(initial);
 
                   int count = 12;
                   ExecutorService pool = Executors.newFixedThreadPool(count);
                   CountDownLatch ready = new CountDownLatch(count);
                   CountDownLatch start = new CountDownLatch(1);
-                  List<Future<SlotMap<ScriptableObject>>> futures = new ArrayList<>();
+                  List<Future<SlotMap<Scriptable>>> futures = new ArrayList<>();
                   try {
                       for (int i = 0; i < count; i++) {
-                          SlotMap<ScriptableObject> candidate = new ThreadSafeEmbeddedSlotMap<>();
+                          SlotMap<Scriptable> candidate = new ThreadSafeEmbeddedSlotMap<>();
                           futures.add(pool.submit(() -> {
                               ready.countDown();
                               assertTrue(start.await(10, TimeUnit.SECONDS));
@@ -205,14 +205,14 @@ jobs:
                       assertTrue(ready.await(10, TimeUnit.SECONDS));
                       start.countDown();
 
-                      List<SlotMap<ScriptableObject>> witnesses = new ArrayList<>();
-                      for (Future<SlotMap<ScriptableObject>> future : futures) {
+                      List<SlotMap<Scriptable>> witnesses = new ArrayList<>();
+                      for (Future<SlotMap<Scriptable>> future : futures) {
                           witnesses.add(future.get(10, TimeUnit.SECONDS));
                       }
-                      SlotMap<ScriptableObject> winner = owner.getMap();
+                      SlotMap<Scriptable> winner = owner.getMap();
                       assertNotSame(initial, winner);
                       assertEquals(1L, witnesses.stream().filter(value -> value == initial).count());
-                      for (SlotMap<ScriptableObject> witness : witnesses) {
+                      for (SlotMap<Scriptable> witness : witnesses) {
                           if (witness != initial) {
                               assertSame(winner, witness);
                           }
@@ -285,14 +285,14 @@ jobs:
               @SuppressWarnings("unchecked")
               public static void run() throws Exception {
                   TestObject owner = new TestObject();
-                  SlotMap<ScriptableObject> initial =
-                          (SlotMap<ScriptableObject>) SlotMapOwner.THREAD_SAFE_EMPTY_SLOT_MAP;
+                  SlotMap<Scriptable> initial =
+                          (SlotMap<Scriptable>) SlotMapOwner.THREAD_SAFE_EMPTY_SLOT_MAP;
                   owner.setMap(initial);
-                  SlotMap<ScriptableObject> replacement = new ThreadSafeEmbeddedSlotMap<>();
+                  SlotMap<Scriptable> replacement = new ThreadSafeEmbeddedSlotMap<>();
                   require(SlotMapOwner.ThreadedAccess.checkAndReplaceMap(owner, initial, replacement) == initial,
                           "successful compare-exchange must return the expected witness");
                   require(owner.getMap() == replacement, "successful compare-exchange must publish replacement");
-                  SlotMap<ScriptableObject> unused = new ThreadSafeEmbeddedSlotMap<>();
+                  SlotMap<Scriptable> unused = new ThreadSafeEmbeddedSlotMap<>();
                   require(SlotMapOwner.ThreadedAccess.checkAndReplaceMap(owner, initial, unused) == replacement,
                           "mismatch must return the current witness");
                   require(owner.getMap() == replacement, "mismatch must not replace the current map");
@@ -303,10 +303,10 @@ jobs:
                   ExecutorService pool = Executors.newFixedThreadPool(count);
                   CountDownLatch ready = new CountDownLatch(count);
                   CountDownLatch start = new CountDownLatch(1);
-                  List<Future<SlotMap<ScriptableObject>>> futures = new ArrayList<>();
+                  List<Future<SlotMap<Scriptable>>> futures = new ArrayList<>();
                   try {
                       for (int i = 0; i < count; i++) {
-                          SlotMap<ScriptableObject> candidate = new ThreadSafeEmbeddedSlotMap<>();
+                          SlotMap<Scriptable> candidate = new ThreadSafeEmbeddedSlotMap<>();
                           futures.add(pool.submit(() -> {
                               ready.countDown();
                               if (!start.await(10, TimeUnit.SECONDS)) throw new AssertionError("start gate timeout");
@@ -315,15 +315,15 @@ jobs:
                       }
                       require(ready.await(10, TimeUnit.SECONDS), "workers did not become ready");
                       start.countDown();
-                      List<SlotMap<ScriptableObject>> witnesses = new ArrayList<>();
-                      for (Future<SlotMap<ScriptableObject>> future : futures) {
+                      List<SlotMap<Scriptable>> witnesses = new ArrayList<>();
+                      for (Future<SlotMap<Scriptable>> future : futures) {
                           witnesses.add(future.get(10, TimeUnit.SECONDS));
                       }
-                      SlotMap<ScriptableObject> winner = concurrentOwner.getMap();
+                      SlotMap<Scriptable> winner = concurrentOwner.getMap();
                       require(winner != initial, "one candidate must win");
                       long winners = witnesses.stream().filter(value -> value == initial).count();
                       require(winners == 1, "exactly one CAS winner expected, got " + winners);
-                      for (SlotMap<ScriptableObject> witness : witnesses) {
+                      for (SlotMap<Scriptable> witness : witnesses) {
                           if (witness != initial) require(witness == winner, "loser must observe winning map");
                       }
                   } finally {
