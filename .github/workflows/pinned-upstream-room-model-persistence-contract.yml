@@ -325,6 +325,30 @@ jobs:
           sha256sum "$probe" | tee build/pinned-upstream-room-model-persistence/generated-probe.sha256
           echo "GENERATED_PROBE=$probe"
 
+      - name: Generate CI-only API 35 instrumentation minSdk override
+        run: |
+          set -euo pipefail
+          init="build/pinned-upstream-room-model-persistence/test-minsdk26.init.gradle"
+          cat > "$init" <<'GROOVY'
+          gradle.beforeProject { project ->
+              if (project.path == ':app') {
+                  project.plugins.withId('com.android.application') {
+                      def androidComponents = project.extensions.getByName('androidComponents')
+                      androidComponents.finalizeDsl { androidDsl ->
+                          def original = androidDsl.defaultConfig.minSdk.apiLevel
+                          if (original != 23) {
+                              throw new GradleException("expected pinned upstream app minSdk 23, found " + original)
+                          }
+                          androidDsl.defaultConfig.minSdk = 26
+                          println "CI_ONLY_TEST_MIN_SDK_OVERRIDE=" + original + "->26"
+                      }
+                  }
+              }
+          }
+          GROOVY
+          sha256sum "$init" | tee build/pinned-upstream-room-model-persistence/test-minsdk26.init.gradle.sha256
+          printf '%s\n' 'SOURCE_MIN_SDK=23' 'CI_TEST_BUILD_MIN_SDK=26' 'DEVICE_API=35' 'PRODUCT_BUILD_FILES_MODIFIED=false' | tee build/pinned-upstream-room-model-persistence/test-build-config.txt
+
       - name: Enable KVM access for Android emulator
         run: |
           set -euo pipefail
@@ -344,7 +368,7 @@ jobs:
           disable-animations: false
           disable-linux-hw-accel: false
           pre-emulator-launch-script: $ANDROID_HOME/emulator/emulator -accel-check
-          script: bash -c 'set -euo pipefail; adb wait-for-device; test "$(adb shell getprop sys.boot_completed | tr -d "\r")" = "1"; echo "EMULATOR_API=$(adb shell getprop ro.build.version.sdk | tr -d "\r")" | tee build/pinned-upstream-room-model-persistence/emulator-identity.txt; echo "EMULATOR_FINGERPRINT=$(adb shell getprop ro.build.fingerprint | tr -d "\r")" | tee -a build/pinned-upstream-room-model-persistence/emulator-identity.txt; test "$(adb shell getprop ro.build.version.sdk | tr -d "\r")" = "35"; set +e; gradle --no-daemon -p upstream/legado :app:connectedAppDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.legado.app.data.RuntimeModelPersistenceProbeTest > build/pinned-upstream-room-model-persistence/gradle.log 2>&1; status=$?; set -e; echo "$status" > build/pinned-upstream-room-model-persistence/instrumentation-exit.txt; cat build/pinned-upstream-room-model-persistence/gradle.log; exit "$status"'
+          script: bash -c 'set -euo pipefail; adb wait-for-device; test "$(adb shell getprop sys.boot_completed | tr -d "\r")" = "1"; echo "EMULATOR_API=$(adb shell getprop ro.build.version.sdk | tr -d "\r")" | tee build/pinned-upstream-room-model-persistence/emulator-identity.txt; echo "EMULATOR_FINGERPRINT=$(adb shell getprop ro.build.fingerprint | tr -d "\r")" | tee -a build/pinned-upstream-room-model-persistence/emulator-identity.txt; test "$(adb shell getprop ro.build.version.sdk | tr -d "\r")" = "35"; set +e; gradle --no-daemon --init-script "$GITHUB_WORKSPACE/build/pinned-upstream-room-model-persistence/test-minsdk26.init.gradle" -p upstream/legado :app:connectedAppDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.legado.app.data.RuntimeModelPersistenceProbeTest > build/pinned-upstream-room-model-persistence/gradle.log 2>&1; status=$?; set -e; echo "$status" > build/pinned-upstream-room-model-persistence/instrumentation-exit.txt; cat build/pinned-upstream-room-model-persistence/gradle.log; exit "$status"'
 
       - name: Finalize exact-SHA Room and RuleData evidence
         if: always()
@@ -367,6 +391,9 @@ jobs:
           cases = [case.attrib.get("name", "") for case in suite.findall(".//testcase")]
           if len(cases) != 3 or totals != {"tests": 3, "failures": 0, "errors": 0, "skipped": 0}:
               raise SystemExit(f"probe tests did not all pass: totals={totals}, cases={cases}")
+          gradle_log = (root / "gradle.log").read_text(encoding="utf-8", errors="replace")
+          if "CI_ONLY_TEST_MIN_SDK_OVERRIDE=23->26" not in gradle_log:
+              raise SystemExit("CI-only minSdk override was not applied and recorded")
           exit_file = root / "instrumentation-exit.txt"
           if not exit_file.exists() or exit_file.read_text().strip() != "0":
               raise SystemExit("instrumentation Gradle exit was not zero")
