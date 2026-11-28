@@ -3794,3 +3794,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - Allowed tracked files: audit + overview; temporary evidence /tmp/task026dr-book-model-host-facade/.
 - Exclusions: no source/test/Gradle/dependency/workflow/schema/database/data/manifest/license/UI changes; no build/test/CI/GitHub/push/ref update/device/live-source; no Room install or persistence implementation; no Stage-1/Task 027.
 - **Disposition:** documentation-only Phase-A typed host-facade design registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.306.
+
+
+### 4.27.263 Task 026DR result — typed Book model host facade (2026-11-28)
+
+- Pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a; start HEAD 282c80a6c44c2f71336f9ba2dc9e915c8f328347; registration commit 31c034cbc2f97122db24859b51cd307abc137b11.
+- Defined 12 typed host contracts and 12 internal callsite bridge rules for Book/BookChapter/BaseBook/BookSource/BatchContentContext. Book.save/delete order, BookChapter.update() internal deferUpdates, exact getDisplayTitle parameters, token identity and batch context are preserved.
+- Correctly pinned BookHelp.getDurChapter overloads, both getContent overloads, nullable RuleBigDataHelp key, AppLog toast flag and toast duration. ReadRecord snapshot uses androidId/name/author and cover retention; Badcat history is not equivalent.
+- Current Badcat has partial progress state and replace-rule catalog only; no full ReadRecord, BookMemo, Book/Chapter variable, settings or AppLog owner. No custom Application exists; new Application installation/readiness gate required.
+- 30 source hashes + 12 input hashes + output manifest verified. Docs-only; no source/Gradle/build/test/CI changes.
+- **Disposition:** Task 026DR accepted as static typed facade design. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next: 026DS owner/migration decision closure; no Room install yet. See audit §24.307.
