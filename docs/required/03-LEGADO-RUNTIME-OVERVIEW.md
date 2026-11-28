@@ -3907,3 +3907,12 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - 12 port layers and 14 blockers recorded. Current :legado-runtime has five interfaces/six methods and zero App production implementors; no exact upstream source compile/ABI/R8 proof.
 - 42 source hashes + 23 prior-task inputs verified. No source/module/Gradle/Room/schema/build/test/CI changes.
 - **Disposition:** static mapping only; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED. Next: 026DX transitive dependency closure and exact adapter signatures. See audit §24.319.
+
+
+### 4.27.276 Task 026DX preregistration — transitive dependency and typed adapter ABI (2026-11-28)
+
+- Start branch integration/legado-upstream-runtime, HEAD 633899a6d334f165a41d3739dd9ecbc72b4e1b00; pinned Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Close exact upstream source imports and third-party dependency roots; align pinned versions with current modules; specify model-neutral HostPort and model-aware CorePort method signatures with typed inputs/outputs/errors/cancellation/lifecycle.
+- No source/module/Gradle/dependency/plugin/Room/KSP/schema/database/data changes; no build/test/CI, migration, dual runtime or dual-write. No schema freeze.
+- Allowed tracked files: audit + overview; temporary evidence /tmp/task026dx-core-dependency-adapter-abi/.
+- **Disposition:** documentation-only dependency/adapter ABI audit registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.320.
