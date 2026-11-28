@@ -4020,3 +4020,23 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - Exact pinned upstream `:app:compileAppDebugKotlin` only; capture seven class files' SHA-256 and `javap -p -s -v` descriptors; upload logs and exact-SHA evidence even on failure. No production or Gradle build-file changes; no APK/R8/DEX/device/behavior proof.
 - Local branch is 45 commits ahead of remote `b93cf723cc6a982b7231981060ebf787ce12d63d`; push dry-run passed as fast-forward. Existing Android debug workflow will also be triggered by the eventual integration-branch push and is tracked separately.
 - **Disposition:** Task 026ED registered / in_progress; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.332.
+
+
+### 4.27.289 Task 026ED result — GitHub-hosted pinned upstream App compile and JVM ABI capture (2026-11-28)
+
+- Exact HEAD e44f2d67138559e17e600c310f43f86c1c34245f; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- GitHub Actions run 46124489018 / Job 140915954188: 12/12 work steps success; runner 16 GB RAM / 4 vCPU; JDK 21.0.13, Gradle 8.14.4, Android SDK 36 / build-tools 36.0.0.
+- Upstream :app:compileAppDebugKotlin PASS, exit 0, 46 actionable tasks, 3m49s. Captured exact .class hashes and javap -p -s -v descriptors for BaseSource, AnalyzeRule, AnalyzeUrl, JsExtensions, JsEncodeUtils, RegexJsExtensions and JsSourceEngine.
+- Artifact 15255580667, SHA-256 0b2c95d78d387ea664aebfe243ff0238ffb4f5c5f0de9fc706ac61f4643fb95c; all 17 internal checksum entries independently verified. First source/bytecode name+arity comparison exposed Kotlin suspend Continuation, internal name mangling and seven incorrect arity cells in the earlier 026EB TSV; exact reconciliation is registered as 026EE.
+- Server downloaded Gradle 8.14.4 to /opt/toolcache/gradle-8.14.4; archive SHA-256 f1771298a70f6db5a29daf62378c4e18a17fc33c9ba6b14362e0cdf40610380d matches official checksum. Server did not compile; GitHub supplied SDK packages.
+- No Java reflection/Rhino JavaMembers/R8/DEX/APK/device or runtime behavior proof. Existing Android debug run 46124488921 / #3699 was still in progress at last check; separate from this ABI task.
+- Disposition: 026ED bounded compile/descriptor objective complete, but compiled ABI closure PARTIAL / NOT ACCEPTED. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.333.
+
+### 4.27.290 Task 026EE preregistration — source-to-bytecode ABI reconciliation and Rhino reflection probe (2026-11-28)
+
+- Start HEAD e44f2d67138559e17e600c310f43f86c1c34245f; pinned Legado 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Reconcile the 233 source method declarations against exact compiled JVM owner/name/descriptors, including Kotlin default/overload, suspend Continuation, internal module suffix and generated members. Correct the seven overstated source arity cells in the derived 026EB ledger without rewriting its historical result.
+- Run bounded Java reflection for the seven compiled classes and pinned Rhino JavaMembers property/overload checks for BaseSource/JsExtensions/JsEncodeUtils; preserve actual object/API identity and distinguish Java reflection from JS exposure.
+- Allowed: audit, required overview, .github/workflows/pinned-upstream-abi-compile.yml, one focused .github/scripts/pinned-upstream-abi-reflection-probe.sh; no upstream source or production source changes.
+- Preserve GitHub capacity gate, fixed upstream SHA, exact-HEAD artifact and fail-closed classpath/probe handling. No R8/DEX/APK/device, source migration, Stage-1 or Task 027.
+- Disposition at registration: Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.334.

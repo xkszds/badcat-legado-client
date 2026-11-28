@@ -6,6 +6,7 @@ on:
       - integration/legado-upstream-runtime
     paths:
       - '.github/workflows/pinned-upstream-abi-compile.yml'
+      - '.github/scripts/pinned-upstream-abi-reflection-probe.sh'
 
 permissions:
   contents: read
@@ -179,6 +180,12 @@ jobs:
           } | tee "$out/abi-result.txt"
           find "$out" -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 -r sha256sum > "$out/SHA256SUMS"
 
+      - name: Run pinned Java reflection and Rhino JavaMembers exposure probe
+        id: reflection_probe
+        if: ${{ success() && steps.upstream-compile.outcome == 'success' }}
+        shell: bash
+        run: bash .github/scripts/pinned-upstream-abi-reflection-probe.sh
+
       - name: Finalize exact-SHA result and upload evidence
         if: always()
         shell: bash
@@ -199,6 +206,7 @@ jobs:
             cat "$out/compile-exit.txt"
             cat "$out/compile-result.txt"
             if [[ -f "$out/abi-result.txt" ]]; then cat "$out/abi-result.txt"; else echo "ABI_CAPTURE=NOT_COMPLETED"; fi
+            if [[ -f "$out/reflection-result.txt" ]]; then cat "$out/reflection-result.txt"; else echo "JAVA_REFLECTION=NOT_COMPLETED"; echo "RHINO_JAVAMEMBERS=NOT_COMPLETED"; fi
             echo "APP_APK=NOT_RUN"
             echo "R8_DEX_DEVICE=NOT_RUN"
             echo "RHINO_RUNTIME_REFLECTION=NOT_RUN"

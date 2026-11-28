@@ -1,0 +1,256 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$GITHUB_WORKSPACE"
+test -n "$repo_root"
+legado_root="$repo_root/upstream/legado"
+out="$repo_root/build/pinned-upstream-abi-proof"
+mkdir -p "$out"
+
+expected_badcat="$GITHUB_SHA"
+expected_legado="330e606c4d57e08adc056ff8ab7a4132c784da9a"
+test -n "$expected_badcat"
+test "$(git -C "$repo_root" rev-parse HEAD)" = "$expected_badcat"
+test "$(git -C "$legado_root" rev-parse HEAD)" = "$expected_legado"
+test "$(cat "$out/compile-result.txt")" = "RESULT=COMPILE_PASS"
+test -s "$out/javap/BaseSource.javap.txt"
+test -s "$out/javap/JsExtensions.javap.txt"
+
+cat > "$out/abi-classpath.init.gradle" <<'GRADLE'
+gradle.projectsEvaluated {
+    def app = gradle.rootProject.project(':app')
+    app.tasks.register('writePinnedAbiCompileClasspath') {
+        doLast {
+            def configuration = app.configurations.getByName('appDebugCompileClasspath')
+            def output = new File(System.getenv('GITHUB_WORKSPACE') + '/build/pinned-upstream-abi-proof/compile-classpath.txt')
+            output.parentFile.mkdirs()
+            output.text = configuration.asPath
+            println("PINNED_ABI_CLASSPATH_ENTRIES=" + configuration.files.size())
+        }
+    }
+}
+GRADLE
+
+(
+    cd "$legado_root"
+    gradle --no-daemon --offline --console plain --max-workers=2 \
+        -Dorg.gradle.parallel=false \
+        -Dorg.gradle.jvmargs="-Xmx1g -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8" \
+        -Pkotlin.compiler.execution.strategy=in-process \
+        -I "$out/abi-classpath.init.gradle" \
+        :app:writePinnedAbiCompileClasspath
+) > "$out/reflection-classpath-gradle.log" 2>&1
+cat "$out/reflection-classpath-gradle.log"
+test -s "$out/compile-classpath.txt"
+
+android_jar="$ANDROID_HOME/platforms/android-36/android.jar"
+test -s "$android_jar"
+app_classes="$legado_root/app/build/tmp/kotlin-classes/appDebug"
+test -d "$app_classes"
+
+classpath="$(cat "$out/compile-classpath.txt")"
+classpath="$classpath:$android_jar:$app_classes"
+for classes_dir in "$legado_root"/app/build/intermediates/javac/appDebug/*/classes; do
+    if [[ -d "$classes_dir" ]]; then classpath="$classpath:$classes_dir"; fi
+done
+for module_jar in "$legado_root"/modules/*/build/intermediates/compile_library_classes_jar/debug/*/classes.jar; do
+    if [[ -f "$module_jar" ]]; then classpath="$classpath:$module_jar"; fi
+done
+printf 'CLASSPATH_ENTRY_COUNT=%s\n' "$(tr ':' '\n' <<< "$classpath" | wc -l)" | tee "$out/reflection-classpath-summary.txt"
+printf 'ANDROID_JAR=%s\nAPP_CLASSES=%s\n' "$android_jar" "$app_classes" >> "$out/reflection-classpath-summary.txt"
+sha256sum "$out/compile-classpath.txt" "$out/abi-classpath.init.gradle" > "$out/reflection-classpath-SHA256SUMS.txt"
+
+cat > "$out/PinnedUpstreamAbiReflectionProbe.java" <<'JAVA'
+import android.webkit.JavascriptInterface;
+import com.script.ScriptBindings;
+import io.legado.app.data.entities.BaseSource;
+import io.legado.app.help.rhino.NativeBaseSource;
+import org.htmlunit.corejs.javascript.Context;
+import org.htmlunit.corejs.javascript.Function;
+
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.lang.invoke.MethodType;
+import java.util.Arrays;
+import java.util.Comparator;
+
+public final class PinnedUpstreamAbiReflectionProbe {
+    private static final String[] TARGETS = {
+        "io.legado.app.data.entities.BaseSource",
+        "io.legado.app.model.analyzeRule.AnalyzeRule",
+        "io.legado.app.model.analyzeRule.AnalyzeUrl",
+        "io.legado.app.help.JsExtensions",
+        "io.legado.app.help.JsEncodeUtils",
+        "io.legado.app.help.RegexJsExtensions",
+        "io.legado.app.model.jsSource.JsSourceEngine"
+    };
+
+    public static void main(String[] args) throws Exception {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        int totalDeclared = 0;
+        int totalPublic = 0;
+        int totalSynthetic = 0;
+        int totalJsAnnotated = 0;
+
+        for (String name : TARGETS) {
+            Class<?> type = Class.forName(name, false, loader);
+            Method[] declared = type.getDeclaredMethods();
+            Arrays.sort(declared, Comparator.comparing(Method::getName)
+                .thenComparing(m -> MethodType.methodType(m.getReturnType(), m.getParameterTypes())
+                    .toMethodDescriptorString()));
+            int publicCount = 0;
+            int syntheticCount = 0;
+            int bridgeCount = 0;
+            int jsCount = 0;
+            for (Method method : declared) {
+                boolean isPublic = java.lang.reflect.Modifier.isPublic(method.getModifiers());
+                boolean js = method.isAnnotationPresent(JavascriptInterface.class);
+                if (isPublic) publicCount++;
+                if (method.isSynthetic()) syntheticCount++;
+                if (method.isBridge()) bridgeCount++;
+                if (js) jsCount++;
+                String descriptor = MethodType.methodType(method.getReturnType(), method.getParameterTypes())
+                    .toMethodDescriptorString();
+                System.out.println("REFLECT_METHOD\t" + name + "\t" + method.getName() + "\t" + descriptor
+                    + "\tpublic=" + isPublic + "\tsynthetic=" + method.isSynthetic()
+                    + "\tbridge=" + method.isBridge() + "\tdefault=" + method.isDefault()
+                    + "\tJavascriptInterface=" + js);
+            }
+            int inheritedPublic = type.getMethods().length;
+            System.out.println("REFLECT_CLASS\t" + name + "\tdeclared=" + declared.length
+                + "\tpublicDeclared=" + publicCount + "\tinheritedPublic=" + inheritedPublic
+                + "\tsynthetic=" + syntheticCount + "\tbridge=" + bridgeCount
+                + "\tJavascriptInterface=" + jsCount);
+            if (declared.length == 0 || publicCount == 0) {
+                throw new AssertionError("No usable declared methods found for " + name);
+            }
+            totalDeclared += declared.length;
+            totalPublic += publicCount;
+            totalSynthetic += syntheticCount;
+            totalJsAnnotated += jsCount;
+        }
+
+        System.out.println("REFLECT_TOTAL declared=" + totalDeclared + " publicDeclared=" + totalPublic
+            + " synthetic=" + totalSynthetic + " JavascriptInterface=" + totalJsAnnotated);
+
+        Context context = Context.enter();
+        try {
+            ScriptBindings scope = new ScriptBindings();
+            InvocationHandler handler = (proxy, method, methodArgs) -> {
+                if (method.getDeclaringClass() == Object.class) {
+                    if (method.getName().equals("toString")) return "Pinned ABI BaseSource proxy";
+                    if (method.getName().equals("hashCode")) return System.identityHashCode(proxy);
+                    if (method.getName().equals("equals")) return proxy == methodArgs[0];
+                }
+                if (method.getName().equals("getTag")) return "abi-probe";
+                if (method.getName().equals("getKey")) return "abi-probe-key";
+                if (method.getName().equals("getLoginUrl")) return "https://example.invalid";
+                if (method.getName().equals("getLoginUi")) return "{}";
+                if (method.getName().equals("getHeader")) return "{}";
+                if (method.getName().equals("getJsLib")) return "";
+                Class<?> result = method.getReturnType();
+                if (result == boolean.class) return false;
+                if (result == int.class) return 0;
+                if (result == long.class) return 0L;
+                if (result == float.class) return 0F;
+                if (result == double.class) return 0D;
+                if (result == short.class) return (short) 0;
+                if (result == byte.class) return (byte) 0;
+                if (result == char.class) return (char) 0;
+                return null;
+            };
+            BaseSource proxy = (BaseSource) Proxy.newProxyInstance(
+                BaseSource.class.getClassLoader(), new Class<?>[]{BaseSource.class}, handler);
+            NativeBaseSource wrapped = new NativeBaseSource(scope, proxy, BaseSource.class);
+
+            String[][] overloadChecks = {
+                {"ajax", "2"},
+                {"connect", "3"},
+                {"webView", "2"},
+                {"getZipStringContent", "2"},
+                {"digestHex", "1"}
+            };
+            for (String[] check : overloadChecks) {
+                String name = check[0];
+                int expected = Integer.parseInt(check[1]);
+                if (!wrapped.has(name, wrapped)) {
+                    throw new AssertionError("Rhino JavaMembers does not expose " + name);
+                }
+                Object property = wrapped.get(name, wrapped);
+                if (!(property instanceof Function)) {
+                    throw new AssertionError("Rhino property is not Function: " + name + " -> " + property);
+                }
+                int actual = nativeJavaMethodOverloadCount(property);
+                System.out.println("RHINO_FUNCTION\t" + name + "\tclass=" + property.getClass().getName()
+                    + "\toverloads=" + actual);
+                if (actual != expected) {
+                    throw new AssertionError("Unexpected Rhino overload count for " + name
+                        + ": expected=" + expected + " actual=" + actual);
+                }
+            }
+
+            String[] required = {
+                "getTag", "getKey", "getSource", "evalLoginUiV2", "evalLoginActionV2",
+                "getLoginHeader", "putLoginInfo", "getVariable", "setVariable",
+                "refreshJSLib", "evalJS", "cacheContent", "getWebViewUA"
+            };
+            for (String name : required) {
+                if (!wrapped.has(name, wrapped) || !(wrapped.get(name, wrapped) instanceof Function)) {
+                    throw new AssertionError("Required Rhino BaseSource/JsExtensions function missing: " + name);
+                }
+                System.out.println("RHINO_REQUIRED_FUNCTION\t" + name + "\tPASS");
+            }
+            if (!wrapped.has("loginUrl", wrapped)) {
+                throw new AssertionError("Expected Java bean property loginUrl is missing");
+            }
+            if (wrapped.has("setLoginUrl", wrapped)) {
+                throw new AssertionError("NativeBaseSource must hide setter when bean property exists");
+            }
+            if (!wrapped.has("setVariable", wrapped)) {
+                throw new AssertionError("NativeBaseSource must preserve setVariable exception");
+            }
+            if (!wrapped.has("variable", wrapped)) {
+                throw new AssertionError("NativeBaseSource variable property is missing");
+            }
+            System.out.println("RHINO_NATIVE_BASE_SOURCE_FILTER\tloginUrl=visible,setLoginUrl=hidden,setVariable=visible,variable=visible");
+        } finally {
+            Context.exit();
+        }
+        System.out.println("RESULT=JAVA_REFLECTION_AND_RHINO_JAVAMEMBERS_PASS");
+    }
+
+    private static int nativeJavaMethodOverloadCount(Object function) throws Exception {
+        for (Class<?> current = function.getClass(); current != null; current = current.getSuperclass()) {
+            for (Field field : current.getDeclaredFields()) {
+                if (!field.getType().isArray()) continue;
+                String component = field.getType().getComponentType().getName();
+                if (!component.endsWith("MemberBox")) continue;
+                field.setAccessible(true);
+                Object values = field.get(function);
+                return Array.getLength(values);
+            }
+        }
+        throw new AssertionError("Rhino NativeJavaMethod MemberBox[] overload table not found on "
+            + function.getClass().getName());
+    }
+}
+JAVA
+
+probe_classes="$out/reflection-probe-classes"
+mkdir -p "$probe_classes"
+javac -encoding UTF-8 -proc:none -cp "$classpath" -d "$probe_classes" "$out/PinnedUpstreamAbiReflectionProbe.java"
+java -Xmx1g -cp "$probe_classes:$classpath" PinnedUpstreamAbiReflectionProbe \
+    | tee "$out/java-reflection-rhino-probe.txt"
+grep -q '^RESULT=JAVA_REFLECTION_AND_RHINO_JAVAMEMBERS_PASS$' "$out/java-reflection-rhino-probe.txt"
+{
+    echo "BADCAT_COMMIT=$expected_badcat"
+    echo "LEGADO_COMMIT=$expected_legado"
+    echo "JAVA_REFLECTION=PASS"
+    echo "RHINO_JAVAMEMBERS=PASS"
+    echo "TARGET_CLASS_COUNT=7"
+    echo "APP_APK=NOT_RUN"
+    echo "R8_DEX_DEVICE=NOT_RUN"
+} | tee "$out/reflection-result.txt"
