@@ -4010,3 +4010,13 @@ Correction to the 026DV preregistration wording: :legado-runtime is an Android l
 - Wrapper-only offline preflight attempted; Gradle wrapper bootstrap tried to fetch distribution before Gradle starts. No bytes downloaded; stopped immediately and removed zero-byte partial/lock. No Gradle task/build/compile/javap/Rhino/R8/CI ran.
 - Source/input/output hashes PASS; repository and upstream clean; fixed SHA unchanged. No tracked production/config changes.
 - **Disposition:** Task 026EC NO-GO / BLOCKED before compile. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. Next prerequisite: approved offline Gradle 8.14.4 distribution and Android SDK platform packages. See audit §24.331.
+
+
+### 4.27.288 Task 026ED preregistration — GitHub-hosted upstream App compile and ABI proof (2026-11-28)
+
+- Start branch integration/legado-upstream-runtime, HEAD `7d87aacd1b46afc98333d21011f8e8b10b84f696`; fixed Legado SHA `330e606c4d57e08adc056ff8ab7a4132c784da9a`.
+- Server is 1.9 GiB RAM / 1.2 GiB available / 2 vCPU; direct Gradle download was slow, but Huawei Cloud mirror downloaded Gradle 8.14.4 (137,388,246 bytes) at about 12 MiB/s. SHA-256 `f1771298a70f6db5a29daf62378c4e18a17fc33c9ba6b14362e0cdf40610380d` matches the official checksum; installed at `/opt/toolcache/gradle-8.14.4`. Use GitHub-hosted Ubuntu for compilation; do not compile on server.
+- Dedicated workflow will install JDK 21, Android SDK 36/build-tools 36.0.0 and Gradle 8.14.4; capacity gate >=7 GiB effective RAM, >=6 GiB available and >=2 vCPU; Gradle heap 4 GiB, metaspace 1 GiB, in-process Kotlin, <=2 workers.
+- Exact pinned upstream `:app:compileAppDebugKotlin` only; capture seven class files' SHA-256 and `javap -p -s -v` descriptors; upload logs and exact-SHA evidence even on failure. No production or Gradle build-file changes; no APK/R8/DEX/device/behavior proof.
+- Local branch is 45 commits ahead of remote `b93cf723cc6a982b7231981060ebf787ce12d63d`; push dry-run passed as fast-forward. Existing Android debug workflow will also be triggered by the eventual integration-branch push and is tracked separately.
+- **Disposition:** Task 026ED registered / in_progress; Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.332.

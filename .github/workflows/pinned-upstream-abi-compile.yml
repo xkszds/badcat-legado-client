@@ -1,0 +1,217 @@
+name: Pinned upstream App compile and JVM ABI proof
+
+on:
+  push:
+    branches:
+      - integration/legado-upstream-runtime
+    paths:
+      - '.github/workflows/pinned-upstream-abi-compile.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pinned-upstream-abi-compile-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  upstream-app-abi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      GRADLE_USER_HOME: ${{ github.workspace }}/.gradle-user-home
+    steps:
+      - name: Check out exact source and pinned submodules
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          submodules: recursive
+
+      - name: Preflight runner capacity before Gradle
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="build/pinned-upstream-abi-proof"
+          mkdir -p "$out"
+          mem_total_kib="$(awk '$1 == "MemTotal:" {print $2}' /proc/meminfo)"
+          mem_available_kib="$(awk '$1 == "MemAvailable:" {print $2}' /proc/meminfo)"
+          effective_limit_bytes=$((mem_total_kib * 1024))
+          cgroup_limit="unlimited"
+          if [[ -r /sys/fs/cgroup/memory.max ]]; then
+            raw_limit="$(cat /sys/fs/cgroup/memory.max)"
+            if [[ "$raw_limit" =~ ^[0-9]+$ ]]; then
+              cgroup_limit="$raw_limit"
+              if (( raw_limit < effective_limit_bytes )); then effective_limit_bytes="$raw_limit"; fi
+            fi
+          elif [[ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ]]; then
+            raw_limit="$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes)"
+            if [[ "$raw_limit" =~ ^[0-9]+$ ]] && (( raw_limit < 1000000000000000 )); then
+              cgroup_limit="$raw_limit"
+              if (( raw_limit < effective_limit_bytes )); then effective_limit_bytes="$raw_limit"; fi
+            fi
+          fi
+          cpu_count="$(nproc)"
+          {
+            echo "BADCAT_COMMIT=$GITHUB_SHA"
+            echo "RUNNER_OS=$RUNNER_OS"
+            echo "RUNNER_ARCH=$RUNNER_ARCH"
+            echo "MEM_TOTAL_BYTES=$((mem_total_kib * 1024))"
+            echo "MEM_AVAILABLE_BYTES=$((mem_available_kib * 1024))"
+            echo "CGROUP_MEMORY_LIMIT_BYTES=$cgroup_limit"
+            echo "EFFECTIVE_MEMORY_LIMIT_BYTES=$effective_limit_bytes"
+            echo "CPU_COUNT=$cpu_count"
+          } | tee "$out/runner-capacity.txt"
+          if (( effective_limit_bytes < 7516192768 || mem_available_kib * 1024 < 6442450944 || cpu_count < 2 )); then
+            echo "CAPACITY_GATE=FAIL (requires >=7 GiB effective, >=6 GiB available RAM and >=2 vCPU)" | tee -a "$out/runner-capacity.txt"
+            exit 78
+          fi
+          echo "CAPACITY_GATE=PASS" | tee -a "$out/runner-capacity.txt"
+
+      - name: Verify exact source and fixed Legado submodule
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="330e606c4d57e08adc056ff8ab7a4132c784da9a"
+          actual="$(git -C upstream/legado rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$actual" = "$expected"
+          test -f upstream/legado/LICENSE
+          grep -q "GNU GENERAL PUBLIC LICENSE" upstream/legado/LICENSE
+          test -z "$(git -C upstream/legado status --porcelain)"
+          {
+            echo "BADCAT_COMMIT=$GITHUB_SHA"
+            echo "LEGADO_COMMIT=$actual"
+            echo "LEGADO_WORKTREE=CLEAN"
+          } | tee build/pinned-upstream-abi-proof/source-identity.txt
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Configure Android SDK platform 36
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${ANDROID_HOME:?Android SDK is not configured}"
+          sdkmanager_path="$(find "$ANDROID_HOME/cmdline-tools" -maxdepth 3 -type f -name sdkmanager | head -n 1)"
+          test -n "$sdkmanager_path"
+          echo "$(dirname "$sdkmanager_path")" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          "$sdkmanager_path" --sdk_root="$ANDROID_HOME" --install "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle 8.14.4
+        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a
+        with:
+          gradle-version: '8.14.4'
+          cache-disabled: true
+
+      - name: Record exact toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "BADCAT_COMMIT=$GITHUB_SHA"
+            java -version 2>&1
+            gradle --version
+            sdkmanager --list_installed
+          } > build/pinned-upstream-abi-proof/toolchain.txt 2>&1
+          cat build/pinned-upstream-abi-proof/toolchain.txt
+
+      - name: Compile only pinned upstream App Debug Kotlin
+        id: upstream-compile
+        shell: bash
+        working-directory: upstream/legado
+        timeout-minutes: 55
+        run: |
+          set -euo pipefail
+          out="../../build/pinned-upstream-abi-proof"
+          set +e
+          gradle --no-daemon --no-build-cache --no-configuration-cache --console plain --stacktrace \
+            --max-workers=2 -Dorg.gradle.parallel=false \
+            -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" \
+            -Pkotlin.compiler.execution.strategy=in-process \
+            :app:compileAppDebugKotlin > "$out/compileAppDebugKotlin.log" 2>&1
+          compile_status=$?
+          set -e
+          echo "GRADLE_EXIT_CODE=$compile_status" | tee "$out/compile-exit.txt"
+          tail -n 180 "$out/compileAppDebugKotlin.log" || true
+          if (( compile_status != 0 )); then
+            echo "RESULT=COMPILE_FAILED" | tee "$out/compile-result.txt"
+            exit "$compile_status"
+          fi
+          grep -qE '^> Task :app:compileAppDebugKotlin$' "$out/compileAppDebugKotlin.log"
+          echo "RESULT=COMPILE_PASS" | tee "$out/compile-result.txt"
+
+      - name: Capture pinned upstream class hashes and JVM descriptors
+        if: ${{ success() && steps.upstream-compile.outcome == 'success' }}
+        shell: bash
+        working-directory: upstream/legado
+        run: |
+          set -euo pipefail
+          out="../../build/pinned-upstream-abi-proof"
+          classes=(BaseSource AnalyzeRule AnalyzeUrl JsExtensions JsEncodeUtils RegexJsExtensions JsSourceEngine)
+          root="app/build/tmp/kotlin-classes"
+          test -d "$root"
+          : > "$out/class-files.txt"
+          : > "$out/class-sha256.txt"
+          mkdir -p "$out/javap"
+          for name in "${classes[@]}"; do
+            mapfile -t matches < <(find "$root" -type f -name "$name.class" -print | sort)
+            if (( ${#matches[@]} != 1 )); then
+              printf 'CLASS_MATCH_COUNT_%s=%s\n' "$name" "${#matches[@]}" | tee -a "$out/abi-errors.txt"
+              printf '%s\n' "${matches[@]}" >> "$out/abi-errors.txt"
+              exit 1
+            fi
+            class_file="${matches[0]}"
+            printf '%s\n' "$class_file" | tee -a "$out/class-files.txt"
+            sha256sum "$class_file" | tee -a "$out/class-sha256.txt"
+            javap -p -s -v "$class_file" > "$out/javap/$name.javap.txt"
+            test -s "$out/javap/$name.javap.txt"
+          done
+          {
+            echo "RESULT=ABI_CAPTURE_PASS"
+            echo "BADCAT_COMMIT=$GITHUB_SHA"
+            echo "LEGADO_COMMIT=330e606c4d57e08adc056ff8ab7a4132c784da9a"
+            echo "COMPILED_TASK=:app:compileAppDebugKotlin"
+            echo "ABI_CLASS_COUNT=${#classes[@]}"
+            sha256sum "$out"/javap/*.javap.txt
+          } | tee "$out/abi-result.txt"
+          find "$out" -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 -r sha256sum > "$out/SHA256SUMS"
+
+      - name: Finalize exact-SHA result and upload evidence
+        if: always()
+        shell: bash
+        run: |
+          set -uo pipefail
+          out="build/pinned-upstream-abi-proof"
+          mkdir -p "$out"
+          if [[ ! -f "$out/compile-exit.txt" ]]; then
+            echo "GRADLE_EXIT_CODE=NOT_REACHED" > "$out/compile-exit.txt"
+          fi
+          if [[ ! -f "$out/compile-result.txt" ]]; then
+            echo "RESULT=PRECOMPILE_BLOCKED" > "$out/compile-result.txt"
+          fi
+          {
+            echo "BADCAT_COMMIT=$GITHUB_SHA"
+            echo "LEGADO_COMMIT=330e606c4d57e08adc056ff8ab7a4132c784da9a"
+            cat "$out/runner-capacity.txt" 2>/dev/null || true
+            cat "$out/compile-exit.txt"
+            cat "$out/compile-result.txt"
+            if [[ -f "$out/abi-result.txt" ]]; then cat "$out/abi-result.txt"; else echo "ABI_CAPTURE=NOT_COMPLETED"; fi
+            echo "APP_APK=NOT_RUN"
+            echo "R8_DEX_DEVICE=NOT_RUN"
+            echo "RHINO_RUNTIME_REFLECTION=NOT_RUN"
+          } > "$out/result.txt"
+          find "$out" -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 -r sha256sum > "$out/SHA256SUMS"
+          cat "$out/result.txt"
+        continue-on-error: true
+
+      - name: Upload exact-SHA upstream ABI evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pinned-upstream-app-abi-proof
+          path: build/pinned-upstream-abi-proof/**
+          if-no-files-found: warn
+          retention-days: 30
