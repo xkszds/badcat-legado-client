@@ -3784,3 +3784,13 @@ See audit §24.86 for path-backed evidence and exact remaining proof.
 - BookHelp source slice is method-level only; extract pure chapter-index matching and delegate raw-content methods to PinnedContentCommitPort. BookSource's AudioPlay import is unused; avoid its large UI service.
 - Artifacts `/tmp/task026dq-book-chapter-compile-closure/`; all 40 source, 18 input and output hashes verified. Docs-only result.
 - **Disposition:** Task 026DQ accepted as static compile-closure/proof-plan audit. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; complete compatibility NOT ESTABLISHED. Next: 026DR host facade symbol/callsite bridge design, no Room installation yet. See audit §24.305.
+
+
+### 4.27.262 Task 026DR preregistration — typed Book/Chapter App host facade (2026-11-28)
+
+- Start branch integration/legado-upstream-runtime, HEAD 282c80a6c44c2f71336f9ba2dc9e915c8f328347; pinned Legado SHA 330e606c4d57e08adc056ff8ab7a4132c784da9a.
+- Define typed host-port signatures and narrow callsite bridge design for Book, BookChapter, BaseBook, BookSource and BatchContentContext: Book DAO, Chapter DAO, PPRule, rule variables, reader/history, config, UI/log and content commit.
+- Preserve exact model object identity, public JVM ABI/Rhino method descriptors, token/fence behavior and cancellation; define App startup injection and fail-closed behavior. No-op shims prohibited.
+- Allowed tracked files: audit + overview; temporary evidence /tmp/task026dr-book-model-host-facade/.
+- Exclusions: no source/test/Gradle/dependency/workflow/schema/database/data/manifest/license/UI changes; no build/test/CI/GitHub/push/ref update/device/live-source; no Room install or persistence implementation; no Stage-1/Task 027.
+- **Disposition:** documentation-only Phase-A typed host-facade design registered. Phase A OPEN; Stage-0 NOT ACCEPTED; Stage-1 NO-GO; Task 027 BLOCKED; full compatibility NOT ESTABLISHED. See audit §24.306.
